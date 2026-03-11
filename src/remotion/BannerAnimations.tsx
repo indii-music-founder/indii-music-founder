@@ -367,10 +367,10 @@ export const BannerCinematic: React.FC = () => {
       }} />
 
       {/* Real screenshots flying in from corners */}
-      <ScreenshotCard src={SCREENSHOTS[0]} x={-80} y={-40} w={320} h={200} rotation={-12} opacity={0.75} frame={frame} total={T} enterFraction={0.15} peakFraction={0.35} />
-      <ScreenshotCard src={SCREENSHOTS[1]} x={700} y={-20} w={350} h={220} rotation={8} opacity={0.65} frame={frame} total={T} enterFraction={0.2} peakFraction={0.4} />
-      <ScreenshotCard src={SCREENSHOTS[2]} x={-60} y={520} w={300} h={190} rotation={6} opacity={0.55} frame={frame} total={T} enterFraction={0.25} peakFraction={0.45} />
-      <ScreenshotCard src={SCREENSHOTS[3]} x={680} y={500} w={340} h={210} rotation={-10} opacity={0.6} frame={frame} total={T} enterFraction={0.28} peakFraction={0.48} />
+      <ScreenshotCard src={SCREENSHOTS[0]} x={-200} y={-120} w={640} h={400} rotation={-12} opacity={0.75} frame={frame} total={T} enterFraction={0.15} peakFraction={0.35} />
+      <ScreenshotCard src={SCREENSHOTS[1]} x={500} y={-100} w={700} h={440} rotation={8} opacity={0.65} frame={frame} total={T} enterFraction={0.2} peakFraction={0.4} />
+      <ScreenshotCard src={SCREENSHOTS[2]} x={-180} y={450} w={600} h={380} rotation={6} opacity={0.55} frame={frame} total={T} enterFraction={0.25} peakFraction={0.45} />
+      <ScreenshotCard src={SCREENSHOTS[3]} x={480} y={420} w={680} h={420} rotation={-10} opacity={0.6} frame={frame} total={T} enterFraction={0.28} peakFraction={0.48} />
 
       {/* Vinyl records */}
       <VinylRecord x={-100} y={600} size={250} frame={frame} total={T} enterFraction={0.12} opacity={0.4} />
@@ -415,10 +415,10 @@ export const BannerZoomThrough: React.FC = () => {
         <Particles frame={frame} total={T} count={40} opacity={0.4} />
 
         {/* Mid layer — screenshot cards */}
-        <ScreenshotCard src={SCREENSHOTS[0]} x={-120} y={50} w={380} h={240} rotation={-15} opacity={0.55} frame={frame} total={T} enterFraction={0.06} peakFraction={0.3} />
-        <ScreenshotCard src={SCREENSHOTS[1]} x={650} y={30} w={400} h={250} rotation={10} opacity={0.5} frame={frame} total={T} enterFraction={0.1} peakFraction={0.35} />
-        <ScreenshotCard src={SCREENSHOTS[2]} x={-80} y={480} w={360} h={220} rotation={8} opacity={0.45} frame={frame} total={T} enterFraction={0.12} peakFraction={0.38} />
-        <ScreenshotCard src={SCREENSHOTS[3]} x={620} y={460} w={380} h={240} rotation={-12} opacity={0.45} frame={frame} total={T} enterFraction={0.15} peakFraction={0.4} />
+        <ScreenshotCard src={SCREENSHOTS[0]} x={-260} y={-50} w={720} h={450} rotation={-15} opacity={0.55} frame={frame} total={T} enterFraction={0.06} peakFraction={0.3} />
+        <ScreenshotCard src={SCREENSHOTS[1]} x={420} y={-40} w={760} h={470} rotation={10} opacity={0.5} frame={frame} total={T} enterFraction={0.1} peakFraction={0.35} />
+        <ScreenshotCard src={SCREENSHOTS[2]} x={-220} y={400} w={680} h={420} rotation={8} opacity={0.45} frame={frame} total={T} enterFraction={0.12} peakFraction={0.38} />
+        <ScreenshotCard src={SCREENSHOTS[3]} x={400} y={380} w={720} h={450} rotation={-12} opacity={0.45} frame={frame} total={T} enterFraction={0.15} peakFraction={0.4} />
 
         {/* Center glow */}
         <div style={{
@@ -499,15 +499,15 @@ export const BannerOrbit: React.FC = () => {
           key={i}
           style={{
             position: 'absolute',
-            left: `calc(50% + ${item.ox}px - 100px)`,
-            top: `calc(50% + ${item.oy}px - 65px)`,
+            left: `calc(50% + ${item.ox}px - 200px)`,
+            top: `calc(50% + ${item.oy}px - 130px)`,
             zIndex: item.zIndex,
           }}
         >
           <div
             style={{
-              width: 200,
-              height: 130,
+              width: 400,
+              height: 260,
               borderRadius: 10,
               overflow: 'hidden',
               opacity: item.itemOpacity * 0.8,
@@ -578,10 +578,10 @@ export const BannerGlitch: React.FC = () => {
         <Particles frame={frame} total={T} count={20} opacity={0.3} />
 
         {/* Screenshot cards with glitch appearance */}
-        <ScreenshotCard src={SCREENSHOTS[0]} x={-60} y={-30} w={300} h={180} rotation={-10} opacity={0.55} frame={frame} total={T} enterFraction={0.1} peakFraction={0.35} />
-        <ScreenshotCard src={SCREENSHOTS[1]} x={680} y={20} w={320} h={200} rotation={7} opacity={0.5} frame={frame} total={T} enterFraction={0.15} peakFraction={0.4} />
-        <ScreenshotCard src={SCREENSHOTS[2]} x={-40} y={500} w={280} h={170} rotation={5} opacity={0.45} frame={frame} total={T} enterFraction={0.18} peakFraction={0.42} />
-        <ScreenshotCard src={SCREENSHOTS[3]} x={660} y={480} w={310} h={190} rotation={-8} opacity={0.45} frame={frame} total={T} enterFraction={0.2} peakFraction={0.45} />
+        <ScreenshotCard src={SCREENSHOTS[0]} x={-180} y={-100} w={600} h={370} rotation={-10} opacity={0.55} frame={frame} total={T} enterFraction={0.1} peakFraction={0.35} />
+        <ScreenshotCard src={SCREENSHOTS[1]} x={480} y={-60} w={640} h={400} rotation={7} opacity={0.5} frame={frame} total={T} enterFraction={0.15} peakFraction={0.4} />
+        <ScreenshotCard src={SCREENSHOTS[2]} x={-160} y={420} w={560} h={350} rotation={5} opacity={0.45} frame={frame} total={T} enterFraction={0.18} peakFraction={0.42} />
+        <ScreenshotCard src={SCREENSHOTS[3]} x={460} y={400} w={620} h={380} rotation={-8} opacity={0.45} frame={frame} total={T} enterFraction={0.2} peakFraction={0.45} />
 
         <VinylRecord x={-120} y={580} size={220} frame={frame} total={T} enterFraction={0.08} opacity={0.3} />
         <VinylRecord x={780} y={-60} size={180} frame={frame} total={T} enterFraction={0.12} opacity={0.25} />
@@ -651,10 +651,10 @@ export const BannerPulse: React.FC = () => {
       ))}
 
       {/* Screenshot cards appearing on pulse waves */}
-      <ScreenshotCard src={SCREENSHOTS[0]} x={-100} y={-20} w={340} h={210} rotation={-12} opacity={0.6} frame={frame} total={T} enterFraction={0.1} peakFraction={0.35} />
-      <ScreenshotCard src={SCREENSHOTS[1]} x={680} y={10} w={360} h={220} rotation={9} opacity={0.55} frame={frame} total={T} enterFraction={0.15} peakFraction={0.4} />
-      <ScreenshotCard src={SCREENSHOTS[2]} x={-70} y={490} w={320} h={200} rotation={7} opacity={0.5} frame={frame} total={T} enterFraction={0.18} peakFraction={0.43} />
-      <ScreenshotCard src={SCREENSHOTS[3]} x={650} y={470} w={350} h={215} rotation={-11} opacity={0.45} frame={frame} total={T} enterFraction={0.22} peakFraction={0.47} />
+      <ScreenshotCard src={SCREENSHOTS[0]} x={-220} y={-100} w={680} h={420} rotation={-12} opacity={0.6} frame={frame} total={T} enterFraction={0.1} peakFraction={0.35} />
+      <ScreenshotCard src={SCREENSHOTS[1]} x={460} y={-80} w={720} h={440} rotation={9} opacity={0.55} frame={frame} total={T} enterFraction={0.15} peakFraction={0.4} />
+      <ScreenshotCard src={SCREENSHOTS[2]} x={-190} y={400} w={640} h={400} rotation={7} opacity={0.5} frame={frame} total={T} enterFraction={0.18} peakFraction={0.43} />
+      <ScreenshotCard src={SCREENSHOTS[3]} x={440} y={380} w={700} h={430} rotation={-11} opacity={0.45} frame={frame} total={T} enterFraction={0.22} peakFraction={0.47} />
 
       <VinylRecord x={-130} y={560} size={240} frame={frame} total={T} enterFraction={0.08} opacity={0.35} />
       <VinylRecord x={790} y={-70} size={200} frame={frame} total={T} enterFraction={0.12} opacity={0.3} />
