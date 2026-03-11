@@ -162,6 +162,90 @@ await engine.runConsolidation('user-123');
 
 ---
 
+## ⏱️ Timeline Orchestrator (Autonomous Campaign Engine)
+
+The **Timeline Orchestrator** is indiiOS's progressive campaign automation system. It enables multi-month, fully autonomous marketing campaigns that escalate in intensity over time — from teaser posts in week 1 to daily multi-platform saturation by release day — all without manual intervention.
+
+### How It Works
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Cloud Scheduler (every 15 min)                              │
+│  → pollTimelineMilestones (Cloud Function)                   │
+│    → Dispatches timeline/milestone.due events to Inngest     │
+│      → executeMilestoneFn calls Gemini server-side           │
+│        → Result stored in Firestore + audit log              │
+│                                                              │
+│  Zero human in the loop. Campaigns run at 3am unattended.    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Progressive Intensity** | Campaigns start with low-frequency "seed" posts and auto-escalate through phases to high-frequency saturation toward the climax |
+| **4 Pre-Built Templates** | Single Release (8 weeks), Album Rollout (16 weeks), Merch Drop (4 weeks), Tour Promotion (12 weeks) |
+| **Agent-Agnostic** | Works with any specialist agent — marketing, social, brand, publicist, distribution, video, etc. |
+| **Smart Asset Strategy** | Each milestone can `create_new` assets via AI, `use_existing` pre-made assets, or `auto` mode (agent decides) |
+| **Lifecycle Management** | Draft → Active → Paused → Resumed → Completed / Cancelled — full control |
+| **Adaptive Cadence** | Adjust posting frequency per-phase in real-time without rebuilding the timeline |
+| **Inngest Durability** | Built-in retries (2x), concurrency limits (5), step-based execution for crash recovery |
+| **Audit Trail** | Every autonomous execution is logged to `timelineExecutionLogs` for transparency |
+
+### 9 Agent Tools
+
+Any agent can orchestrate timelines using these registered tools:
+
+| Tool | Purpose |
+|------|---------|
+| `create_timeline` | Create from template or custom brief |
+| `activate_timeline` | Start autonomous execution |
+| `pause_timeline` / `resume_timeline` | Lifecycle control |
+| `advance_phase` | Skip to next intensity phase |
+| `adjust_cadence` | Change posting frequency |
+| `get_timeline_status` | Progress metrics |
+| `list_timelines` | All user timelines |
+| `list_timeline_templates` | Available templates |
+
+### Usage
+
+```typescript
+import { timelineOrchestrator } from '@/services/timeline/TimelineOrchestratorService';
+
+// Create a progressive campaign from a template
+const timeline = await timelineOrchestrator.createTimeline('user-123', {
+  title: 'Spring Album Rollout',
+  domain: 'marketing',
+  templateId: 'album_rollout_16w',
+  startDate: '2026-04-01',
+  goal: 'Build anticipation and drive 100k first-week streams',
+  assetStrategy: 'create_new',
+});
+
+// Activate it — from here, Cloud Scheduler + Inngest handle everything
+await timelineOrchestrator.activateTimeline('user-123', timeline.id);
+```
+
+### Architecture
+
+```
+src/services/timeline/
+├── TimelineOrchestratorService.ts    # Core engine (creation, lifecycle, progress)
+├── TimelinePhaseTemplates.ts         # 4 pre-built campaign templates
+├── TimelineTypes.ts                  # Type definitions
+└── TimelineOrchestratorService.test.ts  # 25 unit tests
+
+src/services/agent/tools/
+└── TimelineTools.ts                  # 9 agent tools (registered in TOOL_REGISTRY)
+
+functions/src/timeline/
+├── pollTimelineMilestones.ts         # Cloud Scheduler: finds due milestones
+└── milestone_execution.ts            # Inngest: Gemini server-side execution
+```
+
+---
+
 ## 📦 Core Modules (36)
 
 indiiOS ships with 36 lazy-loaded modules organized across four domains:

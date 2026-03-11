@@ -12,6 +12,7 @@ import { GenerateSpeechRequestSchema } from "./lib/audio";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
+import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_AI_MODELS } from "./config/models";
@@ -50,6 +51,9 @@ export { processISWCMapping } from './publishing/iswcMapper';
 
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
+
+// Timeline Orchestrator (Progressive Campaign Engine — polls every 15 min for due milestones)
+export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
 
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
@@ -665,9 +669,12 @@ export const inngestApi = functions
         // 3. Stitching Function (Server-Side using Google Transcoder)
         const stitchVideo = stitchVideoFn(inngestClient);
 
+        // Timeline Orchestrator: Autonomous milestone execution
+        const executeMilestone = executeMilestoneFn(inngestClient);
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideo, generateLongFormVideo, stitchVideo],
+            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone],
             signingKey: inngestSigningKey.value(),
         });
 

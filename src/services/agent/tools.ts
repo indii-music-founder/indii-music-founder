@@ -21,6 +21,7 @@ import { SecurityTools } from './tools/SecurityTools';
 import { DevOpsTools } from './tools/DevOpsTools';
 import { DistributionTools } from './tools/DistributionTools';
 import { UniversalTools } from './tools/UniversalTools';
+import { TimelineTools } from './tools/TimelineTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -46,7 +47,8 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...DevOpsTools,
     ...PUBLICIST_TOOLS,
     ...FinanceTools,
-    ...DistributionTools
+    ...DistributionTools,
+    ...TimelineTools
 };
 
 
@@ -112,4 +114,13 @@ AVAILABLE TOOLS:
 57. delete_user_memory(memoryId: string) - Permanently delete a user memory.
 58. get_user_memory_analytics(days?: number) - Get analytics about user memories.
 59. consolidate_user_memories() - Consolidate user memories to reduce redundancy.
+60. create_timeline(goal, domain, durationWeeks, startDate, templateId?, platforms?, assetStrategy?) - Create a progressive multi-phase campaign timeline.
+61. list_timelines(status?) - List all progressive campaign timelines.
+62. get_timeline_status(timelineId) - Get detailed timeline progress.
+63. activate_timeline(timelineId) - Activate a draft timeline.
+64. pause_timeline(timelineId) - Pause an active timeline.
+65. resume_timeline(timelineId) - Resume a paused timeline.
+66. advance_phase(timelineId) - Skip to the next phase.
+67. adjust_cadence(timelineId, phaseId, cadence) - Change posting frequency mid-campaign.
+68. list_timeline_templates() - List available progressive campaign templates.
 `;
