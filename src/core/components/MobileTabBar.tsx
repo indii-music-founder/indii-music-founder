@@ -118,22 +118,25 @@ export const MobileTabBar: React.FC = () => {
     return (
         <>
             {/* QuickCapture FAB — floating above tab bar center */}
-            <motion.button
-                whileTap={{ scale: 0.85 }}
-                onClick={() => {
-                    haptic('medium');
-                    setIsQuickCaptureOpen(true);
-                }}
-                className="fixed z-[102] w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 flex items-center justify-center active:shadow-indigo-500/50 transition-shadow"
-                style={{
-                    bottom: `calc(56px + env(safe-area-inset-bottom, 0px) + 8px)`,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                }}
-                aria-label="Quick capture new contact"
-            >
-                <Plus size={22} className="text-white" strokeWidth={2.5} />
-            </motion.button>
+            {/* Hidden on modules with their own bottom action bar (Road Mode has voice bar) */}
+            {currentModule !== 'road' && (
+                <motion.button
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => {
+                        haptic('medium');
+                        setIsQuickCaptureOpen(true);
+                    }}
+                    className="fixed z-[102] w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 shadow-lg shadow-teal-500/30 flex items-center justify-center active:shadow-teal-500/50 transition-shadow"
+                    style={{
+                        bottom: `calc(56px + env(safe-area-inset-bottom, 0px) + 8px)`,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                    }}
+                    aria-label="Quick capture new contact"
+                >
+                    <Plus size={22} className="text-white" strokeWidth={2.5} />
+                </motion.button>
+            )}
 
             {/* QuickCapture Bottom Sheet */}
             <QuickCapture

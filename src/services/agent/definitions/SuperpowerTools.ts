@@ -165,5 +165,111 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
             },
             required: ['type', 'message']
         }
+    },
+    // ── Timeline Orchestrator Tools ─────────────────────────────────────────
+    {
+        name: 'create_timeline',
+        description: 'Create a progressive, multi-phase campaign timeline. Supports pre-built templates (single_release_8w, album_rollout_16w, merch_drop_4w, tour_promo_12w) or fully custom AI-generated plans.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                goal: { type: 'STRING', description: 'Campaign goal (e.g., "Release my new single \'Midnight Sun\' on April 15").' },
+                domain: { type: 'STRING', description: `Primary agent domain. Valid IDs: ${VALID_AGENT_IDS_LIST}` },
+                durationWeeks: { type: 'NUMBER', description: 'Total campaign duration in weeks (e.g., 8 for a single release).' },
+                startDate: { type: 'STRING', description: 'Campaign start date in ISO format (e.g., "2026-04-01").' },
+                templateId: { type: 'STRING', description: 'Optional template ID: single_release_8w, album_rollout_16w, merch_drop_4w, tour_promo_12w, or custom.' },
+                platforms: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Target platforms (e.g., ["Instagram", "TikTok", "Twitter"]).' },
+                releaseId: { type: 'STRING', description: 'Optional: ID of the release this timeline supports.' },
+                customInstructions: { type: 'STRING', description: 'Optional: custom AI instructions for plan generation.' },
+                assetStrategy: { type: 'STRING', description: 'Asset preference: create_new, use_existing, or auto.' }
+            },
+            required: ['goal', 'domain', 'durationWeeks', 'startDate']
+        }
+    },
+    {
+        name: 'list_timelines',
+        description: 'List all progressive campaign timelines for the current user with progress summaries.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                status: { type: 'STRING', description: 'Optional filter: draft, active, paused, completed, cancelled.' }
+            }
+        }
+    },
+    {
+        name: 'get_timeline_status',
+        description: 'Get detailed progress of a specific timeline including current phase, upcoming milestones, and completion percentage.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                timelineId: { type: 'STRING', description: 'The timeline ID to check.' }
+            },
+            required: ['timelineId']
+        }
+    },
+    {
+        name: 'activate_timeline',
+        description: 'Activate a draft timeline so its milestones start firing on schedule.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                timelineId: { type: 'STRING', description: 'The timeline ID to activate.' }
+            },
+            required: ['timelineId']
+        }
+    },
+    {
+        name: 'pause_timeline',
+        description: 'Pause an active timeline. Milestones will not fire until resumed.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                timelineId: { type: 'STRING', description: 'The timeline ID to pause.' }
+            },
+            required: ['timelineId']
+        }
+    },
+    {
+        name: 'resume_timeline',
+        description: 'Resume a paused timeline so milestones continue firing.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                timelineId: { type: 'STRING', description: 'The timeline ID to resume.' }
+            },
+            required: ['timelineId']
+        }
+    },
+    {
+        name: 'advance_phase',
+        description: 'Skip to the next phase, marking remaining milestones in the current phase as skipped.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                timelineId: { type: 'STRING', description: 'The timeline ID.' }
+            },
+            required: ['timelineId']
+        }
+    },
+    {
+        name: 'adjust_cadence',
+        description: 'Change the posting frequency of a phase mid-campaign (sparse, moderate, intense, daily).',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                timelineId: { type: 'STRING', description: 'The timeline ID.' },
+                phaseId: { type: 'STRING', description: 'The phase ID to adjust.' },
+                cadence: { type: 'STRING', enum: ['sparse', 'moderate', 'intense', 'daily'], description: 'New cadence level.' }
+            },
+            required: ['timelineId', 'phaseId', 'cadence']
+        }
+    },
+    {
+        name: 'list_timeline_templates',
+        description: 'List all available progressive campaign templates with descriptions and recommended durations.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {}
+        }
     }
 ];
