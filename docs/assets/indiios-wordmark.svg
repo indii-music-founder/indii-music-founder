@@ -4,15 +4,17 @@
       <stop offset="0%" stop-color="#00E5CC"/>
       <stop offset="100%" stop-color="#00B8D4"/>
     </linearGradient>
-    <linearGradient id="wm-bar" x1="0" y1="30" x2="0" y2="90" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#E0F7FA"/>
-    </linearGradient>
   </defs>
   <!-- Logo mark -->
   <rect x="4" y="4" width="112" height="112" rx="28" ry="28" fill="url(#wm-bg)"/>
-  <rect x="38" y="32" width="14" height="56" rx="7" ry="7" fill="url(#wm-bar)"/>
-  <rect x="68" y="32" width="14" height="56" rx="7" ry="7" fill="url(#wm-bar)"/>
+  <!-- Left "i" bar -->
+  <rect x="37" y="47" width="14" height="41" rx="7" ry="7" fill="white"/>
+  <!-- Right "i" bar -->
+  <rect x="69" y="47" width="14" height="41" rx="7" ry="7" fill="white"/>
+  <!-- Left "i" dot -->
+  <circle cx="44" cy="34" r="7" fill="white"/>
+  <!-- Right "i" dot -->
+  <circle cx="76" cy="34" r="7" fill="white"/>
   <!-- Wordmark "indiiOS" -->
   <text x="140" y="72" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif" font-size="54" font-weight="700" fill="#FFFFFF" letter-spacing="-1">indiiOS</text>
 </svg>
