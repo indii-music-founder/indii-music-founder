@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.13.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.12.0...v1.13.0) (2026-03-10)
+
+
+### Features
+
+* wire 9 remaining TODO stubs to real services ([55c23b2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/55c23b20ed83422ac5451dbdb2c7d720abe9bccf))
+* wire final 2 TODO stubs — ECB exchange rates + HFA mechanical license ([5b8a50b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5b8a50b310da9a816bc67844f77708e093a3f5cb))
+
 ## [1.12.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.11.1...v1.12.0) (2026-03-10)
 
 
