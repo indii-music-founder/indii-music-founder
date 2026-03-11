@@ -464,7 +464,7 @@ export const BannerOrbit: React.FC = () => {
   const textY = interpolate(textVis, [0, 1], [20, 0]);
 
   // Orbit angle: exactly one full revolution in T frames for seamless loop
-  const orbitAngle = (frame / T) * 360;
+  const orbitAngle = (frame / T) * 180;
   const orbitRadius = 420;
 
   // 4 orbiting screenshot positions — BIG cards with aggressive depth
@@ -509,7 +509,7 @@ export const BannerOrbit: React.FC = () => {
         position: 'absolute', width: orbitRadius * 2, height: orbitRadius * 0.8,
         borderRadius: '50%', border: `1px solid ${TEAL}22`,
         opacity: 0.35,
-        transform: `rotate(${orbitAngle * 0.02}deg)`,
+        transform: `rotate(${orbitAngle * 0.04}deg)`,
       }} />
 
       {/* Counter-rotating orbit ring — slightly smaller, dashed feel */}
