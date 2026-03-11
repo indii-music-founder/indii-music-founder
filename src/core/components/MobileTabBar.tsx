@@ -128,7 +128,7 @@ export const MobileTabBar: React.FC = () => {
                     }}
                     className="fixed z-[102] w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 shadow-lg shadow-teal-500/30 flex items-center justify-center active:shadow-teal-500/50 transition-shadow"
                     style={{
-                        bottom: `calc(56px + env(safe-area-inset-bottom, 0px) + 16px)`,
+                        bottom: `calc(56px + env(safe-area-inset-bottom, 0px) + 24px)`,
                         left: '50%',
                         transform: 'translateX(-50%)',
                     }}
