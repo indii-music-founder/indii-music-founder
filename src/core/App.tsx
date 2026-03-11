@@ -449,7 +449,7 @@ export default function App() {
                                                 <MobileHeader />
                                             )}
 
-                                            <div className={`flex-1 overflow-y-auto relative custom-scrollbar ${isAnyPhone ? 'pb-[72px]' : ''}`}>
+                                            <div className={`flex-1 overflow-y-auto relative custom-scrollbar ${isAnyPhone ? 'pb-[80px]' : ''}`}>
                                                 <ErrorBoundary key={currentModule}>
                                                     <Suspense fallback={<LoadingFallback />}>
                                                         <ModuleRenderer moduleId={currentModule as ModuleId} />
