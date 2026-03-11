@@ -2,6 +2,19 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.14.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.13.0...v1.14.0) (2026-03-11)
+
+
+### Features
+
+* add WorkspaceCanvas — rich media output panel for agent artifacts ([5dd6772](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5dd6772837f4120b93a713ce5695fdad6d40ba69))
+
+
+### Bug Fixes
+
+* resolve remaining type errors for green CI ([5c42b85](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5c42b85e2349fe0c8a458d81a640485cca337f38))
+* unblock CI + quality elevation — banned model, ECB caching, DMCA, consistency ([a300946](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a30094678d8abec06d1ecfd5565955d799d2c976))
+
 ## [1.13.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.12.0...v1.13.0) (2026-03-10)
 
 
