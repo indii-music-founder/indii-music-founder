@@ -118,35 +118,32 @@ const prepare_release = wrapTool('prepare_release', async (args: {
     }
 });
 
-// ... (run_audio_qc restored)
-async function run_audio_qc(args: {
+/**
+ * Audio QC / Forensics — Electron uses Python layer, Browser returns partial results.
+ */
+const run_audio_qc = wrapTool('run_audio_qc', async (args: {
     filePath: string;
     checkAtmos?: boolean;
-}) {
+}) => {
     const { filePath, checkAtmos = false } = args;
 
     // Check if we're in Electron environment
     const isElectron = typeof window !== 'undefined' && 'electronAPI' in window;
 
     if (isElectron) {
-        try {
-            // Create a task for monitoring
-            const taskId = await distributionService.createTask('QC', `Audio Forensics: ${filePath.split('/').pop()}`);
+        // Create a task for monitoring
+        const taskId = await distributionService.createTask('QC', `Audio Forensics: ${filePath.split('/').pop()}`);
 
-            // Execute forensics via service (which handles IPC and progress updates)
-            const report = await distributionService.runLocalForensics(taskId, filePath);
+        // Execute forensics via service (which handles IPC and progress updates)
+        const report = await distributionService.runLocalForensics(taskId, filePath);
 
-            return {
-                report,
-                message: `Audio QC completed for ${filePath}`
-            };
-        } catch (error) {
-            return toolError(error instanceof Error ? error.message : 'Audio analysis failed', 'QC_FAILED');
-        }
+        return toolSuccess({
+            report
+        }, `Audio QC completed for ${filePath}`);
     }
 
     // Browser fallback - return basic validation
-    return {
+    return toolSuccess({
         file: filePath,
         environment: 'browser',
         checks: {
@@ -157,8 +154,8 @@ async function run_audio_qc(args: {
         },
         overall: 'PARTIAL',
         warnings: ['Full audio QC requires Electron environment']
-    };
-}
+    }, `Audio QC partial — full analysis requires Electron environment.`);
+});
 
 /**
  * Issue an ISRC using the Authority Layer (Python/Registry).
@@ -441,11 +438,12 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
             success: false,
             error: `QC Failed: ${errors.join(', ')}`,
             message: `QC Failed: ${errors.join(', ')}`,
-            data: result
+            data: result,
+            metadata: { timestamp: Date.now(), errorCode: 'QC_FAILED' }
         };
     }
 
-    return result;
+    return toolSuccess(result, `Metadata QC ${status}: ${warnings.length} warning(s).`);
 });
 
 
@@ -517,7 +515,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
 
 export const DistributionTools: Record<string, AnyToolFunction> = {
     prepare_release,
-    run_audio_qc: wrapTool('run_audio_qc', run_audio_qc),
+    run_audio_qc,
     issue_isrc,
     certify_tax_profile,
     calculate_payout,

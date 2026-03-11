@@ -6,8 +6,34 @@ import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 
 // Module-level cache for ECB exchange rates (updates once daily, cache for 1 hour)
-let _ecbCache: { rates: Record<string, number>; fetchedAt: number } | null = null;
 const ECB_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const ECB_STORAGE_KEY = 'ecb_rates_cache';
+
+// Load cached rates from localStorage on startup
+function loadEcbCache(): { rates: Record<string, number>; fetchedAt: number } | null {
+    try {
+        const stored = localStorage.getItem(ECB_STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed?.rates && typeof parsed.fetchedAt === 'number') {
+                return parsed;
+            }
+        }
+    } catch {
+        // localStorage unavailable or corrupted — ignore
+    }
+    return null;
+}
+
+function saveEcbCache(cache: { rates: Record<string, number>; fetchedAt: number }): void {
+    try {
+        localStorage.setItem(ECB_STORAGE_KEY, JSON.stringify(cache));
+    } catch {
+        // localStorage full or unavailable — ignore
+    }
+}
+
+let _ecbCache = loadEcbCache();
 
 export const FinanceTools: Record<string, AnyToolFunction> = {
     analyze_receipt: wrapTool('analyze_receipt', async (args: { image_data: string, mime_type: string }) => {
@@ -284,8 +310,9 @@ export const FinanceTools: Record<string, AnyToolFunction> = {
                     rateMap[match[1]] = parseFloat(match[2]);
                 }
 
-                // Update cache
+                // Update in-memory + localStorage cache
                 _ecbCache = { rates: rateMap, fetchedAt: Date.now() };
+                saveEcbCache(_ecbCache);
 
                 if (src === tgt) {
                     rate = 1.0;
