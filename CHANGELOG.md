@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.18.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.1...v1.18.2) (2026-03-11)
+
+
+### Bug Fixes
+
+* **agent-mobile:** resolve 5 critical mobile UX issues ([03c40ac](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/03c40ace51f3a60b841f1b3122966f29c0db0f99))
+
 ## [1.18.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.0...v1.18.1) (2026-03-11)
 
 
