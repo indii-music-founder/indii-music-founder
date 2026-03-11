@@ -280,6 +280,28 @@
 /* Mobile Optimizations */
 @media (max-width: 768px) {
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * MOBILE FONT SCALE — reduce base size to prevent bloating on small screens
+   * Desktop base is 16px; mobile reduces to ~14px via font-size on html.
+   * All rem-based sizes scale proportionally.
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  html {
+    font-size: 14px;
+  }
+
+  /* Clamp heading sizes for mobile — prevents oversized h1/h2 */
+  h1 {
+    font-size: clamp(1.125rem, 4vw, 1.5rem) !important;
+  }
+
+  h2 {
+    font-size: clamp(1rem, 3.5vw, 1.25rem) !important;
+  }
+
+  h3 {
+    font-size: clamp(0.875rem, 3vw, 1.125rem) !important;
+  }
+
   /* Prevent iOS zoom on focus */
   input,
   select,
@@ -300,6 +322,12 @@
 
 /* Phone-specific optimizations (≤ 430px — iPhone Pro Max class) */
 @media (max-width: 430px) {
+
+  /* Even tighter font scale on small phones */
+  html {
+    font-size: 13px;
+  }
+
   /* Reduce generous paddings on phone */
   .responsive-padding {
     padding: 0.75rem !important;
