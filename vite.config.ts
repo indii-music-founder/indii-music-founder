@@ -190,8 +190,12 @@ export default defineConfig({
           'vendor-wavesurfer': ['wavesurfer.js'],
           'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
           'vendor-fabric': ['fabric'],
-          // Item 268: Heavy libs split into isolated chunks (loaded on-demand by lazy modules)
-          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          // CRITICAL: Only isolate pure 'three' (no React deps). Do NOT put
+          // @react-three/fiber or @react-three/drei here — they depend on
+          // react-reconciler/scheduler and MUST share the same React instance
+          // as vendor-react. Splitting them causes `unstable_now` undefined crash.
+          // Incident 2026-03-11: production app killed by scheduler duplication.
+          'vendor-three': ['three'],
           'vendor-remotion': ['remotion'],
           'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/analytics'],
         },
