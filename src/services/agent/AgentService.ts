@@ -479,14 +479,47 @@ export class AgentService {
         const { updateAgentMessage, agentHistory } = useStore.getState();
 
         // Build persona-aware system prompt from context
-        const artistName = context.userProfile?.displayName || '';
+        // Guard against default/placeholder names that haven't been updated
+        let artistName = context.userProfile?.displayName || '';
+        const isDefaultName = !artistName || artistName === 'New Artist' || artistName === 'pending';
+
+        // If the stored displayName is the generic default, try Firebase Auth's displayName
+        if (isDefaultName) {
+            try {
+                const { auth } = await import('@/services/firebase');
+                const authUser = auth.currentUser;
+                if (authUser?.displayName && authUser.displayName !== 'New Artist') {
+                    artistName = authUser.displayName;
+                } else if (authUser?.email) {
+                    // Extract name from email as last resort (e.g., "john.doe@gmail.com" → "john doe")
+                    const emailName = authUser.email.split('@')[0].replace(/[._-]+/g, ' ');
+                    // Only use if it looks like a real name (more than 2 chars, not all numbers)
+                    if (emailName.length > 2 && !/^\d+$/.test(emailName)) {
+                        artistName = emailName;
+                    } else {
+                        artistName = ''; // No usable name found
+                    }
+                }
+            } catch {
+                artistName = ''; // Auth not available
+            }
+        }
+
         const brandDesc = context.brandKit?.brandDescription || '';
         const genre = context.brandKit?.releaseDetails?.genre || '';
 
         let personaContext = '';
-        if (artistName) {
+        if (artistName && !isDefaultName) {
             personaContext += `\nYou are working with the artist **${artistName}**.`;
             personaContext += ` ALWAYS use this exact name when referring to the artist. NEVER invent a different name.`;
+        } else if (artistName) {
+            // We derived a name from auth but it wasn't explicitly set — use it but less forcefully
+            personaContext += `\nThe user's name appears to be **${artistName}** (from their account).`;
+            personaContext += ` Use this name when addressing them. If they provide a different artist/brand name, use that instead.`;
+        } else {
+            // No name available at all
+            personaContext += `\nThe user has not set their artist name yet.`;
+            personaContext += ` Do NOT call them "New Artist" or invent a name. Address them directly (e.g., "you", "your") or ask what name they go by.`;
         }
         if (brandDesc) personaContext += `\nBrand: ${brandDesc}`;
         if (genre) personaContext += `\nGenre: ${genre}`;

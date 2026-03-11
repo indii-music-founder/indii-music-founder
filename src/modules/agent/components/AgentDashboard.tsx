@@ -49,7 +49,7 @@ const CampaignsTab: React.FC = () => {
     React.useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
 
     return (
-        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 space-y-4">
+        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                     <Megaphone size={18} className="text-cyan-400" /> Campaigns
@@ -117,7 +117,7 @@ const InboxTab: React.FC = () => {
     const unreadCount = messages.filter(m => m.unread).length;
 
     return (
-        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 space-y-4">
+        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                     <Mail size={18} className="text-cyan-400" /> Inbox
@@ -264,7 +264,7 @@ const AgentDashboard: React.FC = () => {
                 <div className="flex-1 flex flex-col min-w-0 bg-[--background]">
                     {/* Mobile Tab Strip — visible only on phones */}
                     {isAnyPhone && (
-                        <div className="flex items-center gap-1 px-3 py-2 border-b border-slate-800 overflow-x-auto shrink-0">
+                        <div className="flex items-center gap-1 px-4 py-2.5 border-b border-slate-800 overflow-x-auto shrink-0">
                             {(['chat', 'tasks', 'campaigns', 'inbox'] as const).map((tab) => (
                                 <button
                                     key={tab}
@@ -382,7 +382,7 @@ const AgentDashboard: React.FC = () => {
                         {activeTab === 'chat' && (
                             <div className="flex flex-col h-full overflow-hidden">
                                 {/* Specialist selector toolbar */}
-                                <div className="flex items-center gap-3 px-4 py-2 border-b border-slate-800 shrink-0">
+                                <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800 shrink-0">
                                     <span className="text-xs text-slate-500 font-medium">Route to:</span>
                                     <SpecialistSelector
                                         selectedAgentId={selectedAgentId}
@@ -417,7 +417,7 @@ const AgentDashboard: React.FC = () => {
                             </div>
                         )}
 
-                        {activeTab !== 'scout' && activeTab !== 'browser' && activeTab !== 'chat' && activeTab !== 'tasks' && (
+                        {activeTab !== 'scout' && activeTab !== 'browser' && activeTab !== 'chat' && activeTab !== 'tasks' && activeTab !== 'campaigns' && activeTab !== 'inbox' && (
                             <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
                                 <div className="p-4 bg-slate-900 rounded-full border border-slate-800">
                                     <Filter size={32} className="opacity-50" />
