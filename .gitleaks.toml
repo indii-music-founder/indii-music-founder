@@ -19,6 +19,12 @@ useDefault = true
 description = "Known safe patterns per indiiOS API Credentials Policy"
 
 paths = [
+    # Environment variable files — Firebase API keys are IDENTIFIERS, not secrets.
+    # Security is enforced by Firestore/Storage Security Rules and GCP API restrictions.
+    # These must be allowlisted to prevent CI/CD from blocking on historical commits.
+    '''\.env$''',
+    '''\.env\..*$''',
+
     # Test files containing mock/fake secrets for testing redaction logic
     '''.*\.test\.ts$''',
     '''.*\.test\.tsx$''',
@@ -38,8 +44,11 @@ paths = [
     '''docs/.*\.md$''',
 ]
 
-# Also allow specific fake/placeholder values
+# Also allow specific fake/placeholder values and Firebase identifiers
 regexes = [
+    # Firebase API keys are identifiers (AIzaSy...), not secrets
+    # Per: docs/API_CREDENTIALS_POLICY.md section 3.1
+    '''AIzaSy[0-9A-Za-z_-]{33}''',
     # Fake Firebase dev bypass key
     '''AIzaSy_FAKE_KEY_FOR_DEV_BYPASS''',
     # Placeholder mock values
