@@ -1,4 +1,3 @@
-// @ts-nocheck — MSW types available after: npm i -D msw
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';

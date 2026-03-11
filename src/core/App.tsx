@@ -10,7 +10,8 @@ import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { MobileNav } from './components/MobileNav';
+import { MobileTabBar } from './components/MobileTabBar';
+import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import { ApprovalModal } from './components/ApprovalModal';
@@ -27,6 +28,7 @@ import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useMobile } from '@/hooks/useMobile';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
 import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
@@ -397,6 +399,7 @@ export default function App() {
 
     // SSR-safe media query for desktop detection
     const isDesktop = useMediaQuery('(min-width: 768px)');
+    const { isAnyPhone } = useMobile();
 
     // Gate: Block ALL rendering until Firebase onAuthStateChanged has fired at least once.
     // This prevents the app from flashing <LoginForm/> on page reload before the user\'s
@@ -443,7 +446,12 @@ export default function App() {
                                         )}
 
                                         <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
-                                            <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                                            {/* Mobile Header — phone only */}
+                                            {showChrome && (
+                                                <MobileHeader />
+                                            )}
+
+                                            <div className={`flex-1 overflow-y-auto relative custom-scrollbar ${isAnyPhone ? 'pb-[72px]' : ''}`}>
                                                 <ErrorBoundary key={currentModule}>
                                                     <Suspense fallback={<LoadingFallback />}>
                                                         <ModuleRenderer moduleId={currentModule as ModuleId} />
@@ -463,10 +471,10 @@ export default function App() {
                                     </div>
                                 </BiometricGate>
 
-                                {/* Mobile Navigation - Hidden for standalone modules */}
+                                {/* Mobile Tab Bar — replaces MobileNav FAB on phone viewports */}
                                 {showChrome && (
                                     <ErrorBoundary>
-                                        <MobileNav />
+                                        <MobileTabBar />
                                     </ErrorBoundary>
                                 )}
 
@@ -484,8 +492,8 @@ export default function App() {
                                 <TransmissionMonitor />
                                 <UpdaterMonitor />
 
-                                {/* Global Command Bar */}
-                                {showChrome && (
+                                {/* Global Command Bar — hidden on phone viewports (chat tab handles prompt) */}
+                                {showChrome && !isAnyPhone && (
                                     <ErrorBoundary>
                                         <CommandBar />
                                     </ErrorBoundary>

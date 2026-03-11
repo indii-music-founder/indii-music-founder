@@ -75,6 +75,13 @@ describe('Sidebar Navigation Integration', () => {
         loadUserProfile: vi.fn(),
         user: { uid: 'test-uid', email: 'test@example.com' },
         authLoading: false,
+        userProfile: {
+            id: 'test-uid',
+            displayName: 'Test User',
+            email: 'test@example.com',
+            bio: 'Music producer from Detroit',
+            brandKit: { brandDescription: 'My amazing brand' },
+        },
         initializeHistory: mockInitializeHistory,
         loadProjects: mockLoadProjects,
         loadSessions: vi.fn(),
@@ -84,6 +91,10 @@ describe('Sidebar Navigation Integration', () => {
         setPendingCount: vi.fn(),
         setIsSyncing: vi.fn(),
         setLastSyncError: vi.fn(),
+        isAgentOpen: false,
+        toggleAgentWindow: vi.fn(),
+        setSidecarStatus: vi.fn(),
+        setIsOffline: vi.fn(),
         ...overrides,
     });
 
@@ -138,10 +149,12 @@ describe('Sidebar Navigation Integration', () => {
     });
 
     it('renders correct dashboard for Brand Manager', async () => {
-        (useStore as any).mockReturnValue({
-            ...buildStoreState(),
-            currentModule: 'brand',
+        const state = buildStoreState({ currentModule: 'brand' });
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
         });
+        (useStore as any).getState = vi.fn().mockReturnValue(state);
 
         render(
             <MemoryRouter>
@@ -155,10 +168,12 @@ describe('Sidebar Navigation Integration', () => {
     });
 
     it('renders correct dashboard for Campaign Manager', async () => {
-        (useStore as any).mockReturnValue({
-            ...buildStoreState(),
-            currentModule: 'campaign',
+        const state = buildStoreState({ currentModule: 'campaign' });
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
         });
+        (useStore as any).getState = vi.fn().mockReturnValue(state);
 
         render(
             <MemoryRouter>
@@ -172,10 +187,12 @@ describe('Sidebar Navigation Integration', () => {
     });
 
     it('renders correct dashboard for Publicist', async () => {
-        (useStore as any).mockReturnValue({
-            ...buildStoreState(),
-            currentModule: 'publicist',
+        const state = buildStoreState({ currentModule: 'publicist' });
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
         });
+        (useStore as any).getState = vi.fn().mockReturnValue(state);
 
         render(
             <MemoryRouter>
@@ -189,10 +206,12 @@ describe('Sidebar Navigation Integration', () => {
     });
 
     it('renders correct dashboard for Publishing', async () => {
-        (useStore as any).mockReturnValue({
-            ...buildStoreState(),
-            currentModule: 'publishing',
+        const state = buildStoreState({ currentModule: 'publishing' });
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
         });
+        (useStore as any).getState = vi.fn().mockReturnValue(state);
 
         render(
             <MemoryRouter>
@@ -206,10 +225,12 @@ describe('Sidebar Navigation Integration', () => {
     });
 
     it('renders correct dashboard for Finance', async () => {
-        (useStore as any).mockReturnValue({
-            ...buildStoreState(),
-            currentModule: 'finance',
+        const state = buildStoreState({ currentModule: 'finance' });
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
         });
+        (useStore as any).getState = vi.fn().mockReturnValue(state);
 
         render(
             <MemoryRouter>
@@ -223,10 +244,12 @@ describe('Sidebar Navigation Integration', () => {
     });
 
     it('renders correct dashboard for Licensing', async () => {
-        (useStore as any).mockReturnValue({
-            ...buildStoreState(),
-            currentModule: 'licensing',
+        const state = buildStoreState({ currentModule: 'licensing' });
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
         });
+        (useStore as any).getState = vi.fn().mockReturnValue(state);
 
         render(
             <MemoryRouter>
