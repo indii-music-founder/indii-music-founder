@@ -163,13 +163,13 @@ export default function ObservabilityDashboard() {
         <ModuleErrorBoundary moduleName="Observability">
             <div className="absolute inset-0 flex flex-col text-white bg-background overflow-hidden">
                 {/* ── HEADER ────────────────────────────────────────── */}
-                <div className="flex-shrink-0 px-6 pt-5 pb-3 flex items-center justify-between border-b border-white/5">
+                <div className="flex-shrink-0 px-4 md:px-6 pt-4 md:pt-5 pb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/5">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
                             <Activity size={20} className="text-purple-400" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold tracking-tight">System Observability</h1>
+                            <h1 className="text-base md:text-lg font-bold tracking-tight">System Observability</h1>
                             <p className="text-[11px] text-muted-foreground">Agent telemetry, cost tracking, and trace analysis</p>
                         </div>
                     </div>
@@ -205,7 +205,7 @@ export default function ObservabilityDashboard() {
                 {/* ── CONTENT ───────────────────────────────────────── */}
                 <div className="flex-1 flex min-h-0 overflow-hidden">
                     {/* ── LEFT PANEL — System Metrics ─────────────────── */}
-                    <aside className="w-72 xl:w-80 flex-shrink-0 border-r border-white/5 overflow-y-auto">
+                    <aside className="hidden md:flex w-72 xl:w-80 flex-shrink-0 border-r border-white/5 overflow-y-auto flex-col">
                         <div className="p-4 space-y-4">
                             {/* Error state */}
                             {error && (

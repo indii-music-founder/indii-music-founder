@@ -22,7 +22,7 @@ export const MerchLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     return (
         <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
             {/* Sidebar */}
-            <aside className="w-64 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col z-20">
+            <aside className="hidden md:flex w-64 border-r border-white/5 bg-black/50 backdrop-blur-xl flex-col z-20">
                 <div className="p-6 flex items-center gap-3">
                     <div className="w-8 h-8 bg-[#FFE135] rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,225,53,0.3)]">
                         <span className="text-black font-black text-lg">M</span>
@@ -57,7 +57,7 @@ export const MerchLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#FFE135]/5 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-lime-400/5 rounded-full blur-[120px] pointer-events-none" />
 
-                <div className="flex-1 overflow-auto p-8 relative z-10 custom-scrollbar text-white">
+                <div className="flex-1 overflow-auto p-4 md:p-8 relative z-10 custom-scrollbar text-white">
                     {children}
                 </div>
             </main>
