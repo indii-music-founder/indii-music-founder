@@ -79,6 +79,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
                 distribution: {
                     ...state.distribution,
                     loading: false,
+                    isConnecting: false,
                     connections,
                     error: null
                 }

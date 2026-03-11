@@ -108,25 +108,27 @@ export const executeMilestoneFn = (inngestClient: any) =>
                         .collection('items')
                         .doc(timelineId);
 
-                    const snap = await timelineRef.get();
-                    if (!snap.exists) {
-                        throw new Error(`Timeline ${timelineId} not found for user ${userId}`);
-                    }
+                    await db.runTransaction(async (transaction) => {
+                        const snap = await transaction.get(timelineRef);
+                        if (!snap.exists) {
+                            throw new Error(`Timeline ${timelineId} not found for user ${userId}`);
+                        }
 
-                    const timeline = snap.data()!;
-                    const milestones = timeline.milestones || [];
-                    const idx = milestones.findIndex((m: any) => m.id === milestoneId);
+                        const timeline = snap.data()!;
+                        const milestones = timeline.milestones || [];
+                        const idx = milestones.findIndex((m: any) => m.id === milestoneId);
 
-                    if (idx === -1) {
-                        throw new Error(`Milestone ${milestoneId} not found in timeline ${timelineId}`);
-                    }
+                        if (idx === -1) {
+                            throw new Error(`Milestone ${milestoneId} not found in timeline ${timelineId}`);
+                        }
 
-                    milestones[idx].status = 'executing';
-                    milestones[idx].executedAt = Date.now();
+                        milestones[idx].status = 'executing';
+                        milestones[idx].executedAt = Date.now();
 
-                    await timelineRef.update({
-                        milestones,
-                        updatedAt: Date.now(),
+                        transaction.update(timelineRef, {
+                            milestones,
+                            updatedAt: Date.now(),
+                        });
                     });
 
                     console.log(`[MilestoneExecution] Marked milestone ${milestoneId} as executing`);
@@ -201,52 +203,58 @@ export const executeMilestoneFn = (inngestClient: any) =>
                         .collection('items')
                         .doc(timelineId);
 
-                    const snap = await timelineRef.get();
-                    if (!snap.exists) {
-                        throw new Error(`Timeline ${timelineId} not found`);
-                    }
+                    let completedCount = 0;
+                    let totalMilestones = 0;
 
-                    const timeline = snap.data()!;
-                    const milestones = timeline.milestones || [];
-                    const idx = milestones.findIndex((m: any) => m.id === milestoneId);
+                    await db.runTransaction(async (transaction) => {
+                        const snap = await transaction.get(timelineRef);
+                        if (!snap.exists) {
+                            throw new Error(`Timeline ${timelineId} not found`);
+                        }
 
-                    if (idx === -1) {
-                        throw new Error(`Milestone ${milestoneId} not found`);
-                    }
+                        const timeline = snap.data()!;
+                        const milestones = timeline.milestones || [];
+                        const idx = milestones.findIndex((m: any) => m.id === milestoneId);
 
-                    milestones[idx].status = 'completed';
-                    milestones[idx].result = agentResult.text;
-                    milestones[idx].completedAt = agentResult.generatedAt;
+                        if (idx === -1) {
+                            throw new Error(`Milestone ${milestoneId} not found`);
+                        }
 
-                    // Update completion count
-                    const completedCount = milestones.filter(
-                        (m: any) => m.status === 'completed'
-                    ).length;
+                        milestones[idx].status = 'completed';
+                        milestones[idx].result = agentResult.text;
+                        milestones[idx].completedAt = agentResult.generatedAt;
 
-                    // Check if all milestones are finished
-                    const allDone = milestones.every(
-                        (m: any) =>
-                            m.status === 'completed' ||
-                            m.status === 'skipped' ||
-                            m.status === 'failed'
-                    );
+                        // Update completion count
+                        completedCount = milestones.filter(
+                            (m: any) => m.status === 'completed'
+                        ).length;
+                        totalMilestones = milestones.length;
 
-                    const updates: Record<string, any> = {
-                        milestones,
-                        updatedAt: Date.now(),
-                        completedCount,
-                    };
+                        // Check if all milestones are finished
+                        const allDone = milestones.every(
+                            (m: any) =>
+                                m.status === 'completed' ||
+                                m.status === 'skipped' ||
+                                m.status === 'failed'
+                        );
 
-                    if (allDone) {
-                        updates.status = 'completed';
-                        console.log(`[MilestoneExecution] Timeline "${title}" is now fully completed!`);
-                    }
+                        const updates: Record<string, any> = {
+                            milestones,
+                            updatedAt: Date.now(),
+                            completedCount,
+                        };
 
-                    await timelineRef.update(updates);
+                        if (allDone) {
+                            updates.status = 'completed';
+                            console.log(`[MilestoneExecution] Timeline "${title}" is now fully completed!`);
+                        }
+
+                        transaction.update(timelineRef, updates);
+                    });
 
                     console.log(
                         `[MilestoneExecution] Milestone ${milestoneId} completed. ` +
-                        `Progress: ${completedCount}/${milestones.length}`
+                        `Progress: ${completedCount}/${totalMilestones}`
                     );
                 });
 
@@ -289,25 +297,27 @@ export const executeMilestoneFn = (inngestClient: any) =>
                             .collection('items')
                             .doc(timelineId);
 
-                        const snap = await timelineRef.get();
-                        if (!snap.exists) return;
+                        await db.runTransaction(async (transaction) => {
+                            const snap = await transaction.get(timelineRef);
+                            if (!snap.exists) return;
 
-                        const timeline = snap.data()!;
-                        const milestones = timeline.milestones || [];
-                        const idx = milestones.findIndex((m: any) => m.id === milestoneId);
+                            const timeline = snap.data()!;
+                            const milestones = timeline.milestones || [];
+                            const idx = milestones.findIndex((m: any) => m.id === milestoneId);
 
-                        if (idx !== -1) {
-                            milestones[idx].status = 'failed';
-                            milestones[idx].error = error.message || 'Unknown error';
-                            milestones[idx].retryCount = (milestones[idx].retryCount || 0) + 1;
+                            if (idx !== -1) {
+                                milestones[idx].status = 'failed';
+                                milestones[idx].error = error.message || 'Unknown error';
+                                milestones[idx].retryCount = (milestones[idx].retryCount || 0) + 1;
 
-                            await timelineRef.update({
-                                milestones,
-                                updatedAt: Date.now(),
-                            });
-                        }
+                                transaction.update(timelineRef, {
+                                    milestones,
+                                    updatedAt: Date.now(),
+                                });
+                            }
+                        });
 
-                        // Write failure to audit log
+                        // Write failure to audit log (outside transaction — independent write)
                         await db.collection('timelineExecutionLogs').add({
                             userId,
                             timelineId,

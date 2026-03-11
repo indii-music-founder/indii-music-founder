@@ -59,67 +59,69 @@ const ACTION_SEARCH_CONFIG: Record<string, { types: string[]; query: string; rad
 let mapsLoadPromise: Promise<void> | null = null;
 
 /**
- * Dynamically load the Google Maps JavaScript API with Places library.
- * Reuses the loader from MapsTools pattern.
+ * Ensure the Google Maps Places library is loaded.
+ * Uses google.maps.importLibrary('places') which works even when
+ * Maps was already loaded by another component (like TourMap) without Places.
  */
 const ensureGoogleMapsLoaded = (): Promise<void> => {
     if (mapsLoadPromise) return mapsLoadPromise;
 
-    mapsLoadPromise = new Promise((resolve, reject) => {
+    mapsLoadPromise = (async () => {
         if (typeof window === 'undefined') {
-            reject(new Error('Browser environment required for Google Maps API'));
+            throw new Error('Browser environment required for Google Maps API');
+        }
+
+        // Case 1: Places library is already loaded (by TourMap or MapsTools)
+        if ((window as any).google?.maps?.places?.PlacesService) {
             return;
         }
 
-        // Already loaded (e.g., by TourMap)
-        if ((window as any).google?.maps?.places) {
-            resolve();
+        // Case 2: Google Maps core is loaded but Places isn't — use importLibrary
+        if ((window as any).google?.maps?.importLibrary) {
+            logger.info('[NearbyPlaces] Loading Places library via importLibrary...');
+            await (window as any).google.maps.importLibrary('places');
             return;
         }
 
-        // Maps loaded but Places not available — wait for it
-        if ((window as any).google?.maps) {
-            // Places might load shortly, give it a beat
-            setTimeout(() => {
-                if ((window as any).google?.maps?.places) {
-                    resolve();
-                } else {
-                    // Need to reload with places library
-                    loadScript(resolve, reject);
-                }
-            }, 500);
-            return;
+        // Case 3: Google Maps not loaded at all — load the full script
+        const apiKey = env.googleMapsApiKey;
+        if (!apiKey) {
+            throw new Error('Missing VITE_GOOGLE_MAPS_API_KEY — cannot search nearby places');
         }
 
-        loadScript(resolve, reject);
+        await new Promise<void>((resolve, reject) => {
+            // Check if script is already being loaded by another component
+            const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+            if (existingScript) {
+                // Wait for it to load, then import Places
+                const waitForLoad = () => {
+                    if ((window as any).google?.maps?.importLibrary) {
+                        (window as any).google.maps.importLibrary('places').then(resolve).catch(reject);
+                    } else {
+                        setTimeout(waitForLoad, 200);
+                    }
+                };
+                waitForLoad();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            script.onerror = (err) => reject(err);
+            document.head.appendChild(script);
+        });
+    })();
+
+    // Reset promise on failure so it can be retried
+    mapsLoadPromise.catch(() => {
+        mapsLoadPromise = null;
     });
 
     return mapsLoadPromise;
 };
-
-function loadScript(resolve: () => void, reject: (err: unknown) => void): void {
-    const apiKey = env.googleMapsApiKey;
-    if (!apiKey) {
-        reject(new Error('Missing VITE_GOOGLE_MAPS_API_KEY — cannot search nearby places'));
-        return;
-    }
-
-    // Check if script is already being loaded
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-    if (existingScript) {
-        existingScript.addEventListener('load', () => resolve());
-        existingScript.addEventListener('error', (err) => reject(err));
-        return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = (err) => reject(err);
-    document.head.appendChild(script);
-}
 
 /**
  * Calculate the distance between two GPS coordinates using the Haversine formula.

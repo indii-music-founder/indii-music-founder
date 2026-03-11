@@ -27,7 +27,7 @@ export class RenderService {
             // This requires IAM credentials configured in the environment:
             // AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
             // The site name usually points to the pre-deployed remotion bundle in S3.
-            const siteName = process.env.REMOTION_AWS_SITE_NAME || 'indii-os-remotion-site';
+            const siteName = import.meta.env.VITE_REMOTION_SITE_NAME || 'indii-os-remotion-site';
 
             const response = await renderMediaOnLambda({
                 region: RemotionLambdaConfig.region,

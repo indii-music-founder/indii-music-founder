@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { type DashboardEarningsSummary } from '@/services/revenue/schema';
 import { ProfileSlice } from './profileSlice';
+import { SubscriptionSlice } from './subscriptionSlice';
 import { logger } from '@/utils/logger';
 
 export interface FinanceSlice {
@@ -12,7 +13,7 @@ export interface FinanceSlice {
     fetchEarnings: (period: { startDate: string; endDate: string }) => Promise<void>;
 }
 
-export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice, [], [], FinanceSlice> = (set, get) => ({
+export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & SubscriptionSlice, [], [], FinanceSlice> = (set, get) => ({
     finance: {
         earningsSummary: null,
         loading: false,
@@ -31,7 +32,10 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice, [], [
 
         try {
             const { financeService } = await import('@/services/finance/FinanceService');
-            // Fix: Use userId (from userProfile) instead of user.uid
+
+            // Clear previous subscription before creating a new one
+            state.clearSubscription?.('finance-earnings');
+
             const unsubscribe = financeService.subscribeToEarnings(userId, (data: any) => {
                 set((state) => ({
                     finance: {
@@ -42,11 +46,9 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice, [], [
                     }
                 }));
             });
-            // In a real application, you would typically store this unsubscribe function
-            // and call it when the component unmounts or the slice is no longer needed.
-            // For this example, we're just demonstrating the subscription.
-            // If this is meant to be a one-time fetch, the original fetchEarnings was more appropriate.
-            // If it's a continuous subscription, the slice needs a way to manage the unsubscribe.
+
+            // Register the unsubscribe so it's cleaned up when no longer needed
+            state.registerSubscription?.('finance-earnings', unsubscribe);
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to fetch earnings';
             set((state) => ({

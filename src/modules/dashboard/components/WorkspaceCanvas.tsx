@@ -135,10 +135,9 @@ function CanvasCard({
 
                 {item.type === 'document' && item.content && (
                     <div className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
-                        <div
-                            className="text-[12px] text-white/70 leading-relaxed whitespace-pre-wrap"
-                            dangerouslySetInnerHTML={{ __html: item.content.replace(/\n/g, '<br/>') }}
-                        />
+                        <div className="text-[12px] text-white/70 leading-relaxed whitespace-pre-wrap">
+                            {item.content}
+                        </div>
                     </div>
                 )}
 
@@ -214,10 +213,9 @@ function Lightbox({ item, onClose }: { item: CanvasItem; onClose: () => void }) 
                 {item.type === 'document' && item.content && (
                     <div className="bg-[#0f0f13] p-8 max-h-[80vh] overflow-y-auto">
                         <h2 className="text-lg font-semibold text-white mb-4">{item.title}</h2>
-                        <div
-                            className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap"
-                            dangerouslySetInnerHTML={{ __html: item.content.replace(/\n/g, '<br/>') }}
-                        />
+                        <div className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
+                            {item.content}
+                        </div>
                     </div>
                 )}
             </motion.div>
