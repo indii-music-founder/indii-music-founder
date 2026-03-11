@@ -87,7 +87,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
 
                 <div className="flex-1 flex overflow-hidden">
                     {/* Left Sidebar: Tools & Annotations */}
-                    <aside className="border-r border-gray-800 bg-[#0a0a0a] flex flex-col items-center">
+                    <aside className="hidden md:flex border-r border-gray-800 bg-[#0a0a0a] flex-col items-center">
                         <CanvasToolbar
                             addRectangle={() => canvasOps.addRectangle()}
                             addCircle={() => canvasOps.addCircle()}

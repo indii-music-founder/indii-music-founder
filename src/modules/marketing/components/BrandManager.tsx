@@ -387,7 +387,7 @@ const BrandManager: React.FC = () => {
                 </div>
 
                 {/* Sidebar Navigation */}
-                <aside className="w-64 border-r border-gray-800 bg-[#0a0a0a] flex flex-col h-full z-20">
+                <aside className="hidden md:flex w-64 border-r border-gray-800 bg-[#0a0a0a] flex-col h-full z-20">
                     {/* Brand Header */}
                     <div className="p-4 border-b border-white/5 flex items-center gap-2 h-14">
                         <Shield className="text-dept-marketing" size={16} />
@@ -449,7 +449,7 @@ const BrandManager: React.FC = () => {
                 {/* Main Area */}
                 <main className="flex-1 relative flex flex-col min-w-0 z-10 h-full overflow-hidden">
                     {/* HUD Header */}
-                    <header className="h-14 shrink-0 px-6 flex items-center justify-between border-b border-gray-800 bg-[#0a0a0a] z-20">
+                    <header className="h-12 md:h-14 shrink-0 px-4 md:px-6 flex items-center justify-between border-b border-gray-800 bg-[#0a0a0a] z-20">
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2 text-gray-400">
                                 {tabs.find(t => t.id === activeTab) && React.createElement(tabs.find(t => t.id === activeTab)!.icon, { size: 16, className: "text-dept-marketing" })}
@@ -460,7 +460,7 @@ const BrandManager: React.FC = () => {
                         </div>
                     </header>
 
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 scroll-smooth custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 scroll-smooth custom-scrollbar">
 
                         <AnimatePresence mode="wait">
 
