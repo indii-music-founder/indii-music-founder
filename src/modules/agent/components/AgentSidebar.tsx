@@ -27,7 +27,7 @@ export const AgentSidebar: React.FC<AgentSidebarProps> = ({ activeTab, setActive
                         key={id}
                         onClick={() => setActiveTab(id)}
                         className={`p-3 rounded-xl transition-all duration-200 group relative ${activeTab === id
-                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                            ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
                             : 'text-slate-400 hover:text-white hover:bg-slate-800'
                             }`}
                         title={label}

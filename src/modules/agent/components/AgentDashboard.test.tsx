@@ -72,7 +72,7 @@ describe('AgentDashboard', () => {
 
         expect(screen.getByTestId('agent-sidebar')).toBeDefined();
         expect(screen.getByTestId('agent-toolbar')).toBeDefined();
-        expect(screen.getByText('Agent Tools')).toBeDefined(); // Inside toolbar logic in dashboard
+        expect(screen.getByText('Booking Agent')).toBeDefined(); // Inside toolbar logic in dashboard
 
         // Default View is Scout
         // The text 'The Scout' appears in the Sidebar mock AND the Hero section.

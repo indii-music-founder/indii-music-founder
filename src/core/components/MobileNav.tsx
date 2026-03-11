@@ -59,7 +59,7 @@ export const MobileNav = () => {
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road Manager' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
-        { id: 'agent', icon: Network, label: 'Agent Tools' },
+        { id: 'agent', icon: Network, label: 'Booking Agent' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
