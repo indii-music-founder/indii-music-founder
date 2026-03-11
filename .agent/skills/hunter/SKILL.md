@@ -1,107 +1,306 @@
 ---
 name: hunter
-description: Systematic HTTP error code hunter for indiiOS. Identifies and patches latent 401, 403, 404, 410, 413, 422, 429, 500, 502, 503, 504 vulnerabilities across Firestore rules, Cloud Functions, service layers, and third-party API clients.
+description: Full-spectrum codebase bug hunter for indiiOS. Surfaces security vulnerabilities, data integrity issues, race conditions, memory leaks, and correctness bugs across the entire stack. Covers both Big Game (surface-level grep scans) and Small Game (deep logic reads). Fully autonomous — finds AND fixes all issues, then verifies and commits.
 ---
 
-# @hunter — HTTP Error Code Hunter
+# @hunter — Full-Spectrum Bug Hunter
 
 ## Mission
 
-Perform a structured sweep of the entire indiiOS codebase to identify and fix any code path that could produce, swallow, or fail to handle the following HTTP/Firebase error codes:
+Perform a structured, multi-phase sweep of the entire indiiOS codebase to **find AND fix** every category of bug that could impact production stability, security, or data integrity. This is not limited to HTTP errors — it covers XSS, race conditions, subscription leaks, stale closures, floating-point money math, locale traps, and more.
 
-| Code | Name | Common Cause |
-|------|------|-------------|
-| 401 | Unauthorized | Missing or expired auth token |
-| 403 | Forbidden | Firestore rules gap, ragProxy blocked path, bad API key scope |
-| 404 | Not Found | Missing Storage asset, dead endpoint, wrong Firestore path |
-| 410 | Gone | Deprecated endpoints still being called |
-| 413 | Payload Too Large | Image/file uploads exceeding provider limits |
-| 422 | Unprocessable Entity | Validation mismatch between client payload and server schema |
-| 429 | Too Many Requests | Missing retry/backoff logic on API clients |
-| 500 | Internal Server Error | Unhandled exceptions in Cloud Functions |
-| 502 | Bad Gateway | Proxy/upstream failure (Inngest, Agent Zero, external APIs) |
-| 503 | Service Unavailable | Transient outage, missing retry logic |
-| 504 | Gateway Timeout | Functions timeout, missing timeout handling |
+> **AUTONOMY RULES:**
+> 1. **DO NOT ASK** before fixing a bug. If you found it, fix it.
+> 2. **DO NOT REPORT AND WAIT.** The output of this skill is committed code, not a list of issues.
+> 3. **Every finding gets a fix.** If a fix is non-trivial (> 50 lines), apply the simplest safe fix and add a `// TODO(hunter): deeper refactor needed` comment.
+> 4. **Verify after fixing.** Never commit code that doesn't pass typecheck and tests.
+> 5. **Log everything.** Every fix goes to Error Ledger AND mem0 for institutional memory.
 
 ---
 
-## Wave 1 — Live Browser Sweep
+## Severity Tiers
 
-1. Open the live app at `https://indiios-studio.web.app`
-2. Open DevTools → Console + Network tabs, filter by `4`, `5` status codes
-3. Navigate through every major module:
-   - Dashboard, Creative Studio, Video, Social, Finance, Marketing
-   - Distribution, Brand Manager, Legal, Merch Tool, Knowledge Base
-4. Screenshot and log every non-200 response with full URL, status, and payload
+| Tier | Criteria | Action |
+|------|----------|--------|
+| 🚨 Critical | Security vulnerability, data loss, crash | Fix NOW |
+| ⚠️ High | User-visible broken behavior | Fix before launch |
+| 🔶 Medium | Intermittent/locale-dependent bugs | Fix this sprint |
+| 🔵 Low | Code hygiene, future footguns | Log & schedule |
+| ✅ Clean | Verified safe | Document as clean |
+
+---
+
+## Phase 1: Big Game (Surface Scan)
+
+Fast grep-based scans that catch low-hanging fruit. Run all in parallel.
+
+### 1.1 Security Vectors
 
 ```bash
-# Check Cloud Functions logs for recent errors
-firebase functions:log --project indiios-v-1-1 --limit 100 | grep -E "403|401|404|429|500|502|503|504"
+# XSS: dangerouslySetInnerHTML
+grep -rn 'dangerouslySetInnerHTML' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+
+# Hardcoded secrets
+grep -rn 'sk_live\|sk_test\|ghp_\|AIza' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v 'MOCK_KEY' | grep -v 'import.meta.env'
+
+# process.env in browser context (should be import.meta.env in Vite)
+grep -rn 'process\.env\.' src/ --include='*.ts' --include='*.tsx' | grep -v 'VITEST\|NODE_ENV\|import\.meta' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+```
+
+### 1.2 Memory Leaks
+
+```bash
+# Event listener mismatch (add vs remove counts)
+echo "=== addEventListener ===" && grep -rn 'addEventListener' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+echo "=== removeEventListener ===" && grep -rn 'removeEventListener' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+
+# Timers without cleanup
+grep -rn 'setInterval\|setTimeout' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | grep -v 'clearInterval\|clearTimeout' | wc -l
+
+# Firestore onSnapshot without matching unsubscribe
+grep -rn 'onSnapshot' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+```
+
+### 1.3 Swallowed Errors & Code Hygiene
+
+```bash
+# Empty catch blocks (silent failure)
+grep -rn 'catch.*{}' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+
+# TODO/FIXME/HACK markers (unfinished work)
+grep -rn 'TODO\|FIXME\|HACK\|XXX' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+
+# Raw console.log (should use logger)
+grep -rn 'console\.log' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | grep -v '//'
+
+# Type-safety: as any casts
+grep -rn 'as any' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+```
+
+### 1.4 HTTP Error Code Sweep
+
+Target codes: **401, 403, 404, 410, 413, 422, 429, 500, 502, 503, 504**
+
+```bash
+# Unhandled response codes (flat generic error handlers)
+grep -rn '!response.ok' src/services/ --include='*.ts' | grep -v 'status\|429\|502\|503\|504\|401\|403\|404' | grep -v test
+
+# Missing 404 handlers for Firestore reads
+grep -rn 'getDoc\|getDocs' src/services/ --include='*.ts' | grep -v 'test\|mock' | grep -v '\.exists\|if.*doc\|null\|undefined' | head -30
+
+# Functions without timeout guards
+grep -rn 'await fetch(' src/services/ --include='*.ts' -r | grep -v 'signal\|timeout\|abort' | grep -v '.test.'
+
+# Deprecated API endpoints (410 candidates)
+grep -rn 'v1beta\|v1alpha\|deprecated\|legacy' src/services/ --include='*.ts' | grep -v 'test\|//\|mock' | head -30
 ```
 
 ---
 
-## Wave 2 — Firestore Rules Audit
+## Phase 2: Small Game (Deep Logic Read)
 
-**Goal:** Find every collection path used in service code that lacks a matching rule.
+These require reading actual code *line-by-line*, not grep patterns.
+
+### 2.1 Zustand Store Slices
+
+Read every file in `src/core/store/slices/`:
+
+- [ ] **Subscription leaks:** Does every `onSnapshot` / `subscribe` store its unsubscribe via `registerSubscription()`?
+- [ ] **Stale flags:** After async operations, are ALL loading/connecting flags reset on BOTH success AND error paths?
+- [ ] **Non-serializable state:** Are callbacks/Promises/functions stored in state? (Breaks persist/devtools)
+- [ ] **Selector instability:** Any multi-property destructuring from `useStore()` without `useShallow`?
+
+```bash
+# Quick: count useShallow vs useStore to find unguarded selectors
+echo "useShallow:" && grep -rn 'useShallow' src/ --include='*.tsx' --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+echo "useStore:" && grep -rn 'useStore(' src/ --include='*.tsx' --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
+```
+
+### 2.2 Finance & Revenue
+
+Read `src/services/finance/` and `execution/finance/`:
+
+- [ ] **Floating-point money:** Any arithmetic on dollar amounts without converting to integer cents first?
+- [ ] **Division by zero:** Percentage calculations that divide by a value that could be 0?
+- [ ] **Rounding errors:** `toFixed()` without `Math.round()` first?
+
+```bash
+grep -rn 'toFixed\|Math.round' src/services/ --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+```
+
+### 2.3 Race Conditions & Concurrency
+
+Read any file that does Firestore read-modify-write:
+
+- [ ] **Non-atomic array updates:** Read doc → mutate array in memory → write entire array back? (Classic race condition)
+- [ ] **Missing Firestore transactions:** Any multi-document update that should be atomic but isn't?
+- [ ] **Concurrent Inngest functions:** Are functions with `concurrency > 1` writing to the same document?
+
+```bash
+# Find read-modify-write patterns (get → update on same ref)
+grep -rn 'timelineRef.update\|docRef.update\|\.update({' functions/src/ --include='*.ts' | grep -v 'transaction\.'
+```
+
+### 2.4 Distribution & DDEX
+
+Read `src/services/distribution/` and `src/services/identity/`:
+
+- [ ] **ISRC/UPC collisions:** Can two concurrent calls generate the same identifier? (Must use Firestore transactions)
+- [ ] **Sequence overflow:** At what number does the identifier format break? Document the ceiling.
+- [ ] **Date locale traps:** Are DDEX XML dates formatted with explicit locale or `toISOString()`?
+
+### 2.5 AI & Agent Services
+
+Read `src/services/agent/BaseAgent.ts` and specialist agents:
+
+- [ ] **Token exhaustion:** Which Gemini calls are missing `maxOutputTokens`? (Unbounded = budget blowout)
+- [ ] **Thought signature continuity:** Is `thoughtSignature` captured and passed back in follow-up calls?
+- [ ] **Abort propagation:** Is the `AbortSignal` threaded through the entire call chain?
+
+```bash
+grep -rn 'maxOutputTokens\|max_tokens' src/services/ --include='*.ts' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+```
+
+### 2.6 Locale & i18n
+
+```bash
+# Locale-dependent formatting without explicit locale
+grep -rn 'toLocaleDateString\|toLocaleString\|toLocaleTimeString' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+```
+
+- [ ] Any use in business-critical paths (DDEX, invoices, legal)?
+- [ ] Are money amounts formatted with `Intl.NumberFormat` and explicit currency?
+
+### 2.7 Firestore Rules Audit
 
 ```bash
 # Step 1: Extract all collection paths from services
-grep -rn "collection(db, '" src/services/ --include="*.ts" | \
-  grep -v "test\|mock\|Mock" | \
-  sed "s/.*collection(db, '//;s/').*//" | sort -u
+grep -rn "collection(db, '" src/services/ --include="*.ts" | grep -v "test\|mock\|Mock" | sed "s/.*collection(db, '//;s/').*//g" | sort -u
 
-# Step 2: Extract all collection paths from firestore.rules  
-grep -n "match /" firestore.rules | sed "s/.*match \///;s/ {.*//" | sort -u
+# Step 2: Extract all collection paths from firestore.rules
+grep -n "match /" firestore.rules | sed "s/.*match \///;s/ {.*//g" | sort -u
 
 # Step 3: Compare — anything in Step 1 not in Step 2 is a latent 403
 ```
 
-For each missing collection, add a rule following this pattern:
+---
 
-```javascript
-// User-scoped collection (user owns their documents)
-match /collection_name/{docId} {
-  allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
-  allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-}
+## Phase 3: Fix & Verify
 
-// Admin-write / auth-read (e.g. content_rules)
-match /collection_name/{docId} {
-  allow read: if isAuthenticated();
-  allow write: if isAdmin();
-}
-```
+### Fix Priority Order
+1. Fix all 🚨 Critical issues immediately
+2. Fix all ⚠️ High issues before committing
+3. Log 🔶 Medium and 🔵 Low to Error Ledger for follow-up
 
-Then validate and deploy:
+### Verification
 
 ```bash
-firebase firestore:rules firebase validate --project indiios-v-1-1
-firebase deploy --only firestore:rules --project indiios-v-1-1
+# Frontend
+npm run typecheck 2>&1 | tail -20
+npx vitest run 2>&1 | tail -30
+npm run build:studio 2>&1 | tail -20
+
+# Cloud Functions (if modified)
+cd functions && npx tsc --noEmit 2>&1 | tail -20
+
+# Firestore rules (if modified)
+firebase firestore:rules validate --project indiios-v-1-1
+```
+
+### Commit
+
+```bash
+git add -A && git commit -m "fix(hunter): [summary of all fixes]" && git push origin main
 ```
 
 ---
 
-## Wave 3 — Service HTTP Client Audit
+## Phase 4: Error Memory Protocol
 
-**Goal:** Find every raw `fetch()` call that lacks auth headers or proper error handling.
+After every hunt session, persist findings:
+
+### Error Ledger
 
 ```bash
-# Find raw fetch() calls that might be missing auth token
-grep -rn "fetch(" src/services/ --include="*.ts" | \
-  grep -v "test\|mock\|import\|await import" | \
-  grep "fetch('" | head -50
+echo "## [DATE] Hunter Find
+- SEVERITY: [Critical|High|Medium|Low]
+- FILE: [path]
+- BUG: [description]
+- FIX: [what was changed]" >> .agent/skills/error_memory/ERROR_LEDGER.md
 ```
 
-**Check each HTTP client for:**
+### mem0
 
-- [ ] `Authorization: Bearer <idToken>` on every request to protected endpoints
-- [ ] Retry logic for 429 and 5xx with exponential backoff
-- [ ] Status-specific error messages (not just generic `throw new Error(response.statusText)`)
-- [ ] Special handling for 413 (payload too large) and 422 (validation mismatch)
+```
+mcp_mem0_add-memory(
+  content="ERROR: [pattern] | FIX: [solution] | FILE: [file]",
+  userId="indiiOS-errors"
+)
+```
 
-**Retry pattern to apply:**
+---
 
+## Reference: Proven Fix Patterns
+
+### XSS via dangerouslySetInnerHTML
+```typescript
+// BAD: raw HTML injection
+<div dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br/>') }} />
+
+// GOOD: CSS handles line breaks, no HTML parsing
+<div style={{ whiteSpace: 'pre-wrap' }}>{content}</div>
+
+// ALTERNATIVE: sanitize if HTML is required
+import DOMPurify from 'dompurify';
+<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
+```
+
+### Non-Atomic Firestore Array Update (Race Condition)
+```typescript
+// BAD: read-modify-write without locking
+const snap = await ref.get();
+const arr = snap.data()!.items;
+arr[idx].status = 'done';
+await ref.update({ items: arr }); // Another function may overwrite this!
+
+// GOOD: atomic transaction
+await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const arr = snap.data()!.items;
+    arr[idx].status = 'done';
+    tx.update(ref, { items: arr }); // Retries if doc changed
+});
+```
+
+### Subscription Leak in Zustand
+```typescript
+// BAD: unsubscribe never stored
+const unsubscribe = service.subscribe(callback);
+// ... unsubscribe is never called → Firestore listener leaks
+
+// GOOD: register with subscription manager
+const unsubscribe = service.subscribe(callback);
+useStore.getState().registerSubscription('my-sub-id', unsubscribe);
+```
+
+### Stale Loading Flag
+```typescript
+// BAD: flag not reset on success
+set({ isConnecting: true });
+await connect(); // success path forgets to reset
+// catch: set({ isConnecting: false }); // only error resets it
+
+// GOOD: reset on both paths
+try {
+    set({ isConnecting: true });
+    await connect();
+    set({ isConnecting: false }); // ← reset on success too
+} catch {
+    set({ isConnecting: false });
+}
+```
+
+### HTTP Retry Pattern
 ```typescript
 private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const maxRetries = 3;
@@ -143,116 +342,19 @@ private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T
 
 ---
 
-## Wave 4 — Cloud Functions Endpoint Audit
-
-**Goal:** Every `onRequest` handler must have auth verification. Every `onCall` must have `if (!context.auth)` guard.
-
-```bash
-# Find all Cloud Functions exports
-grep -n "onRequest\|onCall" functions/src/index.ts | head -60
-
-# Check each onRequest for auth token verification pattern
-grep -A 15 "onRequest" functions/src/index.ts | grep -E "verifyIdToken|401|403|Unauthorized"
-```
-
-**Check ragProxy allowedPrefixes for any new Gemini API paths:**
-
-```bash
-grep -A 10 "allowedPrefixes" functions/src/index.ts
-```
-
-**Ensure Express body size limits are set for onRequest handlers:**
-
-```typescript
-app.use(express.json({ limit: '10mb' })); // Prevents 413 from upstream
-```
-
----
-
-## Wave 5 — Deep Code Grep
-
-Full pattern sweep across all services:
-
-```bash
-# Find unhandled response codes (flat generic error handlers)
-grep -rn "!response.ok" src/services/ --include="*.ts" | \
-  grep -v "status\|429\|502\|503\|504\|401\|403\|404" | \
-  grep -v test
-
-# Find missing 404 handlers for Firestore reads
-grep -rn "getDoc\|getDocs" src/services/ --include="*.ts" | \
-  grep -v "test\|mock" | \
-  grep -v "\.exists\|if.*doc\|null\|undefined" | head -30
-
-# Spot any hardcoded deprecated API endpoints (410 Gone candidates)
-grep -rn "v1beta\|v1alpha\|deprecated\|legacy" src/services/ --include="*.ts" | \
-  grep -v "test\|//\|mock" | head -30
-
-# Find functions without timeout guards
-grep -rn "async.*callApi\|async.*request\|async.*fetch" src/services/ --include="*.ts" | \
-  grep -v "AbortController\|setTimeout\|timeoutMs\|signal" | head -20
-```
-
----
-
-## Deployment & Commit Protocol
-
-After each wave of fixes:
-
-```bash
-# 1. Validate rules
-firebase firestore:rules validate --project indiios-v-1-1
-
-# 2. Deploy rules immediately
-firebase deploy --only firestore:rules --project indiios-v-1-1
-
-# 3. Deploy affected functions
-firebase deploy --only functions:ragProxy,functions:generateContentStream --project indiios-v-1-1
-
-# 4. Commit with descriptive message per fix
-git add <files>
-git commit -m "fix(<scope>): <what was broken> → <what was fixed>
-
-Affected error code: [401|403|404|413|422|429|5xx]
-Found during: HTTP Error Code Hunter sweep
-Impact: <describe what would have happened without this fix>"
-
-git push
-```
-
----
-
 ## Known Patterns Found in This Codebase
 
-From the 2026-02-21 Hunter session — these exact patterns were caught and fixed:
-
-| Fix | File | Error Code | Root Cause |
-|-----|------|-----------|-----------|
-| Firestore rules | `firestore.rules` | 403 | 7 collections missing rules: `fraud_alerts`, `content_rules`, `manufacture_requests`, `sample_requests`, `mockup_generations`, `proactive_tasks`, `users/{uid}/contracts` |
-| ragProxy allowlist | `functions/src/index.ts` | 403 | `/v1beta/fileSearchStores` and `/v1beta/operations` blocked by path allowlist |
-| streamQuery auth | `src/services/rag/GeminiRetrievalService.ts` | 403 | Raw `fetch()` to ragProxy without `Authorization: Bearer` header |
-| Printful retry | `src/services/pod/PrintOnDemandService.ts` | 429/413/422/5xx | Flat `throw new Error()` with no status distinction or retry logic |
-
----
-
-## Error Memory
-
-After each Hunter session, log new findings to the Error Ledger:
-
-```bash
-# Add to .agent/skills/error_memory/ERROR_LEDGER.md
-echo "## [DATE] Hunter Find
-- CODE: [status code]
-- FILE: [path]  
-- CAUSE: [root cause]
-- FIX: [what was changed]" >> .agent/skills/error_memory/ERROR_LEDGER.md
-```
-
-And to mem0:
-
-```
-mcp_mem0_add-memory(
-  content="ERROR: [pattern] | FIX: [solution] | FILE: [file]",
-  userId="indiiOS-errors"
-)
-```
+| Session | Fix | File | Category |
+|---------|-----|------|----------|
+| 2026-02-21 | Firestore rules for 7 missing collections | `firestore.rules` | HTTP 403 |
+| 2026-02-21 | ragProxy allowlist paths | `functions/src/index.ts` | HTTP 403 |
+| 2026-02-21 | streamQuery auth header | `GeminiRetrievalService.ts` | HTTP 403 |
+| 2026-02-21 | Printful retry logic | `PrintOnDemandService.ts` | HTTP 429/5xx |
+| 2026-03-11 | Race condition: non-atomic milestone update | `milestone_execution.ts` | Race Condition |
+| 2026-03-11 | Race condition: poller vs executor writes | `pollTimelineMilestones.ts` | Race Condition |
+| 2026-03-11 | XSS via dangerouslySetInnerHTML | `WorkspaceCanvas.tsx` | Security |
+| 2026-03-11 | Subscription leak in finance slice | `financeSlice.ts` | Memory Leak |
+| 2026-03-11 | isConnecting flag never resets on success | `distributionSlice.ts` | Stale UI |
+| 2026-03-11 | Photo capture silently discards data | `QuickCapture.tsx` | Data Loss |
+| 2026-03-11 | AI calls missing maxOutputTokens | Multiple agent services | Token Exhaustion |
+| 2026-03-11 | Locale-dependent formatting (15+ uses) | Multiple modules | i18n |

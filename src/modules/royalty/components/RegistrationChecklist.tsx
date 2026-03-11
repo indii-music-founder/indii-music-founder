@@ -82,8 +82,8 @@ export const RegistrationChecklist: React.FC<RegistrationChecklistProps> = ({
             <ActionPanel
                 profile={profile}
                 onComplete={() => {
-                    // Typically navigates to Dashboard
-                    console.log("Registration complete! Routing to Dashboard...");
+                    // TODO(hunter): Wire up actual navigation to dashboard
+                    // This should call setCurrentModule('dashboard') from the app store
                 }}
             />
         </div>

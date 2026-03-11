@@ -303,8 +303,8 @@ Safety rules:
         // The response contains function_call with action type + coordinates/text.
         // Parse and return as BrowserAction.
 
-        console.log(`[BrowserAgent] Model: ${COMPUTER_USE_MODEL}`);
-        console.log(`[BrowserAgent] Would send screenshot and get next action`);
+        console.debug(`[BrowserAgent] Model: ${COMPUTER_USE_MODEL}`);
+        console.debug(`[BrowserAgent] Would send screenshot and get next action`);
 
         // Placeholder: return done (real impl parses model response)
         return { type: 'done', result: 'Task execution requires Electron main process with Playwright' };
@@ -317,27 +317,27 @@ Safety rules:
     private async executeAction(action: BrowserAction): Promise<void> {
         switch (action.type) {
             case 'click':
-                console.log(`[BrowserAgent] Click at (${action.x}, ${action.y})`);
+                console.debug(`[BrowserAgent] Click at (${action.x}, ${action.y})`);
                 // page.mouse.click(action.x, action.y)
                 break;
             case 'type':
-                console.log(`[BrowserAgent] Type: "${action.text.substring(0, 20)}..."`);
+                console.debug(`[BrowserAgent] Type: "${action.text.substring(0, 20)}..."`);
                 // page.keyboard.type(action.text)
                 break;
             case 'scroll':
-                console.log(`[BrowserAgent] Scroll ${action.direction} at (${action.x}, ${action.y})`);
+                console.debug(`[BrowserAgent] Scroll ${action.direction} at (${action.x}, ${action.y})`);
                 // page.mouse.wheel(0, action.direction === 'down' ? 100 : -100)
                 break;
             case 'keypress':
-                console.log(`[BrowserAgent] Keypress: ${action.key}`);
+                console.debug(`[BrowserAgent] Keypress: ${action.key}`);
                 // page.keyboard.press(action.key)
                 break;
             case 'navigate':
-                console.log(`[BrowserAgent] Navigate to: ${action.url}`);
+                console.debug(`[BrowserAgent] Navigate to: ${action.url}`);
                 // page.goto(action.url)
                 break;
             case 'wait':
-                console.log(`[BrowserAgent] Wait ${action.milliseconds}ms`);
+                console.debug(`[BrowserAgent] Wait ${action.milliseconds}ms`);
                 await this.sleep(action.milliseconds);
                 break;
             default:

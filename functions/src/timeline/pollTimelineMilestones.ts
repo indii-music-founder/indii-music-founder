@@ -170,26 +170,48 @@ export const pollTimelineMilestones = onSchedule(
                     }
 
                     // Update the timeline document if any milestones were triggered
+                    // Use a transaction to prevent race with executeMilestoneFn
                     if (updated) {
-                        timeline.updatedAt = now;
-                        timeline.completedCount = timeline.milestones.filter(
-                            (m: TimelineMilestone) => m.status === 'completed'
-                        ).length;
-
-                        // Check if all milestones are done
-                        const allDone = timeline.milestones.every(
-                            (m: TimelineMilestone) => m.status === 'completed' || m.status === 'skipped' || m.status === 'failed'
+                        const dueMilestoneIds = new Set(
+                            timeline.milestones
+                                .filter((m: TimelineMilestone) => m.status === 'executing')
+                                .map((m: TimelineMilestone) => m.id)
                         );
-                        if (allDone) {
-                            timeline.status = 'completed';
-                            console.log(`[pollTimelineMilestones] Timeline "${timeline.title}" is now completed!`);
-                        }
 
-                        await timelineDoc.ref.update({
-                            milestones: timeline.milestones,
-                            updatedAt: now,
-                            completedCount: timeline.completedCount,
-                            status: timeline.status,
+                        await db.runTransaction(async (transaction) => {
+                            const freshSnap = await transaction.get(timelineDoc.ref);
+                            if (!freshSnap.exists) return;
+
+                            const freshTimeline = freshSnap.data() as Timeline;
+                            const freshMilestones = freshTimeline.milestones;
+
+                            // Only update milestones that WE dispatched (don't overwrite executor changes)
+                            for (let j = 0; j < freshMilestones.length; j++) {
+                                if (dueMilestoneIds.has(freshMilestones[j].id) && freshMilestones[j].status === 'pending') {
+                                    freshMilestones[j].status = 'executing';
+                                }
+                            }
+
+                            const completedCount = freshMilestones.filter(
+                                (m: TimelineMilestone) => m.status === 'completed'
+                            ).length;
+
+                            const allDone = freshMilestones.every(
+                                (m: TimelineMilestone) => m.status === 'completed' || m.status === 'skipped' || m.status === 'failed'
+                            );
+
+                            const updates: Record<string, any> = {
+                                milestones: freshMilestones,
+                                updatedAt: now,
+                                completedCount,
+                            };
+
+                            if (allDone) {
+                                updates.status = 'completed';
+                                console.log(`[pollTimelineMilestones] Timeline "${timeline.title}" is now completed!`);
+                            }
+
+                            transaction.update(timelineDoc.ref, updates);
                         });
                     }
                 }
