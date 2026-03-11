@@ -199,7 +199,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                             right: isDesktop ? '2rem' : 0,
                             // On mobile, use dvh (dynamic viewport height) to respect Safari's
                             // collapsing/expanding URL bar. Falls back to 100vh for older browsers.
-                            height: isDesktop ? undefined : 'calc(100dvh - 56px - env(safe-area-inset-bottom, 0px))',
+                            // 64px = 56px tab bar height + 8px extra bottom padding
+                            height: isDesktop ? undefined : 'calc(100dvh - 64px - env(safe-area-inset-bottom, 0px))',
                             background: 'linear-gradient(180deg, rgba(12,12,14,0.98) 0%, rgba(8,8,10,0.99) 100%)',
                             backdropFilter: 'blur(20px)',
                         }}
@@ -311,12 +312,14 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                 </div>
                             )}
 
-                            {/* Branding Footer */}
-                            <div className="px-4 py-1.5 bg-black/20 border-t border-white/5 flex items-center justify-center relative z-30 shrink-0">
-                                <span className="text-[10px] text-white/20 font-medium">
-                                    Powered by <span className="font-semibold text-white/30">indii</span>
-                                </span>
-                            </div>
+                            {/* Branding Footer — desktop only, saves space on phone */}
+                            {isDesktop && (
+                                <div className="px-4 py-1.5 bg-black/20 border-t border-white/5 flex items-center justify-center relative z-30 shrink-0">
+                                    <span className="text-[10px] text-white/20 font-medium">
+                                        Powered by <span className="font-semibold text-white/30">indii</span>
+                                    </span>
+                                </div>
+                            )}
 
                             {/* Resize Handles (desktop only) */}
                             {isDesktop && ResizeHandles}
