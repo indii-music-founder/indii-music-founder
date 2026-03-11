@@ -2,6 +2,15 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.18.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.0...v1.18.1) (2026-03-11)
+
+
+### Bug Fixes
+
+* **mobile:** hide sidebars on mobile across 4 more modules ([18cd53b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/18cd53b9b43612ba5aca15e577fd9d55a9488bd9))
+* **mobile:** make Knowledge Base toggle button proper on mobile ([6fb84a3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6fb84a3072336571aa78b96f07f8fa267d9c15a6))
+* **mobile:** unblock agent module, brighten send button, cyan agent colors ([e3603a0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e3603a0c633c829f45259e4c05c10ec6d2a80200))
+
 ## [1.18.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.17.0...v1.18.0) (2026-03-11)
 
 
