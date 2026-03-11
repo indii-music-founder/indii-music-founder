@@ -192,11 +192,12 @@ if (typeof window !== 'undefined') {
                 isTokenAutoRefreshEnabled: true
             });
         } catch (e) {
-            logger.error('App Check initialization failed:', e);
-            // In production, re-throw to prevent running without security
-            if (!env.DEV) {
-                throw e;
-            }
+            // CRITICAL: Do NOT re-throw here. A failed App Check must not crash
+            // the entire app (killing React before it mounts). Firestore/Storage
+            // Security Rules still enforce authorization even without App Check.
+            // Incident 2026-03-11: blocked API key caused App Check re-throw → 
+            // JS bundle death → infinite CSS spinner on production.
+            logger.error('[App Check] Initialization failed — app running without App Check:', e);
         }
     } else if (isElectron && env.appCheckKey) {
         logger.debug('[App Check] Skipped initialization in Electron (missing debug token)');
