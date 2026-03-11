@@ -179,7 +179,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                             scale: 1,
                             y: 0,
                             width: isDesktop ? localSize.width : '100vw',
-                            height: isDesktop ? localSize.height : '100vh',
+                            height: isDesktop ? localSize.height : undefined,
                         }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -197,6 +197,9 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                         style={{
                             top: isDesktop ? 'calc(50vh - 300px)' : 0,
                             right: isDesktop ? '2rem' : 0,
+                            // On mobile, use dvh (dynamic viewport height) to respect Safari's
+                            // collapsing/expanding URL bar. Falls back to 100vh for older browsers.
+                            height: isDesktop ? undefined : 'calc(100dvh - 56px - env(safe-area-inset-bottom, 0px))',
                             background: 'linear-gradient(180deg, rgba(12,12,14,0.98) 0%, rgba(8,8,10,0.99) 100%)',
                             backdropFilter: 'blur(20px)',
                         }}
