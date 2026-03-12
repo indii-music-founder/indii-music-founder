@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.19.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.19.0...v1.19.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* **models:** migrate retired gemini-3-pro-preview → gemini-3.1-pro-preview ([fd8b846](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/fd8b84652d6f6f34535573908677e1855dbdcb1c))
+
 ## [1.19.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.2...v1.19.0) (2026-03-12)
 
 
