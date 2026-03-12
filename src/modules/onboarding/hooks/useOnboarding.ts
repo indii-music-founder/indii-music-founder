@@ -254,6 +254,15 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                 onboardingAnalytics.skipped(cp, rp, 'complete');
             }
         }
+
+        // Persist dismissal so the user never gets redirected back to onboarding.
+        // This is the escape hatch read by useOnboardingRedirect in App.tsx.
+        try {
+            localStorage.setItem('onboarding_dismissed', 'true');
+        } catch {
+            // localStorage may be unavailable (private browsing, quota exceeded)
+        }
+
         if (options.onComplete) {
             options.onComplete();
         } else {

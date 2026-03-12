@@ -40,11 +40,14 @@ export function useSocial(userId?: string) {
             setStats(fetchedStats);
             setScheduledPosts(fetchedScheduled);
         } catch (err) {
-            logger.error("Failed to load social dashboard:", err);
-            Sentry.captureException(err);
-            toast.error("Failed to load dashboard stats.");
+            // BUG-004 FIX: Don't show a disruptive toast for expected failures.
+            // Guest/anonymous users may not have social collections seeded,
+            // and permission errors are expected during onboarding.
+            // Use quiet logging instead of user-facing toast.
+            logger.warn("[Social] Failed to load dashboard stats (non-critical):", err);
+            // Fallback to default stats — don't block the UI
+            setStats({ followers: 0, following: 0, posts: 0, drops: 0 });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userProfile?.id]);
 
     const loadFeed = useCallback(async () => {

@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createStore } from 'zustand';
 import { createAuthSlice, AuthSlice } from './authSlice';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -19,7 +19,9 @@ vi.mock('@/services/firebase', () => ({
             options: {
                 apiKey: 'mock-api-key'
             }
-        }
+        },
+        // Mutable currentUser for debounce tests — starts null
+        currentUser: null as any,
     },
     db: {},
     storage: {},
@@ -44,7 +46,12 @@ describe('AuthSlice', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.useFakeTimers();
         useStore = createStore<AuthSlice>((...a) => createAuthSlice(...a));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('initial state should be loading with no user', () => {
@@ -83,11 +90,14 @@ describe('AuthSlice', () => {
         expect(useStore.getState().user).toBeNull();
     });
 
-    it('initializeAuthListener should set user on state change', () => {
+    it('initializeAuthListener should set user on state change', async () => {
+        // Get reference to the mocked auth so we can mutate currentUser
+        const { auth } = await import('@/services/firebase');
+
         const { initializeAuthListener } = useStore.getState();
 
         let authCallback: (user: any) => void = () => { };
-        vi.mocked(onAuthStateChanged).mockImplementation((auth, cb) => {
+        vi.mocked(onAuthStateChanged).mockImplementation((_auth, cb) => {
             authCallback = cb as (user: any) => void;
             return () => { };
         });
@@ -96,13 +106,25 @@ describe('AuthSlice', () => {
 
         // Simulate User Login
         const mockUser = { uid: '123', email: 'test@example.com' };
+        (auth as any).currentUser = mockUser;
         authCallback(mockUser);
 
         expect(useStore.getState().user).toEqual(mockUser);
         expect(useStore.getState().authLoading).toBe(false);
 
-        // Simulate Logout
+        // Simulate Logout — with BUG-002 fix, null transitions are debounced by 500ms
+        // to prevent spurious logouts during Firebase token refresh cycles.
+        (auth as any).currentUser = null;
         authCallback(null);
+
+        // User should NOT be null yet — debounce is in progress
+        expect(useStore.getState().user).toEqual(mockUser);
+
+        // Advance past the 500ms debounce window
+        vi.advanceTimersByTime(500);
+
+        // Now the logout should have taken effect
         expect(useStore.getState().user).toBeNull();
     });
 });
+

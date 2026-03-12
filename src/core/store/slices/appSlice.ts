@@ -134,7 +134,17 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
         return { isSidebarOpen: newState };
     }),
-    toggleRightPanel: () => set((state) => ({ isRightPanelOpen: !state.isRightPanelOpen })),
+    toggleRightPanel: () => {
+        // BUG-006 FIX: Debounce rapid toggle clicks.
+        // The AnimatePresence mode="wait" in RightPanel can get stuck
+        // if toggled faster than the spring animation duration (~200ms).
+        const now = Date.now();
+        const state = get() as AppSlice & { _lastRightPanelToggle?: number };
+        if (state._lastRightPanelToggle && now - state._lastRightPanelToggle < 200) {
+            return; // Ignore rapid-fire toggles
+        }
+        set({ isRightPanelOpen: !state.isRightPanelOpen, _lastRightPanelToggle: now } as any);
+    },
     isCommandMenuOpen: false,
     setCommandMenuOpen: (open) => set({ isCommandMenuOpen: open }),
 });

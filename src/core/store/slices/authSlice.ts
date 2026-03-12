@@ -171,17 +171,48 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             }
         }, 10_000);
 
+        // BUG-002 FIX: Debounce rapid null→user transitions during token refresh.
+        // Firebase may briefly emit null between token refresh cycles,
+        // causing spurious logouts under rapid load (100+ clicks/sec).
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+        let lastKnownUser: typeof auth.currentUser = null;
+
         // Return unsubscribe function
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             hasResolved = true;
             clearTimeout(timeoutId);
 
+            // If transitioning FROM a valid user TO null, debounce it.
+            // This prevents the brief null flash during Firebase Auth token refresh.
+            if (!user && lastKnownUser) {
+                logger.debug('[Auth] User went null — debouncing for 500ms to guard against token refresh race...');
+                debounceTimer = setTimeout(() => {
+                    // Re-check: if auth.currentUser is STILL null after 500ms,
+                    // it's a genuine logout — not a token refresh blip.
+                    if (!auth.currentUser) {
+                        logger.info('[Auth] Confirmed logout after debounce.');
+                        lastKnownUser = null;
+                        set({ user: null, authLoading: false });
+                    } else {
+                        logger.debug('[Auth] Token refresh resolved — user is still authenticated.');
+                        lastKnownUser = auth.currentUser;
+                        set({ user: auth.currentUser, authLoading: false });
+                    }
+                }, 500);
+                return;
+            }
+
+            // Clear any pending debounce if we received a valid user
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+                debounceTimer = null;
+            }
+
+            lastKnownUser = user;
             set({ user, authLoading: false });
 
             if (user) {
                 // Optional: Ensure user document exists in Firestore
-                // We could move this to ProfileSlice, but doing it here ensures
-                // we have a base user record.
                 try {
                     const userRef = doc(db, 'users', user.uid);
                     const userSnap = await getDoc(userRef);
@@ -208,6 +239,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
 
         return () => {
             clearTimeout(timeoutId);
+            if (debounceTimer) clearTimeout(debounceTimer);
             unsubscribe();
         };
     }

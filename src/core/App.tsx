@@ -264,15 +264,27 @@ function useOnboardingRedirect() {
         // Already on onboarding — no redirect needed
         if (currentModule === 'onboarding') return;
 
-        // Redirect anonymous users away from commercial modules to onboarding
+        // Honor env var bypass (dev convenience)
+        if (env.skipOnboarding) return;
+
+        // Redirect anonymous users away from commercial modules — show GuestGate instead.
+        // IMPORTANT: Do NOT redirect anon users to onboarding for non-commercial modules.
+        // This was the root cause of BUG-003: the old code redirected anon users
+        // to onboarding from modules like Audio Analyzer, Workflow, Social, etc.
         if (user.isAnonymous && COMMERCIAL_MODULES.has(currentModule as ModuleId)) {
-            setModule('onboarding');
+            // GuestGate is rendered by ModuleRenderer, no redirect needed
             return;
         }
 
-        // Only redirect genuinely new users whose profile hasn't loaded from Firestore yet.
-        // Once the profile resolves (id !== 'pending'), the user is a returning user — never trap them.
-        // The localStorage escape hatch prevents loops for users who intentionally skip onboarding.
+        // Anonymous/guest users should NEVER be redirected to onboarding for
+        // the pending-profile check. They don't have persistent Firestore profiles,
+        // so `id === 'pending'` may persist indefinitely. Let them explore freely.
+        if (user.isAnonymous) return;
+
+        // Only redirect genuinely new *authenticated* users whose profile hasn't loaded
+        // from Firestore yet. Once the profile resolves (id !== 'pending'), the user
+        // is a returning user — never trap them.
+        // The localStorage escape hatch prevents loops for users who intentionally skip.
         const profileStillPending = userProfile?.id === 'pending';
         const hasExplicitlySkipped = typeof window !== 'undefined' && localStorage.getItem('onboarding_dismissed') === 'true';
 
