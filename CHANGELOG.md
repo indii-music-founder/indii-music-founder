@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.20.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.19.1...v1.20.0) (2026-03-12)
+
+
+### Features
+
+* Implement dynamic greeting selection in BrandInterview based on user profile completeness using `useMemo` and `zustand` store. ([090783a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/090783a95d5f53d5954bc790d8cf2a9d0d2e25f4))
+
 ## [1.19.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.19.0...v1.19.1) (2026-03-12)
 
 
