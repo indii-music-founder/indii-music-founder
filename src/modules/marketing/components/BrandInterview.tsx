@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     Send,
@@ -9,7 +9,6 @@ import {
     Music,
     MessageCircle,
     CheckCircle,
-    ArrowRight,
     Sparkles
 } from 'lucide-react';
 import { useOnboarding } from '@/modules/onboarding/hooks/useOnboarding';
@@ -20,9 +19,11 @@ import {
     CreativeDirectionCard,
     DistributorInfoCard
 } from '@/modules/onboarding/components/GenerativeUIComponents';
-import { determinePhase } from '@/services/onboarding/onboardingService';
+import { determinePhase, calculateProfileStatus } from '@/services/onboarding/onboardingService';
 import { StepStepper } from '@/modules/onboarding/components/StepStepper';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 // Custom greetings for the Brand Manager context (not first-time onboarding)
 const BRAND_INTERVIEW_GREETINGS = [
@@ -46,13 +47,21 @@ const RETURNING_GREETINGS = [
  */
 const BrandInterview: React.FC = () => {
     const toast = useToast();
+    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
+
+    // Smart greeting selection based on current profile completeness
+    const smartGreetings = useMemo(() => {
+        const { coreProgress, releaseProgress } = calculateProfileStatus(userProfile);
+        const avgProgress = (coreProgress + releaseProgress) / 2;
+        return avgProgress < 30 ? BRAND_INTERVIEW_GREETINGS : RETURNING_GREETINGS;
+    }, [userProfile]);
 
     const handleInterviewComplete = useCallback(() => {
         toast.success("Brand profile complete! All systems go. 🚀");
     }, [toast]);
 
     const {
-        userProfile,
+        userProfile: _profileFromHook,
         input,
         setInput,
         history,
@@ -76,13 +85,9 @@ const BrandInterview: React.FC = () => {
         setEditedBio
     } = useOnboarding({
         onComplete: handleInterviewComplete,
-        greetings: undefined, // Let smart detection choose greetings
+        greetings: smartGreetings,
         trackAnalytics: false, // Don't double-track analytics from Brand Manager
     });
-
-    // Use smart greetings based on detected mode — but the hook handles initial greeting
-    // We just need to supply greetings via the hook options above if needed.
-
     const currentPhase = determinePhase(userProfile);
     const { coreProgress, releaseProgress, coreMissing, releaseMissing } = profileStatus;
     const isProfileComplete = coreProgress >= 100 && releaseProgress >= 100;
