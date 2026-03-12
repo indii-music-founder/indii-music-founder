@@ -24,6 +24,14 @@ export function UnifiedCommandMenu() {
                 e.preventDefault();
                 setCommandMenuOpen(!isCommandMenuOpen);
             }
+
+            // BUG-005 FIX: Dedicated Escape handler that always force-closes.
+            // Under rapid interaction, the cmdk `onOpenChange` can miss Escape events.
+            if (e.key === 'Escape' && isCommandMenuOpen) {
+                e.preventDefault();
+                e.stopPropagation();
+                setCommandMenuOpen(false);
+            }
         };
 
         document.addEventListener('keydown', down);
