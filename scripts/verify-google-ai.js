@@ -38,7 +38,7 @@ try {
     // DIRECT GENERATION TEST
     const modelsToTest = [
         'models/gemini-3.0-pro',
-        'models/gemini-3-pro-preview',
+        'models/gemini-3.1-pro-preview',
         'models/gemini-3.0-flash',
         'models/gemini-3-flash-preview'
     ];

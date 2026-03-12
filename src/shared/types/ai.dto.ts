@@ -93,7 +93,7 @@ export interface ToolConfig {
 // ============================================================================
 
 export interface ThinkingConfig {
-    thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+    thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | (string & {});
     includeThoughts?: boolean;
     thinkingBudget?: number;
 }

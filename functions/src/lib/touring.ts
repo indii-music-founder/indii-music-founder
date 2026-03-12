@@ -6,7 +6,7 @@ import { geminiApiKey, googleMapsApiKey, getGeminiApiKey } from "../config/secre
 
 // Helper for Gemini Calls (similar to generateImageV3 pattern)
 async function generateWithGemini(prompt: string, schema?: any): Promise<any> {
-    const modelId = "gemini-3-pro-preview";
+    const modelId = "gemini-3.1-pro-preview";
     // We access the secret value inside the function execution
     const key = getGeminiApiKey();
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${key}`;
@@ -20,10 +20,8 @@ async function generateWithGemini(prompt: string, schema?: any): Promise<any> {
 
     if (schema) {
         body.generationConfig.responseMimeType = "application/json";
-        // Gemini 1.5 Pro / Flash supports responseSchema
-        // For simpler "json_mode", we often just ask for JSON in prompt, but let's try strict schema if possible.
-        // However, "gemini-3-pro-preview" capability for responseSchema needs verification.
-        // Falling back to "return JSON" in prompt + text/json mimeType is safer for compatibility unless verified.
+        // Gemini 3.1 Pro supports responseSchema for structured JSON output.
+        // For simpler "json_mode", we often just ask for JSON in prompt.
     }
 
     const response = await fetch(endpoint, {

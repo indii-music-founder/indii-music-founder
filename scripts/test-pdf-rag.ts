@@ -32,7 +32,7 @@ async function testPdfRag() {
 
         console.log("4. Querying specifically against the PDF...");
         const query = "What is the primary executive summary goal mentioned in this business plan?";
-        const result = await service.query(file.name, query, undefined, 'gemini-3-pro-preview');
+        const result = await service.query(file.name, query, undefined, 'gemini-3.1-pro-preview');
 
         const answer = result.candidates?.[0]?.content?.parts?.[0]?.text;
         console.log("   🤖 Response:", answer);

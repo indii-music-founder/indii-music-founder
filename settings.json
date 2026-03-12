@@ -1,6 +1,6 @@
 {
     "chat_model_provider": "google",
-    "chat_model_name": "gemini-3-pro-preview",
+    "chat_model_name": "gemini-3.1-pro-preview",
     "util_model_provider": "google",
     "util_model_name": "gemini-3-flash-preview",
     "embed_model_provider": "google",

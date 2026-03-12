@@ -63,13 +63,13 @@ async function runTest() {
 
     try {
         // Pass 'testContent' to use Inline Fallback (Native RAG confirmed broken on Preview)
-        console.log(`   👉 Using NATIVE RAG (File ID Only) with gemini-3-pro-preview`);
+        console.log(`   👉 Using NATIVE RAG (File ID Only) with gemini-3.1-pro-preview`);
         // We pass undefined for content to force native path, and explicitly ask for PRO model
         // We pass undefined for content to force native path
-        // Using approved gemini-3-pro-preview as the primary RAG target
-        console.log(`   👉 Using NATIVE RAG with gemini-3-pro-preview (Temperature 0.0)`);
-        const result = await service.query(file.name, query, undefined, 'gemini-3-pro-preview');
-        console.log("   ✅ Query successful with gemini-3-pro-preview");
+        // Using approved gemini-3.1-pro-preview as the primary RAG target
+        console.log(`   👉 Using NATIVE RAG with gemini-3.1-pro-preview (Temperature 0.0)`);
+        const result = await service.query(file.name, query, undefined, 'gemini-3.1-pro-preview');
+        console.log("   ✅ Query successful with gemini-3.1-pro-preview");
         console.log("   🤖 Response:", result.candidates?.[0]?.content?.parts?.[0]?.text || result);
 
         const candidate = data.candidates?.[0];

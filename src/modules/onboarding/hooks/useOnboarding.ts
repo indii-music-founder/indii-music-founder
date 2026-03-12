@@ -37,7 +37,18 @@ interface AskMultipleChoiceArgs {
     [key: string]: unknown;
 }
 
-export function useOnboarding() {
+export interface UseOnboardingOptions {
+    /** Override the conversation mode. Defaults to smart detection based on profile completeness. */
+    mode?: 'onboarding' | 'update';
+    /** Custom callback when the interview is complete. If not provided, navigates to dashboard. */
+    onComplete?: () => void;
+    /** Custom opening greetings. If not provided, uses the default OPENING_GREETINGS. */
+    greetings?: string[];
+    /** Whether to track analytics. Defaults to true. */
+    trackAnalytics?: boolean;
+}
+
+export function useOnboarding(options: UseOnboardingOptions = {}) {
     const { userProfile, setUserProfile, setModule } = useStore(
         useShallow(state => ({
             userProfile: state.userProfile,
@@ -57,13 +68,25 @@ export function useOnboarding() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Initial greeting
+    // Determine conversation mode: smart detection based on profile completeness
+    const resolvedMode = options.mode ?? (() => {
+        const { coreProgress, releaseProgress } = calculateProfileStatus(userProfile);
+        return (coreProgress + releaseProgress) / 2 < 30 ? 'onboarding' : 'update';
+    })();
+
+    const shouldTrackAnalytics = options.trackAnalytics ?? true;
+    const greetingsToUse = options.greetings ?? OPENING_GREETINGS;
+
+    // Initial greeting — intentionally only fires once on mount
     useEffect(() => {
         if (history.length === 0) {
-            const randomGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
+            const randomGreeting = greetingsToUse[Math.floor(Math.random() * greetingsToUse.length)];
             setHistory([{ role: 'model', parts: [{ text: randomGreeting }] }]);
-            onboardingAnalytics.start();
+            if (shouldTrackAnalytics) {
+                onboardingAnalytics.start();
+            }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [history.length]);
 
     // Auto-scroll to bottom
@@ -135,7 +158,7 @@ export function useOnboarding() {
         setIsProcessing(true);
 
         try {
-            const { text, functionCalls } = await runOnboardingConversation(newHistory, userProfile, 'onboarding', currentFiles);
+            const { text, functionCalls } = await runOnboardingConversation(newHistory, userProfile, resolvedMode, currentFiles);
             const nextHistory = [...newHistory];
             let uiToolCall: HistoryItem['toolCall'] = null;
 
@@ -143,16 +166,24 @@ export function useOnboarding() {
                 const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
                 setUserProfile(updatedProfile);
 
-                for (const update of updates) {
-                    if (typeof update === 'string') {
-                        onboardingAnalytics.fieldCompleted(update, 'identity_core');
+                if (shouldTrackAnalytics) {
+                    for (const update of updates) {
+                        if (typeof update === 'string') {
+                            onboardingAnalytics.fieldCompleted(update, 'identity_core');
+                        }
                     }
                 }
 
                 if (isFinished) {
                     const { coreProgress: cp, releaseProgress: rp } = calculateProfileStatus(updatedProfile);
-                    onboardingAnalytics.completed(cp, rp, history.filter(h => h.role === 'user').length);
-                    setModule('dashboard');
+                    if (shouldTrackAnalytics) {
+                        onboardingAnalytics.completed(cp, rp, history.filter(h => h.role === 'user').length);
+                    }
+                    if (options.onComplete) {
+                        options.onComplete();
+                    } else {
+                        setModule('dashboard');
+                    }
                 }
 
                 const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection', 'shareDistributorInfo'];
@@ -216,12 +247,18 @@ export function useOnboarding() {
 
     const handleComplete = () => {
         const { coreProgress: cp, releaseProgress: rp } = calculateProfileStatus(userProfile);
-        if (cp >= 100 && rp >= 100) {
-            onboardingAnalytics.completed(cp, rp, history.filter(h => h.role === 'user').length);
-        } else {
-            onboardingAnalytics.skipped(cp, rp, 'complete');
+        if (shouldTrackAnalytics) {
+            if (cp >= 100 && rp >= 100) {
+                onboardingAnalytics.completed(cp, rp, history.filter(h => h.role === 'user').length);
+            } else {
+                onboardingAnalytics.skipped(cp, rp, 'complete');
+            }
         }
-        setModule('dashboard');
+        if (options.onComplete) {
+            options.onComplete();
+        } else {
+            setModule('dashboard');
+        }
     };
 
     const handleEditBio = () => {
@@ -280,6 +317,7 @@ export function useOnboarding() {
         messagesEndRef,
         fileInputRef,
         profileStatus,
+        resolvedMode,
         handleFileSelect,
         removeFile,
         handleSend,
