@@ -2,6 +2,19 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.19.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.2...v1.19.0) (2026-03-12)
+
+
+### Features
+
+* **agent:** enable Knowledge Base by default + wire KB into Direct Chat ([8780a3a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8780a3a1d09e65ba0639e0ebf2d72d2a5af6f0da))
+
+
+### Bug Fixes
+
+* **csp:** add firebasevertexai.googleapis.com to connect-src ([7fa72b1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7fa72b1a2876aedff8947dccd13bcfa90c82032b))
+* **mobile:** auto-close ChatOverlay on tab switch + navigate to inline chat ([c5b7955](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c5b7955889c22ecff005fcdac74001c18d933a65))
+
 ## [1.18.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.1...v1.18.2) (2026-03-11)
 
 
