@@ -2,6 +2,19 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.21.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.20.0...v1.21.0) (2026-03-12)
+
+
+### Features
+
+* add drag-and-drop file upload to onboarding chat ([8e91f5b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8e91f5b87393bda2b0ba651f950a91d30a90385a))
+
+
+### Bug Fixes
+
+* resolve all 6 bugs from 10K stress test ([a17eac7](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a17eac73683f8c93e3eb0bb7ca40e5d35baab9ef))
+* **test:** fix MaestroBatchingService timeout — use fake timers + prototype spy ([9cf87e7](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9cf87e7935a9c275393725b20f05a6abce48b5a2))
+
 ## [1.20.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.19.1...v1.20.0) (2026-03-12)
 
 
