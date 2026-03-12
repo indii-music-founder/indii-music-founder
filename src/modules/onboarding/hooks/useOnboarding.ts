@@ -94,50 +94,88 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [history]);
 
-    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const filePromises = Array.from(e.target.files).map(file => {
-                return new Promise<ConversationFile>((resolve) => {
-                    const isImage = file.type.startsWith('image/');
-                    const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a'].some(ext => file.name.toLowerCase().endsWith(ext));
-                    const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
+    /**
+     * Shared file processing logic — used by both click-to-upload and drag-and-drop.
+     */
+    const processFiles = async (fileList: FileList | File[]) => {
+        const filesArray = Array.from(fileList);
+        if (filesArray.length === 0) return;
 
-                    if (isImage) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            resolve({
-                                id: uuidv4(),
-                                file,
-                                preview: e.target?.result as string,
-                                type: 'image',
-                                base64: (e.target?.result as string)?.split(',')[1]
-                            });
-                        };
-                        reader.readAsDataURL(file);
-                    } else if (isAudio) {
+        const filePromises = filesArray.map(file => {
+            return new Promise<ConversationFile>((resolve) => {
+                const isImage = file.type.startsWith('image/');
+                const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a', '.ogg', '.aac'].some(ext => file.name.toLowerCase().endsWith(ext));
+                const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
+                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+                if (isImage) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        resolve({
+                            id: uuidv4(),
+                            file,
+                            preview: e.target?.result as string,
+                            type: 'image',
+                            base64: (e.target?.result as string)?.split(',')[1]
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                } else if (isAudio) {
+                    resolve({
+                        id: uuidv4(),
+                        file,
+                        preview: '',
+                        type: 'audio',
+                        content: `[Audio File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type}]`
+                    });
+                } else if (isPdf) {
+                    resolve({
+                        id: uuidv4(),
+                        file,
+                        preview: '',
+                        type: 'document',
+                        content: `[PDF Document: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB]`
+                    });
+                } else if (isText) {
+                    file.text().then(text => {
                         resolve({
                             id: uuidv4(),
                             file,
                             preview: '',
-                            type: 'audio',
-                            content: `[Audio File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type}]`
+                            type: 'document',
+                            content: text
                         });
-                    } else if (isText) {
-                        file.text().then(text => {
-                            resolve({
-                                id: uuidv4(),
-                                file,
-                                preview: '',
-                                type: 'document',
-                                content: text
-                            });
-                        });
-                    }
-                });
+                    });
+                } else {
+                    // Fallback — treat unknown types as generic documents
+                    resolve({
+                        id: uuidv4(),
+                        file,
+                        preview: '',
+                        type: 'document',
+                        content: `[File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type || 'unknown'}]`
+                    });
+                }
             });
+        });
 
-            const newFiles = await Promise.all(filePromises);
-            setFiles(prev => [...prev, ...newFiles]);
+        const newFiles = await Promise.all(filePromises);
+        setFiles(prev => [...prev, ...newFiles]);
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            await processFiles(e.target.files);
+        }
+    };
+
+    const handleFileDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const droppedFiles = e.dataTransfer?.files;
+        if (droppedFiles && droppedFiles.length > 0) {
+            await processFiles(droppedFiles);
         }
     };
 
@@ -328,6 +366,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         profileStatus,
         resolvedMode,
         handleFileSelect,
+        handleFileDrop,
         removeFile,
         handleSend,
         handleComplete,

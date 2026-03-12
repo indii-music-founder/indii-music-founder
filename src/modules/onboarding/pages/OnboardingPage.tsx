@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     Send,
@@ -8,7 +8,8 @@ import {
     Menu,
     X,
     ChevronRight,
-    Loader2
+    Loader2,
+    Upload
 } from 'lucide-react';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { ProfileProgressPanel } from '../components/ProfileProgressPanel';
@@ -40,6 +41,7 @@ export default function OnboardingPage() {
         fileInputRef,
         profileStatus,
         handleFileSelect,
+        handleFileDrop,
         removeFile,
         handleSend,
         handleComplete,
@@ -51,6 +53,42 @@ export default function OnboardingPage() {
     } = useOnboarding();
 
     const currentPhase = determinePhase(userProfile);
+
+    // Drag-and-drop state
+    const [isDragOver, setIsDragOver] = useState(false);
+    const dragCounterRef = React.useRef(0);
+
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current += 1;
+        if (e.dataTransfer?.types?.includes('Files')) {
+            setIsDragOver(true);
+        }
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current -= 1;
+        if (dragCounterRef.current <= 0) {
+            dragCounterRef.current = 0;
+            setIsDragOver(false);
+        }
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current = 0;
+        setIsDragOver(false);
+        handleFileDrop(e);
+    }, [handleFileDrop]);
 
     return (
         <ModuleErrorBoundary moduleName="Onboarding">
@@ -78,7 +116,37 @@ export default function OnboardingPage() {
                 </button>
             </div>
 
-            <main className="flex-1 flex flex-col h-full min-w-0 z-10 relative">
+            <main
+                className="flex-1 flex flex-col h-full min-w-0 z-10 relative"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+            >
+                {/* Drag-and-Drop Overlay */}
+                <AnimatePresence>
+                    {isDragOver && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md border-2 border-dashed border-purple-400/60 rounded-2xl m-2"
+                        >
+                            <div className="text-center">
+                                <motion.div
+                                    animate={{ y: [0, -8, 0] }}
+                                    transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+                                    className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-400/30 mb-4"
+                                >
+                                    <Upload size={28} className="text-purple-400" />
+                                </motion.div>
+                                <p className="text-white font-bold text-lg mb-1">Drop files here</p>
+                                <p className="text-gray-400 text-sm">Images, audio, documents — indii will handle them</p>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                 <div className="flex-1 overflow-y-auto px-4 py-8 lg:px-12 scrollbar-hide">
                     <div className="max-w-3xl mx-auto flex flex-col h-full space-y-8">
 
