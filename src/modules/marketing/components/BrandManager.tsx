@@ -8,7 +8,7 @@ import {
     Youtube, Facebook, Music, ChevronDown, ExternalLink,
     Image as ImageIcon, Calendar, Clock, Users, GripVertical,
     History, TrendingUp, BarChart2, Folder, Image, ShieldCheck,
-    Download, Search, Filter
+    Download, Search, Filter, MessageCircle
 } from 'lucide-react';
 import { SocialLinks, BrandAsset } from '@/types/User';
 import { useToast } from '@/core/context/ToastContext';
@@ -20,8 +20,10 @@ import { Schema } from 'firebase/ai';
 import { BrandKit } from '@/modules/workflow/types';
 import { TourMap } from '@/modules/touring/components/TourMap';
 import UnifiedAssetLibrary from './UnifiedAssetLibrary';
+import BrandInterview from './BrandInterview';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { calculateProfileStatus } from '@/services/onboarding/onboardingService';
 
 // --- Sub-Components ---
 
@@ -165,7 +167,7 @@ const BrandManager: React.FC = () => {
     const toast = useToast();
 
     // Tab State
-    const [activeTab, setActiveTab] = useState<'identity' | 'visuals' | 'release' | 'health'>('identity');
+    const [activeTab, setActiveTab] = useState<'identity' | 'visuals' | 'release' | 'health' | 'interview'>('identity');
 
     // Edit States
     const [isEditingBio, setIsEditingBio] = useState(false);
@@ -368,8 +370,13 @@ const BrandManager: React.FC = () => {
         }
     };
 
+    // Profile completeness for the interview badge
+    const { coreProgress, releaseProgress } = calculateProfileStatus(userProfile);
+    const profileIncomplete = (coreProgress + releaseProgress) / 2 < 80;
+
     // Navigation Tabs
     const tabs = [
+        { id: 'interview', label: 'Brand Interview', icon: MessageCircle },
         { id: 'identity', label: 'Identity Core', icon: User },
         { id: 'visuals', label: 'Visual DNA', icon: Palette },
         { id: 'release', label: 'Release Manifest', icon: Disc },
@@ -426,7 +433,7 @@ const BrandManager: React.FC = () => {
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id as 'identity' | 'visuals' | 'release' | 'health')}
+                                onClick={() => setActiveTab(tab.id as 'identity' | 'visuals' | 'release' | 'health' | 'interview')}
                                 className={`
                                     w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group relative
                                     ${activeTab === tab.id
@@ -440,6 +447,9 @@ const BrandManager: React.FC = () => {
                                     className={`transition-colors ${activeTab === tab.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'}`}
                                 />
                                 <span>{tab.label}</span>
+                                {tab.id === 'interview' && profileIncomplete && activeTab !== 'interview' && (
+                                    <span className="ml-auto w-2 h-2 rounded-full bg-dept-marketing animate-pulse" />
+                                )}
                                 {activeTab === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-dept-marketing rounded-r-full" />}
                             </button>
                         ))}
@@ -1069,6 +1079,20 @@ const BrandManager: React.FC = () => {
                                             </div>
                                         )}
                                     </div>
+                                </motion.div>
+                            )}
+
+                            {/* INTERVIEW TAB */}
+                            {activeTab === 'interview' && (
+                                <motion.div
+                                    key="interview"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="h-full -m-4 md:-m-6"
+                                >
+                                    <BrandInterview />
                                 </motion.div>
                             )}
                         </AnimatePresence>

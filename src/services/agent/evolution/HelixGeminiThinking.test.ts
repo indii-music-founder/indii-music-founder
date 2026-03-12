@@ -35,7 +35,7 @@ describe('🧬 Helix: Gemini 3 Pro Thinking Budget Evolution', () => {
     name: 'Thinking Agent',
     systemPrompt: 'Solve this problem.',
     parameters: {
-      model: 'gemini-2.0-flash-thinking-exp', // Or 'gemini-3-pro'
+      model: 'gemini-2.0-flash-thinking-exp', // Or 'gemini-3.1-pro-preview'
       thinkingBudget: 1024,
       temperature: 0.7
     },

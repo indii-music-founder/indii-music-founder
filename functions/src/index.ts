@@ -789,13 +789,13 @@ export const generateContentStream = functions
 
             try {
                 const { model, contents, config } = req.body;
-                const modelId = model || "gemini-3-pro-preview";
+                const modelId = model || "gemini-3.1-pro-preview";
 
                 // SECURITY: Strict Model Allowlist (Anti-SSRF / Cost Control)
                 // Only allow approved models for streaming text generation.
                 // See src/core/config/ai-models.ts for the master list.
                 const ALLOWED_MODELS = [
-                    "gemini-3-pro-preview",
+                    "gemini-3.1-pro-preview",
                     "gemini-3-flash-preview",
                     "gemini-2.5-flash"
                 ];
