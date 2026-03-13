@@ -91,3 +91,15 @@ export function getPandaDocApiKey(): string {
 
     throw new Error("PandaDoc API Key not found. Please set PANDADOC_API_KEY secret or environment variable.");
 }
+
+// ---------------------------------------------------------------------------
+// Email OAuth Secrets (Gmail / Outlook)
+// ---------------------------------------------------------------------------
+// Actual secret access is in functions/src/email/tokenManager.ts via defineSecret.
+// Documented here for centralized reference.
+//
+// Required secrets in GCP Secret Manager:
+//   - GOOGLE_OAUTH_CLIENT_ID      (Google Cloud Console → OAuth 2.0 Client ID)
+//   - GOOGLE_OAUTH_CLIENT_SECRET  (Google Cloud Console → OAuth 2.0 Client Secret)
+//   - MICROSOFT_CLIENT_ID         (Azure Portal → App Registration → Client ID)
+//   - MICROSOFT_CLIENT_SECRET     (Azure Portal → App Registration → Client Secret)
