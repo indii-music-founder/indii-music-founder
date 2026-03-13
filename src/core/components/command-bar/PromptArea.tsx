@@ -97,13 +97,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     useEffect(() => {
         if (prevModuleRef.current !== currentModule) {
             prevModuleRef.current = currentModule;
+            // Clear chat input when switching modules to prevent text persistence/accumulation
+            setCommandBarInput('');
             if (currentModule === 'dashboard' || currentModule === 'select-org') {
                 setChatChannel('indii');
             } else {
                 setChatChannel('agent');
             }
         }
-    }, [currentModule, setChatChannel]);
+    }, [currentModule, setChatChannel, setCommandBarInput]);
 
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
     const managerAgents = useMemo(() => allAgents.filter(a => a.category === 'manager' || a.category === 'specialist'), [allAgents]);
