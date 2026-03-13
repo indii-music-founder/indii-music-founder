@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as Sentry from '@sentry/react';
 import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc, FirestoreError } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
 
@@ -54,7 +55,7 @@ export function useReleases(orgId: string | undefined) {
         );
 
         return () => {
-            unsubscribe();
+            safeUnsubscribe(unsubscribe);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- loading and releases are mutated inside; adding them causes infinite loops
     }, [orgId]);

@@ -5,6 +5,7 @@ import { RiderItem } from '../types';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const useRider = () => {
     const { userProfile } = useStore();
@@ -26,7 +27,7 @@ export const useRider = () => {
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => safeUnsubscribe(unsubscribe);
     }, [userProfile?.id]);
 
     const addItem = async (label: string, category: RiderItem['category']) => {

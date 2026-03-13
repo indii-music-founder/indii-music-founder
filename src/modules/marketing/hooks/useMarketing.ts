@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { db, auth } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { CampaignAsset, MarketingStats } from '../types';
@@ -97,8 +98,8 @@ export function useMarketing() {
 
             return () => {
                 unsubscribe();
-                unsubscribeStats();
-                unsubscribeCampaigns();
+                safeUnsubscribe(unsubscribeStats);
+                safeUnsubscribe(unsubscribeCampaigns);
             };
         } catch (err) {
             logger.error("Setup failed:", err);
@@ -110,8 +111,8 @@ export function useMarketing() {
             return () => {
                 unsubscribe();
                 clearTimeout(timer);
-                if (unsubscribeStats) unsubscribeStats();
-                if (unsubscribeCampaigns) unsubscribeCampaigns();
+                safeUnsubscribe(unsubscribeStats);
+                safeUnsubscribe(unsubscribeCampaigns);
             };
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,0 +1,20 @@
+City,Venue,Capacity,Guarantee ($),Door Split,Estimated Merch ($),Travel Cost ($),Hotel ($),Date,Status
+Detroit,The Shelter,400,2500,80/20 after costs,1200,0,0,2026-03-15,CONFIRMED
+Chicago,Subterranean,350,1500,70/30,900,180,149,2026-03-17,PENDING
+Cleveland,Beachland Ballroom,300,1200,70/30,750,120,129,2026-03-19,PENDING
+Indianapolis,Hi-Fi,400,1000,75/25,600,150,119,2026-03-21,CONTACTED
+Milwaukee,Turner Hall,450,1200,70/30,700,200,139,2026-03-23,CONTACTED
+Minneapolis,7th Street Entry,250,1500,70/30,800,280,149,2026-03-25,WISHLIST
+St. Louis,Blueberry Hill,340,1000,75/25,600,240,119,2026-03-27,WISHLIST
+Kansas City,recordBar,300,1000,75/25,550,300,129,2026-03-29,WISHLIST
+Columbus,A&R Music Bar,350,1200,70/30,700,180,119,2026-03-31,WISHLIST
+Cincinnati,MOTR Pub,200,800,80/20,400,200,109,2026-04-02,WISHLIST
+,,,,,,,,, 
+TOTALS,,3345,13400,,7200,1850,1161,,
+,,,,,,,,,
+PROJECTED REVENUE:,,,,,,,,
+Guarantees + Door:,,,,18200 (estimated),,,,
+Merch:,,,,7200,,,,
+TOTAL GROSS:,,,,25400,,,,
+TOTAL COSTS:,,,,3011 (travel+hotel),,,,
+NET PROJECTED:,,,,22389,,,,

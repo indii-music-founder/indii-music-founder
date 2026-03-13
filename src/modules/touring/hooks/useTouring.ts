@@ -5,6 +5,7 @@ import { VehicleStats, Itinerary, ItineraryStop } from '../types';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const useTouring = () => {
     const { userProfile } = useStore();
@@ -64,7 +65,7 @@ export const useTouring = () => {
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => safeUnsubscribe(unsubscribe);
     }, [userProfile?.id]);
 
     const updateItineraryStop = async (index: number, stop: ItineraryStop) => {
