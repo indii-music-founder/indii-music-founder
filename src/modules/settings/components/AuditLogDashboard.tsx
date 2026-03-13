@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Database, FileText, ArrowRight } from 'lucide-react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 interface AuditLogEntry {
     id: string;
@@ -36,7 +37,7 @@ export const AuditLogDashboard: React.FC = () => {
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => safeUnsubscribe(unsubscribe);
     }, []);
 
     return (

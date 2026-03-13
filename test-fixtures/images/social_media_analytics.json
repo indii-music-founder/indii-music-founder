@@ -1,0 +1,57 @@
+{
+  "artist": "KingVerse",
+  "report_period": "2025-10-01 to 2025-12-31",
+  "platforms": {
+    "instagram": {
+      "followers": 12847,
+      "following": 891,
+      "posts": 247,
+      "avg_engagement_rate": 4.7,
+      "top_post_likes": 2341,
+      "stories_per_week": 8,
+      "reels_views_avg": 18492
+    },
+    "tiktok": {
+      "followers": 34291,
+      "videos": 89,
+      "total_likes": 487293,
+      "avg_views": 12847,
+      "viral_videos": 3,
+      "top_video_views": 1247893
+    },
+    "twitter_x": {
+      "followers": 5832,
+      "tweets": 1247,
+      "avg_impressions": 8421,
+      "top_tweet_impressions": 89421
+    },
+    "youtube": {
+      "subscribers": 2891,
+      "total_views": 347821,
+      "avg_watch_time_minutes": 2.4,
+      "videos_published": 12
+    }
+  },
+  "demographics": {
+    "age_groups": {
+      "13-17": 8,
+      "18-24": 42,
+      "25-34": 31,
+      "35-44": 12,
+      "45+": 7
+    },
+    "top_cities": [
+      "Detroit, MI",
+      "Chicago, IL",
+      "Atlanta, GA",
+      "Los Angeles, CA",
+      "New York, NY"
+    ],
+    "gender_split": {
+      "male": 58,
+      "female": 38,
+      "other": 4
+    }
+  },
+  "growth_notes": "TikTok viral moment in November drove 12K new followers across platforms. Instagram Reels performing 3x better than static posts. Detroit fanbase is strongest — consider local activation events."
+}

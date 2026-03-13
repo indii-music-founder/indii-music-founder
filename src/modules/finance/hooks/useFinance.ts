@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
 import { financeService, Expense } from '@/services/finance/FinanceService';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
 import { logger } from '@/utils/logger';
 
@@ -36,7 +37,7 @@ export function useFinance() {
             }
         });
 
-        return () => unsubscribe();
+        return () => safeUnsubscribe(unsubscribe);
     }, [userProfile?.id]);
 
     // Subscribe to Expenses
@@ -53,7 +54,7 @@ export function useFinance() {
             setExpensesLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => safeUnsubscribe(unsubscribe);
     }, [userProfile?.id]);
 
     const addExpense = useCallback(async (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {

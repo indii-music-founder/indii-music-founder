@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '@/core/store'; // Access global store for userProfile
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { Campaign, Contact, PublicistStats } from '../types';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const usePublicist = () => {
     const { userProfile } = useStore();
@@ -29,8 +30,8 @@ export const usePublicist = () => {
         const unsubContacts = PublicistService.subscribeToContacts(userProfile.id, setContacts);
 
         return () => {
-            unsubCampaigns();
-            unsubContacts();
+            safeUnsubscribe(unsubCampaigns);
+            safeUnsubscribe(unsubContacts);
         };
     }, [userProfile?.id]);
 

@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export function useDistributionDashboard() {
     const { releases, loading, error, subscribeToReleases } = useStore(
@@ -14,7 +15,7 @@ export function useDistributionDashboard() {
 
     useEffect(() => {
         const unsubscribe = subscribeToReleases();
-        return () => unsubscribe();
+        return () => safeUnsubscribe(unsubscribe);
     }, [subscribeToReleases]);
 
     const handleRetry = useCallback(() => {

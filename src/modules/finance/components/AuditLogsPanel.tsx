@@ -4,6 +4,7 @@ import { Shield, Download, Radio, Filter, ChevronDown, Loader2, InboxIcon } from
 import { db, auth } from '@/services/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 /* ================================================================== */
 /*  Item 158 — Audit Logs GUI                                          */
@@ -63,7 +64,7 @@ export function AuditLogsPanel() {
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => safeUnsubscribe(unsubscribe);
     }, []);
 
     // Derive filter options from loaded data

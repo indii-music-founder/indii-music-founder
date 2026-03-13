@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { onSnapshot, doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { db } from '@/services/firebase';
 import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost, SocialPost } from '@/services/social/types';
@@ -125,9 +126,9 @@ export function useSocial(userId?: string) {
         });
 
         return () => {
-            userUnsub();
-            scheduledUnsub();
-            feedUnsub();
+            safeUnsubscribe(userUnsub);
+            safeUnsubscribe(scheduledUnsub);
+            safeUnsubscribe(feedUnsub);
         };
     }, [userProfile?.id, userId, filter]);
 

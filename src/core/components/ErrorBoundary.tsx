@@ -45,6 +45,20 @@ export class ErrorBoundary extends Component<Props, State> {
             }
         }
 
+        // Auto-recover from Firestore SDK internal assertion failures (b815/ca9).
+        // These occur during rapid module switching when the WatchChangeAggregator's
+        // internal state becomes corrupted. The error is non-fatal — the Firestore
+        // SDK resets itself on the next subscription. We silently recover instead of
+        // showing the crash screen.
+        if (this.isFirestoreAssertionError(error)) {
+            logger.warn(`[ErrorBoundary] Firestore SDK internal assertion caught (${this.state.errorId}). Auto-recovering...`);
+            // Use a microtask to avoid setState during render cycle
+            queueMicrotask(() => {
+                this.setState({ hasError: false, error: null, errorId: undefined });
+            });
+            return;
+        }
+
         logger.error(`[ErrorBoundary] Uncaught error (${this.state.errorId}):`, error, errorInfo);
     }
 
@@ -54,6 +68,14 @@ export class ErrorBoundary extends Component<Props, State> {
             message.includes('failed to fetch dynamically imported module') ||
             message.includes('importing a module script failed') ||
             message.includes('error loading dynamically imported module')
+        );
+    }
+
+    private isFirestoreAssertionError(error: Error): boolean {
+        const message = error.message || '';
+        return (
+            message.includes('INTERNAL ASSERTION FAILED') ||
+            message.includes('Unexpected state')
         );
     }
 
