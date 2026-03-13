@@ -215,6 +215,18 @@ service cloud.firestore {
       match /ingestionEvents/{eventId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Email Integration: connected account metadata (user-readable/writable)
+      match /emailAccounts/{accountId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Email Integration: OAuth tokens (server-only — NEVER client-readable)
+      // Refresh tokens are stored here by Cloud Functions only.
+      // Client reads are blocked; token refresh goes through Cloud Functions.
+      match /emailTokens/{tokenId} {
+        allow read, write: if false;
+      }
     }
 
     // ========================================

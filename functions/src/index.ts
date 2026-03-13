@@ -55,6 +55,9 @@ export { deliverScheduledPosts } from './social/deliverScheduledPosts';
 // Timeline Orchestrator (Progressive Campaign Engine — polls every 15 min for due milestones)
 export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
 
+// Email OAuth Token Manager (Gmail / Outlook — server-side token exchange & refresh)
+export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email/tokenManager';
+
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
 //   1. Set up reCAPTCHA Enterprise in GCP Console for your project.
