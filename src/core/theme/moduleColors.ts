@@ -69,6 +69,7 @@ export const departmentCssVars = {
     'select-org': '--color-dept-default',
     debug: '--color-dept-default',
     investor: '--color-dept-distribution', // Investor portal shares Distribution
+    settings: '--color-dept-social',       // Settings uses Social cyan
 } as const;
 
 /**
@@ -376,6 +377,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-dept-brand',
         hoverBg: 'hover:bg-dept-brand/5',
         cssVar: '--color-dept-brand',
+    },
+    settings: {
+        // Settings — Cyan for user configuration
+        text: 'text-cyan-400',
+        bg: 'bg-cyan-500/10',
+        border: 'border-cyan-500',
+        ring: 'focus-within:ring-cyan-500/50',
+        hoverText: 'hover:text-cyan-300',
+        hoverBg: 'hover:bg-cyan-500/5',
+        cssVar: '--color-dept-social',
     },
 };
 
