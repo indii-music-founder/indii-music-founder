@@ -11,20 +11,23 @@ interface BiometricGateProps {
 }
 
 export function BiometricGate({ children }: BiometricGateProps) {
+    // DEV MODE BYPASS: Immediately skip ALL biometric logic in development.
+    // This must be the first check — before hooks — so that WebAuthn dialogs
+    // never fire during automated testing or local development.
+    // In production builds, Vite tree-shakes this entire branch away.
+    if (import.meta.env.DEV) {
+        return <>{children}</>;
+    }
+
+    /* eslint-disable react-hooks/rules-of-hooks -- Conditional is compile-time constant */
     const { userProfile } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
-        // updatePreferences: state.updatePreferences // Not needed in Gate for now
     })));
 
     const isBiometricEnabled = userProfile?.preferences?.biometricEnabled ?? false;
 
-    // DEV MODE BYPASS: Skip biometric gate in development so automated testing
-    // tools (Playwright, browser subagent) can access the app without WebAuthn.
-    // In production builds, this entire block is tree-shaken away.
-    const devBypass = import.meta.env.DEV;
-
     // Track verification state - derive isLocked from enabled + verified
-    const [isVerified, setIsVerified] = useState(devBypass);
+    const [isVerified, setIsVerified] = useState(false);
     const [isAvailable, setIsAvailable] = useState(false);
     const [verificationError, setVerificationError] = useState<string | null>(null);
 

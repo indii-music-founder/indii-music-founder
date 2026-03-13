@@ -5,7 +5,12 @@ Generates ISRCs using the format CC-XXX-YY-NNNNN where:
   CC    = ISO 3166-1 alpha-2 country code (default "US")
   XXX   = registrant code (default "IND" for indiiOS)
   YY    = last two digits of the current year
-  NNNNN = 5-digit sequential counter persisted in /tmp/isrc_counter.json
+  NNNNN = 5-digit sequential counter persisted to a configurable path
+
+Counter file path resolution (highest priority wins):
+  1. --counter-file CLI flag
+  2. ISRC_COUNTER_FILE environment variable
+  3. Default: /tmp/isrc_counter.json
 
 Generates UPCs using the EAN-13 check-digit algorithm:
   - 12-digit base: prefix "884" + 9 random digits
@@ -36,14 +41,26 @@ import sys
 # Persistence helpers
 # ---------------------------------------------------------------------------
 
-COUNTER_FILE = "/tmp/isrc_counter.json"
+_DEFAULT_COUNTER_PATH = "/tmp/isrc_counter.json"
 
 
-def _load_counter() -> int:
+def _resolve_counter_file(cli_override: str | None = None) -> str:
+    """
+    Resolve the counter file path with precedence:
+      1. Explicit CLI override
+      2. ISRC_COUNTER_FILE environment variable
+      3. Default /tmp/isrc_counter.json
+    """
+    if cli_override:
+        return cli_override
+    return os.environ.get("ISRC_COUNTER_FILE", _DEFAULT_COUNTER_PATH)
+
+
+def _load_counter(counter_file: str) -> int:
     """Return the current sequential counter from disk, defaulting to 0."""
-    if os.path.exists(COUNTER_FILE):
+    if os.path.exists(counter_file):
         try:
-            with open(COUNTER_FILE, "r") as fh:
+            with open(counter_file, "r") as fh:
                 data = json.load(fh)
             return int(data.get("counter", 0))
         except (json.JSONDecodeError, ValueError, OSError):
@@ -51,9 +68,14 @@ def _load_counter() -> int:
     return 0
 
 
-def _save_counter(value: int) -> None:
+def _save_counter(value: int, counter_file: str) -> None:
     """Persist *value* as the next available counter to disk."""
-    with open(COUNTER_FILE, "w") as fh:
+    # Ensure the parent directory exists for non-/tmp paths
+    parent_dir = os.path.dirname(counter_file)
+    if parent_dir and not os.path.exists(parent_dir):
+        os.makedirs(parent_dir, exist_ok=True)
+
+    with open(counter_file, "w") as fh:
         json.dump({"counter": value}, fh)
 
 
@@ -61,7 +83,11 @@ def _save_counter(value: int) -> None:
 # ISRC generation
 # ---------------------------------------------------------------------------
 
-def generate_isrc(country_code: str = "US", registrant: str = "IND") -> str:
+def generate_isrc(
+    country_code: str = "US",
+    registrant: str = "IND",
+    counter_file: str | None = None,
+) -> str:
     """
     Generate one ISRC and advance the persisted counter.
 
@@ -69,11 +95,12 @@ def generate_isrc(country_code: str = "US", registrant: str = "IND") -> str:
     """
     country_code = country_code.upper().strip()
     registrant = registrant.upper().strip()
+    resolved_path = _resolve_counter_file(counter_file)
 
     year_suffix = datetime.datetime.now().strftime("%y")  # e.g. "26"
 
-    counter = _load_counter() + 1
-    _save_counter(counter)
+    counter = _load_counter(resolved_path) + 1
+    _save_counter(counter, resolved_path)
 
     designation = f"{counter:05d}"
     return f"{country_code}-{registrant}-{year_suffix}-{designation}"
@@ -121,6 +148,7 @@ def assign_identifiers(
     registrant: str = "IND",
     artist_name: str = "",
     track_title: str = "",
+    counter_file: str | None = None,
 ) -> dict:
     """
     Generate one ISRC + UPC pair and return a structured dict.
@@ -135,7 +163,11 @@ def assign_identifiers(
         }
     """
     return {
-        "isrc": generate_isrc(country_code=country_code, registrant=registrant),
+        "isrc": generate_isrc(
+            country_code=country_code,
+            registrant=registrant,
+            counter_file=counter_file,
+        ),
         "upc": generate_upc(),
         "artist_name": artist_name,
         "track_title": track_title,
@@ -178,6 +210,15 @@ def _build_parser() -> argparse.ArgumentParser:
         default=1,
         help="Number of ISRC/UPC pairs to generate (default: 1)",
     )
+    parser.add_argument(
+        "--counter-file",
+        default=None,
+        help=(
+            "Path to the ISRC counter persistence file. "
+            "Overrides ISRC_COUNTER_FILE env var. "
+            f"Default: {_DEFAULT_COUNTER_PATH}"
+        ),
+    )
     return parser
 
 
@@ -199,6 +240,7 @@ def main() -> None:
             registrant=args.registrant,
             artist_name=args.artist_name,
             track_title=args.track_title,
+            counter_file=args.counter_file,
         )
         results.append(result)
 
