@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { db, auth } from '@/services/firebase';
@@ -21,6 +21,13 @@ export function useMarketing() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     // Initial Data Fetch & Realtime Listeners
     useEffect(() => {
         // Validation: If no profile, skip listeners
@@ -39,6 +46,7 @@ export function useMarketing() {
             // 1. Listen to Stats
             const statsRef = doc(db, 'users', userProfile.id, 'stats', 'marketing');
             unsubscribeStats = onSnapshot(statsRef, (doc) => {
+                if (!isMountedRef.current) return;
                 if (doc.exists()) {
                     setStats(doc.data() as MarketingStats);
                 } else {
@@ -60,6 +68,7 @@ export function useMarketing() {
             );
 
             unsubscribeCampaigns = onSnapshot(campaignsQuery, (snapshot) => {
+                if (!isMountedRef.current) return;
                 const campaignsData = snapshot.docs.map(doc => {
                     const data = doc.data();
                     let startDate = data.startDate;

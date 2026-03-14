@@ -19,6 +19,13 @@ export const useTouring = () => {
     const currentItineraryRef = useRef<Itinerary | null>(null);
     useEffect(() => { currentItineraryRef.current = currentItinerary; }, [currentItinerary]);
 
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     const [prevUserId, setPrevUserId] = useState(userProfile?.id);
     if (userProfile?.id !== prevUserId) {
         setPrevUserId(userProfile?.id);
@@ -39,6 +46,7 @@ export const useTouring = () => {
 
         // Fetch vehicle stats
         TouringService.getVehicleStats(userProfile.id).then(stats => {
+            if (!isMountedRef.current) return;
             if (stats) {
                 setVehicleStats(stats);
             } else {
@@ -46,13 +54,15 @@ export const useTouring = () => {
                 setVehicleStats(defaultStats);
             }
         }).catch(error => {
+            if (!isMountedRef.current) return;
             logger.error('Failed to fetch vehicle stats:', error);
             // Fallback to default state on error to keep UI functional
             setVehicleStats(defaultStats);
         });
 
-        // Subscribe to itineraries
+        // Subscribe to itineraries — mounted guard prevents post-unmount state updates
         const unsubscribe = TouringService.subscribeToItineraries(userProfile.id, (data) => {
+            if (!isMountedRef.current) return;
             setItineraries(data);
 
             // Safer logic to set current itinerary only if none is selected
