@@ -2,6 +2,22 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.22.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.21.0...v1.22.0) (2026-03-14)
+
+
+### Features
+
+* Enhance distribution pipeline with Spotify packaging, Apple delivery, XSD validation, and E2E tests, and improve UI stability with mounted component guards. ([d246ca8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d246ca8240489b337e3aec5fedf8883a73522205))
+* full-stack email integration — Gmail/Outlook OAuth, Cloud Functions, Zustand slice, InboxTab UI ([93423b6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/93423b6503cfa5dbf90c1181b30e2370606fa258))
+* Implement mounted guards and navigation debouncing to fix Firestore b815 crashes, and enhance the distribution pipeline with Spotify/Apple packaging, XSD validation, and new E2E tests. ([91e30dc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/91e30dca3fe30467047eafb6f3d6941db5a60790))
+
+
+### Bug Fixes
+
+* BiometricGate escape hatches + Settings panel + service integrations ([b1b47ed](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b1b47ed6eaab8595ab8f5ff651a85dfcadb32adb))
+* clear chat input when switching modules — prevents text accumulation bug ([baecd6e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/baecd6ee726ad03394fec5747281f0f3f8b24535))
+* resolve HANDOFF.md audit gaps — canvas asset pipeline, ISRC config, genre whitelist ([49ef007](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/49ef007cba03ff1dc17e70a50dc71f384787812d))
+
 ## [1.21.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.20.0...v1.21.0) (2026-03-12)
 
 
