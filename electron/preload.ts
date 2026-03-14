@@ -118,6 +118,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         generateBWARM: (data: any) => ipcRenderer.invoke('distribution:generate-bwarm', data),
         checkMerlinStatus: (data: any) => ipcRenderer.invoke('distribution:check-merlin-status', data),
         transmit: (config: any) => ipcRenderer.invoke('distribution:transmit', config),
+        packageSpotify: (releaseId: string, stagingPath: string, outputPath?: string) => ipcRenderer.invoke('distribution:package-spotify', releaseId, stagingPath, outputPath),
+        deliverApple: (command: string, bundlePath: string) => ipcRenderer.invoke('distribution:deliver-apple', command, bundlePath),
+        validateXSD: (xmlContent: string) => ipcRenderer.invoke('distribution:validate-xsd', xmlContent),
     },
 
     // Auto-Updater

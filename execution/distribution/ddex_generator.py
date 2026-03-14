@@ -217,6 +217,62 @@ class DDEXGenerator:
 
         return sr
 
+    def generate_image_resource(self, parent: ET.Element,
+                                release_data: Dict[str, Any]) -> ET.Element:
+        """Generate an Image resource for cover art.
+
+        Both Apple Music and Spotify require cover art as a resource in the ERN.
+        Apple: minimum 3000x3000 pixels, JPEG or PNG.
+        Spotify: minimum 3000x3000 pixels, JPEG.
+        """
+        image = self._create_element(parent, "Image")
+
+        # Image Type
+        self._create_element(image, "ImageType", "FrontCoverImage")
+
+        # Image ID (ProprietaryId fallback if no standard ID)
+        image_id = self._create_element(image, "ImageId")
+        self._create_element(image_id, "ProprietaryId",
+                             release_data.get("cover_id", "COVER001"),
+                             Namespace=self.sender_dpid)
+
+        # Resource Reference (used to link to Release)
+        self._create_element(image, "ResourceReference", "A0")
+
+        # Image Details By Territory
+        details = self._create_element(image, "ImageDetailsByTerritory")
+        self._create_element(details, "TerritoryCode", "Worldwide")
+
+        # Technical Details
+        tech = self._create_element(details, "TechnicalImageDetails")
+        self._create_element(tech, "TechnicalResourceDetailsReference", "T0")
+
+        # Image Codec
+        cover_filename = release_data.get("cover_filename", "cover.jpg")
+        codec = "JPEG"
+        if cover_filename.lower().endswith(".png"):
+            codec = "PNG"
+        self._create_element(tech, "ImageCodecType", codec)
+
+        # Image dimensions (mandatory for Apple Music — minimum 3000x3000)
+        width = release_data.get("cover_width", 3000)
+        height = release_data.get("cover_height", 3000)
+        self._create_element(tech, "ImageWidth", str(width))
+        self._create_element(tech, "ImageHeight", str(height))
+
+        # File Details
+        file_elem = self._create_element(tech, "File")
+        self._create_element(file_elem, "FileName", cover_filename)
+
+        # Cover art hash
+        cover_hash = release_data.get("cover_hash")
+        if cover_hash:
+            hash_elem = self._create_element(file_elem, "HashSum")
+            self._create_element(hash_elem, "HashSumValue", cover_hash)
+            self._create_element(hash_elem, "HashSumAlgorithmType", "MD5")
+
+        return image
+
     def generate_release(self,
                          parent: ET.Element,
                          release_data: Dict[str,
@@ -301,6 +357,13 @@ class DDEXGenerator:
 
         # Release Resource Reference List
         rr_list = self._create_element(release, "ReleaseResourceReferenceList")
+
+        # Cover art reference (A0 = Image resource)
+        if release_data.get("cover_filename") or release_data.get("cover_hash"):
+            self._create_element(rr_list, "ReleaseResourceReference", "A0",
+                                 ReleaseResourceType="SecondaryResource")
+
+        # Track references (A1, A2, ... = SoundRecording resources)
         for i, track in enumerate(release_data.get("tracks", []), 1):
             self._create_element(rr_list, "ReleaseResourceReference", f"A{i}",
                                  ReleaseResourceType="PrimaryResource")
@@ -358,8 +421,14 @@ class DDEXGenerator:
         # Message Header
         self.generate_message_header(root)
 
-        # Resource List (Sound Recordings)
+        # Resource List
         resource_list = self._create_element(root, "ResourceList")
+
+        # Cover Art Image (required by Apple Music and Spotify)
+        if release_data.get("cover_filename") or release_data.get("cover_hash"):
+            self.generate_image_resource(resource_list, release_data)
+
+        # Sound Recordings
         tracks = release_data.get("tracks", [])
         for i, track in enumerate(tracks, 1):
             self.generate_sound_recording(resource_list, track, i)
