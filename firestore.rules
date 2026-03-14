@@ -216,6 +216,31 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      // Generated Images (MetadataPersistenceService — image generation metadata)
+      match /generated_images/{imageId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Generated Videos (MetadataPersistenceService — video generation metadata)
+      match /generated_videos/{videoId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Generic Assets (MetadataPersistenceService — fallback asset metadata)
+      match /assets/{assetId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Knowledge Base (MetadataPersistenceService — document metadata)
+      match /knowledge_base/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Projects subcollection (MetadataPersistenceService — project metadata)
+      match /projects/{projectId} {
+        allow read, write: if isOwner(userId);
+      }
+
       // Email Integration: connected account metadata (user-readable/writable)
       match /emailAccounts/{accountId} {
         allow read, write: if isOwner(userId);

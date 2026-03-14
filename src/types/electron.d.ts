@@ -114,6 +114,9 @@ export interface ElectronAPI {
         generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<unknown>>;
         checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;
         transmit: (config: DistributionTypes.SFTPConfig) => Promise<DistributionTypes.IPCResponse<DistributionTypes.SFTPReport>>;
+        packageSpotify: (releaseId: string, stagingPath: string, outputPath?: string) => Promise<DistributionTypes.IPCResponse<{ status: string; batchId?: string; packagePath?: string; trackCount?: number }>>;
+        deliverApple: (command: string, bundlePath: string) => Promise<DistributionTypes.IPCResponse<{ status: string; action?: string; output?: string }>>;
+        validateXSD: (xmlContent: string) => Promise<DistributionTypes.IPCResponse<{ valid: boolean; mode: string; errors: string[]; warnings: string[]; summary: string }>>;
         listRemoteFiles: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string[]>;
         downloadRemoteFile: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string>;
     };
