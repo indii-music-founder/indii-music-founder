@@ -3,10 +3,12 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
+import { firebaseAI } from '../ai/FirebaseAIService';
 
 // Mocks
 const mocks = vi.hoisted(() => ({
     analyzeImage: vi.fn(),
+    generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4'),
     triggerVideoJob: vi.fn(),
     canPerformAction: vi.fn(),
     currentUser: { uid: 'lens-user' },
@@ -35,7 +37,8 @@ vi.mock('../firebase', () => ({
 
 vi.mock('../ai/FirebaseAIService', () => ({
     firebaseAI: {
-        analyzeImage: mocks.analyzeImage
+        analyzeImage: mocks.analyzeImage,
+        generateVideo: mocks.generateVideo
     }
 }));
 
@@ -93,13 +96,12 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', () => {
         );
 
         // 2. Verify Veo received the enriched prompt
-        expect(mocks.triggerVideoJob).toHaveBeenCalledWith(expect.objectContaining({
+        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(geminiAnalysis),
-            jobId: 'job-lens-multimodal'
         }));
 
         // 3. Verify original prompt is preserved
-        expect(mocks.triggerVideoJob).toHaveBeenCalledWith(expect.objectContaining({
+        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(userPrompt)
         }));
     });
@@ -115,7 +117,7 @@ describe('Lens 🎥 - Gemini 3 Native Multimodal Pipeline', () => {
 
         // Assert
         expect(mocks.analyzeImage).not.toHaveBeenCalled();
-        expect(mocks.triggerVideoJob).toHaveBeenCalledWith(expect.objectContaining({
+        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.not.stringContaining("undefined") // basic sanity check
         }));
     });
