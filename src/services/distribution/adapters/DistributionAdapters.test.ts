@@ -58,6 +58,14 @@ vi.mock('ssh2-sftp-client', () => {
     };
 });
 
+vi.mock('@/services/ddex/ERNService', () => ({
+    ernService: {
+        generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<ERN/>' }),
+    }
+}));
+
+vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network unavailable in tests')));
+
 vi.mock('fs', () => {
     return {
         existsSync: vi.fn(),
