@@ -33,7 +33,7 @@ interface MobileClient {
 }
 
 let mobileWsServer: ReturnType<typeof createServer> | null = null;
-let activeClients: Set<MobileClient> = new Set();
+const activeClients: Set<MobileClient> = new Set();
 let currentPasscode: string | null = null;
 let currentPort = 0;
 
@@ -88,31 +88,61 @@ async function startMobileRemoteServer(): Promise<{ localIp: string; port: numbe
 
       log.info(`[MobileRemote] New WS connection from ${req.socket.remoteAddress}`);
 
+      // Auth timeout: close unauthenticated sockets after 5 seconds
+      const authTimeout = setTimeout(() => {
+        if (!client.authenticated) {
+          log.warn('[MobileRemote] Client auth timed out, closing connection');
+          try { ws.close(4002, 'Auth timeout'); } catch { /* ignore */ }
+          activeClients.delete(client);
+        }
+      }, 5000);
+
       // First message must be the passcode
       ws.once('message', (data: Buffer) => {
         try {
           const msg = JSON.parse(data.toString());
           if (msg.type === 'auth' && msg.passcode === currentPasscode) {
             client.authenticated = true;
+            clearTimeout(authTimeout);
             ws.send(JSON.stringify({ type: 'auth_ok' }));
             log.info('[MobileRemote] Client authenticated');
+
+            // Register persistent listener for commands from authenticated clients
+            ws.on('message', (commandData: Buffer) => {
+              try {
+                const cmd = JSON.parse(commandData.toString());
+                if (cmd.type !== 'auth') {
+                  // Forward to main renderer window for processing
+                  const allWindows = require('electron').BrowserWindow.getAllWindows();
+                  if (allWindows.length > 0) {
+                    allWindows[0].webContents.send('mobile-remote:command', cmd);
+                  }
+                }
+              } catch {
+                log.warn('[MobileRemote] Unparseable command from client');
+              }
+            });
           } else {
+            clearTimeout(authTimeout);
             ws.close(4001, 'Invalid passcode');
             activeClients.delete(client);
             log.warn('[MobileRemote] Client rejected: invalid passcode');
           }
         } catch {
+          clearTimeout(authTimeout);
           ws.close(4000, 'Bad auth message');
           activeClients.delete(client);
         }
       });
 
       ws.on('close', () => {
+        clearTimeout(authTimeout);
         activeClients.delete(client);
         log.info('[MobileRemote] Client disconnected');
       });
 
       ws.on('error', (err: Error) => {
+        clearTimeout(authTimeout);
         log.error('[MobileRemote] WS client error', err.message);
         activeClients.delete(client);
       });
@@ -144,11 +174,13 @@ function stopMobileRemoteServer(): void {
   activeClients.clear();
   currentPasscode = null;
 
-  mobileWsServer.close(() => {
+  const server = mobileWsServer;
+  mobileWsServer = null; // Prevent re-entry
+
+  server.close(() => {
     log.info('[MobileRemote] WS server stopped');
+    currentPort = 0;
   });
-  mobileWsServer = null;
-  currentPort = 0;
 }
 
 // ─── Broadcast ────────────────────────────────────────────────────────────────

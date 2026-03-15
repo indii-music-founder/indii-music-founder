@@ -210,10 +210,15 @@ class EventLoggerService {
 
     try {
       const key = `indiiOS_events_${record.sessionId}`;
+      // Scrub sensitive data before persisting
+      const scrubbed = { ...record, text: this._scrub(record.text) };
+      if (scrubbed.meta) {
+        scrubbed.meta = JSON.parse(this._scrub(JSON.stringify(scrubbed.meta)));
+      }
       const existing = localStorage.getItem(key) ?? '';
       const updated = existing
-        ? `${existing}\n${JSON.stringify(record)}`
-        : JSON.stringify(record);
+        ? `${existing}\n${JSON.stringify(scrubbed)}`
+        : JSON.stringify(scrubbed);
       // Cap at ~500KB per session to avoid localStorage overflow
       if (updated.length < 500_000) {
         localStorage.setItem(key, updated);
@@ -221,6 +226,19 @@ class EventLoggerService {
     } catch {
       // Storage quota exceeded — silent fail; in-memory buffer is still valid
     }
+  }
+
+  /**
+   * Redact common sensitive patterns from text before persisting to localStorage.
+   * Prevents credential/PII leakage through the JSONL memory layer.
+   */
+  private _scrub(text: string): string {
+    return text
+      .replace(/AIza[0-9A-Za-z_-]{35}/g, '[REDACTED_API_KEY]')
+      .replace(/sk-[0-9A-Za-z]{20,}/g, '[REDACTED_OPENAI_KEY]')
+      .replace(/ghp_[0-9A-Za-z]{36}/g, '[REDACTED_GITHUB_TOKEN]')
+      .replace(/ya29\.[0-9A-Za-z_-]+/g, '[REDACTED_OAUTH_TOKEN]')
+      .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, '[REDACTED_EMAIL]');
   }
 }
 

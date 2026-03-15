@@ -138,10 +138,15 @@ class ExecApprovalService {
   async requestApproval(request: ApprovalRequest): Promise<ApprovalResult> {
     const key = this._normalizeKey(request.commandPattern);
 
-    // Fast path: already approved
+    // Fast path: already approved (with sandbox context check)
     const existing = this.isApproved(request.commandPattern);
     if (existing) {
-      return { approved: true, entry: existing };
+      // Prevent sandbox bypass: a sandboxed approval must NOT satisfy an unsandboxed request
+      if (!request.isSandboxed && this._isHighRisk(request.category)) {
+        // Fall through to the safety gate below — cached approval doesn't apply
+      } else {
+        return { approved: true, entry: existing };
+      }
     }
 
     // Safety gate: block unsandboxed external tool calls
@@ -150,6 +155,14 @@ class ExecApprovalService {
       return {
         approved: false,
         reason: `Command requires sandboxed execution. Category '${request.category}' with unsandboxed=true is blocked by security policy.`,
+      };
+    }
+
+    // Race condition guard: reject if approval is already pending for the same key
+    if (this.pendingCallbacks.has(key)) {
+      return {
+        approved: false,
+        reason: `Approval already pending for '${request.commandPattern}'. Resolve the existing request first.`,
       };
     }
 
