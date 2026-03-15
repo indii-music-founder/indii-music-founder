@@ -192,7 +192,7 @@ export class AppleMusicService {
      * Search the Apple Music catalog for your tracks by artist name.
      * Returns the first page of matching results.
      */
-    async searchCatalog(artistName: string, limit = 25): Promise<MusicKitSearchResults['songs']['data']> {
+    async searchCatalog(artistName: string, limit = 25): Promise<NonNullable<MusicKitSearchResults['songs']>['data']> {
         if (!this._kit) throw new Error('MusicKit not initialized.');
         const results = await this._kit.api.search(artistName, { types: 'songs', limit });
         return results.songs?.data ?? [];
