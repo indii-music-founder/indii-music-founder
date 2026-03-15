@@ -46,6 +46,10 @@ vi.mock('fs', () => ({
     existsSync: mocks.fs.existsSync
 }));
 
+vi.mock('../utils/network-security', () => ({
+    validateSafeHostAsync: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe('🛡️ Shield: Distribution Transmit Guardrails (IPC Bridge Safety)', () => {
     let handlers: Record<string, any> = {};
 

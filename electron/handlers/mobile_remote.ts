@@ -33,7 +33,7 @@ interface MobileClient {
 }
 
 let mobileWsServer: ReturnType<typeof createServer> | null = null;
-let activeClients: Set<MobileClient> = new Set();
+const activeClients: Set<MobileClient> = new Set();
 let currentPasscode: string | null = null;
 let currentPort = 0;
 
