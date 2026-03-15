@@ -246,6 +246,89 @@ functions/src/timeline/
 
 ---
 
+## 📊 Growth Intelligence Engine
+
+The **Growth Intelligence Engine** is indiiOS's production analytics system — a real-time viral scoring and breakout prediction pipeline that ingests data directly from your connected streaming and social platforms.
+
+### How It Works
+
+```
+Connected Platforms (Spotify, YouTube, TikTok, Instagram)
+        │
+        ▼
+┌───────────────────────────────────────────┐
+│  PlatformDataService                       │
+│  Aggregates real API data → TrackAnalytics │
+└──────────────────┬────────────────────────┘
+                   │
+                   ▼
+┌───────────────────────────────────────────┐
+│  ViralScoreService                         │
+│  Weighted composite score (0-100):         │
+│  Save Rate (35%) + Completion (25%) +      │
+│  Repeat Listeners (20%) + Playlist (10%)   │
+│  + Shares (10%)                            │
+└──────────────────┬────────────────────────┘
+                   │
+                   ▼
+┌───────────────────────────────────────────┐
+│  GrowthPatternService                      │
+│  8 pattern archetypes + confidence scores  │
+│  Alerts: breakout_candidate, velocity,     │
+│  creator_trend_detected                    │
+└──────────────────┬────────────────────────┘
+                   │
+                   ▼
+┌───────────────────────────────────────────┐
+│  14-Day Forecast (Logistic Growth Curve)   │
+│  y = L / (1 + e^(-k(x - x0)))             │
+│  Upper/lower confidence bounds             │
+└───────────────────────────────────────────┘
+```
+
+### 8 Growth Pattern Archetypes
+
+| Pattern | Trigger |
+|---------|---------|
+| `slow_burn_growth` | Consistent week-over-week compound growth |
+| `72_hour_spike` | Sharp momentum spike within first 3 days |
+| `creator_cascade` | TikTok/Reels creator adoption surge |
+| `regional_spark` | Breakout in a specific geography before global |
+| `playlist_ladder` | Accelerating playlist additions |
+| `algorithm_cluster_expansion` | Viral algorithm recommendation cluster |
+| `weekend_amplification` | Saturday/Sunday stream amplification pattern |
+| `cross_platform_feedback_loop` | Synchronized multi-platform uplift |
+
+### Platform Integrations
+
+| Platform | API | Data |
+|----------|-----|------|
+| **Spotify** | Spotify Web API (PKCE OAuth) | Top tracks, audio features, recently played, stream history |
+| **YouTube** | YouTube Analytics API v2 (Google OAuth) | Real views, watch time, subscribers, geographic breakdown |
+| **TikTok** | TikTok Display API v2 (OAuth 2.0 via Cloud Functions) | Video views, likes, shares, account engagement |
+| **Instagram** | Instagram Graph API (Facebook Login → long-lived token) | Reels plays, reach, impressions, saves |
+| **Apple Music** | MusicKit JS *(coming soon)* | Streams, Shazam counts, radio airplay |
+
+All platform OAuth tokens are stored encrypted in Firestore (`users/{uid}/analyticsTokens/{platform}`). The `PlatformConnector` UI provides a polished one-click connect/disconnect interface for each platform.
+
+### Server-Side Token Security
+
+```
+Cloud Functions (functions/src/analytics/platformTokenExchange.ts)
+├── analyticsExchangeToken   — code → token exchange (Spotify PKCE, TikTok, Instagram)
+├── analyticsRefreshToken    — rotate expired tokens
+└── analyticsRevokeToken     — revoke + delete from Firestore
+
+GCP Secret Manager secrets:
+  SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET
+  TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET
+  META_APP_ID / META_APP_SECRET
+```
+
+Client secrets are **never exposed to the browser** — all token operations route through server-side Cloud Functions.
+
+---
+
 ## 📦 Core Modules (36)
 
 indiiOS ships with 36 lazy-loaded modules organized across four domains:
@@ -297,7 +380,7 @@ indiiOS ships with 36 lazy-loaded modules organized across four domains:
 | **Files** | `/files` | Integrated file manager for project assets |
 | **Marketplace** | `/marketplace` | Marketplace for beats, samples, presets, and services |
 | **Web3** | `/web3` | Blockchain integration for NFTs and decentralized rights |
-| **Analytics** | `/analytics` | Cross-platform streaming and revenue analytics |
+| **Analytics** | `/analytics` | **Growth Intelligence Engine** — viral scoring, growth pattern detection, 14-day breakout forecasts, cross-platform analytics (Spotify, YouTube, TikTok, Instagram) |
 | **Dashboard** | `/dashboard` | Central command — KPIs, recent activity, and quick actions |
 | **Investor** | `/investor` | Investor-facing data room and pitch materials |
 | **Observability** | `/observability` | System health monitoring and AI agent performance tracking |
@@ -430,6 +513,9 @@ cp .env.example .env
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps |
 | `VITE_SKIP_ONBOARDING` | Skip onboarding in dev |
 | `VITE_FIREBASE_APP_CHECK_KEY` | App Check (required in prod) |
+| `VITE_SPOTIFY_CLIENT_ID` | Growth Intelligence: Spotify OAuth (PKCE) |
+| `VITE_TIKTOK_CLIENT_KEY` | Growth Intelligence: TikTok OAuth public key |
+| `VITE_META_APP_ID` | Growth Intelligence: Instagram/Facebook App ID |
 
 ### Development
 
