@@ -179,7 +179,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
 
     it('should verify E2E pipeline: Trigger -> Wait -> Success with Veo 3.1 Metadata', async () => {
         // 1. Setup Wait Mock (onSnapshot)
-        mocks.doc.mockReturnValue('doc-ref');
+        mocks.doc.mockReturnValue({ id: 'doc-ref' });
         mocks.onSnapshot.mockImplementation((_ref: unknown, callback: (snap: unknown) => void) => {
             // Simulate async completion
             setTimeout(() => {
