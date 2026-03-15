@@ -147,7 +147,7 @@ export class AgentService {
             // Track gallery state before execution for timeout grace check
             const galleryCountBefore = useStore.getState().generatedHistory?.length || 0;
 
-            let timeoutHandle: NodeJS.Timeout;
+            let timeoutHandle: ReturnType<typeof setTimeout>;
             const timeoutPromise = new Promise((_, reject) => {
                 timeoutHandle = setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
             });
@@ -319,7 +319,7 @@ export class AgentService {
         let currentStreamedText = '';
 
         // Pass REDACTED text to the executor
-        const result = await this.executor.execute(agentId, text, context as PipelineContext, (event) => {
+        const result = await this.executor.execute(agentId || 'generalist', text, context as PipelineContext, (event) => {
             if (event.type === 'token') {
                 currentStreamedText += event.content;
                 updateAgentMessage(responseId, { text: currentStreamedText });
