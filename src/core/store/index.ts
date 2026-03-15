@@ -24,6 +24,7 @@ import { BackgroundJobsSlice, createBackgroundJobsSlice } from './slices/backgro
 import { MemoryAgentSlice, createMemoryAgentSlice } from './slices/memoryAgentSlice';
 import { MarketplaceSlice, createMarketplaceSlice } from './slices/marketplaceSlice';
 import { EmailSlice, createEmailSlice } from './slices/emailSlice';
+import { AnalyticsSlice, createAnalyticsSlice } from './slices/analyticsSlice';
 
 
 export type { AgentMessage, AgentThought } from './slices/agentSlice';
@@ -49,7 +50,8 @@ export interface StoreState extends
     BackgroundJobsSlice,
     MemoryAgentSlice,
     MarketplaceSlice,
-    EmailSlice { }
+    EmailSlice,
+    AnalyticsSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -81,6 +83,7 @@ export const useStore = create<StoreState>()(
                 ...createMemoryAgentSlice(...a),
                 ...createMarketplaceSlice(...a),
                 ...createEmailSlice(...a),
+                ...createAnalyticsSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access
