@@ -120,18 +120,19 @@ export default function MobileRemote() {
       }
 
       const wsUrl = `ws://${localIp}:${port}`;
-      const pairing: PairingInfo = {
-        localUrl: wsUrl,
-        qrDataUrl: '',
-      };
-
-      setPairingInfo(pairing);
-
+      let qrDataUrl = '';
       // Render QR code
       if (qrCanvasRef.current) {
         renderQRPlaceholder(qrCanvasRef.current, wsUrl);
-        pairing.qrDataUrl = qrCanvasRef.current.toDataURL();
+        qrDataUrl = qrCanvasRef.current.toDataURL();
       }
+
+      const pairing: PairingInfo = {
+        localUrl: wsUrl,
+        qrDataUrl,
+      };
+
+      setPairingInfo(pairing);
 
       // Connect to the WCP bridge
       _connectBridge(wsUrl);
