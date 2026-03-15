@@ -23,6 +23,7 @@ import { spotifyService } from '@/services/analytics/SpotifyService';
 import { youTubeAnalyticsService } from '@/services/analytics/YouTubeAnalyticsService';
 import { tikTokAnalyticsService } from '@/services/analytics/TikTokAnalyticsService';
 import { instagramAnalyticsService } from '@/services/analytics/InstagramAnalyticsService';
+import { appleMusicService } from '@/services/analytics/AppleMusicService';
 import type { PlatformConnectionStatus } from '@/services/analytics/PlatformDataService';
 
 // ── Platform definitions ──────────────────────────────────────────────────────
@@ -99,12 +100,11 @@ const PLATFORMS: PlatformDef[] = [
     {
         id: 'apple_music',
         label: 'Apple Music',
-        description: 'Apple Music for Artists analytics via MusicKit JS integration.',
-        dataPoints: ['Streams & plays', 'Shazam counts', 'Radio airplay', 'Playlist placements'],
+        description: 'Connect your Apple ID via MusicKit JS. Note: stream counts require Apple Music for Artists partner access (not yet public).',
+        dataPoints: ['Library saves (your tracks saved by user)', 'Catalog presence verification', 'Completion rate estimate (72% platform avg)', 'Stream counts when Artists API is available'],
         color: 'text-rose-400',
         bgColor: 'bg-rose-500/10',
         borderColor: 'border-rose-500/30',
-        comingSoon: true,
         icon: (
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-rose-400">
                 <path d="M23.994 6.124a9.23 9.23 0 0 0-.24-2.19c-.317-1.31-1.062-2.31-2.18-3.043a5.022 5.022 0 0 0-1.877-.726 10.496 10.496 0 0 0-1.564-.15c-.04-.003-.083-.01-.124-.013H5.986c-.152.01-.303.017-.455.026C4.786.07 4.043.15 3.34.428 2.004.958 1.04 1.88.475 3.208a5.485 5.485 0 0 0-.36 1.548c-.052.51-.06 1.02-.075 1.532v11.44c.01.51.02 1.017.071 1.524.163 1.51.85 2.743 2.01 3.708.742.622 1.606.975 2.543 1.127.49.08.986.117 1.48.13H18.96c.517-.015 1.033-.06 1.54-.16 1.25-.245 2.3-.86 3.133-1.807.592-.68.96-1.467 1.137-2.35.12-.6.165-1.207.175-1.815V7.63c-.004-.503-.01-1.003-.01-1.506zM16.49 5.02v9.48a3.25 3.25 0 0 1-1.463 2.723c-.49.31-1.04.476-1.6.476-.24 0-.483-.027-.72-.083a3.26 3.26 0 0 1-2.57-3.184 3.26 3.26 0 0 1 3.26-3.26c.416 0 .82.08 1.193.234V7.33l-6.52 1.574V16.4a3.25 3.25 0 0 1-1.463 2.724c-.49.31-1.04.476-1.6.476-.24 0-.482-.027-.72-.083a3.26 3.26 0 0 1-2.57-3.184A3.26 3.26 0 0 1 5.46 13.07c.418 0 .82.08 1.19.234V6.01l9.84-2.38v1.39z"/>
@@ -151,18 +151,19 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
     const checkStatus = useCallback(async () => {
         setChecking(true);
         try {
-            const [spotify, youtube, tiktok, instagram] = await Promise.allSettled([
+            const [spotify, youtube, tiktok, instagram, apple] = await Promise.allSettled([
                 spotifyService.isConnected(),
                 youTubeAnalyticsService.isConnected(),
                 tikTokAnalyticsService.isConnected(),
                 instagramAnalyticsService.isConnected(),
+                appleMusicService.isConnected(),
             ]);
 
             setStatus({
                 spotify:     spotify.status    === 'fulfilled' && spotify.value,
                 youtube:     youtube.status    === 'fulfilled' && youtube.value,
                 tiktok:      tiktok.status     === 'fulfilled' && tiktok.value,
-                apple_music: false,
+                apple_music: apple.status      === 'fulfilled' && apple.value,
                 instagram:   instagram.status  === 'fulfilled' && instagram.value,
             });
         } finally {
@@ -199,6 +200,11 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                 case 'instagram':
                     await instagramAnalyticsService.initiateOAuth();
                     break;
+                case 'apple_music':
+                    await appleMusicService.connect();
+                    await checkStatus();
+                    onConnectionChange?.();
+                    break;
                 default:
                     break;
             }
@@ -216,8 +222,9 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
             switch (platform) {
                 case 'spotify':   await spotifyService.disconnect();            break;
                 case 'youtube':   youTubeAnalyticsService.disconnect();         break;
-                case 'tiktok':    await tikTokAnalyticsService.disconnect();    break;
-                case 'instagram': await instagramAnalyticsService.disconnect(); break;
+                case 'tiktok':       await tikTokAnalyticsService.disconnect();    break;
+                case 'instagram':    await instagramAnalyticsService.disconnect(); break;
+                case 'apple_music':  await appleMusicService.disconnect();         break;
                 default: break;
             }
             await checkStatus();
