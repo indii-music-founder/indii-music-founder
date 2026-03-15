@@ -388,6 +388,26 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-cyan-500/5',
         cssVar: '--color-dept-social',
     },
+    'mobile-remote': {
+        // Mobile Remote — Indigo for remote control / connectivity
+        text: 'text-indigo-400',
+        bg: 'bg-indigo-500/10',
+        border: 'border-indigo-500',
+        ring: 'focus-within:ring-indigo-500/50',
+        hoverText: 'hover:text-indigo-300',
+        hoverBg: 'hover:bg-indigo-500/5',
+        cssVar: '--color-dept-default',
+    },
+    analytics: {
+        // Growth Intelligence — Violet for data science, prediction
+        text: 'text-violet-400',
+        bg: 'bg-violet-500/10',
+        border: 'border-violet-500',
+        ring: 'focus-within:ring-violet-500/50',
+        hoverText: 'hover:text-violet-300',
+        hoverBg: 'hover:bg-violet-500/5',
+        cssVar: '--color-dept-default',
+    },
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {
