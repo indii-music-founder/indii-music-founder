@@ -52,6 +52,9 @@ export interface ConversationSession {
     messages: AgentMessage[];
     participants: string[]; // Agent IDs
     isArchived?: boolean;
+    /** Background job namespace, e.g. "cron:album-rollout". Namespaced sessions
+     *  are isolated from the main UI thread and managed by the WCP lock system. */
+    namespace?: string;
 }
 
 export interface AgentSlice {
@@ -100,7 +103,7 @@ export interface AgentSlice {
     agentsError: string | null;
 
     // Actions
-    createSession: (title?: string, initialAgents?: string[]) => string;
+    createSession: (title?: string, initialAgents?: string[], namespace?: string) => string;
     setActiveSession: (sessionId: string) => void;
     deleteSession: (sessionId: string) => void;
     updateSessionTitle: (sessionId: string, title: string) => void;
@@ -176,7 +179,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     agentWindowSize: { width: 500, height: 800 },
 
-    createSession: (title = 'New Conversation', initialAgents = ['indii']) => {
+    createSession: (title = 'New Conversation', initialAgents = ['indii'], namespace?: string) => {
         const id = crypto.randomUUID();
         const newSession: ConversationSession = {
             id,
@@ -184,7 +187,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             createdAt: Date.now(),
             updatedAt: Date.now(),
             messages: [],
-            participants: initialAgents
+            participants: initialAgents,
+            ...(namespace ? { namespace } : {}),
         };
 
         set(state => ({

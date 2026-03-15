@@ -17,6 +17,7 @@ import { registerMarketingHandlers } from './handlers/marketing';
 import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
+import { registerMobileRemoteHandlers } from './handlers/mobile_remote';
 import { configureSecurity } from './security';
 import { DockerService } from './services/DockerService';
 import { setupAutoUpdater } from './updater';
@@ -333,6 +334,7 @@ if (!gotTheLock) {
         registerSecurityHandlers();
         registerVideoHandlers();
         registerSonicBridgeHandlers();
+        registerMobileRemoteHandlers();
 
         // Register Sidecar Handlers
         ipcMain.handle('sidecar:restart', async () => {
