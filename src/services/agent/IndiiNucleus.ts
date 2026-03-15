@@ -153,11 +153,12 @@ export class IndiiNucleus {
       }
     }
 
-    const responseText = await GenAI.generateContent(
+    const genResult = await GenAI.generateContent(
       [{ role: 'user', parts }],
       AI_MODELS.TEXT.AGENT,
       { systemInstruction: systemPrompt }
     );
+    const responseText = genResult.response.text();
 
     // Log to EPISODIC (non-blocking)
     try {
