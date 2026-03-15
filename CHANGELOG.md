@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.22.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.22.0...v1.22.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* **video:** regenerate functions lockfile + fix Veo 3.1 duration ([3d9ad04](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/3d9ad0436f76492bdd48f33541f5b45b929da5d1))
+
 ## [1.22.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.21.0...v1.22.0) (2026-03-14)
 
 
