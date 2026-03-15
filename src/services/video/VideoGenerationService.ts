@@ -124,10 +124,13 @@ export class VideoGenerationService {
             throw new Error(`Invalid video parameters: ${errorMsg}`);
         }
 
-        // Enforce Authentication
-        if (!auth.currentUser) {
+        // Enforce Authentication — capture UID immediately to prevent race condition
+        // (auth.currentUser can become null between check and use)
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
             throw new Error("You must be signed in to generate video. Please log in.");
         }
+        const userId = currentUser.uid;
 
         // Enforce quota check
         const quota = await this.checkVideoQuota(1);
@@ -163,7 +166,6 @@ export class VideoGenerationService {
 
         const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
-        const userId = auth.currentUser.uid;
         const jobId = uuidv4();
 
         // Write initial job record to Firestore for UI subscription
@@ -461,15 +463,15 @@ export class VideoGenerationService {
                     image: i === 0 && options.firstFrame
                         ? { imageBytes: options.firstFrame, mimeType: 'image/jpeg' }
                         : undefined,
-                    config: {
+                    config: stripUndefined({
                         aspectRatio: targetAspectRatio || '16:9',
                         resolution: options.resolution,
                         durationSeconds: BLOCK_DURATION,
-                        generateAudio: options.generateAudio || false,
-                        personGeneration: options.personGeneration || 'allow_adult',
+                        // NOTE: generateAudio and personGeneration are NOT supported in Veo 3.1 preview.
+                        // Including them causes 400 errors. Do NOT add them back without API verification.
                         negativePrompt: options.negativePrompt,
                         seed: options.seed,
-                    },
+                    }),
                 });
 
                 segmentUrls.push(videoUrl);
