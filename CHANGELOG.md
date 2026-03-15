@@ -2,6 +2,56 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.23.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.23.0...v1.23.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* resolve all lint errors and test failures (Gauntlet pass) ([e1fe7f4](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e1fe7f49bc9358f1e079539db54a748e8b88e13d))
+
+## [1.23.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.22.1...v1.23.0) (2026-03-15)
+
+
+### Features
+
+* **analytics:** complete gaps audit — Apple Music service, secrets config, env vars ([ab7e32f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ab7e32f6d02dc17827998cc43e81fb7a78a089c8))
+* **analytics:** production platform integrations + Growth Intelligence Engine ([7a9526b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7a9526b68c9367a8c919cfceb346585ad5d917fe))
+* **architecture:** implement Secure AI OS architecture — WCP, mobile remote, JSONL memory, session tools, exec approvals ([3340f15](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/3340f155cb063ee642b820df85a22da66524042a))
+* **architecture:** implement Secure AI OS architecture — WCP, mobile remote, JSONL memory, session tools, exec approvals ([88e2b27](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/88e2b270a2b55ea1b3f8e5060d7fad20b8c88afd))
+* Improve Stripe initialization and error handling, refine Firestore rules for video jobs and settings, and update dependencies. ([2ef8bfc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/2ef8bfc19e8ee51124665d7af0097f50b647f836))
+* Music Growth Intelligence Engine — viral scoring, pattern detection, forecasts ([fbf279c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/fbf279c0946d2fa03ff2dab878200954138f77b9))
+
+
+### Bug Fixes
+
+* **analytics:** resolve TS2339 on AppleMusicService.searchCatalog return type ([128d086](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/128d08613b6b6cd2e727522de05b6a70395b5048))
+* **functions:** export analytics Cloud Functions + deduplicate secrets ([2f70c27](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/2f70c27343132030328e9592f549dfd760cba604))
+* resolve all TypeScript errors across Agent Zero removal and env typing ([33601ff](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/33601ff762c8a0b3090d689fc08c131bec5eeb6e))
+* resolve remaining TypeScript errors from Agent Zero removal ([00c8dbb](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/00c8dbb562a32f349aaf3636a3fdb17e75b538aa))
+
+## [1.22.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.22.0...v1.22.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* **video:** regenerate functions lockfile + fix Veo 3.1 duration ([3d9ad04](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/3d9ad0436f76492bdd48f33541f5b45b929da5d1))
+
+## [1.22.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.21.0...v1.22.0) (2026-03-14)
+
+
+### Features
+
+* Enhance distribution pipeline with Spotify packaging, Apple delivery, XSD validation, and E2E tests, and improve UI stability with mounted component guards. ([d246ca8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d246ca8240489b337e3aec5fedf8883a73522205))
+* full-stack email integration — Gmail/Outlook OAuth, Cloud Functions, Zustand slice, InboxTab UI ([93423b6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/93423b6503cfa5dbf90c1181b30e2370606fa258))
+* Implement mounted guards and navigation debouncing to fix Firestore b815 crashes, and enhance the distribution pipeline with Spotify/Apple packaging, XSD validation, and new E2E tests. ([91e30dc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/91e30dca3fe30467047eafb6f3d6941db5a60790))
+
+
+### Bug Fixes
+
+* BiometricGate escape hatches + Settings panel + service integrations ([b1b47ed](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b1b47ed6eaab8595ab8f5ff651a85dfcadb32adb))
+* clear chat input when switching modules — prevents text accumulation bug ([baecd6e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/baecd6ee726ad03394fec5747281f0f3f8b24535))
+* resolve HANDOFF.md audit gaps — canvas asset pipeline, ISRC config, genre whitelist ([49ef007](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/49ef007cba03ff1dc17e70a50dc71f384787812d))
+
 ## [1.21.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.20.0...v1.21.0) (2026-03-12)
 
 

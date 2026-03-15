@@ -5,7 +5,6 @@ import { useStore, HistoryItem } from '@/core/store';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { agentZeroService } from '@/services/agent/AgentZeroService';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -127,38 +126,7 @@ export class VideoDirector {
         const prompt = item.prompt || 'Animate this scene';
 
         // --- Electron Path: Delegate to local Python API (Agent Zero sidecar) ---
-        if (typeof window !== 'undefined' && (window as any).electronAPI) {
-            logger.debug('[VideoDirector] Routing animation to local Python API...');
-            try {
-                let imageBytes = '';
-                if (item.url.startsWith('data:')) {
-                    imageBytes = item.url.split(',')[1];
-                }
-
-                const apiPayload = {
-                    jobId,
-                    prompt,
-                    imageBytes: imageBytes || item.url,
-                    aspectRatio: '16:9',
-                    duration: 4,
-                    model: AI_MODELS.VIDEO.GENERATION,
-                };
-
-                const response = await agentZeroService.callApi('/video_gen', apiPayload) as any;
-
-                if (response.status === 'ok' || response.success) {
-                    return { success: true, video_url: response.video_url };
-                }
-                return { success: false, error: response.error || 'Local video generation failed' };
-            } catch (err: any) {
-                logger.error('[VideoDirector] Local API Error:', err);
-                // Surface the error — do NOT silently fall through to Cloud Function
-                // The Cloud Function payload shape is incompatible with animation requests
-                return { success: false, error: `Sidecar unavailable: ${err.message || 'Connection refused'}` };
-            }
-        }
-
-        // --- Web Path: Cloud Function (triggerVideoJob) ---
+        // --- Cloud Function (triggerVideoJob) ---
         // Build a payload that satisfies VideoJobSchema
         const cloudPayload: any = {
             jobId,

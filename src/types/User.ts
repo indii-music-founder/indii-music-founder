@@ -103,6 +103,17 @@ export interface UserPreferences {
     biometricEnabled?: boolean;
     observabilityEnabled?: boolean;
     notifications: boolean;
+
+    // Notification preferences (Settings → Notifications)
+    notificationSound?: boolean;
+    emailDigest?: 'realtime' | 'daily' | 'weekly' | 'off';
+    agentActivityAlerts?: boolean;
+    budgetAlerts?: boolean;
+
+    // Appearance preferences (Settings → Appearance)
+    compactMode?: boolean;
+    animationsEnabled?: boolean;
+
     [key: string]: any; // Allow extensibility
 }
 

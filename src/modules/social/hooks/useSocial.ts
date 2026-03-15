@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { onSnapshot, doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { db } from '@/services/firebase';
@@ -67,6 +67,13 @@ export function useSocial(userId?: string) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filter, userId, userProfile?.id]);
 
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     // Real-time Data Sync
     useEffect(() => {
         if (!userProfile?.id) return;
@@ -74,6 +81,7 @@ export function useSocial(userId?: string) {
 
         // 1. Stats Listener (User Document)
         const userUnsub = onSnapshot(doc(db, "users", userProfile.id), (doc) => {
+            if (!isMountedRef.current) return;
             if (doc.exists() && doc.data().socialStats) {
                 setStats(doc.data().socialStats as SocialStats);
             }
@@ -88,6 +96,7 @@ export function useSocial(userId?: string) {
         );
 
         const scheduledUnsub = onSnapshot(scheduledQuery, (snapshot) => {
+            if (!isMountedRef.current) return;
             const data = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -107,6 +116,7 @@ export function useSocial(userId?: string) {
         }
 
         const feedUnsub = onSnapshot(postsQuery, (snapshot) => {
+            if (!isMountedRef.current) return;
             const data = snapshot.docs.map(doc => {
                 const d = doc.data();
                 return {

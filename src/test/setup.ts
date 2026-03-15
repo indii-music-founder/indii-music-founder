@@ -363,16 +363,9 @@ vi.mock('firebase/ai', () => ({
     })
 }));
 
-// Mock AgentZeroService to prevent 60s interaction timeouts in tests
+// AgentZeroService is retired — mock returns the tombstone null export
 vi.mock('@/services/agent/AgentZeroService', () => ({
-    AgentZeroService: vi.fn(),
-    agentZeroService: {
-        sendMessage: vi.fn().mockResolvedValue({ message: 'Mock Agent Zero Response' }),
-        executeTask: vi.fn().mockResolvedValue({ status: 'success', data: { response: 'Mock Task Response' } }),
-        provisionProject: vi.fn().mockResolvedValue({ status: 'success' }),
-        syncProject: vi.fn().mockResolvedValue({ status: 'success' }),
-        getHistory: vi.fn().mockResolvedValue([])
-    }
+    agentZeroService: null
 }));
 
 // Mock lucide-react with Proxy-based auto-generating stub factory

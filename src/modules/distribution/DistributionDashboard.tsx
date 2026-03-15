@@ -10,6 +10,7 @@ import { AuthorityPanel } from './components/AuthorityPanel';
 import { QCPanel } from './components/QCPanel';
 import { KeysPanel } from './components/KeysPanel';
 import { TransferPanel } from './components/TransferPanel';
+import { QCVisualizer } from './components/QCVisualizer';
 
 /* ── Extracted Sub-components ── */
 import { ReleasesContent } from './components/ReleasesContent';
@@ -128,6 +129,9 @@ export default function DistributionDashboard() {
                                 <TabsContent value="brain" className="mt-0 border-none outline-none">
                                     <ModuleErrorBoundary moduleName="Distribution / QC">
                                         <QCPanel />
+                                        <div className="mt-6">
+                                            <QCVisualizer />
+                                        </div>
                                     </ModuleErrorBoundary>
                                 </TabsContent>
                                 <TabsContent value="transmission" className="mt-0 border-none outline-none">

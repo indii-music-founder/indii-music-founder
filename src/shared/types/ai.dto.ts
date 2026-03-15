@@ -174,16 +174,34 @@ export interface GenerateContentRequest {
 }
 
 export interface GenerateVideoRequest {
-    model: string;
+    model?: string;
     prompt: string;
-    image?: { imageBytes: string; mimeType: string };
-    config?: GenerationConfig & {
-        aspectRatio?: string;
-        durationSeconds?: number;
-    };
+    image?: { imageBytes?: string; data?: string; mimeType: string };
+    config?: GenerationConfig & VideoGenerationConfig;
     apiKey?: string;
     jobId?: string;
     generateAudio?: boolean;
+}
+
+/** Veo SDK-compatible video generation config fields */
+export interface VideoGenerationConfig {
+    aspectRatio?: string;
+    durationSeconds?: number;
+    resolution?: string;
+    personGeneration?: string;
+    negativePrompt?: string;
+    generateAudio?: boolean;
+    enhancePrompt?: boolean;
+    fps?: number;
+    seed?: number;
+    numberOfVideos?: number;
+    outputGcsUri?: string;
+    pubsubTopic?: string;
+    referenceImages?: Array<{
+        image?: { uri?: string; imageBytes?: string; mimeType?: string };
+        referenceType: 'ASSET' | 'STYLE';
+    }>;
+    lastFrame?: string | { mimeType: string; imageBytes: string };
 }
 
 export interface GenerateImageRequest {
@@ -374,13 +392,10 @@ export interface GenerateStreamOptions {
 }
 
 export interface GenerateVideoOptions {
-    model: string;
+    model?: string;
     prompt: string;
-    image?: { imageBytes: string; mimeType: string };
-    config?: GenerationConfig & {
-        aspectRatio?: string;
-        durationSeconds?: number;
-    };
+    image?: { imageBytes?: string; data?: string; mimeType: string };
+    config?: GenerationConfig & VideoGenerationConfig;
     /** Custom timeout in milliseconds. Defaults to calculated based on durationSeconds or 2 minutes minimum. */
     timeoutMs?: number;
 }

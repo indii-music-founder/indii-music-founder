@@ -65,10 +65,10 @@ export const executeCampaign = functions
 export const dispatchSocialPost = functions
     .region("us-west1")
     .runWith({ timeoutSeconds: 120, memory: "512MB" })
-    .https.onCall(async (data: any, context) => {
+    .https.onCall(async (data: any, context: any) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
-        const { mediaUrl, platform, caption } = data;
+        const { mediaUrl, platform, caption: _caption } = data;
         console.info(`[SocialPost] Dispatching to ${platform}: ${mediaUrl}`);
 
         // Simulation of platform API handshake
@@ -88,10 +88,10 @@ export const dispatchSocialPost = functions
 export const createInfluencerBounty = functions
     .region("us-west1")
     .runWith({ timeoutSeconds: 60, memory: "256MB" })
-    .https.onCall(async (data: any, context) => {
+    .https.onCall(async (data: any, context: any) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
-        const { influencerHandle, trackName, rewardAmount } = data;
+        const { influencerHandle, trackName, rewardAmount: _rewardAmount } = data;
         const refCode = `REF-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
         console.info(`[Bounty] Created bounty for ${influencerHandle} on ${trackName}`);

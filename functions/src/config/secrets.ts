@@ -91,3 +91,35 @@ export function getPandaDocApiKey(): string {
 
     throw new Error("PandaDoc API Key not found. Please set PANDADOC_API_KEY secret or environment variable.");
 }
+
+// ---------------------------------------------------------------------------
+// Growth Intelligence Engine — Platform Analytics OAuth Secrets
+// ---------------------------------------------------------------------------
+// Token exchange logic is in functions/src/analytics/platformTokenExchange.ts.
+// Defined here for centralized reference and cross-function reuse.
+//
+// Required secrets in GCP Secret Manager:
+//   - SPOTIFY_CLIENT_ID      (Spotify Developer Dashboard → App → Client ID)
+//   - SPOTIFY_CLIENT_SECRET  (Spotify Developer Dashboard → App → Client Secret)
+//   - TIKTOK_CLIENT_KEY      (TikTok for Developers → App → Client Key)
+//   - TIKTOK_CLIENT_SECRET   (TikTok for Developers → App → Client Secret)
+//   - META_APP_ID            (Meta Developer Console → App → App ID)
+//   - META_APP_SECRET        (Meta Developer Console → App → App Secret)
+export const spotifyClientId     = defineSecret("SPOTIFY_CLIENT_ID");
+export const spotifyClientSecret = defineSecret("SPOTIFY_CLIENT_SECRET");
+export const tiktokClientKey     = defineSecret("TIKTOK_CLIENT_KEY");
+export const tiktokClientSecret  = defineSecret("TIKTOK_CLIENT_SECRET");
+export const metaAppId           = defineSecret("META_APP_ID");
+export const metaAppSecret       = defineSecret("META_APP_SECRET");
+
+// ---------------------------------------------------------------------------
+// Email OAuth Secrets (Gmail / Outlook)
+// ---------------------------------------------------------------------------
+// Actual secret access is in functions/src/email/tokenManager.ts via defineSecret.
+// Documented here for centralized reference.
+//
+// Required secrets in GCP Secret Manager:
+//   - GOOGLE_OAUTH_CLIENT_ID      (Google Cloud Console → OAuth 2.0 Client ID)
+//   - GOOGLE_OAUTH_CLIENT_SECRET  (Google Cloud Console → OAuth 2.0 Client Secret)
+//   - MICROSOFT_CLIENT_ID         (Azure Portal → App Registration → Client ID)
+//   - MICROSOFT_CLIENT_SECRET     (Azure Portal → App Registration → Client Secret)

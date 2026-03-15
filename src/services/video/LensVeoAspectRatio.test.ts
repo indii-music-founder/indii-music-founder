@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 import { UserProfile } from '@/modules/workflow/types';
+import { firebaseAI } from '../ai/FirebaseAIService';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
@@ -21,6 +22,16 @@ const mocks = vi.hoisted(() => ({
 vi.mock('firebase/functions', () => ({
     httpsCallable: mocks.httpsCallable,
     getFunctions: vi.fn()
+}));
+
+vi.mock('firebase/firestore', () => ({
+    doc: vi.fn(() => ({ id: 'mock-doc' })),
+    setDoc: vi.fn(() => Promise.resolve()),
+    updateDoc: vi.fn(() => Promise.resolve()),
+    collection: vi.fn(() => ({ id: 'mock-coll' })),
+    serverTimestamp: vi.fn(() => new Date()),
+    getFirestore: vi.fn(),
+    onSnapshot: vi.fn(() => () => {}),
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -45,7 +56,8 @@ vi.mock('../firebase', () => ({
 
 vi.mock('../ai/FirebaseAIService', () => ({
     firebaseAI: {
-        analyzeImage: vi.fn().mockResolvedValue('Analyzed context')
+        analyzeImage: vi.fn().mockResolvedValue('Analyzed context'),
+        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4')
     }
 }));
 
@@ -78,9 +90,11 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             duration: 5
         });
 
-        expect(mocks.triggerVideoJob).toHaveBeenCalledWith(expect.objectContaining({
-            aspectRatio: '16:9',
-            prompt: 'Cinematic sunset'
+        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: expect.stringContaining('Cinematic sunset'),
+            config: expect.objectContaining({
+                aspectRatio: '16:9',
+            }),
         }));
     });
 
@@ -100,12 +114,14 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             // No explicit aspect ratio
         });
 
-        expect(mocks.triggerVideoJob).toHaveBeenCalledWith(expect.objectContaining({
-            aspectRatio: '9:16'
+        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+            config: expect.objectContaining({
+                aspectRatio: '9:16',
+            }),
         }));
 
         // Verify prompt enrichment
-        const callArgs = mocks.triggerVideoJob.mock.calls[0][0];
+        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0][0];
         expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         expect(callArgs.prompt).toContain('9:16');
     });
@@ -125,8 +141,10 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             userProfile: userProfile as UserProfile
         });
 
-        expect(mocks.triggerVideoJob).toHaveBeenCalledWith(expect.objectContaining({
-            aspectRatio: '16:9'
+        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+            config: expect.objectContaining({
+                aspectRatio: '16:9',
+            }),
         }));
     });
 });

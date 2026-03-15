@@ -77,12 +77,8 @@ export interface ElectronAPI {
         saveHistory: (id: string, data: unknown) => Promise<{ success: boolean; error?: string }>;
         getHistory: (id: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
         deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
-        proxyZero?: (url: string, payload: unknown, headers: Record<string, string>) => Promise<{ success: boolean; status?: number; data?: unknown; error?: string }>;
     };
 
-    sidecar?: {
-        restart: () => void;
-    };
 
     // Video (Local Asset Management)
     video: {
@@ -114,6 +110,9 @@ export interface ElectronAPI {
         generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<unknown>>;
         checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;
         transmit: (config: DistributionTypes.SFTPConfig) => Promise<DistributionTypes.IPCResponse<DistributionTypes.SFTPReport>>;
+        packageSpotify: (releaseId: string, stagingPath: string, outputPath?: string) => Promise<DistributionTypes.IPCResponse<{ status: string; batchId?: string; packagePath?: string; trackCount?: number }>>;
+        deliverApple: (command: string, bundlePath: string) => Promise<DistributionTypes.IPCResponse<{ status: string; action?: string; output?: string }>>;
+        validateXSD: (xmlContent: string) => Promise<DistributionTypes.IPCResponse<{ valid: boolean; mode: string; errors: string[]; warnings: string[]; summary: string }>>;
         listRemoteFiles: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string[]>;
         downloadRemoteFile: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string>;
     };

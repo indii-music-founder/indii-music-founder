@@ -132,6 +132,7 @@ describe('Sidebar Navigation Integration', () => {
     });
 
     it('calls setModule when a sidebar item is clicked', () => {
+        vi.useFakeTimers();
         render(
             <MemoryRouter>
                 <Sidebar />
@@ -141,11 +142,15 @@ describe('Sidebar Navigation Integration', () => {
         fireEvent.click(screen.getByText('Brand Manager'));
         expect(mockSetModule).toHaveBeenCalledWith('brand');
 
+        vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Publicist'));
         expect(mockSetModule).toHaveBeenCalledWith('publicist');
 
+        vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Finance Department'));
         expect(mockSetModule).toHaveBeenCalledWith('finance');
+
+        vi.useRealTimers();
     });
 
     it('renders correct dashboard for Brand Manager', async () => {
