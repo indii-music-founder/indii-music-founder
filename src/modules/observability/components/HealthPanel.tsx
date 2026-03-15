@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { CheckCircle2, XCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { db } from '@/services/firebase';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { wcpInstance } from '@/services/agent/WebSocketControlPlane';
 
 type HealthStatus = 'checking' | 'healthy' | 'degraded' | 'down';
 
@@ -35,31 +36,18 @@ async function checkFirestore(): Promise<ServiceHealth> {
     }
 }
 
-const AGENT_ZERO_URL = (import.meta.env.VITE_AGENT_ZERO_URL as string | undefined) ?? 'http://localhost:50080';
-
-async function checkAgentZero(): Promise<ServiceHealth> {
-    const start = Date.now();
-    try {
-        const ctrl = new AbortController();
-        const timeout = setTimeout(() => ctrl.abort(), 3000);
-        const res = await fetch(`${AGENT_ZERO_URL}/ping`, { signal: ctrl.signal });
-        clearTimeout(timeout);
-        return {
-            name: 'Agent Zero Sidecar',
-            status: res.ok ? 'healthy' : 'degraded',
-            latencyMs: Date.now() - start,
-        };
-    } catch {
-        return {
-            name: 'Agent Zero Sidecar',
-            status: 'down',
-            error: 'Not reachable — sidecar may not be running',
-        };
-    }
+function checkWCP(): ServiceHealth {
+    const state = wcpInstance.connectionState;
+    if (state === 'connected') return { name: 'Control Plane (WCP)', status: 'healthy' };
+    if (state === 'connecting') return { name: 'Control Plane (WCP)', status: 'degraded', error: 'Connecting…' };
+    return {
+        name: 'Control Plane (WCP)',
+        status: 'down',
+        error: 'Disconnected — mobile remote and real-time session sync unavailable',
+    };
 }
 
 async function checkGeminiAPI(): Promise<ServiceHealth> {
-    // Check if the API key env var is configured — we don't make a real call to avoid costs
     const hasKey = !!(import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY);
     return {
         name: 'Gemini API',
@@ -71,7 +59,7 @@ async function checkGeminiAPI(): Promise<ServiceHealth> {
 export const HealthPanel: React.FC = () => {
     const [services, setServices] = useState<ServiceHealth[]>([
         { name: 'Firestore', status: 'checking' },
-        { name: 'Agent Zero Sidecar', status: 'checking' },
+        { name: 'Control Plane (WCP)', status: 'checking' },
         { name: 'Gemini API', status: 'checking' },
     ]);
     const [lastChecked, setLastChecked] = useState<Date | null>(null);
@@ -79,27 +67,26 @@ export const HealthPanel: React.FC = () => {
     const runChecks = useCallback(async () => {
         setServices(prev => prev.map(s => ({ ...s, status: 'checking' as HealthStatus })));
 
-        const [firestore, agentZero, gemini] = await Promise.all([
+        const [firestore, gemini] = await Promise.all([
             checkFirestore(),
-            checkAgentZero(),
             checkGeminiAPI(),
         ]);
+        const wcp = checkWCP();
 
-        setServices([firestore, agentZero, gemini]);
+        setServices([firestore, wcp, gemini]);
         setLastChecked(new Date());
     }, []);
 
-    // Initial check + auto-refresh every 30s
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            const [firestore, agentZero, gemini] = await Promise.all([
+            const [firestore, gemini] = await Promise.all([
                 checkFirestore(),
-                checkAgentZero(),
                 checkGeminiAPI(),
             ]);
+            const wcp = checkWCP();
             if (!cancelled) {
-                setServices([firestore, agentZero, gemini]);
+                setServices([firestore, wcp, gemini]);
                 setLastChecked(new Date());
             }
         })();
@@ -119,69 +106,50 @@ export const HealthPanel: React.FC = () => {
     const OverallIcon = STATUS_CONFIG[overallStatus].icon;
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar px-6 py-5 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-semibold text-white">System Health</h2>
-                    <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border ${overallStatus === 'healthy'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        : overallStatus === 'degraded'
-                            ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                            : 'bg-red-500/10 text-red-400 border-red-500/20'
-                        }`}>
-                        <OverallIcon size={11} className={services.some(s => s.status === 'checking') ? 'animate-spin' : ''} />
-                        {overallStatus === 'healthy' ? 'All Systems Operational' : overallStatus === 'degraded' ? 'Partial Degradation' : 'System Issue'}
-                    </span>
-                </div>
-                <button
-                    onClick={runChecks}
-                    className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-white transition-colors"
-                >
-                    <RefreshCw size={13} />
-                    Refresh
-                </button>
+        <div className="space-y-4">
+            {/* Overall Status */}
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                overallStatus === 'healthy' ? 'border-emerald-800/50 bg-emerald-950/30' :
+                overallStatus === 'degraded' ? 'border-yellow-800/50 bg-yellow-950/30' :
+                'border-red-800/50 bg-red-950/30'
+            }`}>
+                <OverallIcon size={16} className={STATUS_CONFIG[overallStatus].color} />
+                <span className={`text-sm font-medium ${STATUS_CONFIG[overallStatus].color}`}>
+                    System {STATUS_CONFIG[overallStatus].label}
+                </span>
             </div>
 
-            {/* Service cards */}
-            <div className="space-y-3">
-                {services.map(service => {
-                    const config = STATUS_CONFIG[service.status];
-                    const StatusIcon = config.icon;
-
-                    return (
-                        <div
-                            key={service.name}
-                            className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-4 py-3"
-                        >
-                            <div className="flex items-center gap-3">
-                                <StatusIcon
-                                    size={18}
-                                    className={`${config.color} ${service.status === 'checking' ? 'animate-spin' : ''}`}
-                                />
-                                <div>
-                                    <p className="text-sm font-medium text-white">{service.name}</p>
-                                    {service.error && (
-                                        <p className="text-xs text-slate-500 mt-0.5">{service.error}</p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <p className={`text-sm font-medium ${config.color}`}>{config.label}</p>
-                                {service.latencyMs !== undefined && (
-                                    <p className="text-xs text-slate-600 mt-0.5">{service.latencyMs}ms</p>
-                                )}
-                            </div>
+            {/* Per-service rows */}
+            {services.map(svc => {
+                const Cfg = STATUS_CONFIG[svc.status];
+                const Icon = Cfg.icon;
+                return (
+                    <div key={svc.name} className="flex items-start justify-between gap-3 py-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Icon size={14} className={`${Cfg.color} shrink-0 ${svc.status === 'checking' ? 'animate-spin' : ''}`} />
+                            <span className="text-sm text-white truncate">{svc.name}</span>
                         </div>
-                    );
-                })}
-            </div>
+                        <div className="flex flex-col items-end text-right shrink-0">
+                            <span className={`text-xs font-medium ${Cfg.color}`}>{Cfg.label}</span>
+                            {svc.latencyMs !== undefined && (
+                                <span className="text-xs text-slate-500">{svc.latencyMs}ms</span>
+                            )}
+                            {svc.error && (
+                                <span className="text-xs text-slate-500 max-w-[160px] text-right">{svc.error}</span>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
 
-            {lastChecked && (
-                <p className="text-xs text-slate-600 text-right">
-                    Last checked: {lastChecked.toLocaleTimeString()} · Auto-refreshes every 30s
-                </p>
-            )}
+            {/* Refresh */}
+            <button
+                onClick={runChecks}
+                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors mt-2"
+            >
+                <RefreshCw size={12} />
+                {lastChecked ? `Last checked ${lastChecked.toLocaleTimeString()}` : 'Refresh'}
+            </button>
         </div>
     );
 };

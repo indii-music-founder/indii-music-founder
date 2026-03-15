@@ -78,8 +78,8 @@ export interface AgentSlice {
     // Dual-Chat Channel: 'indii' for orchestrator, 'agent' for specialists
     chatChannel: 'indii' | 'agent';
 
-    // Provider switching: 'direct' (simple LLM chat), 'native' (specialist agents), or 'agent-zero' (Docker container)
-    activeAgentProvider: 'direct' | 'native' | 'agent-zero';
+    // Provider switching: 'direct' (simple LLM chat) or 'native' (specialist agents)
+    activeAgentProvider: 'direct' | 'native';
 
     // Knowledge Base RAG toggle: when true, inject memory + knowledge into system prompt
     isKnowledgeBaseEnabled: boolean;
@@ -120,7 +120,7 @@ export interface AgentSlice {
     setCommandBarAttachments: (attachments: File[]) => void;
     setAgentMode: (mode: AgentMode) => void;
     setChatChannel: (channel: 'indii' | 'agent') => void;
-    setActiveAgentProvider: (provider: 'direct' | 'native' | 'agent-zero') => void;
+    setActiveAgentProvider: (provider: 'direct' | 'native') => void;
     setKnowledgeBaseEnabled: (enabled: boolean) => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
     resolveApproval: (approved: boolean) => void;
