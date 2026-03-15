@@ -431,6 +431,61 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     }
 
     /**
+     * End-to-end release submission pipeline:
+     * QC validate → assign ISRCs → build DDEX ERN 4.3 XML → SFTP upload
+     *
+     * @param releaseData  Full release metadata including optional sftpConfig
+     * @param onProgress   Optional callback for step-by-step progress events
+     */
+    async submitRelease(
+        releaseData: DDEXMetadata & { sftpConfig?: SFTPConfig },
+        onProgress?: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void
+    ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[] }> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for release submission');
+        }
+
+        const taskId = await this.createTask('ddex_delivery', `Submit: ${releaseData.title}`);
+        await this.updateTask(taskId, { status: 'RUNNING', subtext: 'Starting pipeline…' });
+
+        let cleanup: (() => void) | undefined;
+        if (onProgress) {
+            cleanup = (window.electronAPI.distribution as any).onSubmitProgress(onProgress);
+        }
+
+        try {
+            const result = await (window.electronAPI.distribution as any).submitRelease(releaseData);
+
+            if (!result.success) {
+                await this.updateTask(taskId, { status: 'FAILED', error: result.error });
+                throw new Error(result.error || 'Release submission failed');
+            }
+
+            await this.updateTask(taskId, {
+                status: 'COMPLETED',
+                progress: 100,
+                subtext: result.report?.sftp_skipped ? 'DDEX built (SFTP skipped)' : 'Delivered to distributor',
+                metadata: { report: result.report },
+            });
+
+            if (window.electronAPI) {
+                window.electronAPI.showNotification(
+                    'Release Submitted',
+                    `${releaseData.title} has been delivered to your distributor.`
+                );
+            }
+
+            return result.report;
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'Unknown submission error';
+            await this.updateTask(taskId, { status: 'FAILED', error: msg });
+            throw error;
+        } finally {
+            cleanup?.();
+        }
+    }
+
+    /**
      * Subscribe to releases
      */
     subscribeReleases(callback: (releases: any[]) => void, orgId?: string) {
