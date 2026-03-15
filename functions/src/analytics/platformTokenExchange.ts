@@ -17,16 +17,16 @@
 
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
-import { defineSecret } from "firebase-functions/params";
+import {
+    spotifyClientId,
+    spotifyClientSecret,
+    tiktokClientKey,
+    tiktokClientSecret,
+    metaAppId,
+    metaAppSecret,
+} from "../config/secrets";
 
-// ── Secrets (GCP Secret Manager) ──────────────────────────────────────────────
-const spotifyClientId     = defineSecret("SPOTIFY_CLIENT_ID");
-const spotifyClientSecret = defineSecret("SPOTIFY_CLIENT_SECRET");
-const tiktokClientKey     = defineSecret("TIKTOK_CLIENT_KEY");
-const tiktokClientSecret  = defineSecret("TIKTOK_CLIENT_SECRET");
-const metaAppId           = defineSecret("META_APP_ID");
-const metaAppSecret       = defineSecret("META_APP_SECRET");
-
+// ── Secrets (imported from centralized config/secrets.ts) ─────────────────────
 const ALL_SECRETS = [
     spotifyClientId, spotifyClientSecret,
     tiktokClientKey, tiktokClientSecret,
