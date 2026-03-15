@@ -113,7 +113,7 @@ async function startMobileRemoteServer(): Promise<{ localIp: string; port: numbe
                 const cmd = JSON.parse(commandData.toString());
                 if (cmd.type !== 'auth') {
                   // Forward to main renderer window for processing
-                  const allWindows = require('electron').BrowserWindow.getAllWindows();
+                  const allWindows = BrowserWindow.getAllWindows();
                   if (allWindows.length > 0) {
                     allWindows[0].webContents.send('mobile-remote:command', cmd);
                   }
