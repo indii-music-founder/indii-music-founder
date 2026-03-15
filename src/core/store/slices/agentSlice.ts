@@ -191,11 +191,17 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             ...(namespace ? { namespace } : {}),
         };
 
-        set(state => ({
-            sessions: { ...state.sessions, [id]: newSession },
-            activeSessionId: id,
-            agentHistory: []
-        }));
+        set(state => {
+            const update: Partial<AgentSlice> = {
+                sessions: { ...state.sessions, [id]: newSession },
+            };
+            // Background (namespaced) sessions must NOT hijack the foreground UI
+            if (!namespace) {
+                update.activeSessionId = id;
+                update.agentHistory = [];
+            }
+            return update;
+        });
 
         // Persist the new session immediately
         import('@/services/agent/SessionService').then(({ sessionService }) => {

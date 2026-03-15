@@ -252,6 +252,11 @@ service cloud.firestore {
       match /emailTokens/{tokenId} {
         allow read, write: if false;
       }
+
+      // Cross-device Handoff Settings (HandoffService — session continuity)
+      match /settings/{settingId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // ========================================
@@ -301,9 +306,14 @@ service cloud.firestore {
     // ========================================
 
     match /videoJobs/{jobId} {
-      allow read: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
-      allow create: if isRequestOrgMember() || (request.resource.data.orgId == 'personal' && request.resource.data.userId == request.auth.uid);
-      allow update, delete: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
+      // Owner-based access: users can always read/write their own video jobs
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Org-based access: org members can access org video jobs
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
     }
 
     // ========================================

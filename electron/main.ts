@@ -17,7 +17,7 @@ import { registerMarketingHandlers } from './handlers/marketing';
 import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
-import { registerMobileRemoteHandlers } from './handlers/mobile_remote';
+import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { configureSecurity } from './security';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
@@ -326,6 +326,7 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
     isQuitting = true;
+    stopMobileRemoteServer();
 });
 
 // Crash Handling & Observability

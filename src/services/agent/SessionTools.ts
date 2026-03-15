@@ -102,13 +102,20 @@ export async function sessions_send(
       }
     }
 
-    await wcpInstance.route(
-      targetSessionId,
-      { agentId: fromAgentId, message, namespace },
-      namespace
-    );
+    try {
+      await wcpInstance.route(
+        targetSessionId,
+        { agentId: fromAgentId, message, namespace },
+        namespace
+      );
 
-    return { success: true, data: { queued: true, requestId } };
+      return { success: true, data: { queued: true, requestId } };
+    } finally {
+      // Always release the lock to prevent deadlocks
+      if (namespace) {
+        wcpInstance.releaseLock(targetSessionId);
+      }
+    }
   } catch (err) {
     logger.error('[SessionTools] sessions_send error', err);
     return { success: false, error: String(err) };

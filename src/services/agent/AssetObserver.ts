@@ -14,6 +14,7 @@ class AssetObserver {
     private observedIds: Set<string> = new Set();
     private isInitialized: boolean = false;
     private retryTimer: ReturnType<typeof setTimeout> | null = null;
+    private relayTimers: Set<ReturnType<typeof setTimeout>> = new Set();
     private retryCount: number = 0;
     private readonly MAX_RETRIES = 3;
 
@@ -68,6 +69,11 @@ class AssetObserver {
             clearTimeout(this.retryTimer);
             this.retryTimer = null;
         }
+        // Clear all pending relay timeouts to prevent zombie events
+        for (const timer of this.relayTimers) {
+            clearTimeout(timer);
+        }
+        this.relayTimers.clear();
         if (this.unsubscribe) {
             this.unsubscribe();
             this.unsubscribe = null;
@@ -112,9 +118,11 @@ class AssetObserver {
         events.emit('ASSET_FINALIZED', { item });
 
         // Emit distribution relay event — downstream listeners handle proactive handover
-        setTimeout(() => {
+        const timerId = setTimeout(() => {
             events.emit('DISTRIBUTION_RELAY_READY', { item });
+            this.relayTimers.delete(timerId);
         }, 2000);
+        this.relayTimers.add(timerId);
     }
 }
 
