@@ -1,0 +1,99 @@
+{
+  "release": {
+    "title": "Velvet Voltage",
+    "artist": "KIRA NOVA",
+    "artist_real_name": "Kira Novakowski",
+    "genre": "Dark Electro-Pop / Synthwave",
+    "subgenres": ["Darkwave", "Synth-Pop", "Electro", "New Wave Revival"],
+    "bpm": 128,
+    "key": "F# Minor",
+    "duration_estimate": "3:42",
+    "release_date": "2026-04-11",
+    "release_type": "Single",
+    "explicit": false,
+    "language": "English",
+    "copyright": "© 2026 KIRA NOVA, under exclusive license to IndiiOS Records",
+    "p_line": "℗ 2026 IndiiOS Records"
+  },
+  "artist_profile": {
+    "age": 24,
+    "hometown": "Detroit, MI",
+    "current_city": "Los Angeles, CA",
+    "influences": ["Depeche Mode", "Grimes", "Perturbator", "The Weeknd", "Kavinsky", "Crystal Castles"],
+    "bio": "KIRA NOVA is a 24-year-old Detroit-born electronic producer and vocalist who grew up surrounded by the city's legendary techno heritage. After cutting her teeth DJing underground warehouse parties at 17, she moved to Los Angeles to pursue a darker, more cinematic take on electronic pop. Her sound marries analog synthesizer textures — Juno-106, Prophet-5, Moog Subsequent 37 — with modern production techniques, creating a sonic landscape that feels like driving through a rain-soaked city at 3AM. Her debut EP 'Chrome Tears' (2025) caught the attention of Spotify's editorial team, landing her on New Music Friday and Fresh Finds Electronic. 'Velvet Voltage' marks her first release of 2026 and signals a more sensual, dangerous direction.",
+    "achievements": [
+      "500K+ Spotify monthly listeners",
+      "Featured on Spotify New Music Friday (2025)",
+      "Opened for CHVRCHES on their North American tour",
+      "Remix featured in the Netflix series 'Midnight Sun'",
+      "Winner, Red Bull Music Academy Detroit 2024"
+    ],
+    "social_links": {
+      "spotify": "https://open.spotify.com/artist/kiranova",
+      "apple_music": "https://music.apple.com/artist/kira-nova",
+      "instagram": "@kiranova.music",
+      "tiktok": "@kiranova",
+      "twitter": "@kiranovamusic",
+      "youtube": "@KiraNovaOfficial"
+    },
+    "press_email": "press@kiranova.io",
+    "management_email": "mgmt@kiranova.io",
+    "label": "IndiiOS Records (Self-Released)"
+  },
+  "song_story": {
+    "concept": "The electric tension of meeting someone across a crowded club and feeling an instant, dangerous attraction",
+    "narrative": "The song opens with a lone analog synth pad, like the hum of a neon sign. The verse is whispered — almost ASMR-level intimacy — over a minimal kick-and-snare pattern. The pre-chorus builds with layered arpeggios as the protagonist crosses the dance floor. The chorus explodes into a full synthwave wall of sound: gated reverb snares, pulsing sidechained pads, and a soaring vocal melody that captures the moment of eye contact. The bridge strips everything back to just bass and voice — a moment of vulnerability before the final chorus hits with doubled intensity.",
+    "mood_keywords": ["sensual", "dangerous", "electric", "nocturnal", "hypnotic", "pulsing"],
+    "visual_aesthetic": "Neon-lit Tokyo streets, chrome surfaces reflecting colored light, velvet fabrics in deep purple and electric blue, sparks and electrical arcs, silhouettes in fog"
+  },
+  "production": {
+    "producer": "KIRA NOVA",
+    "co_producer": "DJ PHANTOM",
+    "mixer": "DJ PHANTOM",
+    "master_engineer": "Sterling Sound (Emily Lazar)",
+    "studio": "Neon Chapel Studios, Los Angeles",
+    "daw": "Ableton Live 12",
+    "key_instruments": ["Roland Juno-106", "Sequential Prophet-5", "Moog Subsequent 37", "Roland TR-808", "Arturia MicroFreak"],
+    "vocal_chain": "Neumann U87 → Neve 1073 → LA-2A → Pro-Q3"
+  },
+  "collaborators": [
+    {
+      "name": "KIRA NOVA",
+      "real_name": "Kira Novakowski",
+      "role": "Writer / Producer / Vocalist",
+      "pro": "BMI",
+      "ipi": "00987654321",
+      "split_percentage": 70
+    },
+    {
+      "name": "DJ PHANTOM",
+      "real_name": "Marcus Williams",
+      "role": "Co-Producer / Mixer",
+      "pro": "ASCAP",
+      "ipi": "00123456789",
+      "split_percentage": 20
+    },
+    {
+      "name": "LYRA COLE",
+      "real_name": "Lyra Coleman",
+      "role": "Vocal Topline / Background Vocals",
+      "pro": "BMI",
+      "ipi": "00555666777",
+      "split_percentage": 10
+    }
+  ],
+  "distribution": {
+    "distributor": "IndiiOS Direct",
+    "territories": "Worldwide",
+    "platforms": ["Spotify", "Apple Music", "Amazon Music", "YouTube Music", "Tidal", "Deezer", "Pandora", "SoundCloud Go+"],
+    "pre_save_date": "2026-03-28",
+    "release_friday": true
+  },
+  "marketing": {
+    "target_audience": "18-30, urban, fashion-forward, nightlife enthusiasts, electronic music fans",
+    "content_pillars": ["Fashion", "Analog Synths", "Nightlife", "Neon Aesthetics"],
+    "campaign_hashtags": ["#VelvetVoltage", "#KiraNova", "#DarkPop", "#Synthwave2026"],
+    "key_playlists_to_target": ["mint", "New Music Friday", "Dark Pop", "Synthwave from Space", "Night Rider"],
+    "ad_budget_usd": 5000
+  }
+}

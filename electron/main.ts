@@ -17,6 +17,7 @@ import { registerMarketingHandlers } from './handlers/marketing';
 import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
+import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { configureSecurity } from './security';
 import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
@@ -211,6 +212,9 @@ const startHealthMonitoring = (window: BrowserWindow) => {
     healthCheckInterval = setInterval(() => {
         checkSidecarHealth(window);
     }, 30000);
+const startHealthMonitoring = (_window: BrowserWindow) => {
+    // Sidecar health polling removed — Docker container is no longer required.
+    // Native GenAI (Gemini) and Firebase Cloud Functions are the execution runtime.
 };
 
 /**
@@ -354,6 +358,7 @@ if (!gotTheLock) {
         SidecarService.ensureStarted().catch(err => {
             log.error(`[Main] Initial Docker startup failed: ${err.message}`);
         });
+        registerMobileRemoteHandlers();
 
         createWindow();
         createTray();
@@ -390,9 +395,10 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
-app.on('will-quit', async () => {
+app.on('will-quit', () => {
     isQuitting = true;
     await SidecarService.stopSystem();
+    stopMobileRemoteServer();
 });
 
 // Crash Handling & Observability

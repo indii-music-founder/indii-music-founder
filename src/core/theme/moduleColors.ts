@@ -69,6 +69,7 @@ export const departmentCssVars = {
     'select-org': '--color-dept-default',
     debug: '--color-dept-default',
     investor: '--color-dept-distribution', // Investor portal shares Distribution
+    settings: '--color-dept-social',       // Settings uses Social cyan
 } as const;
 
 /**
@@ -376,6 +377,36 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-dept-brand',
         hoverBg: 'hover:bg-dept-brand/5',
         cssVar: '--color-dept-brand',
+    },
+    settings: {
+        // Settings — Cyan for user configuration
+        text: 'text-cyan-400',
+        bg: 'bg-cyan-500/10',
+        border: 'border-cyan-500',
+        ring: 'focus-within:ring-cyan-500/50',
+        hoverText: 'hover:text-cyan-300',
+        hoverBg: 'hover:bg-cyan-500/5',
+        cssVar: '--color-dept-social',
+    },
+    'mobile-remote': {
+        // Mobile Remote — Indigo for remote control / connectivity
+        text: 'text-indigo-400',
+        bg: 'bg-indigo-500/10',
+        border: 'border-indigo-500',
+        ring: 'focus-within:ring-indigo-500/50',
+        hoverText: 'hover:text-indigo-300',
+        hoverBg: 'hover:bg-indigo-500/5',
+        cssVar: '--color-dept-default',
+    },
+    analytics: {
+        // Growth Intelligence — Violet for data science, prediction
+        text: 'text-violet-400',
+        bg: 'bg-violet-500/10',
+        border: 'border-violet-500',
+        ring: 'focus-within:ring-violet-500/50',
+        hoverText: 'hover:text-violet-300',
+        hoverBg: 'hover:bg-violet-500/5',
+        cssVar: '--color-dept-default',
     },
 };
 
