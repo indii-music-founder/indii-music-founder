@@ -21,6 +21,7 @@ import { spotifyService } from './SpotifyService';
 import { youTubeAnalyticsService } from './YouTubeAnalyticsService';
 import { tikTokAnalyticsService } from './TikTokAnalyticsService';
 import { instagramAnalyticsService } from './InstagramAnalyticsService';
+import { appleMusicService } from './AppleMusicService';
 import { logger } from '@/utils/logger';
 import type {
     TrackAnalytics,
@@ -97,18 +98,19 @@ export class PlatformDataService {
      * Check which platforms the user has connected.
      */
     async getConnectionStatus(): Promise<PlatformConnectionStatus> {
-        const [spotify, youtube, tiktok, instagram] = await Promise.allSettled([
+        const [spotify, youtube, tiktok, instagram, apple] = await Promise.allSettled([
             spotifyService.isConnected(),
             youTubeAnalyticsService.isConnected(),
             tikTokAnalyticsService.isConnected(),
             instagramAnalyticsService.isConnected(),
+            appleMusicService.isConnected(),
         ]);
 
         return {
             spotify:     spotify.status    === 'fulfilled' && spotify.value,
             youtube:     youtube.status    === 'fulfilled' && youtube.value,
             tiktok:      tiktok.status     === 'fulfilled' && tiktok.value,
-            apple_music: false, // MusicKit integration TBD
+            apple_music: apple.status      === 'fulfilled' && apple.value,
             instagram:   instagram.status  === 'fulfilled' && instagram.value,
         };
     }
@@ -118,7 +120,7 @@ export class PlatformDataService {
      */
     async hasAnyConnection(): Promise<boolean> {
         const status = await this.getConnectionStatus();
-        return status.spotify || status.youtube || status.tiktok || status.instagram;
+        return status.spotify || status.youtube || status.tiktok || status.instagram || status.apple_music;
     }
 
     /**
@@ -161,15 +163,17 @@ export class PlatformDataService {
             await spotifyService.buildPlatformData();
 
         // Fetch supplementary platform data (optional, non-blocking)
-        const [ytResult, ttResult, igResult] = await Promise.allSettled([
-            status.youtube   ? youTubeAnalyticsService.buildPlatformData()   : Promise.resolve(null),
-            status.tiktok    ? tikTokAnalyticsService.buildPlatformData()    : Promise.resolve(null),
-            status.instagram ? instagramAnalyticsService.buildPlatformData() : Promise.resolve(null),
+        const [ytResult, ttResult, igResult, amResult] = await Promise.allSettled([
+            status.youtube    ? youTubeAnalyticsService.buildPlatformData()   : Promise.resolve(null),
+            status.tiktok     ? tikTokAnalyticsService.buildPlatformData()    : Promise.resolve(null),
+            status.instagram  ? instagramAnalyticsService.buildPlatformData() : Promise.resolve(null),
+            status.apple_music ? appleMusicService.buildPlatformData()        : Promise.resolve(null),
         ]);
 
         const ytPlatform  = ytResult.status  === 'fulfilled' ? ytResult.value  : null;
         const ttPlatform  = ttResult.status  === 'fulfilled' ? ttResult.value  : null;
         const igPlatform  = igResult.status  === 'fulfilled' ? igResult.value  : null;
+        const amPlatform  = amResult.status  === 'fulfilled' ? amResult.value  : null;
 
         // Fetch YouTube region data if available
         let regionData: RegionData[] = [];
@@ -233,6 +237,15 @@ export class PlatformDataService {
                         saves:         Math.round(igPlatform.saves         * shareRatio),
                         completionRate: igPlatform.completionRate,
                         creatorCount:  0,
+                    });
+                }
+
+                if (amPlatform) {
+                    platforms.push({
+                        platform: 'apple_music',
+                        streams:       Math.round(amPlatform.streams       * shareRatio),
+                        saves:         Math.round(amPlatform.saves         * shareRatio),
+                        completionRate: amPlatform.completionRate,
                     });
                 }
 

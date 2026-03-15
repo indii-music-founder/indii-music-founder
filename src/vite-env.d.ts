@@ -92,8 +92,14 @@ interface ImportMetaEnv {
     readonly VITE_SKIP_ONBOARDING?: string
     readonly VITE_EXPOSE_INTERNALS?: string
 
+    // Spotify OAuth (PKCE — client ID is safe to expose, secret stays in Cloud Functions)
+    readonly VITE_SPOTIFY_CLIENT_ID?: string
+
     // TikTok OAuth
     readonly VITE_TIKTOK_CLIENT_KEY?: string
+
+    // Apple Music (MusicKit JS developer token — JWT signed with Apple .p8 key)
+    readonly VITE_APPLE_MUSIC_DEV_TOKEN?: string
 
     // Meta / Instagram Graph API
     readonly VITE_META_APP_ID?: string
