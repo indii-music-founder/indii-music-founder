@@ -92,6 +92,12 @@ interface ImportMetaEnv {
     readonly VITE_SKIP_ONBOARDING?: string
     readonly VITE_EXPOSE_INTERNALS?: string
 
+    // TikTok OAuth
+    readonly VITE_TIKTOK_CLIENT_KEY?: string
+
+    // Meta / Instagram Graph API
+    readonly VITE_META_APP_ID?: string
+
     // Legacy Agent Zero (no longer active — kept for backward compat)
     readonly VITE_A0_BASE_URL?: string
     readonly VITE_A0_RUNTIME_ID?: string

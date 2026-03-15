@@ -1,23 +1,27 @@
 /**
  * GrowthIntelligenceDashboard — Music Growth Intelligence Engine
  *
- * Implements the full analytics pipeline defined in the IndiiOS Growth
- * Intelligence spec:
- *  - Streaming data ingestion (mock; swap in live Spotify/Apple API calls)
- *  - Viral score model (weighted composite 0-100)
- *  - Growth pattern detection (8 archetypes)
- *  - 14-day breakout forecast (logistic growth curve)
- *  - Cross-platform comparison + regional diffusion
- *  - Real-time breakout alerts
+ * Production analytics dashboard powered by real platform data:
+ *  - Spotify Web API (top tracks, audio features, recently played)
+ *  - YouTube Analytics API (views, watch time, subscribers, geography)
+ *  - TikTok Display API (video views, engagement)
+ *  - Instagram Graph API (Reels plays, reach, impressions)
+ *
+ * Shows a "Connect Platforms" onboarding state when no accounts are linked.
+ * Once connected, loads real TrackAnalytics and passes through the full
+ * viral scoring + pattern detection pipeline.
  */
 
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { motion } from 'motion/react';
-import { RefreshCw, Brain, TrendingUp, Globe, Bell, BarChart2, GitBranch } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+    RefreshCw, Brain, TrendingUp, Globe, Bell,
+    BarChart2, GitBranch, Plug, Settings,
+} from 'lucide-react';
 
 import { useStore } from '@/core/store';
-import { mockDataService } from '@/services/analytics/MockDataService';
+import { platformDataService } from '@/services/analytics/PlatformDataService';
 import { analyticsEngine } from '@/services/analytics/AnalyticsEngine';
 import type { TrackReport } from '@/services/analytics/types';
 
@@ -29,6 +33,7 @@ import { GrowthPatternsPanel } from './components/GrowthPatternsPanel';
 import { AlertsPanel } from './components/AlertsPanel';
 import { PlatformBreakdown } from './components/PlatformBreakdown';
 import { RegionalMap } from './components/RegionalMap';
+import { PlatformConnector } from './components/PlatformConnector';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Tab definitions
@@ -43,6 +48,30 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
     { id: 'regions',   label: 'Regions',   icon: Globe       },
     { id: 'alerts',    label: 'Alerts',    icon: Bell        },
 ];
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Empty state — no platforms connected
+// ──────────────────────────────────────────────────────────────────────────────
+
+function NoPlatformsState({ onConnected }: { onConnected: () => void }) {
+    return (
+        <div className="h-full overflow-y-auto p-6">
+            <div className="max-w-2xl mx-auto">
+                <div className="text-center mb-8 pt-4">
+                    <div className="inline-flex p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl mb-4">
+                        <Plug size={32} className="text-indigo-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Connect Your Platforms</h2>
+                    <p className="text-sm text-slate-400 max-w-md mx-auto">
+                        Link your streaming and social accounts to see real-time viral scores,
+                        growth patterns, and 14-day breakout forecasts for your tracks.
+                    </p>
+                </div>
+                <PlatformConnector onConnectionChange={onConnected} />
+            </div>
+        </div>
+    );
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Component
@@ -75,18 +104,30 @@ export default function GrowthIntelligenceDashboard() {
         setAnalyticsLastRefresh: s.setAnalyticsLastRefresh,
     })));
 
-    const [activeTab, setActiveTab] = React.useState<TabId>('overview');
+    const [activeTab, setActiveTab] = useState<TabId>('overview');
+    const [showConnector, setShowConnector] = useState(false);
+    const [hasConnections, setHasConnections] = useState<boolean | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     // ── Load data ─────────────────────────────────────────────────────────────
 
     const loadReports = useCallback(async () => {
         setAnalyticsLoading(true);
+        setLoadError(null);
         try {
-            // In production: replace with live API calls
-            // const tracks = await spotifyService.getArtistTracks(userId);
-            const tracks = mockDataService.generateTrackCatalogue(30);
-            const reports = analyticsEngine.generateCatalogueReports(tracks);
+            // Check connections first
+            const anyConnected = await platformDataService.hasAnyConnection();
+            setHasConnections(anyConnected);
 
+            if (!anyConnected) return;
+
+            const tracks = await platformDataService.buildCatalogue();
+            if (tracks.length === 0) {
+                setHasConnections(false);
+                return;
+            }
+
+            const reports = analyticsEngine.generateCatalogueReports(tracks);
             reports.forEach(r => setAnalyticsReport(r.track.trackId, r));
             addAnalyticsAlerts(reports.flatMap(r => r.alerts));
 
@@ -94,6 +135,8 @@ export default function GrowthIntelligenceDashboard() {
                 setAnalyticsSelectedTrackId(reports[0].track.trackId);
             }
             setAnalyticsLastRefresh(Date.now());
+        } catch (err) {
+            setLoadError(err instanceof Error ? err.message : 'Failed to load analytics data.');
         } finally {
             setAnalyticsLoading(false);
         }
@@ -103,10 +146,15 @@ export default function GrowthIntelligenceDashboard() {
     ]);
 
     useEffect(() => {
-        if (!analyticsLastRefresh) {
+        if (hasConnections === null) {
             loadReports();
         }
-    }, [analyticsLastRefresh, loadReports]);
+    }, [hasConnections, loadReports]);
+
+    const handleConnectionChange = useCallback(() => {
+        setHasConnections(null); // force re-check
+        setShowConnector(false);
+    }, []);
 
     // ── Derived state ─────────────────────────────────────────────────────────
 
@@ -127,7 +175,41 @@ export default function GrowthIntelligenceDashboard() {
         [analyticsAlerts, selectedReport]
     );
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    // ── Render: checking connections ──────────────────────────────────────────
+
+    if (hasConnections === null) {
+        return (
+            <div className="h-full flex items-center justify-center bg-[#0d1117]">
+                <div className="text-center text-slate-500">
+                    <Brain size={36} className="mx-auto mb-3 opacity-30 animate-pulse" />
+                    <p className="text-sm">Checking platform connections…</p>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Render: no connections ────────────────────────────────────────────────
+
+    if (!hasConnections && !analyticsLoading) {
+        return (
+            <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/8 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-500/15 border border-indigo-500/30 rounded-xl">
+                            <Brain size={18} className="text-indigo-400" />
+                        </div>
+                        <div>
+                            <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
+                            <p className="text-xs text-slate-400">Viral scores · Pattern detection · Breakout forecasts</p>
+                        </div>
+                    </div>
+                </div>
+                <NoPlatformsState onConnected={handleConnectionChange} />
+            </div>
+        );
+    }
+
+    // ── Render: main dashboard ────────────────────────────────────────────────
 
     return (
         <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden">
@@ -144,12 +226,23 @@ export default function GrowthIntelligenceDashboard() {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {analyticsLastRefresh && (
                         <span className="text-xs text-slate-500 hidden sm:block">
                             Updated {new Date(analyticsLastRefresh).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                     )}
+                    <button
+                        onClick={() => setShowConnector(prev => !prev)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                            showConnector
+                                ? 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30'
+                                : 'text-slate-400 bg-slate-800 border-white/10 hover:bg-slate-700'
+                        }`}
+                    >
+                        <Settings size={12} />
+                        Platforms
+                    </button>
                     <button
                         onClick={loadReports}
                         disabled={analyticsLoading}
@@ -160,6 +253,37 @@ export default function GrowthIntelligenceDashboard() {
                     </button>
                 </div>
             </div>
+
+            {/* ── Platform connector panel (slide-in) ── */}
+            <AnimatePresence>
+                {showConnector && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden border-b border-white/8 bg-slate-900/50"
+                    >
+                        <div className="p-5 max-h-[60vh] overflow-y-auto">
+                            <PlatformConnector onConnectionChange={handleConnectionChange} />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ── Error banner ── */}
+            <AnimatePresence>
+                {loadError && (
+                    <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: 'auto' }}
+                        exit={{ height: 0 }}
+                        className="px-6 py-2 bg-red-500/10 border-b border-red-500/20 text-xs text-red-400"
+                    >
+                        {loadError}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ── Body ── */}
             <div className="flex-1 flex overflow-hidden">
@@ -189,7 +313,9 @@ export default function GrowthIntelligenceDashboard() {
                         <div className="h-full flex items-center justify-center text-slate-500">
                             <div className="text-center">
                                 <Brain size={40} className="mx-auto mb-3 opacity-30" />
-                                <p className="text-sm">{analyticsLoading ? 'Analyzing tracks…' : 'Select a track to view analytics'}</p>
+                                <p className="text-sm">
+                                    {analyticsLoading ? 'Fetching platform data…' : 'Select a track to view analytics'}
+                                </p>
                             </div>
                         </div>
                     ) : (
@@ -201,15 +327,26 @@ export default function GrowthIntelligenceDashboard() {
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.3 }}
                             >
+                                {selectedReport.track.coverUrl && (
+                                    <img
+                                        src={selectedReport.track.coverUrl}
+                                        alt={selectedReport.track.trackName}
+                                        className="w-12 h-12 rounded-lg object-cover mb-3 border border-white/10"
+                                    />
+                                )}
                                 <h2 className="text-xl font-bold text-white">{selectedReport.track.trackName}</h2>
-                                <p className="text-sm text-slate-400">{selectedReport.track.artistName} · {selectedReport.track.genre} · Released {selectedReport.track.releaseDate}</p>
+                                <p className="text-sm text-slate-400">
+                                    {selectedReport.track.artistName}
+                                    {selectedReport.track.genre ? ` · ${selectedReport.track.genre}` : ''}
+                                    {selectedReport.track.releaseDate ? ` · Released ${selectedReport.track.releaseDate}` : ''}
+                                </p>
                             </motion.div>
 
                             {/* Tab bar */}
                             <div className="flex gap-1 overflow-x-auto pb-0.5">
                                 {TABS.map(tab => {
                                     const Icon = tab.icon;
-                                    const isAlert = tab.id === 'alerts';
+                                    const isAlert  = tab.id === 'alerts';
                                     const hasAlerts = isAlert && activeAlerts.length > 0;
                                     return (
                                         <button
@@ -296,14 +433,15 @@ export default function GrowthIntelligenceDashboard() {
                                         {selectedReport.track.platforms.map(p => {
                                             const labels: Record<string, string> = {
                                                 spotify: 'Spotify', apple_music: 'Apple Music',
-                                                tiktok: 'TikTok', youtube_shorts: 'YT Shorts', instagram_reels: 'Reels',
+                                                tiktok: 'TikTok', youtube_shorts: 'YouTube',
+                                                instagram_reels: 'Instagram Reels',
                                             };
                                             return (
                                                 <div key={p.platform} className="bg-slate-800/50 border border-white/8 rounded-xl p-3">
                                                     <p className="text-sm font-semibold text-white mb-2">{labels[p.platform] ?? p.platform}</p>
                                                     <div className="grid grid-cols-2 gap-2 text-xs">
                                                         <div>
-                                                            <p className="text-slate-500">Streams</p>
+                                                            <p className="text-slate-500">Streams / Views</p>
                                                             <p className="text-white font-medium">{p.streams.toLocaleString()}</p>
                                                         </div>
                                                         <div>
@@ -321,16 +459,37 @@ export default function GrowthIntelligenceDashboard() {
                                             );
                                         })}
                                     </div>
+                                    {/* Connect more platforms CTA */}
+                                    <button
+                                        onClick={() => setShowConnector(true)}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-white/15 text-xs text-slate-500 hover:text-slate-300 hover:border-white/25 transition-colors"
+                                    >
+                                        <Plug size={12} />
+                                        Connect more platforms to see additional data
+                                    </button>
                                 </div>
                             )}
 
                             {activeTab === 'regions' && (
                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-5">
                                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Geographic Diffusion</p>
-                                    <RegionalMap
-                                        regions={selectedReport.track.regions}
-                                        totalStreams={selectedReport.track.totalStreams}
-                                    />
+                                    {selectedReport.track.regions.length === 0 ? (
+                                        <div className="text-center py-8 text-slate-500 text-sm">
+                                            <Globe size={28} className="mx-auto mb-2 opacity-30" />
+                                            <p>Connect YouTube to unlock geographic breakdown data.</p>
+                                            <button
+                                                onClick={() => setShowConnector(true)}
+                                                className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 underline"
+                                            >
+                                                Connect YouTube Analytics
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <RegionalMap
+                                            regions={selectedReport.track.regions}
+                                            totalStreams={selectedReport.track.totalStreams}
+                                        />
+                                    )}
                                 </div>
                             )}
 
