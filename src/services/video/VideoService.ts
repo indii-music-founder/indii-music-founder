@@ -88,7 +88,7 @@ export class VideoService {
                 model: AI_MODELS.VIDEO.GENERATION,
                 prompt: videoPrompt,
                 image: { imageBytes: image.data, mimeType: image.mimeType },
-                config: { aspectRatio: '16:9', durationSeconds: 5 }
+                config: { aspectRatio: '16:9', durationSeconds: 4 }
             }));
 
             return uri || null;
@@ -200,7 +200,7 @@ export class VideoService {
                 image: { imageBytes: startImage.data, mimeType: startImage.mimeType },
                 config: {
                     aspectRatio: '16:9',
-                    durationSeconds: 5,
+                    durationSeconds: 4,
                     lastFrame: `data:${endImage.mimeType};base64,${endImage.data}`
                 }
             }));

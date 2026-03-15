@@ -47,7 +47,8 @@ export {
 export { pandadocWebhook } from './legal/pandadocWebhook';
 
 // Publishing Functions: ISWC Mapper (PandaDoc → composition registration)
-export { processISWCMapping } from './publishing/iswcMapper';
+// TODO: Re-enable after deleting the old HTTPS version in GCP console
+// export { processISWCMapping } from './publishing/iswcMapper';
 
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';

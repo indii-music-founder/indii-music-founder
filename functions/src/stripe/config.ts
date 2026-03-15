@@ -7,10 +7,25 @@ import { Subscription, SubscriptionTier } from '../shared/subscription/types';
 
 import { getStripeSecretKey } from '../config/secrets';
 
-// Initialize Stripe with secret key
-const stripe = new Stripe(getStripeSecretKey(), {
-  apiVersion: '2025-12-15.clover',
-  typescript: true
+// Lazy-initialized Stripe singleton to avoid crashing during Firebase CLI analysis
+// (secrets aren't available at module load time)
+let _stripe: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(getStripeSecretKey(), {
+      apiVersion: '2025-12-15.clover',
+      typescript: true,
+    });
+  }
+  return _stripe;
+}
+
+// Re-export as a getter proxy for backward compatibility
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    return (getStripe() as any)[prop];
+  },
 });
 
 // Placeholder sentinel values used in development only
@@ -22,19 +37,20 @@ const PLACEHOLDER_PRICE_IDS: Record<string, string> = {
 };
 
 /**
- * Resolve a Stripe price env var. In production, throws if the variable is
- * missing or still set to the development placeholder so checkout failures
- * are surfaced at startup rather than at payment time.
+ * Resolve a Stripe price env var. In production, warns if the variable is
+ * missing or still set to the development placeholder. Does NOT throw — because
+ * all Cloud Functions share the same entry point and a throw here kills
+ * unrelated functions (e.g. video generation).
  */
 function resolvePriceId(envVar: string): string {
   const value = process.env[envVar];
-  const placeholder = PLACEHOLDER_PRICE_IDS[envVar];
+  const placeholder = PLACEHOLDER_PRICE_IDS[envVar] ?? 'price_not_configured';
 
   if (process.env.NODE_ENV === 'production') {
     if (!value || value === placeholder) {
-      throw new Error(
+      console.warn(
         `[Stripe] Missing or placeholder price ID for ${envVar}. ` +
-        `Set a real Stripe price ID in the Cloud Functions environment before deploying.`
+        `Checkout will fail until a real Stripe price ID is set.`
       );
     }
   }
@@ -111,4 +127,3 @@ export function mapStripeTierToSubscriptionTier(productId: string): Subscription
   return null;
 }
 
-export { stripe };
