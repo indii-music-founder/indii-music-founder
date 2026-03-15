@@ -3,7 +3,6 @@ import { StorageService } from '../StorageService';
 import { HistoryItem } from '@/core/types/history';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
-import { agentZeroService } from './AgentZeroService';
 
 /**
  * AssetObserver monitors the Creative History for newly completed AI assets.
@@ -112,14 +111,9 @@ class AssetObserver {
         // Emit internal event for UI updates or other services
         events.emit('ASSET_FINALIZED', { item });
 
-        // Trigger Agent Zero's proactive logic
-        // We wrap this in a timeout to ensure the UI has updated first
-        setTimeout(async () => {
-            try {
-                await agentZeroService.triggerDistributionRelay(item as any);
-            } catch (err) {
-                Logger.error('AssetObserver', 'Failed to trigger distribution relay:', err);
-            }
+        // Emit distribution relay event — downstream listeners handle proactive handover
+        setTimeout(() => {
+            events.emit('DISTRIBUTION_RELAY_READY', { item });
         }, 2000);
     }
 }

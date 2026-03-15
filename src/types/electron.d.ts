@@ -77,12 +77,8 @@ export interface ElectronAPI {
         saveHistory: (id: string, data: unknown) => Promise<{ success: boolean; error?: string }>;
         getHistory: (id: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
         deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
-        proxyZero?: (url: string, payload: unknown, headers: Record<string, string>) => Promise<{ success: boolean; status?: number; data?: unknown; error?: string }>;
     };
 
-    sidecar?: {
-        restart: () => void;
-    };
 
     // Video (Local Asset Management)
     video: {

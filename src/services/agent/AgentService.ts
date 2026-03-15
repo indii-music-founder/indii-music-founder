@@ -12,7 +12,6 @@ import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
 import { orchestrationService } from './OrchestrationService';
-import { agentZeroService } from './AgentZeroService';
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 
@@ -277,13 +276,7 @@ export class AgentService {
             return;
         }
 
-        // 2. Check Provider: If set to 'agent-zero', delegate immediately
-        if (activeAgentProvider === 'agent-zero') {
-            await this.handleAgentZeroFlow(text, attachments, responseId);
-            return;
-        }
-
-        // 3. Use Coordinator for Fast Path
+        // 2. Use Coordinator for Fast Path
         let coordinatorResult: string;
         if (forcedAgentId) {
             coordinatorResult = 'DELEGATED_TO_AGENT';
@@ -383,84 +376,6 @@ export class AgentService {
             updateAgentMessage(responseId, {
                 thoughtSignature: result?.thoughtSignature
             });
-        }
-    }
-
-    private async handleAgentZeroFlow(text: string, attachments: { mimeType: string; base64: string }[] | undefined, responseId: string): Promise<void> {
-        const { useStore } = await import('@/core/store');
-        const { updateAgentMessage } = useStore.getState();
-
-        // Adapt attachments for Agent Zero (files base64 with filenames)
-        let agentZeroAttachments: { filename: string; base64: string }[] = [];
-
-        if (attachments && attachments.length > 0) {
-            agentZeroAttachments = attachments.map((att: { mimeType: string; base64: string }, index: number) => {
-                // Determine extension from mimeType
-                let ext = 'bin';
-                if (att.mimeType === 'image/jpeg') ext = 'jpg';
-                else if (att.mimeType === 'image/png') ext = 'png';
-                else if (att.mimeType === 'image/webp') ext = 'webp';
-                else if (att.mimeType === 'application/pdf') ext = 'pdf';
-                else if (att.mimeType === 'text/plain') ext = 'txt';
-
-                return {
-                    filename: `upload_${Date.now()}_${index}.${ext}`,
-                    base64: att.base64
-                };
-            });
-        }
-
-        // Add initial "processing" thought
-        updateAgentMessage(responseId, {
-            thoughts: [{
-                id: uuidv4(),
-                text: 'Agent Zero is processing your request...',
-                timestamp: Date.now(),
-                type: 'logic',
-                toolName: 'Agent Zero'
-            }]
-        });
-
-        try {
-            const response = await agentZeroService.sendMessage(text, agentZeroAttachments);
-
-            // Parse response for tool usage patterns
-            const thoughts = this.parseAgentZeroToolUsage(response.message);
-
-            // Always include the base execution thought
-            thoughts.unshift({
-                id: uuidv4(),
-                text: 'Executed on Agent Zero Container',
-                timestamp: Date.now(),
-                type: 'logic',
-                toolName: 'Agent Zero'
-            });
-
-            updateAgentMessage(responseId, {
-                text: response.message,
-                thoughts
-            });
-
-            // If there are tool calls or attachments in response, handle them here
-            if (response.attachments && response.attachments.length > 0) {
-                // Append attachment links to text
-                const links = response.attachments.map(url => `\n\n![Generated Asset](${url})`).join('');
-                updateAgentMessage(responseId, {
-                    text: response.message + links
-                });
-            }
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            updateAgentMessage(responseId, {
-                text: `Agent Zero Error: ${errorMessage}`,
-                thoughts: [{
-                    id: uuidv4(),
-                    text: 'Agent Zero Connection Failed',
-                    timestamp: Date.now(),
-                    type: 'error'
-                }]
-            });
-            throw err; // Re-throw to be caught by executeFlow catch block
         }
     }
 
@@ -626,71 +541,6 @@ If the user asks you to do something that requires active tools (like generating
             });
             throw err;
         }
-    }
-
-    /**
-     * Parse Agent Zero response to detect tool usage patterns.
-     * This creates visual feedback for tool execution even though Agent Zero
-     * doesn't currently stream tool events.
-     */
-    private parseAgentZeroToolUsage(message: string): AgentThought[] {
-        const thoughts: AgentThought[] = [];
-
-        // Pattern detection for common Agent Zero tool usage
-        const patterns = [
-            {
-                regex: /```(?:python|bash|sh|javascript|typescript)/gi,
-                toolName: 'Code Execution',
-                type: 'tool' as const,
-                getMessage: () => 'Executed code to process your request'
-            },
-            {
-                regex: /(?:created|wrote|saved|generated)\s+(?:file|image|document)/gi,
-                toolName: 'File Operations',
-                type: 'tool' as const,
-                getMessage: (match: string) => `File operation: ${match}`
-            },
-            {
-                regex: /(?:searched|browsed|visited|fetched)\s+(?:web|internet|url|website)/gi,
-                toolName: 'Web Browser',
-                type: 'tool' as const,
-                getMessage: () => 'Browsed the web for information'
-            },
-            {
-                regex: /img:\/\//gi,
-                toolName: 'Image Generation',
-                type: 'tool' as const,
-                getMessage: () => 'Generated an image using Gemini Image 3.1 Pro'
-            },
-            {
-                regex: /(?:analyzed|processed|examined)\s+(?:image|photo|picture)/gi,
-                toolName: 'Vision Analysis',
-                type: 'tool' as const,
-                getMessage: () => 'Analyzed image content with Gemini Vision'
-            },
-            {
-                regex: /(?:installed|updated|executed)\s+(?:package|dependency|npm|pip)/gi,
-                toolName: 'Package Manager',
-                type: 'tool' as const,
-                getMessage: () => 'Managed project dependencies'
-            }
-        ];
-
-        // Check each pattern
-        for (const pattern of patterns) {
-            const matches = message.match(pattern.regex);
-            if (matches && matches.length > 0) {
-                thoughts.push({
-                    id: uuidv4(),
-                    text: pattern.getMessage(matches[0]),
-                    timestamp: Date.now(),
-                    type: pattern.type,
-                    toolName: pattern.toolName
-                });
-            }
-        }
-
-        return thoughts;
     }
 
     /**
