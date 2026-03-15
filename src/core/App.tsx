@@ -80,6 +80,8 @@ const MemoryDashboard = lazy(() => import('../modules/memory/MemoryDashboard'));
 const MarketplaceModule = lazy(() => import('../modules/marketplace'));
 const SelectOrg = lazy(() => import('../modules/select-org/SelectOrg'));
 const SettingsPanel = lazy(() => import('../modules/settings/SettingsPanel'));
+const MobileRemote = lazy(() => import('../modules/mobile-remote/MobileRemote'));
+const GrowthIntelligenceDashboard = lazy(() => import('../modules/analytics/GrowthIntelligenceDashboard'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -118,6 +120,8 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'capture': GhostCapture,
     'memory': MemoryDashboard,
     'settings': SettingsPanel,
+    'mobile-remote': MobileRemote,
+    'analytics': GrowthIntelligenceDashboard,
 };
 
 // ============================================================================

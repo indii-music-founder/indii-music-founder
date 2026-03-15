@@ -347,7 +347,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     onSelectIndii={() => {
                                         setChatChannel('indii');
                                         setModule('dashboard' as ModuleId);
-                                        setActiveAgentProvider('agent-zero');
+                                        setActiveAgentProvider('native');
                                         setOpenDelegate(false);
                                         if (!isAgentOpen) toggleAgentWindow();
                                     }}
