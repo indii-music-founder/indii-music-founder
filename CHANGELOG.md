@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.23.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.23.0...v1.23.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* resolve all lint errors and test failures (Gauntlet pass) ([e1fe7f4](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e1fe7f49bc9358f1e079539db54a748e8b88e13d))
+
 ## [1.23.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.22.1...v1.23.0) (2026-03-15)
 
 
