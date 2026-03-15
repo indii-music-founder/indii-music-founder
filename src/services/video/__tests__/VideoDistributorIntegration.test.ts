@@ -1,18 +1,26 @@
-
 import { VideoGeneration } from '../VideoGenerationService';
 import { useStore } from '@/core/store';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
-import { httpsCallable } from 'firebase/functions';
+import { firebaseAI } from '../../ai/FirebaseAIService';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mocks
 vi.mock('@/core/store');
+
+vi.mock('../../ai/FirebaseAIService', () => ({
+    firebaseAI: {
+        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
+        analyzeImage: vi.fn().mockResolvedValue('Mocked temporal analysis result.'),
+    }
+}));
+
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: {
         canPerformAction: vi.fn(),
         getCurrentSubscription: vi.fn()
     }
 }));
+
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
     functions: {},
@@ -25,8 +33,32 @@ vi.mock('@/services/firebase', () => ({
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
     messaging: { getToken: vi.fn() }
 }));
-vi.mock('firebase/functions', () => ({
-    httpsCallable: vi.fn(() => vi.fn(async () => ({ data: { success: true } })))
+
+vi.mock('firebase/firestore', async (importOriginal) => {
+    const actual = await importOriginal() as any;
+    return {
+        ...actual,
+        doc: vi.fn(() => ({ id: 'mock-doc-ref', path: 'videoJobs/mock-doc-ref' })),
+        setDoc: vi.fn().mockResolvedValue(undefined),
+        updateDoc: vi.fn().mockResolvedValue(undefined),
+        serverTimestamp: vi.fn(),
+        onSnapshot: vi.fn(),
+        Timestamp: {
+            now: vi.fn(() => ({ toDate: () => new Date() })),
+        },
+    };
+});
+
+vi.mock('@/services/persistence/MetadataPersistenceService', () => ({
+    metadataPersistenceService: {
+        save: vi.fn().mockResolvedValue(undefined),
+    }
+}));
+
+vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+    InputSanitizer: {
+        sanitize: vi.fn((text: string) => text),
+    }
 }));
 
 // Helper to create mock profile with distributor
@@ -48,167 +80,133 @@ describe('VideoGenerationService - Distributor Integration', () => {
 
     describe('Distributors with Canvas support (9:16)', () => {
         it('applies 9:16 for DistroKid Canvas', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile('distrokid')
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBe('9:16');
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('9:16');
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
 
         it('applies 9:16 for TuneCore Canvas', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile('tunecore')
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBe('9:16');
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('9:16');
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
     });
 
     describe('Distributors without Canvas support', () => {
         it('does NOT apply Canvas constraints for CD Baby', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile('cdbaby')
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBeUndefined();
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            // Default aspect ratio is '16:9' when no distributor constraint applies
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
         it('does NOT apply Canvas constraints for Ditto', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile('ditto')
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBeUndefined();
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
         it('does NOT apply Canvas constraints for AWAL', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile('awal')
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBeUndefined();
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
         it('does NOT apply Canvas constraints for UnitedMasters', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile('unitedmasters')
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBeUndefined();
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
         it('does NOT apply Canvas constraints for Amuse', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile('amuse')
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBeUndefined();
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
     });
 
     describe('Edge cases', () => {
         it('falls back to defaults when no distributor configured', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile() // No distributor
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBeUndefined();
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
 
         it('falls back to defaults when no userProfile provided', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video'
                 // No userProfile at all
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBeUndefined();
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
 
         it('explicit aspectRatio overrides distributor default', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 aspectRatio: '16:9', // Explicit override
                 userProfile: createMockProfile('distrokid') // Would normally be 9:16
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
-            expect(callArgs.aspectRatio).toBe('16:9');
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
 
         it('handles unknown distributor gracefully', async () => {
-            const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerVideoJob as any);
-
             await VideoGeneration.generateVideo({
                 prompt: 'A cool video',
                 userProfile: createMockProfile('unknown_distributor')
             });
 
-            const callArgs = mockTriggerVideoJob.mock.calls[0][0];
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
             // Should NOT crash, just use defaults
-            expect(callArgs.aspectRatio).toBeUndefined();
+            expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
     });
 
     describe('Long-form video generation', () => {
         it('applies distributor constraints to long-form videos', async () => {
-            const mockTriggerLongFormJob = vi.fn().mockResolvedValue({ data: { success: true } });
-            vi.mocked(httpsCallable).mockReturnValue(mockTriggerLongFormJob as any);
             (subscriptionService.canPerformAction as any).mockResolvedValue({ allowed: true });
 
             await VideoGeneration.generateLongFormVideo({
@@ -217,10 +215,15 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid')
             });
 
-            const callArgs = mockTriggerLongFormJob.mock.calls[0][0];
-            expect(callArgs.options.aspectRatio).toBe('9:16');
+            // Long-form generates multiple segments, each calling firebaseAI.generateVideo
+            const calls = vi.mocked(firebaseAI.generateVideo).mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
+
+            // Each segment should have 9:16 for DistroKid
+            const firstCallArgs = calls[0][0];
+            expect(firstCallArgs.config?.aspectRatio).toBe('9:16');
             // Prompt segments should contain Canvas optimization
-            expect(callArgs.prompts[0]).toContain('Optimized for Spotify Canvas');
+            expect(firstCallArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
     });
 });

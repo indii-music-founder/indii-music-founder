@@ -16,7 +16,7 @@
  * with APP_PASSWORD protection surfaced in the QR payload.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { wcpInstance } from '@/services/agent/WebSocketControlPlane';
@@ -86,6 +86,7 @@ export default function MobileRemote() {
   const [remoteLog, setRemoteLog] = useState<string[]>([]);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const wcpUnsubRef = useRef<(() => void) | null>(null);
 
   const { currentModule, activeSessionId, agentHistory } = useStore(
     useShallow(state => ({
@@ -150,8 +151,11 @@ export default function MobileRemote() {
         setConnectionStatus('connected');
         _log('Connected to indiiOS desktop bridge');
 
+        // Clean up any previous listener before registering a new one
+        wcpUnsubRef.current?.();
+
         // Subscribe to Zustand state broadcasts
-        wcpInstance.on('sync', (msg) => {
+        wcpUnsubRef.current = wcpInstance.on('sync', (msg) => {
           _log(`State sync received: ${JSON.stringify(msg.payload).slice(0, 80)}…`);
         });
       };
@@ -203,6 +207,8 @@ export default function MobileRemote() {
   useEffect(() => {
     return () => {
       wsRef.current?.close();
+      wcpUnsubRef.current?.();
+      wcpUnsubRef.current = null;
     };
   }, []);
 

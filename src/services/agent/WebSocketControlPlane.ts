@@ -226,6 +226,14 @@ class WebSocketControlPlane {
 
     // Drain the session queue after each inbound message
     this._drainQueue(msg.sessionId);
+
+    // Also drain compound-keyed queues (namespace::sessionId → sessionId)
+    // The server may echo only the bare sessionId while our queue key includes the namespace prefix
+    for (const key of this.commandQueues.keys()) {
+      if (key !== msg.sessionId && key.endsWith(`::${msg.sessionId}`)) {
+        this._drainQueue(key);
+      }
+    }
   }
 
   private async _drainQueue(sessionId: string): Promise<void> {
