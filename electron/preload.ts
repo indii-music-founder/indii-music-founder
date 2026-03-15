@@ -118,6 +118,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
         generateBWARM: (data: any) => ipcRenderer.invoke('distribution:generate-bwarm', data),
         checkMerlinStatus: (data: any) => ipcRenderer.invoke('distribution:check-merlin-status', data),
         transmit: (config: any) => ipcRenderer.invoke('distribution:transmit', config),
+        submitRelease: (releaseData: any) => ipcRenderer.invoke('distribution:submit-release', releaseData),
+        onSubmitProgress: (callback: (data: any) => void) => {
+            const handler = (_event: any, data: any) => callback(data);
+            ipcRenderer.on('distribution:submit-progress', handler);
+            return () => ipcRenderer.removeListener('distribution:submit-progress', handler);
+        },
     },
 
     // Auto-Updater

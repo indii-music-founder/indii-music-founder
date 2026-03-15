@@ -18,7 +18,7 @@ import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { configureSecurity } from './security';
-import { DockerService } from './services/DockerService';
+import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
 
@@ -194,7 +194,7 @@ const checkSidecarHealth = async (window: BrowserWindow) => {
 
             showNotification('System Service Issue', 'The Python back-end seems to have crashed. Attempting auto-restart...');
 
-            DockerService.restartSystem().catch(restartErr => {
+            SidecarService.restartSystem().catch(restartErr => {
                 log.error(`[Sidecar] Auto-restart failed: ${restartErr}`);
             });
         }
@@ -337,7 +337,7 @@ if (!gotTheLock) {
         // Register Sidecar Handlers
         ipcMain.handle('sidecar:restart', async () => {
             log.info('[Main] Manual sidecar restart requested via IPC');
-            const result = await DockerService.restartSystem();
+            const result = await SidecarService.restartSystem();
 
             // Trigger immediate health check after restart if a window exists
             const windows = BrowserWindow.getAllWindows();
@@ -351,7 +351,7 @@ if (!gotTheLock) {
 
 
         // Ensure AI Services are running
-        DockerService.ensureStarted().catch(err => {
+        SidecarService.ensureStarted().catch(err => {
             log.error(`[Main] Initial Docker startup failed: ${err.message}`);
         });
 
@@ -392,7 +392,7 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', async () => {
     isQuitting = true;
-    await DockerService.stopSystem();
+    await SidecarService.stopSystem();
 });
 
 // Crash Handling & Observability
