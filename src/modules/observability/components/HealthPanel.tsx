@@ -48,7 +48,7 @@ function checkWCP(): ServiceHealth {
 }
 
 async function checkGeminiAPI(): Promise<ServiceHealth> {
-    const hasKey = !!(import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY);
+    const hasKey = !!import.meta.env.VITE_API_KEY;
     return {
         name: 'Gemini API',
         status: hasKey ? 'healthy' : 'degraded',

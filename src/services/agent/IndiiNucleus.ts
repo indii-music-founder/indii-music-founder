@@ -155,7 +155,7 @@ export class IndiiNucleus {
 
     const responseText = await GenAI.generateContent(
       [{ role: 'user', parts }],
-      AI_MODELS.TEXT_AGENT,
+      AI_MODELS.TEXT.AGENT,
       { systemInstruction: systemPrompt }
     );
 
