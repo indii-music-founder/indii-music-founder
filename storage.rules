@@ -84,6 +84,30 @@ service firebase.storage {
     }
 
     // ========================================
+    // VIDEO STORAGE (User-generated content)
+    // ========================================
+
+    // User-uploaded and AI-generated videos (client-side uploads from Veo pipeline)
+    match /videos/{userId}/{allPaths=**} {
+      // Owner can read their own videos
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Owner can upload: authenticated, size ≤ 500MB, valid video type
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(500) &&
+                      isVideoType();
+    }
+
+    // Video thumbnails (auto-generated poster frames)
+    match /video-thumbnails/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(10) &&
+                      isImageType();
+    }
+
+    // ========================================
     // VIDEO GENERATION OUTPUT (System-managed)
     // ========================================
 

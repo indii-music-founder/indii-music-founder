@@ -1390,9 +1390,13 @@ export class FirebaseAIService {
             // Build image input (first frame / image-to-video)
             let imageInput: { imageBytes: string; mimeType: string } | undefined;
             if (options.image) {
-                const imageBytes = options.image.imageBytes || options.image.data;
+                let imageBytes = options.image.imageBytes || options.image.data;
                 const mimeType = options.image.mimeType || 'image/jpeg';
                 if (imageBytes) {
+                    // Strip data URI prefix if present — API expects raw base64
+                    if (imageBytes.startsWith('data:')) {
+                        imageBytes = imageBytes.split(',')[1] || imageBytes;
+                    }
                     imageInput = { imageBytes, mimeType };
                 }
             }
