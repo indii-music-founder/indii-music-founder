@@ -14,9 +14,8 @@ export const createSidecarSlice: StateCreator<SidecarSlice> = (set) => ({
     setSidecarStatus: (status) => set({ sidecarStatus: status }),
     triggerSidecarRestart: () => {
         set({ sidecarStatus: 'checking' });
-        // @ts-ignore - window.electronAPI is injected via preload in the Electron process
-        if (window.electronAPI?.sidecar?.restart) {
-            window.electronAPI.sidecar.restart();
+        if ((window.electronAPI as any)?.sidecar?.restart) {
+            (window.electronAPI as any).sidecar.restart();
 
         } else {
             logger.warn('[SidecarSlice] Sidecar restart IPC not available');

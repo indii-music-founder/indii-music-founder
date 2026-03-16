@@ -9,7 +9,9 @@ export enum AppErrorCode {
     NOT_FOUND = 'NOT_FOUND',
     RATE_LIMITED = 'RATE_LIMITED',
     TIMEOUT = 'TIMEOUT',
-    CANCELLED = 'CANCELLED'
+    CANCELLED = 'CANCELLED',
+    CONTENT_FILTERED = 'CONTENT_FILTERED',
+    INVALID_INPUT = 'INVALID_INPUT'
 }
 
 export interface ErrorDetails {

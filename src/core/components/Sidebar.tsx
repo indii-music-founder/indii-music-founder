@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePowerState } from '@/core/hooks/usePowerState';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search, Settings } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+// Navigation debounce interval in ms — prevents Firestore b815 crash from rapid module switching
+const NAV_DEBOUNCE_MS = 150;
 
 export default function Sidebar() {
     const { t } = useTranslation();
@@ -28,6 +30,15 @@ export default function Sidebar() {
             logout: state.logout,
         }))
     );
+
+    // Navigation throttle to prevent rapid-fire module switching (Firestore b815 crash fix)
+    const lastNavTimeRef = useRef(0);
+    const throttledSetModule = useCallback((moduleId: ModuleId | 'dashboard' | 'observability' | 'settings') => {
+        const now = Date.now();
+        if (now - lastNavTimeRef.current < NAV_DEBOUNCE_MS) return;
+        lastNavTimeRef.current = now;
+        setModule(moduleId as any);
+    }, [setModule]);
 
     interface SidebarItem {
         id: ModuleId;
@@ -80,7 +91,7 @@ export default function Sidebar() {
                                     });
                                     return;
                                 }
-                                setModule(item.id);
+                                throttledSetModule(item.id);
                             }}
                             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
                             className={`
@@ -130,7 +141,7 @@ export default function Sidebar() {
                     <div className="overflow-hidden">
                         <h2 className="text-sm font-semibold text-gray-200 whitespace-nowrap">Studio Resources</h2>
                         <button
-                            onClick={() => setModule('dashboard')}
+                            onClick={() => throttledSetModule('dashboard')}
                             className="flex items-center gap-2 text-xs text-gray-500 mt-1 hover:text-white transition-colors"
                             data-testid="return-hq-btn"
                             aria-label="Return to HQ"
@@ -262,7 +273,7 @@ export default function Sidebar() {
                         </div>
 
 
-                        <div className="flex items-center justify-center pt-2 border-t border-white/5">
+                        <div className="flex items-center justify-center gap-3 pt-2 border-t border-white/5">
                             <button
                                 onClick={() => {
                                     const isEnabled = userProfile?.preferences?.observabilityEnabled ?? false;
@@ -276,6 +287,17 @@ export default function Sidebar() {
                             >
                                 <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
                                     <Activity size={14} /> Observability
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => throttledSetModule('settings')}
+                                className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'settings' ? 'text-cyan-400 bg-white/5 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
+                                title="Settings"
+                                aria-label="Settings"
+                                data-testid="settings-footer-btn"
+                            >
+                                <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
+                                    <Settings size={14} /> Settings
                                 </span>
                             </button>
                         </div>

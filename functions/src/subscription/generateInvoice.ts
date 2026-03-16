@@ -101,13 +101,13 @@ export const generateInvoice = onCall({
             lines: invoice.lines.data.map((line) => ({
                 description: line.description || '',
                 quantity: line.quantity || 1,
-                unitAmount: line.unit_amount_excluding_tax
-                    ? parseInt(line.unit_amount_excluding_tax)
+                unitAmount: (line as any).unit_amount_excluding_tax
+                    ? parseInt((line as any).unit_amount_excluding_tax)
                     : (line.amount || 0),
                 amount: line.amount || 0,
             })),
             subtotal: invoice.subtotal || 0,
-            tax: invoice.tax || 0,
+            tax: (invoice as any).tax || 0,
             total: invoice.total || 0,
             currency: invoice.currency || 'usd',
             pdfUrl: invoice.invoice_pdf || null,

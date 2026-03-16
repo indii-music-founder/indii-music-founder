@@ -460,8 +460,6 @@ class PrintfulProvider implements IPODProvider {
     }
 }
 
-import { agentZeroService } from '@/services/agent/AgentZeroService';
-
 // ============================================================================
 // Internal Provider (Fallback when no POD configured)
 // ============================================================================
@@ -641,20 +639,20 @@ class InternalProvider implements IPODProvider {
                 }
             }
 
-            // 2. Call the AI Image Edit tool via Agent Zero
-            // We use 'remix' mode essentially to apply the design.
+            // AI mockup generation via Firebase Cloud Function
+            const { httpsCallable } = await import('firebase/functions');
+            const { functionsWest1: functions } = await import('@/services/firebase');
+            const editImageFn = httpsCallable(functions, 'editImage');
+
             const prompt = `A cinematic studio mockup of a ${color} ${type}. The provided design is overlayed ${printArea === 'front' ? 'on the chest' : 'on the back'} with professional high-quality print texture. Hyper-realistic, 4k, retail presentation.`;
 
-            const result = await agentZeroService.callApi('/image_edit', {
-                prompt,
+            const result = await editImageFn({
                 image: imageBytes,
-                // We don't use a mask here, just letting the model contextualize the "remix"
-                // with the prompt guidance.
-            });
+                prompt,
+            }) as { data: { url?: string; visual?: string } };
 
-            if (result?.success && (result.url || result.data?.visual)) {
-                return result.url || result.data?.visual;
-            }
+            const url = result.data?.url || result.data?.visual;
+            if (url) return url;
 
             return designUrl; // Fallback
         } catch (error) {

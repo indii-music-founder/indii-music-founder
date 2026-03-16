@@ -20,7 +20,7 @@ function matchScore(brief: SyncBrief, track: CatalogTrack): number {
     // Mood overlap: Jaccard-like
     const overlap = track.moods.filter(m => brief.moods.includes(m)).length;
     const union = new Set([...track.moods, ...brief.moods]).size;
-    const moodScore = overlap / union;
+    const moodScore = union === 0 ? 0 : overlap / union;
 
     return Math.round((bpmScore * 0.4 + moodScore * 0.6) * 100);
 }
@@ -132,16 +132,20 @@ export function SyncBriefMatcher() {
     const [catalog, setCatalog] = useState<CatalogTrack[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [filter, setFilter] = useState<SyncBrief['type'] | 'All'>('All');
 
     const load = useCallback(async () => {
         try {
+            setError(null);
             const [loadedBriefs, loadedCatalog] = await Promise.all([
                 licensingService.getSyncBriefs(),
                 licensingService.getCatalogTracksForSync(),
             ]);
             setBriefs(loadedBriefs);
             setCatalog(loadedCatalog);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load sync briefs');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -156,6 +160,10 @@ export function SyncBriefMatcher() {
     };
 
     const filtered = filter === 'All' ? briefs : briefs.filter(b => b.type === filter);
+    const highMatchCount = useMemo(
+        () => briefs.filter(b => catalog.some(t => matchScore(b, t) >= 75)).length,
+        [briefs, catalog]
+    );
     const topBudget = briefs.reduce((top, b) => {
         const val = parseInt(b.budget.replace(/[^0-9]/g, ''), 10) || 0;
         return val > top ? val : top;
@@ -199,7 +207,7 @@ export function SyncBriefMatcher() {
             <div className="grid grid-cols-4 gap-3">
                 {[
                     { label: 'Open Briefs', value: loading ? '…' : briefs.length, icon: <Film size={13} />, color: 'text-indigo-400' },
-                    { label: 'High Match (75%+)', value: loading ? '…' : briefs.filter(b => catalog.some(t => matchScore(b, t) >= 75)).length, icon: <Star size={13} />, color: 'text-[#FFE135]' },
+                    { label: 'High Match (75%+)', value: loading ? '…' : highMatchCount, icon: <Star size={13} />, color: 'text-[#FFE135]' },
                     { label: 'Catalog Tracks', value: loading ? '…' : catalog.length, icon: <Music2 size={13} />, color: 'text-green-400' },
                     { label: 'Top Budget', value: loading ? '…' : topBudgetLabel, icon: <Zap size={13} />, color: 'text-purple-400' },
                 ].map(s => (
@@ -217,6 +225,10 @@ export function SyncBriefMatcher() {
                     <div className="flex items-center gap-2 text-[10px] text-neutral-500 py-6 justify-center">
                         <RefreshCw size={11} className="animate-spin" />
                         Loading briefs…
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-8 text-[11px] text-red-400">
+                        {error}
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-8 text-[11px] text-neutral-600">
