@@ -11,6 +11,7 @@
     "build:full": "npm run typecheck && npm run lint && vite build",
     "build:all": "npm run build:landing && npm run build:studio",
     "build:desktop": "bash scripts/build-desktop.sh release all",
+    "build:sidecar": "bash scripts/build_sidecar.sh",
     "build:desktop:linux": "bash scripts/build-desktop.sh linux",
     "build:desktop:mac": "bash scripts/build-desktop.sh release mac",
     "build:desktop:win": "bash scripts/build-desktop.sh release win",
