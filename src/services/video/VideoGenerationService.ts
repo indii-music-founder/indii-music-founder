@@ -212,11 +212,37 @@ export class VideoGenerationService {
         });
 
         // Build the image input if first frame is provided
-        const imageInput = options.firstFrame
-            ? { imageBytes: options.firstFrame, mimeType: 'image/jpeg' }
+        // The Veo API expects raw base64 bytes, NOT data URIs with the prefix.
+        let firstFrameBytes: string | undefined;
+        if (options.firstFrame) {
+            firstFrameBytes = options.firstFrame;
+            // Strip data URI prefix if present (e.g. "data:image/jpeg;base64,...")
+            if (firstFrameBytes.startsWith('data:')) {
+                firstFrameBytes = firstFrameBytes.split(',')[1] || firstFrameBytes;
+            }
+        }
+
+        const imageInput = firstFrameBytes
+            ? { imageBytes: firstFrameBytes, mimeType: 'image/jpeg' }
             : options.image
                 ? { imageBytes: options.image.imageBytes, mimeType: options.image.mimeType || 'image/jpeg' }
                 : undefined;
+
+        // Build lastFrame as the @google/genai SDK Image type.
+        // SDK expects: { imageBytes: string; mimeType: string } (flat, no nesting).
+        // See: node_modules/@google/genai/dist/genai.d.ts → Image_2
+        let lastFrameConfig: { imageBytes: string; mimeType: string } | undefined;
+        if (options.lastFrame) {
+            let lastFrameBytes = options.lastFrame;
+            // Strip data URI prefix if present
+            if (lastFrameBytes.startsWith('data:')) {
+                lastFrameBytes = lastFrameBytes.split(',')[1] || lastFrameBytes;
+            }
+            lastFrameConfig = {
+                imageBytes: lastFrameBytes,
+                mimeType: 'image/jpeg'
+            };
+        }
 
         // Generate video via direct @google/genai SDK (no Cloud Functions)
         try {
@@ -232,7 +258,7 @@ export class VideoGenerationService {
                     // Including them causes 400 errors. Do NOT add them back without API verification.
                     negativePrompt: options.negativePrompt,
                     referenceImages: options.referenceImages?.length ? options.referenceImages : undefined,
-                    lastFrame: options.lastFrame,
+                    lastFrame: lastFrameConfig,
                 }),
             });
 
@@ -270,6 +296,12 @@ export class VideoGenerationService {
                             'output.storagePath': uploadResult.path,
                             updatedAt: serverTimestamp(),
                         });
+
+                        // 🔑 Critical: Propagate the durable URL to in-memory Zustand state.
+                        // Without this, the store retains the ephemeral blob: URL and
+                        // video playback breaks after page refresh or blob GC.
+                        const { useStore: storeRef } = await import('@/core/store');
+                        storeRef.getState().updateHistoryItem(jobId, { url: uploadResult.url });
 
                         logger.info(`[VideoGeneration] ✅ Video persisted to Storage: ${uploadResult.url}`);
                     } catch (uploadError) {
