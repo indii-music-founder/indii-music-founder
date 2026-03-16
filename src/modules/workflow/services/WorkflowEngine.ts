@@ -134,9 +134,13 @@ export class WorkflowEngine {
 
             let contents;
             if (isImage) {
-                // Parse Data URL
-                const [header, base64Data] = prompt.split(',');
-                const mimeType = header.split(':')[1].split(';')[0];
+                // Parse Data URL securely
+                const dataUrlRegex = /^data:([^;]+);base64,(.+)$/;
+                const match = prompt.match(dataUrlRegex);
+                if (!match) {
+                    throw new Error('Invalid Data URL format provided for prompt image content');
+                }
+                const [, mimeType, base64Data] = match;
 
                 contents = [{
                     role: 'user' as const,
@@ -171,6 +175,9 @@ export class WorkflowEngine {
                 (_id, _status) => { /* logger.debug(`[Doc ${id}]: ${status}`) */ },
                 undefined // No fileContent currently available in workflow engine
             );
+            if (!result || !result.asset) {
+                throw new Error('Agentic workflow failed to produce a valid asset');
+            }
             return result.asset.content;
         } else {
             // Generic
@@ -184,7 +191,9 @@ export class WorkflowEngine {
     }
 
     public async saveWorkflow(id: string, name: string, description: string, viewport: { x: number; y: number; zoom: number }): Promise<void> {
-        const { saveWorkflowToStorage } = await import('@/services/storage/repository');
+        const { getWorkflowFromStorage, saveWorkflowToStorage } = await import('@/services/storage/repository');
+
+        const existingWorkflow = await getWorkflowFromStorage(id) as SavedWorkflow | undefined;
 
         const workflowData = {
             id,
@@ -193,7 +202,7 @@ export class WorkflowEngine {
             nodes: this.nodes,
             edges: this.edges,
             viewport,
-            createdAt: new Date().toISOString(), // In a real app, preserve original creation time
+            createdAt: existingWorkflow?.createdAt ?? new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
 
