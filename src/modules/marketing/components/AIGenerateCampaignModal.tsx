@@ -100,19 +100,14 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
         };
 
         try {
-            // Check for E2E Mock Plan
-            const mockPlan = (window as any).__MOCK_AI_PLAN__;
+            // E2E test hook — only active in dev/test builds, stripped in production
+            const mockPlan = import.meta.env.DEV ? (window as any).__MOCK_AI_PLAN__ : undefined;
 
             let plan: GeneratedCampaignPlan;
             if (mockPlan) {
-                // Use the mock plan if available (Maestro Testing)
-                Logger.info('CampaignModal', "Using Mock AI Plan:", mockPlan);
+                Logger.info('CampaignModal', "Using Mock AI Plan (DEV):", mockPlan);
                 plan = mockPlan;
-
-                // Clear the mock so the next generation (e.g. retry) doesn't use the same one unless re-injected
                 (window as any).__MOCK_AI_PLAN__ = undefined;
-
-                // Simulate delay
                 await new Promise(resolve => setTimeout(resolve, 500));
             } else {
                 plan = await CampaignAI.generateCampaign(brief);
