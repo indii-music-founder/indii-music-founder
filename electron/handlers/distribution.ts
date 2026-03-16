@@ -439,4 +439,61 @@ export const setupDistributionHandlers = () => {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
+
+    /**
+     * End-to-end release submission:
+     * QC validate → assign ISRCs → generate DDEX XML → SFTP upload
+     * Progress events are streamed back as 'distribution:submit-progress'.
+     */
+    ipcMain.handle('distribution:submit-release', async (event, releaseData: any) => {
+        try {
+            validateSender(event);
+
+            if (!releaseData || typeof releaseData !== 'object') {
+                throw new Error('Missing or invalid release data');
+            }
+
+            const storagePath = getStoragePath();
+
+            // Credentials for SFTP are injected via env vars, never CLI args
+            const env: Record<string, string | undefined> = {};
+            const sftpCfg = releaseData.sftpConfig;
+            if (sftpCfg?.password) {
+                env.SFTP_PASSWORD = sftpCfg.password;
+                // Redact from the payload before passing to the script
+                releaseData = { ...releaseData, sftpConfig: { ...sftpCfg, password: undefined } };
+            }
+            if (sftpCfg?.key) {
+                env.SFTP_KEY_PATH = sftpCfg.key;
+                releaseData = { ...releaseData, sftpConfig: { ...releaseData.sftpConfig, key: undefined } };
+            }
+
+            const result = await AgentSupervisor.execute(
+                'distribution',
+                'ddex_build.py',
+                [JSON.stringify(releaseData), '--storage-path', storagePath],
+                { timeoutMs: 300000 },  // 5 min for large releases
+                (progress, log) => {
+                    if (progress >= 0) {
+                        event.sender.send('distribution:submit-progress', { progress });
+                    }
+                    if (log) {
+                        // Forward structured step events to the renderer
+                        try {
+                            const parsed = JSON.parse(log);
+                            event.sender.send('distribution:submit-progress', parsed);
+                        } catch {
+                            event.sender.send('distribution:submit-progress', { log });
+                        }
+                    }
+                },
+                env,
+                [0]  // Redact release JSON (index 0) from logs
+            );
+
+            return { success: result.status === 'SUCCESS', report: result };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
 };

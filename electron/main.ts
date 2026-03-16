@@ -19,6 +19,7 @@ import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { configureSecurity } from './security';
+import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
 
@@ -162,6 +163,55 @@ const createWindow = () => {
     });
 };
 
+/**
+ * Sidecar Health Monitor
+ */
+let healthCheckInterval: NodeJS.Timeout | null = null;
+let sidecarFailureCount = 0;
+const MAX_SIDECAR_FAILURES = 3;
+let autoRestartCount = 0;
+const MAX_AUTO_RESTARTS = 3;
+
+const checkSidecarHealth = async (window: BrowserWindow) => {
+    try {
+        // Fetch is available in Node.js 18+ (Project requires Node 22)
+        const response = await fetch('http://localhost:50080/health');
+        if (response.ok) {
+            sidecarFailureCount = 0;
+            autoRestartCount = 0; // Reset restart count on success
+            window.webContents.send('sidecar:status-update', 'online');
+        } else {
+            throw new Error('Health check response not OK');
+        }
+    } catch (err) {
+        sidecarFailureCount++;
+        log.warn(`[Sidecar] Health check failed (${sidecarFailureCount}/${MAX_SIDECAR_FAILURES})`);
+        window.webContents.send('sidecar:status-update', 'offline');
+
+        if (sidecarFailureCount >= MAX_SIDECAR_FAILURES && autoRestartCount < MAX_AUTO_RESTARTS) {
+            log.info('[Sidecar] Attempting automatic restart...');
+            sidecarFailureCount = 0;
+            autoRestartCount++;
+
+            showNotification('System Service Issue', 'The Python back-end seems to have crashed. Attempting auto-restart...');
+
+            SidecarService.restartSystem().catch(restartErr => {
+                log.error(`[Sidecar] Auto-restart failed: ${restartErr}`);
+            });
+        }
+    }
+};
+
+const startHealthMonitoring = (window: BrowserWindow) => {
+    if (healthCheckInterval) clearInterval(healthCheckInterval);
+
+    // Initial check
+    checkSidecarHealth(window);
+
+    // 30s interval
+    healthCheckInterval = setInterval(() => {
+        checkSidecarHealth(window);
+    }, 30000);
 const startHealthMonitoring = (_window: BrowserWindow) => {
     // Sidecar health polling removed — Docker container is no longer required.
     // Native GenAI (Gemini) and Firebase Cloud Functions are the execution runtime.
@@ -287,6 +337,27 @@ if (!gotTheLock) {
         registerSecurityHandlers();
         registerVideoHandlers();
         registerSonicBridgeHandlers();
+
+        // Register Sidecar Handlers
+        ipcMain.handle('sidecar:restart', async () => {
+            log.info('[Main] Manual sidecar restart requested via IPC');
+            const result = await SidecarService.restartSystem();
+
+            // Trigger immediate health check after restart if a window exists
+            const windows = BrowserWindow.getAllWindows();
+            if (windows.length > 0) {
+                // Wait 5s for container to fully wrap up its internal init
+                setTimeout(() => checkSidecarHealth(windows[0]), 5000);
+            }
+
+            return result;
+        });
+
+
+        // Ensure AI Services are running
+        SidecarService.ensureStarted().catch(err => {
+            log.error(`[Main] Initial Docker startup failed: ${err.message}`);
+        });
         registerMobileRemoteHandlers();
 
         createWindow();
@@ -326,6 +397,7 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
     isQuitting = true;
+    await SidecarService.stopSystem();
     stopMobileRemoteServer();
 });
 
