@@ -14,7 +14,6 @@ export const createSidecarSlice: StateCreator<SidecarSlice> = (set) => ({
     setSidecarStatus: (status) => set({ sidecarStatus: status }),
     triggerSidecarRestart: () => {
         set({ sidecarStatus: 'checking' });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((window.electronAPI as any)?.sidecar?.restart) {
             (window.electronAPI as any).sidecar.restart();
 
