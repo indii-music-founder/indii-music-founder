@@ -3,9 +3,34 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { formatCurrency } from '@/lib/utils';
 import { motion } from 'motion/react';
 
+// Actual distributor commission rates (0 = flat-fee models, revenue not percentage-based)
+const DISTRIBUTOR_FEE_RATES: Record<string, number> = {
+    distrokid:      0.00, // Annual flat fee, 0% commission
+    tunecore:       0.00, // Annual flat fee per release
+    cdbaby:         0.09, // 9% of streaming revenue
+    unitedmasters:  0.10, // 10% (Select tier) / 0% (Pro flat tier)
+    onerpm:         0.15, // 15%
+    believe:        0.15, // 15%
+    amuse:          0.00, // Free tier 0%, Boost tier flat fee
+    soundrop:       0.15, // 15%
+    ingrooves:      0.15, // ~15%
+    // Direct DSPs (indiiOS delivers as first-party distributor)
+    spotify:        0.00,
+    apple_music:    0.00,
+    youtube_music:  0.00,
+    amazon_music:   0.00,
+};
+
+// Effective US income + self-employment tax rate for independent music creators
+const DEFAULT_TAX_RATE = 0.22;
+
 interface WaterfallChartProps {
     grossRevenue: number;
     netRevenue: number;
+    /** Distributor ID from the release deployments record (e.g. 'distrokid', 'cdbaby') */
+    distributorId?: string;
+    /** Fraction of gross already allocated to collaborators via split sheets (0–1) */
+    splitsFraction?: number;
 }
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -23,57 +48,54 @@ const CustomTooltip = ({ active, payload }: any) => {
     return null;
 };
 
-export const WaterfallChart: React.FC<WaterfallChartProps> = ({ grossRevenue, netRevenue }) => {
-    // Generate waterfall data from the gross and net parameters
+export const WaterfallChart: React.FC<WaterfallChartProps> = ({
+    grossRevenue,
+    netRevenue,
+    distributorId,
+    splitsFraction = 0,
+}) => {
     const data = useMemo(() => {
-        // Fallback amounts if data isn't provided realistically
         const gross = grossRevenue || 0;
         const net = netRevenue || 0;
 
-        // Let's create sensible mock splits based on the difference
-        const difference = gross - net;
-        const distributorFee = difference * 0.3; // 30% of deductions
-        const taxes = difference * 0.2; // 20% of deductions
-        const splits = difference * 0.5; // 50% to other collaborators
+        // Resolve real distributor commission rate
+        const distKey = (distributorId ?? '').toLowerCase();
+        const distRate = DISTRIBUTOR_FEE_RATES[distKey] ?? 0.09; // 9% default (CDBaby-like)
+        const distributorFee = gross * distRate;
 
-        return [
-            {
-                name: 'Gross Revenue',
-                range: [0, gross],
-                value: gross,
-                color: '#a855f7', // Purple
-                isTotal: true
-            },
-            {
-                name: 'Distributor (15%)',
-                range: [gross - distributorFee, gross],
-                value: -distributorFee,
-                color: '#ef4444', // Red
-                isTotal: false
-            },
-            {
-                name: 'Taxes',
-                range: [gross - distributorFee - taxes, gross - distributorFee],
-                value: -taxes,
-                color: '#f97316', // Orange
-                isTotal: false
-            },
-            {
-                name: 'Splits',
-                range: [net, gross - distributorFee - taxes],
-                value: -splits,
-                color: '#eab308', // Yellow
-                isTotal: false
-            },
-            {
-                name: 'Net Profit',
-                range: [0, net],
-                value: net,
-                color: '#22c55e', // Green
-                isTotal: true
-            }
+        // Tax on remaining post-distributor gross
+        const postDist = gross - distributorFee;
+        const taxes = postDist * DEFAULT_TAX_RATE;
+
+        // Collaborator splits from split sheet; clamp so we never go below 0
+        const splits = Math.min(gross * splitsFraction, Math.max(0, postDist - taxes - net));
+
+        // Any residual deduction unaccounted for (rounding, platform fees, etc.)
+        const residual = Math.max(0, gross - distributorFee - taxes - splits - net);
+        const displayNet = net > 0 ? net : Math.max(0, gross - distributorFee - taxes - splits - residual);
+
+        const distLabel = distKey && DISTRIBUTOR_FEE_RATES[distKey] !== undefined
+            ? `${distKey.charAt(0).toUpperCase()}${distKey.slice(1)} (${Math.round(distRate * 100)}%)`
+            : `Distributor (${Math.round(distRate * 100)}%)`;
+
+        const bars = [
+            { name: 'Gross Revenue',            range: [0, gross],                                             value: gross,           color: '#a855f7', isTotal: true  },
+            { name: distLabel,                   range: [gross - distributorFee, gross],                        value: -distributorFee, color: '#ef4444', isTotal: false },
+            { name: `Taxes (~${Math.round(DEFAULT_TAX_RATE * 100)}%)`, range: [gross - distributorFee - taxes, gross - distributorFee], value: -taxes, color: '#f97316', isTotal: false },
         ];
-    }, [grossRevenue, netRevenue]);
+
+        if (splits > 0.01) {
+            const after = gross - distributorFee - taxes;
+            bars.push({ name: 'Collaborator Splits', range: [after - splits, after], value: -splits, color: '#eab308', isTotal: false });
+        }
+        if (residual > 0.01) {
+            const after = gross - distributorFee - taxes - splits;
+            bars.push({ name: 'Other Fees', range: [after - residual, after], value: -residual, color: '#6b7280', isTotal: false });
+        }
+
+        bars.push({ name: 'Net Profit', range: [0, displayNet], value: displayNet, color: '#22c55e', isTotal: true });
+        return bars;
+    }, [grossRevenue, netRevenue, distributorId, splitsFraction]);
 
     return (
         <div className="flex flex-col h-full w-full">

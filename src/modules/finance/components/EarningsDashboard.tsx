@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFinance } from '../hooks/useFinance';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RevenueChart } from './RevenueChart';
@@ -101,6 +103,16 @@ export const EarningsDashboard: React.FC = () => {
     // Custom hook
     const { earningsSummary, earningsLoading: loading, earningsError: error } = useFinance();
     const [activeTab, setActiveTab] = useState('overview');
+
+    // Derive primary distributor ID from first active release deployment
+    const releases = useStore(useShallow((s) => s.releases));
+    const primaryDistributorId = useMemo(() => {
+        for (const release of releases) {
+            const keys = Object.keys(release.deployments ?? {});
+            if (keys.length > 0) return keys[0];
+        }
+        return undefined;
+    }, [releases]);
 
     if (loading) return (
         <div className="flex items-center justify-center h-96">
@@ -234,6 +246,7 @@ export const EarningsDashboard: React.FC = () => {
                         <WaterfallChart
                             grossRevenue={earningsSummary.totalGrossRevenue || 0}
                             netRevenue={earningsSummary.totalNetRevenue || 0}
+                            distributorId={primaryDistributorId}
                         />
                     </motion.div>
                 </TabsContent>
