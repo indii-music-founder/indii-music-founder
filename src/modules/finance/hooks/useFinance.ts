@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
@@ -20,6 +20,13 @@ export function useFinance() {
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [expensesLoading, setExpensesLoading] = useState(true);
 
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     // Subscribe to Earnings
     useEffect(() => {
         if (!userProfile?.id) {
@@ -30,6 +37,7 @@ export function useFinance() {
 
         setEarningsLoading(true);
         const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data: any) => {
+            if (!isMountedRef.current) return;
             setEarningsSummary(data);
             setEarningsLoading(false);
             if (!data) {
@@ -50,6 +58,7 @@ export function useFinance() {
 
         setExpensesLoading(true);
         const unsubscribe = financeService.subscribeToExpenses(userProfile.id, (data: Expense[]) => {
+            if (!isMountedRef.current) return;
             setExpenses(data);
             setExpensesLoading(false);
         });

@@ -215,6 +215,48 @@ service cloud.firestore {
       match /ingestionEvents/{eventId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Generated Images (MetadataPersistenceService — image generation metadata)
+      match /generated_images/{imageId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Generated Videos (MetadataPersistenceService — video generation metadata)
+      match /generated_videos/{videoId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Generic Assets (MetadataPersistenceService — fallback asset metadata)
+      match /assets/{assetId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Knowledge Base (MetadataPersistenceService — document metadata)
+      match /knowledge_base/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Projects subcollection (MetadataPersistenceService — project metadata)
+      match /projects/{projectId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Email Integration: connected account metadata (user-readable/writable)
+      match /emailAccounts/{accountId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Email Integration: OAuth tokens (server-only — NEVER client-readable)
+      // Refresh tokens are stored here by Cloud Functions only.
+      // Client reads are blocked; token refresh goes through Cloud Functions.
+      match /emailTokens/{tokenId} {
+        allow read, write: if false;
+      }
+
+      // Cross-device Handoff Settings (HandoffService — session continuity)
+      match /settings/{settingId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // ========================================
@@ -264,9 +306,14 @@ service cloud.firestore {
     // ========================================
 
     match /videoJobs/{jobId} {
-      allow read: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
-      allow create: if isRequestOrgMember() || (request.resource.data.orgId == 'personal' && request.resource.data.userId == request.auth.uid);
-      allow update, delete: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
+      // Owner-based access: users can always read/write their own video jobs
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Org-based access: org members can access org video jobs
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
     }
 
     // ========================================
@@ -659,6 +706,35 @@ service cloud.firestore {
       allow create: if isVerifiedUser() && request.resource.data.buyerId == request.auth.uid;
       // Purchases are immutable once created
       allow update, delete: if false;
+    }
+
+    // ========================================
+    // AUDIT LOGS (read-only for authenticated users)
+    // Written by Cloud Functions / Admin SDK only
+    // ========================================
+
+    match /audit_logs/{logId} {
+      // Any authenticated user can read audit logs
+      allow read: if isAuthenticated();
+      // Only server-side (Admin SDK) can write — never client
+      allow write: if false;
+    }
+
+    // ========================================
+    // PUSH NOTIFICATION TOKENS (user-scoped)
+    // ========================================
+
+    match /notification_tokens/{tokenId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // CROSS-DEVICE HANDOFF (user-scoped subcollection)
+    // ========================================
+
+    match /users/{userId}/handoff/{stateId} {
+      allow read, write: if isOwner(userId);
     }
 
     // ========================================

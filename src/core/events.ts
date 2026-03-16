@@ -7,6 +7,7 @@ export type EventType =
     | 'TASK_COMPLETED'
     | 'TASK_FAILED'
     | 'ASSET_FINALIZED'
+    | 'DISTRIBUTION_RELAY_READY'
     | 'SYNC_QUEUE_CHANGE';
 
 export interface AgentActionEvent {

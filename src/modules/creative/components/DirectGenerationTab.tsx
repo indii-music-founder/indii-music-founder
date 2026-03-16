@@ -72,7 +72,9 @@ export default function DirectGenerationTab() {
                     prompt: finalPrompt,
                     resolution: studioControls.resolution,
                     aspectRatio: studioControls.aspectRatio,
-                    duration: 5, // Default short clip
+                    duration: Math.max(6, studioControls.duration || 6), // Veo API requires >= 6
+                    durationSeconds: Math.max(6, studioControls.duration || 6),
+                    model: studioControls.model, // Will be resolved by FirebaseAIService
                     fps: 24,
                     orgId: 'personal' // Force personal for direct test
                 });

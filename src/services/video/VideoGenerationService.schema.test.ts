@@ -20,7 +20,8 @@ const mocks = vi.hoisted(() => ({
   serverTimestamp: vi.fn(), currentOrganizationId: 'org-123' }))
     },
     firebaseAI: {
-        analyzeImage: vi.fn()
+        analyzeImage: vi.fn(),
+        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4')
     },
     uuid: vi.fn(() => 'mock-uuid')
 }));
@@ -36,7 +37,10 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
-    getFirestore: vi.fn()
+    getFirestore: vi.fn(),
+    setDoc: vi.fn(() => Promise.resolve()),
+    updateDoc: vi.fn(() => Promise.resolve()),
+    collection: vi.fn(() => ({ id: 'mock-coll' })),
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -207,36 +211,14 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 secretKey: 'should-not-be-here'
             };
 
-            // Setup mock to verify what is actually passed to the cloud function
-            const triggerMock = vi.fn().mockResolvedValue({ data: { jobId: 'job-123' } });
-            mocks.httpsCallable.mockReturnValue(triggerMock);
-
+            // Setup mock — the service now calls firebaseAI.generateVideo directly
+            // (no Cloud Functions trigger involved)
 
             await service.generateVideo(extraOptions);
 
-            // Check what was passed to triggerVideoJob
-            // The service destructs options and passes them.
-            // We want to ensure 'secretKey' didn't make it to the backend function
-            // OR if it did, the service didn't crash locally.
-            // Ideally Zod cleans it.
-
-            // Actually, VideoGenerationService passes ...options to triggerVideoGeneration
-            // which passes ...options to the cloud function.
-            // If Zod validation passes (it ignores unknown keys by default), the extra key MIGHT still be passed
-            // because the service uses the original 'options' object in triggerVideoGeneration({ ...options })
-            // UNLESS it uses the PARSED output.
-
-            // Let's check the code:
-            // const validation = VideoGenerationOptionsSchema.safeParse(options);
-            // ...
-            // await this.triggerVideoGeneration({ ...options, ... });
-
-            // Ah! It uses 'options' (the raw input), NOT 'validation.data'.
-            // This means extra fields ARE passed to the backend.
-            // Forge Insight: This is a potential issue if we want strict schema compliance passed to backend.
-            // However, for this test, we just want to ensure it doesn't crash.
-
-            expect(triggerMock).toHaveBeenCalled();
+            // The service should not crash with extra fields.
+            // firebaseAI.generateVideo should have been called via the direct SDK path.
+            expect(mocks.firebaseAI.generateVideo).toHaveBeenCalled();
         });
     });
 });

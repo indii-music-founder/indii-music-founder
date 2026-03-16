@@ -5,7 +5,6 @@ import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
 import CommandBar from './components/CommandBar';
-import ChatOverlay from './components/ChatOverlay';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -79,6 +78,9 @@ const GhostCapture = lazy(() => import('../modules/capture/GhostCapture'));
 const MemoryDashboard = lazy(() => import('../modules/memory/MemoryDashboard'));
 const MarketplaceModule = lazy(() => import('../modules/marketplace'));
 const SelectOrg = lazy(() => import('../modules/select-org/SelectOrg'));
+const SettingsPanel = lazy(() => import('../modules/settings/SettingsPanel'));
+const MobileRemote = lazy(() => import('../modules/mobile-remote/MobileRemote'));
+const GrowthIntelligenceDashboard = lazy(() => import('../modules/analytics/GrowthIntelligenceDashboard'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -116,6 +118,9 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'investor': InvestorPortal,
     'capture': GhostCapture,
     'memory': MemoryDashboard,
+    'settings': SettingsPanel,
+    'mobile-remote': MobileRemote,
+    'analytics': GrowthIntelligenceDashboard,
 };
 
 // ============================================================================
@@ -198,8 +203,36 @@ function useAppInitialization() {
                 if (isMounted) alwaysOnMemoryEngine.start(user.uid);
             }).catch(err => logger.error('Failed to load AlwaysOnMemoryEngine', err));
 
+            // Initialize Push Notification foreground listener — shows toasts for incoming push messages
+            let pushUnsub: (() => void) | null = null;
+            import('@/services/notifications/PushNotificationService').then(({ pushNotificationService }) => {
+                if (isMounted) {
+                    pushUnsub = pushNotificationService.onForegroundMessage((payload) => {
+                        logger.info('[App] Push notification received in foreground:', payload?.notification?.title);
+                    });
+                }
+            }).catch(err => logger.warn('Push notifications unavailable:', err));
+
+            // Initialize Cross-Device Handoff — syncs active route to Firestore
+            let handoffUnsub: (() => void) | null = null;
+            import('@/services/collaboration/HandoffService').then(({ handoffService }) => {
+                if (isMounted) {
+                    // Sync initial state
+                    const currentModule = useStore.getState().currentModule;
+                    handoffService.syncState({ activeRoute: currentModule });
+
+                    // Listen for remote handoff from another device
+                    handoffUnsub = handoffService.listenForRemoteHandoff((state) => {
+                        logger.info('[App] Remote handoff detected:', state.activeRoute);
+                        // Could show a toast here to let user resume from another device
+                    });
+                }
+            }).catch(err => logger.warn('Handoff service unavailable:', err));
+
             return () => {
                 isMounted = false;
+                if (pushUnsub) pushUnsub();
+                if (handoffUnsub) handoffUnsub();
                 import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
                     proactiveService.dispose();
                 }).catch(() => { /* module already unloaded */ });
@@ -506,14 +539,6 @@ export default function App() {
                                 {showChrome && !isAnyPhone && (
                                     <ErrorBoundary>
                                         <CommandBar />
-                                    </ErrorBoundary>
-                                )}
-
-                                {/* Floating Chat Overlay — draggable, resizable */}
-                                {/* On mobile agent module, chat is inline in AgentDashboard — skip overlay */}
-                                {isAgentOpen && !(isAnyPhone && currentModule === 'agent') && (
-                                    <ErrorBoundary>
-                                        <ChatOverlay onClose={toggleAgentWindow} />
                                     </ErrorBoundary>
                                 )}
 

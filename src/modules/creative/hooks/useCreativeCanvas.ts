@@ -308,13 +308,33 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const saveCanvas = async () => {
         if (!item) return;
-        canvasOps.saveCanvas(`edited-${item.id}.png`);
+        // 1. Trigger browser download (preserve existing UX)
+        const dataUrl = canvasOps.saveCanvas(`edited-${item.id}.png`);
+
         try {
+            // 2. Upload blob to Firebase Storage as a persistent asset
             const blob = await canvasOps.getBlob();
-            if (blob) await saveAssetToStorage(blob);
+            if (blob) {
+                const assetId = await saveAssetToStorage(blob);
+
+                // 3. Create a HistoryItem so the export appears in the gallery
+                const { addToHistory } = useStore.getState();
+                const canvasAsset: HistoryItem = {
+                    id: assetId,
+                    url: dataUrl || item.url,
+                    prompt: `Canvas edit of: ${item.prompt || 'untitled'}`,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId,
+                    origin: 'canvas-export',
+                };
+                addToHistory(canvasAsset);
+            }
+
+            // 4. Persist canvas state (annotations / layers) for reload
             const json = await canvasOps.toJSON();
             if (json) await saveCanvasStateToStorage(item.id, json);
-            toast.success('Stored in cloud!');
+            toast.success('Saved to gallery & cloud!');
         } catch {
             toast.warning('Stored to disk only.');
         }

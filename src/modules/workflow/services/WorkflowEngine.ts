@@ -46,20 +46,22 @@ export class WorkflowEngine {
         this.blackboard.clear();
         this.executionQueue = [];
 
-        const startNodes = this.nodes.filter(n => n.type === 'inputNode');
-        for (const node of startNodes) {
-            this.executionQueue.push({
-                nodeId: node.id,
-                inputs: { prompt: (node.data as InputNodeData).prompt },
-            });
-        }
+        try {
+            const startNodes = this.nodes.filter(n => n.type === 'inputNode');
+            for (const node of startNodes) {
+                this.executionQueue.push({
+                    nodeId: node.id,
+                    inputs: { prompt: (node.data as InputNodeData).prompt },
+                });
+            }
 
-        while (this.executionQueue.length > 0) {
-            const task = this.executionQueue.shift()!;
-            await this.executeNode(task);
+            while (this.executionQueue.length > 0) {
+                const task = this.executionQueue.shift()!;
+                await this.executeNode(task);
+            }
+        } finally {
+            this.isRunning = false;
         }
-
-        this.isRunning = false;
     }
 
     /** Resolve a pending Gatekeeper node.  Call from the UI approve/reject buttons. */
@@ -77,7 +79,10 @@ export class WorkflowEngine {
         description: string,
         viewport: { x: number; y: number; zoom: number }
     ): Promise<void> {
-        const { saveWorkflowToStorage } = await import('@/services/storage/repository');
+        const { getWorkflowFromStorage, saveWorkflowToStorage } = await import('@/services/storage/repository');
+
+        const existingWorkflow = await getWorkflowFromStorage(id) as SavedWorkflow | undefined;
+
         await saveWorkflowToStorage({
             id,
             name,
@@ -85,7 +90,7 @@ export class WorkflowEngine {
             nodes: this.nodes,
             edges: this.edges,
             viewport,
-            createdAt: new Date().toISOString(),
+            createdAt: existingWorkflow?.createdAt ?? new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         });
     }
@@ -267,6 +272,9 @@ export class WorkflowEngine {
                     prompt, userProfile, null,
                     () => { }, () => { }, undefined
                 );
+                if (!result || !result.asset) {
+                    throw new Error('Agentic workflow failed to produce a valid asset');
+                }
                 return result.asset.content;
             }
 
@@ -298,7 +306,6 @@ export class WorkflowEngine {
                         const dataStr = typeof inputs.data === 'string' ? inputs.data : JSON.stringify(inputs.data);
                         // Replace token $data with the stringified value
                         const expr = condition.replace(/\$data/g, JSON.stringify(dataStr));
-                        // eslint-disable-next-line no-new-func
                         result = Boolean(new Function(`return (${expr})`)());
                     } catch {
                         result = Boolean(inputs.data);

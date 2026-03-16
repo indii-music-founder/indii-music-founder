@@ -196,7 +196,6 @@ export class CEOSyncService {
             const batch = writeBatch(db);
             for (const docData of documents) {
                 const docId = docData._docId as string;
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { _docId, ...cleanData } = docData;
                 const docRef = doc(db, collectionName, docId);
                 batch.set(docRef, {

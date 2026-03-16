@@ -4,13 +4,12 @@ import os
 import xml.etree.ElementTree as ET
 
 # Add current directory to path
-sys.path.append(os.getcwd())
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.getcwd())
 
 try:
-    from execution.distribution.ddex_generator import DDEXGenerator
+    from ddex_generator import DDEXGenerator
 except ImportError:
-    # Fallback if running from root
-    sys.path.append(os.path.join(os.getcwd(), 'execution', 'distribution'))
     from execution.distribution.ddex_generator import DDEXGenerator
 
 class TestDDEXStructure(unittest.TestCase):

@@ -18,7 +18,7 @@ import { GoogleGenAI } from '@google/genai';
 import { FUNCTION_AI_MODELS } from '../config/models';
 import { getGeminiApiKey } from '../config/secrets';
 
-const db = admin.firestore();
+const getDb = () => admin.firestore();
 
 // ============================================================================
 // Types
@@ -102,13 +102,13 @@ export const executeMilestoneFn = (inngestClient: any) =>
                 // Step 1: Mark milestone as executing in Firestore
                 // --------------------------------------------------------
                 await step.run('mark-executing', async () => {
-                    const timelineRef = db
+                    const timelineRef = getDb()
                         .collection('timelines')
                         .doc(userId)
                         .collection('items')
                         .doc(timelineId);
 
-                    await db.runTransaction(async (transaction) => {
+                    await getDb().runTransaction(async (transaction: any) => {
                         const snap = await transaction.get(timelineRef);
                         if (!snap.exists) {
                             throw new Error(`Timeline ${timelineId} not found for user ${userId}`);
@@ -197,7 +197,7 @@ export const executeMilestoneFn = (inngestClient: any) =>
                 // Step 3: Store result and mark completed
                 // --------------------------------------------------------
                 await step.run('mark-completed', async () => {
-                    const timelineRef = db
+                    const timelineRef = getDb()
                         .collection('timelines')
                         .doc(userId)
                         .collection('items')
@@ -206,7 +206,7 @@ export const executeMilestoneFn = (inngestClient: any) =>
                     let completedCount = 0;
                     let totalMilestones = 0;
 
-                    await db.runTransaction(async (transaction) => {
+                    await getDb().runTransaction(async (transaction: any) => {
                         const snap = await transaction.get(timelineRef);
                         if (!snap.exists) {
                             throw new Error(`Timeline ${timelineId} not found`);
@@ -262,7 +262,7 @@ export const executeMilestoneFn = (inngestClient: any) =>
                 // Step 4: Store execution record for audit trail
                 // --------------------------------------------------------
                 await step.run('write-audit-log', async () => {
-                    await db.collection('timelineExecutionLogs').add({
+                    await getDb().collection('timelineExecutionLogs').add({
                         userId,
                         timelineId,
                         milestoneId,
@@ -291,13 +291,13 @@ export const executeMilestoneFn = (inngestClient: any) =>
                 // Mark the milestone as failed in Firestore
                 await step.run('mark-failed', async () => {
                     try {
-                        const timelineRef = db
+                        const timelineRef = getDb()
                             .collection('timelines')
                             .doc(userId)
                             .collection('items')
                             .doc(timelineId);
 
-                        await db.runTransaction(async (transaction) => {
+                        await getDb().runTransaction(async (transaction: any) => {
                             const snap = await transaction.get(timelineRef);
                             if (!snap.exists) return;
 
@@ -318,7 +318,7 @@ export const executeMilestoneFn = (inngestClient: any) =>
                         });
 
                         // Write failure to audit log (outside transaction — independent write)
-                        await db.collection('timelineExecutionLogs').add({
+                        await getDb().collection('timelineExecutionLogs').add({
                             userId,
                             timelineId,
                             milestoneId,
