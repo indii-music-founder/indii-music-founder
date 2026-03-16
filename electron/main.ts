@@ -212,9 +212,6 @@ const startHealthMonitoring = (window: BrowserWindow) => {
     healthCheckInterval = setInterval(() => {
         checkSidecarHealth(window);
     }, 30000);
-const startHealthMonitoring = (_window: BrowserWindow) => {
-    // Sidecar health polling removed — Docker container is no longer required.
-    // Native GenAI (Gemini) and Firebase Cloud Functions are the execution runtime.
 };
 
 /**
@@ -395,7 +392,7 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
-app.on('will-quit', () => {
+app.on('will-quit', async () => {
     isQuitting = true;
     await SidecarService.stopSystem();
     stopMobileRemoteServer();

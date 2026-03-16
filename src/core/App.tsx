@@ -5,7 +5,6 @@ import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
 import CommandBar from './components/CommandBar';
-import ChatOverlay from './components/ChatOverlay';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -540,14 +539,6 @@ export default function App() {
                                 {showChrome && !isAnyPhone && (
                                     <ErrorBoundary>
                                         <CommandBar />
-                                    </ErrorBoundary>
-                                )}
-
-                                {/* Floating Chat Overlay — draggable, resizable */}
-                                {/* On mobile agent module, chat is inline in AgentDashboard — skip overlay */}
-                                {isAgentOpen && !(isAnyPhone && currentModule === 'agent') && (
-                                    <ErrorBoundary>
-                                        <ChatOverlay onClose={toggleAgentWindow} />
                                     </ErrorBoundary>
                                 )}
 

@@ -528,7 +528,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             throw new Error('Electron environment required for release submission');
         }
 
-        const taskId = await this.createTask('ddex_delivery', `Submit: ${releaseData.title}`);
+        const taskId = await this.createTask('DELIVERY', `Submit: ${releaseData.title}`);
         await this.updateTask(taskId, { status: 'RUNNING', subtext: 'Starting pipeline…' });
 
         let cleanup: (() => void) | undefined;

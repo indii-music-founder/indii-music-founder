@@ -25,6 +25,11 @@ import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 // import { VertexAI } from "@google-cloud/vertexai";
 import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream if needed, but primary is Vertex
 
+// Polyfill for v1 Firebase Functions migrating to modern Node/Gen 2
+if (!process.env.GCLOUD_PROJECT) {
+    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indiios-v-1-1";
+}
+
 // Initialize Firebase Admin
 admin.initializeApp();
 

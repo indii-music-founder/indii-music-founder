@@ -207,6 +207,11 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ── Step 7: Extract video from response ────────────────────────────
         const response = operation.response as any;
         if (!response) {
+            const opAny = operation as any;
+            if (opAny.error) {
+                console.error(`[VideoGenDirect] Vertex AI Operation Error details:`, JSON.stringify(opAny.error, null, 2));
+                throw new Error(`Vertex AI API Error: ${opAny.error.message || JSON.stringify(opAny.error)}`);
+            }
             throw new Error("No response in completed operation");
         }
 
@@ -227,22 +232,11 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         const durationSec = config.durationSeconds || 5;
         const resolutionStr = config.resolution || "720p";
 
-        // Try to get video URI directly
-        if (video?.uri) {
-            videoUrl = video.uri;
-            console.log(`[VideoGenDirect] Got video URI: ${videoUrl}`);
+        // ALWAYS download the video and upload to Firebase Storage, 
+        // as raw Google API URIs require authentication to play in the browser.
 
-            // Convert gs:// to HTTPS if needed
-            if (videoUrl.startsWith('gs://')) {
-                const pathParts = videoUrl.replace('gs://', '');
-                const bucketName = pathParts.split('/')[0];
-                const objectPath = pathParts.split('/').slice(1).join('/');
-                videoUrl = `https://storage.googleapis.com/${bucketName}/${objectPath}`;
-            }
-        }
-
-        // If no direct URI, check for bytesBase64Encoded inline
-        if (!videoUrl && video?.bytesBase64Encoded) {
+        // Check for bytesBase64Encoded inline first
+        if (video?.bytesBase64Encoded) {
             console.log(`[VideoGenDirect] Got inline base64 video, uploading to Storage...`);
             const bucket = admin.storage().bucket();
             const filePath = `videos/${userId}/${jobId}.mp4`;
@@ -252,10 +246,10 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
                 public: true
             });
             videoUrl = file.publicUrl();
-            console.log(`[VideoGenDirect] Uploaded to Firebase Storage: ${videoUrl}`);
+            console.log(`[VideoGenDirect] Uploaded to Firebase Storage from inline bytes: ${videoUrl}`);
         }
 
-        // Last resort: try to download via SDK file API
+        // Otherwise, download via SDK file API
         if (!videoUrl && video?.name) {
             console.log(`[VideoGenDirect] Attempting SDK file download for: ${video.name}`);
             try {
@@ -276,11 +270,40 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
                 console.log(`[VideoGenDirect] Downloaded via SDK and uploaded: ${videoUrl}`);
 
                 // Clean up tmp
-                fs.unlinkSync(tmpPath);
+                if (fs.existsSync(tmpPath)) {
+                    fs.unlinkSync(tmpPath);
+                }
             } catch (downloadErr: any) {
                 console.error(`[VideoGenDirect] SDK file download failed:`, downloadErr);
             }
         }
+
+        // Fallback: If it gave us a URI, try fetching it directly with the API key or ADC
+        if (!videoUrl && video?.uri) {
+            console.log(`[VideoGenDirect] Attempting fetch fallback from URI: ${video.uri}`);
+            try {
+                const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+                const fetchUrl = apiKey && !video.uri.includes('key=') ? `${video.uri}&key=${apiKey}` : video.uri;
+                const res = await fetch(fetchUrl);
+                if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+                const arrayBuf = await res.arrayBuffer();
+                const buffer = Buffer.from(arrayBuf);
+                
+                const bucket = admin.storage().bucket();
+                const filePath = `videos/${userId}/${jobId}.mp4`;
+                const file = bucket.file(filePath);
+                await file.save(buffer, {
+                    metadata: { contentType: 'video/mp4' },
+                    public: true
+                });
+                videoUrl = file.publicUrl();
+                console.log(`[VideoGenDirect] Fetched directly from URI and uploaded: ${videoUrl}`);
+            } catch (err: any) {
+                console.error(`[VideoGenDirect] URI fetch fallback failed:`, err);
+            }
+        }
+
+
 
         if (!videoUrl) {
             throw new Error("No video URL or downloadable video in response: " + JSON.stringify(generatedVideos));
