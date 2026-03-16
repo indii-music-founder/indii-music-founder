@@ -22,6 +22,19 @@ import { DevOpsTools } from './tools/DevOpsTools';
 import { DistributionTools } from './tools/DistributionTools';
 import { UniversalTools } from './tools/UniversalTools';
 import { TimelineTools } from './tools/TimelineTools';
+// Previously unregistered tool modules
+import { LicensingTools } from './tools/LicensingTools';
+import { LegalTools } from './tools/LegalTools';
+import { MusicTools } from './tools/MusicTools';
+import { PublishingTools } from './tools/PublishingTools';
+import { ProducerTools } from './tools/ProducerTools';
+import { NarrativeTools } from './tools/NarrativeTools';
+import { ScreenwriterTools } from './tools/ScreenwriterTools';
+import { SovereignTools } from './tools/SovereignTools';
+import { CommerceTools } from './tools/CommerceTools';
+import { BigQueryTools } from './tools/BigQueryTools';
+import { BrowserTools } from './tools/BrowserTools';
+import { Web3Tools } from './tools/Web3Tools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -48,7 +61,20 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...PUBLICIST_TOOLS,
     ...FinanceTools,
     ...DistributionTools,
-    ...TimelineTools
+    ...TimelineTools,
+    // Domain specialists
+    ...LicensingTools,
+    ...LegalTools,
+    ...MusicTools,
+    ...PublishingTools,
+    ...ProducerTools,
+    ...NarrativeTools,
+    ...ScreenwriterTools,
+    ...SovereignTools,
+    ...CommerceTools,
+    ...BigQueryTools,
+    ...BrowserTools,
+    ...Web3Tools,
 };
 
 
@@ -123,4 +149,44 @@ AVAILABLE TOOLS:
 66. advance_phase(timelineId) - Skip to the next phase.
 67. adjust_cadence(timelineId, phaseId, cadence) - Change posting frequency mid-campaign.
 68. list_timeline_templates() - List available progressive campaign templates.
+--- LICENSING & LEGAL ---
+69. match_sync_licensing_brief(briefDescription: string, mood: string, targetBpm: number) - Match catalog tracks to a sync licensing brief using mood/BPM scoring.
+70. generate_beat_lease_contract(beatTitle, producerName, buyerName, leaseType, price) - Generate a beat lease agreement (Exclusive or Non-Exclusive).
+71. draft_contract(type, parties, terms) - Draft a general music industry contract.
+72. generate_nda(partyA, partyB, purpose, duration) - Generate a Non-Disclosure Agreement.
+73. generate_split_sheet(trackTitle, collaborators) - Generate a royalty split sheet.
+74. trigger_digital_signature(documentUrl, signers) - Initiate digital signature workflow.
+75. generate_dmca_takedown(infringingUrl, contentDescription, ownerName) - Generate a DMCA takedown notice.
+76. verify_mechanical_license(isrc, territory) - Verify mechanical license coverage for a track.
+--- MUSIC & PUBLISHING ---
+77. create_music_metadata(trackTitle, artistName, genre, bpm, key, mood, isrc) - Create standardized music metadata.
+78. verify_metadata_golden(trackId) - Verify metadata completeness against golden standard.
+79. update_track_metadata(trackId, updates) - Update track metadata fields.
+80. scrub_id3_tags(fileUrl) - Scrub and standardize ID3 tags on an audio file.
+81. inject_splits_to_metadata(trackId, splits) - Inject royalty split data into track metadata.
+82. export_dolby_atmos_stems(trackId, format) - Export stems for Dolby Atmos spatial audio.
+83. query_pro_database(songTitle, composer, pro) - Query a Performing Rights Organization database.
+--- PRODUCTION & NARRATIVE ---
+84. create_call_sheet(projectName, date, location, crew, talent) - Create a production call sheet.
+85. breakdown_script(scriptText) - Break down a script into production elements.
+86. generate_visual_script(concept, scenes, style) - Generate a visual narrative script.
+87. format_screenplay(storyOutline, genre) - Format a screenplay from an outline.
+88. analyze_script_structure(scriptText) - Analyze script structure and pacing.
+--- COMMERCE & WEB3 ---
+89. create_artifact_drop(assetId, dropType, price, quantity) - Create a sovereign artifact drop (NFT or limited edition).
+90. mockup_merchandise(productType, designUrl, colorway) - Generate merchandise mockups.
+91. deploy_storefront_preview(products) - Deploy a storefront preview for fan review.
+92. recommend_merch_pricing(productType, cost, targetMargin) - Recommend merchandise pricing based on market data.
+93. create_limited_drop_campaign(productId, dropDate, quantity, notifyFans) - Create a limited drop campaign.
+94. generate_smart_contract(type, parties, terms) - Generate a Web3 smart contract (ERC-721 / ERC-1155).
+95. trace_blockchain_royalty(tokenId, chain) - Trace on-chain royalty history for a token.
+96. generate_token_gated_preview(assetId, tokenContract) - Generate a token-gated content preview URL.
+--- ANALYTICS & BROWSER ---
+97. execute_bigquery_query(sql, projectId) - Execute a BigQuery SQL query for revenue analytics.
+98. get_table_schema(dataset, table) - Get BigQuery table schema.
+99. list_datasets(projectId) - List available BigQuery datasets.
+100. run_cohort_analysis(metric, cohortType, dateRange) - Run a user/fan cohort analysis.
+101. browser_navigate(url) - Navigate to a URL in the background browser.
+102. browser_action(action, selector, value) - Perform a browser action (click, type, select).
+103. browser_snapshot(format) - Take a snapshot of the current browser page.
 `;
