@@ -2,6 +2,19 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.25.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.3...v1.25.0) (2026-03-16)
+
+
+### Features
+
+* **agent:** register 12 missing tool modules in TOOL_REGISTRY ([cfd8c32](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/cfd8c32de5ac45a7b141e8496c909a551309d623))
+* **touring:** seed TourRouteOptimizer with 45 real US touring markets ([ebd431c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ebd431c4e4f242396beddfd4e0a7480e4e534a4d))
+
+
+### Bug Fixes
+
+* address all CodeRabbit/Sentry PR [#1313](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/issues/1313) review items ([d7f408a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d7f408aa98a2b38be41223a09ffdbf10151486e7))
+
 ## [1.24.3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.2...v1.24.3) (2026-03-16)
 
 
