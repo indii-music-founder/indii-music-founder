@@ -339,7 +339,7 @@ indiiOS ships with 36 lazy-loaded modules organized across four domains:
 |--------|-------|-------------|
 | **Creative Director** | `/creative` | Infinite Fabric.js canvas for AI image generation (Gemini 3 Pro Image), product visualization, and asset editing |
 | **Video Producer** | `/video` | Production-grade pipeline for **Veo 3.1** video synthesis with Director's Cut QA step |
-| **Workflow Lab** | `/workflow` | Node-based automation editor (React Flow) to chain complex AI tasks into repeatable creative recipes |
+| **Workflow Lab** | `/workflow` | Node-based automation editor (React Flow) to chain AI tasks into repeatable recipes. Fully wired: Art, Video (text-to-video / img2vid / extend), Marketing, Social, Campaign, Knowledge Base departments + Router, Gatekeeper, and Variables logic nodes |
 | **Design Studio** | `/design` | Brand-first design system for consistent visual identity |
 | **Capture** | `/capture` | Quick-capture tool for ideas, references, and inspiration |
 
@@ -351,7 +351,7 @@ indiiOS ships with 36 lazy-loaded modules organized across four domains:
 | **Release Manager** | `/release` | End-to-end release lifecycle: metadata, artwork, scheduling, delivery, and QC |
 | **Finance** | `/finance` | Streaming revenue tracking, waterfall royalty splits, and automated payout calculations |
 | **Royalty** | `/royalty` | Detailed royalty statement parsing, reconciliation, and split management |
-| **Legal** | `/legal` | AI-powered contract review, rights management, IP protection, and legal compliance |
+| **Legal** | `/legal` | AI-powered contract review (score + risk extraction), rights management, IP protection. Analysis history is persisted to Firestore and restored on every page load |
 | **Licensing** | `/licensing` | Sync licensing deal management and opportunity matching |
 | **Publishing** | `/publishing` | Music publishing dashboard — song registration and rights administration |
 | **Commerce** | `/commerce` | E-commerce integration for direct-to-fan sales |
@@ -629,6 +629,34 @@ For deep-dives into specific subsystems:
 | [Model Usage Policy](MODEL_POLICY.md) | AI model selection and enforcement |
 | [API Credentials Policy](docs/API_CREDENTIALS_POLICY.md) | Security policy for credential management |
 | [Production Checklist](docs/PRODUCTION_300.md) | 300+ item production readiness audit |
+
+---
+
+## 🔄 Recent Updates
+
+### v0.1.0-beta.2 — March 2026
+
+**Workflow Lab — Full Node Execution**
+
+The `WorkflowEngine` now executes every node type with real service calls:
+
+| Node | Handler |
+|------|---------|
+| Art Department | `ImageGenerationService.generateImages()` |
+| Video Department | `VideoGenerationService.generateVideo()` — text-to-video, image-to-video (`img2vid`), and extend-video jobs |
+| Marketing Department | Gemini AI copywriting (multimodal: text or image input) |
+| Social Media Department | AI caption generation → `SocialService.createPost()` as a DRAFT |
+| Campaign Manager | Gemini strategy generation |
+| Knowledge Base | Agentic RAG workflow |
+| Router (Logic) | Evaluates a `$data`-interpolated condition and routes the `true`/`false` edge |
+| Gatekeeper (Logic) | Pauses execution at `WAITING_FOR_APPROVAL`; the UI calls `engine.resolveGatekeeper(nodeId, approved)` to resume. Auto-rejects after 5 minutes to prevent hung workflows |
+| Variables set/get | Shared blackboard `Map` — store named values and retrieve them in downstream nodes |
+
+**Legal Module — Persistent Analysis History**
+
+- `LegalService.saveAnalysis()` / `getAnalyses()` added — contract analyses are now stored in Firestore under `users/{uid}/contract_analyses`.
+- `LegalDashboard` loads the 20 most recent analyses on mount, so the history panel is populated immediately instead of being blank on every page load.
+- Persistence is fire-and-forget — failures are logged as warnings and never surface to the user.
 
 ---
 
