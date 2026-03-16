@@ -109,7 +109,11 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     const uploadResult = await VideoUploadService.uploadVideo(file, storagePath);
 
                     imageUrl = uploadResult.url;
-                    logger.info(`[StorageService] Video blob uploaded to Storage: ${uploadResult.url}`);
+                    thumbnailUrl = uploadResult.thumbnailUrl;
+                    logger.info(`[StorageService] Video uploaded to Storage: ${uploadResult.url}`);
+                    if (thumbnailUrl) {
+                        logger.info(`[StorageService] Video thumbnail: ${thumbnailUrl}`);
+                    }
                 } catch (uploadError) {
                     logger.warn('[StorageService] Video blob upload failed, saving blob URL as fallback:', uploadError);
                     // Still save the blob: URL — at least the current session can play it
