@@ -1,4 +1,6 @@
 import { CustomNode, CustomEdge, DepartmentNodeData, LogicNodeData, InputNodeData, Status, SavedWorkflow } from '../types';
+import { CustomNode, CustomEdge, NodeData, DepartmentNodeData, LogicNodeData, InputNodeData, OutputNodeData, Status, SavedWorkflow } from '@/modules/workflow/types';
+import { useStore } from '@/core/store';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
@@ -100,6 +102,30 @@ export class WorkflowEngine {
             return data;
         }
         return null;
+        
+        try {
+            this.results.clear();
+            this.executionQueue = [];
+
+            // 1. Identify Start Nodes (Input Nodes)
+            const startNodes = this.nodes.filter(node => node.type === 'inputNode');
+
+            // 2. Initialize Queue with Start Nodes
+            for (const node of startNodes) {
+                this.executionQueue.push({
+                    nodeId: node.id,
+                    inputs: { prompt: (node.data as InputNodeData).prompt }
+                });
+            }
+
+            // 3. Process Queue
+            while (this.executionQueue.length > 0) {
+                const task = this.executionQueue.shift()!;
+                await this.executeNode(task);
+            }
+        } finally {
+            this.isRunning = false;
+        }
     }
 
     // -----------------------------------------------------------------------
