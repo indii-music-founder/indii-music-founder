@@ -4,6 +4,9 @@ import { formatCurrency } from '@/lib/utils';
 import { motion } from 'motion/react';
 
 // Actual distributor commission rates (0 = flat-fee models, revenue not percentage-based)
+// NOTE: Some distributors have tiered pricing (e.g., UnitedMasters Select 10% vs Pro 0%,
+// Amuse Free 0% vs Boost flat fee). This map uses the "most common" tier rate.
+// When the user's actual tier is known, override via the distributorId prop.
 const DISTRIBUTOR_FEE_RATES: Record<string, number> = {
     distrokid:      0.00, // Annual flat fee, 0% commission
     tunecore:       0.00, // Annual flat fee per release
@@ -19,6 +22,23 @@ const DISTRIBUTOR_FEE_RATES: Record<string, number> = {
     apple_music:    0.00,
     youtube_music:  0.00,
     amazon_music:   0.00,
+};
+
+// Proper display names for known distributors
+const DISTRIBUTOR_DISPLAY_NAMES: Record<string, string> = {
+    distrokid:     'DistroKid',
+    tunecore:      'TuneCore',
+    cdbaby:        'CD Baby',
+    unitedmasters: 'UnitedMasters',
+    onerpm:        'ONErpm',
+    believe:       'Believe',
+    amuse:         'Amuse',
+    soundrop:      'Soundrop',
+    ingrooves:     'Ingrooves',
+    spotify:       'Spotify',
+    apple_music:   'Apple Music',
+    youtube_music: 'YouTube Music',
+    amazon_music:  'Amazon Music',
 };
 
 // Effective US income + self-employment tax rate for independent music creators
@@ -75,7 +95,7 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
         const displayNet = net > 0 ? net : Math.max(0, gross - distributorFee - taxes - splits - residual);
 
         const distLabel = distKey && DISTRIBUTOR_FEE_RATES[distKey] !== undefined
-            ? `${distKey.charAt(0).toUpperCase()}${distKey.slice(1)} (${Math.round(distRate * 100)}%)`
+            ? `${DISTRIBUTOR_DISPLAY_NAMES[distKey] ?? distKey} (${Math.round(distRate * 100)}%)`
             : `Distributor (${Math.round(distRate * 100)}%)`;
 
         const bars = [

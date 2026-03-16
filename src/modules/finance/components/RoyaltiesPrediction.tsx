@@ -12,6 +12,7 @@ import {
 import { motion } from 'motion/react';
 import { TrendingUp, RefreshCw, DollarSign, Music } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 /* ================================================================== */
 /*  Item 152 — Daily Royalties Prediction                              */
@@ -149,7 +150,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 export function RoyaltiesPrediction() {
-    const releases = useStore((s) => s.releases);
+    const releases = useStore(useShallow((s) => s.releases ?? []));
     const [chartData, setChartData] = useState<StreamDataPoint[]>([]);
     const [isUpdating, setIsUpdating] = useState(false);
     const [modelVersion, setModelVersion] = useState(1);
