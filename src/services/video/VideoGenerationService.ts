@@ -248,6 +248,36 @@ export class VideoGenerationService {
                 completedAt: serverTimestamp(),
             });
 
+            // 🔥 Fire-and-forget: Upload blob to Firebase Storage for durable persistence.
+            // Blob URLs are session-scoped and won't survive page refresh.
+            // This background upload ensures the video remains accessible in future sessions.
+            if (videoUrl.startsWith('blob:')) {
+                (async () => {
+                    try {
+                        const blobResponse = await fetch(videoUrl);
+                        const blob = await blobResponse.blob();
+                        const file = new File([blob], `veo_${jobId}.mp4`, { type: 'video/mp4' });
+
+                        const { VideoUploadService } = await import('./VideoUploadService');
+                        const storagePath = `videos/${userId}/${jobId}.mp4`;
+                        const uploadResult = await VideoUploadService.uploadVideo(file, storagePath);
+
+                        // Update Firestore with durable Storage URL
+                        const { updateDoc: updateDocAsync } = await import('firebase/firestore');
+                        await updateDocAsync(jobRef, {
+                            videoUrl: uploadResult.url,
+                            'output.url': uploadResult.url,
+                            'output.storagePath': uploadResult.path,
+                            updatedAt: serverTimestamp(),
+                        });
+
+                        logger.info(`[VideoGeneration] ✅ Video persisted to Storage: ${uploadResult.url}`);
+                    } catch (uploadError) {
+                        logger.warn('[VideoGeneration] Background Storage upload failed (non-blocking):', uploadError);
+                    }
+                })();
+            }
+
             return [{
                 id: jobId,
                 url: videoUrl,
@@ -327,7 +357,9 @@ export class VideoGenerationService {
 
                         // Lens 🎥 Integrity Check: Verify Video Asset Availability (404 Protection)
                         const videoUrl = job.output?.url;
-                        if (videoUrl) {
+                        // Skip integrity check for blob URLs — they are in-memory and always valid.
+                        // HEAD requests are not supported on the blob: protocol.
+                        if (videoUrl && !videoUrl.startsWith('blob:')) {
                             try {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(videoUrl, { method: 'HEAD' });

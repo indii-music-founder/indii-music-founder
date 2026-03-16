@@ -1450,8 +1450,29 @@ export class FirebaseAIService {
                     const videoBytes = firstVideo.video?.videoBytes;
 
                     if (videoUri) {
-                        logger.info(`[FirebaseAIService] ✅ Video generated successfully: ${videoUri.substring(0, 100)}...`);
-                        return videoUri;
+                        logger.info(`[FirebaseAIService] ✅ Video URI received, fetching bytes for playback: ${videoUri.substring(0, 100)}...`);
+
+                        // Native <video> elements cannot attach custom headers (x-goog-api-key).
+                        // The raw Gemini API URI requires authentication, so we fetch the bytes
+                        // via an authenticated request and create a blob URL for the browser.
+                        try {
+                            const apiKey = import.meta.env.VITE_API_KEY;
+                            const fetchUrl = videoUri.includes('?')
+                                ? `${videoUri}&key=${apiKey}`
+                                : `${videoUri}?key=${apiKey}`;
+                            const videoResponse = await fetch(fetchUrl);
+                            if (!videoResponse.ok) {
+                                throw new Error(`HTTP ${videoResponse.status}: ${videoResponse.statusText}`);
+                            }
+                            const videoBlob = await videoResponse.blob();
+                            const blobUrl = URL.createObjectURL(videoBlob);
+                            logger.info(`[FirebaseAIService] ✅ Video ready for playback (blob): ${blobUrl}`);
+                            return blobUrl;
+                        } catch (fetchError) {
+                            logger.warn('[FirebaseAIService] Failed to fetch video bytes, falling back to raw URI:', fetchError);
+                            // Fall back to raw URI — may still fail in <video> but allows Electron/download paths to work
+                            return videoUri;
+                        }
                     }
 
                     // If we got raw bytes instead of a URI, create a blob URL
