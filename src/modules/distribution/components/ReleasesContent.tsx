@@ -61,15 +61,6 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
                         bg: 'bg-white/5',
                         border: 'border-white/5'
                     }}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {releases.map((release) => (
-                <ReleaseStatusCard
-                    key={release.id}
-                    releaseTitle={release.title}
-                    artistName={release.artist}
-                    coverArtUrl={release.coverArtUrl}
-                    deployments={release.deployments}
-                    releaseDate={release.releaseDate}
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
