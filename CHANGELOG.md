@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.24.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.23.1...v1.24.0) (2026-03-16)
+
+
+### Features
+
+* wire distribution pipeline and replace Docker with bundled Python sidecar ([c8a8ffa](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c8a8ffacc18f234e2e595eb1433da845d89c7849))
+
 ## [1.23.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.23.0...v1.23.1) (2026-03-15)
 
 
