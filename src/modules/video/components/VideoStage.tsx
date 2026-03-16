@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Sparkles, Video } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { CreativeSlice } from '@/core/store/slices/creativeSlice';
+import { logger } from '@/utils/logger';
 
 interface VideoStageProps {
     jobStatus: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed';
@@ -21,6 +22,63 @@ export const VideoStage = React.memo<VideoStageProps>(({
     const [videoError, setVideoError] = React.useState<string | null>(null);
     const [displayProgress, setDisplayProgress] = React.useState(0);
     const [statusMessageIndex, setStatusMessageIndex] = React.useState(0);
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+
+    /**
+     * Captures the current video frame as a base64 JPEG string.
+     * This is essential for daisy-chaining: the Veo API needs actual image data,
+     * not a blob: URL reference (which is session-scoped and un-fetchable by the API).
+     */
+    const captureCurrentFrame = React.useCallback((): string | null => {
+        const video = videoRef.current;
+        if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+            logger.warn('[VideoStage] Cannot capture frame: video element not ready');
+            return null;
+        }
+
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return null;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Return base64 JPEG — strip the data:image/jpeg;base64, prefix for the API
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            logger.info('[VideoStage] Frame captured successfully', {
+                width: canvas.width,
+                height: canvas.height,
+                size: Math.round(dataUrl.length / 1024) + 'KB'
+            });
+            return dataUrl;
+        } catch (e) {
+            logger.error('[VideoStage] Frame capture failed:', e);
+            return null;
+        }
+    }, []);
+
+    /**
+     * Creates a HistoryItem-like anchor from the captured frame.
+     * The URL is a base64 data URI that the Veo API can actually consume.
+     */
+    const createFrameAnchor = React.useCallback((label: 'anchor' | 'end'): HistoryItem | null => {
+        if (!activeVideo) return null;
+        const frameData = captureCurrentFrame();
+        if (!frameData) {
+            logger.warn(`[VideoStage] Failed to capture ${label} frame — using fallback`);
+            return activeVideo; // Fallback: pass the HistoryItem as-is
+        }
+
+        return {
+            ...activeVideo,
+            id: `${activeVideo.id}-${label}-frame`,
+            url: frameData,
+            type: 'image' as const,
+            prompt: `${label === 'anchor' ? 'First' : 'Last'} frame from: ${activeVideo.prompt || 'video'}`,
+            timestamp: Date.now()
+        };
+    }, [activeVideo, captureCurrentFrame]);
 
     const PROGRESS_MESSAGES = React.useMemo(() => [
         "AI Director is framing the scene...",
@@ -89,9 +147,28 @@ export const VideoStage = React.memo<VideoStageProps>(({
         }
     }, [activeVideo]);
 
-    const handleVideoError = () => {
+    const handleVideoError = React.useCallback(async () => {
+        // Blob URL Recovery: If a blob: URL fails, check the Zustand store
+        // for a durable https:// URL that may have been populated by the
+        // fire-and-forget Storage upload in VideoGenerationService.
+        if (activeVideo?.url.startsWith('blob:')) {
+            try {
+                const { useStore } = await import('@/core/store');
+                const storeHistory = useStore.getState().generatedHistory;
+                const storeItem = storeHistory.find(h => h.id === activeVideo.id);
+
+                if (storeItem && storeItem.url.startsWith('https://')) {
+                    logger.info('[VideoStage] Recovered durable URL from store:', storeItem.url.slice(0, 60));
+                    // Don't set error — the parent will re-render with the updated URL
+                    return;
+                }
+            } catch (e) {
+                logger.warn('[VideoStage] Blob URL recovery attempt failed:', e);
+            }
+        }
+
         setVideoError("Playback Error: Video source unavailable or corrupted.");
-    };
+    }, [activeVideo]);
 
     return (
         <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
@@ -139,6 +216,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                             <img src={activeVideo.url} alt="Preview" className="w-full h-full object-contain" />
                         ) : (
                             <video
+                                ref={videoRef}
                                 src={activeVideo.url}
                                 controls
                                 className="max-h-full max-w-full rounded-lg shadow-2xl border border-white/10"
@@ -160,7 +238,13 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         {/* Daisychaining Buttons — Top-right, show on hover */}
                         <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover/stage:opacity-100 transition-opacity duration-300">
                             <button
-                                onClick={() => setVideoInputs({ firstFrame: activeVideo })}
+                                onClick={() => {
+                                    const anchor = createFrameAnchor('anchor');
+                                    if (anchor) {
+                                        setVideoInputs({ firstFrame: anchor });
+                                        logger.info('[VideoStage] Anchor frame set (captured from canvas)');
+                                    }
+                                }}
                                 data-testid="set-anchor-btn"
                                 aria-label="Set as anchor frame for next generation"
                                 className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-purple-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-purple-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
@@ -168,7 +252,13 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 ⚓ Set Anchor
                             </button>
                             <button
-                                onClick={() => setVideoInputs({ lastFrame: activeVideo })}
+                                onClick={() => {
+                                    const endFrame = createFrameAnchor('end');
+                                    if (endFrame) {
+                                        setVideoInputs({ lastFrame: endFrame });
+                                        logger.info('[VideoStage] End frame set (captured from canvas)');
+                                    }
+                                }}
                                 data-testid="set-end-frame-btn"
                                 aria-label="Set as end frame for next generation"
                                 className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-indigo-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-indigo-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
