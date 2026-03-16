@@ -134,40 +134,5 @@ export function registerAgentHandlers() {
             }
         });
 
-        // Agent Zero Main Process Proxy (Bypasses CORS)
-        ipcMain.handle('agent:proxy-zero', async (event: IpcMainInvokeEvent, endpoint: string, payload: unknown, headers: Record<string, string>) => {
-            try {
-                validateSender(event);
-
-                // Security: Only allow proxying to local Agent Zero port
-                if (!endpoint.startsWith('http://127.0.0.1:50080') && !endpoint.startsWith('http://localhost:50080')) {
-                    throw new Error('Security Violation: Proxy target must be local Agent Zero instance (127.0.0.1:50080)');
-                }
-
-                console.info(`[Main] Proxying request to Agent Zero: ${endpoint}`);
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: headers || { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                    // @ts-expect-error - timeout is supported in node fetch but not typed in RequestInit
-                    timeout: 60000
-                });
-
-                const status = response.status;
-                const statusText = response.statusText;
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    return { success: false, status, statusText, error: errorText };
-                }
-
-                const data = await response.json();
-                return { success: true, status, statusText, data };
-            } catch (error: any) {
-                console.error('[Main] Agent Zero Proxy Failed:', error);
-                return { success: false, error: String(error) };
-            }
-        });
     }
 }

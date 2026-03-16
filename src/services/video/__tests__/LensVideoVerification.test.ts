@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
+import { firebaseAI } from '../../ai/FirebaseAIService';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../../ai/FirebaseAIService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     firebaseAI: {
-        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result.")
+        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result."),
+        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
     }
 }));
 
@@ -28,31 +30,39 @@ vi.mock('@/services/firebase', () => ({
 
 // Mock SubscriptionService to always allow
 vi.mock('@/services/subscription/SubscriptionService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
         getCurrentSubscription: vi.fn().mockResolvedValue({ tier: Promise.resolve('pro') })
     }
 }));
 
-// Mock functions to capture arguments
-const mockHttpsCallable = vi.fn();
-vi.mock('firebase/functions', () => ({
-  serverTimestamp: vi.fn(),
-    httpsCallable: vi.fn((functions, name) => {
-        return (...args: any[]) => mockHttpsCallable(name, ...args);
-    })
-}));
-
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal() as any;
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         ...actual,
-        doc: vi.fn(),
-        onSnapshot: vi.fn()
+        doc: vi.fn(() => ({ id: 'mock-doc-ref', path: 'videoJobs/mock-doc-ref' })),
+        setDoc: vi.fn().mockResolvedValue(undefined),
+        updateDoc: vi.fn().mockResolvedValue(undefined),
+        onSnapshot: vi.fn(),
+        Timestamp: {
+            now: vi.fn(() => ({ toDate: () => new Date() })),
+        },
     };
 });
+
+vi.mock('@/services/persistence/MetadataPersistenceService', () => ({
+    metadataPersistenceService: {
+        save: vi.fn().mockResolvedValue(undefined),
+    }
+}));
+
+vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+    InputSanitizer: {
+        sanitize: vi.fn((text: string) => text),
+    }
+}));
 
 describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
     beforeEach(() => {
@@ -83,8 +93,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({
-  serverTimestamp: vi.fn(), status: 'processing' })
+                    data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
                 } as any);
 
                 setTimeout(() => {
@@ -123,8 +132,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                     callback({
                         exists: () => true,
                         id: mockJobId,
-                        data: () => ({
-  serverTimestamp: vi.fn(), status: 'completed', url: 'http://fast.url' })
+                        data: () => ({ serverTimestamp: vi.fn(), status: 'completed', url: 'http://fast.url' })
                     } as any);
                 }, 500); // 0.5s
                 return vi.fn();
@@ -144,8 +152,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({
-  serverTimestamp: vi.fn(), status: 'processing' })
+                    data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
                 } as any);
                 return vi.fn();
             });
@@ -169,7 +176,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                         exists: () => true,
                         id: mockJobId,
                         data: () => ({
-  serverTimestamp: vi.fn(),
+                            serverTimestamp: vi.fn(),
                             status: 'failed',
                             error: 'Safety violation: Harassment filter triggered.'
                         })
@@ -187,7 +194,8 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
 
     describe('Prompt Enhancer Flow', () => {
         it('should inject camera and motion parameters into the prompt', async () => {
-            mockHttpsCallable.mockResolvedValue({ data: { jobId: 'test-job' } });
+            // Use real timers for generateVideo (no onSnapshot-based job waiting)
+            vi.useRealTimers();
 
             await VideoGeneration.generateVideo({
                 prompt: 'A Cyberpunk city',
@@ -196,16 +204,14 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 fps: 24
             });
 
-            // Inspect the call to triggerVideoJob
-            expect(mockHttpsCallable).toHaveBeenCalledWith('triggerVideoJob', expect.objectContaining({
-                prompt: expect.stringContaining('cinematic pan right camera movement'),
-                jobId: expect.any(String)
-            }));
+            // Inspect the call to firebaseAI.generateVideo (direct SDK path)
+            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+
+            // Verify camera movement enrichment
+            expect(callArgs.prompt).toContain('cinematic pan right camera movement');
 
             // Verify motion strength enrichment
-            expect(mockHttpsCallable).toHaveBeenCalledWith('triggerVideoJob', expect.objectContaining({
-                prompt: expect.stringContaining('high dynamic motion')
-            }));
+            expect(callArgs.prompt).toContain('high dynamic motion');
         });
     });
 });

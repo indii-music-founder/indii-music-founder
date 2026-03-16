@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RiderService } from '@/services/touring/RiderService';
 import { RiderItem } from '../types';
 import { useStore } from '@/core/store';
@@ -19,10 +19,18 @@ export const useRider = () => {
         setLoading(!!userProfile?.id);
     }
 
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     useEffect(() => {
         if (!userProfile?.id) return;
 
         const unsubscribe = RiderService.subscribeToRiderItems(userProfile.id, (data) => {
+            if (!isMountedRef.current) return;
             setItems(data);
             setLoading(false);
         });

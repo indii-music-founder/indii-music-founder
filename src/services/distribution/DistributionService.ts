@@ -390,6 +390,89 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
     }
 
+    /**
+     * Package a release for Spotify SFTP delivery.
+     * Creates the expected directory structure: batch_id/release_id.xml + resources/ + manifest.xml
+     */
+    async packageSpotify(releaseId: string, stagingPath: string, outputPath?: string): Promise<{ status: string; batchId?: string; packagePath?: string; trackCount?: number; error?: string }> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for Spotify packaging');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.packageSpotify(releaseId, stagingPath, outputPath);
+            if (!result.success) {
+                throw new Error(result.error || 'Spotify packaging failed');
+            }
+            return result.report || { status: 'PASS' };
+        } catch (error) {
+            logger.error('[Distribution] Spotify packaging error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Package and optionally deliver a release to Apple Music.
+     * Creates an ITMSP bundle and optionally invokes Apple Transporter for upload.
+     */
+    async packageApple(releaseId: string, stagingPath: string, options?: { upload?: boolean }): Promise<{ status: string; bundlePath?: string; error?: string }> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for Apple packaging');
+        }
+
+        try {
+            // Step 1: Create ITMSP bundle via existing packageITMSP
+            const packageResult = await window.electronAPI.distribution.packageITMSP(releaseId);
+
+            if (!packageResult.success) {
+                throw new Error(packageResult.error || 'ITMSP packaging failed');
+            }
+
+            // Step 2: Optionally deliver via Transporter
+            if (options?.upload && packageResult.packagePath) {
+                const deliverResult = await window.electronAPI.distribution.deliverApple('upload', packageResult.packagePath);
+
+                if (!deliverResult.success) {
+                    throw new Error(deliverResult.error || 'Apple Transporter upload failed');
+                }
+
+                return {
+                    status: 'DELIVERED',
+                    bundlePath: packageResult.packagePath
+                };
+            }
+
+            return {
+                status: 'PACKAGED',
+                bundlePath: packageResult.packagePath
+            };
+        } catch (error) {
+            logger.error('[Distribution] Apple packaging error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Validate DDEX ERN XML against the official XSD schema or structural rules.
+     * Returns a validation report with errors and warnings.
+     */
+    async validateXSD(xmlContent: string): Promise<{ valid: boolean; mode: string; errors: string[]; warnings: string[]; summary: string }> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for XSD validation');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.validateXSD(xmlContent);
+            if (!result.success || !result.report) {
+                throw new Error(result.error || 'XSD validation failed');
+            }
+            return result.report;
+        } catch (error) {
+            logger.error('[Distribution] XSD validation error:', error);
+            throw error;
+        }
+    }
+
     private releasesService = new FirestoreService<any>('ddexReleases');
 
     /**
@@ -445,7 +528,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             throw new Error('Electron environment required for release submission');
         }
 
-        const taskId = await this.createTask('ddex_delivery', `Submit: ${releaseData.title}`);
+        const taskId = await this.createTask('DELIVERY', `Submit: ${releaseData.title}`);
         await this.updateTask(taskId, { status: 'RUNNING', subtext: 'Starting pipeline…' });
 
         let cleanup: (() => void) | undefined;
@@ -469,9 +552,12 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             });
 
             if (window.electronAPI) {
+                const body = result.report?.sftp_skipped
+                    ? `${releaseData.title} DDEX package is ready (SFTP skipped).`
+                    : `${releaseData.title} has been delivered to your distributor.`;
                 window.electronAPI.showNotification(
                     'Release Submitted',
-                    `${releaseData.title} has been delivered to your distributor.`
+                    body
                 );
             }
 

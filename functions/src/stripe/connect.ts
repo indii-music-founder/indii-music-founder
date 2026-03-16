@@ -4,13 +4,13 @@ import { stripe } from './config';
 /**
  * Triggered by the client to create a Stripe Connect Express account for an artist.
  */
-export const createStripeAccount = functions.https.onCall(async (data: { artistId: string }, context) => {
+export const createStripeAccount = functions.https.onCall(async (data: any, context: any) => {
     // 1. Basic auth check
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
     }
 
-    const { artistId } = data;
+    const { artistId } = data as { artistId: string };
     // Stripe instance is pre-configured and exported from ./config.ts
 
     try {
@@ -45,12 +45,12 @@ export const createStripeAccount = functions.https.onCall(async (data: { artistI
 /**
  * Triggers a payout/transfer from the platform to the destination artist.
  */
-export const createTransfer = functions.https.onCall(async (data: { amount: number, destinationId: string, currency?: string }, context) => {
+export const createTransfer = functions.https.onCall(async (data: any, context: any) => {
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
     }
 
-    const { amount, destinationId, currency = 'usd' } = data;
+    const { amount, destinationId, currency = 'usd' } = data as { amount: number; destinationId: string; currency?: string };
     // Stripe instance is pre-configured and exported from ./config.ts
 
     try {

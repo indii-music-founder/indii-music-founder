@@ -6,7 +6,8 @@
 # instead of requiring Docker for packaged desktop builds.
 #
 # Usage:
-#   ./scripts/build_sidecar.sh [--platform mac|win|linux]
+#   ./scripts/build_sidecar.sh 
+#   (Note: --platform [mac|win|linux] is planned for future cross-compilation)
 #
 # The output binary is placed at:
 #   dist/agent_sidecar          (macOS / Linux)

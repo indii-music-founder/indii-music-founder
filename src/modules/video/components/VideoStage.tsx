@@ -134,7 +134,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         <p className="text-gray-400 text-center max-w-sm px-4">{videoError}</p>
                     </div>
                 ) : activeVideo ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="relative w-full h-full flex items-center justify-center group/stage">
                         {activeVideo.url.startsWith('data:image') || activeVideo.type === 'image' ? (
                             <img src={activeVideo.url} alt="Preview" className="w-full h-full object-contain" />
                         ) : (
@@ -148,32 +148,33 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 data-testid="video-player"
                             />
                         )}
-                        {/* Info Overlay */}
-                        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md p-2 rounded-lg border border-white/10 max-w-md">
-                            <p className="text-sm font-medium text-white truncate">{activeVideo.prompt}</p>
-                            <div className="flex gap-2 text-[10px] text-gray-400 mt-1">
+                        {/* Info Overlay — Top-left, auto-hides to not block video controls */}
+                        <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10 max-w-sm opacity-0 group-hover/stage:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <p className="text-xs font-medium text-white truncate">{activeVideo.prompt}</p>
+                            <div className="flex gap-2 text-[9px] text-gray-400 mt-0.5">
                                 <span>{new Date(activeVideo.timestamp).toLocaleTimeString()}</span>
                                 <span>•</span>
                                 <span>{activeVideo.id.slice(0, 8)}</span>
                             </div>
-                            <div className="flex gap-2 mt-2 pt-2 border-t border-white/10">
-                                <button
-                                    onClick={() => setVideoInputs({ firstFrame: activeVideo })}
-                                    data-testid="set-anchor-btn"
-                                    aria-label="Set as anchor frame for next generation"
-                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
-                                >
-                                    Set Anchor
-                                </button>
-                                <button
-                                    onClick={() => setVideoInputs({ lastFrame: activeVideo })}
-                                    data-testid="set-end-frame-btn"
-                                    aria-label="Set as end frame for next generation"
-                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
-                                >
-                                    Set End Frame
-                                </button>
-                            </div>
+                        </div>
+                        {/* Daisychaining Buttons — Top-right, show on hover */}
+                        <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover/stage:opacity-100 transition-opacity duration-300">
+                            <button
+                                onClick={() => setVideoInputs({ firstFrame: activeVideo })}
+                                data-testid="set-anchor-btn"
+                                aria-label="Set as anchor frame for next generation"
+                                className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-purple-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-purple-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+                            >
+                                ⚓ Set Anchor
+                            </button>
+                            <button
+                                onClick={() => setVideoInputs({ lastFrame: activeVideo })}
+                                data-testid="set-end-frame-btn"
+                                aria-label="Set as end frame for next generation"
+                                className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-indigo-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-indigo-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+                            >
+                                🎬 Set End Frame
+                            </button>
                         </div>
                     </div>
                 ) : (
