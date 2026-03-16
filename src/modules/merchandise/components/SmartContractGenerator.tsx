@@ -31,7 +31,13 @@ export function SmartContractGenerator() {
     const [copied, setCopied] = useState(false);
 
     const totalPct = payees.reduce((s, p) => s + Number(p.percentage || 0), 0);
-    const isValid = name && symbol && isrc && Math.abs(totalPct - 100) < 0.01;
+    const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+    const allWalletsSet = payees.every(p => ETH_ADDRESS_RE.test(p.walletAddress.trim()));
+    const normalizedName = name.trim();
+    const normalizedSymbol = symbol.trim();
+    const normalizedIsrc = isrc.trim();
+    const hasRequiredMetadata = normalizedName.length > 0 && normalizedSymbol.length > 0 && normalizedIsrc.length > 0;
+    const isValid = hasRequiredMetadata && Math.abs(totalPct - 100) < 0.01 && allWalletsSet;
 
     const addPayee = () => {
         if (payees.length >= 6) return;
@@ -52,9 +58,9 @@ export function SmartContractGenerator() {
         setError(null);
         try {
             const config: SplitContractConfig = {
-                isrc,
+                isrc: normalizedIsrc,
                 payees: payees.map(p => ({
-                    walletAddress: p.walletAddress || `0x${Math.random().toString(16).slice(2, 42)}`,
+                    walletAddress: p.walletAddress.trim(),
                     percentage: Number(p.percentage),
                     role: p.role,
                 })),
@@ -151,7 +157,7 @@ export function SmartContractGenerator() {
                             <input
                                 value={payee.walletAddress}
                                 onChange={e => updatePayee(i, 'walletAddress', e.target.value)}
-                                placeholder="0x... (auto-generated if empty)"
+                                placeholder="0x... (valid Ethereum address required)"
                                 className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white placeholder-neutral-700 focus:outline-none font-mono"
                             />
                             <input
