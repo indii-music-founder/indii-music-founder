@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.26.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.25.0...v1.26.0) (2026-03-16)
+
+
+### Features
+
+* **storage:** add lifecycle management Cloud Functions + quota tracking ([7502e99](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7502e99294d86d8b23a77761980aa18e02cf244f))
+* **storage:** wire quota into dashboard + pre-upload gate ([8bd9c1a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8bd9c1a436d33b338fad796310222eb5536cfef9))
+* **video:** long-term storage hardening ([1b68302](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1b683026dffca89e5b02d2a239b4b3b5a1f377bc))
+
+
+### Bug Fixes
+
+* **video:** persist videos to Storage & fix lastFrame API format ([a5b7114](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a5b7114e70a97ccc3009ce7b0725d677fd8881dd))
+
 ## [1.25.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.3...v1.25.0) (2026-03-16)
 
 
