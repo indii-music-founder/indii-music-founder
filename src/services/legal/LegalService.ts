@@ -8,11 +8,21 @@ import {
     getDocs,
     query,
     orderBy,
+    limit,
     serverTimestamp,
     updateDoc
 } from 'firebase/firestore';
 import { useStore } from '@/core/store';
 import { LegalContract, ContractStatus } from '@/modules/legal/types';
+
+export interface ContractAnalysis {
+    id?: string;
+    fileName: string;
+    score: number;
+    summary: string;
+    risks: string[];
+    analyzedAt: string;
+}
 
 export class LegalService {
 
@@ -22,10 +32,7 @@ export class LegalService {
     static async saveContract(data: Omit<LegalContract, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> {
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) {
-            throw new AppException(
-                AppErrorCode.AUTH_ERROR,
-                'User not authenticated'
-            );
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'User not authenticated');
         }
 
         const contractData = {
@@ -46,18 +53,11 @@ export class LegalService {
     static async updateContract(id: string, updates: Partial<LegalContract>): Promise<void> {
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) {
-            throw new AppException(
-                AppErrorCode.AUTH_ERROR,
-                'User not authenticated'
-            );
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'User not authenticated');
         }
 
         const docRef = doc(db, 'users', userProfile.id, 'contracts', id);
-
-        await updateDoc(docRef, {
-            ...updates,
-            updatedAt: serverTimestamp()
-        });
+        await updateDoc(docRef, { ...updates, updatedAt: serverTimestamp() });
     }
 
     /**
@@ -73,10 +73,7 @@ export class LegalService {
         );
 
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        } as unknown as LegalContract));
+        return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as LegalContract));
     }
 
     /**
@@ -86,15 +83,48 @@ export class LegalService {
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) return null;
 
-        const docRef = doc(db, 'users', userProfile.id, 'contracts', id);
-        const snapshot = await getDoc(docRef);
+        const snapshot = await getDoc(doc(db, 'users', userProfile.id, 'contracts', id));
+        return snapshot.exists()
+            ? ({ id: snapshot.id, ...snapshot.data() } as unknown as LegalContract)
+            : null;
+    }
 
-        if (snapshot.exists()) {
-            return {
-                id: snapshot.id,
-                ...snapshot.data()
-            } as unknown as LegalContract;
+    // -----------------------------------------------------------------------
+    // Contract Analysis persistence
+    // -----------------------------------------------------------------------
+
+    /**
+     * Persist an AI contract analysis result to Firestore.
+     * Stored under users/{uid}/contract_analyses.
+     */
+    static async saveAnalysis(analysis: Omit<ContractAnalysis, 'id'>): Promise<string> {
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) {
+            // Silently skip if unauthenticated — analysis results are still shown in UI
+            return '';
         }
-        return null;
+
+        const docRef = await addDoc(
+            collection(db, 'users', userProfile.id, 'contract_analyses'),
+            { ...analysis, savedAt: serverTimestamp() }
+        );
+        return docRef.id;
+    }
+
+    /**
+     * Fetch the 20 most recent contract analyses for the current user.
+     */
+    static async getAnalyses(): Promise<ContractAnalysis[]> {
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) return [];
+
+        const q = query(
+            collection(db, 'users', userProfile.id, 'contract_analyses'),
+            orderBy('savedAt', 'desc'),
+            limit(20)
+        );
+
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as ContractAnalysis));
     }
 }
