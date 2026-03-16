@@ -1,6 +1,6 @@
 {
   "name": "indii-os",
-  "version": "1.21.0",
+  "version": "1.24.3",
   "description": "The Operating System for Independent Artists",
   "author": "IndiiOS LLC",
   "private": true,
@@ -15,7 +15,7 @@
     "build:desktop:linux": "bash scripts/build-desktop.sh linux",
     "build:desktop:mac": "bash scripts/build-desktop.sh release mac",
     "build:desktop:win": "bash scripts/build-desktop.sh release win",
-    "build:electron": "npx esbuild electron/main.ts --bundle --platform=node --outfile=dist-electron/main.cjs --format=cjs --external:electron --external:keytar --external:fluent-ffmpeg --external:ffmpeg-static --external:ffprobe-static --external:electron-squirrel-startup --external:cpu-features --external:ssh2 --external:ssh2-sftp-client --external:*.node && npx esbuild electron/preload.ts --bundle --platform=node --outfile=dist-electron/preload.cjs --format=cjs --external:electron",
+    "build:electron": "npx esbuild electron/main.ts --bundle --platform=node --outfile=dist-electron/main.cjs --format=cjs --external:electron --external:keytar --external:fluent-ffmpeg --external:ffmpeg-static --external:ffprobe-static --external:electron-squirrel-startup --external:cpu-features --external:ssh2 --external:ssh2-sftp-client --external:ws --external:*.node && npx esbuild electron/preload.ts --bundle --platform=node --outfile=dist-electron/preload.cjs --format=cjs --external:electron",
     "build:landing": "cd landing-page && npm install && npm run build",
     "build:studio": "vite build",
     "build:studio:all": "vite build && electron-builder --config electron-builder-studio.json -mlw --publish never",
@@ -123,6 +123,7 @@
     "web-vitals": "^5.1.0",
     "xml2js": "0.6.2",
     "y-protocols": "^1.0.7",
+    "ws": "^8.18.0",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.29",
     "zod": "3.25.76",
@@ -131,6 +132,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
+    "@types/ws": "^8.5.14",
     "@doyensec/electronegativity": "1.10.3",
     "@electron-forge/cli": "7.8.3",
     "@electron-forge/maker-deb": "7.10.2",

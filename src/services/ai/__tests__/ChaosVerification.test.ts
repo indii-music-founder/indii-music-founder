@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { agentZeroService } from '../../agent/AgentZeroService';
 import { firebaseAI } from '../FirebaseAIService';
+import { wcpInstance } from '../../agent/WebSocketControlPlane';
 import { Content } from 'firebase/ai';
 
-// Mock AgentZeroService
-vi.mock('../../agent/AgentZeroService', () => ({
-    agentZeroService: {
-        sendMessage: vi.fn()
+// Mock WCP for connection failure scenarios
+vi.mock('../../agent/WebSocketControlPlane', () => ({
+    wcpInstance: {
+        connectionState: 'disconnected',
+        route: vi.fn(),
+        on: vi.fn(() => () => {}),
+        broadcast: vi.fn(),
     }
 }));
 
@@ -15,39 +18,40 @@ describe('ChaosVerification', () => {
         vi.clearAllMocks();
     });
 
-    describe('Agent Zero Connection Failures (IPC Proxy)', () => {
-        it('should handle Refused Connection (50080 offline)', async () => {
-            // Simulate ECONNREFUSED or similar proxy failure
-            vi.mocked(agentZeroService.sendMessage).mockRejectedValueOnce(new Error('fetch failed: ECONNREFUSED at 127.0.0.1:50080'));
+    describe('WebSocket Control Plane Connection Failures', () => {
+        it('should surface ECONNREFUSED when WCP route is called while disconnected', async () => {
+            vi.mocked(wcpInstance.route).mockRejectedValueOnce(
+                new Error('WCP route failed: ECONNREFUSED — control plane offline')
+            );
 
-            await expect(agentZeroService.sendMessage('test', [])).rejects.toThrow('ECONNREFUSED');
+            await expect(wcpInstance.route('session-1', { agentId: 'generalist', message: 'ping' })).rejects.toThrow('ECONNREFUSED');
         });
 
-        it('should handle Timeout on long-running proxy requests', async () => {
-            // Simulate 60s timeout
-            vi.mocked(agentZeroService.sendMessage).mockRejectedValueOnce(new Error('Agent Zero Proxy Failed: Execution timeout'));
+        it('should handle timeout on long-running WCP route requests', async () => {
+            vi.mocked(wcpInstance.route).mockRejectedValueOnce(
+                new Error('WCP route failed: Execution timeout after 30s')
+            );
 
-            await expect(agentZeroService.sendMessage('test', [])).rejects.toThrow('Execution timeout');
+            await expect(wcpInstance.route('session-1', { agentId: 'generalist', message: 'task' })).rejects.toThrow('timeout');
         });
 
-        it('should handle Internal Server Error from Agent Zero container', async () => {
-            // Simulate 500 error bubbled through proxy
-            vi.mocked(agentZeroService.sendMessage).mockRejectedValueOnce(new Error('Agent Zero Error: Internal Server Error (500)'));
+        it('should handle internal server error bubbled through WCP', async () => {
+            vi.mocked(wcpInstance.route).mockRejectedValueOnce(
+                new Error('WCP Internal Error: Upstream agent returned 500')
+            );
 
-            await expect(agentZeroService.sendMessage('test', [])).rejects.toThrow('500');
+            await expect(wcpInstance.route('session-1', { agentId: 'generalist', message: 'task' })).rejects.toThrow('500');
         });
     });
 
-    describe('Specialist Agent Fallback Logic', () => {
-        it('should gracefully handle tool execution failure in BaseAgent', async () => {
-            // This would test the error bubbling in BaseAgent/AgentService
-            // For now, we verify that AgentZeroService propagates the error which the Service/UI should catch
-            vi.mocked(agentZeroService.sendMessage).mockResolvedValueOnce({
+    describe('Native GenAI Fallback Logic', () => {
+        it('should gracefully handle tool execution failure and propagate error', async () => {
+            vi.mocked(wcpInstance.route).mockResolvedValueOnce({
                 message: 'I tried to use a tool but it failed.',
                 attachments: []
             });
 
-            const response = await agentZeroService.sendMessage('test', []);
+            const response = await wcpInstance.route('session-1', { agentId: 'generalist', message: 'tool_call' }) as { message: string };
             expect(response.message).toContain('failed');
         });
     });
@@ -78,7 +82,7 @@ describe('ChaosVerification', () => {
             const promiseA = firebaseAI.rawGenerateContent(promptA, undefined, {}, undefined, [], { skipCache: true });
             const keyA = Array.from(activeRequests.keys())[0];
 
-            // Start Request B 
+            // Start Request B
             const promiseB = firebaseAI.rawGenerateContent(promptB, undefined, {}, undefined, [], { skipCache: true });
             const keyB = Array.from(activeRequests.keys()).find(k => k !== keyA);
 
@@ -89,6 +93,7 @@ describe('ChaosVerification', () => {
             // Cleanup
             promiseA.catch(() => { });
             promiseB.catch(() => { });
+            void rawGenerateSpy;
         });
 
         it('should handle AI Generation Timeout via AbortSignal', async () => {
@@ -139,7 +144,7 @@ describe('ChaosVerification', () => {
                 };
             });
 
-            // Trigger 
+            // Trigger
             const result = await firebaseAI.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });
 
             expect(mockGenerate).toHaveBeenCalledTimes(2);

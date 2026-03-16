@@ -425,10 +425,10 @@ export const setupDistributionHandlers = () => {
                 args,
                 { timeoutMs: 300000, retries: 1 }, // 5 mins timeout for large uploads + retry
                 (progress, log) => {
-                    if (progress >= 0) {
+                    if (progress >= 0 && !event.sender.isDestroyed()) {
                         event.sender.send('distribution:transmit-progress', { progress });
                     }
-                    if (log) {
+                    if (log && !event.sender.isDestroyed()) {
                         event.sender.send('distribution:transmit-progress', { log });
                     }
                 },
@@ -474,10 +474,10 @@ export const setupDistributionHandlers = () => {
                 [JSON.stringify(releaseData), '--storage-path', storagePath],
                 { timeoutMs: 300000 },  // 5 min for large releases
                 (progress, log) => {
-                    if (progress >= 0) {
+                    if (progress >= 0 && !event.sender.isDestroyed()) {
                         event.sender.send('distribution:submit-progress', { progress });
                     }
-                    if (log) {
+                    if (log && !event.sender.isDestroyed()) {
                         // Forward structured step events to the renderer
                         try {
                             const parsed = JSON.parse(log);

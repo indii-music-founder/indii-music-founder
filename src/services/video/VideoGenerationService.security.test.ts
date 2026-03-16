@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from './VideoGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { useStore } from '@/core/store';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 // --- MOCKS ---
 
@@ -38,6 +39,20 @@ vi.mock('firebase/functions', () => ({
     }
 }));
 
+vi.mock('firebase/firestore', () => ({
+    doc: vi.fn(() => ({ id: 'mock-doc' })),
+    setDoc: vi.fn(() => Promise.resolve()),
+    updateDoc: vi.fn(() => Promise.resolve()),
+    collection: vi.fn(() => ({ id: 'mock-coll' })),
+    serverTimestamp: vi.fn(() => new Date()),
+    getFirestore: vi.fn(),
+    onSnapshot: vi.fn(() => () => {}),
+}));
+
+vi.mock('uuid', () => ({
+    v4: () => 'mock-uuid'
+}));
+
 // 4. Mock Subscription Service
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: {
@@ -55,10 +70,10 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-// 6. Mock Firebase AI (for temporal context analysis)
 vi.mock('@/services/ai/FirebaseAIService', () => ({
     firebaseAI: {
-        analyzeImage: vi.fn().mockResolvedValue('Temporal context')
+        analyzeImage: vi.fn().mockResolvedValue('Temporal context'),
+        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4')
     }
 }));
 
@@ -81,8 +96,8 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         });
 
         // Assert
-        expect(mocks.triggerVideoJob).toHaveBeenCalled();
-        const callArgs = mocks.triggerVideoJob.mock.calls[0][0];
+        expect(firebaseAI.generateVideo).toHaveBeenCalled();
+        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0][0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("4111 1111 1111 1111");
@@ -103,8 +118,8 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         });
 
         // Assert
-        expect(mocks.triggerVideoJob).toHaveBeenCalled();
-        const callArgs = mocks.triggerVideoJob.mock.calls[0][0];
+        expect(firebaseAI.generateVideo).toHaveBeenCalled();
+        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0][0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("SuperSecretPassword123!");

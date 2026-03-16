@@ -17,6 +17,7 @@ import { registerMarketingHandlers } from './handlers/marketing';
 import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
+import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { configureSecurity } from './security';
 import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
@@ -354,6 +355,7 @@ if (!gotTheLock) {
         SidecarService.ensureStarted().catch(err => {
             log.error(`[Main] Initial Docker startup failed: ${err.message}`);
         });
+        registerMobileRemoteHandlers();
 
         createWindow();
         createTray();
@@ -393,6 +395,7 @@ app.on('window-all-closed', () => {
 app.on('will-quit', async () => {
     isQuitting = true;
     await SidecarService.stopSystem();
+    stopMobileRemoteServer();
 });
 
 // Crash Handling & Observability

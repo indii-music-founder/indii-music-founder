@@ -100,6 +100,16 @@ vi.mock('@google/genai', () => {
                 ),
                 embedContent: vi.fn().mockResolvedValue({
                     embeddings: [{ values: [0.1, 0.2, 0.3] }]
+                }),
+                generateVideos: vi.fn().mockResolvedValue({
+                    done: false,
+                    response: null
+                })
+            };
+            operations = {
+                getVideosOperation: vi.fn().mockResolvedValue({
+                    done: true,
+                    response: { generatedVideos: [{ video: { uri: 'http://video.mp4' } }] }
                 })
             };
         }
@@ -330,29 +340,26 @@ describe('FirebaseAIService', () => {
     });
 
     it('should handle generateVideo with polling', async () => {
-        const { httpsCallable } = await import('firebase/functions');
-        const { getDoc } = await import('firebase/firestore');
+        vi.useFakeTimers();
+        // Mock fallback client initialization
+        await service.bootstrap();
+        service['useFallbackMode'] = true;
+        await service['initializeFallbackMode']();
 
-        (httpsCallable as any).mockReturnValue(vi.fn().mockResolvedValue({ data: {} }));
-        (getDoc as any).mockResolvedValueOnce({
-            exists: () => true,
-            data: () => ({
-                serverTimestamp: vi.fn(), status: 'pending'
-            })
-        }).mockResolvedValueOnce({
-            exists: () => true,
-            data: () => ({
-                serverTimestamp: vi.fn(), status: 'completed', videoUrl: 'http://video.mp4'
-            })
-        });
-
-        const result = await service.generateVideo({
+        const generatePromise = service.generateVideo({
             prompt: 'Cinematic video',
             model: 'veo-v1',
-            config: { durationSeconds: 5 }
+            config: { durationSeconds: 5 },
+            timeoutMs: 10000 // large enough to pass the maxAttempts check
         });
 
+        // Advance timers to trigger the setTimeout inside the polling loop
+        await vi.advanceTimersByTimeAsync(5500);
+
+        const result = await generatePromise;
+
         expect(result).toBe('http://video.mp4');
+        vi.useRealTimers();
     });
 
     it('should retry on transient errors', async () => {

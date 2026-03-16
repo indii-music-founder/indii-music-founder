@@ -1,9 +1,8 @@
 import { firebaseAI } from '../ai/FirebaseAIService';
-import { AI_CONFIG } from '@/core/config/ai-models';
+import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
 import { v4 as uuidv4 } from 'uuid';
-import { functionsWest1, db, auth } from '@/services/firebase';
+import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { UserProfile } from '@/modules/workflow/types';
@@ -16,6 +15,15 @@ import { VideoJob, VideoSafetyRating } from '@/types/video';
 import { logger } from '@/utils/logger';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
+
+const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
+
+/** Strip undefined values from an object to prevent Firestore rejection. */
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+    return Object.fromEntries(
+        Object.entries(obj).filter(([, v]) => v !== undefined)
+    ) as T;
+}
 
 /**
  * VideoGenerationService - Client-side orchestrator for AI video production
@@ -101,10 +109,12 @@ export class VideoGenerationService {
 
     /**
      * Triggers a standard (atomic) video generation job.
-     * Enriches the prompt, analyzes temporal context, and invokes the triggerVideoJob function.
+     * Enriches the prompt, analyzes temporal context, and calls the
+     * @google/genai SDK directly via FirebaseAIService (no Cloud Functions).
+     * Writes results to Firestore for UI subscription compatibility.
      * 
      * @param options - Configuration for the video generation request.
-     * @returns A promise resolving to an array containing the jobId placeholder.
+     * @returns A promise resolving to an array containing the job result.
      */
     async generateVideo(options: VideoGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
         // Zod Validation
@@ -114,10 +124,13 @@ export class VideoGenerationService {
             throw new Error(`Invalid video parameters: ${errorMsg}`);
         }
 
-        // Enforce Authentication
-        if (!auth.currentUser) {
+        // Enforce Authentication — capture UID immediately to prevent race condition
+        // (auth.currentUser can become null between check and use)
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
             throw new Error("You must be signed in to generate video. Please log in.");
         }
+        const userId = currentUser.uid;
 
         // Enforce quota check
         const quota = await this.checkVideoQuota(1);
@@ -153,13 +166,27 @@ export class VideoGenerationService {
 
         const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
+        const jobId = uuidv4();
 
-        const { jobId } = await this.triggerVideoGeneration({
-            ...options,
-            aspectRatio: targetAspectRatio,
+        // Write initial job record to Firestore for UI subscription
+        const { setDoc, serverTimestamp } = await import('firebase/firestore');
+        const jobRef = doc(db, 'videoJobs', jobId);
+        await setDoc(jobRef, stripUndefined({
+            id: jobId,
+            userId,
+            orgId: orgId || 'personal',
             prompt: enrichedPrompt,
-            orgId
-        });
+            status: 'processing',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            options: stripUndefined({
+                aspectRatio: targetAspectRatio,
+                resolution: options.resolution,
+                duration: options.duration || options.durationSeconds || 8,
+                generateAudio: options.generateAudio || false,
+                model: options.model || DEFAULT_VIDEO_MODEL,
+            }),
+        }));
 
         // Persist video metadata for future retrieval and agent context
         metadataPersistenceService.save('video', {
@@ -174,22 +201,101 @@ export class VideoGenerationService {
             hasLastFrame: !!options.lastFrame,
             generateAudio: options.generateAudio || false,
             model: options.model,
-            status: 'pending',
+            status: 'processing',
             generatedAt: new Date().toISOString(),
         }, {
-            showToasts: false, // Don't spam toasts for background saves
+            showToasts: false,
             maxRetries: 1,
             queueOnFailure: true,
         }).catch(err => {
             logger.warn('[VideoGeneration] Failed to persist video metadata:', err);
         });
 
-        // Return a mock entry that the UI can subscribe to via Firebase
-        return [{
-            id: jobId,
-            url: '', // Empty URL signifies an async job
-            prompt: enrichedPrompt
-        }];
+        // Build the image input if first frame is provided
+        const imageInput = options.firstFrame
+            ? { imageBytes: options.firstFrame, mimeType: 'image/jpeg' }
+            : options.image
+                ? { imageBytes: options.image.imageBytes, mimeType: options.image.mimeType || 'image/jpeg' }
+                : undefined;
+
+        // Generate video via direct @google/genai SDK (no Cloud Functions)
+        try {
+            const videoUrl = await firebaseAI.generateVideo({
+                prompt: enrichedPrompt,
+                model: options.model || DEFAULT_VIDEO_MODEL,
+                image: imageInput,
+                config: stripUndefined({
+                    aspectRatio: targetAspectRatio || '16:9',
+                    resolution: options.resolution,
+                    durationSeconds: options.duration || options.durationSeconds || 8,
+                    // NOTE: generateAudio and personGeneration are NOT supported in Veo 3.1 preview.
+                    // Including them causes 400 errors. Do NOT add them back without API verification.
+                    negativePrompt: options.negativePrompt,
+                    referenceImages: options.referenceImages?.length ? options.referenceImages : undefined,
+                    lastFrame: options.lastFrame,
+                }),
+            });
+
+            // Update Firestore with completed status for UI subscription
+            const { updateDoc } = await import('firebase/firestore');
+            await updateDoc(jobRef, {
+                status: 'completed',
+                videoUrl: videoUrl,
+                'output.url': videoUrl,
+                'output.metadata.quality': 'pro',
+                'output.metadata.mime_type': 'video/mp4',
+                updatedAt: serverTimestamp(),
+                completedAt: serverTimestamp(),
+            });
+
+            // 🔥 Fire-and-forget: Upload blob to Firebase Storage for durable persistence.
+            // Blob URLs are session-scoped and won't survive page refresh.
+            // This background upload ensures the video remains accessible in future sessions.
+            if (videoUrl.startsWith('blob:')) {
+                (async () => {
+                    try {
+                        const blobResponse = await fetch(videoUrl);
+                        const blob = await blobResponse.blob();
+                        const file = new File([blob], `veo_${jobId}.mp4`, { type: 'video/mp4' });
+
+                        const { VideoUploadService } = await import('./VideoUploadService');
+                        const storagePath = `videos/${userId}/${jobId}.mp4`;
+                        const uploadResult = await VideoUploadService.uploadVideo(file, storagePath);
+
+                        // Update Firestore with durable Storage URL
+                        const { updateDoc: updateDocAsync } = await import('firebase/firestore');
+                        await updateDocAsync(jobRef, {
+                            videoUrl: uploadResult.url,
+                            'output.url': uploadResult.url,
+                            'output.storagePath': uploadResult.path,
+                            updatedAt: serverTimestamp(),
+                        });
+
+                        logger.info(`[VideoGeneration] ✅ Video persisted to Storage: ${uploadResult.url}`);
+                    } catch (uploadError) {
+                        logger.warn('[VideoGeneration] Background Storage upload failed (non-blocking):', uploadError);
+                    }
+                })();
+            }
+
+            return [{
+                id: jobId,
+                url: videoUrl,
+                prompt: enrichedPrompt
+            }];
+        } catch (error) {
+            // Update Firestore with failure for UI subscription
+            const { updateDoc } = await import('firebase/firestore');
+            const errorMsg = error instanceof Error ? error.message : String(error);
+
+            await updateDoc(jobRef, {
+                status: 'failed',
+                error: errorMsg,
+                updatedAt: serverTimestamp(),
+            }).catch(e => logger.warn('[VideoGeneration] Failed to update job status:', e));
+
+            throw error;
+        }
     }
 
     /**
@@ -251,7 +357,9 @@ export class VideoGenerationService {
 
                         // Lens 🎥 Integrity Check: Verify Video Asset Availability (404 Protection)
                         const videoUrl = job.output?.url;
-                        if (videoUrl) {
+                        // Skip integrity check for blob URLs — they are in-memory and always valid.
+                        // HEAD requests are not supported on the blob: protocol.
+                        if (videoUrl && !videoUrl.startsWith('blob:')) {
                             try {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(videoUrl, { method: 'HEAD' });
@@ -298,7 +406,8 @@ export class VideoGenerationService {
 
     /**
      * Triggers a long-form (Daisychaining) video generation job.
-     * Splices a long request into segments, enriches them, and invokes triggerLongFormVideoJob.
+     * Splices a long request into segments, enriches them, and generates each segment
+     * sequentially via the direct SDK, then writes results to Firestore.
      * 
      * @param options - Configuration for long-form generation including totalDuration.
      * @returns A promise resolving to the main jobId placeholder.
@@ -342,7 +451,6 @@ export class VideoGenerationService {
         const jobId = `long_${uuidv4()}`;
         const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
-        const triggerLongFormVideoJob = httpsCallable(functionsWest1, 'triggerLongFormVideoJob');
 
         // Enrich prompt with distributor context
         const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
@@ -351,55 +459,97 @@ export class VideoGenerationService {
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
 
-        // Construct segment-wise prompts for the background worker
+        // Construct segment-wise prompts for sequential generation
         const BLOCK_DURATION = 8;
         const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
         const prompts = Array.from({ length: numBlocks }, (_, i) =>
             `${enrichedPrompt} (Part ${i + 1}/${numBlocks})`
         );
 
-        await triggerLongFormVideoJob({
-            jobId,
-            prompts,
-            orgId,
-            aspectRatio: targetAspectRatio,
-            startImage: options.firstFrame,
-            totalDuration: options.totalDuration,
-            options: {
-                aspectRatio: targetAspectRatio,
-                resolution: options.resolution,
-                seed: options.seed,
-                generateAudio: options.generateAudio,
-                inputAudio: options.inputAudio,
-                thinking: options.thinking,
-                model: options.model,
-                negativePrompt: options.negativePrompt,
-                personGeneration: options.personGeneration,
-                referenceImages: options.referenceImages
-            }
-        });
-
-        // Return a placeholder list with the main jobId
-        // The UI will subscribe to this jobId and see updates as progress changes
-        return [{
+        // Write initial long-form job to Firestore
+        const { setDoc, serverTimestamp } = await import('firebase/firestore');
+        const jobRef = doc(db, 'videoJobs', jobId);
+        await setDoc(jobRef, {
             id: jobId,
-            url: '',
-            prompt: options.prompt
-        }];
-    }
-
-    async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
-        const triggerVideoJob = httpsCallable(functionsWest1, 'triggerVideoJob');
-
-        const jobId = uuidv4();
-
-        await triggerVideoJob({
-            ...options,
-            generateAudio: options.generateAudio,
-            jobId,
+            userId: auth.currentUser?.uid,
+            orgId: orgId || 'personal',
+            prompt: enrichedPrompt,
+            status: 'processing',
+            type: 'long_form',
+            totalSegments: numBlocks,
+            completedSegments: 0,
+            segmentUrls: [],
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
         });
 
-        return { jobId };
+        // Generate each segment sequentially
+        const segmentUrls: string[] = [];
+        try {
+            for (let i = 0; i < prompts.length; i++) {
+                options.onProgress?.(i, numBlocks);
+
+                const videoUrl = await firebaseAI.generateVideo({
+                    prompt: prompts[i],
+                    model: options.model || DEFAULT_VIDEO_MODEL,
+                    image: i === 0 && options.firstFrame
+                        ? { imageBytes: options.firstFrame, mimeType: 'image/jpeg' }
+                        : undefined,
+                    config: stripUndefined({
+                        aspectRatio: targetAspectRatio || '16:9',
+                        resolution: options.resolution,
+                        durationSeconds: BLOCK_DURATION,
+                        // NOTE: generateAudio and personGeneration are NOT supported in Veo 3.1 preview.
+                        // Including them causes 400 errors. Do NOT add them back without API verification.
+                        negativePrompt: options.negativePrompt,
+                        seed: options.seed,
+                    }),
+                });
+
+                segmentUrls.push(videoUrl);
+
+                // Update progress in Firestore
+                const { updateDoc } = await import('firebase/firestore');
+                await updateDoc(jobRef, {
+                    completedSegments: i + 1,
+                    segmentUrls,
+                    updatedAt: serverTimestamp(),
+                });
+            }
+
+            options.onProgress?.(numBlocks, numBlocks);
+
+            // Mark as completed with all segment URLs
+            const { updateDoc } = await import('firebase/firestore');
+            await updateDoc(jobRef, {
+                status: 'completed',
+                videoUrl: segmentUrls[0], // Primary URL is first segment
+                segmentUrls,
+                'output.url': segmentUrls[0],
+                'output.metadata.quality': 'pro',
+                'output.metadata.mime_type': 'video/mp4',
+                updatedAt: serverTimestamp(),
+                completedAt: serverTimestamp(),
+            });
+
+            return [{
+                id: jobId,
+                url: segmentUrls[0],
+                prompt: options.prompt
+            }];
+        } catch (error) {
+            const { updateDoc } = await import('firebase/firestore');
+            const errorMsg = error instanceof Error ? error.message : String(error);
+
+            await updateDoc(jobRef, {
+                status: 'failed',
+                error: errorMsg,
+                segmentUrls,
+                updatedAt: serverTimestamp(),
+            }).catch(e => logger.warn('[VideoGeneration] Failed to update long-form job status:', e));
+
+            throw error;
+        }
     }
 }
 

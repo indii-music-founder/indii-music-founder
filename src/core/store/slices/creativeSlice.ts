@@ -335,7 +335,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         cameraMovement: 'Static',
         motionStrength: 0.7,
         fps: 24,
-        duration: 5, // Default to 5 seconds
+        duration: 6, // Default to 6 seconds (Veo API rejects 5)
         shotList: [],
         isCoverArtMode: false,
         model: 'pro',
