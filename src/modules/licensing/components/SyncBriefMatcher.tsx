@@ -4,40 +4,11 @@
  * catalog tracks fit the mood/BPM. Mood-score algorithm: cosine similarity
  * on mood tag overlap + BPM window matching.
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Music2, Film, Star, ChevronDown, ChevronUp, RefreshCw, Tag } from 'lucide-react';
-
-type Mood = 'Cinematic' | 'Upbeat' | 'Melancholic' | 'Dark' | 'Chill' | 'Energetic' | 'Romantic' | 'Triumphant';
-
-interface SyncBrief {
-    id: string;
-    project: string;
-    type: 'TV' | 'Film' | 'Ad' | 'Game' | 'Trailer';
-    network: string;
-    deadline: string;
-    bpmMin: number;
-    bpmMax: number;
-    moods: Mood[];
-    budget: string;
-    description: string;
-}
-
-interface CatalogTrack {
-    id: string;
-    title: string;
-    bpm: number;
-    moods: Mood[];
-    duration: string;
-    isrc: string;
-}
-
-// Sync briefs should be loaded from the licensing API/inbox
-// The matching algorithm will work once real briefs and catalog tracks are available
-const BRIEFS: SyncBrief[] = [];
-
-// Catalog tracks should be loaded from the user's catalog in Firestore
-const CATALOG: CatalogTrack[] = [];
+import { licensingService } from '@/services/licensing/LicensingService';
+import type { SyncBrief, SyncCatalogTrack as CatalogTrack, SyncMood as Mood } from '@/services/licensing/LicensingService';
 
 function matchScore(brief: SyncBrief, track: CatalogTrack): number {
     // BPM fit: 1.0 if in range, decays outside
@@ -73,12 +44,12 @@ function ScoreBadge({ score }: { score: number }) {
     );
 }
 
-function BriefCard({ brief }: { brief: SyncBrief }) {
+function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack[] }) {
     const [open, setOpen] = useState(false);
-    const matches = useMemo(() => CATALOG
+    const matches = useMemo(() => catalog
         .map(t => ({ track: t, score: matchScore(brief, t) }))
         .sort((a, b) => b.score - a.score)
-        .slice(0, 4), [brief]);
+        .slice(0, 4), [brief, catalog]);
 
     return (
         <div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-colors">
@@ -157,16 +128,39 @@ function BriefCard({ brief }: { brief: SyncBrief }) {
 }
 
 export function SyncBriefMatcher() {
+    const [briefs, setBriefs] = useState<SyncBrief[]>([]);
+    const [catalog, setCatalog] = useState<CatalogTrack[]>([]);
+    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState<SyncBrief['type'] | 'All'>('All');
 
-    const filtered = filter === 'All' ? BRIEFS : BRIEFS.filter(b => b.type === filter);
+    const load = useCallback(async () => {
+        try {
+            const [loadedBriefs, loadedCatalog] = await Promise.all([
+                licensingService.getSyncBriefs(),
+                licensingService.getCatalogTracksForSync(),
+            ]);
+            setBriefs(loadedBriefs);
+            setCatalog(loadedCatalog);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, []);
+
+    useEffect(() => { load(); }, [load]);
 
     const handleRefresh = async () => {
         setRefreshing(true);
-        await new Promise(r => setTimeout(r, 1200));
-        setRefreshing(false);
+        await load();
     };
+
+    const filtered = filter === 'All' ? briefs : briefs.filter(b => b.type === filter);
+    const topBudget = briefs.reduce((top, b) => {
+        const val = parseInt(b.budget.replace(/[^0-9]/g, ''), 10) || 0;
+        return val > top ? val : top;
+    }, 0);
+    const topBudgetLabel = topBudget >= 100000 ? '$100K+' : topBudget >= 50000 ? '$50K+' : topBudget >= 10000 ? `$${Math.round(topBudget / 1000)}K+` : topBudget > 0 ? `$${topBudget.toLocaleString()}` : '—';
 
     return (
         <div className="space-y-5">
@@ -192,7 +186,7 @@ export function SyncBriefMatcher() {
                     </div>
                     <button
                         onClick={handleRefresh}
-                        disabled={refreshing}
+                        disabled={refreshing || loading}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[11px] text-neutral-400 hover:text-white transition-all disabled:opacity-50"
                     >
                         <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} />
@@ -204,10 +198,10 @@ export function SyncBriefMatcher() {
             {/* Stats row */}
             <div className="grid grid-cols-4 gap-3">
                 {[
-                    { label: 'Open Briefs', value: BRIEFS.length, icon: <Film size={13} />, color: 'text-indigo-400' },
-                    { label: 'High Match (75%+)', value: BRIEFS.filter(b => CATALOG.some(t => matchScore(b, t) >= 75)).length, icon: <Star size={13} />, color: 'text-[#FFE135]' },
-                    { label: 'Catalog Tracks', value: CATALOG.length, icon: <Music2 size={13} />, color: 'text-green-400' },
-                    { label: 'Top Budget', value: '$50K+', icon: <Zap size={13} />, color: 'text-purple-400' },
+                    { label: 'Open Briefs', value: loading ? '…' : briefs.length, icon: <Film size={13} />, color: 'text-indigo-400' },
+                    { label: 'High Match (75%+)', value: loading ? '…' : briefs.filter(b => catalog.some(t => matchScore(b, t) >= 75)).length, icon: <Star size={13} />, color: 'text-[#FFE135]' },
+                    { label: 'Catalog Tracks', value: loading ? '…' : catalog.length, icon: <Music2 size={13} />, color: 'text-green-400' },
+                    { label: 'Top Budget', value: loading ? '…' : topBudgetLabel, icon: <Zap size={13} />, color: 'text-purple-400' },
                 ].map(s => (
                     <div key={s.label} className="bg-white/[0.02] border border-white/5 rounded-xl p-3">
                         <div className={`${s.color} mb-1`}>{s.icon}</div>
@@ -219,11 +213,24 @@ export function SyncBriefMatcher() {
 
             {/* Brief cards */}
             <div className="space-y-3">
-                <div className="flex items-center gap-2 text-[10px] text-neutral-500">
-                    <Tag size={10} />
-                    Click a brief to see matched catalog tracks
-                </div>
-                {filtered.map(brief => <BriefCard key={brief.id} brief={brief} />)}
+                {loading ? (
+                    <div className="flex items-center gap-2 text-[10px] text-neutral-500 py-6 justify-center">
+                        <RefreshCw size={11} className="animate-spin" />
+                        Loading briefs…
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <div className="text-center py-8 text-[11px] text-neutral-600">
+                        No briefs found{filter !== 'All' ? ` for type "${filter}"` : ''}
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex items-center gap-2 text-[10px] text-neutral-500">
+                            <Tag size={10} />
+                            Click a brief to see matched catalog tracks
+                        </div>
+                        {filtered.map(brief => <BriefCard key={brief.id} brief={brief} catalog={catalog} />)}
+                    </>
+                )}
             </div>
         </div>
     );
