@@ -306,7 +306,6 @@ export class WorkflowEngine {
                         const dataStr = typeof inputs.data === 'string' ? inputs.data : JSON.stringify(inputs.data);
                         // Replace token $data with the stringified value
                         const expr = condition.replace(/\$data/g, JSON.stringify(dataStr));
-                        // eslint-disable-next-line no-new-func
                         result = Boolean(new Function(`return (${expr})`)());
                     } catch {
                         result = Boolean(inputs.data);
