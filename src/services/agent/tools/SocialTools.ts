@@ -41,8 +41,9 @@ export const SocialTools: Record<string, AnyToolFunction> = {
         // Pull available post content from Firestore to ground the analysis
         let recentPostSnippets: string[] = [];
         try {
-            const feed = await SocialService.getFeed(undefined, 20);
+            const feed = await SocialService.getFeed(undefined, 'all');
             recentPostSnippets = feed
+                .slice(0, 20)
                 .map((p: { content?: string }) => (p.content ?? '').slice(0, 200))
                 .filter(Boolean);
         } catch (e) {
@@ -83,15 +84,17 @@ Be specific and data-driven based on the post content above.`;
                     reportPeriod: { type: 'STRING' },
                 },
                 required: ['sentiment', 'trend_score', 'insights', 'reportPeriod'],
-            } as any,
+            } as Record<string, unknown>,
             undefined,
             undefined,
             AI_MODELS.TEXT.AGENT
         );
 
+        const normalizedTrendScore = Math.min(100, Math.max(0, Math.round(result.trend_score)));
+
         return toolSuccess(
-            { crawledAccounts: accounts, ...result },
-            `Weekly sentiment report for ${accounts.join(', ')}: ${result.sentiment} (score ${result.trend_score}/100).`
+            { crawledAccounts: accounts, ...result, trend_score: normalizedTrendScore },
+            `Weekly sentiment report for ${accounts.join(', ')}: ${result.sentiment} (score ${normalizedTrendScore}/100).`
         );
     })
 };

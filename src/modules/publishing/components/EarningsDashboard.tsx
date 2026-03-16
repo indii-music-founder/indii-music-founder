@@ -46,7 +46,7 @@ export const EarningsDashboard: React.FC = () => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byPlatform && earnings.byPlatform.length > 0) {
             return earnings.byPlatform.map(p => ({
-                label: p.platform,
+                label: p.platformName,
                 revenue: p.revenue,
                 percentage: Math.round((p.revenue / earnings.totalNetRevenue) * 100),
             }));
@@ -65,7 +65,7 @@ export const EarningsDashboard: React.FC = () => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byTerritory && earnings.byTerritory.length > 0) {
             return earnings.byTerritory.map(t => ({
-                label: t.territory,
+                label: t.territoryName,
                 revenue: t.revenue,
                 percentage: Math.round((t.revenue / earnings.totalNetRevenue) * 100),
             }));
@@ -150,9 +150,11 @@ export const EarningsDashboard: React.FC = () => {
                     byPlatform={platformBreakdown}
                     byTerritory={territoryBreakdown}
                     byTrack={earnings.byRelease?.map(r => ({
-                        label: r.releaseTitle,
+                        label: r.releaseName,
                         revenue: r.revenue,
-                        percentage: Math.round((r.revenue / earnings.totalNetRevenue) * 100),
+                        percentage: earnings.totalNetRevenue > 0
+                            ? Math.round((r.revenue / earnings.totalNetRevenue) * 100)
+                            : 0,
                         growth: undefined,
                     }))}
                 />

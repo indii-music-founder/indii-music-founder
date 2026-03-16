@@ -101,13 +101,15 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
 
         try {
             // E2E test hook — only active in dev/test builds, stripped in production
-            const mockPlan = import.meta.env.DEV ? (window as any).__MOCK_AI_PLAN__ : undefined;
+            type WindowWithMockPlan = Window & typeof globalThis & { __MOCK_AI_PLAN__?: GeneratedCampaignPlan };
+            const devWindow = window as WindowWithMockPlan;
+            const mockPlan = import.meta.env.DEV ? devWindow.__MOCK_AI_PLAN__ : undefined;
 
             let plan: GeneratedCampaignPlan;
             if (mockPlan) {
                 Logger.info('CampaignModal', "Using Mock AI Plan (DEV):", mockPlan);
                 plan = mockPlan;
-                (window as any).__MOCK_AI_PLAN__ = undefined;
+                devWindow.__MOCK_AI_PLAN__ = undefined;
                 await new Promise(resolve => setTimeout(resolve, 500));
             } else {
                 plan = await CampaignAI.generateCampaign(brief);
