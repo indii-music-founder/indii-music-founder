@@ -59,7 +59,7 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
                     artistName={release.artist}
                     coverArtUrl={release.coverArtUrl}
                     deployments={release.deployments}
-                    releaseDate={release.releaseDate || new Date().toISOString()}
+                    releaseDate={release.releaseDate}
                 />
             ))}
         </div>

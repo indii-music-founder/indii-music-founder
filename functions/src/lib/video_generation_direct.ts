@@ -114,8 +114,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         if (rawDuration) {
             let dur = typeof rawDuration === 'string' ? parseInt(rawDuration) : rawDuration;
             if (dur <= 4) dur = 4;
-            else if (dur <= 5) dur = 5;
-            else if (dur <= 6) dur = 6;
+            else if (dur <= 6) dur = 6; // strictly 4, 6, or 8 for Veo 3.1
             else dur = 8;
             config.durationSeconds = dur;
         }
@@ -235,13 +234,26 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ALWAYS download the video and upload to Firebase Storage, 
         // as raw Google API URIs require authentication to play in the browser.
 
-        // Check for bytesBase64Encoded inline first
-        if (video?.bytesBase64Encoded) {
-            console.log(`[VideoGenDirect] Got inline base64 video, uploading to Storage...`);
-            const bucket = admin.storage().bucket();
+        const targetBucketName = (process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indiios-alpha-electron.appspot.com').replace('.appspot.com', '');
+
+        // Check for bytesBase64Encoded or videoBytes inline first
+        const base64Data = video?.bytesBase64Encoded || video?.videoBytes;
+        if (base64Data) {
+            console.log(`[VideoGenDirect] Got inline base64 video, uploading to Storage ${targetBucketName}...`);
+            const bucket = admin.storage().bucket(targetBucketName);
             const filePath = `videos/${userId}/${jobId}.mp4`;
             const file = bucket.file(filePath);
-            await file.save(Buffer.from(video.bytesBase64Encoded, 'base64'), {
+            
+            // Depending on SDK version, videoBytes might be a string (base64) or Uint8Array. 
+            // Buffer.from works well with string ('base64' encoding) or raw byte arrays.
+            let buffer: Buffer;
+            if (typeof base64Data === 'string') {
+                buffer = Buffer.from(base64Data, 'base64');
+            } else {
+                buffer = Buffer.from(base64Data);
+            }
+
+            await file.save(buffer, {
                 metadata: { contentType: 'video/mp4' },
                 public: true
             });
@@ -259,7 +271,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
                 // Read from tmp and upload to Storage
                 const fs = await import("fs");
                 const videoBuffer = fs.readFileSync(tmpPath);
-                const bucket = admin.storage().bucket();
+                const bucket = admin.storage().bucket(targetBucketName);
                 const filePath = `videos/${userId}/${jobId}.mp4`;
                 const storageFile = bucket.file(filePath);
                 await storageFile.save(videoBuffer, {
@@ -303,10 +315,10 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             }
         }
 
-
-
         if (!videoUrl) {
-            throw new Error("No video URL or downloadable video in response: " + JSON.stringify(generatedVideos));
+            // Strip out massive buffers to prevent Firestore 1MB document limit crashes
+            const safeOutputKeys = generatedVideos.map((v: any) => Object.keys(v?.video || {}));
+            throw new Error(`No video URL or downloadable video in response. Available keys: ${JSON.stringify(safeOutputKeys)}`);
         }
 
         // ── Step 8: Update Firestore → "completed" ────────────────────────
