@@ -18,7 +18,8 @@ const mocks = vi.hoisted(() => ({
         getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
     },
     firebaseAI: {
-        analyzeImage: vi.fn()
+        analyzeImage: vi.fn(),
+        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4')
     },
     uuid: vi.fn(() => 'job-uuid-123')
 }));
@@ -37,6 +38,7 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     addDoc: vi.fn().mockResolvedValue({ id: 'doc-id' }),
     setDoc: vi.fn().mockResolvedValue(undefined),
+    updateDoc: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -109,7 +111,7 @@ describe('Veo 3.1 Integration Pipeline', () => {
         );
 
         // This is the critical assertion that verifies the "Prompt Enhancer" result is actually used
-        expect(triggerMock).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mocks.firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(mockAnalysis)
         }));
     });

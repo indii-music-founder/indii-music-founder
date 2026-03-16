@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
 import { firebaseAI } from '../../ai/FirebaseAIService';
-import { httpsCallable } from 'firebase/functions';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../../ai/FirebaseAIService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     firebaseAI: {
-        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result.")
+        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result."),
+        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
     }
 }));
 
@@ -29,27 +29,44 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('firebase/functions', () => ({
-  serverTimestamp: vi.fn(),
-    httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }))
-}));
-
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal() as any;
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         ...actual,
-        doc: vi.fn(),
-        onSnapshot: vi.fn()
+        doc: vi.fn(() => ({ id: 'mock-doc-ref', path: 'videoJobs/mock-doc-ref' })),
+        setDoc: vi.fn().mockResolvedValue(undefined),
+        updateDoc: vi.fn().mockResolvedValue(undefined),
+        onSnapshot: vi.fn(),
+        Timestamp: {
+            now: vi.fn(() => ({ toDate: () => new Date() })),
+        },
     };
 });
 
 // Mock SubscriptionService
 vi.mock('@/services/subscription/SubscriptionService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
         getCurrentSubscription: vi.fn().mockResolvedValue({ tier: Promise.resolve('pro') })
+    }
+}));
+
+// Mock MetadataPersistenceService
+vi.mock('@/services/persistence/MetadataPersistenceService', () => ({
+    metadataPersistenceService: {
+        save: vi.fn().mockResolvedValue(undefined),
+        saveVideoJob: vi.fn().mockResolvedValue(undefined),
+        updateVideoJob: vi.fn().mockResolvedValue(undefined),
+    }
+}));
+
+// Mock InputSanitizer
+vi.mock('@/services/ai/utils/InputSanitizer', () => ({
+    InputSanitizer: {
+        sanitize: vi.fn((text: string) => text),
+        sanitizePrompt: vi.fn((text: string) => text),
     }
 }));
 
@@ -63,9 +80,10 @@ describe('VideoGenerationService', () => {
             const result = await VideoGeneration.generateVideo({ prompt: 'test video' });
 
             expect(result).toHaveLength(1);
-            expect(result[0].id).toBeDefined(); // UUID is generated dynamically
-            expect(result[0].url).toBe(''); // Async job returns empty URL
-            expect(httpsCallable).toHaveBeenCalled();
+            expect(result[0].id).toBeDefined();
+            expect(result[0].url).toBe('https://storage.googleapis.com/mock-video.mp4');
+            // Verify it calls the direct SDK path, not Cloud Functions
+            expect(firebaseAI.generateVideo).toHaveBeenCalled();
         });
 
         it('should throw error if quota is exceeded', async () => {
@@ -96,7 +114,8 @@ describe('VideoGenerationService', () => {
 
             expect(result).toHaveLength(1);
             expect(result[0].id).toMatch(/^long_/);
-            expect(result[0].url).toBe('');
+            // Long-form should also call generateVideo for each segment
+            expect(firebaseAI.generateVideo).toHaveBeenCalled();
         });
     });
 
@@ -120,8 +139,7 @@ describe('VideoGenerationService', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({
-  serverTimestamp: vi.fn(), status: 'pending' })
+                    data: () => ({ serverTimestamp: vi.fn(), status: 'pending' })
                 } as any);
 
                 // 2. Completed (Simulating async update)
@@ -153,7 +171,7 @@ describe('VideoGenerationService', () => {
                         exists: () => true,
                         id: mockJobId,
                         data: () => ({
-  serverTimestamp: vi.fn(),
+                            serverTimestamp: vi.fn(),
                             status: 'failed',
                             error: 'Safety violation: Content blocked by safety filters.'
                         })
@@ -174,8 +192,7 @@ describe('VideoGenerationService', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({
-  serverTimestamp: vi.fn(), status: 'processing' })
+                    data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
                 } as any);
                 return vi.fn();
             });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShieldAlert, Database, FileText, ArrowRight } from 'lucide-react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
@@ -17,6 +17,13 @@ export const AuditLogDashboard: React.FC = () => {
     const [logs, setLogs] = useState<AuditLogEntry[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     useEffect(() => {
         // Real-time listener on Firestore audit_logs collection
         const q = query(
@@ -26,6 +33,7 @@ export const AuditLogDashboard: React.FC = () => {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!isMountedRef.current) return;
             const entries = snapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),

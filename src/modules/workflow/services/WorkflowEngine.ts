@@ -214,6 +214,67 @@ export class WorkflowEngine {
                 const results = await VideoGeneration.generateVideo({ prompt, durationSeconds: 5, aspectRatio: '16:9' });
                 return results[0]?.url;
             }
+        // --- REAL AI EXECUTION ---
+        if (data.departmentName === 'Art Department') {
+            // Generate Image
+            const images = await ImageGeneration.generateImages({ prompt, count: 1, aspectRatio: '1:1' });
+            return images[0]?.url;
+        } else if (data.departmentName === 'Marketing Department') {
+            // Generate Text (Multimodal Aware)
+            const isImage = typeof prompt === 'string' && prompt.startsWith('data:image');
+
+            let contents;
+            if (isImage) {
+                // Parse Data URL securely
+                const dataUrlRegex = /^data:([^;]+);base64,(.+)$/;
+                const match = prompt.match(dataUrlRegex);
+                if (!match) {
+                    throw new Error('Invalid Data URL format provided for prompt image content');
+                }
+                const [, mimeType, base64Data] = match;
+
+                contents = [{
+                    role: 'user' as const,
+                    parts: [
+                        { inlineData: { mimeType, data: base64Data } },
+                        { text: "Write marketing copy for this visual asset." }
+                    ]
+                }];
+            } else {
+                contents = [{
+                    role: 'user' as const,
+                    parts: [{ text: `Write marketing copy for: ${prompt}` }]
+                }];
+            }
+
+            const response = await AI.generateContent(
+                contents,
+                AI_MODELS.TEXT.AGENT // Both modes use the Pro Agent model
+            );
+            return response.response.text();
+        } else if (data.departmentName === 'Knowledge Base') {
+            // RAG / Knowledge Base
+            const { runAgenticWorkflow } = await import('@/services/rag/ragService');
+            const { useStore } = await import('@/core/store');
+            const userProfile = useStore.getState().userProfile;
+
+            const result = await runAgenticWorkflow(
+                prompt,
+                userProfile,
+                null,
+                (_status) => { /* logger.debug(`[Research]: ${status}`) */ },
+                (_id, _status) => { /* logger.debug(`[Doc ${id}]: ${status}`) */ },
+                undefined // No fileContent currently available in workflow engine
+            );
+            if (!result || !result.asset) {
+                throw new Error('Agentic workflow failed to produce a valid asset');
+            }
+            return result.asset.content;
+        } else {
+            // Generic
+            return `Processed by ${data.departmentName}: ${prompt}`;
+        }
+    }
 
             // ── Marketing Department ────────────────────────────────────────
             case 'Marketing Department': {
@@ -257,6 +318,21 @@ export class WorkflowEngine {
                 );
                 return res.response.text();
             }
+    public async saveWorkflow(id: string, name: string, description: string, viewport: { x: number; y: number; zoom: number }): Promise<void> {
+        const { getWorkflowFromStorage, saveWorkflowToStorage } = await import('@/services/storage/repository');
+
+        const existingWorkflow = await getWorkflowFromStorage(id) as SavedWorkflow | undefined;
+
+        const workflowData = {
+            id,
+            name,
+            description,
+            nodes: this.nodes,
+            edges: this.edges,
+            viewport,
+            createdAt: existingWorkflow?.createdAt ?? new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
 
             // ── Knowledge Base ──────────────────────────────────────────────
             case 'Knowledge Base': {

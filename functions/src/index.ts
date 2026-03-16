@@ -25,6 +25,11 @@ import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 // import { VertexAI } from "@google-cloud/vertexai";
 import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream if needed, but primary is Vertex
 
+// Polyfill for v1 Firebase Functions migrating to modern Node/Gen 2
+if (!process.env.GCLOUD_PROJECT) {
+    process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indiios-v-1-1";
+}
+
 // Initialize Firebase Admin
 admin.initializeApp();
 
@@ -47,13 +52,20 @@ export {
 export { pandadocWebhook } from './legal/pandadocWebhook';
 
 // Publishing Functions: ISWC Mapper (PandaDoc → composition registration)
-export { processISWCMapping } from './publishing/iswcMapper';
+// TODO: Re-enable after deleting the old HTTPS version in GCP console
+// export { processISWCMapping } from './publishing/iswcMapper';
 
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
 
 // Timeline Orchestrator (Progressive Campaign Engine — polls every 15 min for due milestones)
 export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
+
+// Email OAuth Token Manager (Gmail / Outlook — server-side token exchange & refresh)
+export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email/tokenManager';
+
+// Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
+export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
@@ -294,35 +306,8 @@ export const triggerVideoJob = functions
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
 
-            // 2. Fire-and-forget: Call executeVideoJob directly (bypasses dead Inngest pipeline)
-            //    This is a self-invocation pattern — triggerVideoJob calls executeVideoJob
-            //    which runs for up to 540s. We don't await the response.
-            const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indiios-v-1-1';
-            const executeUrl = `https://us-west1-${projectId}.cloudfunctions.net/executeVideoJob`;
-
-            // Get a valid ID token to self-invoke the function
-            const { GoogleAuth: AuthLib } = await import('google-auth-library');
-            const selfAuth = new AuthLib();
-            const idTokenClient = await selfAuth.getIdTokenClient(executeUrl);
-            const headers = await idTokenClient.getRequestHeaders(executeUrl);
-
-            // Fire-and-forget — don't await the response
-            fetch(executeUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...headers
-                },
-                body: JSON.stringify({
-                    jobId,
-                    userId,
-                    orgId: orgId || "personal",
-                    prompt,
-                    options
-                })
-            }).catch(err => {
-                console.error(`[VideoJob] Fire-and-forget to executeVideoJob failed:`, err);
-            });
+            // 2. That's it — the Firestore document creation above will trigger
+            //    executeVideoJob via Firestore onCreate. No self-invocation needed.
 
             console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
 
@@ -343,7 +328,8 @@ export const triggerVideoJob = functions
  * This is the actual video generation worker. It runs the full Vertex AI pipeline
  * directly, bypassing the broken Inngest callback system.
  *
- * Called by triggerVideoJob via fire-and-forget HTTP POST.
+ * Triggered automatically by Firestore onCreate when triggerVideoJob creates
+ * a new document in the videoJobs collection.
  * 540s timeout (9 minutes) — enough for Vertex AI video generation + polling.
  */
 export const executeVideoJob = functions
@@ -352,31 +338,42 @@ export const executeVideoJob = functions
         timeoutSeconds: 540, // 9 minutes
         memory: "2GB"
     })
-    .https.onRequest(async (req, res) => {
-        // Only accept POST
-        if (req.method !== 'POST') {
-            res.status(405).send('Method Not Allowed');
+    .firestore.document("videoJobs/{jobId}")
+    .onCreate(async (snapshot, context) => {
+        const jobId = context.params.jobId;
+        const data = snapshot.data();
+
+        // Only process documents with status "queued"
+        if (data.status !== "queued") {
+            console.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
             return;
         }
 
-        const { jobId, userId, orgId, prompt, options } = req.body;
+        const userId = data.userId;
+        const prompt = data.prompt;
+        const orgId = data.orgId || "personal";
+        const options = data.options || {};
 
-        if (!jobId || !userId || !prompt) {
-            res.status(400).send('Missing required fields: jobId, userId, prompt');
+        if (!userId || !prompt) {
+            console.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
+            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                status: "failed",
+                error: "Missing required fields: userId or prompt",
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
             return;
         }
 
-        // Return immediately — the actual work happens asynchronously below
-        res.status(202).json({ accepted: true, jobId });
+        console.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
 
-        // Run the generation in the background (the response has already been sent)
+        // Run the generation
         try {
             await generateVideoDirect({
                 jobId,
                 userId,
-                orgId: orgId || 'personal',
+                orgId,
                 prompt,
-                options: options || {}
+                options
             });
         } catch (error: any) {
             // Error is already handled inside generateVideoDirect (Firestore updated to "failed")

@@ -52,6 +52,9 @@ export interface ConversationSession {
     messages: AgentMessage[];
     participants: string[]; // Agent IDs
     isArchived?: boolean;
+    /** Background job namespace, e.g. "cron:album-rollout". Namespaced sessions
+     *  are isolated from the main UI thread and managed by the WCP lock system. */
+    namespace?: string;
 }
 
 export interface AgentSlice {
@@ -75,8 +78,8 @@ export interface AgentSlice {
     // Dual-Chat Channel: 'indii' for orchestrator, 'agent' for specialists
     chatChannel: 'indii' | 'agent';
 
-    // Provider switching: 'direct' (simple LLM chat), 'native' (specialist agents), or 'agent-zero' (Docker container)
-    activeAgentProvider: 'direct' | 'native' | 'agent-zero';
+    // Provider switching: 'direct' (simple LLM chat) or 'native' (specialist agents)
+    activeAgentProvider: 'direct' | 'native';
 
     // Knowledge Base RAG toggle: when true, inject memory + knowledge into system prompt
     isKnowledgeBaseEnabled: boolean;
@@ -100,7 +103,7 @@ export interface AgentSlice {
     agentsError: string | null;
 
     // Actions
-    createSession: (title?: string, initialAgents?: string[]) => string;
+    createSession: (title?: string, initialAgents?: string[], namespace?: string) => string;
     setActiveSession: (sessionId: string) => void;
     deleteSession: (sessionId: string) => void;
     updateSessionTitle: (sessionId: string, title: string) => void;
@@ -117,7 +120,7 @@ export interface AgentSlice {
     setCommandBarAttachments: (attachments: File[]) => void;
     setAgentMode: (mode: AgentMode) => void;
     setChatChannel: (channel: 'indii' | 'agent') => void;
-    setActiveAgentProvider: (provider: 'direct' | 'native' | 'agent-zero') => void;
+    setActiveAgentProvider: (provider: 'direct' | 'native') => void;
     setKnowledgeBaseEnabled: (enabled: boolean) => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
     resolveApproval: (approved: boolean) => void;
@@ -176,7 +179,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     agentWindowSize: { width: 500, height: 800 },
 
-    createSession: (title = 'New Conversation', initialAgents = ['indii']) => {
+    createSession: (title = 'New Conversation', initialAgents = ['indii'], namespace?: string) => {
         const id = crypto.randomUUID();
         const newSession: ConversationSession = {
             id,
@@ -184,14 +187,21 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             createdAt: Date.now(),
             updatedAt: Date.now(),
             messages: [],
-            participants: initialAgents
+            participants: initialAgents,
+            ...(namespace ? { namespace } : {}),
         };
 
-        set(state => ({
-            sessions: { ...state.sessions, [id]: newSession },
-            activeSessionId: id,
-            agentHistory: []
-        }));
+        set(state => {
+            const update: Partial<AgentSlice> = {
+                sessions: { ...state.sessions, [id]: newSession },
+            };
+            // Background (namespaced) sessions must NOT hijack the foreground UI
+            if (!namespace) {
+                update.activeSessionId = id;
+                update.agentHistory = [];
+            }
+            return update;
+        });
 
         // Persist the new session immediately
         import('@/services/agent/SessionService').then(({ sessionService }) => {

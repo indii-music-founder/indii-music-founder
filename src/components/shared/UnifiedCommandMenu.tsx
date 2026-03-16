@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import {
     AudioWaveform, FolderOpen, Video, Map, User, Briefcase,
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
-    Building, Music, ShieldAlert, Cpu
+    Building, Music, ShieldAlert, Cpu, Workflow
 } from 'lucide-react';
 
 export function UnifiedCommandMenu() {
@@ -128,8 +128,15 @@ export function UnifiedCommandMenu() {
                             <span>History & Vault</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('workflow'))} className="flex items-center gap-3 cursor-pointer">
-                            <Settings className="w-4 h-4 text-slate-400" />
+                            <Workflow className="w-4 h-4 text-slate-400" />
                             <span>Workflow Blueprints</span>
+                        </Command.Item>
+                    </Command.Group>
+
+                    <Command.Group heading="System" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
+                        <Command.Item onSelect={() => runCommand(() => setModule('settings'))} className="flex items-center gap-3 cursor-pointer">
+                            <Settings className="w-4 h-4 text-cyan-400" />
+                            <span>Settings & Preferences</span>
                         </Command.Item>
                     </Command.Group>
                 </Command.List>

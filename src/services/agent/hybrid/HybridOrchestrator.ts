@@ -86,17 +86,16 @@ export class HybridOrchestrator {
             AVAILABLE SPECIALISTS:
             ${AGENTS.map(a => `- "${a.id}": ${a.description}`).join('\n')}
 
-            SYSTEM TOOLS (OpenClaw DNA):
+            SYSTEM TOOLS:
             - "browser_control": Navigate websites, fill forms (Library of Congress, PROs).
             - "knowledge_base": Query the artist's personal files/contracts.
-            - "agent_zero_deep": Delegate complex technical/creative generation tasks to the Agent Zero container.
 
             INSTRUCTIONS:
             1. If you can answer directly, do so and set "complete": true.
             2. If you need a specialist, call them by ID using "callAgentId".
             3. If you need to "do" something on the web, use "useTool": "browser_control".
             4. If you need to search the artist's files, use "useTool": "knowledge_base".
-            5. If you need a deep autonomous agent to run code, generate images/video, or browse the web extensively, use "useTool": "agent_zero_deep".
+            5. For complex generation tasks (images, video, deep analysis), delegate to the appropriate specialist agent.
             6. If a specialist fails or times out, you MUST attempt a different path or self-correct.
             7. When calling a specialist, provide the "task" they should perform.
 
@@ -191,23 +190,6 @@ export class HybridOrchestrator {
                     }
                 }
 
-                if (decision.useTool === 'agent_zero_deep') {
-                    logger.info(`[indii:Hybrid] Delegating deep task to Agent Zero Container...`);
-                    try {
-                        const { agentZeroService } = await import('../AgentZeroService');
-                        const result = await agentZeroService.sendMessage(decision.task || decision.args?.query || sanitizedQuery);
-
-                        history.push({
-                            turn: currentTurn,
-                            tool: 'agent_zero_deep',
-                            result: pruneResult(result.message, 3000)
-                        });
-                        lastAgentResponse = result.message;
-                    } catch (azErr) {
-                        logger.error(`[indii:Hybrid] Agent Zero Container failed:`, azErr);
-                        history.push({ turn: currentTurn, tool: 'agent_zero_deep', error: String(azErr) });
-                    }
-                }
 
                 if (decision.complete) {
                     isTaskComplete = true;
