@@ -1,4 +1,4 @@
-import { CustomNode, CustomEdge, NodeData, DepartmentNodeData, LogicNodeData, InputNodeData, OutputNodeData, Status, SavedWorkflow } from '../types';
+import { CustomNode, CustomEdge, NodeData, DepartmentNodeData, LogicNodeData, InputNodeData, OutputNodeData, Status, SavedWorkflow } from '@/modules/workflow/types';
 import { useStore } from '@/core/store';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
@@ -36,28 +36,30 @@ export class WorkflowEngine {
     public async run() {
         if (this.isRunning) return;
         this.isRunning = true;
-        this.results.clear();
-        this.executionQueue = [];
+        
+        try {
+            this.results.clear();
+            this.executionQueue = [];
 
-        // 1. Identify Start Nodes (Input Nodes)
-        const startNodes = this.nodes.filter(node => node.type === 'inputNode');
+            // 1. Identify Start Nodes (Input Nodes)
+            const startNodes = this.nodes.filter(node => node.type === 'inputNode');
 
-        // 2. Initialize Queue with Start Nodes
-        for (const node of startNodes) {
-            this.executionQueue.push({
-                nodeId: node.id,
-                inputs: { prompt: (node.data as InputNodeData).prompt }
-            });
+            // 2. Initialize Queue with Start Nodes
+            for (const node of startNodes) {
+                this.executionQueue.push({
+                    nodeId: node.id,
+                    inputs: { prompt: (node.data as InputNodeData).prompt }
+                });
+            }
+
+            // 3. Process Queue
+            while (this.executionQueue.length > 0) {
+                const task = this.executionQueue.shift()!;
+                await this.executeNode(task);
+            }
+        } finally {
+            this.isRunning = false;
         }
-
-        // 3. Process Queue
-        while (this.executionQueue.length > 0) {
-            const task = this.executionQueue.shift()!;
-            await this.executeNode(task);
-        }
-
-        this.isRunning = false;
-
     }
 
     private async executeNode(task: ExecutionTask) {
