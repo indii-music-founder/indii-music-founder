@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Clock, Briefcase, BookOpen, Radio, Star, ExternalLink, ChevronRight, Search, MapPin, Award } from 'lucide-react';
 import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +6,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { LegalTools } from '@/services/agent/tools/LegalTools';
+import { LegalService } from '@/services/legal/LegalService';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
@@ -33,6 +34,19 @@ export default function LegalDashboard() {
     const [analysisHistory, setAnalysisHistory] = useState<Array<{ name: string; score: number; date: string }>>([]);
     const [activeTab, setActiveTab] = useState('analyzer');
     const toast = useToast();
+
+    // Load persisted analysis history on mount
+    useEffect(() => {
+        LegalService.getAnalyses().then(analyses => {
+            if (analyses.length > 0) {
+                setAnalysisHistory(analyses.map(a => ({
+                    name: a.fileName,
+                    score: a.score,
+                    date: new Date(a.analyzedAt).toLocaleDateString(),
+                })));
+            }
+        }).catch(err => logger.warn('[Legal] Could not load analysis history:', err));
+    }, []);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -101,10 +115,18 @@ Only return valid JSON.
             };
 
             setAnalysisResult(result);
-            setAnalysisHistory(prev => [
-                { name: file.name, score: result.score, date: new Date().toLocaleDateString() },
-                ...prev.slice(0, 9)
-            ]);
+            const historyEntry = { name: file.name, score: result.score, date: new Date().toLocaleDateString() };
+            setAnalysisHistory(prev => [historyEntry, ...prev.slice(0, 19)]);
+
+            // Persist to Firestore (fire-and-forget — don't block the UI)
+            LegalService.saveAnalysis({
+                fileName: file.name,
+                score: result.score,
+                summary: result.summary,
+                risks: result.risks,
+                analyzedAt: new Date().toISOString(),
+            }).catch(err => logger.warn('[Legal] Failed to persist analysis:', err));
+
             toast.success("Analysis complete!");
         } catch (error) {
             logger.error("Analysis failed:", error);

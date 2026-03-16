@@ -1,6 +1,7 @@
-import React from 'react';
-import { Radio } from 'lucide-react';
+import React, { useState } from 'react';
+import { Radio, PlusCircle } from 'lucide-react';
 import { ReleaseStatusCard } from './ReleaseStatusCard';
+import { SubmitReleaseModal } from './SubmitReleaseModal';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 
 interface ReleasesContentProps {
@@ -11,6 +12,8 @@ interface ReleasesContentProps {
 }
 
 export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesContentProps) {
+    const [submitOpen, setSubmitOpen] = useState(false);
+
     if (loading && releases.length === 0) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -35,22 +38,29 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
         );
     }
 
-    if (releases.length === 0) {
-        return (
-            <ActionableEmptyState
-                icon={<Radio size={48} />}
-                title="NO ACTIVE RELEASES"
-                description="Your distributed music will appear here once you start the rollout process from Publishing."
-                colorClasses={{
-                    text: 'text-gray-500',
-                    bg: 'bg-white/5',
-                    border: 'border-white/5'
-                }}
-            />
-        );
-    }
-
     return (
+        <>
+            {/* Submit button row */}
+            <div className="flex justify-end mb-4">
+                <button
+                    onClick={() => setSubmitOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-black font-black text-xs uppercase tracking-widest rounded-lg hover:bg-gray-200 active:scale-[0.98] transition-all"
+                >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    Submit Release
+                </button>
+            </div>
+
+            {releases.length === 0 ? (
+                <ActionableEmptyState
+                    icon={<Radio size={48} />}
+                    title="NO ACTIVE RELEASES"
+                    description="Submit your first release using the button above."
+                    colorClasses={{
+                        text: 'text-gray-500',
+                        bg: 'bg-white/5',
+                        border: 'border-white/5'
+                    }}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {releases.map((release) => (
                 <ReleaseStatusCard
@@ -61,7 +71,29 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
                     deployments={release.deployments}
                     releaseDate={release.releaseDate}
                 />
-            ))}
-        </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {releases.map((release) => (
+                        <ReleaseStatusCard
+                            key={release.id}
+                            releaseTitle={release.title}
+                            artistName={release.artist}
+                            coverArtUrl={release.coverArtUrl}
+                            deployments={release.deployments}
+                            releaseDate={release.releaseDate || new Date().toISOString()}
+                        />
+                    ))}
+                </div>
+            )}
+
+            <SubmitReleaseModal
+                open={submitOpen}
+                onClose={() => setSubmitOpen(false)}
+                onSubmitted={() => {
+                    setSubmitOpen(false);
+                    onRetry(); // refresh releases list
+                }}
+            />
+        </>
     );
 }
