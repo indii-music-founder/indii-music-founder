@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.24.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.1...v1.24.2) (2026-03-16)
+
+
+### Bug Fixes
+
+* **video:** resolve playback error — fetch blob URL from Gemini API ([d6638ba](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d6638ba9d0c5a05ad6c3d7c9ae77aa728e2ccc54))
+
 ## [1.24.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.0...v1.24.1) (2026-03-16)
 
 
