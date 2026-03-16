@@ -552,9 +552,12 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             });
 
             if (window.electronAPI) {
+                const body = result.report?.sftp_skipped
+                    ? `${releaseData.title} DDEX package is ready (SFTP skipped).`
+                    : `${releaseData.title} has been delivered to your distributor.`;
                 window.electronAPI.showNotification(
                     'Release Submitted',
-                    `${releaseData.title} has been delivered to your distributor.`
+                    body
                 );
             }
 
