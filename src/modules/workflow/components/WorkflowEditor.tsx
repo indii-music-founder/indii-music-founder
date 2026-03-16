@@ -37,15 +37,10 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
     const { nodes, edges, setNodes, setEdges, addNode } = useStore();
     const [collaborators, setCollaborators] = React.useState<number>(1);
 
-    // Mock presence effect for CRDT/Yjs item 110
+    // Presence count — shows current user only until CRDT/Yjs (item 110) is implemented
     React.useEffect(() => {
-        if (readOnly) return;
-        const interval = setInterval(() => {
-            // Randomly simulate 1-3 collaborators jumping in/out
-            setCollaborators(Math.floor(Math.random() * 3) + 1);
-        }, 15000);
-        return () => clearInterval(interval);
-    }, [readOnly]);
+        setCollaborators(1);
+    }, []);
 
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const [reactFlowInstance, setReactFlowInstance] = React.useState<any>(null);

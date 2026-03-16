@@ -31,7 +31,9 @@ export function SmartContractGenerator() {
     const [copied, setCopied] = useState(false);
 
     const totalPct = payees.reduce((s, p) => s + Number(p.percentage || 0), 0);
-    const isValid = name && symbol && isrc && Math.abs(totalPct - 100) < 0.01;
+    const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+    const allWalletsSet = payees.every(p => ETH_ADDRESS_RE.test(p.walletAddress.trim()));
+    const isValid = name && symbol && isrc && Math.abs(totalPct - 100) < 0.01 && allWalletsSet;
 
     const addPayee = () => {
         if (payees.length >= 6) return;
@@ -54,7 +56,7 @@ export function SmartContractGenerator() {
             const config: SplitContractConfig = {
                 isrc,
                 payees: payees.map(p => ({
-                    walletAddress: p.walletAddress || `0x${Math.random().toString(16).slice(2, 42)}`,
+                    walletAddress: p.walletAddress.trim(),
                     percentage: Number(p.percentage),
                     role: p.role,
                 })),
