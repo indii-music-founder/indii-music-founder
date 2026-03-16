@@ -91,6 +91,34 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         let imageUrl = item.url;
         let thumbnailUrl: string | undefined;
 
+        // 🔥 Handle blob: URLs for video items — blob: URLs are session-scoped
+        // and become invalid after page refresh. We must upload to Firebase Storage
+        // and persist the durable https:// URL to the history collection.
+        if (item.url.startsWith('blob:') && item.type === 'video') {
+            const { auth } = await import('./firebase');
+            const userId = auth.currentUser?.uid;
+
+            if (userId) {
+                try {
+                    const blobResponse = await fetch(item.url);
+                    const blob = await blobResponse.blob();
+                    const file = new File([blob], `veo_${item.id}.mp4`, { type: 'video/mp4' });
+
+                    const { VideoUploadService } = await import('./video/VideoUploadService');
+                    const storagePath = `videos/${userId}/${item.id}.mp4`;
+                    const uploadResult = await VideoUploadService.uploadVideo(file, storagePath);
+
+                    imageUrl = uploadResult.url;
+                    logger.info(`[StorageService] Video blob uploaded to Storage: ${uploadResult.url}`);
+                } catch (uploadError) {
+                    logger.warn('[StorageService] Video blob upload failed, saving blob URL as fallback:', uploadError);
+                    // Still save the blob: URL — at least the current session can play it
+                }
+            } else {
+                logger.warn('[StorageService] No auth — cannot upload video blob to Storage');
+            }
+        }
+
         // If it's a base64 data URL, use CloudStorageService
         if (item.url.startsWith('data:')) {
             const { auth } = await import('./firebase');
