@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.24.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.0...v1.24.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* resolve AI-identified bugs in WorkflowEngine and Releases components ([c7b13d3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c7b13d350561ea210461003fc1af677a4f342931))
+* resolve AI-identified WorkflowEngine bugs (try/finally block and import alias) ([5c27210](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5c27210343c8ccbc4bedcdcb8468d5141d1cb670))
+
 ## [1.24.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.23.1...v1.24.0) (2026-03-16)
 
 
