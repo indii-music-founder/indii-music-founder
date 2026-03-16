@@ -67,6 +67,9 @@ export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 
+// Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging)
+export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
+
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
 //   1. Set up reCAPTCHA Enterprise in GCP Console for your project.
