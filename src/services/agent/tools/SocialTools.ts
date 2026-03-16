@@ -38,18 +38,61 @@ export const SocialTools: Record<string, AnyToolFunction> = {
     }),
 
     analyze_social_sentiment: wrapTool('analyze_social_sentiment', async ({ accounts }: { accounts: string[] }) => {
-        // Mock crawling linked socials and providing weekly sentiment/trend reports
-        return toolSuccess({
-            crawledAccounts: accounts,
-            sentiment: 'positive',
-            trend_score: 85,
-            insights: [
-                'High engagement on latest video drop.',
-                'Audience is asking for tour dates in comments.',
-                'Negative sentiment down by 15% WoW.'
-            ],
-            reportPeriod: 'Weekly'
-        }, `Weekly sentiment and trend report generated for accounts: ${accounts.join(', ')}. Sentiment is overwhelmingly positive.`);
+        // Pull available post content from Firestore to ground the analysis
+        let recentPostSnippets: string[] = [];
+        try {
+            const feed = await SocialService.getFeed(undefined, 20);
+            recentPostSnippets = feed
+                .map((p: { content?: string }) => (p.content ?? '').slice(0, 200))
+                .filter(Boolean);
+        } catch (e) {
+            logger.warn('[SocialTools] Could not fetch posts for sentiment context:', e);
+        }
+
+        const feedContext = recentPostSnippets.length > 0
+            ? `Recent posts from the feed:\n${recentPostSnippets.slice(0, 10).map((p, i) => `${i + 1}. "${p}"`).join('\n')}`
+            : 'No recent post data available — provide a general analysis for an independent music artist.';
+
+        const prompt = `You are a professional social media analyst for the music industry.
+Analyze the sentiment and trends for these accounts: ${accounts.join(', ')}.
+
+${feedContext}
+
+Return a JSON object with exactly these fields:
+{
+  "sentiment": one of "positive" | "neutral" | "negative",
+  "trend_score": integer 0-100 (higher = stronger positive trend),
+  "insights": array of 3-5 specific, actionable insight strings,
+  "reportPeriod": "Weekly"
+}
+Be specific and data-driven based on the post content above.`;
+
+        const result = await firebaseAI.generateStructuredData<{
+            sentiment: string;
+            trend_score: number;
+            insights: string[];
+            reportPeriod: string;
+        }>(
+            prompt,
+            {
+                type: 'OBJECT',
+                properties: {
+                    sentiment: { type: 'STRING' },
+                    trend_score: { type: 'NUMBER' },
+                    insights: { type: 'ARRAY', items: { type: 'STRING' } },
+                    reportPeriod: { type: 'STRING' },
+                },
+                required: ['sentiment', 'trend_score', 'insights', 'reportPeriod'],
+            } as any,
+            undefined,
+            undefined,
+            AI_MODELS.TEXT.AGENT
+        );
+
+        return toolSuccess(
+            { crawledAccounts: accounts, ...result },
+            `Weekly sentiment report for ${accounts.join(', ')}: ${result.sentiment} (score ${result.trend_score}/100).`
+        );
     })
 };
 
