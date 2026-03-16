@@ -182,6 +182,11 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      // Licensing: sync briefs subcollection (user-scoped, seeded by LicensingService)
+      match /syncBriefs/{briefId} {
+        allow read, write: if isOwner(userId);
+      }
+
       // User Stats subcollection
       match /stats/{statId} {
         allow read, write: if isOwner(userId);
