@@ -44,6 +44,23 @@ export class VideoUploadService {
     ): Promise<VideoUploadResult> {
         const { onProgress, metadata } = options;
 
+        // 0. Pre-upload quota check (non-blocking — fails open for new users)
+        try {
+            const { StorageQuotaService } = await import('@/services/StorageQuotaService');
+            const quotaCheck = await StorageQuotaService.canUpload(file.size);
+            if (!quotaCheck.allowed) {
+                Logger.warn(TAG, `Upload blocked by quota: ${quotaCheck.reason}`);
+                throw new Error(quotaCheck.reason || 'Storage quota exceeded');
+            }
+        } catch (quotaErr) {
+            // Only re-throw if it's our quota error (has a reason message)
+            if (quotaErr instanceof Error && quotaErr.message.includes('quota') || quotaErr instanceof Error && quotaErr.message.includes('exceed')) {
+                throw quotaErr;
+            }
+            // Otherwise, quota service is unavailable — allow the upload
+            Logger.info(TAG, 'Quota check unavailable, proceeding with upload');
+        }
+
         // 1. Prepare Metadata
         // Videos are immutable once generated — use aggressive long-term caching.
         // Firebase Storage download URLs include a token that changes on regeneration,
