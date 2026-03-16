@@ -20,19 +20,8 @@ export interface VideoGenerationOptions {
     generateAudio?: boolean; // Enable native audio generation
 }
 
-// Local config interface to avoid 'any'
-interface GenerationConfig {
-    numberOfVideos?: number;
-    resolution?: string;
-    aspectRatio?: string;
-    durationSeconds?: number;
-    referenceImages?: Array<{
-        image: { imageBytes: string; mimeType: string };
-        referenceType: string;
-    }>;
-    lastFrame?: string;
-    generateAudio?: boolean;
-}
+
+
 
 export class VideoService {
 
@@ -88,7 +77,7 @@ export class VideoService {
                 model: AI_MODELS.VIDEO.GENERATION,
                 prompt: videoPrompt,
                 image: { imageBytes: image.data, mimeType: image.mimeType },
-                config: { aspectRatio: '16:9', durationSeconds: 5 }
+                config: { aspectRatio: '16:9', durationSeconds: 4 }
             }));
 
             return uri || null;
@@ -130,32 +119,20 @@ export class VideoService {
 
         try {
             const model = AI_MODELS.VIDEO.GENERATION;
-            const config: GenerationConfig = {
-                numberOfVideos: 1,
-                resolution: options.resolution || '720p',
-                aspectRatio: options.aspectRatio || '16:9',
-                durationSeconds: durationSeconds,
-            };
 
-            // Add reference images (up to 3 per Veo 3.1 limit)
+            // Build reference images (up to 3 per Veo 3.1 limit)
             const refImages = options.referenceImages || options.anchors;
-            if (refImages && refImages.length > 0) {
-                const limitedRefs = refImages.slice(0, 3); // Enforce 3 image limit
-                config.referenceImages = limitedRefs.map((img, index) => ({
+            const referenceImages = refImages && refImages.length > 0
+                ? refImages.slice(0, 3).map((img, index) => ({
                     image: { imageBytes: img.data, mimeType: img.mimeType },
-                    referenceType: index === 0 ? 'STYLE' : 'ASSET'
-                }));
-            }
+                    referenceType: (index === 0 ? 'STYLE' : 'ASSET') as 'STYLE' | 'ASSET',
+                }))
+                : undefined;
 
-            // Add last frame control for keyframe transitions
-            if (options.lastFrame) {
-                config.lastFrame = `data:${options.lastFrame.mimeType};base64,${options.lastFrame.data}`;
-            }
-
-            // Enable native audio generation
-            if (options.generateAudio) {
-                config.generateAudio = true;
-            }
+            // Build last frame config
+            const lastFrame = options.lastFrame
+                ? `data:${options.lastFrame.mimeType};base64,${options.lastFrame.data}`
+                : undefined;
 
             // Determine input image (firstFrame takes priority over image)
             const firstFrameSource = options.firstFrame || options.image;
@@ -163,12 +140,20 @@ export class VideoService {
                 ? { imageBytes: firstFrameSource.data, mimeType: firstFrameSource.mimeType }
                 : undefined;
 
-            // FIX #8: Wrap with retry logic for rate limiting
+            // Generate with retry for rate limiting — direct SDK call through GenAI alias
             const uri = await this.withRetry(() => AI.generateVideo({
                 model,
                 prompt: options.prompt,
                 image: inputImage,
-                config: config as unknown as Record<string, unknown>
+                config: {
+                    numberOfVideos: 1,
+                    resolution: options.resolution || '720p',
+                    aspectRatio: options.aspectRatio || '16:9',
+                    durationSeconds,
+                    referenceImages,
+                    lastFrame,
+                    generateAudio: options.generateAudio || false,
+                },
             }));
 
             // Increment usage counter after successful generation
@@ -200,7 +185,7 @@ export class VideoService {
                 image: { imageBytes: startImage.data, mimeType: startImage.mimeType },
                 config: {
                     aspectRatio: '16:9',
-                    durationSeconds: 5,
+                    durationSeconds: 4,
                     lastFrame: `data:${endImage.mimeType};base64,${endImage.data}`
                 }
             }));

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import * as Sentry from '@sentry/react';
 import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc, FirestoreError } from 'firebase/firestore';
 import { db } from '@/services/firebase';
@@ -16,6 +16,13 @@ export function useReleases(orgId: string | undefined) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
     const [hasPendingSync, setHasPendingSync] = useState(false);
+
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     useEffect(() => {
         if (!orgId) {
@@ -35,6 +42,7 @@ export function useReleases(orgId: string | undefined) {
 
         const unsubscribe = onSnapshot(q, { includeMetadataChanges: true },
             (snapshot) => {
+                if (!isMountedRef.current) return;
                 const releaseData = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data(),

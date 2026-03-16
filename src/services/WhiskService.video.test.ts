@@ -4,6 +4,18 @@ import { WhiskService } from './WhiskService';
 import { WhiskState } from '@/core/store/slices/creativeSlice';
 import { STYLE_PRESETS } from '@/modules/creative/components/whisk/WhiskPresetStyles';
 
+vi.mock('@/modules/creative/components/whisk/WhiskPresetStyles', () => ({
+    STYLE_PRESETS: [
+        {
+            id: 'preset-matched',
+            prompt: 'Cinematic music video aesthetic, dramatic lighting, film grain, 16:9 composition, storytelling mood, professional color grading',
+            aspectRatio: '16:9',
+            duration: 8,
+            motionIntensity: 'high'
+        }
+    ]
+}));
+
 describe('WhiskService Video Support', () => {
     it('should synthesize a video prompt with subject, scene, motion, and style', () => {
         const mockState: WhiskState = {

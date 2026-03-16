@@ -3,7 +3,6 @@ import { StorageService } from '../StorageService';
 import { HistoryItem } from '@/core/types/history';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
-import { agentZeroService } from './AgentZeroService';
 
 /**
  * AssetObserver monitors the Creative History for newly completed AI assets.
@@ -15,6 +14,7 @@ class AssetObserver {
     private observedIds: Set<string> = new Set();
     private isInitialized: boolean = false;
     private retryTimer: ReturnType<typeof setTimeout> | null = null;
+    private relayTimers: Set<ReturnType<typeof setTimeout>> = new Set();
     private retryCount: number = 0;
     private readonly MAX_RETRIES = 3;
 
@@ -69,6 +69,11 @@ class AssetObserver {
             clearTimeout(this.retryTimer);
             this.retryTimer = null;
         }
+        // Clear all pending relay timeouts to prevent zombie events
+        for (const timer of this.relayTimers) {
+            clearTimeout(timer);
+        }
+        this.relayTimers.clear();
         if (this.unsubscribe) {
             this.unsubscribe();
             this.unsubscribe = null;
@@ -112,15 +117,12 @@ class AssetObserver {
         // Emit internal event for UI updates or other services
         events.emit('ASSET_FINALIZED', { item });
 
-        // Trigger Agent Zero's proactive logic
-        // We wrap this in a timeout to ensure the UI has updated first
-        setTimeout(async () => {
-            try {
-                await agentZeroService.triggerDistributionRelay(item as any);
-            } catch (err) {
-                Logger.error('AssetObserver', 'Failed to trigger distribution relay:', err);
-            }
+        // Emit distribution relay event — downstream listeners handle proactive handover
+        const timerId = setTimeout(() => {
+            events.emit('DISTRIBUTION_RELAY_READY', { item });
+            this.relayTimers.delete(timerId);
         }, 2000);
+        this.relayTimers.add(timerId);
     }
 }
 
