@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.24.3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.2...v1.24.3) (2026-03-16)
+
+
+### Bug Fixes
+
+* resolve corrupted merge from PR [#1308](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/issues/1308) — clean up ReleasesContent and WorkflowEngine ([9110dd8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9110dd8a14d673d23f266402ecec999d5cd616b9))
+
 ## [1.24.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.1...v1.24.2) (2026-03-16)
 
 
