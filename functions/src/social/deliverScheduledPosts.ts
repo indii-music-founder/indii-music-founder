@@ -236,6 +236,7 @@ export const deliverScheduledPosts = onSchedule({
             );
         }
     } catch (error) {
-        logger.error('[deliverScheduledPosts] Error during scheduled delivery:', error);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        logger.error({ message: '[deliverScheduledPosts] Error during scheduled delivery', errorCode: 'DELIVERY_FAILED', detail: errMsg });
     }
 });
