@@ -20,7 +20,7 @@ export default function RecentProjects() {
     useEffect(() => {
         DashboardService.getProjects()
             .then((p) => setProjects(p.slice(0, 4))) // Show top 4
-            .catch(() => {})
+            .catch((err) => { console.error('[RecentProjects] failed to load projects:', err); })
             .finally(() => setLoading(false));
     }, []);
 

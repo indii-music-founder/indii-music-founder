@@ -38,7 +38,11 @@ export const SidecarStatus: React.FC<SidecarStatusProps> = ({ collapsed }) => {
     const Icon = current.icon;
 
     return (
-        <div className={cn(
+        <div
+            role="status"
+            aria-live="polite"
+            aria-label={`Agent Zero status: ${current.label}`}
+            className={cn(
             "flex items-center gap-2 rounded-lg bg-card/50 border border-border/50 transition-all duration-300",
             collapsed ? "p-1 justify-center" : "px-3 py-2"
         )}>
