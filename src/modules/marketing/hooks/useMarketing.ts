@@ -75,7 +75,7 @@ export function useMarketing() {
 
                     // Normalize Firestore Timestamp to ISO string to prevent UI crashes
                     if (startDate && typeof startDate === 'object' && 'toDate' in startDate) {
-                        startDate = (startDate as any).toDate().toISOString();
+                        startDate = (startDate as { toDate: () => Date }).toDate().toISOString();
                     }
 
                     return {
@@ -135,11 +135,11 @@ export function useMarketing() {
             await MarketingService.createCampaign(campaign);
             toast.success("Campaign created successfully!");
             return true;
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error("Failed to create campaign:", err);
             Sentry.captureException(err);
 
-            if (err.code === 'permission-denied') {
+            if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'permission-denied') {
                 toast.error("You must be logged in to create campaigns.");
             } else {
                 toast.error("Failed to create campaign.");

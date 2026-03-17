@@ -125,8 +125,8 @@ describe('Router Context Verification', () => {
             render(<App />);
             // If we wait for it to load, it should throw
             await screen.findByText('Dashboard Loaded');
-        } catch (e: any) {
-            expect(e.message).toMatch(/useNavigate\(\) may be used only in the context of a <Router> component/);
+        } catch (e: unknown) {
+            expect(e instanceof Error ? e.message : '').toMatch(/useNavigate\(\) may be used only in the context of a <Router> component/);
         }
 
         consoleSpy.mockRestore();

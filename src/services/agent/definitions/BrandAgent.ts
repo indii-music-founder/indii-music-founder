@@ -48,11 +48,11 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
             try {
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { critique: response } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
-        analyze_brand_consistency: async (args: { content?: string, type?: string, assetPath?: string, brandKit?: any }) => {
+        analyze_brand_consistency: async (args: { content?: string, type?: string, assetPath?: string, brandKit?: Record<string, unknown> }) => {
             try {
                 // If an asset path is provided, use the high-fidelity vision tool
                 if (args.assetPath && (window as any).electronAPI?.brand) {
@@ -71,8 +71,8 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
                 Return a Score (0-100) and actionable feedback.`;
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { analysis: response } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
         generate_brand_guidelines: async (args: { name: string, values: string[] }) => {
@@ -87,8 +87,8 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
             try {
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { guidelines: response } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
         audit_visual_assets: async (args: { assets: string[] }) => {
@@ -126,8 +126,8 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
 
                 const profile = await audioIntelligence.analyze(file);
                 return { success: true, data: { analysis: profile } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         }
     },

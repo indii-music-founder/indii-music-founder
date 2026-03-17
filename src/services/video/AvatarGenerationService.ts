@@ -46,9 +46,9 @@ export class AvatarGenerationService {
 
             return jobId;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error(`[AvatarGen] Lip-sync generation failed:`, error);
-            store.updateJobStatus(jobId, 'error', error.message || 'Avatar processing failed');
+            store.updateJobStatus(jobId, 'error', error instanceof Error ? error.message : 'Avatar processing failed');
             throw error;
         }
     }

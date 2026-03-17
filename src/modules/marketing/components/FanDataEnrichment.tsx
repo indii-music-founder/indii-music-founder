@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FanEnrichment } from '@/services/marketing/FanEnrichmentService';
 import { FanRecord, EnrichedFanData, EnrichmentProvider, EnrichmentProgress } from '../types';
 import { logger } from '@/utils/logger';
+import { toDateString } from '@/utils/dateUtils';
 
 export default function FanDataEnrichment() {
     const [provider, setProvider] = useState<EnrichmentProvider>('Clearbit');
@@ -30,9 +31,9 @@ export default function FanDataEnrichment() {
             setParsedFans(fans);
             setStatus('idle');
             setErrorMessage(null);
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error("[FanEnrichment] Parse error:", err);
-            setErrorMessage(err.message || "Failed to parse CSV");
+            setErrorMessage(err instanceof Error ? err.message : 'Failed to parse CSV');
             setStatus('error');
             setFile(null);
             setParsedFans([]);
@@ -57,9 +58,9 @@ export default function FanDataEnrichment() {
             );
             setEnrichedFans(results);
             setStatus('completed');
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error("[FanEnrichment] Enrichment error:", err);
-            setErrorMessage(err.message || "Enrichment failed");
+            setErrorMessage(err instanceof Error ? err.message : 'Enrichment failed');
             setStatus('error');
         }
     };
@@ -85,7 +86,7 @@ export default function FanDataEnrichment() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `enriched_fans_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `enriched_fans_${toDateString(new Date())}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

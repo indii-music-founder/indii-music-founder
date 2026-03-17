@@ -58,6 +58,7 @@ const TIER_LIMITS_GB: Record<string, number> = {
 export class StorageQuotaService {
     /**
      * Get the current user's storage quota (one-time read).
+     * Fetches both usage data and subscription tier in parallel.
      */
     static async getQuota(): Promise<StorageQuotaWithLimits | null> {
         const userId = auth.currentUser?.uid;
@@ -89,6 +90,11 @@ export class StorageQuotaService {
 
     /**
      * Subscribe to real-time quota updates.
+     *
+     * Fetches the subscription tier BEFORE starting the onSnapshot listener
+     * so the very first callback receives the correct tier — no flash of
+     * free-tier limits for paying users.
+     *
      * Returns an unsubscribe function.
      */
     static subscribeToQuota(
@@ -102,23 +108,53 @@ export class StorageQuotaService {
         }
 
         const usageRef = doc(db, 'users', userId, 'usage', 'storage');
-        let cachedTier = 'free';
+        let innerUnsub: Unsubscribe | null = null;
+        let cancelled = false;
 
-        // Fetch subscription tier once upfront; real-time usage updates reuse it
+        // Fetch tier first, THEN start the real-time listener.
+        // This prevents the race condition where the first onSnapshot callback
+        // fires before the tier is known, causing paying users to briefly see
+        // free-tier storage limits.
         getDoc(doc(db, 'subscriptions', userId))
-            .then(snap => { cachedTier = (snap.data()?.tier as string) || 'free'; })
-            .catch(() => { /* leave cachedTier as 'free' */ });
+            .then(snap => {
+                if (cancelled) return;
+                const tier = (snap.data()?.tier as string) || 'free';
 
-        return onSnapshot(usageRef, (snapshot) => {
-            if (!snapshot.exists()) {
-                callback(StorageQuotaService.buildDefaultQuota(cachedTier));
-                return;
+                innerUnsub = onSnapshot(usageRef, (snapshot) => {
+                    if (!snapshot.exists()) {
+                        callback(StorageQuotaService.buildDefaultQuota(tier));
+                        return;
+                    }
+                    callback(StorageQuotaService.enrichQuota(snapshot.data(), tier));
+                }, (snapshotError) => {
+                    Logger.error(TAG, 'Quota subscription error:', snapshotError);
+                    callback(null);
+                });
+            })
+            .catch((fetchError) => {
+                if (cancelled) return;
+                Logger.warn(TAG, 'Failed to fetch subscription tier, falling back to free:', fetchError);
+                // Fall back: start listener with 'free' tier rather than blocking entirely
+                innerUnsub = onSnapshot(usageRef, (snapshot) => {
+                    if (!snapshot.exists()) {
+                        callback(StorageQuotaService.buildDefaultQuota('free'));
+                        return;
+                    }
+                    callback(StorageQuotaService.enrichQuota(snapshot.data(), 'free'));
+                }, (snapshotError) => {
+                    Logger.error(TAG, 'Quota subscription error:', snapshotError);
+                    callback(null);
+                });
+            });
+
+        // Return an unsubscribe function that tears down both the pending
+        // tier fetch and the inner snapshot listener
+        return () => {
+            cancelled = true;
+            if (innerUnsub) {
+                innerUnsub();
             }
-            callback(StorageQuotaService.enrichQuota(snapshot.data(), cachedTier));
-        }, (error) => {
-            Logger.error(TAG, 'Quota subscription error:', error);
-            callback(null);
-        });
+        };
     }
 
     /**

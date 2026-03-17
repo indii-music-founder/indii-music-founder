@@ -48,9 +48,10 @@ const BrowserAgentTester: React.FC = () => {
                     metadata: { url, goal, error: 'Incomplete' }
                 });
             }
-        } catch (err: any) {
-            setError(err.message || 'An unexpected error occurred');
-            setLogs(prev => [...prev, `[ERROR] ${err.message}`]);
+        } catch (err: unknown) {
+            const errMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+            setError(errMessage);
+            setLogs(prev => [...prev, `[ERROR] ${errMessage}`]);
         } finally {
             setIsRunning(false);
         }

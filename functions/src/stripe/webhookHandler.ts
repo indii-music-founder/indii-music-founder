@@ -263,25 +263,35 @@ export const stripeWebhook = onRequest({
     return;
   }
 
-  // Idempotency guard: skip events we've already processed.
-  // Stripe retries webhooks on timeout/5xx, so without this we can
-  // double-apply subscription changes or duplicate invoice credits.
+  // ── Idempotency guard: atomic check-and-set via transaction ──────────
+  // Stripe retries webhooks on timeout/5xx. Without an atomic guard, two
+  // concurrent deliveries of the same event can both read "not processed"
+  // and both proceed, causing double subscription changes or duplicate
+  // invoice credits. Using runTransaction() makes the check-and-write
+  // atomic, closing that race window.
   const db = getFirestore();
   const deliveryRef = db.collection('stripe_webhook_deliveries').doc(event.id);
   try {
-    const existing = await deliveryRef.get();
-    if (existing.exists) {
+    const alreadyProcessed = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(deliveryRef);
+      if (snap.exists) {
+        return true; // Already processed or in-flight
+      }
+      // Atomically mark as in-flight so concurrent retries are blocked
+      tx.set(deliveryRef, {
+        eventId: event.id,
+        type: event.type,
+        receivedAt: FieldValue.serverTimestamp(),
+        status: 'processing',
+      });
+      return false;
+    });
+
+    if (alreadyProcessed) {
       console.log(`[stripeWebhook] Duplicate delivery skipped: ${event.id}`);
       res.json({ received: true, duplicate: true });
       return;
     }
-    // Mark as in-flight before processing so concurrent retries are also blocked
-    await deliveryRef.set({
-      eventId: event.id,
-      type: event.type,
-      receivedAt: FieldValue.serverTimestamp(),
-      status: 'processing',
-    });
   } catch (idempotencyErr) {
     // Non-fatal: log and continue — better to process twice than drop
     console.warn('[stripeWebhook] Idempotency check failed (proceeding):', idempotencyErr);
@@ -311,7 +321,7 @@ export const stripeWebhook = onRequest({
         console.log(`[stripeWebhook] Unhandled event type: ${event.type}`);
     }
 
-    // Mark delivery complete
+    // Mark delivery complete (best-effort)
     deliveryRef.update({ status: 'processed', processedAt: FieldValue.serverTimestamp() })
       .catch(() => { /* best-effort */ });
 

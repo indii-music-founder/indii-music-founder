@@ -35,13 +35,15 @@ export class VideoService {
     ): Promise<T> {
         try {
             return await operation();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errObj = error as Record<string, unknown> | null;
+            const errMessage = error instanceof Error ? error.message : String(error);
             const isRetryable =
-                error?.code === 'resource-exhausted' ||
-                error?.message?.includes('429') ||
-                error?.message?.includes('quota') ||
-                error?.message?.includes('rate') ||
-                error?.message?.includes('RESOURCE_EXHAUSTED');
+                errObj?.code === 'resource-exhausted' ||
+                errMessage?.includes('429') ||
+                errMessage?.includes('quota') ||
+                errMessage?.includes('rate') ||
+                errMessage?.includes('RESOURCE_EXHAUSTED');
 
             if (retries > 0 && isRetryable) {
                 logger.warn(`[VideoService] Rate limited, retrying in ${delay}ms... (${retries} retries left)`);

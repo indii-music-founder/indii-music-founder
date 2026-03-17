@@ -236,9 +236,9 @@ export class DigitalSignatureService {
                 sentAt: new Date().toISOString(),
                 provider: 'docusign',
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[DigitalSignatureService] Failed to send split sheet via DocuSign', error);
-            throw new Error(`Failed to send split sheet: ${error.message}`);
+            throw new Error(`Failed to send split sheet: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }

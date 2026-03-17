@@ -134,11 +134,11 @@ export class ProactiveService {
                 status: 'completed'
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error(`[ProactiveService] Failed to execute task ${task.id}:`, error);
             await updateDoc(doc(db, 'proactive_tasks', task.id), {
                 status: 'failed',
-                lastError: error.message
+                lastError: error instanceof Error ? error.message : String(error)
             });
         }
     }

@@ -72,9 +72,9 @@ export class CanvasBatchService {
             store.updateJobStatus(jobId, 'success');
             return exportedMap;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[CanvasBatch] Batch export failed:', error);
-            store.updateJobStatus(jobId, 'error', error.message);
+            store.updateJobStatus(jobId, 'error', error instanceof Error ? error.message : String(error));
             throw error;
         }
     }

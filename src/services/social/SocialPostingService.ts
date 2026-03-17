@@ -66,12 +66,12 @@ export class SocialPostingService {
                 postId: mockedPostId
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error(`[SocialPostingService] Failed to post to ${platform}`, error);
             return {
                 platform,
                 success: false,
-                error: error.message
+                error: error instanceof Error ? error.message : String(error)
             };
         }
     }

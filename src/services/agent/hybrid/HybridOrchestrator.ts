@@ -16,7 +16,7 @@ export class HybridOrchestrator {
     private MAX_TURNS = 10;
     private MAX_RESULT_LENGTH = 3000;
 
-    private truncate(text: any): string {
+    private truncate(text: unknown): string {
         if (!text) return '';
         const str = typeof text === 'string' ? text : JSON.stringify(text);
         if (str.length > this.MAX_RESULT_LENGTH) {
@@ -44,7 +44,7 @@ export class HybridOrchestrator {
         const history: any[] = [];
 
         // Helper to prune tool/agent results to stay within context window
-        const pruneResult = (input: any, maxLen: number = 3000): string => {
+        const pruneResult = (input: unknown, maxLen: number = 3000): string => {
             if (input === null || input === undefined) return "";
             const text = typeof input === 'string' ? input : JSON.stringify(input);
             if (text.length <= maxLen) return text;
@@ -139,7 +139,7 @@ export class HybridOrchestrator {
                             result: pruneResult(result.text, 5000)
                         });
                         lastAgentResponse = result.text;
-                    } catch (agentErr: any) {
+                    } catch (agentErr: unknown) {
                         logger.error(`[indii:Hybrid] Specialist ${decision.callAgentId} failed:`, agentErr);
                         history.push({ turn: currentTurn, agent: decision.callAgentId, error: String(agentErr) });
                     }
@@ -150,6 +150,7 @@ export class HybridOrchestrator {
                     logger.info(`[indii:Hybrid] Using system tool: knowledge_base`);
                     try {
                         const { KnowledgeTools } = await import('../tools/KnowledgeTools');
+                        if (!KnowledgeTools.search_knowledge) throw new Error('search_knowledge not available');
                         const result = await KnowledgeTools.search_knowledge({ query: decision.args?.query || sanitizedQuery }, context);
 
                         history.push({
@@ -157,7 +158,7 @@ export class HybridOrchestrator {
                             tool: 'knowledge_base',
                             result: pruneResult(result.data?.answer || '', 3000)
                         });
-                        lastAgentResponse = result.data?.answer;
+                        lastAgentResponse = result.data?.answer ?? '';
                     } catch (toolErr) {
                         logger.error(`[indii:Hybrid] Tool knowledge_base failed:`, toolErr);
                         history.push({ turn: currentTurn, tool: 'knowledge_base', error: String(toolErr) });
@@ -171,14 +172,17 @@ export class HybridOrchestrator {
                         let result;
 
                         if (decision.args?.url) {
+                            if (!BrowserTools.browser_navigate) throw new Error('browser_navigate not available');
                             result = await BrowserTools.browser_navigate({ url: decision.args.url }, context);
                         } else if (decision.args?.action) {
+                            if (!BrowserTools.browser_action) throw new Error('browser_action not available');
                             result = await BrowserTools.browser_action({
                                 action: decision.args.action,
                                 selector: decision.args.selector,
                                 text: decision.args.text
                             }, context);
                         } else {
+                            if (!BrowserTools.browser_snapshot) throw new Error('browser_snapshot not available');
                             result = await BrowserTools.browser_snapshot({}, context);
                         }
 
@@ -199,10 +203,12 @@ export class HybridOrchestrator {
                     else break;
                 }
 
-            } catch (e: any) {
-                logger.error(`[indii:Hybrid] Turn ${currentTurn} failed:`, e?.message || e);
-                logger.error(`[indii:Hybrid] Error details:`, e?.stack || 'No stack');
-                lastAgentResponse = `I encountered an issue: ${e?.message?.slice?.(0, 100) || 'Unknown error'}`;
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e);
+                const stack = e instanceof Error ? e.stack : 'No stack';
+                logger.error(`[indii:Hybrid] Turn ${currentTurn} failed:`, msg);
+                logger.error(`[indii:Hybrid] Error details:`, stack);
+                lastAgentResponse = `I encountered an issue: ${msg.slice(0, 100)}`;
                 break;
             }
         }
