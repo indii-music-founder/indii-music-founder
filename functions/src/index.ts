@@ -31,6 +31,9 @@ admin.initializeApp();
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
 
+// Stripe Split Escrow (Item 135)
+export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
+
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
