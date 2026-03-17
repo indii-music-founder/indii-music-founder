@@ -100,12 +100,12 @@ function injectFounderEntry(
     covenantHash: ${JSON.stringify(record.covenantHash)},
   },`;
 
-    // Replace the placeholder comment line with the new entry + placeholder preserved
-    return fileContent.replace(
-        '  // ── Founder entries are appended here automatically ──',
-        `${entry}\n  // ── Founder entries are appended here automatically ──`
-    );
-}
+  // Replace the placeholder comment line with the new entry + placeholder preserved
+  const placeholder = "  // ── Founder entries are appended here automatically ──";
+  if (!fileContent.includes(placeholder)) {
+    throw new Error('Placeholder not found in founders.ts');
+  }
+  return fileContent.replace(placeholder, `${entry}\n${placeholder}`);}
 
 /**
  * Commit the updated founders.ts to main via the GitHub Contents API.
