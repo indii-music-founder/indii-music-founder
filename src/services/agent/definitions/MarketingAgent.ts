@@ -56,8 +56,8 @@ Include:
             try {
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { brief: response } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
         analyze_audience: async (args: { platform: string }) => {
@@ -72,11 +72,11 @@ Provide:
             try {
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { analysis: response } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
-        schedule_content: async (args: { posts: any[] }) => {
+        schedule_content: async (args: { posts: Record<string, unknown>[] }) => {
             // Future: Call SocialService.schedulePost
             const prompt = `Simulate scheduling posts.Count: ${args.posts.length}. Return a confirmation message.`;
             const confirmation = await firebaseAI.generateText(prompt);
@@ -124,11 +124,11 @@ Provide:
                         technical: profile.technical
                     }
                 };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
-        create_artifact_drop: SovereignTools.create_artifact_drop
+        create_artifact_drop: SovereignTools.create_artifact_drop!
     },
     tools: [{
         functionDeclarations: [

@@ -42,9 +42,9 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                 setError(result.error || 'Failed to parse DSR report.');
                 toast.error('Parsing failed');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error('Error parsing DSR:', err);
-            setError(err.message || 'Failed to parse DSR report. Ensure it follows DDEX standards.');
+            setError(err instanceof Error ? err.message : 'Failed to parse DSR report. Ensure it follows DDEX standards.');
             toast.error('Parsing failed');
         } finally {
             setIsParsing(false);
@@ -59,8 +59,8 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
             await onProcess(parsedReport);
             toast.success('Royalty data integrated into dashboard');
             onClose();
-        } catch (err: any) {
-            setError(err.message || 'Failed to process report data.');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to process report data.');
         } finally {
             setIsParsing(false);
         }

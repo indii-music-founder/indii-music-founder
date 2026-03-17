@@ -76,9 +76,9 @@ export class SocialAutoPosterService {
 
             return jobId;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error(`[SocialPost] Failed to queue ${content.platform} post:`, error);
-            store.updateJobStatus(jobId, 'error', error.message || 'Post failed to queue');
+            store.updateJobStatus(jobId, 'error', error instanceof Error ? error.message : 'Post failed to queue');
             throw error;
         }
     }

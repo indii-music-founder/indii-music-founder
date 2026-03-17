@@ -50,9 +50,9 @@ export class AudioContinuationService {
 
             return jobId;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[AudioContinuation] Failed to start continuation:', error);
-            store.updateJobStatus(jobId, 'error', error.message || 'Continuation failed to start');
+            store.updateJobStatus(jobId, 'error', error instanceof Error ? error.message : 'Continuation failed to start');
             throw error;
         }
     }

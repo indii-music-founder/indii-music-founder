@@ -121,8 +121,8 @@ export const SecurityTools: Record<string, AnyToolFunction> = {
             }
 
             return toolSuccess(result, `Credentials for ${service_name} rotated successfully in the vault.`);
-        } catch (error: any) {
-            return toolError(`Failed to bridge to security vault: ${error.message}`, "BRIDGE_ERROR");
+        } catch (error: unknown) {
+            return toolError(`Failed to bridge to security vault: ${error instanceof Error ? error.message : String(error)}`, "BRIDGE_ERROR");
         }
     }),
 
@@ -232,8 +232,8 @@ export const SecurityTools: Record<string, AnyToolFunction> = {
             }
 
             return toolSuccess(result.scan, `Vulnerability scan completed for ${scope}. Score: ${result.scan.score}`);
-        } catch (error: any) {
-            return toolError(`Failed to bridge to security scanner: ${error.message}`, "BRIDGE_ERROR");
+        } catch (error: unknown) {
+            return toolError(`Failed to bridge to security scanner: ${error instanceof Error ? error.message : String(error)}`, "BRIDGE_ERROR");
         }
     }),
 

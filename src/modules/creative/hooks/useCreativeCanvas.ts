@@ -277,8 +277,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     toast.success("Remix Generated! Hint: Draw on the image for targeted edits.");
                 }
             }
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to process edit');
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Failed to process edit');
         } finally {
             setIsProcessing(false);
             setProcessingStatus('');
@@ -295,8 +295,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             } else {
                 throw new Error(result.error || 'Unknown error');
             }
-        } catch (error: any) {
-            toast.error(error.message || 'Animation failed');
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Animation failed');
         }
     };
 
@@ -392,8 +392,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 setEndFrameItem(targetAsset as any);
                 toast.success("Climax frame created!");
             }
-        } catch (error: any) {
-            toast.error(`Error: ${error.message}`);
+        } catch (error: unknown) {
+            toast.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setIsProcessing(false);
             setProcessingStatus('');
@@ -424,7 +424,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 download(results.instagram, '1-1-ig');
                 download(results.youtube, '16-9-yt');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Batch export failed.");
         } finally {
             setIsProcessing(false);

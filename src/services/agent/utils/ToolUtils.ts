@@ -64,14 +64,15 @@ export function wrapTool<TArgs extends ToolFunctionArgs>(
                 toolName
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             logger.error(`[Tool:${toolName}] execution failed:`, error);
 
             // Preserve specific error codes if available (e.g. QUOTA_EXCEEDED)
-            const errorCode = (error?.code && typeof error.code === 'string')
-                ? error.code
-                : (error?.name === 'QuotaExceededError' ? 'QUOTA_EXCEEDED' : 'TOOL_EXECUTION_ERROR');
+            const errObj = error as Record<string, unknown> | null;
+            const errorCode = (errObj?.code && typeof errObj.code === 'string')
+                ? errObj.code
+                : (error instanceof Error && error.name === 'QuotaExceededError' ? 'QUOTA_EXCEEDED' : 'TOOL_EXECUTION_ERROR');
 
             return toolError(errorMessage, errorCode, {
                 latencyMs: Date.now() - startTime,

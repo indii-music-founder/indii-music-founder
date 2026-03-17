@@ -220,7 +220,7 @@ export const MerchandiseService = {
             });
 
             if (results.length > 0) {
-                const resultUrl = results[0].url;
+                const resultUrl = results[0]!.url;
                 // Update the record with the result
                 await updateDoc(docRef, {
                     resultUrl,
@@ -230,10 +230,10 @@ export const MerchandiseService = {
             }
 
             throw new Error('No images generated');
-        } catch (error: any) {
+        } catch (error: unknown) {
             await updateDoc(docRef, {
                 status: 'failed',
-                error: error.message
+                error: error instanceof Error ? error.message : String(error)
             });
             throw error;
         }
@@ -278,7 +278,7 @@ export const MerchandiseService = {
 
             return jobId;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error("Video Generation Error:", error);
             throw error;
         }
