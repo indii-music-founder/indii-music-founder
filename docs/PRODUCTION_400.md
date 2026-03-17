@@ -138,9 +138,9 @@ This document contains **Part 6** of the master production readiness checklist (
 
 - [ ] **394. Push Notification Permission Flow:** The app registers a FCM token in `firebase-messaging-sw.js` but there is no user-facing UI that requests `Notification.requestPermission()` and explains the value proposition before the browser prompt appears.
 - [ ] **395. App Install Prompt Analytics:** `src/components/PWAInstallPrompt.tsx` shows the install prompt but does not track `prompt shown`, `prompt accepted`, `prompt dismissed` events to Firebase Analytics. Add events to measure PWA install conversion.
-- [ ] **396. iOS PWA Splash Screen and Status Bar:** `index.html` is missing `<meta name="apple-mobile-web-app-status-bar-style">` and platform-specific splash screen meta tags. iOS PWA installs show a white flash on launch.
+- [x] **396. iOS PWA Splash Screen and Status Bar:** `index.html` is missing `<meta name="apple-mobile-web-app-status-bar-style">` and platform-specific splash screen meta tags. iOS PWA installs show a white flash on launch.
 - [ ] **397. Viewport Lock for Mobile Modals:** Several modals use `position: fixed` without `touch-action: none` on the scroll container. On iOS Safari, background content scrolls behind an open modal. Add `overscroll-behavior: contain` to modal overlays.
-- [ ] **398. Web Share API for Release Links:** Add a Share button on the Release Detail page that calls `navigator.share({ title, url })` on supported browsers — enables artists to share release links directly from the app to social platforms.
+- [x] **398. Web Share API for Release Links:** Add a Share button on the Release Detail page that calls `navigator.share({ title, url })` on supported browsers — enables artists to share release links directly from the app to social platforms.
 - [ ] **399. Biometric Auth on Mobile PWA:** `BiometricGate.tsx` targets Electron's `keytar`. Extend with `PublicKeyCredential` / WebAuthn for mobile PWA biometric auth (Face ID / Touch ID via browser API) as a fallback when Electron APIs are unavailable.
 
 ---

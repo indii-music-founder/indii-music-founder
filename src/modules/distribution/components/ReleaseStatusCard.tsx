@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useCallback } from 'react';
+import { Share2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import type { ReleaseStatus } from '@/services/distribution/types/distributor';
 
@@ -44,6 +45,19 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
     releaseDate,
     upc
 }) => {
+    // Item 398: Web Share API for release links
+    const handleShare = useCallback(async () => {
+        if (!navigator.share) return;
+        try {
+            await navigator.share({
+                title: `${releaseTitle} — ${artistName}`,
+                text: `Check out "${releaseTitle}" by ${artistName} on all platforms.`,
+                url: window.location.href,
+            });
+        } catch (_e) {
+            // User cancelled or API not available — ignore
+        }
+    }, [releaseTitle, artistName]);
     // Determine overall status (most critical one)
     const deploymentList = Object.values(deployments);
     const overallStatus = deploymentList.length > 0 ? deploymentList[0].status : 'draft';
@@ -111,6 +125,17 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                     <div className="flex justify-between items-center pt-2 border-t border-gray-800/50">
                         {upc && (
                             <span className="text-[10px] text-gray-600 font-mono">UPC: {upc}</span>
+                        )}
+                        {/* Item 398: Web Share API */}
+                        {typeof navigator !== 'undefined' && navigator.share && (
+                            <button
+                                onClick={handleShare}
+                                className="p-1.5 rounded-md hover:bg-white/5 text-gray-600 hover:text-gray-300 transition-colors mr-2"
+                                title="Share release"
+                                aria-label={`Share ${releaseTitle}`}
+                            >
+                                <Share2 size={12} />
+                            </button>
                         )}
                         <button className="text-[11px] font-bold text-white hover:text-dept-distribution transition-colors ml-auto group/btn flex items-center gap-1 uppercase tracking-widest">
                             VIEW DETAILS
