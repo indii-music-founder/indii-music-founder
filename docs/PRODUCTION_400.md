@@ -42,8 +42,8 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **337. Empty Catch Block Remediation:** `src/modules/merchandise/components/WalletConnectPanel.tsx` and `src/modules/dashboard/components/RecentProjects.tsx` have `.catch(() => {})` — silently swallowing errors. Replace with `catch (err) { logger.error('...', err); }` and surface via toast where appropriate.
 - [ ] **338. onSnapshot Cleanup Audit:** 236 `onSnapshot` calls across the codebase — audit each `useEffect` containing `onSnapshot` to confirm the cleanup function returns `unsubscribe()`. Fix any missing returns. Priority: `src/services/video/`, `src/services/ai/`, `src/modules/distribution/`.
 - [x] **339. Fetch Error Handling: response.json() on Non-200:** Multiple service files call `await res.json()` without first checking `res.ok`. If the server returns HTML error page, JSON parse throws. Add `if (!res.ok) throw new Error(await res.text())` pattern across `src/services/`.
-- [ ] **340. Service Worker: Push Event Handler:** `src/service-worker.ts` lacks a `push` event listener. Add handler that shows a notification and opens the app — otherwise registered push subscriptions silently fail to display.
-- [ ] **341. Service Worker: Share Target Input Validation:** `src/service-worker.ts:77-127` — the Share Target handler accepts files from external apps without type, size, or name validation. Add whitelist of MIME types and 50MB size cap before passing to IndexedDB.
+- [x] **340. Service Worker: Push Event Handler:** `src/service-worker.ts` lacks a `push` event listener. Add handler that shows a notification and opens the app — otherwise registered push subscriptions silently fail to display.
+- [x] **341. Service Worker: Share Target Input Validation:** `src/service-worker.ts:77-127` — the Share Target handler accepts files from external apps without type, size, or name validation. Add whitelist of MIME types and 50MB size cap before passing to IndexedDB.
 - [x] **342. aria-live Regions for Dynamic Content:** Real-time status updates (Agent sidecar health, upload queue progress, delivery status) have no `aria-live` attribute. Add `aria-live="polite"` to the sidecar status indicator and `aria-live="assertive"` to error toasts.
 
 ---
@@ -117,7 +117,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **382. onSnapshot Cleanup: Distribution Status Polling:** `src/modules/distribution/components/TransmissionMonitor.tsx` polls delivery status via `onSnapshot`. Confirm subscription is cancelled when component unmounts and when job reaches terminal state.
 - [ ] **383. Offline: Firestore Pending Write Conflict Resolution:** When the app comes back online after a period of edits, Firestore offline persistence may surface write conflicts. Add a conflict resolution strategy (last-write-wins with timestamp, or merge logic) in `MetadataPersistenceService`.
 - [x] **384. Background Sync for Failed Social Posts:** Scheduled posts that fail delivery are marked failed in Firestore but not retried. Add exponential backoff retry logic in `deliverScheduledPosts.ts` — retry failed delivery up to 3× before final failure notification.
-- [ ] **385. Workbox: Offline Fallback for Navigation Requests:** `src/service-worker.ts` caches assets but has no offline fallback HTML page for navigation requests when the shell can't load. Add `offlineFallback: '/offline.html'` with a minimal informational page.
+- [x] **385. Workbox: Offline Fallback for Navigation Requests:** `src/service-worker.ts` caches assets but has no offline fallback HTML page for navigation requests when the shell can't load. Add `offlineFallback: '/offline.html'` with a minimal informational page.
 - [x] **386. IndexedDB Quota Management:** The offline queue and RAG cache write to IndexedDB without quota checks. Add `navigator.storage.estimate()` before writes and warn when remaining quota < 50MB.
 
 ---

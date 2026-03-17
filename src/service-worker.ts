@@ -69,10 +69,53 @@ registerRoute(
 // Firestore handles its own offline persistence and sync for data mutations.
 // Using BackgroundSyncPlugin for /api/ conflicts with Firestore's built-in offline support.
 
+// Item 385: Offline fallback for navigation requests
+registerRoute(
+    ({ request }) => request.mode === 'navigate',
+    new NetworkOnly({
+        plugins: [
+            {
+                fetchDidFail: async () => {
+                    return caches.match('/offline.html') as Promise<Response>;
+                }
+            }
+        ]
+    })
+);
+
+// Item 340: Push notification handler
+self.addEventListener('push', (event: PushEvent) => {
+    const data = event.data?.json() as { title?: string; body?: string; icon?: string } | null;
+    const title = data?.title ?? 'indiiOS';
+    const options: NotificationOptions = {
+        body: data?.body ?? 'You have a new notification',
+        icon: data?.icon ?? '/icons/icon-192x192.png',
+        badge: '/favicon.svg',
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event: NotificationEvent) => {
+    event.notification.close();
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window' }).then(clients => {
+            if (clients.length > 0) {
+                clients[0].focus();
+            } else {
+                self.clients.openWindow('/');
+            }
+        })
+    );
+});
+
 // Share Target Handler
 // Intercepts POST requests from other apps sharing content
 import { openDB } from 'idb';
 import { logger } from '@/utils/logger';
+
+// Item 341: Allowed MIME types and max file size for share target
+const SHARE_ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'video/mp4', 'video/webm', 'text/plain', 'application/pdf']);
+const SHARE_MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 registerRoute(
     '/_share-target',
@@ -84,6 +127,14 @@ registerRoute(
             const text = formData.get('text');
             const url = formData.get('url');
 
+            // Item 341: Validate shared files before storing
+            const validatedFiles = files.filter(f => {
+                if (!(f instanceof File)) return false;
+                if (!SHARE_ALLOWED_TYPES.has(f.type)) return false;
+                if (f.size > SHARE_MAX_FILE_SIZE) return false;
+                return true;
+            });
+
             // Store shared data in IndexedDB
             const db = await openDB('indii-share-target', 1, {
                 upgrade(db) {
@@ -94,7 +145,7 @@ registerRoute(
             });
 
             await db.add('shared-items', {
-                files,
+                files: validatedFiles,
                 title,
                 text,
                 url,
