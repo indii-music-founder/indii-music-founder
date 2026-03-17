@@ -32,7 +32,12 @@ async function handleFounderPassCheckoutCompleted(session: Stripe.Checkout.Sessi
   const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : null;
 
   if (!userId || !paymentIntentId) {
-    console.error('[handleFounderPassCheckoutCompleted] Missing userId or paymentIntentId in metadata');
+    console.error(
+      `[handleFounderPassCheckoutCompleted] Missing userId or paymentIntentId. ` +
+      `sessionId=${session.id}, userId=${userId ?? 'MISSING'}, ` +
+      `paymentIntentId=${paymentIntentId ?? 'MISSING'}, ` +
+      `metadata=${JSON.stringify(session.metadata)}`
+    );
     return;
   }
 

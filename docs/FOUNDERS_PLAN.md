@@ -48,13 +48,13 @@ These terms will be encoded immutably in `src/config/founders.ts` and signed:
 - **API costs:** Pass-through at cost — founders are not charged a markup, but are responsible for their own Gemini/Vertex AI token consumption billed monthly at Anthropic/Google cost
 - **Seats:** Exactly 10 founders total. No exceptions.
 - **Name in code:** Each founder's name (or handle, their choice) is committed to the git repository in `src/config/founders.ts` and remains there for the lifetime of the software. This is their proof.
-- **Covenant hash:** A SHA-256 hash of `name + terms + joinedAt` is returned to the founder at checkout and stored in Firestore. If terms are ever disputed, the hash proves what was promised.
+- **Covenant hash:** `SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")` is returned to the founder at checkout and stored in Firestore. If terms are ever disputed, the hash proves what was promised. The pipe-delimited formula is the canonical recipe — founders can recompute it at any time.
 
 ---
 
 ### Architecture
 
-```
+```text
 Landing page                Studio app              Cloud Functions
 ────────────                ──────────              ───────────────
 FoundersSection.tsx         FounderBadge.tsx        activateFounderPass()
@@ -92,7 +92,7 @@ The permanent on-disk record. Committed to git. Immutable by design (git history
  *
  * This file is a permanent record of indiiOS founding members.
  * Entries are append-only. Removal of any entry is a breach of covenant.
- * Hash verification: SHA-256(name + COVENANT_VERSION + joinedAt)
+ * Hash verification: SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")
  *
  * indiiOS LLC — chartered 2024
  */
@@ -112,7 +112,7 @@ export interface FounderRecord {
   seat: number;               // 1–10, permanent
   name: string;               // public display name or handle
   joinedAt: string;           // ISO date, UTC
-  covenantHash: string;       // SHA-256(name+COVENANT_VERSION+joinedAt)
+  covenantHash: string;       // SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")
 }
 
 export const FOUNDERS: FounderRecord[] = [
@@ -129,12 +129,13 @@ Cloud Function (`onCall`) that:
 1. Verifies the caller is authenticated
 2. Confirms a `payment_intent` was paid via Stripe API
 3. Checks `founders` collection count < 10
-4. Generates covenant hash: `SHA-256(name + COVENANT_VERSION + ISO_timestamp)`
-5. Writes to Firestore `founders/{uid}` and `subscriptions/{uid}` with `tier: 'founder'`
-6. Calls GitHub REST API to open a PR (or direct commit to a `founders-update` branch) adding the new entry to `src/config/founders.ts`
-7. Returns `{ covenantHash, seat, joinedAt, message }` to the client
+4. Generates covenant hash: `SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")`
+5. Validates payment amount ($2,500 USD) and currency
+6. Writes to Firestore `founders/{uid}` and `subscriptions/{uid}` with `tier: 'founder'`
+7. Makes a direct commit to `main` via the GitHub Contents API (PUT), writing the new entry permanently to `src/config/founders.ts`
+8. Returns `{ covenantHash, seat, joinedAt, message, githubCommitPending }` to the client
 
-The GitHub commit makes the record permanent and publicly verifiable. The PR flow keeps it intentional (no automated direct pushes to `main` without review).
+The direct commit to `main` makes the record immediately permanent and publicly verifiable. If the GitHub commit fails (non-fatal), the Firestore record remains authoritative and the commit is queued for manual retry. The `githubCommitPending` flag in the response lets the client distinguish committed vs queued states.
 
 #### MODIFIED: `functions/src/shared/subscription/SubscriptionTier.ts`
 

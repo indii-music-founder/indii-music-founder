@@ -28,12 +28,14 @@ export const stripe = new Proxy({} as Stripe, {
   },
 });
 
-// Placeholder sentinel values used in development only
+// Placeholder sentinel values used in development only.
+// Real test-mode price IDs are set below as defaults so local emulation works.
 const PLACEHOLDER_PRICE_IDS: Record<string, string> = {
-  STRIPE_PRICE_PRO_MONTHLY: 'price_pro_monthly_id',
-  STRIPE_PRICE_PRO_YEARLY: 'price_pro_yearly_id',
-  STRIPE_PRICE_STUDIO_MONTHLY: 'price_studio_monthly_id',
-  STRIPE_PRICE_STUDIO_YEARLY: 'price_studio_yearly_id',
+  STRIPE_PRICE_PRO_MONTHLY:    'price_1TC4ceECGAoF2ZTQOjOAzJMR',
+  STRIPE_PRICE_PRO_YEARLY:     'price_1TC4cfECGAoF2ZTQgaNAFI1Q',
+  STRIPE_PRICE_STUDIO_MONTHLY: 'price_1TC4cqECGAoF2ZTQdZiAsoXo',
+  STRIPE_PRICE_STUDIO_YEARLY:  'price_1TC4cqECGAoF2ZTQdZiAsoXo', // no yearly yet — same as monthly
+  STRIPE_PRICE_FOUNDER_PASS:   'price_1TC4crECGAoF2ZTQ0rlpPs9q',
 };
 
 /**
@@ -62,21 +64,28 @@ function resolvePriceId(envVar: string): string {
 export const STRIPE_PRICES: Record<SubscriptionTier, {
   monthly?: string;
   yearly?: string;
+  oneTime?: string;
 }> = {
   [SubscriptionTier.FREE]: {},
   [SubscriptionTier.PRO_MONTHLY]: {
     monthly: resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'),
-    yearly: resolvePriceId('STRIPE_PRICE_PRO_YEARLY')
-  },
-  [SubscriptionTier.STUDIO]: {
-    monthly: resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'),
-    yearly: resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY')
+    yearly:  resolvePriceId('STRIPE_PRICE_PRO_YEARLY'),
   },
   [SubscriptionTier.PRO_YEARLY]: {
     monthly: resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'),
-    yearly: resolvePriceId('STRIPE_PRICE_PRO_YEARLY')
-  }
+    yearly:  resolvePriceId('STRIPE_PRICE_PRO_YEARLY'),
+  },
+  [SubscriptionTier.STUDIO]: {
+    monthly: resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'),
+    yearly:  resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'),
+  },
+  [SubscriptionTier.FOUNDER]: {
+    oneTime: resolvePriceId('STRIPE_PRICE_FOUNDER_PASS'),
+  },
 };
+
+/** Price ID for the Founders Pass one-time checkout */
+export const STRIPE_FOUNDER_PRICE_ID = resolvePriceId('STRIPE_PRICE_FOUNDER_PASS');
 
 /**
  * Get Stripe price ID for a tier and billing period
@@ -112,18 +121,21 @@ export function mapStripeStatus(status: Stripe.Subscription.Status): Subscriptio
   }
 }
 
+// Canonical product ID → tier mapping (test-mode IDs baked in; override via env for live)
+const PRODUCT_TIER_MAP: Record<string, SubscriptionTier> = {
+  'prod_UAPRroIFgVlgBH': SubscriptionTier.PRO_MONTHLY,  // indiiOS Pro (test)
+  'prod_UAPRv11hqs79bP': SubscriptionTier.STUDIO,        // indiiOS Studio (test)
+  'prod_UAPRfFZ19hlLEV': SubscriptionTier.FOUNDER,       // indiiOS Founders Pass (test)
+};
+
 /**
- * Map Stripe price tier to our subscription tier
+ * Map a Stripe product ID to our SubscriptionTier.
+ * Checks env overrides first (for live-mode product IDs), then the baked-in map.
  */
 export function mapStripeTierToSubscriptionTier(productId: string): SubscriptionTier | null {
-  // Check environment variables first (allows manual overrides)
-  if (process.env.STRIPE_PRODUCT_PRO && productId === process.env.STRIPE_PRODUCT_PRO) return SubscriptionTier.PRO_MONTHLY;
-  if (process.env.STRIPE_PRODUCT_STUDIO && productId === process.env.STRIPE_PRODUCT_STUDIO) return SubscriptionTier.STUDIO;
-
-  // For now, map based on known production/test patterns
-  const p = productId.toLowerCase();
-  if (p.includes('pro')) return SubscriptionTier.PRO_MONTHLY;
-  if (p.includes('studio')) return SubscriptionTier.STUDIO;
-  return null;
+  if (process.env.STRIPE_PRODUCT_PRO     && productId === process.env.STRIPE_PRODUCT_PRO)     return SubscriptionTier.PRO_MONTHLY;
+  if (process.env.STRIPE_PRODUCT_STUDIO  && productId === process.env.STRIPE_PRODUCT_STUDIO)  return SubscriptionTier.STUDIO;
+  if (process.env.STRIPE_PRODUCT_FOUNDER && productId === process.env.STRIPE_PRODUCT_FOUNDER) return SubscriptionTier.FOUNDER;
+  return PRODUCT_TIER_MAP[productId] ?? null;
 }
 
