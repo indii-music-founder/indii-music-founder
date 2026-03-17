@@ -1,9 +1,17 @@
 import React from 'react';
-import { Sliders, Monitor } from 'lucide-react';
+import { Sliders, Monitor, Globe } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { PrivacySettingsPanel } from '@/components/shared/PrivacySettingsPanel';
+import { useTranslation } from 'react-i18next';
+
+const SUPPORTED_LANGUAGES = [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español (es-419)' },
+];
 
 export default function GlobalSettings() {
     const { userProfile, setUserProfile } = useStore();
+    const { i18n } = useTranslation();
 
     const preferences = userProfile?.preferences || {};
     const darkMode = preferences.theme === 'dark';
@@ -60,6 +68,31 @@ export default function GlobalSettings() {
                         <div className={`absolute top-1.5 w-4 h-4 bg-white rounded-full transition-all duration-200 ${darkMode ? 'right-1.5' : 'left-1.5'}`}></div>
                     </button>
                 </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-white/5 space-y-3">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                    <Globe size={12} /> Language
+                </h3>
+                <div className="flex gap-2">
+                    {SUPPORTED_LANGUAGES.map(lang => (
+                        <button
+                            key={lang.code}
+                            onClick={() => i18n.changeLanguage(lang.code)}
+                            className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                                i18n.resolvedLanguage?.startsWith(lang.code)
+                                    ? 'bg-white/10 border-white/20 text-white font-semibold'
+                                    : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                            }`}
+                        >
+                            {lang.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/5">
+                <PrivacySettingsPanel />
             </div>
         </div>
     );

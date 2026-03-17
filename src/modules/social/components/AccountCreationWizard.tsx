@@ -82,8 +82,9 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
             </div>
             <div className="space-y-4 mt-6">
                 <div>
-                    <label className="block text-sm text-gray-400 mb-1">Brand Name</label>
+                    <label htmlFor="acw-brand-name" className="block text-sm text-gray-400 mb-1">Brand Name</label>
                     <input
+                        id="acw-brand-name"
                         type="text"
                         value={brandName}
                         onChange={(e) => setBrandName(e.target.value)}
@@ -92,8 +93,9 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                     />
                 </div>
                 <div>
-                    <label className="block text-sm text-gray-400 mb-1">Industry</label>
+                    <label htmlFor="acw-industry" className="block text-sm text-gray-400 mb-1">Industry</label>
                     <input
+                        id="acw-industry"
                         type="text"
                         value={industry}
                         onChange={(e) => setIndustry(e.target.value)}

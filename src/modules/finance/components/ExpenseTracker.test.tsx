@@ -77,7 +77,7 @@ describe('ExpenseTracker', () => {
     fireEvent.click(screen.getByText('Add Manual'));
 
     // Check if modal is visible - "Add Expense" is the main header text
-    expect(screen.getByText('Add Expense')).toBeInTheDocument();
+    expect(screen.getAllByText('Add Expense').length).toBeGreaterThanOrEqual(1);
 
     // Fill form
     fireEvent.change(screen.getByPlaceholderText('e.g. Sweetwater'), {

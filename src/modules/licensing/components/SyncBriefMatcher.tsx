@@ -4,11 +4,14 @@
  * catalog tracks fit the mood/BPM. Mood-score algorithm: cosine similarity
  * on mood tag overlap + BPM window matching.
  */
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Zap, Music2, Film, Star, ChevronDown, ChevronUp, RefreshCw, Tag } from 'lucide-react';
+import { Zap, Music2, Film, Star, ChevronDown, ChevronUp, RefreshCw, Tag, Upload, FileCheck, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
 import type { SyncBrief, SyncCatalogTrack as CatalogTrack, SyncMood as Mood } from '@/services/licensing/LicensingService';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { storage, db, auth } from '@/services/firebase';
 
 function matchScore(brief: SyncBrief, track: CatalogTrack): number {
     // BPM fit: 1.0 if in range, decays outside
@@ -44,8 +47,208 @@ function ScoreBadge({ score }: { score: number }) {
     );
 }
 
+/**
+ * Item 310: Clearance Document Upload Modal
+ *
+ * Displayed when an artist wants to submit a matched track for a sync brief.
+ * Requires uploading proof of clearance (contract, license, or clearance letter)
+ * for any sampled elements before the submission can be sent.
+ */
+interface ClearanceUploadModalProps {
+    brief: SyncBrief;
+    track: CatalogTrack;
+    onClose: () => void;
+    onSubmitted: () => void;
+}
+
+type UploadStatus = 'idle' | 'uploading' | 'done' | 'error';
+
+function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceUploadModalProps) {
+    const [files, setFiles] = useState<File[]>([]);
+    const [status, setStatus] = useState<UploadStatus>('idle');
+    const [error, setError] = useState('');
+    const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const uid = auth.currentUser?.uid;
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+        }
+    };
+
+    const removeFile = (idx: number) => {
+        setFiles(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handleSubmit = async () => {
+        if (!uid || files.length === 0) return;
+        setStatus('uploading');
+        setError('');
+        const urls: string[] = [];
+        try {
+            for (const file of files) {
+                const path = `users/${uid}/clearance/${brief.id}/${track.id}/${file.name}`;
+                const fileRef = storageRef(storage, path);
+                await uploadBytes(fileRef, file);
+                const url = await getDownloadURL(fileRef);
+                urls.push(url);
+            }
+            // Record clearance submission in Firestore
+            await addDoc(collection(db, 'licensing_clearances'), {
+                briefId: brief.id,
+                briefProject: brief.project,
+                trackId: track.id,
+                trackTitle: track.title,
+                trackISRC: track.isrc,
+                userId: uid,
+                clearanceDocUrls: urls,
+                submittedAt: serverTimestamp(),
+                status: 'pending_review',
+            });
+            setUploadedUrls(urls);
+            setStatus('done');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Upload failed. Please try again.');
+            setStatus('error');
+        }
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clearance-modal-title"
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-[#0d0d0f] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-5"
+            >
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 id="clearance-modal-title" className="text-sm font-bold text-white">
+                            Upload Clearance Documents
+                        </h2>
+                        <p className="text-[10px] text-neutral-500 mt-0.5">
+                            Submit proof of clearance for <span className="text-white">{track.title}</span> &rarr; <span className="text-indigo-400">{brief.project}</span>
+                        </p>
+                    </div>
+                    <button onClick={onClose} aria-label="Close clearance upload" className="text-neutral-500 hover:text-white transition-colors">
+                        <X size={16} aria-hidden="true" />
+                    </button>
+                </div>
+
+                {status !== 'done' ? (
+                    <>
+                        {/* What to upload */}
+                        <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 text-xs text-neutral-400 space-y-1">
+                            <p className="font-semibold text-neutral-300 text-[11px]">Required if your track contains:</p>
+                            <ul className="list-disc list-inside space-y-0.5 text-[10px]">
+                                <li>Samples from third-party recordings</li>
+                                <li>Interpolated melodies or chord progressions</li>
+                                <li>Co-writer agreements for split compositions</li>
+                            </ul>
+                            <p className="text-[10px] pt-1">Accepted: PDF, JPG, PNG, DOCX</p>
+                        </div>
+
+                        {/* File list */}
+                        {files.length > 0 && (
+                            <ul className="space-y-2">
+                                {files.map((f, i) => (
+                                    <li key={i} className="flex items-center gap-2 bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2">
+                                        <FileCheck size={12} className="text-indigo-400 flex-shrink-0" aria-hidden="true" />
+                                        <span className="text-[11px] text-white flex-1 truncate">{f.name}</span>
+                                        <span className="text-[10px] text-neutral-600">{(f.size / 1024).toFixed(0)}KB</span>
+                                        <button
+                                            onClick={() => removeFile(i)}
+                                            aria-label={`Remove ${f.name}`}
+                                            className="text-neutral-600 hover:text-red-400 transition-colors"
+                                        >
+                                            <X size={11} />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        {/* Upload button */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept=".pdf,.jpg,.jpeg,.png,.docx"
+                            onChange={handleFileChange}
+                            className="sr-only"
+                            aria-label="Select clearance documents"
+                            id="clearance-file-input"
+                        />
+                        <label
+                            htmlFor="clearance-file-input"
+                            className="flex items-center justify-center gap-2 w-full py-3 border border-dashed border-white/10 rounded-xl text-[11px] text-neutral-500 hover:text-white hover:border-white/20 transition-all cursor-pointer"
+                        >
+                            <Upload size={13} aria-hidden="true" />
+                            Click to add clearance documents
+                        </label>
+
+                        {/* Error */}
+                        {status === 'error' && (
+                            <p className="text-xs text-red-400">{error}</p>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={onClose}
+                                className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] text-neutral-400 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={files.length === 0 || status === 'uploading'}
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                aria-label="Submit track with clearance documents"
+                            >
+                                {status === 'uploading' ? (
+                                    <><Loader2 size={12} className="animate-spin" aria-hidden="true" />Uploading…</>
+                                ) : (
+                                    <><Upload size={12} aria-hidden="true" />Submit Track</>
+                                )}
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    /* Success state */
+                    <div className="flex flex-col items-center py-6 gap-3 text-center">
+                        <CheckCircle2 size={32} className="text-green-400" aria-hidden="true" />
+                        <div>
+                            <p className="text-sm font-semibold text-white">Submission received</p>
+                            <p className="text-[10px] text-neutral-500 mt-1">
+                                {uploadedUrls.length} document{uploadedUrls.length !== 1 ? 's' : ''} uploaded.
+                                The licensor will review your clearance docs within 5 business days.
+                            </p>
+                        </div>
+                        <button
+                            onClick={onSubmitted}
+                            className="px-5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] text-neutral-400 transition-colors"
+                        >
+                            Done
+                        </button>
+                    </div>
+                )}
+            </motion.div>
+        </div>
+    );
+}
+
 function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack[] }) {
     const [open, setOpen] = useState(false);
+    const [clearanceTrack, setClearanceTrack] = useState<CatalogTrack | null>(null);
+    const [submittedTracks, setSubmittedTracks] = useState<Set<string>>(new Set());
     const matches = useMemo(() => catalog
         .map(t => ({ track: t, score: matchScore(brief, t) }))
         .sort((a, b) => b.score - a.score)
@@ -101,26 +304,59 @@ function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack
                             <p className="text-[10px] text-neutral-500 italic">{brief.description}</p>
                             <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Catalog Matches</div>
                             <div className="space-y-2">
-                                {matches.map(({ track, score }) => (
-                                    <div key={track.id} className="flex items-center gap-3 p-2.5 bg-white/[0.02] border border-white/5 rounded-xl">
-                                        <Music2 size={13} className="text-neutral-600 flex-shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-xs font-bold text-white truncate">{track.title}</div>
-                                            <div className="text-[9px] text-neutral-600 mt-0.5">
-                                                {track.bpm} BPM · {track.duration} · {track.isrc}
+                                {matches.map(({ track, score }) => {
+                                    const submitted = submittedTracks.has(track.id);
+                                    return (
+                                        <div key={track.id} className="flex items-center gap-3 p-2.5 bg-white/[0.02] border border-white/5 rounded-xl">
+                                            <Music2 size={13} className="text-neutral-600 flex-shrink-0" aria-hidden="true" />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs font-bold text-white truncate">{track.title}</div>
+                                                <div className="text-[9px] text-neutral-600 mt-0.5">
+                                                    {track.bpm} BPM · {track.duration} · {track.isrc}
+                                                </div>
                                             </div>
+                                            <div className="flex flex-wrap gap-1 flex-shrink-0 max-w-[80px] justify-end">
+                                                {track.moods.filter(m => brief.moods.includes(m)).map(m => (
+                                                    <span key={m} className="text-[8px] px-1.5 py-0.5 bg-[#FFE135]/10 border border-[#FFE135]/20 rounded-full text-[#FFE135]">{m}</span>
+                                                ))}
+                                            </div>
+                                            <ScoreBadge score={score} />
+                                            {/* Item 310: Submit with clearance docs */}
+                                            {submitted ? (
+                                                <span className="flex items-center gap-1 text-[9px] text-green-400 font-bold">
+                                                    <CheckCircle2 size={10} aria-hidden="true" />Submitted
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setClearanceTrack(track)}
+                                                    aria-label={`Submit ${track.title} for ${brief.project} with clearance docs`}
+                                                    className="flex items-center gap-1 px-2 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg text-[9px] text-indigo-400 font-bold transition-colors whitespace-nowrap"
+                                                >
+                                                    <Upload size={9} aria-hidden="true" />
+                                                    Submit
+                                                </button>
+                                            )}
                                         </div>
-                                        <div className="flex flex-wrap gap-1 flex-shrink-0 max-w-[120px] justify-end">
-                                            {track.moods.filter(m => brief.moods.includes(m)).map(m => (
-                                                <span key={m} className="text-[8px] px-1.5 py-0.5 bg-[#FFE135]/10 border border-[#FFE135]/20 rounded-full text-[#FFE135]">{m}</span>
-                                            ))}
-                                        </div>
-                                        <ScoreBadge score={score} />
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Clearance Upload Modal — rendered in BriefCard to scope to this brief */}
+            <AnimatePresence>
+                {clearanceTrack && (
+                    <ClearanceUploadModal
+                        brief={brief}
+                        track={clearanceTrack}
+                        onClose={() => setClearanceTrack(null)}
+                        onSubmitted={() => {
+                            setSubmittedTracks(prev => new Set([...prev, clearanceTrack.id]));
+                            setClearanceTrack(null);
+                        }}
+                    />
                 )}
             </AnimatePresence>
         </div>

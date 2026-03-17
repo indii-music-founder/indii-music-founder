@@ -48,8 +48,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Audit dependencies for vulnerabilities (Item 252)
-        run: pnpm audit --audit-level=high || echo "::warning::Dependency vulnerabilities detected (non-blocking)"
-        continue-on-error: true
+        run: pnpm audit --audit-level=high
 
       # Item 294: Deploy PR preview channel for QA sign-off
       - name: Deploy PR Preview Channel
@@ -65,21 +64,23 @@ jobs:
       - name: Run linting checks
         run: pnpm run lint
 
-      # - name: Run unit tests
-      #   timeout-minutes: 30
-      #   run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
-      #   env:
-      #     VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
-      #     VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
-      #     VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
-      #     VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-      #     VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-      #     VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
+      - name: Run unit tests
+        timeout-minutes: 30
+        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
+        env:
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
+          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
 
-
-
-      # - name: Run E2E tests (critical paths only)
-      #   run: npm run test:e2e
+      - name: Run E2E tests (critical paths only)
+        run: npm run test:e2e
+        env:
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
 
       - name: Build landing page
         run: |
@@ -136,7 +137,7 @@ jobs:
           npm install -g serve @axe-core/cli
           serve -s dist -l 5000 &
           sleep 3
-          npx axe --exit http://localhost:5000 || echo "::warning::Accessibility issues found - review axe output above"
+          npx axe --exit http://localhost:5000
           kill %1 || true
 
       - name: Setup Firebase CLI
