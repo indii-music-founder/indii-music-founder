@@ -3,7 +3,8 @@ import { FirestoreService } from '@/services/FirestoreService';
 import { DistributionTaskDocument, TaxProfileDocument } from '@/types/firestore';
 import { isrcService } from './ISRCService';
 import { taxService } from './TaxService';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import {
     MerlinCheckData, MerlinReport,
@@ -23,6 +24,23 @@ import {
 } from '@/types/distribution';
 
 export type { DistributionTaskDocument as DistributionTask };
+
+/** Item 393: Write an immutable audit event to distribution_audit/{releaseId}/events */
+async function writeDistributionAuditEvent(
+    releaseId: string,
+    event: { type: string; status: string; detail?: string }
+): Promise<void> {
+    try {
+        const eventsCol = collection(db, 'distribution_audit', releaseId, 'events');
+        await addDoc(eventsCol, {
+            ...event,
+            timestamp: serverTimestamp(),
+            userId: auth.currentUser?.uid ?? null,
+        });
+    } catch (err) {
+        logger.error('[DistributionService] Failed to write audit event:', err);
+    }
+}
 
 class DistributionService extends FirestoreService<DistributionTaskDocument> {
     constructor() {
@@ -521,7 +539,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * @param onProgress   Optional callback for step-by-step progress events
      */
     async submitRelease(
-        releaseData: DDEXMetadata & { sftpConfig?: SFTPConfig },
+        releaseData: DDEXMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
         onProgress?: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void
     ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[] }> {
         if (!window.electronAPI) {
@@ -530,6 +548,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         const taskId = await this.createTask('DELIVERY', `Submit: ${releaseData.title}`);
         await this.updateTask(taskId, { status: 'RUNNING', subtext: 'Starting pipeline…' });
+        const releaseId = releaseData.releaseId ?? releaseData.upc ?? taskId;
 
         let cleanup: (() => void) | undefined;
         if (onProgress) {
@@ -551,6 +570,13 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 metadata: { report: result.report },
             });
 
+            // Item 393: Write immutable delivery audit event
+            await writeDistributionAuditEvent(releaseId, {
+                type: result.report?.sftp_skipped ? 'ddex_built' : 'sftp_delivered',
+                status: 'success',
+                detail: JSON.stringify(result.report ?? {}),
+            });
+
             if (window.electronAPI) {
                 const body = result.report?.sftp_skipped
                     ? `${releaseData.title} DDEX package is ready (SFTP skipped).`
@@ -565,6 +591,12 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'Unknown submission error';
             await this.updateTask(taskId, { status: 'FAILED', error: msg });
+            // Item 393: Write failure audit event
+            await writeDistributionAuditEvent(releaseId, {
+                type: 'delivery_failed',
+                status: 'error',
+                detail: msg,
+            });
             throw error;
         } finally {
             cleanup?.();
