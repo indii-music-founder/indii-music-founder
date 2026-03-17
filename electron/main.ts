@@ -430,6 +430,28 @@ if (!gotTheLock) {
         if (app.isPackaged) {
             setupAutoUpdater();
         }
+
+        // Item 378: Developer-only memory snapshot — accessible via --inspect flag or IPC
+        if (!app.isPackaged) {
+            ipcMain.handle('dev:heap-snapshot', async () => {
+                try {
+                    const v8 = await import('v8');
+                    const snapshotPath = path.join(app.getPath('userData'), `heap-${Date.now()}.heapsnapshot`);
+                    v8.writeHeapSnapshot(snapshotPath);
+                    log.info(`[Dev] Heap snapshot written: ${snapshotPath}`);
+                    return { success: true, path: snapshotPath };
+                } catch (err) {
+                    log.error(`[Dev] Heap snapshot failed: ${err}`);
+                    return { success: false, error: String(err) };
+                }
+            });
+
+            // Log heap stats every 5 minutes in dev for leak detection
+            setInterval(() => {
+                const mem = process.memoryUsage();
+                log.info(`[Dev][Memory] RSS=${(mem.rss / 1024 / 1024).toFixed(1)}MB HeapUsed=${(mem.heapUsed / 1024 / 1024).toFixed(1)}MB HeapTotal=${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB`);
+            }, 5 * 60 * 1000);
+        }
     });
 }
 
