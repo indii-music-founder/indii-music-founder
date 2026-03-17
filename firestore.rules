@@ -800,6 +800,44 @@ service cloud.firestore {
     }
 
     // ========================================
+    // LICENSING CLEARANCES (Item 310)
+    // ========================================
+
+    match /licensing_clearances/{clearanceId} {
+      // Only the submitting user can read their own clearances
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // Verified users can create their own clearance submissions
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      // No updates or deletes from client — managed by staff review process
+      allow update, delete: if false;
+    }
+
+    // ========================================
+    // LABEL DEALS (Item 312)
+    // ========================================
+
+    match /label_deals/{dealId} {
+      // Only the owning user can read their label deals
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // Verified users can create and update their own deals
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // No deletion — deals are financial records
+      allow delete: if false;
+    }
+
+    // ========================================
+    // DELETION REQUESTS (Item 306)
+    // ========================================
+
+    match /_deletion_requests/{userId} {
+      // Users can only read/create their own deletion requests
+      allow read: if isVerifiedUser() && request.auth.uid == userId;
+      allow create: if isVerifiedUser() && request.auth.uid == userId;
+      allow update, delete: if false;
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 

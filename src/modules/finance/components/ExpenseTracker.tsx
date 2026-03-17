@@ -11,6 +11,7 @@ import { ExpenseItem } from './ExpenseItem';
 import { ExpenseManualEntryModal } from './ExpenseManualEntryModal';
 import { ReceiptScanResultSchema } from '@/modules/finance/schemas';
 import { logger } from '@/utils/logger';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 export const ExpenseTracker: React.FC = React.memo(() => {
     const { userProfile } = useStore();
@@ -45,9 +46,13 @@ export const ExpenseTracker: React.FC = React.memo(() => {
         }
         if (expenses.length === 0) {
             return (
-                <div className="text-center text-gray-500 py-10">
-                    No expenses recorded yet. Note your costs to calculate tax deductions.
-                </div>
+                <EmptyState
+                    icon="document"
+                    title="No expenses recorded"
+                    description="Note your costs and upload receipts to calculate tax deductions and track spending."
+                    action={{ label: 'Add Expense', onClick: () => setShowManualEntry(true) }}
+                    compact
+                />
             );
         }
         return expenses.map(expense => (
