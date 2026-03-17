@@ -9,6 +9,7 @@ import { registerAudioHandlers } from './handlers/audio';
 import { registerNetworkHandlers } from './handlers/network';
 import { registerCredentialHandlers } from './handlers/credential';
 import { registerSFTPHandlers } from './handlers/sftp';
+import { sftpService } from './services/SFTPService';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { registerAgentHandlers } from './handlers/agent';
 import { registerBrandHandlers } from './handlers/brand';
@@ -394,6 +395,10 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', async () => {
     isQuitting = true;
+    // Item 377: Close open SFTP/SSH connections before quit
+    if (sftpService.isConnected()) {
+        await sftpService.disconnect().catch(e => log.warn('[Main] SFTP disconnect on quit error:', e));
+    }
     await SidecarService.stopSystem();
     stopMobileRemoteServer();
 });
