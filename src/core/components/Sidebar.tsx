@@ -15,6 +15,69 @@ import { cn } from '@/lib/utils';
 // Navigation debounce interval in ms — prevents Firestore b815 crash from rapid module switching
 const NAV_DEBOUNCE_MS = 150;
 
+interface SidebarItem {
+    id: ModuleId;
+    icon: React.ElementType;
+    label: string;
+}
+
+// Item 360: Memoized NavItem — prevents re-render on every Sidebar store subscription update
+const NavItem = React.memo(function NavItem({
+    item,
+    isActive,
+    isSidebarOpen,
+    onNavigate,
+}: {
+    item: SidebarItem;
+    isActive: boolean;
+    isSidebarOpen: boolean;
+    onNavigate: (id: ModuleId) => void;
+}) {
+    const colors = getColorForModule(item.id);
+
+    return (
+        <TooltipProvider delayDuration={0}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        onClick={() => {
+                            if (item.id === 'history') {
+                                useStore.setState({
+                                    isAgentOpen: true,
+                                    rightPanelView: 'archives'
+                                });
+                                return;
+                            }
+                            onNavigate(item.id);
+                        }}
+                        style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
+                        className={`
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            ${isActive
+                                ? `${colors.text} ${colors.bg} border-l-2 border-l-[--dept-color]`
+                                : `text-gray-400 ${colors.hoverText} ${colors.hoverBg} border-l-2 border-l-transparent`
+                            }
+                            ${!isSidebarOpen ? 'justify-center px-2' : ''}
+                        `}
+                        data-testid={`nav-item-${item.id}`}
+                        aria-current={isActive ? 'page' : undefined}
+                        aria-label={!isSidebarOpen ? item.label : undefined}
+                    >
+                        <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
+                        {isSidebarOpen && <span className="truncate">{item.label}</span>}
+                    </button>
+                </TooltipTrigger>
+                {!isSidebarOpen && (
+                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 font-medium">
+                        {item.label}
+                    </TooltipContent>
+                )}
+            </Tooltip>
+        </TooltipProvider>
+    );
+});
+
 export default function Sidebar() {
     const { t } = useTranslation();
     const { isThrottled } = usePowerState();
@@ -39,12 +102,6 @@ export default function Sidebar() {
         lastNavTimeRef.current = now;
         setModule(moduleId as any);
     }, [setModule]);
-
-    interface SidebarItem {
-        id: ModuleId;
-        icon: React.ElementType;
-        label: string;
-    }
 
     // Grouped navigation items based on the screenshot
     const managerItems: SidebarItem[] = [
@@ -74,52 +131,6 @@ export default function Sidebar() {
         { id: 'memory', icon: AudioLines, label: 'Memory Agent' },
         { id: 'history', icon: Clock, label: 'History' },
     ];
-
-    const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {
-        const colors = getColorForModule(item.id);
-
-        return (
-            <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button
-                            onClick={() => {
-                                if (item.id === 'history') {
-                                    useStore.setState({
-                                        isAgentOpen: true,
-                                        rightPanelView: 'archives'
-                                    });
-                                    return;
-                                }
-                                throttledSetModule(item.id);
-                            }}
-                            style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
-                            className={`
-                                w-full flex items-center gap-3 px-4 py-2 text-sm
-                                bolt-interactive relative
-                                ${isActive
-                                    ? `${colors.text} ${colors.bg} border-l-2 border-l-[--dept-color]`
-                                    : `text-gray-400 ${colors.hoverText} ${colors.hoverBg} border-l-2 border-l-transparent`
-                                }
-                                ${!isSidebarOpen ? 'justify-center px-2' : ''}
-                            `}
-                            data-testid={`nav-item-${item.id}`}
-                            aria-current={isActive ? 'page' : undefined}
-                            aria-label={!isSidebarOpen ? item.label : undefined}
-                        >
-                            <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
-                            {isSidebarOpen && <span className="truncate">{item.label}</span>}
-                        </button>
-                    </TooltipTrigger>
-                    {!isSidebarOpen && (
-                        <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 font-medium">
-                            {item.label}
-                        </TooltipContent>
-                    )}
-                </Tooltip>
-            </TooltipProvider>
-        );
-    };
 
     return (
         <motion.nav
@@ -197,7 +208,7 @@ export default function Sidebar() {
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Manager's Office</h3>}
                     <div className="space-y-0.5">
                         {managerItems.map(item => (
-                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} />
+                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
                         ))}
                     </div>
                 </div>
@@ -207,7 +218,7 @@ export default function Sidebar() {
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Departments</h3>}
                     <div className="space-y-0.5">
                         {departmentItems.map(item => (
-                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} />
+                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
                         ))}
                     </div>
                 </div>
@@ -217,7 +228,7 @@ export default function Sidebar() {
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Tools</h3>}
                     <div className="space-y-0.5">
                         {toolItems.map(item => (
-                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} />
+                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
                         ))}
                     </div>
                 </div>

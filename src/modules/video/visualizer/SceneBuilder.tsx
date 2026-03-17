@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect, Suspense, Component, ErrorInfo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
-import * as THREE from 'three';
+import { Mesh } from 'three'; // Item 357: Named import enables Three.js tree-shaking
 import { Download, Trash2, BoxSelect, MonitorPlay } from 'lucide-react';
 
 /**
@@ -43,7 +43,7 @@ const Model = ({ url, position, scale }: { url: string; position: [number, numbe
     useEffect(() => {
         return () => {
             clonedScene.traverse((obj) => {
-                if (obj instanceof THREE.Mesh) {
+                if (obj instanceof Mesh) {
                     obj.geometry?.dispose();
                     if (Array.isArray(obj.material)) {
                         obj.material.forEach(m => m.dispose());
