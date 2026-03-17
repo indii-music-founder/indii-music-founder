@@ -1,9 +1,10 @@
-import { auth } from '@/services/firebase';
+import { auth, storage } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import { DistributionTaskDocument, TaxProfileDocument } from '@/types/firestore';
 import { isrcService } from './ISRCService';
 import { taxService } from './TaxService';
 import { Timestamp, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadString } from 'firebase/storage';
 import { db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import {
@@ -567,6 +568,20 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         // Item 414: Snapshot metadata at the point of submission for post-distribution history
         writeMetadataSnapshot(releaseId, releaseData).catch(() => { /* best-effort */ });
 
+        // Item 408: Auto-assign ISRCs to tracks that are missing them
+        if (releaseData.tracks?.length) {
+            for (const track of releaseData.tracks) {
+                if (!track.isrc || track.isrc.trim() === '') {
+                    try {
+                        track.isrc = await isrcService.assignNextISRC(track.title ?? 'unknown');
+                        logger.info(`[Distribution] Auto-assigned ISRC ${track.isrc} to track "${track.title}"`);
+                    } catch (isrcErr) {
+                        logger.warn(`[Distribution] Could not auto-assign ISRC for track "${track.title}":`, isrcErr);
+                    }
+                }
+            }
+        }
+
         let cleanup: (() => void) | undefined;
         if (onProgress) {
             cleanup = (window.electronAPI.distribution as any).onSubmitProgress(onProgress);
@@ -593,6 +608,14 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 status: 'success',
                 detail: JSON.stringify(result.report ?? {}),
             });
+
+            // Item 410: Persist delivery receipt to Firebase Storage
+            if (!result.report?.sftp_skipped) {
+                const receiptContent = JSON.stringify({ releaseId, report: result.report, submittedAt: new Date().toISOString() }, null, 2);
+                const receiptPath = `distribution/receipts/${releaseId}/receipt_${Date.now()}.json`;
+                uploadString(ref(storage, receiptPath), receiptContent, 'raw', { contentType: 'application/json' })
+                    .catch(err => logger.warn('[Distribution] Delivery receipt upload failed:', err));
+            }
 
             if (window.electronAPI) {
                 const body = result.report?.sftp_skipped

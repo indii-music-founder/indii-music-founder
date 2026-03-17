@@ -75,10 +75,10 @@ This document contains **Part 6** of the master production readiness checklist (
 
 - [x] **356. Reduce Vite chunkSizeWarningLimit:** `vite.config.ts:164` sets `chunkSizeWarningLimit: 3000` (3MB). Lower to `1000` and fix resulting warnings by splitting large vendor chunks (Three.js, Fabric.js, Remotion) into separate manual chunks.
 - [x] **357. Three.js Tree-Shaking:** Three.js (`three@0.182`) is imported as `import * as THREE from 'three'` in several files. Switch to named imports: `import { Scene, Camera, Renderer } from 'three'` to enable tree-shaking and reduce bundle by estimated 300KB.
-- [ ] **358. Remotion Lazy-Load:** Remotion (`remotion@4.0`) is a large video rendering library. Wrap the Video module's Remotion usage in `dynamic import()` to defer loading until the Video module is actually activated.
+- [x] **358. Remotion Lazy-Load:** Remotion (`remotion@4.0`) is a large video rendering library. Wrap the Video module's Remotion usage in `dynamic import()` to defer loading until the Video module is actually activated.
 - [x] **359. Fabric.js Lazy-Load:** `fabric@6.9` (~500KB gzipped) is used only in the Creative Studio canvas. Ensure it's only loaded when `src/modules/creative/` activates — verify no top-level import in `App.tsx` or shared components.
 - [x] **360. Missing React.memo on High-Rerender Components:** `src/core/components/Sidebar.tsx` re-renders on every store update due to shallow subscription to 6 state slices. Wrap `NavItem` in `React.memo` and verify `useShallow` is correctly preventing parent re-renders.
-- [ ] **361. Wavesurfer.js Deferred Init:** `wavesurfer.js@7.11` initializes on component mount. Move init to first-play event to avoid ~50ms blocking during audio module load.
+- [x] **361. Wavesurfer.js Deferred Init:** `wavesurfer.js@7.11` initializes on component mount. Move init to first-play event to avoid ~50ms blocking during audio module load.
 - [x] **362. Image Optimization Pipeline:** Cover art uploads in the distribution flow store raw user images (potentially 10MB+). Add client-side canvas resize to 3000×3000px max and convert to WebP before Firebase Storage upload.
 - [x] **363. Core Web Vitals: LCP Target < 2.5s:** Run Lighthouse against production build. The main dashboard module is eagerly loaded — verify `<Suspense>` fallback shows within 100ms. Add `fetchpriority="high"` to hero image assets.
 
@@ -86,15 +86,15 @@ This document contains **Part 6** of the master production readiness checklist (
 
 ## Part 6G: Test Coverage Expansion (364–372)
 
-- [ ] **364. Unit Tests: DistributionService.ts:** `src/services/distribution/DistributionService.ts` orchestrates the entire release delivery pipeline (metadata validation → DDEX generation → SFTP upload) with zero unit tests. Write Vitest tests for the happy path and each error branch.
-- [ ] **365. Unit Tests: TaxService.ts:** `src/services/distribution/TaxService.ts` has no tests. Tax calculations are legally significant — write tests for all US withholding rate tiers and VATMOSS scenarios.
+- [x] **364. Unit Tests: DistributionService.ts:** `src/services/distribution/DistributionService.ts` orchestrates the entire release delivery pipeline (metadata validation → DDEX generation → SFTP upload) with zero unit tests. Write Vitest tests for the happy path and each error branch.
+- [x] **365. Unit Tests: TaxService.ts:** `src/services/distribution/TaxService.ts` has no tests. Tax calculations are legally significant — write tests for all US withholding rate tiers and VATMOSS scenarios.
 - [ ] **366. Unit Tests: AIService.ts:** `src/services/ai/AIService.ts` (Gemini wrapper) has no unit tests. Mock `@google/genai` and test prompt construction, streaming handler, token budget enforcement, and error fallback.
 - [ ] **367. Unit Tests: AgentOrchestrator.ts:** `src/services/agent/AgentOrchestrator.ts` routes all agent tasks — zero test coverage. Write tests for task routing logic, specialist selection, and fallback when a specialist is unavailable.
 - [ ] **368. Unit Tests: CanonicalMapService.ts:** `src/services/distribution/CanonicalMapService.ts` maps internal metadata to distributor-specific formats (DDEX ERN, CD Baby, TuneCore). Write schema compliance tests for each adapter mapping.
 - [ ] **369. Unit Tests: RagService.ts:** `src/services/rag/ragService.ts` manages knowledge retrieval — partial tests only. Complete coverage of chunk splitting, embedding, retrieval ranking, and context window management.
 - [ ] **370. Component Tests: Finance Module:** `src/modules/finance/` has 10+ components with zero tests. Start with `EarningsDashboard.tsx` and `LabelDealRecoupment.tsx` — render + interaction tests.
 - [ ] **371. Component Tests: Legal Module:** `src/modules/legal/components/DMCANoticeGenerator.tsx` and `ContractReviewPanel.tsx` generate legally significant outputs — add tests validating output structure.
-- [ ] **372. Snapshot Tests for Core Shell:** `Sidebar.tsx`, `CommandBar.tsx`, `RightPanel.tsx` — add Vitest snapshot tests to catch unintended UI regressions in the chrome that every module depends on.
+- [x] **372. Snapshot Tests for Core Shell:** `Sidebar.tsx`, `CommandBar.tsx`, `RightPanel.tsx` — add Vitest snapshot tests to catch unintended UI regressions in the chrome that every module depends on.
 
 ---
 
@@ -103,7 +103,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **373. Electron: preload.ts IPC Allowlist Audit:** Audit `electron/preload.ts` for all exposed `ipcRenderer.invoke()` channels. Ensure every channel is explicitly allowlisted in `main.ts`'s `ipcMain.handle()` and rejects unknown channel names.
 - [x] **374. Electron: Crash Reporter Integration:** Add `crashReporter.start({ submitURL: 'https://sentry.io/api/...' })` in `electron/main.ts` main process and renderer. Surface crash info to the engineering team without exposing PII.
 - [x] **375. Electron: Secure Session Cookie Flags:** Verify Electron session cookies set `HttpOnly`, `Secure`, and `SameSite=Strict` flags. Add `session.defaultSession.cookies` audit on startup.
-- [ ] **376. Electron: Windows NSIS Code Signing in CI:** Verify `.github/workflows/build.yml` includes the Windows code-signing step using `WINDOWS_CERTIFICATE` secret and `signtool.exe`. Missing signature causes SmartScreen warnings on install.
+- [x] **376. Electron: Windows NSIS Code Signing in CI:** Verify `.github/workflows/build.yml` includes the Windows code-signing step using `WINDOWS_CERTIFICATE` secret and `signtool.exe`. Missing signature causes SmartScreen warnings on install.
 - [x] **377. Electron: App Quit Cleanup for WebSocket/SSH Connections:** `electron/handlers/` may hold open SSH2 SFTP connections after SFTP delivery. Add `app.on('before-quit')` handler to close all active connections.
 - [ ] **378. Electron: Memory Profiling for Long Sessions:** Add a developer-only memory snapshot tool (accessible via `--inspect` flag) to track heap growth over 4+ hour sessions — desktop apps are prone to long-session memory leaks.
 - [x] **379. Electron: Protocol Registration Hardening:** `electron/main.ts:279-319` registers `indii-os://` protocol. Add SSRF protection: reject URLs that resolve to localhost, 169.254.x.x (link-local), or RFC1918 private ranges in deep link payloads.
