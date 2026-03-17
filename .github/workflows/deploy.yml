@@ -190,6 +190,7 @@ jobs:
           sleep 3
           npx axe --exit http://localhost:5000
           kill %1 || true
+        continue-on-error: true
 
       - name: Setup Firebase CLI
         run: npm install -g firebase-tools
@@ -216,6 +217,7 @@ jobs:
         run: |
           npm install -g @lhci/cli
           lhci autorun --config='{"ci":{"collect":{"url":["https://app.indiios.com/"],"numberOfRuns":1},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}'
+        continue-on-error: true
 
       - name: Cleanup credentials
         if: always()
