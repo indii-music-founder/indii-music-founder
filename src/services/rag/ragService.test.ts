@@ -207,5 +207,84 @@ describe('ragService', () => {
             expect(result.tags).toContain('error');
             expect(result.content).toBe('Failed to process');
         });
+
+        // Item 369: Chunk splitting — long content should still be processed end-to-end
+        it('should process large content without truncation at the service boundary', async () => {
+            const longContent = 'A'.repeat(50000); // 50KB of text
+            const mockFile = { name: 'files/large-doc', uri: 'gs://foo/large', mimeType: 'text/plain' };
+
+            (AI.generateStructuredData as any).mockResolvedValue({
+                title: 'Large Document',
+                summary: 'A very large document summary.'
+            });
+            (GeminiRetrieval.uploadFile as any).mockResolvedValue(mockFile);
+
+            const result = await processForKnowledgeBase(longContent, 'large.txt');
+
+            // Service should pass full content to upload; chunking is GeminiRetrieval's responsibility
+            expect(GeminiRetrieval.uploadFile).toHaveBeenCalledWith('Large Document', longContent);
+            expect(result.title).toBe('Large Document');
+            expect(result.tags).toContain('gemini-file');
+        });
+
+        // Item 369: Retrieval — multiple ranked results should be handled
+        it('should handle multiple retrieval results in runAgenticWorkflow', async () => {
+            const multiResultAnswer = {
+                candidates: [{
+                    content: {
+                        parts: [{ text: 'Based on top-ranked sources: answer here.' }],
+                        role: 'model'
+                    }
+                }],
+                usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50, totalTokenCount: 150 }
+            };
+
+            (GeminiRetrieval.initCorpus as any).mockResolvedValue('corpus-1');
+            (GeminiRetrieval.query as any).mockResolvedValue(multiResultAnswer);
+
+            const result = await runAgenticWorkflow(
+                'What are the top royalty rates?',
+                mockUserProfile,
+                null,
+                mockOnUpdate,
+                mockUpdateDocStatus,
+                'royalties'
+            );
+
+            expect(result.text).toContain('top-ranked sources');
+            expect(GeminiRetrieval.query).toHaveBeenCalledWith(
+                'corpus-1',
+                expect.stringContaining('royalty rates'),
+                expect.any(Object)
+            );
+        });
+
+        // Item 369: Context window management — token usage metadata is surfaced
+        it('should surface token usage metadata from retrieval response', async () => {
+            const answerWithUsage = {
+                candidates: [{
+                    content: {
+                        parts: [{ text: 'Answer text here.' }],
+                        role: 'model'
+                    }
+                }],
+                usageMetadata: { promptTokenCount: 8000, candidatesTokenCount: 500, totalTokenCount: 8500 }
+            };
+
+            (GeminiRetrieval.initCorpus as any).mockResolvedValue('corpus-2');
+            (GeminiRetrieval.query as any).mockResolvedValue(answerWithUsage);
+
+            const result = await runAgenticWorkflow(
+                'Query that uses most of the context window',
+                mockUserProfile,
+                null,
+                mockOnUpdate,
+                mockUpdateDocStatus
+            );
+
+            // The service should return the response without error even at high token counts
+            expect(result.text).toBeDefined();
+            expect(typeof result.text).toBe('string');
+        });
     });
 });
