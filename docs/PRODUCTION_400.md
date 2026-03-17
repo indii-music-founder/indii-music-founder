@@ -31,7 +31,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **331. App Check Enforcement Default:** `functions/src/index.ts:87` — `ENFORCE_APP_CHECK` defaults to `false`. Flip default to `true` and require opt-out via `SKIP_APP_CHECK=true` in dev; prevents accidental production deploy without App Check.
 - [x] **332. Firestore Write Schema Validation in Functions:** `functions/src/index.ts:366` writes `videoJobs` documents with no schema guard. Add a Zod `videoJobSchema` and validate before `admin.firestore().set()` — prevents schema drift corrupting documents.
 - [x] **333. Social Post Delivery Error Handling:** `functions/src/social/deliverScheduledPosts.ts:60-108` — fetch calls to Twitter/Instagram/TikTok APIs have no try/catch around `response.json()` or HTTP status checks. Add per-platform error handling with structured failure logging and Firestore status update on failure.
-- [ ] **334. Security Handler: Real Key Rotation API Calls:** `electron/handlers/security.ts:38` builds `sk_test_rotated_${suffix}` — simulated rotation only. Wire real Stripe `POST /v1/restricted_keys` and GitHub `PATCH /repos/{owner}/{repo}/actions/secrets/{secret_name}` API calls.
+- [x] **334. Security Handler: Real Key Rotation API Calls:** `electron/handlers/security.ts:38` builds `sk_test_rotated_${suffix}` — simulated rotation only. Wire real Stripe `POST /v1/restricted_keys` and GitHub `PATCH /repos/{owner}/{repo}/actions/secrets/{secret_name}` API calls.
 - [x] **335. Functions Cold Start: Move Heavy Imports Inside Handlers:** Top-level imports of large SDKs (Essentia, DDEX parsers) in `functions/src/index.ts` increase cold start time. Move inside function handlers using dynamic `import()` for functions that aren't invoked frequently.
 
 ---
@@ -91,9 +91,9 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **366. Unit Tests: AIService.ts:** `src/services/ai/AIService.ts` (Gemini wrapper) has no unit tests. Mock `@google/genai` and test prompt construction, streaming handler, token budget enforcement, and error fallback.
 - [x] **367. Unit Tests: AgentOrchestrator.ts:** `src/services/agent/AgentOrchestrator.ts` routes all agent tasks — zero test coverage. Write tests for task routing logic, specialist selection, and fallback when a specialist is unavailable.
 - [x] **368. Unit Tests: CanonicalMapService.ts:** `src/services/distribution/CanonicalMapService.ts` maps internal metadata to distributor-specific formats (DDEX ERN, CD Baby, TuneCore). Write schema compliance tests for each adapter mapping.
-- [ ] **369. Unit Tests: RagService.ts:** `src/services/rag/ragService.ts` manages knowledge retrieval — partial tests only. Complete coverage of chunk splitting, embedding, retrieval ranking, and context window management.
-- [ ] **370. Component Tests: Finance Module:** `src/modules/finance/` has 10+ components with zero tests. Start with `EarningsDashboard.tsx` and `LabelDealRecoupment.tsx` — render + interaction tests.
-- [ ] **371. Component Tests: Legal Module:** `src/modules/legal/components/DMCANoticeGenerator.tsx` and `ContractReviewPanel.tsx` generate legally significant outputs — add tests validating output structure.
+- [x] **369. Unit Tests: RagService.ts:** `src/services/rag/ragService.ts` manages knowledge retrieval — partial tests only. Complete coverage of chunk splitting, embedding, retrieval ranking, and context window management.
+- [x] **370. Component Tests: Finance Module:** `src/modules/finance/` has 10+ components with zero tests. Start with `EarningsDashboard.tsx` and `LabelDealRecoupment.tsx` — render + interaction tests.
+- [x] **371. Component Tests: Legal Module:** `src/modules/legal/components/DMCANoticeGenerator.tsx` and `ContractReviewPanel.tsx` generate legally significant outputs — add tests validating output structure.
 - [x] **372. Snapshot Tests for Core Shell:** `Sidebar.tsx`, `CommandBar.tsx`, `RightPanel.tsx` — add Vitest snapshot tests to catch unintended UI regressions in the chrome that every module depends on.
 
 ---
