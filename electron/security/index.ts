@@ -1,4 +1,26 @@
-import { app, Session } from 'electron';
+import { app, Session, session as electronSession } from 'electron';
+import log from 'electron-log';
+
+// Item 375: Audit session cookies on startup for security flags
+export async function auditSessionCookies(): Promise<void> {
+    try {
+        const cookies = await electronSession.defaultSession.cookies.get({});
+        let insecureCount = 0;
+        for (const cookie of cookies) {
+            const issues: string[] = [];
+            if (!cookie.httpOnly) issues.push('missing HttpOnly');
+            if (!cookie.secure) issues.push('missing Secure');
+            if (!cookie.sameSite || cookie.sameSite === 'no_restriction') issues.push('SameSite not Strict/Lax');
+            if (issues.length > 0) {
+                log.warn(`[Security][Cookie] ${cookie.domain}/${cookie.name}: ${issues.join(', ')}`);
+                insecureCount++;
+            }
+        }
+        log.info(`[Security][Cookie] Audit complete: ${cookies.length} total, ${insecureCount} with flag issues`);
+    } catch (err) {
+        log.error(`[Security][Cookie] Audit failed: ${err}`);
+    }
+}
 
 export function configureSecurity(session: Session) {
     // 1. CSP Hardening

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import { registerSystemHandlers } from './handlers/system';
@@ -19,7 +19,7 @@ import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
-import { configureSecurity } from './security';
+import { configureSecurity, auditSessionCookies } from './security';
 import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
@@ -36,6 +36,14 @@ log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
+
+// Item 374: Crash reporter (no PII — only crash metadata is submitted)
+if (app.isPackaged) {
+    crashReporter.start({
+        submitURL: process.env.CRASH_REPORTER_URL ?? 'https://sentry.io/api/indiios/minidump/',
+        uploadToServer: !!process.env.CRASH_REPORTER_URL,
+    });
+}
 
 const createWindow = () => {
     const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
@@ -377,6 +385,9 @@ if (!gotTheLock) {
             'test:browser-agent', 'show-notification',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
+
+        // Item 375: Audit session cookies for security flags on startup
+        auditSessionCookies();
 
         // Ensure AI Services are running
         SidecarService.ensureStarted().catch(err => {
