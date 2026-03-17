@@ -1,4 +1,5 @@
-import { auth } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { TraceService } from '../observability/TraceService';
 import { agentRegistry } from '../registry';
 import { PipelineContext } from './ContextPipeline';
@@ -102,6 +103,14 @@ export class AgentExecutor {
                         tool: event.toolName,
                         args: event.content
                     });
+                    // Item 401: Stream tool progress to Firestore so UI can subscribe in real-time
+                    setDoc(doc(db, 'agent_tasks', traceId, 'progress', String(Date.now())), {
+                        type: 'tool_call',
+                        toolName: event.toolName ?? null,
+                        content: typeof event.content === 'string' ? event.content : null,
+                        agentId: agent?.id ?? null,
+                        timestamp: serverTimestamp(),
+                    }, { merge: false }).catch(() => { /* best-effort */ });
                 } else if (event.type === 'usage' && event.usage) {
                     await TraceService.addStepWithUsage(
                         traceId,
