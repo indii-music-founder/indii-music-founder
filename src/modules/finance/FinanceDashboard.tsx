@@ -411,7 +411,7 @@ function TaxSummaryPanel({ earningsSummary, expenses, loading }: TaxSummaryPanel
     ];
 
     // Days until next quarterly deadline
-    const dueDateStr = quarterDueDates[quarter - 1];
+    const dueDateStr = quarterDueDates[quarter - 1]!;
     const dueDate = new Date(dueDateStr);
     const daysUntilDue = Math.max(0, Math.ceil((dueDate.getTime() - now.getTime()) / 86_400_000));
 
@@ -573,7 +573,7 @@ function AlertsPanel({ earningsSummary, expenses }: AlertsPanelProps) {
             new Date(`Sep 15, ${year}`),
             new Date(`Jan 15, ${year + 1}`),
         ];
-        const dueDate = quarterDueDates[quarter - 1];
+        const dueDate = quarterDueDates[quarter - 1]!;
         const daysUntilDue = Math.max(0, Math.ceil((dueDate.getTime() - now.getTime()) / 86_400_000));
         if (daysUntilDue <= 90) {
             result.push({ text: `Tax deadline in ${daysUntilDue} days`, level: 'warn' });

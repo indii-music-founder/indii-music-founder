@@ -14,7 +14,7 @@ export interface FileSystemSlice {
     // Actions
     fetchFileNodes: (projectId: string) => Promise<void>;
     createFolder: (name: string, parentId: string | null, projectId: string, userId: string) => Promise<void>;
-    createFileNode: (name: string, parentId: string | null, projectId: string, userId: string, fileType: FileNode['fileType'], data?: any) => Promise<void>;
+    createFileNode: (name: string, parentId: string | null, projectId: string, userId: string, fileType: FileNode['fileType'], data?: FileNode['data']) => Promise<void>;
     moveNode: (nodeId: string, transform: { parentId: string | null; newIndex?: number }, projectId: string) => Promise<void>;
     renameNode: (nodeId: string, newName: string) => Promise<void>;
     deleteNode: (nodeId: string) => Promise<void>;

@@ -2,6 +2,25 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.27.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.26.1...v1.27.0) (2026-03-17)
+
+
+### Features
+
+* **analytics,commerce,social:** replace stubs with real API integrations ([189f3b9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/189f3b9f2450dc7b7dbfff34f7d40de944d928a1))
+* close Items 277, 281, 286, 296, 310 — tests, empty states, sync clearance upload ([850fef3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/850fef3d8c5ff9c4bfd950c7ca2e58d58a2509b5))
+* close Items 287, 298, 306, 307, 312 — skeletons, privacy, recoupment, CF tuning ([1f8b76f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1f8b76f32c126fd95d78a7ae4537446217d7f850))
+* **production:** close 8 production gaps across infra, CI, and app code ([381d03f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/381d03ff41e725b7636503898685a9a39fa81bb2))
+* **production:** close gaps 263, 269/275, 281, 315; mark 271/292/294/299/300 done ([db37db7](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/db37db70cecbf9dd0be6000f9614590114f756df))
+
+
+### Bug Fixes
+
+* **agent,social:** replace 4 Math.random/coin-flip stubs with real logic ([60e8e50](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/60e8e50ab8ebdaf1a34ee8f928be28521b5527a9))
+* MechanicalRoyaltyPanel icon type — use LucideIcon instead of React.FC ([0d9d597](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0d9d597e8ea72624ad5c9c65db8ddae87bc958d4))
+* resolve all CI typecheck and test failures ([b2ef549](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b2ef5499b3d8eebb86d61c638a926698e7e40f43))
+* resolve Sentry + lint review items for PR [#1323](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/issues/1323) ([3e79d84](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/3e79d84631fc2683fe97d2a019d5737d92f67c05))
+
 ## [1.26.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.26.0...v1.26.1) (2026-03-17)
 
 

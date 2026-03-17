@@ -243,8 +243,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         if (state.activeSessionId === sessionId) {
             const remainingIds = Object.keys(newSessions);
             if (remainingIds.length > 0) {
-                newActiveId = remainingIds[0];
-                newHistory = newSessions[newActiveId].messages;
+                newActiveId = remainingIds[0]!;
+                newHistory = newSessions[newActiveId]!.messages;
             } else {
                 newActiveId = null;
                 newHistory = [];
@@ -262,7 +262,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         set(state => ({
             sessions: {
                 ...state.sessions,
-                [sessionId]: { ...state.sessions[sessionId], title }
+                [sessionId]: { ...state.sessions[sessionId]!, title }
             }
         }));
 
@@ -289,9 +289,10 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             };
         }
 
+        const currentSession = sessions[currentSessionId]!;
         const updatedSession = {
-            ...sessions[currentSessionId],
-            messages: [...sessions[currentSessionId].messages, msg],
+            ...currentSession,
+            messages: [...currentSession.messages, msg],
             updatedAt: Date.now()
         };
 
@@ -310,8 +311,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     updateAgentMessage: (id, updates) => set((state) => {
         if (!state.activeSessionId) return {};
 
-        const session = state.sessions[state.activeSessionId];
-        const updatedMessages = session.messages.map(msg =>
+        const session = state.sessions[state.activeSessionId]!;
+        const updatedMessages = session!.messages.map(msg =>
             msg.id === id ? { ...msg, ...updates } : msg
         );
 
@@ -348,7 +349,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             sessions: {
                 ...state.sessions,
                 [state.activeSessionId]: {
-                    ...state.sessions[state.activeSessionId],
+                    ...state.sessions[state.activeSessionId]!,
                     messages: []
                 }
             },
@@ -356,9 +357,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         };
     }),
 
-    toggleAgentWindow: () => set((state: any) => ({
+    toggleAgentWindow: () => set((state) => ({
         isAgentOpen: !state.isAgentOpen,
-        isRightPanelOpen: !state.isAgentOpen // Open RightPanel when agent opens, close when it closes
     })),
     setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
     setCommandBarCollapsed: (collapsed) => set({ isCommandBarCollapsed: collapsed }),
@@ -448,15 +448,15 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
                     // If the active session was deleted remotely, fallback to the most recent one
                     if (activeId && !sessionMap[activeId] && sessions.length > 0) {
-                        activeId = sessions[0].id;
+                        activeId = sessions[0]!.id;
                     } else if (!activeId && sessions.length > 0) {
-                        activeId = sessions[0].id; // Most recent due to sort
+                        activeId = sessions[0]!.id; // Most recent due to sort
                     }
 
                     return {
                         sessions: sessionMap,
                         activeSessionId: activeId,
-                        agentHistory: activeId && sessionMap[activeId] ? sessionMap[activeId].messages : []
+                        agentHistory: activeId && sessionMap[activeId] ? sessionMap[activeId]!.messages : []
                     };
                 });
             }, (error) => {
