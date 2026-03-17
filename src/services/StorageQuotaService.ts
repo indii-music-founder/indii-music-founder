@@ -67,16 +67,20 @@ export class StorageQuotaService {
         }
 
         try {
-            const usageRef = doc(db, 'users', userId, 'usage', 'storage');
-            const usageDoc = await getDoc(usageRef);
+            // Fetch usage and subscription tier in parallel
+            const [usageDoc, subscriptionDoc] = await Promise.all([
+                getDoc(doc(db, 'users', userId, 'usage', 'storage')),
+                getDoc(doc(db, 'subscriptions', userId)),
+            ]);
+
+            const tier = (subscriptionDoc.data()?.tier as string) || 'free';
 
             if (!usageDoc.exists()) {
                 Logger.info(TAG, 'No usage data yet — quota scan has not run');
-                return StorageQuotaService.buildDefaultQuota();
+                return StorageQuotaService.buildDefaultQuota(tier);
             }
 
-            const data = usageDoc.data();
-            return StorageQuotaService.enrichQuota(data);
+            return StorageQuotaService.enrichQuota(usageDoc.data(), tier);
         } catch (error) {
             Logger.error(TAG, 'Failed to read storage quota:', error);
             return null;
@@ -98,13 +102,19 @@ export class StorageQuotaService {
         }
 
         const usageRef = doc(db, 'users', userId, 'usage', 'storage');
+        let cachedTier = 'free';
+
+        // Fetch subscription tier once upfront; real-time usage updates reuse it
+        getDoc(doc(db, 'subscriptions', userId))
+            .then(snap => { cachedTier = (snap.data()?.tier as string) || 'free'; })
+            .catch(() => { /* leave cachedTier as 'free' */ });
 
         return onSnapshot(usageRef, (snapshot) => {
             if (!snapshot.exists()) {
-                callback(StorageQuotaService.buildDefaultQuota());
+                callback(StorageQuotaService.buildDefaultQuota(cachedTier));
                 return;
             }
-            callback(StorageQuotaService.enrichQuota(snapshot.data()));
+            callback(StorageQuotaService.enrichQuota(snapshot.data(), cachedTier));
         }, (error) => {
             Logger.error(TAG, 'Quota subscription error:', error);
             callback(null);
@@ -139,13 +149,10 @@ export class StorageQuotaService {
     // Private helpers
     // ========================================================================
 
-    private static enrichQuota(data: Record<string, unknown>): StorageQuotaWithLimits {
+    private static enrichQuota(data: Record<string, unknown>, tier = 'free'): StorageQuotaWithLimits {
         const totalGB = (data.totalGB as number) || 0;
-
-        // TODO: Read the user's actual tier from their profile/org.
-        // For now, default to 'free' tier.
-        const tier = 'free';
-        const limitGB = TIER_LIMITS_GB[tier] || TIER_LIMITS_GB.free;
+        const resolvedTier = TIER_LIMITS_GB[tier] !== undefined ? tier : 'free';
+        const limitGB = TIER_LIMITS_GB[resolvedTier] ?? TIER_LIMITS_GB.free;
         const usedPercent = limitGB > 0 ? Math.min(100, Math.round((totalGB / limitGB) * 100)) : 0;
 
         return {
@@ -157,7 +164,7 @@ export class StorageQuotaService {
             imageCount: (data.imageCount as number) || 0,
             scanDate: (data.scanDate as string) || '',
             updatedAt: data.updatedAt ? (data.updatedAt as { toDate: () => Date }).toDate() : null,
-            tier,
+            tier: resolvedTier,
             limitGB,
             usedPercent,
             isNearLimit: usedPercent >= 80,
@@ -165,8 +172,8 @@ export class StorageQuotaService {
         };
     }
 
-    private static buildDefaultQuota(): StorageQuotaWithLimits {
-        const tier = 'free';
+    private static buildDefaultQuota(tier = 'free'): StorageQuotaWithLimits {
+        const resolvedTier = TIER_LIMITS_GB[tier] !== undefined ? tier : 'free';
         return {
             totalBytes: 0,
             totalMB: 0,
@@ -176,8 +183,8 @@ export class StorageQuotaService {
             imageCount: 0,
             scanDate: '',
             updatedAt: null,
-            tier,
-            limitGB: TIER_LIMITS_GB[tier],
+            tier: resolvedTier,
+            limitGB: TIER_LIMITS_GB[resolvedTier] ?? TIER_LIMITS_GB.free,
             usedPercent: 0,
             isNearLimit: false,
             isOverLimit: false,

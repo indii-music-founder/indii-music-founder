@@ -263,6 +263,30 @@ export const stripeWebhook = onRequest({
     return;
   }
 
+  // Idempotency guard: skip events we've already processed.
+  // Stripe retries webhooks on timeout/5xx, so without this we can
+  // double-apply subscription changes or duplicate invoice credits.
+  const db = getFirestore();
+  const deliveryRef = db.collection('stripe_webhook_deliveries').doc(event.id);
+  try {
+    const existing = await deliveryRef.get();
+    if (existing.exists) {
+      console.log(`[stripeWebhook] Duplicate delivery skipped: ${event.id}`);
+      res.json({ received: true, duplicate: true });
+      return;
+    }
+    // Mark as in-flight before processing so concurrent retries are also blocked
+    await deliveryRef.set({
+      eventId: event.id,
+      type: event.type,
+      receivedAt: FieldValue.serverTimestamp(),
+      status: 'processing',
+    });
+  } catch (idempotencyErr) {
+    // Non-fatal: log and continue — better to process twice than drop
+    console.warn('[stripeWebhook] Idempotency check failed (proceeding):', idempotencyErr);
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed':
@@ -287,9 +311,16 @@ export const stripeWebhook = onRequest({
         console.log(`[stripeWebhook] Unhandled event type: ${event.type}`);
     }
 
+    // Mark delivery complete
+    deliveryRef.update({ status: 'processed', processedAt: FieldValue.serverTimestamp() })
+      .catch(() => { /* best-effort */ });
+
     res.json({ received: true });
   } catch (error) {
     console.error('[stripeWebhook] Handler error:', error);
+    // Mark failed so the next retry is not skipped
+    deliveryRef.update({ status: 'failed', error: String(error) })
+      .catch(() => { /* best-effort */ });
     res.status(500).json({ error: 'Webhook handler failed' });
   }
 });
