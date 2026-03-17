@@ -87,10 +87,6 @@ export default function LoginForm() {
         }
     };
 
-    const toggleMode = () => {
-        setSignUpMode(!isSignUpMode);
-        setConfirmPassword('');
-    };
 
     return (
         <div className="flex flex-col items-center justify-center h-screen w-screen bg-black text-white relative overflow-hidden">
@@ -119,7 +115,7 @@ export default function LoginForm() {
                 <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-6">
                     <button
                         type="button"
-                        onClick={() => setSignUpMode(false)}
+                        onClick={() => { setSignUpMode(false); setConfirmPassword(''); setDateOfBirth(''); }}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${!isSignUpMode ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'text-gray-400 hover:text-white'}`}
                     >
                         <LogIn className="w-4 h-4" />
@@ -127,7 +123,7 @@ export default function LoginForm() {
                     </button>
                     <button
                         type="button"
-                        onClick={() => setSignUpMode(true)}
+                        onClick={() => { setSignUpMode(true); }}
                         data-testid="toggle-auth-mode"
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isSignUpMode ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'text-gray-400 hover:text-white'}`}
                     >

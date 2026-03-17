@@ -20,6 +20,23 @@ export const pandaDocApiKey = defineSecret("PANDADOC_API_KEY");
 export const githubTokenFounders = defineSecret("GITHUB_TOKEN_FOUNDERS");
 
 /**
+ * Helper to safely retrieve the GitHub Token for the Founders Program.
+ */
+export function getGithubTokenFounders(): string {
+    const envKey = process.env.GITHUB_TOKEN_FOUNDERS;
+    if (envKey && envKey.trim().length > 0) return envKey;
+
+    try {
+        const secret = githubTokenFounders.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch {
+        if (process.env.GITHUB_TOKEN_FOUNDERS) return process.env.GITHUB_TOKEN_FOUNDERS;
+    }
+
+    throw new Error("GitHub Token for Founders Program not found. Please set GITHUB_TOKEN_FOUNDERS secret or environment variable.");
+}
+
+/**
  * Helper to safely retrieve the Gemini API Key.
  * Handles both production (secrets) and local development (environment variables).
  */

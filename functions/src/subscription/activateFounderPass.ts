@@ -44,6 +44,8 @@ export interface ActivateFounderPassResult {
     covenantHash: string;
     joinedAt: string;
     message: string;
+    /** true when the GitHub commit failed and was queued for manual retry */
+    githubCommitPending: boolean;
 }
 
 /**
@@ -86,22 +88,24 @@ async function getFoundersFileSha(githubToken: string): Promise<{ content: strin
  */
 function injectFounderEntry(
     fileContent: string,
-    record: { seat: number; name: string; joinedAt: string; covenantHash: string; uid: string }
+    record: { seat: number; name: string; joinedAt: string; covenantHash: string }
 ): string {
+    // Use JSON.stringify for string values to properly escape quotes,
+    // newlines, and backslashes. uid is deliberately omitted from the
+    // public git record (it stays in Firestore only).
     const entry = `  {
     seat: ${record.seat},
-    name: '${record.name.replace(/'/g, "\\'")}',
-    joinedAt: '${record.joinedAt}',
-    covenantHash: '${record.covenantHash}',
-    uid: '${record.uid}',
+    name: ${JSON.stringify(record.name)},
+    joinedAt: ${JSON.stringify(record.joinedAt)},
+    covenantHash: ${JSON.stringify(record.covenantHash)},
   },`;
 
-    // Replace the placeholder comment line with the new entry + placeholder preserved
-    return fileContent.replace(
-        '  // ── Founder entries are appended here automatically ──',
-        `${entry}\n  // ── Founder entries are appended here automatically ──`
-    );
-}
+  // Replace the placeholder comment line with the new entry + placeholder preserved
+  const placeholder = "  // ── Founder entries are appended here automatically ──";
+  if (!fileContent.includes(placeholder)) {
+    throw new Error('Placeholder not found in founders.ts');
+  }
+  return fileContent.replace(placeholder, `${entry}\n${placeholder}`);}
 
 /**
  * Commit the updated founders.ts to main via the GitHub Contents API.
@@ -179,6 +183,21 @@ export const activateFounderPass = onCall({
         throw new HttpsError('permission-denied', 'Payment intent does not belong to this user.');
     }
 
+    // Verify the payment amount and currency match the founders pass price
+    const FOUNDER_PASS_AMOUNT_CENTS = 250_000; // $2,500.00
+    if (!paymentIntent.amount || paymentIntent.amount < FOUNDER_PASS_AMOUNT_CENTS) {
+        throw new HttpsError(
+            'failed-precondition',
+            `Payment amount ($${((paymentIntent.amount ?? 0) / 100).toFixed(2)}) is below the required $2,500.00.`
+        );
+    }
+    if (paymentIntent.currency?.toLowerCase() !== 'usd') {
+        throw new HttpsError(
+            'failed-precondition',
+            `Payment currency (${paymentIntent.currency}) is not USD.`
+        );
+    }
+
     const db = getFirestore();
     const joinedAt = new Date().toISOString();
     const covenantHash = generateCovenantHash(name, joinedAt);
@@ -235,6 +254,7 @@ export const activateFounderPass = onCall({
     }
 
     // 3. Commit the founder entry to GitHub (best-effort — Firestore already committed)
+    let githubCommitPending = false;
     try {
         const githubToken = githubTokenFounders.value();
         const { content: currentFileContent, sha: fileSha } = await getFoundersFileSha(githubToken);
@@ -243,13 +263,13 @@ export const activateFounderPass = onCall({
             name,
             joinedAt,
             covenantHash,
-            uid: userId,
         });
         await commitFounderToGitHub(githubToken, updatedContent, fileSha, { name, seat });
         console.log(`[activateFounderPass] Founder #${seat} (${name}) successfully committed to repo.`);
     } catch (gitErr) {
         // Non-fatal: Firestore record is the authoritative source.
         // GitHub commit will be retried manually if needed.
+        githubCommitPending = true;
         console.error('[activateFounderPass] GitHub commit failed (non-fatal):', gitErr);
         // Queue for manual retry via admin tools
         await getFirestore().collection('founder_github_commit_queue').add({
@@ -263,10 +283,15 @@ export const activateFounderPass = onCall({
         }).catch(() => { /* best-effort */ });
     }
 
+    const message = githubCommitPending
+        ? `Welcome, Founder #${seat}. Your covenant hash is your permanent receipt. It is stored in Firestore; the repository commit is pending and will be completed shortly.`
+        : `Welcome, Founder #${seat}. Your covenant hash is your permanent receipt. It has been committed to the indiiOS repository.`;
+
     return {
         seat,
         covenantHash,
         joinedAt,
-        message: `Welcome, Founder #${seat}. Your covenant hash is your permanent receipt. It has been committed to the indiiOS repository.`,
+        message,
+        githubCommitPending,
     };
 });
