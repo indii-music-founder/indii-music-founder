@@ -49,9 +49,9 @@ export class RenderService {
                 bucketName: response.bucketName
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[CloudRenderService] Cloud render dispatch failed:', error);
-            throw new Error(`Failed to dispatch cloud render: ${error.message}`);
+            throw new Error(`Failed to dispatch cloud render: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -66,7 +66,7 @@ export class RenderService {
                 functionName: `remotion-render-${RemotionLambdaConfig.region}`,
                 region: RemotionLambdaConfig.region,
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[CloudRenderService] Failed to get progress:', error);
             throw error;
         }
@@ -114,9 +114,9 @@ export class RenderService {
             console.info(`[RenderService] Render complete: ${config.outputLocation}`);
             return config.outputLocation;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[RenderService] Render failed:', error);
-            throw new Error(`Failed to render composition: ${error.message}`);
+            throw new Error(`Failed to render composition: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }

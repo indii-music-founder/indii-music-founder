@@ -65,7 +65,7 @@ export class InfluencerBountyService {
             };
 
             return bounty;
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error(`[BountyService] Failed to create bounty:`, error);
             throw error;
         }

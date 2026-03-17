@@ -40,9 +40,9 @@ export class VideoRenderOrchestrator {
 
             return cloudResponse.renderId;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[VideoRenderer] Render failed to start:', error);
-            store.updateJobStatus(renderId, 'error', error.message || 'Render failed to start');
+            store.updateJobStatus(renderId, 'error', error instanceof Error ? error.message : 'Render failed to start');
             throw error;
         }
     }
@@ -76,7 +76,7 @@ export class VideoRenderOrchestrator {
                 const percent = Math.round((progress.overallProgress || 0) * 100);
                 store.updateJobProgress(localJobId, percent);
 
-            } catch (error: any) {
+            } catch (error: unknown) {
                 logger.warn(`[VideoRenderer] Polling error for ${localJobId}:`, error);
                 // We don't stop immediately on one polling error to handle transient network issues
             }

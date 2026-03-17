@@ -102,18 +102,21 @@ export default function DirectGenerationTab() {
                     }
                 }
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error("Direct Generation Failed:", error);
 
+            const errObj = error as Record<string, unknown> | null;
+            const errMessage = error instanceof Error ? error.message : '';
+
             // Provide specific error messages based on error type
-            if (error?.code === 'deadline-exceeded' || error?.message?.includes('timeout')) {
+            if (errObj?.code === 'deadline-exceeded' || errMessage?.includes('timeout')) {
                 toast.error('Generation timed out. The API may be busy - please try again.');
-            } else if (error?.code === 'resource-exhausted') {
-                toast.error(error.message || 'Quota exceeded. Please upgrade your plan.');
-            } else if (error?.code === 'internal' && error?.message?.includes('No image data')) {
+            } else if (errObj?.code === 'resource-exhausted') {
+                toast.error(errMessage || 'Quota exceeded. Please upgrade your plan.');
+            } else if (errObj?.code === 'internal' && errMessage?.includes('No image data')) {
                 toast.error('No image was generated. Try rephrasing your prompt.');
             } else {
-                toast.error(`Generation failed: ${error.message || 'Unknown error'}`);
+                toast.error(`Generation failed: ${errMessage || 'Unknown error'}`);
             }
         } finally {
             setIsGenerating(false);

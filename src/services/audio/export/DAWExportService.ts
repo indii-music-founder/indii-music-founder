@@ -48,9 +48,9 @@ export class DAWExportService {
             ]);
 
             return new Blob([midiData], { type: 'audio/midi' });
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[DAWExportService] MIDI export failed', error);
-            throw new Error(`MIDI export failed: ${error.message}`);
+            throw new Error(`MIDI export failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -106,9 +106,9 @@ export class DAWExportService {
 </Ableton>`;
 
             return xml;
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[DAWExportService] Ableton export failed', error);
-            throw new Error(`Ableton export failed: ${error.message}`);
+            throw new Error(`Ableton export failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 

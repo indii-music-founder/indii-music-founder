@@ -120,9 +120,9 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             const data = result.data as { renderId?: string; success?: boolean; url?: string; error?: string };
             if (data.renderId || data.success) toast.success('Cloud render started successfully!');
             else throw new Error(data.error || 'Export failed');
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('Export error:', error);
-            toast.error(`Export failed: ${error.message}`);
+            toast.error(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setIsExporting(false);
         }

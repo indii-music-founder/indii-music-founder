@@ -69,9 +69,9 @@ export function SplitSheetEscrow() {
 
             await Promise.all(transferPromises);
             setReleased(true);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[SplitSheetEscrow] Transfer failed:', err);
-            setReleaseError(err.message || 'Transfer failed. Please try again.');
+            setReleaseError(err instanceof Error ? err.message : 'Transfer failed. Please try again.');
         } finally {
             setReleasing(false);
         }
@@ -99,7 +99,7 @@ export function SplitSheetEscrow() {
             });
             setExportUrl(result.data.url);
             window.open(result.data.url, '_blank');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[SplitSheetEscrow] Export failed:', err);
         } finally {
             setExporting(false);

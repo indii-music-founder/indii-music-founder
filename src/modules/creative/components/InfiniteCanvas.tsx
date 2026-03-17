@@ -188,7 +188,7 @@ export default function InfiniteCanvas() {
 
         // Check top-most image first
         for (let i = canvasImages.length - 1; i >= 0; i--) {
-            const img = canvasImages[i];
+            const img = canvasImages[i]!;
             // Ensure width/height are numbers (fallback to 0)
             const w = img.width ?? 0;
             const h = img.height ?? 0;
@@ -323,7 +323,7 @@ export default function InfiniteCanvas() {
             tCtx.drawImage(canvas, sx, sy, w, h, 0, 0, w, h);
 
             const contextDataUrl = tempCanvas.toDataURL('image/png');
-            const base64Data = contextDataUrl.split(',')[1];
+            const base64Data = contextDataUrl.split(',')[1] ?? '';
 
             // Use ImageService for generation (Edit Mode / Magic Fill)
             // We use editImage to include the context
@@ -348,7 +348,7 @@ export default function InfiniteCanvas() {
                     aspectRatio: "1:1"
                 });
                 if (results.length > 0) {
-                    const res = results[0];
+                    const res = results[0]!;
                     addCanvasImage({
                         id: res.id,
                         base64: res.url,
@@ -358,14 +358,15 @@ export default function InfiniteCanvas() {
                     });
                 }
             }
-        } catch (e: any) {
-            logger.error(e);
-            if (e?.name === 'QuotaExceededError' || e?.code === 'QUOTA_EXCEEDED') {
+        } catch (e: unknown) {
+            logger.error(e instanceof Error ? e.message : String(e));
+            const isQuota = e instanceof Error && (e.name === 'QuotaExceededError' || ('code' in e && (e as { code?: string }).code === 'QUOTA_EXCEEDED'));
+            if (isQuota && e instanceof Error) {
                 toast.error(e.message || 'Quota exceeded during generation.');
             } else if (e instanceof Error) {
                 toast.error(`Generation failed: ${e.message}`);
             } else {
-                toast.error("Generation failed: An unknown error occurred.");
+                toast.error('Generation failed: An unknown error occurred.');
             }
         } finally {
             setIsGenerating(false);

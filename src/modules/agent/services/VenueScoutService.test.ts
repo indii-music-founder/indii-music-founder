@@ -101,14 +101,14 @@ describe('VenueScoutService', () => {
             try {
                 await VenueScoutService.searchVenues('', 'Rock');
                 expect.fail('Should have thrown an error');
-            } catch (err: any) {
-                expect(err.message).toContain('Invalid search parameters');
+            } catch (err: unknown) {
+                expect(err instanceof Error ? err.message : '').toContain('Invalid search parameters');
             }
             try {
                 await VenueScoutService.searchVenues('Nashville', '');
                 expect.fail('Should have thrown an error');
-            } catch (err: any) {
-                expect(err.message).toContain('Invalid search parameters');
+            } catch (err: unknown) {
+                expect(err instanceof Error ? err.message : '').toContain('Invalid search parameters');
             }
         });
 

@@ -51,7 +51,7 @@ export class VideoDirector {
                 // FirebaseAIService expects Record<string, any> or Schema.
                 const feedback = await GenAI.generateStructuredData<DirectorFeedback>(
                     [
-                        { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] } },
+                        { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] ?? '' } },
                         { text: critiquePrompt }
                     ],
                     schema,
@@ -74,8 +74,8 @@ export class VideoDirector {
 
             return this.saveVideo(url, prompt, isRetry);
 
-        } catch (e: any) {
-            if (e.retry) throw e; // Propagate retry signal
+        } catch (e: unknown) {
+            if (e && typeof e === 'object' && 'retry' in e) throw e; // Propagate retry signal
             return null;
         }
     }
@@ -128,7 +128,7 @@ export class VideoDirector {
         // --- Electron Path: Delegate to local Python API (Agent Zero sidecar) ---
         // --- Cloud Function (triggerVideoJob) ---
         // Build a payload that satisfies VideoJobSchema
-        const cloudPayload: any = {
+        const cloudPayload: Record<string, unknown> = {
             jobId,
             prompt,
             model: AI_MODELS.VIDEO.GENERATION,
@@ -137,9 +137,10 @@ export class VideoDirector {
 
         if (item.url.startsWith('data:')) {
             const parts = item.url.split(',');
+            const header = parts[0] ?? '';
             cloudPayload.image = {
-                imageBytes: parts[1],
-                mimeType: parts[0].split(':')[1].split(';')[0],
+                imageBytes: parts[1] ?? '',
+                mimeType: header.split(':')[1]?.split(';')[0] ?? 'image/png',
             };
         } else {
             cloudPayload.referenceImageUri = item.url;
@@ -149,9 +150,9 @@ export class VideoDirector {
             const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
             const response = await triggerVideoJob(cloudPayload);
             return response.data as { success: boolean; error?: string };
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error('[VideoDirector] Cloud Function Error:', err);
-            return { success: false, error: err.message || 'Video generation failed' };
+            return { success: false, error: err instanceof Error ? err.message : 'Video generation failed' };
         }
     }
 }

@@ -127,13 +127,13 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     } else {
                         toast.error("Generation returned no images. Please try again.");
                     }
-                } catch (e: any) {
+                } catch (e: unknown) {
                     logger.error("[CreativeStudio] Image generation error:", e);
-                    if (e?.name === 'QuotaExceededError' || e?.code === 'QUOTA_EXCEEDED') {
-                        toast.error(e.message || "Quota exceeded. Please upgrade.");
+                    const isQuota = e instanceof Error && (e.name === 'QuotaExceededError' || ('code' in e && (e as { code?: string }).code === 'QUOTA_EXCEEDED'));
+                    if (isQuota) {
+                        toast.error(e instanceof Error ? e.message : 'Quota exceeded. Please upgrade.');
                     } else {
-                        // Show actual error message for debugging
-                        const errorMsg = e?.message || e?.details?.message || "Unknown error";
+                        const errorMsg = e instanceof Error ? e.message : 'Unknown error';
                         toast.error(`Image generation failed: ${errorMsg}`);
                     }
                 } finally {
