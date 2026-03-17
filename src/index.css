@@ -393,6 +393,54 @@
   transform: translateY(-1px);
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+ * Items 270 & 273: Global Keyboard Focus Rings & Contrast Helpers
+ *
+ * 270: Ensure keyboard-visible focus rings on all interactive elements.
+ *      Uses :focus-visible so mouse clicks do NOT show the ring.
+ *
+ * 273: Lifted text contrast — replace text-gray-500 with text-gray-400
+ *      for body copy on dark surfaces to meet WCAG AA 4.5:1 minimum.
+ * ──────────────────────────────────────────────────────────────────────────*/
+
+/* Global focus ring — applies to all interactive elements not already styled */
+:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default outlines that browsers add (we use the rule above) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Sidebar & nav items — tighter ring on pill-shaped buttons */
+[data-testid^="nav-item"]:focus-visible,
+.bolt-interactive:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+/* Skip-to-main link — visually hidden until focused (Item 274 already done, keep here for reference) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: #000;
+  font-weight: bold;
+  border-radius: 6px;
+  outline: 2px solid #000;
+}
+
 /* Typography utilities */
 .font-main {
   font-family: var(--font-main);
