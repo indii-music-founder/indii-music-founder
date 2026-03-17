@@ -1147,6 +1147,7 @@ import { getCustomerPortal } from "./subscription/getCustomerPortal";
 import { getUsageStats } from "./subscription/getUsageStats";
 import { trackUsage } from "./subscription/trackUsage";
 import { stripeWebhook } from "./stripe/webhookHandler";
+import { activateFounderPass } from "./subscription/activateFounderPass";
 
 export {
     getSubscription,
@@ -1158,7 +1159,8 @@ export {
     getCustomerPortal,
     getUsageStats,
     trackUsage,
-    stripeWebhook
+    stripeWebhook,
+    activateFounderPass
 };
 
 // ----------------------------------------------------------------------------

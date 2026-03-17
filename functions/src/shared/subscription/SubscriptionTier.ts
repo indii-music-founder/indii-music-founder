@@ -16,7 +16,8 @@ export enum SubscriptionTier {
     FREE = 'free',
     PRO_MONTHLY = 'pro_monthly',
     PRO_YEARLY = 'pro_yearly',
-    STUDIO = 'studio'
+    STUDIO = 'studio',
+    FOUNDER = 'founder'
 }
 
 /**
@@ -203,6 +204,44 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
         maxTeamMembers: 5
     },
 
+    [SubscriptionTier.FOUNDER]: {
+        name: 'indiiOS Founder',
+        description: 'Lifetime founding access. One-time $2,500. Limited to 10 seats. API costs billed at pass-through cost.',
+        price: 2500,
+        billingPeriod: 'once',
+        imageGenerations: {
+            monthly: 999999,
+            maxResolution: '4096x4096',
+            generationsPerMonth: 999999,
+            allowedFormats: ['png', 'jpg', 'webp', 'svg', 'tiff', 'psd']
+        },
+        videoGenerations: {
+            totalDurationMinutes: 999999,
+            maxResolution: '4K',
+            maxDurationSeconds: 99999,
+            allowedFormats: ['mp4', 'mov', 'webm', 'avi', 'mkv']
+        },
+        aiChat: {
+            tokensPerMonth: 999999999,
+            modelTier: 'unlimited'
+        },
+        storage: {
+            totalGB: 10000,
+            fileTypeAccess: ['all'],
+            maxFileSizeMB: 10000
+        },
+        features: {
+            collaboration: true,
+            exportFormats: ['all'],
+            agentCapabilities: ['all'],
+            advancedTools: ['all'],
+            prioritySupport: true,
+            apiAccess: true
+        },
+        maxProjects: 999999,
+        maxTeamMembers: 100
+    },
+
     [SubscriptionTier.STUDIO]: {
         name: 'indiiOS Studio',
         description: 'Desktop-native with local computing and unlimited creativity',
@@ -256,8 +295,16 @@ export function getTierOrder(): SubscriptionTier[] {
     return [
         SubscriptionTier.FREE,
         SubscriptionTier.PRO_MONTHLY,
-        SubscriptionTier.STUDIO
+        SubscriptionTier.STUDIO,
+        SubscriptionTier.FOUNDER
     ];
+}
+
+/**
+ * Check if a tier is the Founder lifetime tier
+ */
+export function isFounderTier(tier: SubscriptionTier): boolean {
+    return tier === SubscriptionTier.FOUNDER;
 }
 
 /**

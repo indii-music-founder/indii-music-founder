@@ -23,10 +23,44 @@ function verifyStripeWebhook(
 }
 
 /**
+ * Handle checkout.session.completed for a founders pass (one-time payment).
+ * Writes the pending activation record to Firestore so activateFounderPass
+ * can be called by the client after redirect.
+ */
+async function handleFounderPassCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  const userId = session.metadata?.userId;
+  const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : null;
+
+  if (!userId || !paymentIntentId) {
+    console.error('[handleFounderPassCheckoutCompleted] Missing userId or paymentIntentId in metadata');
+    return;
+  }
+
+  const db = getFirestore();
+  // Write a pending activation record. The client will call activateFounderPass()
+  // after reading this (passing the paymentIntentId + their chosen display name).
+  await db.collection('founder_pending_activations').doc(userId).set({
+    userId,
+    paymentIntentId,
+    checkoutSessionId: session.id,
+    status: 'pending',
+    createdAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  console.log(`[handleFounderPassCheckoutCompleted] Pending activation written for user ${userId}`);
+}
+
+/**
  * Handle checkout.session.completed event
  */
 async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   const session = event.data.object as Stripe.Checkout.Session;
+
+  // Route founder pass payments separately
+  if (session.metadata?.type === 'founder_pass') {
+    await handleFounderPassCheckoutCompleted(session);
+    return;
+  }
 
   if (!session.customer || !session.metadata?.userId || !session.metadata?.tier) {
     console.error('[handleCheckoutCompleted] Missing required metadata');
