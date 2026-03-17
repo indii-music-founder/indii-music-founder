@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sliders, Monitor } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { PrivacySettingsPanel } from '@/components/shared/PrivacySettingsPanel';
 
 export default function GlobalSettings() {
     const { userProfile, setUserProfile } = useStore();
@@ -60,6 +61,10 @@ export default function GlobalSettings() {
                         <div className={`absolute top-1.5 w-4 h-4 bg-white rounded-full transition-all duration-200 ${darkMode ? 'right-1.5' : 'left-1.5'}`}></div>
                     </button>
                 </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/5">
+                <PrivacySettingsPanel />
             </div>
         </div>
     );

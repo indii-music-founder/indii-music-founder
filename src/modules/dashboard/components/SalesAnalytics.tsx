@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, TrendingUp, Users, MousePointerClick, AlertCircle, Loader2 } from 'lucide-react';
+import { SkeletonStat, SkeletonTable } from '@/components/ui/Skeleton';
 import { DashboardService } from '@/services/dashboard/DashboardService';
 import { SalesAnalyticsData } from '@/services/dashboard/schema';
 import { logger } from '@/utils/logger';
@@ -103,9 +104,11 @@ export default function SalesAnalytics() {
 
     if (loading) {
         return (
-            <div className="h-64 flex flex-col items-center justify-center space-y-4">
-                <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
-                <span className="text-gray-500 text-sm">Loading analytics...</span>
+            <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[0, 1, 2, 3].map((i) => <SkeletonStat key={i} />)}
+                </div>
+                <SkeletonTable rows={5} cols={4} />
             </div>
         );
     }

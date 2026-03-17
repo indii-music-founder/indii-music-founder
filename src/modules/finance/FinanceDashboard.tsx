@@ -11,6 +11,7 @@ import { AuditLogsPanel } from './components/AuditLogsPanel';
 import { BudgetVsActuals } from './components/BudgetVsActuals';
 import { SplitSheetEscrow } from './components/SplitSheetEscrow';
 import { ReceiptOCR } from './components/ReceiptOCR';
+import { LabelDealRecoupment } from './components/LabelDealRecoupment';
 import { useFinance } from './hooks/useFinance';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
@@ -19,7 +20,7 @@ import {
     Briefcase, CreditCard, ShoppingBag, TrendingUp,
     DollarSign, ArrowUpRight, Wallet,
     AlertTriangle, Calendar, PiggyBank, Globe, Users,
-    FileText, Activity, Shield, Camera, GitMerge, Loader2
+    FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark
 } from 'lucide-react';
 import type { EarningsSummary } from '@/services/revenue/schema';
 import type { Expense } from './schemas';
@@ -125,6 +126,9 @@ export default function FinanceDashboard() {
                                 <TabsTrigger value="receipts" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
                                     <Camera size={14} /> Receipt OCR
                                 </TabsTrigger>
+                                <TabsTrigger value="recoupment" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <Landmark size={14} /> Recoupment
+                                </TabsTrigger>
                             </TabsList>
                         </div>
 
@@ -188,6 +192,11 @@ export default function FinanceDashboard() {
                                 <TabsContent value="receipts" className="mt-0 outline-none">
                                     <ModuleErrorBoundary moduleName="Finance / Receipts">
                                         <ReceiptOCR />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="recoupment" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Recoupment">
+                                        <LabelDealRecoupment />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
                             </div>
