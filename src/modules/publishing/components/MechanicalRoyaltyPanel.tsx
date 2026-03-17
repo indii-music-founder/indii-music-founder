@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Music, FileText, CheckCircle, Clock, AlertCircle, Search, DollarSign, XCircle } from 'lucide-react';
+import { Music, FileText, CheckCircle, Clock, AlertCircle, Search, DollarSign, XCircle, type LucideIcon } from 'lucide-react';
 import {
     MechanicalRoyaltyService,
     type MechanicalLicense,
@@ -21,7 +21,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 
 const STATUS_CONFIG: Record<MechanicalLicenseStatus, {
     label: string;
-    icon: React.FC<{ size?: number; className?: string }>;
+    icon: LucideIcon;
     color: string;
     bg: string;
 }> = {
