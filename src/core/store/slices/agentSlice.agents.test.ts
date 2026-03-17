@@ -73,6 +73,6 @@ describe('AgentSlice - Available Agents', () => {
         await store.loadAgents();
 
         expect(useStore.getState().availableAgents).toHaveLength(1);
-        expect(useStore.getState().availableAgents[0].id).toBe('marketing');
+        expect(useStore.getState().availableAgents[0]!.id).toBe('marketing');
     });
 });
