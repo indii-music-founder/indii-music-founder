@@ -63,8 +63,10 @@ export {
 export { pandadocWebhook } from './legal/pandadocWebhook';
 
 // Publishing Functions: ISWC Mapper (PandaDoc → composition registration)
-// TODO: Re-enable after deleting the old HTTPS version in GCP console
-// export { processISWCMapping } from './publishing/iswcMapper';
+// Re-exported as V2 alias to avoid collision with the old HTTPS-triggered version
+// that may still be deployed. Once the old `processISWCMapping` is deleted from GCP
+// console (firebase functions:delete processISWCMapping), rename this back.
+export { processISWCMapping as processISWCMappingV2 } from './publishing/iswcMapper';
 
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
