@@ -46,7 +46,7 @@ export const EarningsDashboard: React.FC = () => {
     const platformBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byPlatform && earnings.byPlatform.length > 0) {
-            return earnings.byPlatform.map(p => ({
+            return earnings.byPlatform.map((p: { platformName: string; revenue: number }) => ({
                 label: p.platformName,
                 revenue: p.revenue,
                 percentage: Math.round((p.revenue / earnings.totalNetRevenue) * 100),
@@ -65,7 +65,7 @@ export const EarningsDashboard: React.FC = () => {
     const territoryBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byTerritory && earnings.byTerritory.length > 0) {
-            return earnings.byTerritory.map(t => ({
+            return earnings.byTerritory.map((t: { territoryName: string; revenue: number }) => ({
                 label: t.territoryName,
                 revenue: t.revenue,
                 percentage: Math.round((t.revenue / earnings.totalNetRevenue) * 100),
@@ -150,7 +150,7 @@ export const EarningsDashboard: React.FC = () => {
                 <EarningsBreakdown
                     byPlatform={platformBreakdown}
                     byTerritory={territoryBreakdown}
-                    byTrack={earnings.byRelease?.map(r => ({
+                    byTrack={earnings.byRelease?.map((r: { releaseName: string; revenue: number }) => ({
                         label: r.releaseName,
                         revenue: r.revenue,
                         percentage: earnings.totalNetRevenue > 0

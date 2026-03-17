@@ -139,7 +139,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     outcome: { type: 'STRING' as const },
                 },
                 required: ['negotiationLog', 'finalTerms', 'outcome'],
-            } as any, AI_MODELS.TEXT.FAST);
+            } as any, undefined, undefined, AI_MODELS.TEXT.FAST);
 
             return {
                 success: true,
