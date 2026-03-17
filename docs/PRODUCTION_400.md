@@ -104,7 +104,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **374. Electron: Crash Reporter Integration:** Add `crashReporter.start({ submitURL: 'https://sentry.io/api/...' })` in `electron/main.ts` main process and renderer. Surface crash info to the engineering team without exposing PII.
 - [ ] **375. Electron: Secure Session Cookie Flags:** Verify Electron session cookies set `HttpOnly`, `Secure`, and `SameSite=Strict` flags. Add `session.defaultSession.cookies` audit on startup.
 - [ ] **376. Electron: Windows NSIS Code Signing in CI:** Verify `.github/workflows/build.yml` includes the Windows code-signing step using `WINDOWS_CERTIFICATE` secret and `signtool.exe`. Missing signature causes SmartScreen warnings on install.
-- [ ] **377. Electron: App Quit Cleanup for WebSocket/SSH Connections:** `electron/handlers/` may hold open SSH2 SFTP connections after SFTP delivery. Add `app.on('before-quit')` handler to close all active connections.
+- [x] **377. Electron: App Quit Cleanup for WebSocket/SSH Connections:** `electron/handlers/` may hold open SSH2 SFTP connections after SFTP delivery. Add `app.on('before-quit')` handler to close all active connections.
 - [ ] **378. Electron: Memory Profiling for Long Sessions:** Add a developer-only memory snapshot tool (accessible via `--inspect` flag) to track heap growth over 4+ hour sessions — desktop apps are prone to long-session memory leaks.
 - [ ] **379. Electron: Protocol Registration Hardening:** `electron/main.ts:279-319` registers `indii-os://` protocol. Add SSRF protection: reject URLs that resolve to localhost, 169.254.x.x (link-local), or RFC1918 private ranges in deep link payloads.
 
@@ -118,7 +118,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **383. Offline: Firestore Pending Write Conflict Resolution:** When the app comes back online after a period of edits, Firestore offline persistence may surface write conflicts. Add a conflict resolution strategy (last-write-wins with timestamp, or merge logic) in `MetadataPersistenceService`.
 - [x] **384. Background Sync for Failed Social Posts:** Scheduled posts that fail delivery are marked failed in Firestore but not retried. Add exponential backoff retry logic in `deliverScheduledPosts.ts` — retry failed delivery up to 3× before final failure notification.
 - [ ] **385. Workbox: Offline Fallback for Navigation Requests:** `src/service-worker.ts` caches assets but has no offline fallback HTML page for navigation requests when the shell can't load. Add `offlineFallback: '/offline.html'` with a minimal informational page.
-- [ ] **386. IndexedDB Quota Management:** The offline queue and RAG cache write to IndexedDB without quota checks. Add `navigator.storage.estimate()` before writes and warn when remaining quota < 50MB.
+- [x] **386. IndexedDB Quota Management:** The offline queue and RAG cache write to IndexedDB without quota checks. Add `navigator.storage.estimate()` before writes and warn when remaining quota < 50MB.
 
 ---
 
@@ -139,7 +139,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **394. Push Notification Permission Flow:** The app registers a FCM token in `firebase-messaging-sw.js` but there is no user-facing UI that requests `Notification.requestPermission()` and explains the value proposition before the browser prompt appears.
 - [ ] **395. App Install Prompt Analytics:** `src/components/PWAInstallPrompt.tsx` shows the install prompt but does not track `prompt shown`, `prompt accepted`, `prompt dismissed` events to Firebase Analytics. Add events to measure PWA install conversion.
 - [x] **396. iOS PWA Splash Screen and Status Bar:** `index.html` is missing `<meta name="apple-mobile-web-app-status-bar-style">` and platform-specific splash screen meta tags. iOS PWA installs show a white flash on launch.
-- [ ] **397. Viewport Lock for Mobile Modals:** Several modals use `position: fixed` without `touch-action: none` on the scroll container. On iOS Safari, background content scrolls behind an open modal. Add `overscroll-behavior: contain` to modal overlays.
+- [x] **397. Viewport Lock for Mobile Modals:** Several modals use `position: fixed` without `touch-action: none` on the scroll container. On iOS Safari, background content scrolls behind an open modal. Add `overscroll-behavior: contain` to modal overlays.
 - [x] **398. Web Share API for Release Links:** Add a Share button on the Release Detail page that calls `navigator.share({ title, url })` on supported browsers — enables artists to share release links directly from the app to social platforms.
 - [ ] **399. Biometric Auth on Mobile PWA:** `BiometricGate.tsx` targets Electron's `keytar`. Extend with `PublicKeyCredential` / WebAuthn for mobile PWA biometric auth (Face ID / Touch ID via browser API) as a fallback when Electron APIs are unavailable.
 
