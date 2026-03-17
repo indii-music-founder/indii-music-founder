@@ -200,7 +200,7 @@ function escapeHtml(str: string): string {
 /* ── Cloud Function ──────────────────────────────────────────────────────── */
 
 export const exportSplitSheet = onCall<ExportSplitSheetInput, Promise<{ url: string; storagePath: string }>>(
-    { cors: true, enforceAppCheck: false },
+    { cors: true, enforceAppCheck: true },
     async (request) => {
         const uid = request.auth?.uid;
         if (!uid) {

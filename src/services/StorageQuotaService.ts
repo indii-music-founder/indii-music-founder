@@ -58,6 +58,7 @@ const TIER_LIMITS_GB: Record<string, number> = {
 export class StorageQuotaService {
     /**
      * Get the current user's storage quota (one-time read).
+     * Fetches both usage data and subscription tier in parallel.
      */
     static async getQuota(): Promise<StorageQuotaWithLimits | null> {
         const userId = auth.currentUser?.uid;
@@ -67,16 +68,20 @@ export class StorageQuotaService {
         }
 
         try {
-            const usageRef = doc(db, 'users', userId, 'usage', 'storage');
-            const usageDoc = await getDoc(usageRef);
+            // Fetch usage and subscription tier in parallel
+            const [usageDoc, subscriptionDoc] = await Promise.all([
+                getDoc(doc(db, 'users', userId, 'usage', 'storage')),
+                getDoc(doc(db, 'subscriptions', userId)),
+            ]);
+
+            const tier = (subscriptionDoc.data()?.tier as string) || 'free';
 
             if (!usageDoc.exists()) {
                 Logger.info(TAG, 'No usage data yet — quota scan has not run');
-                return StorageQuotaService.buildDefaultQuota();
+                return StorageQuotaService.buildDefaultQuota(tier);
             }
 
-            const data = usageDoc.data();
-            return StorageQuotaService.enrichQuota(data);
+            return StorageQuotaService.enrichQuota(usageDoc.data(), tier);
         } catch (error) {
             Logger.error(TAG, 'Failed to read storage quota:', error);
             return null;
@@ -85,6 +90,11 @@ export class StorageQuotaService {
 
     /**
      * Subscribe to real-time quota updates.
+     *
+     * Fetches the subscription tier BEFORE starting the onSnapshot listener
+     * so the very first callback receives the correct tier — no flash of
+     * free-tier limits for paying users.
+     *
      * Returns an unsubscribe function.
      */
     static subscribeToQuota(
@@ -98,17 +108,53 @@ export class StorageQuotaService {
         }
 
         const usageRef = doc(db, 'users', userId, 'usage', 'storage');
+        let innerUnsub: Unsubscribe | null = null;
+        let cancelled = false;
 
-        return onSnapshot(usageRef, (snapshot) => {
-            if (!snapshot.exists()) {
-                callback(StorageQuotaService.buildDefaultQuota());
-                return;
+        // Fetch tier first, THEN start the real-time listener.
+        // This prevents the race condition where the first onSnapshot callback
+        // fires before the tier is known, causing paying users to briefly see
+        // free-tier storage limits.
+        getDoc(doc(db, 'subscriptions', userId))
+            .then(snap => {
+                if (cancelled) return;
+                const tier = (snap.data()?.tier as string) || 'free';
+
+                innerUnsub = onSnapshot(usageRef, (snapshot) => {
+                    if (!snapshot.exists()) {
+                        callback(StorageQuotaService.buildDefaultQuota(tier));
+                        return;
+                    }
+                    callback(StorageQuotaService.enrichQuota(snapshot.data(), tier));
+                }, (snapshotError) => {
+                    Logger.error(TAG, 'Quota subscription error:', snapshotError);
+                    callback(null);
+                });
+            })
+            .catch((fetchError) => {
+                if (cancelled) return;
+                Logger.warn(TAG, 'Failed to fetch subscription tier, falling back to free:', fetchError);
+                // Fall back: start listener with 'free' tier rather than blocking entirely
+                innerUnsub = onSnapshot(usageRef, (snapshot) => {
+                    if (!snapshot.exists()) {
+                        callback(StorageQuotaService.buildDefaultQuota('free'));
+                        return;
+                    }
+                    callback(StorageQuotaService.enrichQuota(snapshot.data(), 'free'));
+                }, (snapshotError) => {
+                    Logger.error(TAG, 'Quota subscription error:', snapshotError);
+                    callback(null);
+                });
+            });
+
+        // Return an unsubscribe function that tears down both the pending
+        // tier fetch and the inner snapshot listener
+        return () => {
+            cancelled = true;
+            if (innerUnsub) {
+                innerUnsub();
             }
-            callback(StorageQuotaService.enrichQuota(snapshot.data()));
-        }, (error) => {
-            Logger.error(TAG, 'Quota subscription error:', error);
-            callback(null);
-        });
+        };
     }
 
     /**
@@ -139,13 +185,10 @@ export class StorageQuotaService {
     // Private helpers
     // ========================================================================
 
-    private static enrichQuota(data: Record<string, unknown>): StorageQuotaWithLimits {
+    private static enrichQuota(data: Record<string, unknown>, tier = 'free'): StorageQuotaWithLimits {
         const totalGB = (data.totalGB as number) || 0;
-
-        // TODO: Read the user's actual tier from their profile/org.
-        // For now, default to 'free' tier.
-        const tier = 'free';
-        const limitGB = TIER_LIMITS_GB[tier] || TIER_LIMITS_GB.free;
+        const resolvedTier = TIER_LIMITS_GB[tier] !== undefined ? tier : 'free';
+        const limitGB = TIER_LIMITS_GB[resolvedTier] ?? TIER_LIMITS_GB.free;
         const usedPercent = limitGB > 0 ? Math.min(100, Math.round((totalGB / limitGB) * 100)) : 0;
 
         return {
@@ -157,7 +200,7 @@ export class StorageQuotaService {
             imageCount: (data.imageCount as number) || 0,
             scanDate: (data.scanDate as string) || '',
             updatedAt: data.updatedAt ? (data.updatedAt as { toDate: () => Date }).toDate() : null,
-            tier,
+            tier: resolvedTier,
             limitGB,
             usedPercent,
             isNearLimit: usedPercent >= 80,
@@ -165,8 +208,8 @@ export class StorageQuotaService {
         };
     }
 
-    private static buildDefaultQuota(): StorageQuotaWithLimits {
-        const tier = 'free';
+    private static buildDefaultQuota(tier = 'free'): StorageQuotaWithLimits {
+        const resolvedTier = TIER_LIMITS_GB[tier] !== undefined ? tier : 'free';
         return {
             totalBytes: 0,
             totalMB: 0,
@@ -176,8 +219,8 @@ export class StorageQuotaService {
             imageCount: 0,
             scanDate: '',
             updatedAt: null,
-            tier,
-            limitGB: TIER_LIMITS_GB[tier],
+            tier: resolvedTier,
+            limitGB: TIER_LIMITS_GB[resolvedTier] ?? TIER_LIMITS_GB.free,
             usedPercent: 0,
             isNearLimit: false,
             isOverLimit: false,
