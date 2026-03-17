@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.28.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.27.1...v1.28.0) (2026-03-17)
+
+
+### Features
+
+* staging-gated CI/CD pipeline + re-enable ISWC Mapper V2 ([7a0929f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7a0929fc754b448fa48fdc4ec95ec9c32be8a335))
+
 ## [1.27.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.27.0...v1.27.1) (2026-03-17)
 
 
