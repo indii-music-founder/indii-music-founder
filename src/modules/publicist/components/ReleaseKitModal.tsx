@@ -101,8 +101,9 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Track Title</label>
+                                            <label htmlFor="rk-track-title" className="text-xs font-bold text-gray-400 uppercase tracking-wider">Track Title</label>
                                             <input
+                                                id="rk-track-title"
                                                 type="text"
                                                 value={formData.trackTitle}
                                                 onChange={e => setFormData({ ...formData, trackTitle: e.target.value })}
@@ -111,8 +112,9 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Artist Name</label>
+                                            <label htmlFor="rk-artist-name" className="text-xs font-bold text-gray-400 uppercase tracking-wider">Artist Name</label>
                                             <input
+                                                id="rk-artist-name"
                                                 type="text"
                                                 value={formData.artistName}
                                                 onChange={e => setFormData({ ...formData, artistName: e.target.value })}
@@ -122,8 +124,9 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Release Date</label>
+                                        <label htmlFor="rk-release-date" className="text-xs font-bold text-gray-400 uppercase tracking-wider">Release Date</label>
                                         <input
+                                            id="rk-release-date"
                                             type="date"
                                             value={formData.releaseDate}
                                             onChange={e => setFormData({ ...formData, releaseDate: e.target.value })}
@@ -131,8 +134,9 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Musical Style / Vibe</label>
+                                        <label htmlFor="rk-musical-style" className="text-xs font-bold text-gray-400 uppercase tracking-wider">Musical Style / Vibe</label>
                                         <input
+                                            id="rk-musical-style"
                                             type="text"
                                             value={formData.musicalStyle}
                                             onChange={e => setFormData({ ...formData, musicalStyle: e.target.value })}
@@ -141,8 +145,9 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Target Audience</label>
+                                        <label htmlFor="rk-target-audience" className="text-xs font-bold text-gray-400 uppercase tracking-wider">Target Audience</label>
                                         <textarea
+                                            id="rk-target-audience"
                                             value={formData.targetAudience}
                                             onChange={e => setFormData({ ...formData, targetAudience: e.target.value })}
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors min-h-[100px]"
