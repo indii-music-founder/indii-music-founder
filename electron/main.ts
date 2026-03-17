@@ -57,6 +57,11 @@ const createWindow = () => {
         isMaximized: false
     }) as { width: number, height: number, x?: number, y?: number, isMaximized: boolean };
 
+    // Item 325: Hard assertion — webSecurity must always be true in production
+    if (app.isPackaged && isDev) {
+        throw new Error('[Security] webSecurity must be enabled in production builds');
+    }
+
     const win = new BrowserWindow({
         width: windowState.width,
         height: windowState.height,
