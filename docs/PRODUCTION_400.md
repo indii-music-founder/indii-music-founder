@@ -39,12 +39,12 @@ This document contains **Part 6** of the master production readiness checklist (
 ## Part 6C: React Error Boundaries & Resilience (336–342)
 
 - [x] **336. Error Boundaries on All Lazy Modules:** `src/core/App.tsx:52-85` — 30+ lazy-loaded modules are wrapped in `<Suspense>` but only ~3 have `<ModuleErrorBoundary>`. Add `<ModuleErrorBoundary moduleName="X">` to every lazy module render: `CreativeStudio`, `LegalDashboard`, `MarketingDashboard`, `VideoStudio`, `WorkflowLab`, `Dashboard`, and the remaining 25.
-- [ ] **337. Empty Catch Block Remediation:** `src/modules/merchandise/components/WalletConnectPanel.tsx` and `src/modules/dashboard/components/RecentProjects.tsx` have `.catch(() => {})` — silently swallowing errors. Replace with `catch (err) { logger.error('...', err); }` and surface via toast where appropriate.
+- [x] **337. Empty Catch Block Remediation:** `src/modules/merchandise/components/WalletConnectPanel.tsx` and `src/modules/dashboard/components/RecentProjects.tsx` have `.catch(() => {})` — silently swallowing errors. Replace with `catch (err) { logger.error('...', err); }` and surface via toast where appropriate.
 - [ ] **338. onSnapshot Cleanup Audit:** 236 `onSnapshot` calls across the codebase — audit each `useEffect` containing `onSnapshot` to confirm the cleanup function returns `unsubscribe()`. Fix any missing returns. Priority: `src/services/video/`, `src/services/ai/`, `src/modules/distribution/`.
 - [ ] **339. Fetch Error Handling: response.json() on Non-200:** Multiple service files call `await res.json()` without first checking `res.ok`. If the server returns HTML error page, JSON parse throws. Add `if (!res.ok) throw new Error(await res.text())` pattern across `src/services/`.
 - [ ] **340. Service Worker: Push Event Handler:** `src/service-worker.ts` lacks a `push` event listener. Add handler that shows a notification and opens the app — otherwise registered push subscriptions silently fail to display.
 - [ ] **341. Service Worker: Share Target Input Validation:** `src/service-worker.ts:77-127` — the Share Target handler accepts files from external apps without type, size, or name validation. Add whitelist of MIME types and 50MB size cap before passing to IndexedDB.
-- [ ] **342. aria-live Regions for Dynamic Content:** Real-time status updates (Agent sidecar health, upload queue progress, delivery status) have no `aria-live` attribute. Add `aria-live="polite"` to the sidecar status indicator and `aria-live="assertive"` to error toasts.
+- [x] **342. aria-live Regions for Dynamic Content:** Real-time status updates (Agent sidecar health, upload queue progress, delivery status) have no `aria-live` attribute. Add `aria-live="polite"` to the sidecar status indicator and `aria-live="assertive"` to error toasts.
 
 ---
 
@@ -53,10 +53,10 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **343. Add Typecheck Step to CI Before Build:** `.github/workflows/deploy.yml` runs lint and tests but never runs `npm run typecheck`. TypeScript errors currently slip through to production. Add `- run: npm run typecheck` between lint and build steps.
 - [ ] **344. Test Sharding for Vitest:** `.github/workflows/deploy.yml:67-69` uses `--no-file-parallelism`. Replace with `--shard=1/4` across 4 parallel matrix jobs to cut CI time from ~30min to ~8min.
 - [x] **345. Gate E2E on Unit Test Success:** `.github/workflows/deploy.yml` runs E2E tests unconditionally. Add `needs: unit-tests` and `if: success()` to the E2E job to skip expensive Playwright runs when unit tests already fail.
-- [ ] **346. Blocking Lighthouse CI Thresholds:** `.github/workflows/deploy.yml:164-167` — Lighthouse failures emit `::warning::` but don't fail the build. Make blocking: performance ≥ 80, accessibility ≥ 90, best-practices ≥ 90. Use `lhci assert` with `--preset=lighthouse:recommended`.
+- [x] **346. Blocking Lighthouse CI Thresholds:** `.github/workflows/deploy.yml:164-167` — Lighthouse failures emit `::warning::` but don't fail the build. Make blocking: performance ≥ 80, accessibility ≥ 90, best-practices ≥ 90. Use `lhci assert` with `--preset=lighthouse:recommended`.
 - [ ] **347. Blocking Accessibility Audit in CI:** axe-core runs in E2E but failures don't block deployment. Add `failOnViolations: true` to the axe configuration and make the job exit non-zero on any WCAG AA critical violation.
-- [ ] **348. Preview Channel Deployment Before Production:** `.github/workflows/deploy.yml` deploys directly to the `app` Firebase Hosting target. Add a preview channel step: `firebase hosting:channel:deploy pr-${PR_NUMBER}` and require manual promotion to production.
-- [ ] **349. Dependency Security Audit in CI:** Add `npm audit --audit-level=high` as a non-blocking warning step in the deploy pipeline. Escalate to blocking after a 2-week grace period for fixing existing vulnerabilities.
+- [x] **348. Preview Channel Deployment Before Production:** `.github/workflows/deploy.yml` deploys directly to the `app` Firebase Hosting target. Add a preview channel step: `firebase hosting:channel:deploy pr-${PR_NUMBER}` and require manual promotion to production.
+- [x] **349. Dependency Security Audit in CI:** Add `npm audit --audit-level=high` as a non-blocking warning step in the deploy pipeline. Escalate to blocking after a 2-week grace period for fixing existing vulnerabilities.
 
 ---
 
