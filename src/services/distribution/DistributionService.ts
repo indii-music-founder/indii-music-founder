@@ -604,6 +604,29 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     }
 
     /**
+     * Item 411: Request Release Takedown
+     * Writes to distribution_takedowns/{releaseId} and notifies adapters.
+     */
+    async requestTakedown(releaseId: string, distributorId: string, reason?: string): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('User must be authenticated');
+
+        const takedownCol = collection(db, 'distribution_takedowns', releaseId, 'requests');
+        await addDoc(takedownCol, {
+            releaseId,
+            distributorId,
+            reason: reason ?? 'voluntary_withdrawal',
+            requestedBy: userId,
+            status: 'pending',
+            requestedAt: serverTimestamp(),
+        });
+
+        // Update the release document status
+        await this.releasesService.update(releaseId, { status: 'takedown_requested' } as any);
+        logger.info(`[DistributionService] Takedown requested for release ${releaseId} from ${distributorId}`);
+    }
+
+    /**
      * Subscribe to releases
      */
     subscribeReleases(callback: (releases: any[]) => void, orgId?: string) {

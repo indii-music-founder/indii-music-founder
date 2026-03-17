@@ -134,6 +134,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                                 </div>
                                             </div>
                                         </div>
+                                        <div className="flex items-center gap-1">
                                         {dep.liveUrl && (
                                             <a
                                                 href={dep.liveUrl}
@@ -144,6 +145,18 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                                 <ExternalLink size={14} />
                                             </a>
                                         )}
+                                        {/* Item 411: Request Takedown action */}
+                                        {(dep.status === 'live' || dep.status === 'delivered') && onTakedown && (
+                                            <button
+                                                onClick={() => onTakedown(dep.distributorId)}
+                                                className="p-2 text-gray-600 hover:text-red-400 hover:bg-red-900/10 rounded-lg transition-all"
+                                                title="Request takedown"
+                                                aria-label={`Request takedown from ${dep.distributorId}`}
+                                            >
+                                                <AlertTriangle size={12} />
+                                            </button>
+                                        )}
+                                        </div>
                                     </div>
                                 );
                             })}

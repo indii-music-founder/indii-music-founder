@@ -352,6 +352,32 @@ if (!gotTheLock) {
         });
 
 
+        // Item 373: IPC channel allowlist audit — log any unregistered channels on startup
+        const KNOWN_IPC_CHANNELS = new Set([
+            'get-platform', 'get-app-version', 'privacy:toggle-protection',
+            'system:select-file', 'system:select-directory', 'system:get-directory-contents', 'system:get-gpu-info', 'system:getMobileRemoteInfo',
+            'auth:logout', 'credentials:save', 'credentials:get', 'credentials:delete',
+            'audio:analyze', 'audio:lookup-metadata', 'audio:transcode', 'audio:master',
+            'net:fetch-url',
+            'sftp:connect', 'sftp:upload-directory', 'sftp:disconnect', 'sftp:is-connected',
+            'distribution:validate-metadata', 'distribution:generate-isrc', 'distribution:generate-upc',
+            'distribution:generate-ddex', 'distribution:stage-release', 'distribution:submit-release',
+            'distribution:transmit', 'distribution:package-itmsp', 'distribution:package-spotify',
+            'distribution:deliver-apple', 'distribution:validate-xsd', 'distribution:register-release',
+            'distribution:generate-bwarm', 'distribution:check-merlin-status', 'distribution:run-forensics',
+            'distribution:generate-content-id-csv', 'distribution:execute-waterfall',
+            'distribution:calculate-tax', 'distribution:certify-tax',
+            'agent:get-history', 'agent:save-history', 'agent:delete-history', 'agent:navigate-and-extract', 'agent:perform-action', 'agent:capture-state',
+            'brand:analyze-consistency', 'marketing:analyze-trends', 'publicist:generate-pdf',
+            'security:rotate-credentials', 'security:scan-vulnerabilities',
+            'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
+            'video:render', 'video:open-folder', 'video:save-asset',
+            'sidecar:restart', 'power:get-state', 'mobile-remote:stop',
+            'updater:check', 'updater:install',
+            'test:browser-agent', 'show-notification',
+        ]);
+        log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
+
         // Ensure AI Services are running
         SidecarService.ensureStarted().catch(err => {
             log.error(`[Main] Initial Docker startup failed: ${err.message}`);
