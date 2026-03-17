@@ -11,7 +11,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { useStore } from '@/core/store';
+import { useStore, type StoreState } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 
 interface FounderData {
@@ -23,7 +23,7 @@ interface FounderData {
 }
 
 export default function FounderBadge() {
-    const { user } = useStore(useShallow((s: any) => ({ user: s.user })));
+    const { user } = useStore(useShallow((s: StoreState) => ({ user: s.user })));
     const [founder, setFounder] = useState<FounderData | null>(null);
     const [loading, setLoading] = useState(true);
     const [hashCopied, setHashCopied] = useState(false);
@@ -43,9 +43,13 @@ export default function FounderBadge() {
 
     const copyHash = async () => {
         if (!founder?.covenantHash) return;
-        await navigator.clipboard.writeText(founder.covenantHash);
-        setHashCopied(true);
-        setTimeout(() => setHashCopied(false), 2000);
+        try {
+            await navigator.clipboard.writeText(founder.covenantHash);
+            setHashCopied(true);
+            setTimeout(() => setHashCopied(false), 2000);
+        } catch (err) {
+            console.error('[FounderBadge] Clipboard write failed:', err);
+        }
     };
 
     if (loading || !founder) return null;
@@ -107,7 +111,7 @@ export default function FounderBadge() {
                         { label: 'Projects', value: 'Unlimited' },
                         { label: 'Storage', value: '10 TB' },
                     ].map((item) => (
-                        <div key={item.label} className="px-3 py-2 rounded-xl bg-white/3 border border-white/8">
+                        <div key={item.label} className="px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08]">
                             <p className="text-[10px] text-slate-500 font-mono uppercase">{item.label}</p>
                             <p className="text-sm text-amber-300 font-semibold mt-0.5">{item.value}</p>
                         </div>

@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
-import { useAuth } from './auth/AuthProvider';
-import { getStudioUrl } from '../lib/auth';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { getStudioUrl } from '@/lib/auth';
 
 interface FoundersMeta {
   count: number;
@@ -16,9 +16,10 @@ const MAX_SEATS = 10;
 const FOUNDER_PRICE = 2500;
 
 export default function FoundersSection() {
-  const { user } = useAuth();
-  const [meta, setMeta] = useState<FoundersMeta>({ count: 0, founders: [] });
+  const { user, loading: authLoading } = useAuth();
+  const [meta, setMeta] = useState<FoundersMeta | null>(null);
   const [loading, setLoading] = useState(true);
+  const [metaError, setMetaError] = useState(false);
 
   useEffect(() => {
     async function fetchMeta() {
@@ -27,9 +28,13 @@ export default function FoundersSection() {
         const metaDoc = await getDoc(doc(db, 'founders_meta', 'summary'));
         if (metaDoc.exists()) {
           setMeta(metaDoc.data() as FoundersMeta);
+        } else {
+          // Document doesn't exist yet — program hasn't started, default to 0
+          setMeta({ count: 0, founders: [] });
         }
-      } catch {
-        // Non-fatal — show default 0/10
+      } catch (err) {
+        console.error('[FoundersSection] Failed to fetch founders meta:', err);
+        setMetaError(true);
       } finally {
         setLoading(false);
       }
@@ -37,10 +42,13 @@ export default function FoundersSection() {
     fetchMeta();
   }, []);
 
-  const seatsRemaining = MAX_SEATS - meta.count;
-  const programOpen = seatsRemaining > 0;
+  const seatsRemaining = meta ? MAX_SEATS - meta.count : 0;
+  const programOpen = !metaError && meta !== null && seatsRemaining > 0;
+  const ctaReady = !loading && !authLoading && !metaError && meta !== null;
 
   const handleBecomeFounder = () => {
+    // Don't act until both auth and meta have resolved
+    if (!ctaReady) return;
     // Redirect to studio to complete checkout (user must be signed in)
     const target = user
       ? `${getStudioUrl()}/founders-checkout`
@@ -89,7 +97,7 @@ export default function FoundersSection() {
         <div className="flex justify-center mb-12">
           <div className="flex gap-2">
             {Array.from({ length: MAX_SEATS }).map((_, i) => {
-              const taken = i < meta.count;
+              const taken = meta ? i < meta.count : false;
               return (
                 <motion.div
                   key={i}
@@ -111,7 +119,7 @@ export default function FoundersSection() {
         </div>
 
         {/* Existing founders list */}
-        {meta.founders.length > 0 && (
+        {meta && meta.founders.length > 0 && (
           <div className="flex flex-wrap justify-center gap-3 mb-12">
             {meta.founders.map((f) => (
               <div
@@ -161,7 +169,7 @@ export default function FoundersSection() {
           ].map((item) => (
             <div
               key={item.title}
-              className="p-5 rounded-2xl bg-white/3 border border-white/8 hover:border-amber-500/30 transition-colors"
+              className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:border-amber-500/30 transition-colors"
             >
               <div className="text-2xl font-black text-amber-400 mb-2 font-mono">{item.icon}</div>
               <div className="text-white font-semibold mb-1">{item.title}</div>
@@ -172,15 +180,23 @@ export default function FoundersSection() {
 
         {/* CTA */}
         <div className="text-center">
-          {loading ? (
+          {loading || authLoading ? (
             <div className="inline-block w-64 h-16 rounded-2xl bg-white/5 animate-pulse" />
+          ) : metaError ? (
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-mono text-sm">
+                <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                Unable to confirm seat availability. Please try again later.
+              </div>
+            </div>
           ) : programOpen ? (
             <div className="flex flex-col items-center gap-4">
               <button
                 onClick={handleBecomeFounder}
-                className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.98] shadow-[0_0_60px_rgba(245,158,11,0.3)]"
+                disabled={!ctaReady}
+                className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.98] shadow-[0_0_60px_rgba(245,158,11,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                Become Founder #{meta.count + 1}
+                Become Founder #{(meta?.count ?? 0) + 1}
                 <span className="text-black/60 font-normal text-base">
                   — ${FOUNDER_PRICE.toLocaleString()} one-time
                 </span>
