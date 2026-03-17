@@ -438,7 +438,11 @@ export async function syncSpotifyStats(uid: string, artistId: string): Promise<P
         });
 
         if (artistRes.status === 401) {
-            await refreshPlatformToken(uid, 'spotify');
+            const refreshed = await refreshPlatformToken(uid, 'spotify');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] Spotify token refresh failed — re-auth required');
+                return { platform: 'spotify', fetchedAt: Date.now() };
+            }
             return syncSpotifyStats(uid, artistId);
         }
 
@@ -497,6 +501,14 @@ export async function syncInstagramStats(uid: string): Promise<PlatformStats> {
             `https://graph.facebook.com/v19.0/me?fields=instagram_business_account&access_token=${token.accessToken}`,
             { signal: AbortSignal.timeout(10000) }
         );
+        if (meRes.status === 401) {
+            const refreshed = await refreshPlatformToken(uid, 'instagram');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] Instagram token refresh failed on /me — re-auth required');
+                return { platform: 'instagram', fetchedAt: Date.now() };
+            }
+            return syncInstagramStats(uid);
+        }
         const meData = await meRes.json() as { instagram_business_account?: { id: string } };
         const igId = meData.instagram_business_account?.id;
         if (!igId) {
@@ -509,7 +521,11 @@ export async function syncInstagramStats(uid: string): Promise<PlatformStats> {
             { signal: AbortSignal.timeout(10000) }
         );
         if (statsRes.status === 401) {
-            await refreshPlatformToken(uid, 'instagram');
+            const refreshed = await refreshPlatformToken(uid, 'instagram');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] Instagram token refresh failed — re-auth required');
+                return { platform: 'instagram', fetchedAt: Date.now() };
+            }
             return syncInstagramStats(uid);
         }
 
@@ -546,7 +562,11 @@ export async function syncTikTokStats(uid: string): Promise<PlatformStats> {
             }
         );
         if (res.status === 401) {
-            await refreshPlatformToken(uid, 'tiktok');
+            const refreshed = await refreshPlatformToken(uid, 'tiktok');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] TikTok token refresh failed — re-auth required');
+                return { platform: 'tiktok', fetchedAt: Date.now() };
+            }
             return syncTikTokStats(uid);
         }
 
@@ -583,7 +603,11 @@ export async function syncTwitterStats(uid: string): Promise<PlatformStats> {
             signal: AbortSignal.timeout(10000),
         });
         if (meRes.status === 401) {
-            await refreshPlatformToken(uid, 'twitter');
+            const refreshed = await refreshPlatformToken(uid, 'twitter');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] Twitter token refresh failed — re-auth required');
+                return { platform: 'twitter', fetchedAt: Date.now() };
+            }
             return syncTwitterStats(uid);
         }
 
@@ -622,7 +646,11 @@ export async function syncYouTubeStats(uid: string): Promise<PlatformStats> {
             }
         );
         if (res.status === 401) {
-            await refreshPlatformToken(uid, 'youtube');
+            const refreshed = await refreshPlatformToken(uid, 'youtube');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] YouTube token refresh failed — re-auth required');
+                return { platform: 'youtube', fetchedAt: Date.now() };
+            }
             return syncYouTubeStats(uid);
         }
 

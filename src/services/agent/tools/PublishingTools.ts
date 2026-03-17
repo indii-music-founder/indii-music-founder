@@ -12,7 +12,7 @@ export const PublishingTools: Record<string, AnyToolFunction> = {
         const titleLower = args.trackTitle.toLowerCase().trim();
 
         // 1. Search the user's own DDEX release catalog in Firestore for an existing registration
-        let existingRecords: Array<{ workId: string; registeredWriters: string[]; status: string; isrc?: string }> = [];
+        const existingRecords: Array<{ workId: string; registeredWriters: string[]; status: string; isrc?: string }> = [];
         try {
             const { db, auth } = await import('@/services/firebase');
             const { collection, query, where, getDocs } = await import('firebase/firestore');
