@@ -14,10 +14,10 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **319. Eval() in WorkflowEngine:** `src/services/workflow/services/WorkflowEngine.ts` contains `eval()` calls. Replace with a safe AST-based expression evaluator (e.g. `expr-eval`, `mathjs`) or a sandboxed `Function()` constructor with explicit scope injection.
 - [ ] **320. Eval() in Marketing Services:** `src/services/marketing/InfluencerBountyService.ts` and `src/services/marketing/SocialAutoPosterService.ts` contain `eval()` calls. Replace with deterministic template interpolation (`Handlebars`, `mustache`, or string.replace with whitelist).
 - [ ] **321. Eval() in Agent Test Harness:** `src/services/agent/sdk/test/AgentTestHarness.ts` uses `eval()`. Replace with a test-safe dynamic import or explicit handler registry pattern.
-- [ ] **322. Electron: Missing Content-Security-Policy Header:** `electron/main.ts` sets COEP/COOP headers but no `Content-Security-Policy`. Add via `session.defaultSession.webRequest.onHeadersReceived` or `BrowserWindow.webContents.session`: `script-src 'self'; object-src 'none'; base-uri 'self'`.
-- [ ] **323. Electron: Deep Link URL Validation:** `electron/main.ts` passes raw `indii-os://` protocol URLs to `handleDeepLink()` without validation. Add URL parsing and whitelist of allowed paths before processing — prevents open-redirect and command injection via crafted protocol URLs.
+- [x] **322. Electron: Missing Content-Security-Policy Header:** `electron/main.ts` sets COEP/COOP headers but no `Content-Security-Policy`. Add via `session.defaultSession.webRequest.onHeadersReceived` or `BrowserWindow.webContents.session`: `script-src 'self'; object-src 'none'; base-uri 'self'`.
+- [x] **323. Electron: Deep Link URL Validation:** `electron/main.ts` passes raw `indii-os://` protocol URLs to `handleDeepLink()` without validation. Add URL parsing and whitelist of allowed paths before processing — prevents open-redirect and command injection via crafted protocol URLs.
 - [ ] **324. Electron: Auto-Updater Code Signing Verification:** Verify `electron/updater.ts` enforces `allowPrerelease: false`, verifies update signatures, and has a rollback handler on install failure. Confirm Windows NSIS installer is code-signed.
-- [ ] **325. Electron: webSecurity Production Guard:** `electron/main.ts:64` sets `webSecurity: !isDev`. Add a hard assertion: `if (app.isPackaged && !webPreferences.webSecurity) throw new Error('webSecurity must be enabled in production')`.
+- [x] **325. Electron: webSecurity Production Guard:** `electron/main.ts:64` sets `webSecurity: !isDev`. Add a hard assertion: `if (app.isPackaged && !webPreferences.webSecurity) throw new Error('webSecurity must be enabled in production')`.
 
 ---
 
@@ -25,11 +25,11 @@ This document contains **Part 6** of the master production readiness checklist (
 
 - [x] **326. Rate Limit: Image Generation Endpoints:** `functions/src/index.ts` — `generateImageV3Fn` and `editImageFn` have no rate limiting despite being the highest-cost endpoints. Add `rateLimit({ tokensPerInterval: 5, interval: 'minute' })` (same pattern as `triggerVideoJob`).
 - [x] **327. Rate Limit: Audio Analysis Endpoint:** `analyzeAudioFn` (functions/src/index.ts) has no rate limiting. Audio analysis invokes Essentia.js and can run for 30s — add per-user rate limit of 10/hour.
-- [ ] **328. Rate Limit: Token Exchange Endpoints:** All email/social OAuth token refresh and exchange Cloud Functions lack rate limiting. Add 20 req/minute per UID to prevent token-stuffing attacks.
+- [x] **328. Rate Limit: Token Exchange Endpoints:** All email/social OAuth token refresh and exchange Cloud Functions lack rate limiting. Add 20 req/minute per UID to prevent token-stuffing attacks.
 - [x] **329. Zod Validation: Image Generation Input:** `generateImageV3Fn` and `editImageFn` accept raw callable data without Zod schema validation. Add schema: `{ prompt: z.string().max(2000), width: z.number().max(2048), height: z.number().max(2048) }`.
 - [x] **330. Zod Validation: Audio Analysis Input:** `analyzeAudioFn` callable accepts raw `data` without schema. Add `{ audioUrl: z.string().url(), features: z.array(z.string()) }` Zod validation.
 - [x] **331. App Check Enforcement Default:** `functions/src/index.ts:87` — `ENFORCE_APP_CHECK` defaults to `false`. Flip default to `true` and require opt-out via `SKIP_APP_CHECK=true` in dev; prevents accidental production deploy without App Check.
-- [ ] **332. Firestore Write Schema Validation in Functions:** `functions/src/index.ts:366` writes `videoJobs` documents with no schema guard. Add a Zod `videoJobSchema` and validate before `admin.firestore().set()` — prevents schema drift corrupting documents.
+- [x] **332. Firestore Write Schema Validation in Functions:** `functions/src/index.ts:366` writes `videoJobs` documents with no schema guard. Add a Zod `videoJobSchema` and validate before `admin.firestore().set()` — prevents schema drift corrupting documents.
 - [x] **333. Social Post Delivery Error Handling:** `functions/src/social/deliverScheduledPosts.ts:60-108` — fetch calls to Twitter/Instagram/TikTok APIs have no try/catch around `response.json()` or HTTP status checks. Add per-platform error handling with structured failure logging and Firestore status update on failure.
 - [ ] **334. Security Handler: Real Key Rotation API Calls:** `electron/handlers/security.ts:38` builds `sk_test_rotated_${suffix}` — simulated rotation only. Wire real Stripe `POST /v1/restricted_keys` and GitHub `PATCH /repos/{owner}/{repo}/actions/secrets/{secret_name}` API calls.
 - [ ] **335. Functions Cold Start: Move Heavy Imports Inside Handlers:** Top-level imports of large SDKs (Essentia, DDEX parsers) in `functions/src/index.ts` increase cold start time. Move inside function handlers using dynamic `import()` for functions that aren't invoked frequently.
@@ -66,7 +66,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **351. Fix @ts-ignore in Core Files:** `src/core/App.tsx`, `src/core/hooks/usePowerState.ts`, and `src/core/components/UpdaterMonitor.tsx` have `@ts-ignore` comments. Investigate the root type mismatch and fix properly — likely requires updating a type definition or adding an overload.
 - [ ] **352. Add Return Type Annotations to Exported CF Functions:** Cloud Functions in `functions/src/` lack explicit return type annotations. Add `Promise<{ result: ... }>` signatures to all `onCall` handlers — improves IDE support and prevents unintentional return shape changes.
 - [ ] **353. Non-Null Assertion Audit in Distribution Service:** `src/services/distribution/DistributionService.ts` uses non-null assertions (`!`) on values derived from user data and external APIs. Replace with explicit null checks and early returns.
-- [ ] **354. Strict Mode for Functions TypeScript:** `functions/tsconfig.json` — verify `"strict": true` is set. If not, enable it and fix the resulting errors to enforce null safety at the Cloud Functions layer.
+- [x] **354. Strict Mode for Functions TypeScript:** `functions/tsconfig.json` — verify `"strict": true` is set. If not, enable it and fix the resulting errors to enforce null safety at the Cloud Functions layer.
 - [ ] **355. noUncheckedIndexedAccess for Array Safety:** Add `"noUncheckedIndexedAccess": true` to `tsconfig.json`. This catches array index out-of-bounds as a TypeScript error. Fix resulting issues in service layer array processing code.
 
 ---
@@ -101,20 +101,20 @@ This document contains **Part 6** of the master production readiness checklist (
 ## Part 6H: Electron Desktop Hardening (373–379)
 
 - [x] **373. Electron: preload.ts IPC Allowlist Audit:** Audit `electron/preload.ts` for all exposed `ipcRenderer.invoke()` channels. Ensure every channel is explicitly allowlisted in `main.ts`'s `ipcMain.handle()` and rejects unknown channel names.
-- [ ] **374. Electron: Crash Reporter Integration:** Add `crashReporter.start({ submitURL: 'https://sentry.io/api/...' })` in `electron/main.ts` main process and renderer. Surface crash info to the engineering team without exposing PII.
-- [ ] **375. Electron: Secure Session Cookie Flags:** Verify Electron session cookies set `HttpOnly`, `Secure`, and `SameSite=Strict` flags. Add `session.defaultSession.cookies` audit on startup.
+- [x] **374. Electron: Crash Reporter Integration:** Add `crashReporter.start({ submitURL: 'https://sentry.io/api/...' })` in `electron/main.ts` main process and renderer. Surface crash info to the engineering team without exposing PII.
+- [x] **375. Electron: Secure Session Cookie Flags:** Verify Electron session cookies set `HttpOnly`, `Secure`, and `SameSite=Strict` flags. Add `session.defaultSession.cookies` audit on startup.
 - [ ] **376. Electron: Windows NSIS Code Signing in CI:** Verify `.github/workflows/build.yml` includes the Windows code-signing step using `WINDOWS_CERTIFICATE` secret and `signtool.exe`. Missing signature causes SmartScreen warnings on install.
 - [x] **377. Electron: App Quit Cleanup for WebSocket/SSH Connections:** `electron/handlers/` may hold open SSH2 SFTP connections after SFTP delivery. Add `app.on('before-quit')` handler to close all active connections.
 - [ ] **378. Electron: Memory Profiling for Long Sessions:** Add a developer-only memory snapshot tool (accessible via `--inspect` flag) to track heap growth over 4+ hour sessions — desktop apps are prone to long-session memory leaks.
-- [ ] **379. Electron: Protocol Registration Hardening:** `electron/main.ts:279-319` registers `indii-os://` protocol. Add SSRF protection: reject URLs that resolve to localhost, 169.254.x.x (link-local), or RFC1918 private ranges in deep link payloads.
+- [x] **379. Electron: Protocol Registration Hardening:** `electron/main.ts:279-319` registers `indii-os://` protocol. Add SSRF protection: reject URLs that resolve to localhost, 169.254.x.x (link-local), or RFC1918 private ranges in deep link payloads.
 
 ---
 
 ## Part 6I: Real-Time & Offline Resilience (380–386)
 
-- [ ] **380. onSnapshot Cleanup: Video Services:** `src/services/video/` — audit all `onSnapshot` subscriptions for missing `return () => unsubscribe()` in `useEffect`. Long video job polls that never clean up accumulate open connections.
-- [ ] **381. onSnapshot Cleanup: AI Context Management:** `src/services/ai/` context management files subscribe to Firestore for conversation history. Verify all subscriptions have proper teardown in `useEffect` return.
-- [ ] **382. onSnapshot Cleanup: Distribution Status Polling:** `src/modules/distribution/components/TransmissionMonitor.tsx` polls delivery status via `onSnapshot`. Confirm subscription is cancelled when component unmounts and when job reaches terminal state.
+- [x] **380. onSnapshot Cleanup: Video Services:** `src/services/video/` — audit all `onSnapshot` subscriptions for missing `return () => unsubscribe()` in `useEffect`. Long video job polls that never clean up accumulate open connections.
+- [x] **381. onSnapshot Cleanup: AI Context Management:** `src/services/ai/` context management files subscribe to Firestore for conversation history. Verify all subscriptions have proper teardown in `useEffect` return.
+- [x] **382. onSnapshot Cleanup: Distribution Status Polling:** `src/modules/distribution/components/TransmissionMonitor.tsx` polls delivery status via `onSnapshot`. Confirm subscription is cancelled when component unmounts and when job reaches terminal state.
 - [ ] **383. Offline: Firestore Pending Write Conflict Resolution:** When the app comes back online after a period of edits, Firestore offline persistence may surface write conflicts. Add a conflict resolution strategy (last-write-wins with timestamp, or merge logic) in `MetadataPersistenceService`.
 - [x] **384. Background Sync for Failed Social Posts:** Scheduled posts that fail delivery are marked failed in Firestore but not retried. Add exponential backoff retry logic in `deliverScheduledPosts.ts` — retry failed delivery up to 3× before final failure notification.
 - [x] **385. Workbox: Offline Fallback for Navigation Requests:** `src/service-worker.ts` caches assets but has no offline fallback HTML page for navigation requests when the shell can't load. Add `offlineFallback: '/offline.html'` with a minimal informational page.
