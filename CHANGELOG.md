@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.28.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.0...v1.28.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* **ci:** make e2e-staging job non-blocking until test:e2e script exists ([0e723cc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0e723cc0b5dc733f181d0b394d15de0c4e648569))
+* **ci:** remove duplicate job definitions from PR [#1327](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/issues/1327) merge collision ([b8b9d55](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b8b9d55dd570a6d79cd022b1ee7d084815e0253b))
+
 ## [1.28.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.27.1...v1.28.0) (2026-03-17)
 
 
