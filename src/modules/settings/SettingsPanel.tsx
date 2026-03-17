@@ -46,6 +46,7 @@ import { pushNotificationService } from '@/services/notifications/PushNotificati
 import { EmailService } from '@/services/email/EmailService';
 import type { EmailAccount } from '@/services/email/types';
 import { logger } from '@/utils/logger';
+import FounderBadge from './components/FounderBadge';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -276,6 +277,9 @@ const ProfileSection: React.FC = () => {
                     </motion.div>
                 )}
             </div>
+
+            {/* Founder badge — only visible for users with FOUNDER tier */}
+            <FounderBadge />
         </div>
     );
 };

@@ -15,6 +15,7 @@ const SoundscapeCanvas = lazy(() => import('./components/3d/SoundscapeCanvas'));
 
 import FeatureShowcase from './components/FeatureShowcase';
 import TechSpecs from './components/TechSpecs';
+import FoundersSection from './components/FoundersSection';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -107,6 +108,7 @@ export default function Home() {
 
       {/* 3. New Sections */}
       <FeatureShowcase />
+      <FoundersSection />
       <TechSpecs />
 
       {/* Footer / Anchors */}
