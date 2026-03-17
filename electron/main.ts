@@ -207,6 +207,8 @@ const checkSidecarHealth = async (window: BrowserWindow) => {
             sidecarFailureCount = 0;
             autoRestartCount++;
 
+            // Item 404: Surface "restarting" status to renderer before attempting restart
+            window.webContents.send('sidecar:status-update', 'restarting');
             showNotification('System Service Issue', 'The Python back-end seems to have crashed. Attempting auto-restart...');
 
             SidecarService.restartSystem().catch(restartErr => {

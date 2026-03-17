@@ -25,6 +25,20 @@ import {
 
 export type { DistributionTaskDocument as DistributionTask };
 
+/** Item 414: Snapshot release metadata into metadata_history subcollection at each distribution event */
+async function writeMetadataSnapshot(releaseId: string, metadata: DDEXMetadata): Promise<void> {
+    try {
+        const historyCol = collection(db, 'distribution_audit', releaseId, 'metadata_history');
+        await addDoc(historyCol, {
+            snapshot: JSON.parse(JSON.stringify(metadata)), // deep-clone to detach from mutation
+            timestamp: serverTimestamp(),
+            userId: auth.currentUser?.uid ?? null,
+        });
+    } catch (err) {
+        logger.error('[DistributionService] Failed to write metadata snapshot:', err);
+    }
+}
+
 /** Item 393: Write an immutable audit event to distribution_audit/{releaseId}/events */
 async function writeDistributionAuditEvent(
     releaseId: string,
@@ -549,6 +563,9 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         const taskId = await this.createTask('DELIVERY', `Submit: ${releaseData.title}`);
         await this.updateTask(taskId, { status: 'RUNNING', subtext: 'Starting pipeline…' });
         const releaseId = releaseData.releaseId ?? releaseData.upc ?? taskId;
+
+        // Item 414: Snapshot metadata at the point of submission for post-distribution history
+        writeMetadataSnapshot(releaseId, releaseData).catch(() => { /* best-effort */ });
 
         let cleanup: (() => void) | undefined;
         if (onProgress) {
