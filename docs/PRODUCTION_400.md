@@ -88,9 +88,9 @@ This document contains **Part 6** of the master production readiness checklist (
 
 - [x] **364. Unit Tests: DistributionService.ts:** `src/services/distribution/DistributionService.ts` orchestrates the entire release delivery pipeline (metadata validation → DDEX generation → SFTP upload) with zero unit tests. Write Vitest tests for the happy path and each error branch.
 - [x] **365. Unit Tests: TaxService.ts:** `src/services/distribution/TaxService.ts` has no tests. Tax calculations are legally significant — write tests for all US withholding rate tiers and VATMOSS scenarios.
-- [ ] **366. Unit Tests: AIService.ts:** `src/services/ai/AIService.ts` (Gemini wrapper) has no unit tests. Mock `@google/genai` and test prompt construction, streaming handler, token budget enforcement, and error fallback.
-- [ ] **367. Unit Tests: AgentOrchestrator.ts:** `src/services/agent/AgentOrchestrator.ts` routes all agent tasks — zero test coverage. Write tests for task routing logic, specialist selection, and fallback when a specialist is unavailable.
-- [ ] **368. Unit Tests: CanonicalMapService.ts:** `src/services/distribution/CanonicalMapService.ts` maps internal metadata to distributor-specific formats (DDEX ERN, CD Baby, TuneCore). Write schema compliance tests for each adapter mapping.
+- [x] **366. Unit Tests: AIService.ts:** `src/services/ai/AIService.ts` (Gemini wrapper) has no unit tests. Mock `@google/genai` and test prompt construction, streaming handler, token budget enforcement, and error fallback.
+- [x] **367. Unit Tests: AgentOrchestrator.ts:** `src/services/agent/AgentOrchestrator.ts` routes all agent tasks — zero test coverage. Write tests for task routing logic, specialist selection, and fallback when a specialist is unavailable.
+- [x] **368. Unit Tests: CanonicalMapService.ts:** `src/services/distribution/CanonicalMapService.ts` maps internal metadata to distributor-specific formats (DDEX ERN, CD Baby, TuneCore). Write schema compliance tests for each adapter mapping.
 - [ ] **369. Unit Tests: RagService.ts:** `src/services/rag/ragService.ts` manages knowledge retrieval — partial tests only. Complete coverage of chunk splitting, embedding, retrieval ranking, and context window management.
 - [ ] **370. Component Tests: Finance Module:** `src/modules/finance/` has 10+ components with zero tests. Start with `EarningsDashboard.tsx` and `LabelDealRecoupment.tsx` — render + interaction tests.
 - [ ] **371. Component Tests: Legal Module:** `src/modules/legal/components/DMCANoticeGenerator.tsx` and `ContractReviewPanel.tsx` generate legally significant outputs — add tests validating output structure.
@@ -105,7 +105,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **375. Electron: Secure Session Cookie Flags:** Verify Electron session cookies set `HttpOnly`, `Secure`, and `SameSite=Strict` flags. Add `session.defaultSession.cookies` audit on startup.
 - [x] **376. Electron: Windows NSIS Code Signing in CI:** Verify `.github/workflows/build.yml` includes the Windows code-signing step using `WINDOWS_CERTIFICATE` secret and `signtool.exe`. Missing signature causes SmartScreen warnings on install.
 - [x] **377. Electron: App Quit Cleanup for WebSocket/SSH Connections:** `electron/handlers/` may hold open SSH2 SFTP connections after SFTP delivery. Add `app.on('before-quit')` handler to close all active connections.
-- [ ] **378. Electron: Memory Profiling for Long Sessions:** Add a developer-only memory snapshot tool (accessible via `--inspect` flag) to track heap growth over 4+ hour sessions — desktop apps are prone to long-session memory leaks.
+- [x] **378. Electron: Memory Profiling for Long Sessions:** Add a developer-only memory snapshot tool (accessible via `--inspect` flag) to track heap growth over 4+ hour sessions — desktop apps are prone to long-session memory leaks.
 - [x] **379. Electron: Protocol Registration Hardening:** `electron/main.ts:279-319` registers `indii-os://` protocol. Add SSRF protection: reject URLs that resolve to localhost, 169.254.x.x (link-local), or RFC1918 private ranges in deep link payloads.
 
 ---
@@ -160,9 +160,9 @@ This document contains **Part 6** of the master production readiness checklist (
 
 ## Part 6M: Advanced Distribution (408–415)
 
-- [ ] **408. Automated ISRC Assignment:** When a new release is created without an ISRC, auto-assign one using the user's registered registrant code prefix (stored in their profile). Currently ISRC is manually entered — blocking distribution for non-technical users.
+- [x] **408. Automated ISRC Assignment:** When a new release is created without an ISRC, auto-assign one using the user's registered registrant code prefix (stored in their profile). Currently ISRC is manually entered — blocking distribution for non-technical users.
 - [ ] **409. UPC Barcode Generation:** Releases require a UPC barcode for physical/digital distribution. Add a UPC generation service that draws from a pre-purchased block of UPCs (stored in Firestore) and assigns one on release creation.
-- [ ] **410. Distributor Delivery Receipt Storage:** After SFTP upload, save the raw delivery receipt (SFTP confirmation log, API response) to Firebase Storage at `distribution/receipts/{releaseId}/{distributor}_{timestamp}.txt`. Currently delivery proof is not persisted.
+- [x] **410. Distributor Delivery Receipt Storage:** After SFTP upload, save the raw delivery receipt (SFTP confirmation log, API response) to Firebase Storage at `distribution/receipts/{releaseId}/{distributor}_{timestamp}.txt`. Currently delivery proof is not persisted.
 - [x] **411. Release Takedown Flow:** There is no UI for requesting a release takedown (DMCA counter-notice, voluntary withdrawal). Add a "Request Takedown" action in Release Detail that writes to `distribution_takedowns/{releaseId}` and notifies relevant adapters.
 - [ ] **412. Split Sheet PDF Export:** `SplitSheetEscrow.tsx` manages royalty splits but there is no PDF export for legal documentation. Generate a signed split sheet PDF using `pdfkit` or a Cloud Function and deliver via email + Firebase Storage.
 - [ ] **413. Distributor API Version Pinning:** Distributor adapters hit live API endpoints without version pinning. If TuneCore or CD Baby releases a breaking API change, all deliveries fail. Add explicit API version headers and a version-check startup probe.
