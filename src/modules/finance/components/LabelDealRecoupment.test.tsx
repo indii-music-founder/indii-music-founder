@@ -52,7 +52,7 @@ describe('LabelDealRecoupment', () => {
 
     it('renders the component heading', () => {
         render(<LabelDealRecoupment />);
-        expect(screen.getByText(/Label Deal/i)).toBeTruthy();
+        expect(screen.getAllByText(/Label Deal/i).length).toBeGreaterThan(0);
     });
 
     it('renders empty state when no deals exist', () => {
@@ -61,9 +61,9 @@ describe('LabelDealRecoupment', () => {
         expect(screen.queryAllByRole('button').length).toBeGreaterThanOrEqual(0);
     });
 
-    it('renders a deal card when Firestore returns data', () => {
+    it('renders a deal card when Firestore returns data', async () => {
         const { onSnapshot } = vi.mocked(await import('firebase/firestore'));
-        (onSnapshot as any).mockImplementation((_q: unknown, cb: Function) => {
+        (onSnapshot as any).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
             cb({
                 docs: [{
                     id: 'deal-1',
@@ -82,13 +82,13 @@ describe('LabelDealRecoupment', () => {
         });
 
         render(<LabelDealRecoupment />);
-        expect(screen.getByText('Capitol Records')).toBeTruthy();
-        expect(screen.getByText('$100000.00')).toBeTruthy();
+        expect(screen.getAllByText('Capitol Records').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('$100000.00').length).toBeGreaterThan(0);
     });
 
-    it('shows "Recouped" status when recoupedAmount >= advanceAmount', () => {
+    it('shows "Recouped" status when recoupedAmount >= advanceAmount', async () => {
         const { onSnapshot } = vi.mocked(await import('firebase/firestore'));
-        (onSnapshot as any).mockImplementation((_q: unknown, cb: Function) => {
+        (onSnapshot as any).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
             cb({
                 docs: [{
                     id: 'deal-2',
@@ -106,12 +106,12 @@ describe('LabelDealRecoupment', () => {
         });
 
         render(<LabelDealRecoupment />);
-        expect(screen.getByText('Recouped')).toBeTruthy();
+        expect(screen.getAllByText('Recouped').length).toBeGreaterThan(0);
     });
 
-    it('shows "At Risk" status when recoupedAmount < 50% of advance', () => {
+    it('shows "At Risk" status when recoupedAmount < 50% of advance', async () => {
         const { onSnapshot } = vi.mocked(await import('firebase/firestore'));
-        (onSnapshot as any).mockImplementation((_q: unknown, cb: Function) => {
+        (onSnapshot as any).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
             cb({
                 docs: [{
                     id: 'deal-3',
