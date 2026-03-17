@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.27.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.27.0...v1.27.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* 3 critical bugs from Sentry/CodeRabbit (PR [#1327](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/issues/1327)) ([9f90820](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9f9082078ffe2fd6fa89493e192a5bf3d2c90451))
+* **ci:** make axe-core and Lighthouse audits non-blocking ([95488a3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/95488a3531369aa1400734bd65d6c9b16b62b40f))
+* **ci:** make dependency audit non-blocking in deploy.yml ([4b5994e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4b5994e2272750f4b38058f6fe12f3a691277054))
+* **ci:** make E2E tests non-blocking in deploy.yml ([667c516](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/667c516df642198b236f4192f313b5a4bb7a4171))
+* **ci:** make typecheck non-blocking and fix YAML unicode escapes ([b2a49a0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b2a49a07fdc850699c679af2c21031cd31abddaa))
+* **ci:** resolve YAML syntax errors in deploy.yml ([793b3a1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/793b3a1a31cc3b0529f9e9e6160530ee4bc84ad0))
+* properly type earningsSummary in financeSlice (any -&gt; EarningsSummary) ([d8b5e61](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d8b5e61225af13ec7e621b302f128ae031483aef))
+* resolve test failures in LabelDealRecoupment, DMCANoticeGenerator, and ragService ([9225cdd](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9225cdd5c2ff082927dec754b8ceb93bfb2758de))
+
 ## [1.27.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.26.1...v1.27.0) (2026-03-17)
 
 
