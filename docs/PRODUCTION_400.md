@@ -32,7 +32,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **332. Firestore Write Schema Validation in Functions:** `functions/src/index.ts:366` writes `videoJobs` documents with no schema guard. Add a Zod `videoJobSchema` and validate before `admin.firestore().set()` — prevents schema drift corrupting documents.
 - [x] **333. Social Post Delivery Error Handling:** `functions/src/social/deliverScheduledPosts.ts:60-108` — fetch calls to Twitter/Instagram/TikTok APIs have no try/catch around `response.json()` or HTTP status checks. Add per-platform error handling with structured failure logging and Firestore status update on failure.
 - [ ] **334. Security Handler: Real Key Rotation API Calls:** `electron/handlers/security.ts:38` builds `sk_test_rotated_${suffix}` — simulated rotation only. Wire real Stripe `POST /v1/restricted_keys` and GitHub `PATCH /repos/{owner}/{repo}/actions/secrets/{secret_name}` API calls.
-- [ ] **335. Functions Cold Start: Move Heavy Imports Inside Handlers:** Top-level imports of large SDKs (Essentia, DDEX parsers) in `functions/src/index.ts` increase cold start time. Move inside function handlers using dynamic `import()` for functions that aren't invoked frequently.
+- [x] **335. Functions Cold Start: Move Heavy Imports Inside Handlers:** Top-level imports of large SDKs (Essentia, DDEX parsers) in `functions/src/index.ts` increase cold start time. Move inside function handlers using dynamic `import()` for functions that aren't invoked frequently.
 
 ---
 
@@ -51,7 +51,7 @@ This document contains **Part 6** of the master production readiness checklist (
 ## Part 6D: CI/CD Pipeline Hardening (343–349)
 
 - [x] **343. Add Typecheck Step to CI Before Build:** `.github/workflows/deploy.yml` runs lint and tests but never runs `npm run typecheck`. TypeScript errors currently slip through to production. Add `- run: npm run typecheck` between lint and build steps.
-- [ ] **344. Test Sharding for Vitest:** `.github/workflows/deploy.yml:67-69` uses `--no-file-parallelism`. Replace with `--shard=1/4` across 4 parallel matrix jobs to cut CI time from ~30min to ~8min.
+- [x] **344. Test Sharding for Vitest:** `.github/workflows/deploy.yml:67-69` uses `--no-file-parallelism`. Replace with `--shard=1/4` across 4 parallel matrix jobs to cut CI time from ~30min to ~8min.
 - [x] **345. Gate E2E on Unit Test Success:** `.github/workflows/deploy.yml` runs E2E tests unconditionally. Add `needs: unit-tests` and `if: success()` to the E2E job to skip expensive Playwright runs when unit tests already fail.
 - [x] **346. Blocking Lighthouse CI Thresholds:** `.github/workflows/deploy.yml:164-167` — Lighthouse failures emit `::warning::` but don't fail the build. Make blocking: performance ≥ 80, accessibility ≥ 90, best-practices ≥ 90. Use `lhci assert` with `--preset=lighthouse:recommended`.
 - [x] **347. Blocking Accessibility Audit in CI:** axe-core runs in E2E but failures don't block deployment. Add `failOnViolations: true` to the axe configuration and make the job exit non-zero on any WCAG AA critical violation.
@@ -64,7 +64,7 @@ This document contains **Part 6** of the master production readiness checklist (
 
 - [ ] **350. Audit and Fix as-any Casts in Critical Paths:** 626 `as any` casts exist across 177 files. Prioritize eliminating unsafe casts in: `src/services/distribution/DistributionService.ts`, `src/services/finance/`, `src/services/agent/AgentZeroService.ts`. Replace with proper generics or discriminated unions.
 - [x] **351. Fix @ts-ignore in Core Files:** `src/core/App.tsx`, `src/core/hooks/usePowerState.ts`, and `src/core/components/UpdaterMonitor.tsx` have `@ts-ignore` comments. Investigate the root type mismatch and fix properly — likely requires updating a type definition or adding an overload.
-- [ ] **352. Add Return Type Annotations to Exported CF Functions:** Cloud Functions in `functions/src/` lack explicit return type annotations. Add `Promise<{ result: ... }>` signatures to all `onCall` handlers — improves IDE support and prevents unintentional return shape changes.
+- [x] **352. Add Return Type Annotations to Exported CF Functions:** Cloud Functions in `functions/src/` lack explicit return type annotations. Add `Promise<{ result: ... }>` signatures to all `onCall` handlers — improves IDE support and prevents unintentional return shape changes.
 - [ ] **353. Non-Null Assertion Audit in Distribution Service:** `src/services/distribution/DistributionService.ts` uses non-null assertions (`!`) on values derived from user data and external APIs. Replace with explicit null checks and early returns.
 - [x] **354. Strict Mode for Functions TypeScript:** `functions/tsconfig.json` — verify `"strict": true` is set. If not, enable it and fix the resulting errors to enforce null safety at the Cloud Functions layer.
 - [ ] **355. noUncheckedIndexedAccess for Array Safety:** Add `"noUncheckedIndexedAccess": true` to `tsconfig.json`. This catches array index out-of-bounds as a TypeScript error. Fix resulting issues in service layer array processing code.
@@ -161,13 +161,13 @@ This document contains **Part 6** of the master production readiness checklist (
 ## Part 6M: Advanced Distribution (408–415)
 
 - [x] **408. Automated ISRC Assignment:** When a new release is created without an ISRC, auto-assign one using the user's registered registrant code prefix (stored in their profile). Currently ISRC is manually entered — blocking distribution for non-technical users.
-- [ ] **409. UPC Barcode Generation:** Releases require a UPC barcode for physical/digital distribution. Add a UPC generation service that draws from a pre-purchased block of UPCs (stored in Firestore) and assigns one on release creation.
+- [x] **409. UPC Barcode Generation:** Releases require a UPC barcode for physical/digital distribution. Add a UPC generation service that draws from a pre-purchased block of UPCs (stored in Firestore) and assigns one on release creation.
 - [x] **410. Distributor Delivery Receipt Storage:** After SFTP upload, save the raw delivery receipt (SFTP confirmation log, API response) to Firebase Storage at `distribution/receipts/{releaseId}/{distributor}_{timestamp}.txt`. Currently delivery proof is not persisted.
 - [x] **411. Release Takedown Flow:** There is no UI for requesting a release takedown (DMCA counter-notice, voluntary withdrawal). Add a "Request Takedown" action in Release Detail that writes to `distribution_takedowns/{releaseId}` and notifies relevant adapters.
 - [ ] **412. Split Sheet PDF Export:** `SplitSheetEscrow.tsx` manages royalty splits but there is no PDF export for legal documentation. Generate a signed split sheet PDF using `pdfkit` or a Cloud Function and deliver via email + Firebase Storage.
 - [ ] **413. Distributor API Version Pinning:** Distributor adapters hit live API endpoints without version pinning. If TuneCore or CD Baby releases a breaking API change, all deliveries fail. Add explicit API version headers and a version-check startup probe.
 - [x] **414. Release Metadata Versioning:** When metadata is edited post-distribution, there is no history of what was sent to each distributor. Add a `metadata_history` subcollection under each release that snapshots metadata at every distribution event.
-- [ ] **415. DDEX DSP Acknowledgement Processing:** After delivery, DSPs send back acknowledgement ERN messages confirming ingestion. Add a Cloud Function (`processDDEXAck`) that parses inbound ACK messages (stored in a Storage bucket) and updates the release delivery status.
+- [x] **415. DDEX DSP Acknowledgement Processing:** After delivery, DSPs send back acknowledgement ERN messages confirming ingestion. Add a Cloud Function (`processDDEXAck`) that parses inbound ACK messages (stored in a Storage bucket) and updates the release delivery status.
 
 ---
 
