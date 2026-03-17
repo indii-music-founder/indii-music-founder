@@ -18,43 +18,40 @@ export const UpdaterMonitor: React.FC = () => {
     const [error, setError] = useState<string>('');
 
     useEffect(() => {
-        // @ts-ignore
-        if (!window.electronAPI?.on) return;
+        const api = window.electronAPI;
+        if (!api?.on) return;
 
-        // @ts-ignore
         const unsubs = [
-            // @ts-ignore
-            window.electronAPI.on('updater:checking', () => {
+            api.on('updater:checking', () => {
                 logger.info('[Updater] Checking for updates...');
                 setStatus('checking');
                 setIsVisible(true);
             }),
-            // @ts-ignore
-            window.electronAPI.on('updater:available', (info: { version: string }) => {
+            api.on('updater:available', (...args) => {
+                const info = args[0] as { version: string };
                 logger.info(`[Updater] Update available: ${info.version}`);
                 setVersion(info.version);
                 setStatus('available');
                 setIsVisible(true);
             }),
-            // @ts-ignore
-            window.electronAPI.on('updater:not-available', () => {
+            api.on('updater:not-available', () => {
                 logger.info('[Updater] No update available');
                 setTimeout(() => setIsVisible(false), 3000);
             }),
-            // @ts-ignore
-            window.electronAPI.on('updater:progress', (data: UpdateProgress) => {
+            api.on('updater:progress', (...args) => {
+                const data = args[0] as UpdateProgress;
                 setStatus('downloading');
                 setProgress(data);
                 setIsVisible(true);
             }),
-            // @ts-ignore
-            window.electronAPI.on('updater:downloaded', (info: { version: string }) => {
+            api.on('updater:downloaded', (...args) => {
+                const info = args[0] as { version: string };
                 logger.info(`[Updater] Update downloaded: ${info.version}`);
                 setStatus('downloaded');
                 setIsVisible(true);
             }),
-            // @ts-ignore
-            window.electronAPI.on('updater:error', (err: { message: string }) => {
+            api.on('updater:error', (...args) => {
+                const err = args[0] as { message: string };
                 logger.error('[Updater] Error:', err.message);
                 setError(err.message);
                 setStatus('error');
@@ -66,7 +63,6 @@ export const UpdaterMonitor: React.FC = () => {
     }, []);
 
     const handleInstall = () => {
-        // @ts-ignore
         window.electronAPI?.updater?.install();
     };
 
