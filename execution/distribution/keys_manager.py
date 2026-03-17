@@ -154,8 +154,3 @@ if __name__ == "__main__":
         logger.exception("Keys Manager Error")
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
-
-    except Exception as e:
-        logger.exception("Keys Manager Error")
-        print(json.dumps({"error": str(e)}))
-        sys.exit(1)

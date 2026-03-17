@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Shield, Download, Radio, Filter, ChevronDown, Loader2, InboxIcon } from 'lucide-react';
 import { db, auth } from '@/services/firebase';
@@ -30,6 +30,13 @@ export function AuditLogsPanel() {
     const [agentFilter, setAgentFilter] = useState('ALL');
     const [actionFilter, setActionFilter] = useState('ALL');
 
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     // Subscribe to audit_logs collection from Firestore
     useEffect(() => {
         const userId = auth.currentUser?.uid;
@@ -43,6 +50,7 @@ export function AuditLogsPanel() {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!isMountedRef.current) return;
             const entries: LogEntry[] = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {

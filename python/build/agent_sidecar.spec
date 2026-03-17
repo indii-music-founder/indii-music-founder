@@ -27,8 +27,9 @@ ROOT = Path(SPECPATH).parent.parent  # repo root
 # ---------------------------------------------------------------------------
 # api.py exposes the HTTP server used by Electron (localhost:50080).
 # If your project uses mcp_server.py as the HTTP entry point instead,
+# If your project uses mcp_server.py as the HTTP entry point instead,
 # swap the path below.
-ENTRY = str(ROOT / 'python' / 'api' / 'api.py')
+ENTRY = str(ROOT / 'python' / 'helpers' / 'mcp_server.py')
 
 # ---------------------------------------------------------------------------
 # Data files to bundle (non-Python assets needed at runtime)

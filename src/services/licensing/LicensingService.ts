@@ -279,8 +279,7 @@ export class LicensingService {
                 }
             };
 
-            const { GenAI: AI } = await import('@/services/ai/GenAI');
-            const generated = await AI.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
+            const generated = await GenAI.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
                 `Generate 8 realistic sync licensing briefs for music supervisors seeking independent music.
 Use these upcoming deadlines: ${deadlines.join(', ')}.
 Vary the types (TV, Film, Ad, Game, Trailer), budgets ($5K–$100K+), moods and BPM ranges.

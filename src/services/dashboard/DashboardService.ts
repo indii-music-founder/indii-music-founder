@@ -132,17 +132,60 @@ export class DashboardService {
                 DashboardService.storageCache.kbRef === kb &&
                 DashboardService.storageCache.tier === tier
             ) {
-                // Return cached data, but we might want to update browser usage if possible?
-                // Browser usage is async and external, so strictly speaking it makes the cache imperfect.
-                // However, for performance, we assume it doesn't change drastically within the same app state session
-                // unless we explicitly invalidate.
-                // If we want to be safe, we could just re-fetch browser usage, but that requires await.
                 return DashboardService.storageCache.data;
             }
 
             const quotaBytes = STORAGE_QUOTAS[tier as keyof typeof STORAGE_QUOTAS] || STORAGE_QUOTAS.free;
 
-            // Calculate usage from generated history
+            // ─────────────────────────────────────────────────────────
+            // PRIMARY: Read server-scanned usage from Firestore
+            // (populated daily by trackStorageQuotas Cloud Function)
+            // ─────────────────────────────────────────────────────────
+            try {
+                const { StorageQuotaService } = await import('@/services/StorageQuotaService');
+                const serverQuota = await StorageQuotaService.getQuota();
+
+                if (serverQuota && serverQuota.totalBytes > 0) {
+                    const result: StorageStats = {
+                        usedBytes: serverQuota.totalBytes,
+                        quotaBytes,
+                        percentUsed: Math.min((serverQuota.totalBytes / quotaBytes) * 100, 100),
+                        tier: tier as 'free' | 'pro' | 'enterprise',
+                        breakdown: {
+                            images: 0, // Server scan doesn't separate KB from images yet
+                            videos: 0,
+                            knowledgeBase: 0,
+                        },
+                    };
+
+                    // Use server data for video/image counts and estimate bytes proportionally
+                    if (serverQuota.fileCount > 0) {
+                        const videoRatio = serverQuota.videoCount / serverQuota.fileCount;
+                        const imageRatio = serverQuota.imageCount / serverQuota.fileCount;
+                        result.breakdown = {
+                            images: Math.round(serverQuota.totalBytes * imageRatio),
+                            videos: Math.round(serverQuota.totalBytes * videoRatio),
+                            knowledgeBase: Math.round(serverQuota.totalBytes * (1 - videoRatio - imageRatio)),
+                        };
+                    }
+
+                    // Update Cache
+                    DashboardService.storageCache = {
+                        historyRef: history,
+                        kbRef: kb,
+                        tier: tier,
+                        data: result,
+                    };
+
+                    return result;
+                }
+            } catch {
+                // Server quota not available yet — fall through to local estimation
+            }
+
+            // ─────────────────────────────────────────────────────────
+            // FALLBACK: Estimate from local state (pre-first-scan or new users)
+            // ─────────────────────────────────────────────────────────
             let imagesBytes = 0;
             let videosBytes = 0;
 
@@ -150,7 +193,6 @@ export class DashboardService {
                 state.generatedHistory.forEach((item) => {
                     // Estimate size from base64 URL or content length
                     const urlLength = item.url?.length || 0;
-                    // content might not exist on all HistoryItems but exists on text types
                     const contentPadding = (item as HistoryItem & { content?: string }).content?.length || 0;
                     const estimatedBytes = Math.floor((urlLength + contentPadding) * 0.75);
 
@@ -187,8 +229,8 @@ export class DashboardService {
                 breakdown: {
                     images: imagesBytes,
                     videos: videosBytes,
-                    knowledgeBase: kbBytes + browserUsage
-                }
+                    knowledgeBase: kbBytes + browserUsage,
+                },
             };
 
             // Update Cache
@@ -196,7 +238,7 @@ export class DashboardService {
                 historyRef: history,
                 kbRef: kb,
                 tier: tier,
-                data: result
+                data: result,
             };
 
             return result;

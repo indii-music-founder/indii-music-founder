@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store'; // Access global store for userProfile
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { Campaign, Contact, PublicistStats } from '../types';
@@ -15,6 +15,13 @@ export const usePublicist = () => {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     // Initial Data Fetch
     useEffect(() => {
         if (!userProfile?.id) return;
@@ -24,10 +31,14 @@ export const usePublicist = () => {
 
         // Subscribe to live data
         const unsubCampaigns = PublicistService.subscribeToCampaigns(userProfile.id, (data) => {
+            if (!isMountedRef.current) return;
             setCampaigns(data);
             setLoading(false);
         });
-        const unsubContacts = PublicistService.subscribeToContacts(userProfile.id, setContacts);
+        const unsubContacts = PublicistService.subscribeToContacts(userProfile.id, (data) => {
+            if (!isMountedRef.current) return;
+            setContacts(data);
+        });
 
         return () => {
             safeUnsubscribe(unsubCampaigns);

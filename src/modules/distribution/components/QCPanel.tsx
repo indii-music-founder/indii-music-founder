@@ -2,12 +2,6 @@ import React, { useState } from 'react';
 import { Loader2, AlertTriangle, CheckCircle, XCircle, FileText, Youtube } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { distributionService } from '@/services/distribution/DistributionService';
-
-interface QCError {
-    field: string;
-    message: string;
-}
-
 import type { ValidationReport } from '@/types/distribution';
 
 interface QCError {

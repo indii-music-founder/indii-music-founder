@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Sparkles, Video } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { CreativeSlice } from '@/core/store/slices/creativeSlice';
+import { logger } from '@/utils/logger';
 
 interface VideoStageProps {
     jobStatus: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed';
@@ -21,6 +22,63 @@ export const VideoStage = React.memo<VideoStageProps>(({
     const [videoError, setVideoError] = React.useState<string | null>(null);
     const [displayProgress, setDisplayProgress] = React.useState(0);
     const [statusMessageIndex, setStatusMessageIndex] = React.useState(0);
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+
+    /**
+     * Captures the current video frame as a base64 JPEG string.
+     * This is essential for daisy-chaining: the Veo API needs actual image data,
+     * not a blob: URL reference (which is session-scoped and un-fetchable by the API).
+     */
+    const captureCurrentFrame = React.useCallback((): string | null => {
+        const video = videoRef.current;
+        if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+            logger.warn('[VideoStage] Cannot capture frame: video element not ready');
+            return null;
+        }
+
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return null;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Return base64 JPEG — strip the data:image/jpeg;base64, prefix for the API
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            logger.info('[VideoStage] Frame captured successfully', {
+                width: canvas.width,
+                height: canvas.height,
+                size: Math.round(dataUrl.length / 1024) + 'KB'
+            });
+            return dataUrl;
+        } catch (e) {
+            logger.error('[VideoStage] Frame capture failed:', e);
+            return null;
+        }
+    }, []);
+
+    /**
+     * Creates a HistoryItem-like anchor from the captured frame.
+     * The URL is a base64 data URI that the Veo API can actually consume.
+     */
+    const createFrameAnchor = React.useCallback((label: 'anchor' | 'end'): HistoryItem | null => {
+        if (!activeVideo) return null;
+        const frameData = captureCurrentFrame();
+        if (!frameData) {
+            logger.warn(`[VideoStage] Failed to capture ${label} frame — using fallback`);
+            return activeVideo; // Fallback: pass the HistoryItem as-is
+        }
+
+        return {
+            ...activeVideo,
+            id: `${activeVideo.id}-${label}-frame`,
+            url: frameData,
+            type: 'image' as const,
+            prompt: `${label === 'anchor' ? 'First' : 'Last'} frame from: ${activeVideo.prompt || 'video'}`,
+            timestamp: Date.now()
+        };
+    }, [activeVideo, captureCurrentFrame]);
 
     const PROGRESS_MESSAGES = React.useMemo(() => [
         "AI Director is framing the scene...",
@@ -89,9 +147,28 @@ export const VideoStage = React.memo<VideoStageProps>(({
         }
     }, [activeVideo]);
 
-    const handleVideoError = () => {
+    const handleVideoError = React.useCallback(async () => {
+        // Blob URL Recovery: If a blob: URL fails, check the Zustand store
+        // for a durable https:// URL that may have been populated by the
+        // fire-and-forget Storage upload in VideoGenerationService.
+        if (activeVideo?.url.startsWith('blob:')) {
+            try {
+                const { useStore } = await import('@/core/store');
+                const storeHistory = useStore.getState().generatedHistory;
+                const storeItem = storeHistory.find(h => h.id === activeVideo.id);
+
+                if (storeItem && storeItem.url.startsWith('https://')) {
+                    logger.info('[VideoStage] Recovered durable URL from store:', storeItem.url.slice(0, 60));
+                    // Don't set error — the parent will re-render with the updated URL
+                    return;
+                }
+            } catch (e) {
+                logger.warn('[VideoStage] Blob URL recovery attempt failed:', e);
+            }
+        }
+
         setVideoError("Playback Error: Video source unavailable or corrupted.");
-    };
+    }, [activeVideo]);
 
     return (
         <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
@@ -134,11 +211,12 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         <p className="text-gray-400 text-center max-w-sm px-4">{videoError}</p>
                     </div>
                 ) : activeVideo ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="relative w-full h-full flex items-center justify-center group/stage">
                         {activeVideo.url.startsWith('data:image') || activeVideo.type === 'image' ? (
                             <img src={activeVideo.url} alt="Preview" className="w-full h-full object-contain" />
                         ) : (
                             <video
+                                ref={videoRef}
                                 src={activeVideo.url}
                                 controls
                                 className="max-h-full max-w-full rounded-lg shadow-2xl border border-white/10"
@@ -148,32 +226,45 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 data-testid="video-player"
                             />
                         )}
-                        {/* Info Overlay */}
-                        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md p-2 rounded-lg border border-white/10 max-w-md">
-                            <p className="text-sm font-medium text-white truncate">{activeVideo.prompt}</p>
-                            <div className="flex gap-2 text-[10px] text-gray-400 mt-1">
+                        {/* Info Overlay — Top-left, auto-hides to not block video controls */}
+                        <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10 max-w-sm opacity-0 group-hover/stage:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <p className="text-xs font-medium text-white truncate">{activeVideo.prompt}</p>
+                            <div className="flex gap-2 text-[9px] text-gray-400 mt-0.5">
                                 <span>{new Date(activeVideo.timestamp).toLocaleTimeString()}</span>
                                 <span>•</span>
                                 <span>{activeVideo.id.slice(0, 8)}</span>
                             </div>
-                            <div className="flex gap-2 mt-2 pt-2 border-t border-white/10">
-                                <button
-                                    onClick={() => setVideoInputs({ firstFrame: activeVideo })}
-                                    data-testid="set-anchor-btn"
-                                    aria-label="Set as anchor frame for next generation"
-                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
-                                >
-                                    Set Anchor
-                                </button>
-                                <button
-                                    onClick={() => setVideoInputs({ lastFrame: activeVideo })}
-                                    data-testid="set-end-frame-btn"
-                                    aria-label="Set as end frame for next generation"
-                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
-                                >
-                                    Set End Frame
-                                </button>
-                            </div>
+                        </div>
+                        {/* Daisychaining Buttons — Top-right, show on hover */}
+                        <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover/stage:opacity-100 transition-opacity duration-300">
+                            <button
+                                onClick={() => {
+                                    const anchor = createFrameAnchor('anchor');
+                                    if (anchor) {
+                                        setVideoInputs({ firstFrame: anchor });
+                                        logger.info('[VideoStage] Anchor frame set (captured from canvas)');
+                                    }
+                                }}
+                                data-testid="set-anchor-btn"
+                                aria-label="Set as anchor frame for next generation"
+                                className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-purple-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-purple-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+                            >
+                                ⚓ Set Anchor
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const endFrame = createFrameAnchor('end');
+                                    if (endFrame) {
+                                        setVideoInputs({ lastFrame: endFrame });
+                                        logger.info('[VideoStage] End frame set (captured from canvas)');
+                                    }
+                                }}
+                                data-testid="set-end-frame-btn"
+                                aria-label="Set as end frame for next generation"
+                                className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-indigo-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-indigo-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+                            >
+                                🎬 Set End Frame
+                            </button>
                         </div>
                     </div>
                 ) : (
