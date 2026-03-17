@@ -43,7 +43,8 @@ import { DSRUploadModal } from './components/DSRUploadModal';
 import { ValidationRequirementsModal } from './components/ValidationRequirementsModal';
 import { PublishingErrorBoundary } from './components/PublishingErrorBoundary';
 import { OfflineBanner } from './components/OfflineBanner';
-import { LayoutGrid, BarChart2, CreditCard, Upload } from 'lucide-react';
+import { LayoutGrid, BarChart2, CreditCard, Upload, ScrollText } from 'lucide-react';
+import { MechanicalRoyaltyPanel } from './components/MechanicalRoyaltyPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ReleaseAssets, DistributorId, ReleaseStatus } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
@@ -227,6 +228,13 @@ export default function PublishingDashboard() {
                                                     <CreditCard size={14} />
                                                     Royalties
                                                 </TabsTrigger>
+                                                <TabsTrigger
+                                                    value="mechanical"
+                                                    className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                                >
+                                                    <ScrollText size={14} />
+                                                    Mechanical
+                                                </TabsTrigger>
                                             </TabsList>
                                         </div>
 
@@ -265,6 +273,13 @@ export default function PublishingDashboard() {
                                                     </button>
                                                 </div>
                                                 <PayoutHistory payouts={payouts} loading={payoutsLoading} />
+                                            </TabsContent>
+                                            <TabsContent value="mechanical" className="mt-0 outline-none">
+                                                <PublishingErrorBoundary componentName="Mechanical Royalties">
+                                                    <MechanicalRoyaltyPanel
+                                                        releaseId={selectedReleaseId ?? undefined}
+                                                    />
+                                                </PublishingErrorBoundary>
                                             </TabsContent>
                                         </div>
                                     </Tabs>

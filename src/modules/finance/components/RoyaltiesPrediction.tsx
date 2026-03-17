@@ -150,7 +150,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 export function RoyaltiesPrediction() {
-    const releases = useStore(useShallow((s) => s.releases ?? []));
+    const releases = useStore(useShallow((s) => s.distribution?.releases ?? []));
     const baseChartData = useMemo(() => buildStreamTimeline(releases.length), [releases.length]);
     const [refinedData, setRefinedData] = useState<StreamDataPoint[] | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);

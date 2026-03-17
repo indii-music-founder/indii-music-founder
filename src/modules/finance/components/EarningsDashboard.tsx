@@ -12,6 +12,7 @@ import { SubscriptionTab } from './SubscriptionTab';
 import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
 import { motion } from 'motion/react';
 import { TrendingUp, Music, Globe, DollarSign, ArrowUpRight } from 'lucide-react';
+import { SkeletonStatPanel, SkeletonTable } from '@/components/ui/Skeleton';
 
 const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
     <motion.div
@@ -105,7 +106,7 @@ export const EarningsDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState('overview');
 
     // Derive primary distributor ID from first active release deployment
-    const releases = useStore(useShallow((s) => s.releases ?? []));
+    const releases = useStore(useShallow((s) => s.distribution?.releases ?? []));
     const primaryDistributorId = useMemo(() => {
         for (const release of releases) {
             const keys = Object.keys(release.deployments ?? {});
@@ -115,8 +116,9 @@ export const EarningsDashboard: React.FC = () => {
     }, [releases]);
 
     if (loading) return (
-        <div className="flex items-center justify-center h-96">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        <div className="space-y-6 pt-2">
+            <SkeletonStatPanel />
+            <SkeletonTable rows={6} cols={5} />
         </div>
     );
 

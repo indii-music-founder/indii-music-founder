@@ -714,6 +714,63 @@ service cloud.firestore {
     }
 
     // ========================================
+    // COMPOSITIONS (verified users only — publishing/PRO registration)
+    // ========================================
+
+    match /compositions/{compositionId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // Compositions are permanent records — deletion restricted
+      allow delete: if false;
+    }
+
+    // ========================================
+    // LICENSING DEALS (verified users only — commercial contracts)
+    // ========================================
+
+    match /licensing_deals/{dealId} {
+      allow read: if isVerifiedUser() && (
+        resource.data.licenseeUid == request.auth.uid ||
+        resource.data.licensorUid == request.auth.uid
+      );
+      allow create: if isVerifiedUser() && request.resource.data.licensorUid == request.auth.uid;
+      allow update: if isVerifiedUser() && (
+        resource.data.licensorUid == request.auth.uid ||
+        resource.data.licenseeUid == request.auth.uid
+      );
+      // Licensing deals are compliance records — deletion restricted
+      allow delete: if false;
+    }
+
+    // ========================================
+    // PUBLISHING REGISTRATIONS (verified users only — PRO/MLC filings)
+    // ========================================
+
+    match /publishing_registrations/{registrationId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // Registration records are permanent — deletion restricted
+      allow delete: if false;
+    }
+
+    // ========================================
+    // SPLIT ESCROWS (verified users only — financial holds)
+    // ========================================
+
+    match /split_escrows/{escrowId} {
+      // Initiator and all parties can read
+      allow read: if isVerifiedUser() && (
+        resource.data.initiatorUid == request.auth.uid ||
+        request.auth.uid in resource.data.parties
+      );
+      // Only verified users can create escrow (server-side via Cloud Function preferred)
+      allow create: if isVerifiedUser() && request.resource.data.initiatorUid == request.auth.uid;
+      // Updates restricted to parties signing off (enforced by Cloud Function)
+      allow update: if isVerifiedUser() && request.auth.uid in resource.data.parties;
+      // Escrow records are financial audit trails — no client deletion
+      allow delete: if false;
     // AUDIT LOGS (read-only for authenticated users)
     // Written by Cloud Functions / Admin SDK only
     // ========================================
@@ -740,6 +797,44 @@ service cloud.firestore {
 
     match /users/{userId}/handoff/{stateId} {
       allow read, write: if isOwner(userId);
+    }
+
+    // ========================================
+    // LICENSING CLEARANCES (Item 310)
+    // ========================================
+
+    match /licensing_clearances/{clearanceId} {
+      // Only the submitting user can read their own clearances
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // Verified users can create their own clearance submissions
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      // No updates or deletes from client — managed by staff review process
+      allow update, delete: if false;
+    }
+
+    // ========================================
+    // LABEL DEALS (Item 312)
+    // ========================================
+
+    match /label_deals/{dealId} {
+      // Only the owning user can read their label deals
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // Verified users can create and update their own deals
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // No deletion — deals are financial records
+      allow delete: if false;
+    }
+
+    // ========================================
+    // DELETION REQUESTS (Item 306)
+    // ========================================
+
+    match /_deletion_requests/{userId} {
+      // Users can only read/create their own deletion requests
+      allow read: if isVerifiedUser() && request.auth.uid == userId;
+      allow create: if isVerifiedUser() && request.auth.uid == userId;
+      allow update, delete: if false;
     }
 
     // ========================================

@@ -67,6 +67,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                     />
 
                     <motion.div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="cc-modal-title"
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -74,7 +77,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                     >
                         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-slate-950/50">
                             <div>
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <h3 id="cc-modal-title" className="text-xl font-bold text-white flex items-center gap-2">
                                     <User size={20} className="text-sonic-purple" />
                                     Add New Contact
                                 </h3>
@@ -82,6 +85,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                             </div>
                             <button
                                 onClick={onClose}
+                                aria-label="Close dialog"
                                 className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
                             >
                                 <X size={20} />
@@ -90,8 +94,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-5">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Contact Name</label>
+                                <label htmlFor="cc-name" className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Contact Name</label>
                                 <input
+                                    id="cc-name"
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
@@ -102,8 +107,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Media Outlet</label>
+                                <label htmlFor="cc-outlet" className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Media Outlet</label>
                                 <input
+                                    id="cc-outlet"
                                     type="text"
                                     value={outlet}
                                     onChange={(e) => setOutlet(e.target.value)}
@@ -113,8 +119,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Role/Position</label>
+                                <label htmlFor="cc-role" className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Role/Position</label>
                                 <select
+                                    id="cc-role"
                                     value={role}
                                     onChange={(e) => setRole(e.target.value as Contact['role'])}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 transition-all font-medium bg-slate-900"

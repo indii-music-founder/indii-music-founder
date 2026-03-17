@@ -5,7 +5,7 @@ import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
 import { ernService } from '@/services/ddex/ERNService'; // Hook up the real service
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
-
+import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { ddexValidator } from '@/services/ddex/DDEXValidator';
 import { logger } from '@/utils/logger';
 
@@ -21,35 +21,61 @@ export const ReleaseManager: React.FC = () => {
 
     useUnsavedChanges(isDirty);
 
-    // Mock Audio Load for Demo
-    const handleLoadAudio = async (url?: string, name?: string) => {
+    const handleLoadAudio = async (url?: string, name?: string, file?: File) => {
         setStep('analyzing');
         if (url) setAudioUrl(url);
         if (name) setFileName(name);
 
-        // Simulate "CLIP" Analysis Delay
-        setTimeout(() => {
-            const mockProfile: AudioIntelligenceProfile = {
-                id: 'mock-123',
-                technical: { bpm: 128, key: 'C', scale: 'minor', energy: 0.9, duration: 245, danceability: 0.8, loudness: -5 },
+        if (file) {
+            // Real analysis via AudioIntelligenceService (Essentia.js + Gemini)
+            try {
+                const profile = await audioIntelligence.analyze(file);
+                setAudioProfile(profile);
+            } catch (err) {
+                logger.error('[ReleaseManager] Audio analysis failed:', err);
+                // Fallback: empty profile so the user can still fill metadata manually
+                setAudioProfile({
+                    id: crypto.randomUUID(),
+                    technical: { bpm: 0, key: '', scale: '', energy: 0, duration: 0, danceability: 0, loudness: 0 },
+                    semantic: {
+                        mood: [],
+                        genre: [],
+                        instruments: [],
+                        ddexGenre: '',
+                        ddexSubGenre: '',
+                        language: 'zxx',
+                        isExplicit: false,
+                        visualImagery: { abstract: '', narrative: '', lighting: '' },
+                        marketingHooks: { keywords: [], oneLiner: '' },
+                        targetPrompts: { image: '', veo: '' },
+                    },
+                    analyzedAt: Date.now(),
+                    modelVersion: 'fallback',
+                });
+            }
+        } else {
+            // No file provided (click-to-demo) — use a blank scaffold for manual entry
+            setAudioProfile({
+                id: crypto.randomUUID(),
+                technical: { bpm: 0, key: '', scale: '', energy: 0, duration: 0, danceability: 0, loudness: 0 },
                 semantic: {
-                    mood: ['Energetic', 'Dark'],
-                    genre: ['Electronic'],
-                    instruments: ['Synthesizer'],
-                    ddexGenre: 'Electronic',
-                    ddexSubGenre: 'Techno',
+                    mood: [],
+                    genre: [],
+                    instruments: [],
+                    ddexGenre: '',
+                    ddexSubGenre: '',
                     language: 'zxx',
                     isExplicit: false,
                     visualImagery: { abstract: '', narrative: '', lighting: '' },
-                    marketingHooks: { keywords: [], oneLiner: 'A banger.' },
-                    targetPrompts: { image: '', veo: '' }
+                    marketingHooks: { keywords: [], oneLiner: '' },
+                    targetPrompts: { image: '', veo: '' },
                 },
                 analyzedAt: Date.now(),
-                modelVersion: 'gemini-3.1-pro-preview'
-            };
-            setAudioProfile(mockProfile);
-            setStep('edit');
-        }, 1500);
+                modelVersion: 'manual',
+            });
+        }
+
+        setStep('edit');
     };
 
     const handleSaveMetadata = (data: ExtendedGoldenMetadata) => {
@@ -99,7 +125,7 @@ export const ReleaseManager: React.FC = () => {
         const file = e.dataTransfer.files?.[0];
         if (file && file.type.startsWith('audio/')) {
             const url = URL.createObjectURL(file);
-            handleLoadAudio(url, file.name);
+            handleLoadAudio(url, file.name, file);
         } else {
             handleLoadAudio();
         }

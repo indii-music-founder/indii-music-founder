@@ -438,7 +438,11 @@ export async function syncSpotifyStats(uid: string, artistId: string): Promise<P
         });
 
         if (artistRes.status === 401) {
-            await refreshPlatformToken(uid, 'spotify');
+            const refreshed = await refreshPlatformToken(uid, 'spotify');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] Spotify token refresh failed — re-auth required');
+                return { platform: 'spotify', fetchedAt: Date.now() };
+            }
             return syncSpotifyStats(uid, artistId);
         }
 
@@ -474,6 +478,199 @@ export async function syncSpotifyStats(uid: string, artistId: string): Promise<P
 // ────────────────────────────────────────────────────────────────────
 // Unified Post Dispatcher
 // ────────────────────────────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────────────
+// Platform Stats Sync — Instagram, TikTok, Twitter, YouTube
+// All follow the same pattern as syncSpotifyStats:
+//  1. Get valid token from Firestore (auto-refresh if expired)
+//  2. Call the platform API
+//  3. Cache result to users/{uid}/platformStats/{platform}
+// ────────────────────────────────────────────────────────────────────
+
+/** Sync Instagram follower / media counts via Meta Graph API */
+export async function syncInstagramStats(uid: string): Promise<PlatformStats> {
+    const token = await getValidToken(uid, 'instagram');
+    if (!token) {
+        logger.warn('[SocialPlatformService] Instagram not connected — no token');
+        return { platform: 'instagram', fetchedAt: Date.now() };
+    }
+
+    try {
+        // Get the Instagram Business/Creator account ID linked to the token
+        const meRes = await fetch(
+            `https://graph.facebook.com/v19.0/me?fields=instagram_business_account&access_token=${token.accessToken}`,
+            { signal: AbortSignal.timeout(10000) }
+        );
+        if (meRes.status === 401) {
+            const refreshed = await refreshPlatformToken(uid, 'instagram');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] Instagram token refresh failed on /me — re-auth required');
+                return { platform: 'instagram', fetchedAt: Date.now() };
+            }
+            return syncInstagramStats(uid);
+        }
+        const meData = await meRes.json() as { instagram_business_account?: { id: string } };
+        const igId = meData.instagram_business_account?.id;
+        if (!igId) {
+            logger.warn('[SocialPlatformService] No Instagram Business account linked');
+            return { platform: 'instagram', fetchedAt: Date.now() };
+        }
+
+        const statsRes = await fetch(
+            `https://graph.facebook.com/v19.0/${igId}?fields=followers_count,media_count&access_token=${token.accessToken}`,
+            { signal: AbortSignal.timeout(10000) }
+        );
+        if (statsRes.status === 401) {
+            const refreshed = await refreshPlatformToken(uid, 'instagram');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] Instagram token refresh failed — re-auth required');
+                return { platform: 'instagram', fetchedAt: Date.now() };
+            }
+            return syncInstagramStats(uid);
+        }
+
+        const ig = await statsRes.json() as { followers_count?: number; media_count?: number };
+        const stats: PlatformStats = {
+            platform: 'instagram',
+            followers: ig.followers_count,
+            fetchedAt: Date.now(),
+        };
+
+        const cacheRef = doc(db, 'users', uid, 'platformStats', 'instagram');
+        await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
+        return stats;
+    } catch (err) {
+        logger.error('[SocialPlatformService] Instagram stats sync error:', err);
+        return { platform: 'instagram', fetchedAt: Date.now() };
+    }
+}
+
+/** Sync TikTok follower / like counts via TikTok Business API v2 */
+export async function syncTikTokStats(uid: string): Promise<PlatformStats> {
+    const token = await getValidToken(uid, 'tiktok');
+    if (!token) {
+        logger.warn('[SocialPlatformService] TikTok not connected — no token');
+        return { platform: 'tiktok', fetchedAt: Date.now() };
+    }
+
+    try {
+        const res = await fetch(
+            'https://open.tiktokapis.com/v2/user/info/?fields=follower_count,likes_count,video_count',
+            {
+                headers: { 'Authorization': `Bearer ${token.accessToken}` },
+                signal: AbortSignal.timeout(10000),
+            }
+        );
+        if (res.status === 401) {
+            const refreshed = await refreshPlatformToken(uid, 'tiktok');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] TikTok token refresh failed — re-auth required');
+                return { platform: 'tiktok', fetchedAt: Date.now() };
+            }
+            return syncTikTokStats(uid);
+        }
+
+        const data = await res.json() as { data?: { user?: { follower_count?: number; likes_count?: number } } };
+        const user = data.data?.user;
+        const stats: PlatformStats = {
+            platform: 'tiktok',
+            followers: user?.follower_count,
+            likes: user?.likes_count,
+            fetchedAt: Date.now(),
+        };
+
+        const cacheRef = doc(db, 'users', uid, 'platformStats', 'tiktok');
+        await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
+        return stats;
+    } catch (err) {
+        logger.error('[SocialPlatformService] TikTok stats sync error:', err);
+        return { platform: 'tiktok', fetchedAt: Date.now() };
+    }
+}
+
+/** Sync Twitter/X follower + impression counts via Twitter API v2 */
+export async function syncTwitterStats(uid: string): Promise<PlatformStats> {
+    const token = await getValidToken(uid, 'twitter');
+    if (!token) {
+        logger.warn('[SocialPlatformService] Twitter not connected — no token');
+        return { platform: 'twitter', fetchedAt: Date.now() };
+    }
+
+    try {
+        // Get authenticated user's public metrics
+        const meRes = await fetch('https://api.twitter.com/2/users/me?user.fields=public_metrics', {
+            headers: { 'Authorization': `Bearer ${token.accessToken}` },
+            signal: AbortSignal.timeout(10000),
+        });
+        if (meRes.status === 401) {
+            const refreshed = await refreshPlatformToken(uid, 'twitter');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] Twitter token refresh failed — re-auth required');
+                return { platform: 'twitter', fetchedAt: Date.now() };
+            }
+            return syncTwitterStats(uid);
+        }
+
+        const me = await meRes.json() as { data?: { public_metrics?: { followers_count?: number; impression_count?: number } } };
+        const metrics = me.data?.public_metrics;
+        const stats: PlatformStats = {
+            platform: 'twitter',
+            followers: metrics?.followers_count,
+            impressions: metrics?.impression_count,
+            fetchedAt: Date.now(),
+        };
+
+        const cacheRef = doc(db, 'users', uid, 'platformStats', 'twitter');
+        await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
+        return stats;
+    } catch (err) {
+        logger.error('[SocialPlatformService] Twitter stats sync error:', err);
+        return { platform: 'twitter', fetchedAt: Date.now() };
+    }
+}
+
+/** Sync YouTube subscriber + view counts via YouTube Data API v3 */
+export async function syncYouTubeStats(uid: string): Promise<PlatformStats> {
+    const token = await getValidToken(uid, 'youtube');
+    if (!token) {
+        logger.warn('[SocialPlatformService] YouTube not connected — no token');
+        return { platform: 'youtube', fetchedAt: Date.now() };
+    }
+
+    try {
+        const res = await fetch(
+            'https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true',
+            {
+                headers: { 'Authorization': `Bearer ${token.accessToken}` },
+                signal: AbortSignal.timeout(10000),
+            }
+        );
+        if (res.status === 401) {
+            const refreshed = await refreshPlatformToken(uid, 'youtube');
+            if (!refreshed) {
+                logger.warn('[SocialPlatformService] YouTube token refresh failed — re-auth required');
+                return { platform: 'youtube', fetchedAt: Date.now() };
+            }
+            return syncYouTubeStats(uid);
+        }
+
+        const yt = await res.json() as { items?: Array<{ statistics?: { subscriberCount?: string; viewCount?: string } }> };
+        const stats_raw = yt.items?.[0]?.statistics;
+        const stats: PlatformStats = {
+            platform: 'youtube',
+            followers: stats_raw?.subscriberCount ? parseInt(stats_raw.subscriberCount, 10) : undefined,
+            plays: stats_raw?.viewCount ? parseInt(stats_raw.viewCount, 10) : undefined,
+            fetchedAt: Date.now(),
+        };
+
+        const cacheRef = doc(db, 'users', uid, 'platformStats', 'youtube');
+        await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
+        return stats;
+    } catch (err) {
+        logger.error('[SocialPlatformService] YouTube stats sync error:', err);
+        return { platform: 'youtube', fetchedAt: Date.now() };
+    }
+}
 
 export async function dispatchToplatforms(
     uid: string,

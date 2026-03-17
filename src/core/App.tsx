@@ -40,6 +40,8 @@ import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { UpdaterMonitor } from './components/UpdaterMonitor';
 import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
 import { logger } from '@/utils/logger';
+import '@/core/i18n'; // Initialize i18next — must run before any component renders
+import { FirstRunTour } from '@/components/shared/FirstRunTour';
 
 cleanupLocalStorage();
 
@@ -555,6 +557,9 @@ export default function App() {
 
                                 {/* GDPR Cookie Consent Banner (Item 303) */}
                                 <CookieConsentBanner />
+
+                                {/* Item 290: First-Run Guided Tour */}
+                                <FirstRunTour />
                             </GlobalDropZone>
                         </div>
                     </ToastProvider>

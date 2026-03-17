@@ -22,20 +22,57 @@ export const AnalysisTools: Record<string, AnyToolFunction> = {
     }),
 
     sync_dsp_stats: wrapTool('sync_dsp_stats', async (args: { dsp: 'Spotify' | 'Apple'; artistId: string }) => {
-        // Mock DSP (Spotify/Apple) API Sync (Item 156)
-        const mockStats = {
-            totalStreams: Math.floor(Math.random() * 1000000) + 50000,
-            monthlyListeners: Math.floor(Math.random() * 50000) + 10000,
-            followers: Math.floor(Math.random() * 20000) + 5000,
-            playlistAdds: Math.floor(Math.random() * 500) + 50
-        };
+        const platformKey = args.dsp === 'Spotify' ? 'spotify' : 'apple_music';
 
-        return toolSuccess({
-            dsp: args.dsp,
-            artistId: args.artistId,
-            timestamp: new Date().toISOString(),
-            stats: mockStats
-        }, `Successfully synced ${args.dsp} stats for artist ID ${args.artistId}. Total Streams: ${mockStats.totalStreams}.`);
+        // 1. Try reading cached stats from Firestore (written by SocialPlatformService.syncSpotifyStats)
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { doc, getDoc } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (uid) {
+                const cacheRef = doc(db, 'users', uid, 'platformStats', platformKey);
+                const snap = await getDoc(cacheRef);
+
+                if (snap.exists()) {
+                    const cached = snap.data();
+                    const ageMs = Date.now() - (cached.fetchedAt || 0);
+                    // Serve cache if fresher than 6 hours
+                    if (ageMs < 6 * 60 * 60 * 1000) {
+                        return toolSuccess({
+                            dsp: args.dsp,
+                            artistId: args.artistId,
+                            timestamp: new Date(cached.fetchedAt).toISOString(),
+                            stats: cached,
+                            source: 'cache'
+                        }, `${args.dsp} stats loaded from cache (${Math.round(ageMs / 60000)} min old). Followers: ${cached.followers?.toLocaleString() ?? 'N/A'}.`);
+                    }
+                }
+
+                // 2. Cache miss or stale — attempt live sync for Spotify
+                if (args.dsp === 'Spotify') {
+                    const { syncSpotifyStats } = await import('@/services/social/SocialPlatformService');
+                    const live = await syncSpotifyStats(uid, args.artistId);
+                    if (live.followers !== undefined) {
+                        return toolSuccess({
+                            dsp: args.dsp,
+                            artistId: args.artistId,
+                            timestamp: new Date(live.fetchedAt).toISOString(),
+                            stats: live,
+                            source: 'live'
+                        }, `${args.dsp} stats synced live. Followers: ${live.followers?.toLocaleString() ?? 'N/A'}.`);
+                    }
+                }
+            }
+        } catch (err) {
+            // Fall through to not-connected error
+        }
+
+        // 3. Token not connected or sync failed — return actionable error, not fake numbers
+        return toolError(
+            `${args.dsp} is not connected. Connect via Settings → Social Platforms to enable live stat sync.`,
+            'DSP_NOT_CONNECTED'
+        );
     }),
 
     detect_streaming_anomalies: wrapTool('detect_streaming_anomalies', async (args: { trackId: string; currentStreams: number; averageStreams: number }) => {

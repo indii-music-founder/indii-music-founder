@@ -67,7 +67,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
         const timestamp = new Date(`${scheduledDate}T${scheduledTime}`).getTime();
 
         const newPostData = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: crypto.randomUUID(),
             platform,
             copy,
             imageAsset: selectedImage || undefined,

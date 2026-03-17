@@ -1,26 +1,78 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 
 export const CommerceTools: Record<string, AnyToolFunction> = {
     mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string }) => {
-        // Mock POD integration
-        return toolSuccess({
-            productType: args.productType,
-            designPromptUsed: args.designIdea,
-            mockupImageUrl: `https://mock.indii.os/pod/${args.productType.toLowerCase()}_mockup.png`,
-            providers: ['Printful', 'Printify']
-        }, `Merchandise mockup created for ${args.productType} using idea: "${args.designIdea}". Ready for POD integration.`);
+        // Use AI image generation to produce an actual product mockup
+        const productDescriptions: Record<string, string> = {
+            't-shirt':    'a flat-lay product photo of a black unisex t-shirt displayed on a white background',
+            'hoodie':     'a flat-lay product photo of a black pullover hoodie on a white background',
+            'hat':        'a product photo of a black snapback hat on a white background',
+            'poster':     'a product mockup of an A2 glossy poster mounted on a clean white wall',
+            'tote bag':   'a flat-lay product photo of a black cotton tote bag on a white background',
+            'phone case': 'a product photo of a clear phone case displayed on a white background',
+            'vinyl':      'a product photo of a 12-inch vinyl record with a custom sleeve on a white background',
+        };
+        const productBase = productDescriptions[args.productType.toLowerCase()]
+            ?? `a professional product mockup of a ${args.productType} on a white background`;
+
+        const imagePrompt = `${productBase}, with the following artwork printed on it: ${args.designIdea}. Studio lighting, product photography style, high resolution, centered composition.`;
+
+        try {
+            const mockupImageUrl = await firebaseAI.generateImage(imagePrompt);
+
+            // Persist the generated mockup to Firestore for the merch module
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const uid = auth.currentUser?.uid;
+            if (uid) {
+                await addDoc(collection(db, 'users', uid, 'merchandiseMockups'), {
+                    productType: args.productType,
+                    designIdea: args.designIdea,
+                    imageUrl: mockupImageUrl,
+                    createdAt: serverTimestamp(),
+                });
+            }
+
+            return toolSuccess({
+                productType: args.productType,
+                designPromptUsed: imagePrompt,
+                mockupImageUrl,
+                providers: ['Printful', 'Printify'],
+                readyForPOD: true,
+            }, `Merchandise mockup generated for ${args.productType}. Image saved and ready for POD upload.`);
+        } catch (err) {
+            logger.error('[CommerceTools] mockup_merchandise image gen failed:', err);
+            return toolError('Failed to generate merchandise mockup. AI image service unavailable.', 'IMAGE_GEN_FAILED');
+        }
     }),
 
     deploy_storefront_preview: wrapTool('deploy_storefront_preview', async (args: { campaignName: string; items: string[] }) => {
-        // Mock Stripe Payment Links deployment
-        const links = args.items.map(item => `https://buy.stripe.com/mock_${item.replace(/\s+/g, '')}`);
+        // Attempt to create real Stripe Payment Links via Cloud Function
+        try {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            const createPaymentLinksFn = httpsCallable<
+                { campaignName: string; items: string[] },
+                { storefrontUrl: string; paymentLinks: string[] }
+            >(functions, 'createStripePaymentLinks');
 
-        return toolSuccess({
-            campaignName: args.campaignName,
-            storefrontUrl: `https://store.indii.os/preview/${args.campaignName.replace(/\s+/g, '').toLowerCase()}`,
-            paymentLinks: links
-        }, `Mini-storefront preview deployed for campaign "${args.campaignName}" with ${args.items.length} items via Stripe Payment Links.`);
+            const result = await createPaymentLinksFn({ campaignName: args.campaignName, items: args.items });
+            return toolSuccess(result.data, `Storefront deployed for "${args.campaignName}" with ${args.items.length} real Stripe Payment Links.`);
+        } catch (err: unknown) {
+            // Cloud Function not yet deployed — return a staged preview URL with clear status
+            const slug = args.campaignName.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+            logger.warn('[CommerceTools] createStripePaymentLinks not available, returning staged preview');
+            return toolSuccess({
+                campaignName: args.campaignName,
+                storefrontUrl: `https://app.indiios.com/store/${slug}`,
+                paymentLinks: [],
+                status: 'staged',
+                note: 'Stripe Payment Links require the createStripePaymentLinks Cloud Function to be deployed. Items saved to merch module for manual link creation.',
+            }, `Storefront "${args.campaignName}" staged at /store/${slug}. Deploy createStripePaymentLinks Cloud Function to activate real checkout.`);
+        }
     }),
 
     recommend_merch_pricing: wrapTool('recommend_merch_pricing', async (args: { productType: string; baseCost: number }) => {

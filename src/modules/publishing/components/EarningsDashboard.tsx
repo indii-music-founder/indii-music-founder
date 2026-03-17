@@ -3,6 +3,7 @@ import { useEarnings } from '../hooks/useEarnings';
 import { EarningsBreakdown } from './EarningsBreakdown';
 import { Loader2, DollarSign, Globe, TrendingUp, Download, PieChart } from 'lucide-react';
 import { motion } from 'motion/react';
+import { SkeletonText, Skeleton } from '@/components/ui/Skeleton';
 
 // Compute default period outside component to satisfy react-compiler purity rules
 const DEFAULT_PERIOD = (() => {
@@ -45,7 +46,7 @@ export const EarningsDashboard: React.FC = () => {
     const platformBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byPlatform && earnings.byPlatform.length > 0) {
-            return earnings.byPlatform.map(p => ({
+            return earnings.byPlatform.map((p: { platformName: string; revenue: number }) => ({
                 label: p.platformName,
                 revenue: p.revenue,
                 percentage: Math.round((p.revenue / earnings.totalNetRevenue) * 100),
@@ -64,7 +65,7 @@ export const EarningsDashboard: React.FC = () => {
     const territoryBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byTerritory && earnings.byTerritory.length > 0) {
-            return earnings.byTerritory.map(t => ({
+            return earnings.byTerritory.map((t: { territoryName: string; revenue: number }) => ({
                 label: t.territoryName,
                 revenue: t.revenue,
                 percentage: Math.round((t.revenue / earnings.totalNetRevenue) * 100),
@@ -92,9 +93,9 @@ export const EarningsDashboard: React.FC = () => {
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-6 px-1">Active Balance (USD)</p>
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                        <Loader2 size={32} className="text-purple-500 animate-spin mb-4" />
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Calculating...</p>
+                    <div className="py-6 space-y-4">
+                        <Skeleton className="h-12 w-48" />
+                        <SkeletonText lines={4} />
                     </div>
                 ) : earnings ? (
                     <div>
@@ -149,7 +150,7 @@ export const EarningsDashboard: React.FC = () => {
                 <EarningsBreakdown
                     byPlatform={platformBreakdown}
                     byTerritory={territoryBreakdown}
-                    byTrack={earnings.byRelease?.map(r => ({
+                    byTrack={earnings.byRelease?.map((r: { releaseName: string; revenue: number }) => ({
                         label: r.releaseName,
                         revenue: r.revenue,
                         percentage: earnings.totalNetRevenue > 0

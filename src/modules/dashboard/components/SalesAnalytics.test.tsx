@@ -28,16 +28,17 @@ describe('SalesAnalytics', () => {
 
     it('renders loading state initially', () => {
         (DashboardService.getSalesAnalytics as any).mockReturnValue(new Promise(() => {})); // Never resolves
-        render(<SalesAnalytics />);
-        expect(screen.getByText('Loading analytics...')).toBeInTheDocument();
+        const { container } = render(<SalesAnalytics />);
+        // Component now uses Skeleton loading UI instead of text
+        expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
     });
 
     it('renders data after fetch', async () => {
         (DashboardService.getSalesAnalytics as any).mockResolvedValue(mockData);
-        render(<SalesAnalytics />);
+        const { container } = render(<SalesAnalytics />);
 
         await waitFor(() => {
-            expect(screen.queryByText('Loading analytics...')).not.toBeInTheDocument();
+            expect(container.querySelector('.animate-pulse')).not.toBeInTheDocument();
         });
 
         expect(screen.getByText('Sales Analytics')).toBeInTheDocument();

@@ -109,8 +109,9 @@ export function SmartContractGenerator() {
             {/* Contract Fields */}
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold mb-1 block">Token Name</label>
+                    <label htmlFor="sc-token-name" className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold mb-1 block">Token Name</label>
                     <input
+                        id="sc-token-name"
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="Summer EP Rights"
@@ -118,8 +119,9 @@ export function SmartContractGenerator() {
                     />
                 </div>
                 <div>
-                    <label className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold mb-1 block">Symbol</label>
+                    <label htmlFor="sc-symbol" className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold mb-1 block">Symbol</label>
                     <input
+                        id="sc-symbol"
                         value={symbol}
                         onChange={e => setSymbol(e.target.value.toUpperCase().slice(0, 8))}
                         placeholder="SUMEP"
@@ -128,8 +130,9 @@ export function SmartContractGenerator() {
                 </div>
             </div>
             <div>
-                <label className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold mb-1 block">ISRC Code</label>
+                <label htmlFor="sc-isrc" className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold mb-1 block">ISRC Code</label>
                 <input
+                    id="sc-isrc"
                     value={isrc}
                     onChange={e => setIsrc(e.target.value.toUpperCase())}
                     placeholder="USRC17607839"
