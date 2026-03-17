@@ -607,11 +607,11 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         let cleanup: (() => void) | undefined;
         if (onProgress) {
-            cleanup = (window.electronAPI.distribution as any).onSubmitProgress(onProgress);
+            cleanup = window.electronAPI.distribution.onSubmitProgress(onProgress);
         }
 
         try {
-            const result = await (window.electronAPI.distribution as any).submitRelease(releaseData);
+            const result = await window.electronAPI.distribution.submitRelease(releaseData);
 
             if (!result.success) {
                 await this.updateTask(taskId, { status: 'FAILED', error: result.error });
@@ -685,7 +685,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         });
 
         // Update the release document status
-        await this.releasesService.update(releaseId, { status: 'takedown_requested' } as any);
+        await this.releasesService.update(releaseId, { status: 'takedown_requested' });
         logger.info(`[DistributionService] Takedown requested for release ${releaseId} from ${distributorId}`);
     }
 

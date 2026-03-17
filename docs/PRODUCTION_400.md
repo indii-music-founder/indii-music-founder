@@ -62,12 +62,12 @@ This document contains **Part 6** of the master production readiness checklist (
 
 ## Part 6E: TypeScript Quality (350–355)
 
-- [ ] **350. Audit and Fix as-any Casts in Critical Paths:** 626 `as any` casts exist across 177 files. Prioritize eliminating unsafe casts in: `src/services/distribution/DistributionService.ts`, `src/services/finance/`, `src/services/agent/AgentZeroService.ts`. Replace with proper generics or discriminated unions.
+- [x] **350. Audit and Fix as-any Casts in Critical Paths:** 626 `as any` casts exist across 177 files. Prioritize eliminating unsafe casts in: `src/services/distribution/DistributionService.ts`, `src/services/finance/`, `src/services/agent/AgentZeroService.ts`. Replace with proper generics or discriminated unions.
 - [x] **351. Fix @ts-ignore in Core Files:** `src/core/App.tsx`, `src/core/hooks/usePowerState.ts`, and `src/core/components/UpdaterMonitor.tsx` have `@ts-ignore` comments. Investigate the root type mismatch and fix properly — likely requires updating a type definition or adding an overload.
 - [x] **352. Add Return Type Annotations to Exported CF Functions:** Cloud Functions in `functions/src/` lack explicit return type annotations. Add `Promise<{ result: ... }>` signatures to all `onCall` handlers — improves IDE support and prevents unintentional return shape changes.
 - [x] **353. Non-Null Assertion Audit in Distribution Service:** `src/services/distribution/DistributionService.ts` uses non-null assertions (`!`) on values derived from user data and external APIs. Replace with explicit null checks and early returns.
 - [x] **354. Strict Mode for Functions TypeScript:** `functions/tsconfig.json` — verify `"strict": true` is set. If not, enable it and fix the resulting errors to enforce null safety at the Cloud Functions layer.
-- [ ] **355. noUncheckedIndexedAccess for Array Safety:** Add `"noUncheckedIndexedAccess": true` to `tsconfig.json`. This catches array index out-of-bounds as a TypeScript error. Fix resulting issues in service layer array processing code.
+- [x] **355. noUncheckedIndexedAccess for Array Safety:** Add `"noUncheckedIndexedAccess": true` to `tsconfig.json`. This catches array index out-of-bounds as a TypeScript error. Fix resulting issues in service layer array processing code.
 
 ---
 
@@ -125,11 +125,11 @@ This document contains **Part 6** of the master production readiness checklist (
 ## Part 6J: Observability & Monitoring (387–393)
 
 - [x] **387. Structured Error Logging in Cloud Functions:** Cloud Functions use `logger.error()` but log unstructured strings. Switch to structured logging: `logger.error({ message: '...', userId, releaseId, errorCode })` — enables BigQuery log analysis and alerting on specific error types.
-- [ ] **388. Client-Side Error Tracking (Sentry):** Add `@sentry/react` and `@sentry/electron` for production error capture. Configure `Sentry.init({ dsn, environment, tracesSampleRate: 0.1 })` in `App.tsx` and Electron main process.
+- [x] **388. Client-Side Error Tracking (Sentry):** Add `@sentry/react` and `@sentry/electron` for production error capture. Configure `Sentry.init({ dsn, environment, tracesSampleRate: 0.1 })` in `App.tsx` and Electron main process.
 - [x] **389. Firebase Performance Monitoring:** Add `firebase/performance` and instrument the 3 most critical user flows: (1) Release creation → distribution submit, (2) AI image generation end-to-end, (3) Agent chat first response time.
-- [ ] **390. Custom BigQuery Dashboard for Revenue Metrics:** Analytics events fire to Firebase Analytics but no BigQuery dashboard visualizes revenue funnel: free → trial → pro → label plan. Build a Looker Studio report on top of the existing `analytics` Cloud Function data.
+- [x] **390. Custom BigQuery Dashboard for Revenue Metrics:** Analytics events fire to Firebase Analytics but no BigQuery dashboard visualizes revenue funnel: free → trial → pro → label plan. Build a Looker Studio report on top of the existing `analytics` Cloud Function data.
 - [x] **391. Health Check Endpoint for Agent Zero Sidecar:** `localhost:50080` sidecar has no documented health endpoint. Add `GET /health` returning `{ status: 'ok', version, uptime }` — enables Electron to surface sidecar status and GCP uptime checks to monitor it.
-- [ ] **392. Alert on High Agent Error Rate:** Add a Cloud Monitoring metric that alerts when agent task failures exceed 10% of requests in a 5-minute window. Route to PagerDuty or Slack `#incidents` channel.
+- [x] **392. Alert on High Agent Error Rate:** Add a Cloud Monitoring metric that alerts when agent task failures exceed 10% of requests in a 5-minute window. Route to PagerDuty or Slack `#incidents` channel.
 - [x] **393. Release Delivery Audit Log:** Every SFTP upload, DDEX submission, and delivery status change should write an immutable audit record to `distribution_audit/{releaseId}/events/{eventId}`. Currently only Firestore document state is tracked, not event history.
 
 ---
@@ -164,7 +164,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **409. UPC Barcode Generation:** Releases require a UPC barcode for physical/digital distribution. Add a UPC generation service that draws from a pre-purchased block of UPCs (stored in Firestore) and assigns one on release creation.
 - [x] **410. Distributor Delivery Receipt Storage:** After SFTP upload, save the raw delivery receipt (SFTP confirmation log, API response) to Firebase Storage at `distribution/receipts/{releaseId}/{distributor}_{timestamp}.txt`. Currently delivery proof is not persisted.
 - [x] **411. Release Takedown Flow:** There is no UI for requesting a release takedown (DMCA counter-notice, voluntary withdrawal). Add a "Request Takedown" action in Release Detail that writes to `distribution_takedowns/{releaseId}` and notifies relevant adapters.
-- [ ] **412. Split Sheet PDF Export:** `SplitSheetEscrow.tsx` manages royalty splits but there is no PDF export for legal documentation. Generate a signed split sheet PDF using `pdfkit` or a Cloud Function and deliver via email + Firebase Storage.
+- [x] **412. Split Sheet PDF Export:** `SplitSheetEscrow.tsx` manages royalty splits but there is no PDF export for legal documentation. Generate a signed split sheet PDF using `pdfkit` or a Cloud Function and deliver via email + Firebase Storage.
 - [x] **413. Distributor API Version Pinning:** Distributor adapters hit live API endpoints without version pinning. If TuneCore or CD Baby releases a breaking API change, all deliveries fail. Add explicit API version headers and a version-check startup probe.
 - [x] **414. Release Metadata Versioning:** When metadata is edited post-distribution, there is no history of what was sent to each distributor. Add a `metadata_history` subcollection under each release that snapshots metadata at every distribution event.
 - [x] **415. DDEX DSP Acknowledgement Processing:** After delivery, DSPs send back acknowledgement ERN messages confirming ingestion. Add a Cloud Function (`processDDEXAck`) that parses inbound ACK messages (stored in a Storage bucket) and updates the release delivery status.

@@ -1,5 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
+import { initSentry, setSentryUser, clearSentryUser } from '@/services/observability/SentryService';
+
+// Item 388: Initialize Sentry before any rendering — captures mount-phase errors
+initSentry();
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
@@ -291,6 +295,15 @@ function useOnboardingRedirect() {
             userProfile: s.userProfile,
         }))
     );
+
+    useEffect(() => {
+        // Item 388: Set/clear Sentry user context on auth state change
+        if (user) {
+            setSentryUser(user.uid, user.email ?? undefined);
+        } else if (!authLoading) {
+            clearSentryUser();
+        }
+    }, [user, authLoading]);
 
     useEffect(() => {
         if (authLoading || !user) return;
