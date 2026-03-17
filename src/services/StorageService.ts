@@ -24,6 +24,40 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
     }
 
     /**
+     * Item 362: Resize and convert an image file to WebP on the client before upload.
+     * Caps at 3000x3000px and converts to WebP (quality 0.9) to reduce bandwidth.
+     * Falls back to original file if canvas API is unavailable.
+     */
+    async optimizeImageForUpload(file: File, maxSize = 3000): Promise<Blob> {
+        return new Promise((resolve) => {
+            if (!file.type.startsWith('image/') || typeof document === 'undefined') {
+                resolve(file);
+                return;
+            }
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                let { width, height } = img;
+                if (width > maxSize || height > maxSize) {
+                    const scale = maxSize / Math.max(width, height);
+                    width = Math.round(width * scale);
+                    height = Math.round(height * scale);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) { resolve(file); return; }
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob((blob) => resolve(blob ?? file), 'image/webp', 0.9);
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+            img.src = url;
+        });
+    }
+
+    /**
      * Uploads a file (Blob or File) directly to Firebase Storage.
      * @param file The file to upload.
      * @param path The storage path (e.g., 'users/uid/ref_images/id').
