@@ -1,0 +1,1111 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Sidebar > matches snapshot in collapsed state 1`] = `
+<nav
+  aria-label="Main navigation"
+  class="hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar z-sidebar"
+>
+  <div
+    class="p-4 border-b border-white/5 flex items-center justify-center"
+  >
+    <button
+      aria-label="Expand Sidebar"
+      class="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+      data-testid="sidebar-toggle"
+    >
+      <svg
+        data-testid="icon-ChevronRight"
+        size="16"
+      />
+    </button>
+  </div>
+  <div
+    class="flex items-center justify-center pt-4 pb-2 border-b border-white/5 border-dashed"
+  >
+    <button
+      aria-label="Open Command Menu"
+      class="p-2 rounded-lg text-gray-400 hover:text-purple-400 hover:bg-white/10 transition-colors shadow-sm"
+      title="Search (⌘K)"
+    >
+      <svg
+        data-testid="icon-Search"
+        size="16"
+      />
+    </button>
+  </div>
+  <div
+    class="flex-1 py-4 space-y-6"
+  >
+    <div
+      data-testid="manager-section"
+    >
+      <div
+        class="space-y-0.5"
+      >
+        <button
+          aria-label="Brand Manager"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-brand"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Briefcase"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Road Manager"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-road"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Users"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Campaign Manager"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-campaign"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Megaphone"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Booking Agent"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-agent"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Network"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Publicist"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-publicist"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Mic"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Creative Director"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-creative"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Palette"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Video Producer"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-video"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Film"
+            size="16"
+          />
+        </button>
+      </div>
+    </div>
+    <div>
+      <div
+        class="space-y-0.5"
+      >
+        <button
+          aria-label="Marketing Department"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-marketing"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Megaphone"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Social Media Department"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-social"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Network"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Legal Department"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-legal"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Scale"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Publishing Department"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-publishing"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Book"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Finance Department"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-finance"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-DollarSign"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Licensing Department"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-licensing"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-FileText"
+            size="16"
+          />
+        </button>
+      </div>
+    </div>
+    <div>
+      <div
+        class="space-y-0.5"
+      >
+        <button
+          aria-label="Merch Tool"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-merch"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-ShoppingBag"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Audio Analyzer"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-audio-analyzer"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Radio"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Workflow Builder"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-workflow"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Network"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Knowledge Base"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-knowledge"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Book"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Memory Agent"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-memory"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-AudioLines"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="History"
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            justify-center px-2
+                        "
+          data-state="closed"
+          data-testid="nav-item-history"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Clock"
+            size="16"
+          />
+        </button>
+      </div>
+    </div>
+  </div>
+  <div
+    class="p-4 border-t border-white/5 mt-auto flex flex-col gap-2 items-center"
+  >
+    <div
+      class="mb-2 w-full flex flex-col gap-2"
+    />
+    <div
+      class="flex flex-col justify-center gap-3"
+    >
+      <div
+        class="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden"
+      >
+        <span
+          class="text-xs font-bold text-white"
+        >
+          S
+        </span>
+      </div>
+      <button
+        aria-label="Reload System"
+        class="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors mt-1"
+        data-testid="logout-btn"
+        title="Reload System"
+      >
+        <svg
+          data-testid="icon-LogOut"
+          size="14"
+        />
+      </button>
+    </div>
+  </div>
+</nav>
+`;
+
+exports[`Sidebar > matches snapshot in expanded state 1`] = `
+<nav
+  aria-label="Main navigation"
+  class="hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar z-sidebar"
+>
+  <div
+    class="p-4 border-b border-white/5 flex items-center justify-between"
+  >
+    <div
+      class="overflow-hidden"
+    >
+      <h2
+        class="text-sm font-semibold text-gray-200 whitespace-nowrap"
+      >
+        Studio Resources
+      </h2>
+      <button
+        aria-label="Return to HQ"
+        class="flex items-center gap-2 text-xs text-gray-500 mt-1 hover:text-white transition-colors"
+        data-testid="return-hq-btn"
+      >
+        <svg
+          data-testid="icon-Layout"
+          size="12"
+        />
+         Return to HQ
+      </button>
+    </div>
+    <button
+      aria-label="Collapse Sidebar"
+      class="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+      data-testid="sidebar-toggle"
+    >
+      <svg
+        data-testid="icon-ChevronLeft"
+        size="16"
+      />
+    </button>
+  </div>
+  <div
+    class="px-4 pt-4 pb-2"
+  >
+    <button
+      aria-label="Open Command Menu"
+      class="w-full flex items-center justify-between px-3 py-2 bg-black/20 hover:bg-white/5 border border-white/5 rounded-lg text-sm text-gray-400 hover:text-gray-200 transition-all group shadow-sm"
+    >
+      <span
+        class="flex items-center gap-2"
+      >
+        <svg
+          class="text-gray-500 group-hover:text-purple-400 transition-colors"
+          data-testid="icon-Search"
+          size="14"
+        />
+        Search...
+      </span>
+      <div
+        class="flex items-center gap-1"
+      >
+        <kbd
+          class="px-1.5 py-[1px] bg-white/5 border border-white/10 rounded text-[10px] font-mono whitespace-nowrap shadow-sm text-gray-500 group-hover:text-gray-300"
+        >
+          ⌘
+        </kbd>
+        <kbd
+          class="px-1.5 py-[1px] bg-white/5 border border-white/10 rounded text-[10px] font-mono whitespace-nowrap shadow-sm text-gray-500 group-hover:text-gray-300"
+        >
+          K
+        </kbd>
+      </div>
+    </button>
+  </div>
+  <div
+    class="flex-1 py-4 space-y-6"
+  >
+    <div
+      data-testid="manager-section"
+    >
+      <h3
+        class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap"
+      >
+        Manager's Office
+      </h3>
+      <div
+        class="space-y-0.5"
+      >
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-brand"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Briefcase"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Brand Manager
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-road"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Users"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Road Manager
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-campaign"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Megaphone"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Campaign Manager
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-agent"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Network"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Booking Agent
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-publicist"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Mic"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Publicist
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-creative"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Palette"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Creative Director
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-video"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Film"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Video Producer
+          </span>
+        </button>
+      </div>
+    </div>
+    <div>
+      <h3
+        class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap"
+      >
+        Departments
+      </h3>
+      <div
+        class="space-y-0.5"
+      >
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-marketing"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Megaphone"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Marketing Department
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-social"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Network"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Social Media Department
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-legal"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Scale"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Legal Department
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-publishing"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Book"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Publishing Department
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-finance"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-DollarSign"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Finance Department
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-licensing"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-FileText"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Licensing Department
+          </span>
+        </button>
+      </div>
+    </div>
+    <div>
+      <h3
+        class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap"
+      >
+        Tools
+      </h3>
+      <div
+        class="space-y-0.5"
+      >
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-merch"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-ShoppingBag"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Merch Tool
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-audio-analyzer"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Radio"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Audio Analyzer
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-workflow"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Network"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Workflow Builder
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-knowledge"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Book"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Knowledge Base
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-memory"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-AudioLines"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            Memory Agent
+          </span>
+        </button>
+        <button
+          class="
+                            w-full flex items-center gap-3 px-4 py-2 text-sm
+                            bolt-interactive relative
+                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
+                            
+                        "
+          data-state="closed"
+          data-testid="nav-item-history"
+          style="--dept-color: var(--color-test);"
+        >
+          <svg
+            class=""
+            data-testid="icon-Clock"
+            size="16"
+          />
+          <span
+            class="truncate"
+          >
+            History
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div
+    class="p-4 border-t border-white/5 mt-auto flex flex-col gap-2 "
+  >
+    <div
+      class="flex items-center gap-3"
+    >
+      <div
+        class="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden"
+      >
+        <span
+          class="text-xs font-bold text-white"
+        >
+          S
+        </span>
+      </div>
+      <div
+        class="flex-1 min-w-0"
+      >
+        <p
+          class="text-sm font-medium text-gray-200 truncate"
+        >
+          Test User
+        </p>
+        <p
+          class="text-xs text-gray-500 truncate"
+          data-testid="user-profile-info"
+        >
+          System Active
+        </p>
+      </div>
+      <button
+        aria-label="Reload System"
+        class="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors "
+        data-testid="logout-btn"
+        title="Reload System"
+      >
+        <svg
+          data-testid="icon-LogOut"
+          size="14"
+        />
+      </button>
+    </div>
+    <div
+      class="mt-4 flex flex-col gap-2 p-2 rounded-lg bg-black/20 border border-white/5"
+    >
+      <div
+        class="flex items-center justify-center"
+      >
+        <div
+          class="flex items-center gap-1 p-1 bg-secondary/50 rounded-full border border-white/10"
+        >
+          <button
+            class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
+            title="Light Mode"
+          >
+            <svg
+              class="w-4 h-4"
+              data-testid="icon-Sun"
+            />
+          </button>
+          <button
+            class="p-1.5 rounded-full transition-all duration-200 bg-white text-purple-600 shadow-sm"
+            title="System Preference"
+          >
+            <svg
+              class="w-4 h-4"
+              data-testid="icon-Monitor"
+            />
+          </button>
+          <button
+            class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
+            title="Dark Mode"
+          >
+            <svg
+              class="w-4 h-4"
+              data-testid="icon-Moon"
+            />
+          </button>
+        </div>
+      </div>
+      <div
+        class="px-2 pt-2 border-t border-white/5"
+      >
+        <div
+          class="flex items-center gap-2 p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
+          data-state="closed"
+        >
+          <svg
+            class="text-gray-500"
+            data-testid="icon-Fingerprint"
+            size="16"
+          />
+          <span
+            class="text-xs text-gray-500 font-medium"
+          >
+            Biometrics Unavailable
+          </span>
+        </div>
+      </div>
+      <div
+        class="px-1 pt-2 border-t border-white/5 flex flex-col gap-2"
+      />
+      <div
+        class="flex items-center justify-center gap-3 pt-2 border-t border-white/5"
+      >
+        <button
+          aria-label="System Observability"
+          class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
+          data-testid="observability-footer-btn"
+          title="System Observability"
+        >
+          <span
+            class="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider"
+          >
+            <svg
+              data-testid="icon-Activity"
+              size="14"
+            />
+             Observability
+          </span>
+        </button>
+        <button
+          aria-label="Settings"
+          class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
+          data-testid="settings-footer-btn"
+          title="Settings"
+        >
+          <span
+            class="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider"
+          >
+            <svg
+              data-testid="icon-Settings"
+              size="14"
+            />
+             Settings
+          </span>
+        </button>
+      </div>
+    </div>
+    <p
+      class="mt-4 text-[10px] text-gray-600 text-center italic"
+    >
+      made by Detroit, for the world.
+    </p>
+  </div>
+</nav>
+`;
