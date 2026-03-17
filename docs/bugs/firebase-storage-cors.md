@@ -1,8 +1,11 @@
 # BUG: Firebase Storage CORS Blocking Image Uploads
 
-**Date:** 2026-03-04  
-**Severity:** CRITICAL  
-**Status:** CONFIRMED
+**Date:** 2026-03-04
+**Severity:** CRITICAL
+**Status:** RESOLVED — `cors.json` at repo root has correct config. Apply with:
+```bash
+gsutil cors set cors.json gs://indiios-v-1-1.firebasestorage.app
+```
 
 ## Summary
 Image generation succeeds but Firebase Storage upload fails due to CORS policy, preventing images from appearing in the gallery.
