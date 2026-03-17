@@ -415,13 +415,15 @@ service cloud.firestore {
       // Anyone authenticated can read posts (public feed)
       allow read: if isAuthenticated();
 
-      // Temporarily relaxed for MVP E2E testing
-      allow create, update, delete: if isAuthenticated();
+      // Item 317: Scoped to post owner — prevents any user from editing/deleting others' posts
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
     }
 
     match /scheduled_posts/{postId} {
-      // Temporarily relaxed for MVP E2E testing
-      allow read, create, update, delete: if isAuthenticated();
+      // Item 317: Scoped to post owner
+      allow read, create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
     }
 
     // ========================================
@@ -489,8 +491,9 @@ service cloud.firestore {
     match /venues/{venueId} {
       // Anyone authenticated can read venue data
       allow read: if isAuthenticated();
-      // Authenticated users can create/update via autonomous agents
-      allow create, update: if isAuthenticated();
+      // Item 318: Scoped to venue creator — prevents venue spam/overwrite by unrelated users
+      allow create: if isVerifiedUser() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.createdBy == request.auth.uid;
       // Only admins can delete
       allow delete: if isAdmin();
     }
