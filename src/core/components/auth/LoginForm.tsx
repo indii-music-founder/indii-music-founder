@@ -115,6 +115,27 @@ export default function LoginForm() {
                     <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Alpha Build • Studio HQ</p>
                 </div>
 
+                {/* Sign In / Create Account tab switcher */}
+                <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-6">
+                    <button
+                        type="button"
+                        onClick={() => setSignUpMode(false)}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${!isSignUpMode ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        <LogIn className="w-4 h-4" />
+                        Sign In
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setSignUpMode(true)}
+                        data-testid="toggle-auth-mode"
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isSignUpMode ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        Create Account
+                    </button>
+                </div>
+
                 <motion.form
                     onSubmit={handleSubmit}
                     className="space-y-4"
@@ -233,18 +254,6 @@ export default function LoginForm() {
                                 </>
                             )}
                             <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                        </button>
-                    </div>
-
-                    {/* Toggle between Sign In and Create Account */}
-                    <div className="text-center pt-1">
-                        <button
-                            type="button"
-                            onClick={toggleMode}
-                            className="text-sm text-purple-400 hover:text-purple-300 transition-colors font-medium"
-                            data-testid="toggle-auth-mode"
-                        >
-                            {isSignUpMode ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
                         </button>
                     </div>
 
