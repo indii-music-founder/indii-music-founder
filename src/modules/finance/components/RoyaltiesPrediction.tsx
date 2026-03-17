@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     AreaChart,
     Area,
@@ -151,14 +151,14 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 
 export function RoyaltiesPrediction() {
     const releases = useStore(useShallow((s) => s.releases ?? []));
-    const [chartData, setChartData] = useState<StreamDataPoint[]>([]);
+    const baseChartData = useMemo(() => buildStreamTimeline(releases.length), [releases.length]);
+    const [refinedData, setRefinedData] = useState<StreamDataPoint[] | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const [modelVersion, setModelVersion] = useState(1);
 
-    // Rebuild timeline when release count changes
-    useEffect(() => {
-        setChartData(buildStreamTimeline(releases.length));
-    }, [releases.length]);
+    // Use refined data if available, otherwise use base data from useMemo
+    // When releases.length changes, baseChartData recalculates and refinedData resets
+    const chartData = refinedData ?? baseChartData;
 
     const totalForecastStreams = useMemo(
         () => chartData.filter((d) => d.forecast != null).reduce((sum, d) => sum + (d.forecast ?? 0), 0),
@@ -172,7 +172,7 @@ export function RoyaltiesPrediction() {
     function handleUpdateModel() {
         setIsUpdating(true);
         requestAnimationFrame(() => {
-            setChartData((prev) => refineTimeline(prev));
+            setRefinedData(refineTimeline(chartData));
             setModelVersion((v) => v + 1);
             setIsUpdating(false);
         });
