@@ -291,13 +291,13 @@ function DealRow({ deal, onUpdateRecouped }: { deal: LabelDeal; onUpdateRecouped
 
 export function LabelDealRecoupment() {
     const [deals, setDeals] = useState<LabelDeal[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [showAddForm, setShowAddForm] = useState(false);
     const uid = auth.currentUser?.uid;
+    const [loading, setLoading] = useState(!!uid);
+    const [showAddForm, setShowAddForm] = useState(false);
 
     // Subscribe to label_deals for this user
     useEffect(() => {
-        if (!uid) { setLoading(false); return; }
+        if (!uid) return;
         const q = query(
             collection(db, 'label_deals'),
             where('userId', '==', uid),

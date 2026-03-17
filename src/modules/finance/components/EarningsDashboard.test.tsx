@@ -42,8 +42,8 @@ describe('EarningsDashboard UI States', () => {
         mockUseFinance({ earningsLoading: true });
         const { container } = render(<EarningsDashboard />);
 
-        // Check for loading spinner class instead of text
-        expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+        // Check for skeleton loading UI (animate-pulse from Skeleton component)
+        expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
         // Ensure content is hidden
         expect(screen.queryByText('Total Revenue')).not.toBeInTheDocument();
     });
