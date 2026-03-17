@@ -136,8 +136,8 @@ This document contains **Part 6** of the master production readiness checklist (
 
 ## Part 6K: PWA & Mobile (394–399)
 
-- [ ] **394. Push Notification Permission Flow:** The app registers a FCM token in `firebase-messaging-sw.js` but there is no user-facing UI that requests `Notification.requestPermission()` and explains the value proposition before the browser prompt appears.
-- [ ] **395. App Install Prompt Analytics:** `src/components/PWAInstallPrompt.tsx` shows the install prompt but does not track `prompt shown`, `prompt accepted`, `prompt dismissed` events to Firebase Analytics. Add events to measure PWA install conversion.
+- [x] **394. Push Notification Permission Flow:** The app registers a FCM token in `firebase-messaging-sw.js` but there is no user-facing UI that requests `Notification.requestPermission()` and explains the value proposition before the browser prompt appears.
+- [x] **395. App Install Prompt Analytics:** `src/components/PWAInstallPrompt.tsx` shows the install prompt but does not track `prompt shown`, `prompt accepted`, `prompt dismissed` events to Firebase Analytics. Add events to measure PWA install conversion.
 - [x] **396. iOS PWA Splash Screen and Status Bar:** `index.html` is missing `<meta name="apple-mobile-web-app-status-bar-style">` and platform-specific splash screen meta tags. iOS PWA installs show a white flash on launch.
 - [x] **397. Viewport Lock for Mobile Modals:** Several modals use `position: fixed` without `touch-action: none` on the scroll container. On iOS Safari, background content scrolls behind an open modal. Add `overscroll-behavior: contain` to modal overlays.
 - [x] **398. Web Share API for Release Links:** Add a Share button on the Release Detail page that calls `navigator.share({ title, url })` on supported browsers — enables artists to share release links directly from the app to social platforms.
@@ -153,7 +153,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **403. Agent Cost Circuit Breaker Production Wiring:** `CostCircuitBreaker.ts` exists but verify it is actually called before every AI generation invocation in production code paths — grep for all Gemini API calls and confirm each passes through the circuit breaker.
 - [ ] **404. Agent Zero Sidecar Health Auto-Restart:** When the sidecar becomes unreachable, `AgentZeroService` marks it offline but Electron has no auto-restart logic. Add `app.on('renderer-process-crashed')` + Docker restart policy and surface a "Restarting AI service…" overlay.
 - [x] **405. Agent Conversation Export:** Add a "Export Chat" button to the agent panel that generates a timestamped JSON or Markdown transcript of the full session — useful for artists reviewing AI-generated strategies.
-- [ ] **406. Agent Tool Use Audit Log:** Every tool invocation (image gen, distribution submit, legal contract review) should write a structured record to `users/{uid}/agent_audit/{id}` — gives artists visibility into what the AI did on their behalf.
+- [x] **406. Agent Tool Use Audit Log:** Every tool invocation (image gen, distribution submit, legal contract review) should write a structured record to `users/{uid}/agent_audit/{id}` — gives artists visibility into what the AI did on their behalf.
 - [ ] **407. Agent Task Queue Persistence:** If the app closes mid-task, queued agent work is lost. Persist the task queue to Firestore `users/{uid}/agent_queue` and resume on next launch.
 
 ---
