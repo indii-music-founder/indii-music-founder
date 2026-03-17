@@ -114,4 +114,56 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
   abstract getAllEarnings(period: DateRange): Promise<DistributorEarnings[]>;
   abstract validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult>;
   abstract validateAssets(assets: ReleaseAssets): Promise<ValidationResult>;
+
+  // Item 413: Distributor API Version Pinning
+  // Subclasses declare their pinned API version; startup probe validates compatibility
+  protected readonly apiVersion: string = 'v1';
+  protected apiBaseUrl?: string;
+
+  /**
+   * Version-check startup probe.
+   * Verifies the distributor API responds with a compatible version before delivery.
+   * Call this during connect() or before the first API request.
+   */
+  protected async checkApiVersion(): Promise<void> {
+    if (!this.apiBaseUrl || !this.credentials?.apiKey) return;
+
+    const versionUrl = `${this.apiBaseUrl.replace(/\/$/, '')}/version`;
+    try {
+      const response = await fetch(versionUrl, {
+        headers: {
+          'Authorization': `Bearer ${this.credentials.apiKey}`,
+          'Accept': 'application/json',
+          'X-Client-Api-Version': this.apiVersion,
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (response.ok) {
+        const data = await response.json() as { version?: string; api_version?: string };
+        const remoteVersion = data.version || data.api_version;
+        if (remoteVersion && !remoteVersion.startsWith(this.apiVersion.replace('v', ''))) {
+          logger.warn(
+            `[${this.name}] API version mismatch: pinned=${this.apiVersion}, remote=${remoteVersion}. ` +
+            'Delivery may fail — check for breaking changes.'
+          );
+        } else {
+          logger.info(`[${this.name}] API version check passed (${this.apiVersion})`);
+        }
+      }
+    } catch {
+      // Version probe is best-effort; don't block delivery if endpoint doesn't exist
+      logger.info(`[${this.name}] API version probe skipped (endpoint not available)`);
+    }
+  }
+
+  /**
+   * Returns standard API headers including the pinned version identifier.
+   */
+  protected getVersionedHeaders(): Record<string, string> {
+    return {
+      'X-Client-Api-Version': this.apiVersion,
+      'X-indiiOS-Client': `indiiOS/${this.apiVersion}`,
+    };
+  }
 }

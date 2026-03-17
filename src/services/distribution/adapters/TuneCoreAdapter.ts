@@ -18,6 +18,9 @@ import { DDEX_CONFIG } from '@/core/config/ddex';
 export class TuneCoreAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'tunecore';
     readonly name = 'TuneCore';
+    // Item 413: Pinned API version — bump intentionally on breaking change
+    protected readonly apiVersion = 'v1';
+    protected readonly apiBaseUrl = 'https://api.tunecore.com/v1';
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'tunecore',
@@ -81,12 +84,12 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
             // 2. Attempt HTTP API delivery when API key is present (Item 211)
             if (this.credentials?.apiKey) {
                 try {
-                    const response = await fetch('https://api.tunecore.com/v1/releases', {
+                    const response = await fetch(`${this.apiBaseUrl}/releases`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${this.credentials.apiKey}`,
                             'Content-Type': 'application/json',
-                            'X-TuneCore-Client': 'indiiOS/1.0',
+                            ...this.getVersionedHeaders(),
                         },
                         body: JSON.stringify({
                             title: metadata.trackTitle,

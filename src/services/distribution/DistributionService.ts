@@ -213,7 +213,10 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 metadata: { ...data, rawReport: report }
             });
 
-            return (await taxService.getProfile(userId))!;
+            // Item 353: replace non-null assertion with explicit null check
+            const profile = await taxService.getProfile(userId);
+            if (!profile) throw new Error('Tax profile not found after certification');
+            return profile;
         } catch (error) {
             logger.error('[Distribution] Tax certification error:', error);
             throw error;
