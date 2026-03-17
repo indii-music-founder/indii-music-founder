@@ -69,6 +69,7 @@ export function ReceiptOCR() {
         setIsDragOver(false);
         const file = e.dataTransfer.files[0];
         if (file) handleFile(file);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {

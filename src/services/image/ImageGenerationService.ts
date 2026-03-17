@@ -4,7 +4,6 @@ import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { firebaseAI } from '../ai/FirebaseAIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { agentZeroService } from '@/services/agent/AgentZeroService';
 import { env } from '@/config/env';
 
 // isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
@@ -293,24 +292,7 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         return withServiceError('ImageGeneration', 'remixImage', async () => {
-            // Call local Python API if in Electron
-            if (typeof window !== 'undefined' && window.electronAPI) {
-                try {
-                    const localResult = await agentZeroService.callApi('/image_edit', {
-                        prompt: options.prompt || 'Create a cinematic remix.',
-                        image: options.contentImage?.data || '',
-                        model: AI_MODELS.IMAGE.GENERATION
-                    });
-
-                    if (localResult?.success && (localResult.url || localResult.data?.url)) {
-                        return { url: localResult.url || localResult.data?.url };
-                    }
-                } catch (localError) {
-                    logger.warn('[ImageGenerationService] Local remix failed, falling back to Cloud Function:', localError);
-                }
-            }
-
-            const editImageFn = httpsCallable(functions, 'editImage');
+                const editImageFn = httpsCallable(functions, 'editImage');
 
             const result = await editImageFn({
                 prompt: options.prompt || 'Create a cinematic remix.',

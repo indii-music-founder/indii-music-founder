@@ -106,7 +106,7 @@ export const EarningsDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState('overview');
 
     // Derive primary distributor ID from first active release deployment
-    const releases = useStore(useShallow((s) => s.releases));
+    const releases = useStore(useShallow((s) => s.releases ?? []));
     const primaryDistributorId = useMemo(() => {
         for (const release of releases) {
             const keys = Object.keys(release.deployments ?? {});

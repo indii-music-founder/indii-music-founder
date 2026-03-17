@@ -195,7 +195,11 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                                     const localItem = historyMap.get(remItem.id);
 
                                     if (localItem && localItem.url) {
-                                        if (localItem.url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
+                                        if (localItem.url.startsWith('blob:') && remItem.url.startsWith('https://')) {
+                                            // Always prefer the durable Storage URL over an ephemeral blob URL.
+                                            // The blob URL was valid for immediate playback but dies on refresh.
+                                            historyMap.set(remItem.id, remItem);
+                                        } else if (localItem.url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
                                             historyMap.set(remItem.id, { ...remItem, url: localItem.url });
                                         } else {
                                             historyMap.set(remItem.id, remItem);
@@ -335,7 +339,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         cameraMovement: 'Static',
         motionStrength: 0.7,
         fps: 24,
-        duration: 5, // Default to 5 seconds
+        duration: 6, // Default to 6 seconds (Veo API rejects 5)
         shotList: [],
         isCoverArtMode: false,
         model: 'pro',

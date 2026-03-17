@@ -44,7 +44,7 @@ export class SidecarService {
             return DockerService.ensureStarted();
         }
 
-        if (this.child && !this.child.killed) {
+        if (this.child && this.child.exitCode === null) {
             log.info('[SidecarService] Sidecar already running');
             return { success: true };
         }
@@ -72,12 +72,12 @@ export class SidecarService {
         if (!app.isPackaged) {
             return DockerService.stopSystem();
         }
-        if (this.child && !this.child.killed) {
+        if (this.child && this.child.exitCode === null) {
             log.info('[SidecarService] Stopping bundled sidecar…');
             this.child.kill('SIGTERM');
             // Give it a moment to shut down gracefully
             await new Promise<void>((resolve) => setTimeout(resolve, 1500));
-            if (!this.child.killed) {
+            if (this.child.exitCode === null) {
                 this.child.kill('SIGKILL');
             }
             this.child = null;
