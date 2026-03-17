@@ -23,7 +23,8 @@ import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 
 // Vertex AI SDK
 // import { VertexAI } from "@google-cloud/vertexai";
-import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream if needed, but primary is Vertex
+// Item 335: GoogleGenAI is loaded lazily inside the handler to reduce cold start time
+// import { GoogleGenAI } from "@google/genai";
 
 // Polyfill for v1 Firebase Functions migrating to modern Node/Gen 2
 if (!process.env.GCLOUD_PROJECT) {
@@ -42,6 +43,9 @@ export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
 
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
+
+// Distribution Functions (Item 415: DDEX DSP Acknowledgement Processing)
+export { processDDEXAck } from './distribution/processDDEXAck';
 
 // Legal Functions (Item 242: PandaDoc Proxy — API key secured server-side)
 export {
@@ -260,7 +264,8 @@ export const triggerVideoJob = functions
         memory: "2GB",
         enforceAppCheck: ENFORCE_APP_CHECK
     })
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+    // Item 352: Explicit return type annotation
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; message: string }> => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -401,7 +406,8 @@ export const triggerLongFormVideoJob = functions
         memory: "2GB",
         enforceAppCheck: ENFORCE_APP_CHECK
     })
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+    // Item 352: Explicit return type annotation
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; message: string }> => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -566,7 +572,8 @@ export const renderVideo = functions
         memory: "2GB",
         enforceAppCheck: ENFORCE_APP_CHECK
     })
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+    // Item 352: Explicit return type annotation
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; renderId: string; message: string }> => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -699,7 +706,8 @@ export const analyzeAudio = analyzeAudioFn();
 
 export const generateSpeech = functions
     .runWith({ secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
-    .https.onCall(async (data: unknown, context) => {
+    // Item 352: Explicit return type annotation
+    .https.onCall(async (data: unknown, context): Promise<{ audioContent: string }> => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
@@ -810,8 +818,8 @@ export const generateContentStream = functions
                     return;
                 }
 
-                // Initialize SDK Client
-                // Initialize SDK Client
+                // Initialize SDK Client (dynamic import — Item 335: reduces cold start)
+                const { GoogleGenAI } = await import("@google/genai");
                 const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
                 // Generate Content Stream
@@ -1161,7 +1169,8 @@ export {
  */
 export const exportUserData = functions
     .runWith({ timeoutSeconds: 120, memory: "512MB" })
-    .https.onCall(async (_data, context) => {
+    // Item 352: Explicit return type annotation
+    .https.onCall(async (_data, context): Promise<Record<string, unknown>> => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -1227,7 +1236,8 @@ export const exportUserData = functions
  */
 export const requestAccountDeletion = functions
     .runWith({ timeoutSeconds: 120, memory: "256MB" })
-    .https.onCall(async (_data, context) => {
+    // Item 352: Explicit return type annotation
+    .https.onCall(async (_data, context): Promise<{ success: boolean; deletedDocs: number; errors: string[]; deletedAt: string }> => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -1348,7 +1358,8 @@ export const enrichFanData = functions
         memory: "1GB",
         enforceAppCheck: ENFORCE_APP_CHECK
     })
-    .https.onCall(async (data: any, context) => {
+    // Item 352: Explicit return type annotation
+    .https.onCall(async (data: any, context): Promise<{ results: unknown[]; metadata: { provider: string; count: number; timestamp: string } }> => {
         // 1. Security Check
         if (!context.auth) {
             throw new functions.https.HttpsError(

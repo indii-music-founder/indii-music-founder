@@ -7,8 +7,58 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install root dependencies
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
+
+      - name: Run unit tests (shard ${{ matrix.shard }}/4)
+        timeout-minutes: 15
+        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/4
+        env:
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
+          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
+
   build-and-deploy:
     runs-on: ubuntu-latest
+    needs: unit-tests
 
     steps:
       - name: Checkout repository
@@ -66,17 +116,6 @@ jobs:
 
       - name: TypeScript type check (Item 343)
         run: pnpm run typecheck
-
-      - name: Run unit tests
-        timeout-minutes: 30
-        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
-        env:
-          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
-          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
-          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
 
       - name: Run E2E tests (critical paths only — Item 345: only if unit tests passed)
         if: success()

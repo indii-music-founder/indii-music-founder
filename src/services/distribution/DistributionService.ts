@@ -2,6 +2,7 @@ import { auth, storage } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import { DistributionTaskDocument, TaxProfileDocument } from '@/types/firestore';
 import { isrcService } from './ISRCService';
+import { upcService } from './UPCService';
 import { taxService } from './TaxService';
 import { Timestamp, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadString } from 'firebase/storage';
@@ -567,6 +568,25 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         // Item 414: Snapshot metadata at the point of submission for post-distribution history
         writeMetadataSnapshot(releaseId, releaseData).catch(() => { /* best-effort */ });
+
+        // Item 409: Auto-assign UPC to releases that are missing one
+        if (!releaseData.upc || releaseData.upc.trim() === '') {
+            try {
+                releaseData.upc = await upcService.assignNextUPC(releaseId);
+                logger.info(`[Distribution] Auto-assigned UPC ${releaseData.upc} to release "${releaseData.title}"`);
+                // Record in registry for audit trail
+                const userId = auth.currentUser?.uid ?? 'unknown';
+                upcService.recordAssignment({
+                    upc: releaseData.upc,
+                    releaseId,
+                    userId,
+                    releaseTitle: releaseData.title,
+                    assignedAt: new Date(),
+                }).catch(err => logger.warn('[Distribution] UPC registry record failed:', err));
+            } catch (upcErr) {
+                logger.warn('[Distribution] Could not auto-assign UPC for release:', upcErr);
+            }
+        }
 
         // Item 408: Auto-assign ISRCs to tracks that are missing them
         if (releaseData.tracks?.length) {
