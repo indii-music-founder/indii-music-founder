@@ -47,6 +47,9 @@ export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 // Distribution Functions (Item 415: DDEX DSP Acknowledgement Processing)
 export { processDDEXAck } from './distribution/processDDEXAck';
 
+// Legal Functions (Item 412: Split Sheet PDF Export)
+export { exportSplitSheet } from './legal/exportSplitSheet';
+
 // Legal Functions (Item 242: PandaDoc Proxy — API key secured server-side)
 export {
     pandadocListTemplates,

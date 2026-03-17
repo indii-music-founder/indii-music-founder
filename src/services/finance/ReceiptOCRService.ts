@@ -1,6 +1,7 @@
 import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
+import type { Content } from '@google/firebase-ai';
 
 export interface ReceiptData {
     amount: number;
@@ -44,7 +45,8 @@ export class ReceiptOCRService {
                 Focus on the TOTAL amount.
             `;
 
-            const contents = [
+            // Item 350: Typed as Content[] to remove `as any` cast
+            const contents: Content[] = [
                 {
                     role: 'user',
                     parts: [
@@ -60,7 +62,7 @@ export class ReceiptOCRService {
             ];
 
             const result = await this.aiService.rawGenerateContent(
-                contents as any,
+                contents,
                 AI_MODELS.TEXT.AGENT, // Corrected from .PRO
                 {
                     responseMimeType: 'application/json'
