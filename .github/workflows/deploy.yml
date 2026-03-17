@@ -64,6 +64,9 @@ jobs:
       - name: Run linting checks
         run: pnpm run lint
 
+      - name: TypeScript type check (Item 343)
+        run: pnpm run typecheck
+
       - name: Run unit tests
         timeout-minutes: 30
         run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
@@ -75,7 +78,8 @@ jobs:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
 
-      - name: Run E2E tests (critical paths only)
+      - name: Run E2E tests (critical paths only — Item 345: only if unit tests passed)
+        if: success()
         run: npm run test:e2e
         env:
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}

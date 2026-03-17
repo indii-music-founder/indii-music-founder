@@ -161,7 +161,7 @@ export default defineConfig({
     exclude: ['temp_comparison_repo_backup']
   },
   build: {
-    chunkSizeWarningLimit: 3000,
+    chunkSizeWarningLimit: 1000, // Item 356: Reduced from 3MB — surface real bundle bloat
     sourcemap: !!process.env.SENTRY_AUTH_TOKEN, // Generate source maps when Sentry upload is configured
     // Use terser for more aggressive console stripping
     minify: 'terser',

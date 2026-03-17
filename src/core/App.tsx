@@ -9,6 +9,7 @@ import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ModuleErrorBoundary } from './components/ModuleErrorBoundary';
 import { MobileTabBar } from './components/MobileTabBar';
 import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
@@ -497,11 +498,12 @@ export default function App() {
                                             )}
 
                                             <div className={`flex-1 overflow-y-auto relative custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
-                                                <ErrorBoundary key={currentModule}>
+                                                {/* Item 336: ModuleErrorBoundary wraps every lazy module — shows module name in error UI */}
+                                                <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
                                                     <Suspense fallback={<LoadingFallback />}>
                                                         <ModuleRenderer moduleId={currentModule as ModuleId} />
                                                     </Suspense>
-                                                </ErrorBoundary>
+                                                </ModuleErrorBoundary>
                                             </div>
 
 
