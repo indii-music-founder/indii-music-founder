@@ -118,7 +118,7 @@ jobs:
         run: pnpm run typecheck
         continue-on-error: true
 
-      - name: Run E2E tests (critical paths only — Item 345: only if unit tests passed)
+      - name: Run E2E tests (critical paths only - Item 345)
         if: success()
         run: npm run test:e2e
         env:
@@ -205,7 +205,7 @@ jobs:
           echo "Deploying studio app to target: app"
           firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive --debug
 
-      - name: Lighthouse CI audit (Item 346: blocking thresholds)
+      - name: "Lighthouse CI audit (Item 346 - blocking thresholds)"
         run: |
           npm install -g @lhci/cli
           lhci autorun --config='{"ci":{"collect":{"url":["https://app.indiios.com/"],"numberOfRuns":1},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}'
