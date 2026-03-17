@@ -12,7 +12,7 @@
  */
 
 import { auth, db } from '@/services/firebase';
-import { collection, addDoc, setDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, setDoc, getDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { events } from '@/core/events';
 import { logger } from '@/utils/logger';
 
@@ -44,6 +44,8 @@ interface QueuedSave {
     collectionPath: string;
     timestamp: number;
     retryCount: number;
+    /** If set, this is an update to an existing doc (used for conflict detection) */
+    docId?: string;
 }
 
 const QUEUE_KEY = 'indiiOS_pendingMetadataSaves';
@@ -141,11 +143,37 @@ class MetadataPersistenceService {
 
             for (const item of queue) {
                 try {
-                    await addDoc(collection(db, item.collectionPath), {
-                        ...item.data,
-                        syncedAt: serverTimestamp(),
-                        originalTimestamp: Timestamp.fromMillis(item.timestamp),
-                    });
+                    // Item 383: Conflict resolution — last-write-wins with timestamp comparison
+                    if (item.docId) {
+                        // Update to existing doc: check server timestamp before overwriting
+                        const existing = await getDoc(doc(db, item.collectionPath, item.docId));
+                        if (existing.exists()) {
+                            const serverData = existing.data();
+                            const serverUpdatedAt = serverData?.updatedAt?.toMillis?.() ?? 0;
+                            if (serverUpdatedAt > item.timestamp) {
+                                // Server is newer — discard local queued write (server wins)
+                                logger.info(
+                                    `[MetadataPersistence] Conflict: discarded stale queued write for ${item.docId} ` +
+                                    `(server=${serverUpdatedAt} > local=${item.timestamp})`
+                                );
+                                successCount++; // Count as resolved, not failed
+                                continue;
+                            }
+                        }
+                        // Local write is newer — apply it
+                        await setDoc(doc(db, item.collectionPath, item.docId), {
+                            ...item.data,
+                            syncedAt: serverTimestamp(),
+                            originalTimestamp: Timestamp.fromMillis(item.timestamp),
+                        }, { merge: true });
+                    } else {
+                        // New document — always add
+                        await addDoc(collection(db, item.collectionPath), {
+                            ...item.data,
+                            syncedAt: serverTimestamp(),
+                            originalTimestamp: Timestamp.fromMillis(item.timestamp),
+                        });
+                    }
                     successCount++;
                 } catch (e) {
                     logger.error(`[MetadataPersistence] Failed to sync queued item:`, e);
@@ -344,6 +372,15 @@ class MetadataPersistenceService {
         if (showToasts) {
             events.emit('SYSTEM_ALERT', { level: 'error', message: '❌ Failed to update data. Please try again.' });
         }
+        // Item 383: Queue update with docId so conflict resolution can compare timestamps on replay
+        this.queueForLater({
+            assetType: 'other',
+            data: enrichedData,
+            collectionPath,
+            docId,
+            timestamp: Date.now(),
+            retryCount: 0,
+        });
         return { success: false, error: 'Update failed after retries', retryable: true };
     }
 
