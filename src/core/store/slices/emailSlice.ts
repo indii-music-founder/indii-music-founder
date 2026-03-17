@@ -148,8 +148,9 @@ export const createEmailSlice: StateCreator<EmailSlice> = (set, get) => ({
             // Auto-sync after connecting
             await emailSync(provider);
             logger.info(`[EmailSlice] Connected ${provider}`);
-        } catch (err: any) {
-            emailSetError(err.message || `Failed to connect ${provider}`);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            emailSetError(message || `Failed to connect ${provider}`);
             logger.error(`[EmailSlice] Connect ${provider} failed:`, err);
         } finally {
             emailSetLoading(false);
@@ -166,7 +167,7 @@ export const createEmailSlice: StateCreator<EmailSlice> = (set, get) => ({
                 emailMessages: get().emailMessages.filter(m => m.provider !== provider),
             });
             logger.info(`[EmailSlice] Disconnected ${provider}`);
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error(`[EmailSlice] Disconnect ${provider} failed:`, err);
         }
     },
@@ -199,8 +200,9 @@ export const createEmailSlice: StateCreator<EmailSlice> = (set, get) => ({
             }
 
             logger.info(`[EmailSlice] Synced ${allMessages.length} messages`);
-        } catch (err: any) {
-            emailSetError(err.message || 'Sync failed');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            emailSetError(message || 'Sync failed');
             logger.error('[EmailSlice] Sync failed:', err);
         } finally {
             emailSetSyncing(false);
@@ -220,8 +222,9 @@ export const createEmailSlice: StateCreator<EmailSlice> = (set, get) => ({
             }
             logger.info('[EmailSlice] Email sent successfully');
             return true;
-        } catch (err: any) {
-            emailSetError(err.message || 'Send failed');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            emailSetError(message || 'Send failed');
             logger.error('[EmailSlice] Send failed:', err);
             return false;
         }

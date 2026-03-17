@@ -36,7 +36,7 @@ export function useFinance() {
         }
 
         setEarningsLoading(true);
-        const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data: any) => {
+        const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data) => {
             if (!isMountedRef.current) return;
             setEarningsSummary(data);
             setEarningsLoading(false);

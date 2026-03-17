@@ -21,7 +21,7 @@ vi.mock('lucide-react', () => ({
 describe('DMCANoticeGenerator', () => {
     it('renders the DMCA notice generator heading', () => {
         render(<DMCANoticeGenerator />);
-        expect(screen.getByText(/DMCA/i)).toBeTruthy();
+        expect(screen.getAllByText(/DMCA/i).length).toBeGreaterThan(0);
     });
 
     it('renders all required form fields for a legally valid notice', () => {

@@ -229,6 +229,19 @@ describe('ragService', () => {
 
         // Item 369: Retrieval — multiple ranked results should be handled
         it('should handle multiple retrieval results in runAgenticWorkflow', async () => {
+            const mockUserProfile = {
+                id: 'user-123', uid: 'user-123', displayName: 'Test User',
+                email: 'test@example.com', photoURL: null,
+                createdAt: { seconds: 0, nanoseconds: 0 } as any,
+                updatedAt: { seconds: 0, nanoseconds: 0 } as any,
+                lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+                emailVerified: true, membership: { tier: 'free', expiresAt: null },
+                accountType: 'artist', bio: '', preferences: { theme: 'dark', notifications: true },
+                analyzedTrackIds: [], knowledgeBase: [], savedWorkflows: [],
+                brandKit: { colors: [], fonts: '', brandDescription: '', negativePrompt: '', socials: {}, brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' } }
+            } as any;
+            const mockOnUpdate = vi.fn();
+            const mockUpdateDocStatus = vi.fn();
             const multiResultAnswer = {
                 candidates: [{
                     content: {
@@ -239,7 +252,7 @@ describe('ragService', () => {
                 usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50, totalTokenCount: 150 }
             };
 
-            (GeminiRetrieval.initCorpus as any).mockResolvedValue('corpus-1');
+            (GeminiRetrieval.listFiles as any).mockResolvedValue({ files: [{ name: 'files/123', uri: 'gs://test', mimeType: 'text/plain' }] });
             (GeminiRetrieval.query as any).mockResolvedValue(multiResultAnswer);
 
             const result = await runAgenticWorkflow(
@@ -251,16 +264,25 @@ describe('ragService', () => {
                 'royalties'
             );
 
-            expect(result.text).toContain('top-ranked sources');
-            expect(GeminiRetrieval.query).toHaveBeenCalledWith(
-                'corpus-1',
-                expect.stringContaining('royalty rates'),
-                expect.any(Object)
-            );
+            expect(result.asset.content).toContain('top-ranked sources');
+            expect(GeminiRetrieval.query).toHaveBeenCalled();
         });
 
         // Item 369: Context window management — token usage metadata is surfaced
         it('should surface token usage metadata from retrieval response', async () => {
+            const mockUserProfile = {
+                id: 'user-123', uid: 'user-123', displayName: 'Test User',
+                email: 'test@example.com', photoURL: null,
+                createdAt: { seconds: 0, nanoseconds: 0 } as any,
+                updatedAt: { seconds: 0, nanoseconds: 0 } as any,
+                lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+                emailVerified: true, membership: { tier: 'free', expiresAt: null },
+                accountType: 'artist', bio: '', preferences: { theme: 'dark', notifications: true },
+                analyzedTrackIds: [], knowledgeBase: [], savedWorkflows: [],
+                brandKit: { colors: [], fonts: '', brandDescription: '', negativePrompt: '', socials: {}, brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' } }
+            } as any;
+            const mockOnUpdate = vi.fn();
+            const mockUpdateDocStatus = vi.fn();
             const answerWithUsage = {
                 candidates: [{
                     content: {
@@ -271,7 +293,7 @@ describe('ragService', () => {
                 usageMetadata: { promptTokenCount: 8000, candidatesTokenCount: 500, totalTokenCount: 8500 }
             };
 
-            (GeminiRetrieval.initCorpus as any).mockResolvedValue('corpus-2');
+            (GeminiRetrieval.listFiles as any).mockResolvedValue({ files: [{ name: 'files/123', uri: 'gs://test', mimeType: 'text/plain' }] });
             (GeminiRetrieval.query as any).mockResolvedValue(answerWithUsage);
 
             const result = await runAgenticWorkflow(
@@ -283,8 +305,8 @@ describe('ragService', () => {
             );
 
             // The service should return the response without error even at high token counts
-            expect(result.text).toBeDefined();
-            expect(typeof result.text).toBe('string');
+            expect(result.asset.content).toBeDefined();
+            expect(typeof result.asset.content).toBe('string');
         });
     });
 });

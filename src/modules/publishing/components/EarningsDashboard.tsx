@@ -8,9 +8,12 @@ import { SkeletonText, Skeleton } from '@/components/ui/Skeleton';
 // Compute default period outside component to satisfy react-compiler purity rules
 const DEFAULT_PERIOD = (() => {
     const now = Date.now();
-    const endDate = new Date(now).toISOString().split('T')[0];
-    const startDate = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    return { startDate, endDate };
+    const endIso = new Date(now).toISOString();
+    const startIso = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+    return {
+        startDate: startIso.substring(0, startIso.indexOf('T')),
+        endDate: endIso.substring(0, endIso.indexOf('T')),
+    };
 })();
 
 // Industry-average DSP revenue share (2024 IFPI Global Music Report)
@@ -46,7 +49,7 @@ export const EarningsDashboard: React.FC = () => {
     const platformBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byPlatform && earnings.byPlatform.length > 0) {
-            return earnings.byPlatform.map((p: { platformName: string; revenue: number }) => ({
+            return earnings.byPlatform.map((p) => ({
                 label: p.platformName,
                 revenue: p.revenue,
                 percentage: Math.round((p.revenue / earnings.totalNetRevenue) * 100),
@@ -65,7 +68,7 @@ export const EarningsDashboard: React.FC = () => {
     const territoryBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byTerritory && earnings.byTerritory.length > 0) {
-            return earnings.byTerritory.map((t: { territoryName: string; revenue: number }) => ({
+            return earnings.byTerritory.map((t) => ({
                 label: t.territoryName,
                 revenue: t.revenue,
                 percentage: Math.round((t.revenue / earnings.totalNetRevenue) * 100),
@@ -150,7 +153,7 @@ export const EarningsDashboard: React.FC = () => {
                 <EarningsBreakdown
                     byPlatform={platformBreakdown}
                     byTerritory={territoryBreakdown}
-                    byTrack={earnings.byRelease?.map((r: { releaseName: string; revenue: number }) => ({
+                    byTrack={earnings.byRelease?.map((r) => ({
                         label: r.releaseName,
                         revenue: r.revenue,
                         percentage: earnings.totalNetRevenue > 0

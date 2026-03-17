@@ -36,7 +36,7 @@ import {
     ExternalLink,
     ScrollText,
 } from 'lucide-react';
-import { useStore } from '@/core/store';
+import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -139,7 +139,7 @@ const SelectDropdown: React.FC<{
 // ---------------------------------------------------------------------------
 
 const ProfileSection: React.FC = () => {
-    const { user, userProfile } = useStore(useShallow((s: any) => ({
+    const { user, userProfile } = useStore(useShallow((s: StoreState) => ({
         user: s.user,
         userProfile: s.userProfile,
     })));
@@ -173,7 +173,7 @@ const ProfileSection: React.FC = () => {
             setDirty(false);
             showToast('Profile updated', 'success');
             logger.info('[Settings] Profile updated');
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error('[Settings] Profile update failed:', err);
             showToast('Failed to update profile', 'error');
         } finally {
@@ -311,8 +311,9 @@ const ConnectionsSection: React.FC = () => {
             await EmailService.connectAccount(provider);
             await loadAccounts();
             showToast(`${provider === 'gmail' ? 'Gmail' : 'Outlook'} connected`, 'success');
-        } catch (err: any) {
-            showToast(err.message || 'Connection failed', 'error');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            showToast(message || 'Connection failed', 'error');
         } finally {
             setConnecting(null);
         }
@@ -323,8 +324,9 @@ const ConnectionsSection: React.FC = () => {
             await EmailService.disconnectAccount(provider);
             await loadAccounts();
             showToast(`${provider === 'gmail' ? 'Gmail' : 'Outlook'} disconnected`, 'success');
-        } catch (err: any) {
-            showToast(err.message || 'Disconnection failed', 'error');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            showToast(message || 'Disconnection failed', 'error');
         }
     };
 
@@ -446,7 +448,7 @@ const ConnectionsSection: React.FC = () => {
 // ---------------------------------------------------------------------------
 
 const NotificationsSection: React.FC = () => {
-    const { userProfile, updatePreferences } = useStore(useShallow((s: any) => ({
+    const { userProfile, updatePreferences } = useStore(useShallow((s: StoreState) => ({
         userProfile: s.userProfile,
         updatePreferences: s.updatePreferences,
     })));
@@ -534,7 +536,7 @@ const NotificationsSection: React.FC = () => {
 // ---------------------------------------------------------------------------
 
 const AppearanceSection: React.FC = () => {
-    const { userProfile, updatePreferences, setTheme: storeSetTheme } = useStore(useShallow((s: any) => ({
+    const { userProfile, updatePreferences, setTheme: storeSetTheme } = useStore(useShallow((s: StoreState) => ({
         userProfile: s.userProfile,
         updatePreferences: s.updatePreferences,
         setTheme: s.setTheme,
@@ -602,7 +604,7 @@ const AuditLogDashboard = React.lazy(() =>
 );
 
 const SecuritySection: React.FC = () => {
-    const { logout, user, userProfile } = useStore(useShallow((s: any) => ({
+    const { logout, user, userProfile } = useStore(useShallow((s: StoreState) => ({
         logout: s.logout,
         user: s.user,
         userProfile: s.userProfile,
@@ -616,7 +618,7 @@ const SecuritySection: React.FC = () => {
         try {
             await logout();
             showToast('Signed out successfully', 'success');
-        } catch (err: any) {
+        } catch (err: unknown) {
             showToast('Sign out failed', 'error');
         }
     };
@@ -648,7 +650,8 @@ const SecuritySection: React.FC = () => {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `indiios-data-export-${new Date().toISOString().split('T')[0]}.json`;
+            const isoDate = new Date().toISOString();
+            link.download = `indiios-data-export-${isoDate.substring(0, isoDate.indexOf('T'))}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -656,7 +659,7 @@ const SecuritySection: React.FC = () => {
 
             showToast('Data exported successfully', 'success');
             logger.info('[Settings] Data export completed');
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error('[Settings] Data export failed:', err);
             showToast('Export failed', 'error');
         } finally {
