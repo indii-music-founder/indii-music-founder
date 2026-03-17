@@ -80,7 +80,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **360. Missing React.memo on High-Rerender Components:** `src/core/components/Sidebar.tsx` re-renders on every store update due to shallow subscription to 6 state slices. Wrap `NavItem` in `React.memo` and verify `useShallow` is correctly preventing parent re-renders.
 - [ ] **361. Wavesurfer.js Deferred Init:** `wavesurfer.js@7.11` initializes on component mount. Move init to first-play event to avoid ~50ms blocking during audio module load.
 - [x] **362. Image Optimization Pipeline:** Cover art uploads in the distribution flow store raw user images (potentially 10MB+). Add client-side canvas resize to 3000×3000px max and convert to WebP before Firebase Storage upload.
-- [ ] **363. Core Web Vitals: LCP Target < 2.5s:** Run Lighthouse against production build. The main dashboard module is eagerly loaded — verify `<Suspense>` fallback shows within 100ms. Add `fetchpriority="high"` to hero image assets.
+- [x] **363. Core Web Vitals: LCP Target < 2.5s:** Run Lighthouse against production build. The main dashboard module is eagerly loaded — verify `<Suspense>` fallback shows within 100ms. Add `fetchpriority="high"` to hero image assets.
 
 ---
 
@@ -126,7 +126,7 @@ This document contains **Part 6** of the master production readiness checklist (
 
 - [x] **387. Structured Error Logging in Cloud Functions:** Cloud Functions use `logger.error()` but log unstructured strings. Switch to structured logging: `logger.error({ message: '...', userId, releaseId, errorCode })` — enables BigQuery log analysis and alerting on specific error types.
 - [ ] **388. Client-Side Error Tracking (Sentry):** Add `@sentry/react` and `@sentry/electron` for production error capture. Configure `Sentry.init({ dsn, environment, tracesSampleRate: 0.1 })` in `App.tsx` and Electron main process.
-- [ ] **389. Firebase Performance Monitoring:** Add `firebase/performance` and instrument the 3 most critical user flows: (1) Release creation → distribution submit, (2) AI image generation end-to-end, (3) Agent chat first response time.
+- [x] **389. Firebase Performance Monitoring:** Add `firebase/performance` and instrument the 3 most critical user flows: (1) Release creation → distribution submit, (2) AI image generation end-to-end, (3) Agent chat first response time.
 - [ ] **390. Custom BigQuery Dashboard for Revenue Metrics:** Analytics events fire to Firebase Analytics but no BigQuery dashboard visualizes revenue funnel: free → trial → pro → label plan. Build a Looker Studio report on top of the existing `analytics` Cloud Function data.
 - [x] **391. Health Check Endpoint for Agent Zero Sidecar:** `localhost:50080` sidecar has no documented health endpoint. Add `GET /health` returning `{ status: 'ok', version, uptime }` — enables Electron to surface sidecar status and GCP uptime checks to monitor it.
 - [ ] **392. Alert on High Agent Error Rate:** Add a Cloud Monitoring metric that alerts when agent task failures exceed 10% of requests in a 5-minute window. Route to PagerDuty or Slack `#incidents` channel.
