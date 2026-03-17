@@ -33,6 +33,8 @@ interface ScheduledPostDoc {
     scheduledAt: Timestamp;
     status: 'pending' | 'delivering' | 'delivered' | 'failed';
     igUserId?: string;
+    retryCount?: number;
+    nextRetryAt?: Timestamp;
 }
 
 interface PlatformToken {
@@ -143,21 +145,33 @@ export const deliverScheduledPosts = onSchedule({
             .limit(20)
             .get();
 
-        if (pendingSnap.empty) {
+        // Item 384: Retry failed posts with exponential backoff (up to 3 attempts)
+        const retrySnap = await db.collection('scheduledPosts')
+            .where('status', '==', 'failed')
+            .where('retryCount', '<', 3)
+            .where('nextRetryAt', '<=', now)
+            .limit(10)
+            .get();
+
+        const allDocs = [...pendingSnap.docs, ...retrySnap.docs];
+
+        if (allDocs.length === 0) {
             logger.info('[deliverScheduledPosts] No pending posts to deliver.');
             return;
         }
 
-        logger.info(`[deliverScheduledPosts] Processing ${pendingSnap.size} scheduled posts.`);
+        logger.info(`[deliverScheduledPosts] Processing ${pendingSnap.size} pending + ${retrySnap.size} retry posts.`);
 
-        for (const docSnap of pendingSnap.docs) {
+        for (const docSnap of allDocs) {
             const post = docSnap.data() as ScheduledPostDoc;
             const postRef = docSnap.ref;
 
             // Atomic claim: mark as 'delivering' to prevent duplicate delivery
             const claimed = await db.runTransaction(async tx => {
                 const fresh = await tx.get(postRef);
-                if (fresh.data()?.status !== 'pending') return false;
+                const freshStatus = fresh.data()?.status;
+                // Allow claiming pending posts or failed posts ready for retry
+                if (freshStatus !== 'pending' && freshStatus !== 'failed') return false;
                 tx.update(postRef, { status: 'delivering', deliveryStartedAt: FieldValue.serverTimestamp() });
                 return true;
             });
@@ -193,18 +207,36 @@ export const deliverScheduledPosts = onSchedule({
                     result = { success: false, error: `Unsupported platform: ${post.platform}` };
             }
 
-            await postRef.update({
-                status: result.success ? 'delivered' : 'failed',
-                platformPostId: result.postId || null,
-                deliveryError: result.error || null,
-                deliveredAt: FieldValue.serverTimestamp(),
-            });
+            if (result.success) {
+                await postRef.update({
+                    status: 'delivered',
+                    platformPostId: result.postId || null,
+                    deliveryError: null,
+                    deliveredAt: FieldValue.serverTimestamp(),
+                });
+            } else {
+                // Item 384: Exponential backoff retry — 2^retryCount minutes (2, 4, 8 min)
+                const currentRetry = (post.retryCount ?? 0) + 1;
+                const backoffMs = Math.pow(2, currentRetry) * 60 * 1000;
+                const nextRetry = new Timestamp(
+                    Math.floor((Date.now() + backoffMs) / 1000), 0
+                );
+                await postRef.update({
+                    status: currentRetry >= 3 ? 'failed' : 'failed',
+                    platformPostId: null,
+                    deliveryError: result.error || null,
+                    retryCount: currentRetry,
+                    nextRetryAt: currentRetry < 3 ? nextRetry : FieldValue.delete(),
+                    deliveredAt: currentRetry >= 3 ? FieldValue.serverTimestamp() : null,
+                });
+            }
 
             logger.info(
                 `[deliverScheduledPosts] Post ${docSnap.id} (${post.platform}): ${result.success ? 'delivered' : 'failed'} — ${result.error || result.postId}`
             );
         }
     } catch (error) {
-        logger.error('[deliverScheduledPosts] Error during scheduled delivery:', error);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        logger.error({ message: '[deliverScheduledPosts] Error during scheduled delivery', errorCode: 'DELIVERY_FAILED', detail: errMsg });
     }
 });

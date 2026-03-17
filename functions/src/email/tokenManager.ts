@@ -13,6 +13,10 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { defineSecret } from "firebase-functions/params";
+import { enforceRateLimit } from "../lib/rateLimit";
+
+// Item 328: Token exchange rate limit — 20 req/min per UID
+const TOKEN_RATE_LIMIT = { maxRequests: 20, windowMs: 60 * 1000 };
 
 // ---------------------------------------------------------------------------
 // Secrets (stored in GCP Secret Manager)
@@ -54,6 +58,9 @@ export const emailExchangeToken = functions
         }
 
         const userId = context.auth.uid;
+
+        // Item 328: Rate limit token exchange to 20 req/min per UID
+        await enforceRateLimit(userId, "emailExchangeToken", TOKEN_RATE_LIMIT);
 
         try {
             let tokens: any;
@@ -119,6 +126,9 @@ export const emailRefreshToken = functions
         }
 
         const userId = context.auth.uid;
+
+        // Item 328: Rate limit token refresh to 20 req/min per UID
+        await enforceRateLimit(userId, "emailRefreshToken", TOKEN_RATE_LIMIT);
 
         try {
             // Use provided refresh token or fall back to stored one

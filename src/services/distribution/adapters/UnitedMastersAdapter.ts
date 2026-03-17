@@ -28,6 +28,9 @@ const UM_API_BASE = 'https://api.unitedmasters.com/v1';
 export class UnitedMastersAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'unitedmasters';
     readonly name = 'UnitedMasters';
+    // Item 413: Pinned API version — bump intentionally on breaking change
+    protected readonly apiVersion = 'v1';
+    protected readonly apiBaseUrl = UM_API_BASE;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'unitedmasters',

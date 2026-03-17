@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
+import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard, Loader2, Download } from 'lucide-react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 /* ================================================================== */
@@ -26,6 +26,9 @@ export function SplitSheetEscrow() {
     const [released, setReleased] = useState(false);
     const [releasing, setReleasing] = useState(false);
     const [releaseError, setReleaseError] = useState<string | null>(null);
+    // Item 412: Split Sheet PDF Export state
+    const [exporting, setExporting] = useState(false);
+    const [exportUrl, setExportUrl] = useState<string | null>(null);
 
     const signedCount = collaborators.filter(c => c.signed).length;
     const totalCount = collaborators.length;
@@ -74,17 +77,60 @@ export function SplitSheetEscrow() {
         }
     };
 
+    /**
+     * Item 412: Export the split sheet as a print-ready HTML document
+     * via the exportSplitSheet Cloud Function, then open the signed URL.
+     */
+    const handleExportSplitSheet = async () => {
+        if (collaborators.length === 0 || exporting) return;
+        setExporting(true);
+        setExportUrl(null);
+        try {
+            const functions = getFunctions();
+            const exportFn = httpsCallable<
+                { splitSheetId: string; releaseTitle: string; collaborators: typeof collaborators; totalEscrowAmount?: number },
+                { url: string; storagePath: string }
+            >(functions, 'exportSplitSheet');
+            const result = await exportFn({
+                splitSheetId: `ss_${Date.now()}`,
+                releaseTitle: 'Untitled Release',
+                collaborators,
+                totalEscrowAmount: escrowAmount || undefined,
+            });
+            setExportUrl(result.data.url);
+            window.open(result.data.url, '_blank');
+        } catch (err: any) {
+            console.error('[SplitSheetEscrow] Export failed:', err);
+        } finally {
+            setExporting(false);
+        }
+    };
+
     return (
         <div className="space-y-5 pb-6">
             {/* Header */}
-            <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                    <Lock size={16} className="text-emerald-400" />
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                        <Lock size={16} className="text-emerald-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-base font-black text-white uppercase tracking-tight">Split Sheet Escrow</h2>
+                        <p className="text-[10px] text-gray-500">Funds locked until all collaborators sign off</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-base font-black text-white uppercase tracking-tight">Split Sheet Escrow</h2>
-                    <p className="text-[10px] text-gray-500">Funds locked until all collaborators sign off</p>
-                </div>
+                {/* Item 412: Export split sheet as printable HTML/PDF */}
+                {collaborators.length > 0 && (
+                    <button
+                        onClick={handleExportSplitSheet}
+                        disabled={exporting}
+                        title="Export split sheet as printable document"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-gray-300 transition-colors disabled:opacity-50"
+                    >
+                        {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                        {exporting ? 'Exporting…' : 'Export PDF'}
+                    </button>
+                )}
             </div>
 
             {released ? (

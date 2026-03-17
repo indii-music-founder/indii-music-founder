@@ -108,6 +108,16 @@ export class AIResponseCache {
         if (typeof window === 'undefined') return;
 
         try {
+            // Item 386: Guard against low IndexedDB quota before writing
+            if (navigator.storage?.estimate) {
+                const { quota = 0, usage = 0 } = await navigator.storage.estimate();
+                const remaining = quota - usage;
+                if (remaining < 50 * 1024 * 1024) { // < 50MB remaining
+                    console.warn('[AIResponseCache] IndexedDB quota low (<50MB remaining) — skipping cache write');
+                    return;
+                }
+            }
+
             const key = await this.generateKey(prompt, model, config);
             const db = await this.dbPromise;
 

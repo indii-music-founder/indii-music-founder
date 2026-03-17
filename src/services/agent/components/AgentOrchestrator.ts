@@ -151,4 +151,82 @@ export class AgentOrchestrator {
             return 'generalist';
         }
     }
+
+    /**
+     * Item 402: Multi-agent parallel task fan-out.
+     * Determines whether a user request can be decomposed into independent subtasks
+     * that should execute simultaneously across multiple specialist agents.
+     *
+     * Returns a list of { agentId, subtask } pairs. If only one agent is needed,
+     * returns a single-item array (callers use Promise.all regardless).
+     */
+    async determineFanOut(
+        context: AgentContext,
+        userQuery: string
+    ): Promise<Array<{ agentId: string; subtask: string }>> {
+        const validation = InputSanitizer.validate(userQuery);
+        if (!validation.valid) return [{ agentId: 'generalist', subtask: userQuery }];
+
+        const specializedAgents = agentRegistry.getAll().map(a => ({
+            id: a.id,
+            name: a.name,
+            description: a.description
+        }));
+
+        const prompt = `
+        You are indii, the AI orchestration system for indiiOS.
+        Analyze this user request and determine if it contains INDEPENDENT subtasks
+        that can be executed simultaneously by different specialist agents.
+
+        AVAILABLE AGENTS:
+        ${specializedAgents.map(a => `- "${a.id}" (${a.name}): ${a.description}`).join('\n')}
+
+        USER REQUEST: "${InputSanitizer.sanitize(userQuery)}"
+
+        Return a JSON array of subtasks. If the request is for a single agent, return one item.
+        For requests that span multiple domains (e.g. "generate press release + social posts + campaign brief"),
+        decompose into independent tasks.
+
+        Output format:
+        [
+          { "agentId": "string", "subtask": "specific instruction for this agent" },
+          ...
+        ]
+
+        Rules:
+        - Only fan out when subtasks are TRULY independent (no data dependency between them).
+        - Maximum 4 parallel tasks to control cost.
+        - Prefer fewer tasks if uncertain.
+        `;
+
+        try {
+            const res = await AI.generateContent(
+                [{ role: 'user', parts: [{ text: prompt }] }],
+                AI_MODELS.TEXT.FAST,
+                { ...AI_CONFIG.THINKING.LOW, responseMimeType: 'application/json' }
+            );
+
+            const textResponse = res.response.text() || '[]';
+            const parsed = JSON.parse(textResponse) as Array<{ agentId: string; subtask: string }>;
+
+            if (!Array.isArray(parsed) || parsed.length === 0) {
+                return [{ agentId: 'generalist', subtask: userQuery }];
+            }
+
+            const validAgentIds = new Set([...specializedAgents.map(a => a.id), 'generalist']);
+            const validated = parsed
+                .slice(0, 4) // Cap at 4 parallel tasks
+                .map(item => ({
+                    agentId: validAgentIds.has(item.agentId) ? item.agentId : 'generalist',
+                    subtask: typeof item.subtask === 'string' ? item.subtask : userQuery,
+                }));
+
+            logger.info(`[AgentOrchestrator] Fan-out: ${validated.length} parallel tasks`, validated.map(v => v.agentId));
+            return validated;
+
+        } catch (e) {
+            logger.warn('[indii:Orchestrator] Fan-out decomposition failed, single agent fallback.', e);
+            return [{ agentId: 'generalist', subtask: userQuery }];
+        }
+    }
 }

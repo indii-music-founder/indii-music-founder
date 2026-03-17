@@ -115,8 +115,17 @@ export interface ElectronAPI {
         validateXSD: (xmlContent: string) => Promise<DistributionTypes.IPCResponse<{ valid: boolean; mode: string; errors: string[]; warnings: string[]; summary: string }>>;
         listRemoteFiles: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string[]>;
         downloadRemoteFile: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string>;
+        // Item 350: Typed submitRelease + onSubmitProgress (replaces `as any` casts)
+        submitRelease: (releaseData: unknown) => Promise<{ success: boolean; error?: string; report?: { sftp_skipped?: boolean } }>;
+        onSubmitProgress: (callback: (progress: number) => void) => () => void;
     };
     on: (channel: string, callback: (...args: unknown[]) => void) => () => void;
+    // Item 351: Explicit invoke signature to remove @ts-ignore in usePowerState and UpdaterMonitor
+    invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
+    updater: {
+        check: () => Promise<{ available: boolean; version?: string; error?: string }>;
+        install: () => Promise<void>;
+    };
 }
 
 declare global {

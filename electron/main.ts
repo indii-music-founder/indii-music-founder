@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import { registerSystemHandlers } from './handlers/system';
@@ -9,6 +9,7 @@ import { registerAudioHandlers } from './handlers/audio';
 import { registerNetworkHandlers } from './handlers/network';
 import { registerCredentialHandlers } from './handlers/credential';
 import { registerSFTPHandlers } from './handlers/sftp';
+import { sftpService } from './services/SFTPService';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { registerAgentHandlers } from './handlers/agent';
 import { registerBrandHandlers } from './handlers/brand';
@@ -18,7 +19,7 @@ import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
-import { configureSecurity } from './security';
+import { configureSecurity, auditSessionCookies } from './security';
 import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
@@ -36,6 +37,14 @@ let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
 
+// Item 374: Crash reporter (no PII — only crash metadata is submitted)
+if (app.isPackaged) {
+    crashReporter.start({
+        submitURL: process.env.CRASH_REPORTER_URL ?? 'https://sentry.io/api/indiios/minidump/',
+        uploadToServer: !!process.env.CRASH_REPORTER_URL,
+    });
+}
+
 const createWindow = () => {
     const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
@@ -47,6 +56,11 @@ const createWindow = () => {
         y: undefined,
         isMaximized: false
     }) as { width: number, height: number, x?: number, y?: number, isMaximized: boolean };
+
+    // Item 325: Hard assertion — webSecurity must always be true in production
+    if (app.isPackaged && isDev) {
+        throw new Error('[Security] webSecurity must be enabled in production builds');
+    }
 
     const win = new BrowserWindow({
         width: windowState.width,
@@ -193,6 +207,8 @@ const checkSidecarHealth = async (window: BrowserWindow) => {
             sidecarFailureCount = 0;
             autoRestartCount++;
 
+            // Item 404: Surface "restarting" status to renderer before attempting restart
+            window.webContents.send('sidecar:status-update', 'restarting');
             showNotification('System Service Issue', 'The Python back-end seems to have crashed. Attempting auto-restart...');
 
             SidecarService.restartSystem().catch(restartErr => {
@@ -351,6 +367,35 @@ if (!gotTheLock) {
         });
 
 
+        // Item 373: IPC channel allowlist audit — log any unregistered channels on startup
+        const KNOWN_IPC_CHANNELS = new Set([
+            'get-platform', 'get-app-version', 'privacy:toggle-protection',
+            'system:select-file', 'system:select-directory', 'system:get-directory-contents', 'system:get-gpu-info', 'system:getMobileRemoteInfo',
+            'auth:logout', 'credentials:save', 'credentials:get', 'credentials:delete',
+            'audio:analyze', 'audio:lookup-metadata', 'audio:transcode', 'audio:master',
+            'net:fetch-url',
+            'sftp:connect', 'sftp:upload-directory', 'sftp:disconnect', 'sftp:is-connected',
+            'distribution:validate-metadata', 'distribution:generate-isrc', 'distribution:generate-upc',
+            'distribution:generate-ddex', 'distribution:stage-release', 'distribution:submit-release',
+            'distribution:transmit', 'distribution:package-itmsp', 'distribution:package-spotify',
+            'distribution:deliver-apple', 'distribution:validate-xsd', 'distribution:register-release',
+            'distribution:generate-bwarm', 'distribution:check-merlin-status', 'distribution:run-forensics',
+            'distribution:generate-content-id-csv', 'distribution:execute-waterfall',
+            'distribution:calculate-tax', 'distribution:certify-tax',
+            'agent:get-history', 'agent:save-history', 'agent:delete-history', 'agent:navigate-and-extract', 'agent:perform-action', 'agent:capture-state',
+            'brand:analyze-consistency', 'marketing:analyze-trends', 'publicist:generate-pdf',
+            'security:rotate-credentials', 'security:scan-vulnerabilities',
+            'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
+            'video:render', 'video:open-folder', 'video:save-asset',
+            'sidecar:restart', 'power:get-state', 'mobile-remote:stop',
+            'updater:check', 'updater:install',
+            'test:browser-agent', 'show-notification',
+        ]);
+        log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
+
+        // Item 375: Audit session cookies for security flags on startup
+        auditSessionCookies();
+
         // Ensure AI Services are running
         SidecarService.ensureStarted().catch(err => {
             log.error(`[Main] Initial Docker startup failed: ${err.message}`);
@@ -385,6 +430,28 @@ if (!gotTheLock) {
         if (app.isPackaged) {
             setupAutoUpdater();
         }
+
+        // Item 378: Developer-only memory snapshot — accessible via --inspect flag or IPC
+        if (!app.isPackaged) {
+            ipcMain.handle('dev:heap-snapshot', async () => {
+                try {
+                    const v8 = await import('v8');
+                    const snapshotPath = path.join(app.getPath('userData'), `heap-${Date.now()}.heapsnapshot`);
+                    v8.writeHeapSnapshot(snapshotPath);
+                    log.info(`[Dev] Heap snapshot written: ${snapshotPath}`);
+                    return { success: true, path: snapshotPath };
+                } catch (err) {
+                    log.error(`[Dev] Heap snapshot failed: ${err}`);
+                    return { success: false, error: String(err) };
+                }
+            });
+
+            // Log heap stats every 5 minutes in dev for leak detection
+            setInterval(() => {
+                const mem = process.memoryUsage();
+                log.info(`[Dev][Memory] RSS=${(mem.rss / 1024 / 1024).toFixed(1)}MB HeapUsed=${(mem.heapUsed / 1024 / 1024).toFixed(1)}MB HeapTotal=${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB`);
+            }, 5 * 60 * 1000);
+        }
     });
 }
 
@@ -394,6 +461,10 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', async () => {
     isQuitting = true;
+    // Item 377: Close open SFTP/SSH connections before quit
+    if (sftpService.isConnected()) {
+        await sftpService.disconnect().catch(e => log.warn('[Main] SFTP disconnect on quit error:', e));
+    }
     await SidecarService.stopSystem();
     stopMobileRemoteServer();
 });

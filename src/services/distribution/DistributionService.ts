@@ -1,9 +1,12 @@
-import { auth } from '@/services/firebase';
+import { auth, storage } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import { DistributionTaskDocument, TaxProfileDocument } from '@/types/firestore';
 import { isrcService } from './ISRCService';
+import { upcService } from './UPCService';
 import { taxService } from './TaxService';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadString } from 'firebase/storage';
+import { db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import {
     MerlinCheckData, MerlinReport,
@@ -23,6 +26,37 @@ import {
 } from '@/types/distribution';
 
 export type { DistributionTaskDocument as DistributionTask };
+
+/** Item 414: Snapshot release metadata into metadata_history subcollection at each distribution event */
+async function writeMetadataSnapshot(releaseId: string, metadata: DDEXMetadata): Promise<void> {
+    try {
+        const historyCol = collection(db, 'distribution_audit', releaseId, 'metadata_history');
+        await addDoc(historyCol, {
+            snapshot: JSON.parse(JSON.stringify(metadata)), // deep-clone to detach from mutation
+            timestamp: serverTimestamp(),
+            userId: auth.currentUser?.uid ?? null,
+        });
+    } catch (err) {
+        logger.error('[DistributionService] Failed to write metadata snapshot:', err);
+    }
+}
+
+/** Item 393: Write an immutable audit event to distribution_audit/{releaseId}/events */
+async function writeDistributionAuditEvent(
+    releaseId: string,
+    event: { type: string; status: string; detail?: string }
+): Promise<void> {
+    try {
+        const eventsCol = collection(db, 'distribution_audit', releaseId, 'events');
+        await addDoc(eventsCol, {
+            ...event,
+            timestamp: serverTimestamp(),
+            userId: auth.currentUser?.uid ?? null,
+        });
+    } catch (err) {
+        logger.error('[DistributionService] Failed to write audit event:', err);
+    }
+}
 
 class DistributionService extends FirestoreService<DistributionTaskDocument> {
     constructor() {
@@ -179,7 +213,10 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 metadata: { ...data, rawReport: report }
             });
 
-            return (await taxService.getProfile(userId))!;
+            // Item 353: replace non-null assertion with explicit null check
+            const profile = await taxService.getProfile(userId);
+            if (!profile) throw new Error('Tax profile not found after certification');
+            return profile;
         } catch (error) {
             logger.error('[Distribution] Tax certification error:', error);
             throw error;
@@ -521,7 +558,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * @param onProgress   Optional callback for step-by-step progress events
      */
     async submitRelease(
-        releaseData: DDEXMetadata & { sftpConfig?: SFTPConfig },
+        releaseData: DDEXMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
         onProgress?: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void
     ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[] }> {
         if (!window.electronAPI) {
@@ -530,14 +567,51 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         const taskId = await this.createTask('DELIVERY', `Submit: ${releaseData.title}`);
         await this.updateTask(taskId, { status: 'RUNNING', subtext: 'Starting pipeline…' });
+        const releaseId = releaseData.releaseId ?? releaseData.upc ?? taskId;
+
+        // Item 414: Snapshot metadata at the point of submission for post-distribution history
+        writeMetadataSnapshot(releaseId, releaseData).catch(() => { /* best-effort */ });
+
+        // Item 409: Auto-assign UPC to releases that are missing one
+        if (!releaseData.upc || releaseData.upc.trim() === '') {
+            try {
+                releaseData.upc = await upcService.assignNextUPC(releaseId);
+                logger.info(`[Distribution] Auto-assigned UPC ${releaseData.upc} to release "${releaseData.title}"`);
+                // Record in registry for audit trail
+                const userId = auth.currentUser?.uid ?? 'unknown';
+                upcService.recordAssignment({
+                    upc: releaseData.upc,
+                    releaseId,
+                    userId,
+                    releaseTitle: releaseData.title,
+                    assignedAt: new Date(),
+                }).catch(err => logger.warn('[Distribution] UPC registry record failed:', err));
+            } catch (upcErr) {
+                logger.warn('[Distribution] Could not auto-assign UPC for release:', upcErr);
+            }
+        }
+
+        // Item 408: Auto-assign ISRCs to tracks that are missing them
+        if (releaseData.tracks?.length) {
+            for (const track of releaseData.tracks) {
+                if (!track.isrc || track.isrc.trim() === '') {
+                    try {
+                        track.isrc = await isrcService.assignNextISRC(track.title ?? 'unknown');
+                        logger.info(`[Distribution] Auto-assigned ISRC ${track.isrc} to track "${track.title}"`);
+                    } catch (isrcErr) {
+                        logger.warn(`[Distribution] Could not auto-assign ISRC for track "${track.title}":`, isrcErr);
+                    }
+                }
+            }
+        }
 
         let cleanup: (() => void) | undefined;
         if (onProgress) {
-            cleanup = (window.electronAPI.distribution as any).onSubmitProgress(onProgress);
+            cleanup = window.electronAPI.distribution.onSubmitProgress(onProgress);
         }
 
         try {
-            const result = await (window.electronAPI.distribution as any).submitRelease(releaseData);
+            const result = await window.electronAPI.distribution.submitRelease(releaseData);
 
             if (!result.success) {
                 await this.updateTask(taskId, { status: 'FAILED', error: result.error });
@@ -550,6 +624,21 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 subtext: result.report?.sftp_skipped ? 'DDEX built (SFTP skipped)' : 'Delivered to distributor',
                 metadata: { report: result.report },
             });
+
+            // Item 393: Write immutable delivery audit event
+            await writeDistributionAuditEvent(releaseId, {
+                type: result.report?.sftp_skipped ? 'ddex_built' : 'sftp_delivered',
+                status: 'success',
+                detail: JSON.stringify(result.report ?? {}),
+            });
+
+            // Item 410: Persist delivery receipt to Firebase Storage
+            if (!result.report?.sftp_skipped) {
+                const receiptContent = JSON.stringify({ releaseId, report: result.report, submittedAt: new Date().toISOString() }, null, 2);
+                const receiptPath = `distribution/receipts/${releaseId}/receipt_${Date.now()}.json`;
+                uploadString(ref(storage, receiptPath), receiptContent, 'raw', { contentType: 'application/json' })
+                    .catch(err => logger.warn('[Distribution] Delivery receipt upload failed:', err));
+            }
 
             if (window.electronAPI) {
                 const body = result.report?.sftp_skipped
@@ -565,10 +654,39 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'Unknown submission error';
             await this.updateTask(taskId, { status: 'FAILED', error: msg });
+            // Item 393: Write failure audit event
+            await writeDistributionAuditEvent(releaseId, {
+                type: 'delivery_failed',
+                status: 'error',
+                detail: msg,
+            });
             throw error;
         } finally {
             cleanup?.();
         }
+    }
+
+    /**
+     * Item 411: Request Release Takedown
+     * Writes to distribution_takedowns/{releaseId} and notifies adapters.
+     */
+    async requestTakedown(releaseId: string, distributorId: string, reason?: string): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('User must be authenticated');
+
+        const takedownCol = collection(db, 'distribution_takedowns', releaseId, 'requests');
+        await addDoc(takedownCol, {
+            releaseId,
+            distributorId,
+            reason: reason ?? 'voluntary_withdrawal',
+            requestedBy: userId,
+            status: 'pending',
+            requestedAt: serverTimestamp(),
+        });
+
+        // Update the release document status
+        await this.releasesService.update(releaseId, { status: 'takedown_requested' });
+        logger.info(`[DistributionService] Takedown requested for release ${releaseId} from ${distributorId}`);
     }
 
     /**

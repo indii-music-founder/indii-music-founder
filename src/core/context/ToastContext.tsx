@@ -140,10 +140,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (
         <ToastContext.Provider value={contextValue}>
             {children}
-            <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none" role="region" aria-label="Notifications" aria-live="polite">
-                <div className="flex flex-col gap-2 items-end pointer-events-auto">
+            {/* Item 342: aria-live="assertive" for error toasts, "polite" for informational */}
+            <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+                <div role="status" aria-live="assertive" aria-label="Error notifications" className="flex flex-col gap-2 items-end pointer-events-auto">
                     <AnimatePresence>
-                        {toasts.map(toast => (
+                        {toasts.filter(t => t.type === 'error').map(toast => (
+                            <Toast key={toast.id} toast={toast} onDismiss={removeToast} />
+                        ))}
+                    </AnimatePresence>
+                </div>
+                <div role="status" aria-live="polite" aria-label="Notifications" className="flex flex-col gap-2 items-end pointer-events-auto">
+                    <AnimatePresence>
+                        {toasts.filter(t => t.type !== 'error').map(toast => (
                             <Toast key={toast.id} toast={toast} onDismiss={removeToast} />
                         ))}
                     </AnimatePresence>

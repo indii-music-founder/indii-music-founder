@@ -20,6 +20,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="indiiOS" />
+    <!-- Item 396: iOS splash screen — prevents white flash on PWA launch -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
 
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileColor" content="#0f0f0f" />
@@ -32,6 +35,11 @@
     <!-- Performance Hints - Google Fonts preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+
+    <!-- Item 363: Preconnect to Firebase for LCP improvement — reduces DNS + TLS handshake time -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin="anonymous" />
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
 
     <title>indiiOS - AI Creative Studio</title>
 

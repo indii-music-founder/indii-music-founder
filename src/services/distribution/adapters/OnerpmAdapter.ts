@@ -28,6 +28,9 @@ const ONERPM_API_BASE = 'https://api.onerpm.com/v2';
 export class OnerpmAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'onerpm';
     readonly name = 'OneRPM';
+    // Item 413: Pinned API version — bump intentionally on breaking change
+    protected readonly apiVersion = 'v2';
+    protected readonly apiBaseUrl = ONERPM_API_BASE;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'onerpm',

@@ -118,7 +118,7 @@ export function WalletConnectPanel() {
         localStorage.removeItem(CHAIN_KEY);
         setAddress(null);
         setError(null);
-        walletConnectService.disconnect().catch(() => {});
+        walletConnectService.disconnect().catch((err) => { console.error('[WalletConnect] disconnect error:', err); });
     };
 
     const handleCopy = async () => {

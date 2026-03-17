@@ -131,6 +131,9 @@ export interface AgentSlice {
     setAgentWindowSize: (size: { width: number; height: number }) => void;
     loadSessions: () => Promise<void>;
     loadAgents: () => Promise<void>;
+    // Item 407: Task queue persistence across app restarts
+    persistQueueToFirestore: () => Promise<void>;
+    resumeQueueFromFirestore: () => Promise<void>;
 
     // Canvas Items — rich media output from agent tasks
     canvasItems: CanvasItem[];
@@ -167,9 +170,11 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     // Maestro Batching Initial State
     batchingTasks: [],
-    addBatchTask: (task) => set(state => ({
-        batchingTasks: [...state.batchingTasks, task]
-    })),
+    addBatchTask: (task) => {
+        set(state => ({ batchingTasks: [...state.batchingTasks, task] }));
+        // Item 407: Persist queue so in-flight tasks survive app restart
+        get().persistQueueToFirestore();
+    },
     updateBatchTask: (id, updates) => set(state => ({
         batchingTasks: state.batchingTasks.map(t => t.id === id ? { ...t, ...updates } : t)
     })),
@@ -422,6 +427,9 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     clearCanvasItems: () => set({ canvasItems: [] }),
 
     loadSessions: async () => {
+        // Item 407: Resume any in-flight tasks that survived an app restart
+        get().resumeQueueFromFirestore();
+
         const { sessionService } = await import('@/services/agent/SessionService');
 
         try {
@@ -460,6 +468,60 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             });
         } catch (error) {
             logger.error('[AgentSlice] Failed to initialize sessions subscription:', error);
+        }
+    },
+
+    // Item 407: Persist task queue to Firestore so in-progress work survives app restarts
+    persistQueueToFirestore: async () => {
+        try {
+            const { auth, db } = await import('@/services/firebase');
+            const { collection, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+            const uid = auth.currentUser?.uid;
+            if (!uid) return;
+
+            const { batchingTasks } = get();
+            const pendingTasks = batchingTasks.filter(t => t.status === 'pending' || t.status === 'processing');
+
+            const queueRef = doc(collection(db, 'users', uid, 'agent_queue'), 'queue');
+            await setDoc(queueRef, {
+                tasks: pendingTasks,
+                savedAt: serverTimestamp(),
+            });
+            logger.info(`[AgentSlice] Persisted ${pendingTasks.length} queue tasks to Firestore`);
+        } catch (err) {
+            logger.warn('[AgentSlice] Queue persistence failed:', err);
+        }
+    },
+
+    resumeQueueFromFirestore: async () => {
+        try {
+            const { auth, db } = await import('@/services/firebase');
+            const { collection, doc, getDoc, deleteDoc } = await import('firebase/firestore');
+            const uid = auth.currentUser?.uid;
+            if (!uid) return;
+
+            const queueRef = doc(collection(db, 'users', uid, 'agent_queue'), 'queue');
+            const snap = await getDoc(queueRef);
+            if (!snap.exists()) return;
+
+            const data = snap.data() as { tasks?: BatchedTask[] };
+            const pendingTasks = (data.tasks ?? []).filter(t => t.status === 'pending');
+
+            if (pendingTasks.length > 0) {
+                set(state => ({
+                    batchingTasks: [
+                        ...state.batchingTasks,
+                        // Avoid duplicates by filtering out tasks already in queue
+                        ...pendingTasks.filter(t => !state.batchingTasks.find(existing => existing.id === t.id))
+                    ]
+                }));
+                logger.info(`[AgentSlice] Resumed ${pendingTasks.length} pending tasks from Firestore queue`);
+            }
+
+            // Clean up the persisted queue after loading
+            await deleteDoc(queueRef);
+        } catch (err) {
+            logger.warn('[AgentSlice] Queue resume failed:', err);
         }
     },
 

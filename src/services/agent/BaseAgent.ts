@@ -1,4 +1,6 @@
 import { logger } from '@/utils/logger';
+import { db } from '@/services/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -551,6 +553,17 @@ export class BaseAgent implements SpecializedAgent {
                     // Store tool call and result
                     lastToolResult = result;
                     toolCalls.push({ name, args, result });
+
+                    // Item 406: Write async tool audit record (fire-and-forget, non-blocking)
+                    if (enrichedContext.userId) {
+                        const auditCol = collection(db, 'users', enrichedContext.userId, 'agent_audit');
+                        addDoc(auditCol, {
+                            toolName: name,
+                            agentId: this.id,
+                            timestamp: serverTimestamp(),
+                            success: typeof result === 'object' && result !== null ? (result as any).success !== false : true,
+                        }).catch(() => { /* audit is best-effort */ });
+                    }
 
                     const outputText = typeof result === 'string'
                         ? result

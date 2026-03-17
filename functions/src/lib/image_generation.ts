@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_AI_MODELS } from "../config/models";
 import { GenerateImageRequestSchema, EditImageRequestSchema } from "./image";
 import { geminiApiKey, getGeminiApiKey } from "../config/secrets";
+import { enforceRateLimit, RATE_LIMITS } from "./rateLimit";
 
 /**
  * GeminiImageService
@@ -295,6 +296,9 @@ export const generateImageV3Fn = () => functions
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
 
+        // 1b. Item 326: Rate limit — image generation is the highest-cost endpoint
+        await enforceRateLimit(context.auth.uid, "generateImageV3", RATE_LIMITS.generation);
+
         // 2. Validate Input
         const validation = GenerateImageRequestSchema.safeParse(data);
         if (!validation.success) {
@@ -320,6 +324,9 @@ export const editImageFn = () => functions
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
+
+        // 1b. Item 326: Rate limit — image editing is a high-cost operation
+        await enforceRateLimit(context.auth.uid, "editImage", RATE_LIMITS.generation);
 
         // 2. Validate Input
         const validation = EditImageRequestSchema.safeParse(data);
