@@ -40,6 +40,7 @@ import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { UpdaterMonitor } from './components/UpdaterMonitor';
 import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
 import { logger } from '@/utils/logger';
+import '@/core/i18n'; // Initialize i18next — must run before any component renders
 
 cleanupLocalStorage();
 
