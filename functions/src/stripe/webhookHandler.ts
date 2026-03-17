@@ -263,6 +263,40 @@ export const stripeWebhook = onRequest({
     return;
   }
 
+  // ── Idempotency guard: atomic check-and-set via transaction ──────────
+  // Stripe retries webhooks on timeout/5xx. Without an atomic guard, two
+  // concurrent deliveries of the same event can both read "not processed"
+  // and both proceed, causing double subscription changes or duplicate
+  // invoice credits. Using runTransaction() makes the check-and-write
+  // atomic, closing that race window.
+  const db = getFirestore();
+  const deliveryRef = db.collection('stripe_webhook_deliveries').doc(event.id);
+  try {
+    const alreadyProcessed = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(deliveryRef);
+      if (snap.exists) {
+        return true; // Already processed or in-flight
+      }
+      // Atomically mark as in-flight so concurrent retries are blocked
+      tx.set(deliveryRef, {
+        eventId: event.id,
+        type: event.type,
+        receivedAt: FieldValue.serverTimestamp(),
+        status: 'processing',
+      });
+      return false;
+    });
+
+    if (alreadyProcessed) {
+      console.log(`[stripeWebhook] Duplicate delivery skipped: ${event.id}`);
+      res.json({ received: true, duplicate: true });
+      return;
+    }
+  } catch (idempotencyErr) {
+    // Non-fatal: log and continue — better to process twice than drop
+    console.warn('[stripeWebhook] Idempotency check failed (proceeding):', idempotencyErr);
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed':
@@ -287,9 +321,16 @@ export const stripeWebhook = onRequest({
         console.log(`[stripeWebhook] Unhandled event type: ${event.type}`);
     }
 
+    // Mark delivery complete (best-effort)
+    deliveryRef.update({ status: 'processed', processedAt: FieldValue.serverTimestamp() })
+      .catch(() => { /* best-effort */ });
+
     res.json({ received: true });
   } catch (error) {
     console.error('[stripeWebhook] Handler error:', error);
+    // Mark failed so the next retry is not skipped
+    deliveryRef.update({ status: 'failed', error: String(error) })
+      .catch(() => { /* best-effort */ });
     res.status(500).json({ error: 'Webhook handler failed' });
   }
 });
