@@ -662,6 +662,66 @@ service cloud.firestore {
     }
 
     // ========================================
+    // COMPOSITIONS (verified users only — publishing/PRO registration)
+    // ========================================
+
+    match /compositions/{compositionId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // Compositions are permanent records — deletion restricted
+      allow delete: if false;
+    }
+
+    // ========================================
+    // LICENSING DEALS (verified users only — commercial contracts)
+    // ========================================
+
+    match /licensing_deals/{dealId} {
+      allow read: if isVerifiedUser() && (
+        resource.data.licenseeUid == request.auth.uid ||
+        resource.data.licensorUid == request.auth.uid
+      );
+      allow create: if isVerifiedUser() && request.resource.data.licensorUid == request.auth.uid;
+      allow update: if isVerifiedUser() && (
+        resource.data.licensorUid == request.auth.uid ||
+        resource.data.licenseeUid == request.auth.uid
+      );
+      // Licensing deals are compliance records — deletion restricted
+      allow delete: if false;
+    }
+
+    // ========================================
+    // PUBLISHING REGISTRATIONS (verified users only — PRO/MLC filings)
+    // ========================================
+
+    match /publishing_registrations/{registrationId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      // Registration records are permanent — deletion restricted
+      allow delete: if false;
+    }
+
+    // ========================================
+    // SPLIT ESCROWS (verified users only — financial holds)
+    // ========================================
+
+    match /split_escrows/{escrowId} {
+      // Initiator and all parties can read
+      allow read: if isVerifiedUser() && (
+        resource.data.initiatorUid == request.auth.uid ||
+        request.auth.uid in resource.data.parties
+      );
+      // Only verified users can create escrow (server-side via Cloud Function preferred)
+      allow create: if isVerifiedUser() && request.resource.data.initiatorUid == request.auth.uid;
+      // Updates restricted to parties signing off (enforced by Cloud Function)
+      allow update: if isVerifiedUser() && request.auth.uid in resource.data.parties;
+      // Escrow records are financial audit trails — no client deletion
+      allow delete: if false;
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 

@@ -230,32 +230,48 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
     }),
 
     tier_superfans: wrapTool('tier_superfans', async (args: { minSpendForVIP: number; minSpendForSuperfan: number }) => {
-        // Superfan CRM Tiering mock
-        const mockFans = [
-            { id: 'f1', email: 'fan1@example.com', spend: 15 },
-            { id: 'f2', email: 'fan2@example.com', spend: 85 },
-            { id: 'f3', email: 'fan3@example.com', spend: 250 }
-        ];
+        // Superfan CRM Tiering — reads real fan purchase records from Firestore
+        const results = { Standard: 0, VIP: 0, Superfan: 0 };
 
-        const results = {
-            Standard: 0,
-            VIP: 0,
-            Superfan: 0
-        };
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, getDocs } = await import('firebase/firestore');
 
-        mockFans.forEach(fan => {
-            if (fan.spend >= args.minSpendForSuperfan) results.Superfan++;
-            else if (fan.spend >= args.minSpendForVIP) results.VIP++;
-            else results.Standard++;
-        });
+            const uid = auth.currentUser?.uid;
+            if (uid) {
+                // Aggregate spend per fan from purchase records
+                const purchasesSnap = await getDocs(
+                    collection(db, 'users', uid, 'fanPurchases')
+                );
 
+                const fanSpend: Record<string, number> = {};
+                purchasesSnap.forEach(doc => {
+                    const data = doc.data();
+                    const fanId = data.fanId as string;
+                    if (fanId) {
+                        fanSpend[fanId] = (fanSpend[fanId] || 0) + (Number(data.amount) || 0);
+                    }
+                });
+
+                Object.values(fanSpend).forEach(spend => {
+                    if (spend >= args.minSpendForSuperfan) results.Superfan++;
+                    else if (spend >= args.minSpendForVIP) results.VIP++;
+                    else results.Standard++;
+                });
+            }
+        } catch (err) {
+            logger.warn('[MarketingTools] tier_superfans Firestore read failed:', err);
+        }
+
+        const total = results.Standard + results.VIP + results.Superfan;
         return toolSuccess({
             tiers: results,
             thresholds: {
                 vip: args.minSpendForVIP,
-                superfan: args.minSpendForSuperfan
-            }
-        }, `Fan CRM successfully tiered: ${results.Superfan} Superfans, ${results.VIP} VIPs, ${results.Standard} Standard.`);
+                superfan: args.minSpendForSuperfan,
+            },
+            totalFans: total,
+        }, `Fan CRM tiered (${total} fans): ${results.Superfan} Superfans, ${results.VIP} VIPs, ${results.Standard} Standard.`);
     }),
 
     track_post_release_momentum: wrapTool('track_post_release_momentum', async (args: { trackId: string; adSpend: number; organicStreams: number; dsp: string }) => {

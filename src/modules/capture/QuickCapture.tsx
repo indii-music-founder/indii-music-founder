@@ -60,6 +60,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
     const [role, setRole] = useState<FieldContactRole>('other');
     const [notes, setNotes] = useState('');
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     // Auto-metadata
@@ -102,10 +103,11 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
         }
     };
 
-    // Photo capture
+    // Photo capture — store File for upload + preview data URL for display
     const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setPhotoFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPhotoPreview(reader.result as string);
@@ -114,12 +116,27 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
         }
     };
 
-    // Save contact
+    // Save contact — uploads photo to Firebase Storage if one was captured
     const handleSave = useCallback(async () => {
         if (!name.trim() || !userId) return;
 
         setIsSaving(true);
         try {
+            // Upload contact photo to Firebase Storage before saving
+            let photoUrl: string | undefined;
+            if (photoFile) {
+                try {
+                    const { storage } = await import('@/services/firebase');
+                    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+                    const ext = photoFile.name.split('.').pop() || 'jpg';
+                    const storagePath = `users/${userId}/contacts/${crypto.randomUUID()}.${ext}`;
+                    const snapshot = await uploadBytes(ref(storage, storagePath), photoFile);
+                    photoUrl = await getDownloadURL(snapshot.ref);
+                } catch (uploadErr) {
+                    logger.warn('[QuickCapture] Photo upload failed, saving without photo:', uploadErr);
+                }
+            }
+
             await FieldContactService.addFieldContact(userId, {
                 name: name.trim(),
                 phone: phone.trim() || undefined,
@@ -129,7 +146,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                 notes: notes.trim() || undefined,
                 capturedLocation: captureLocation || undefined,
                 capturedContext: contextString || undefined,
-                photoUrl: undefined, // TODO: Upload photo to Storage
+                photoUrl,
                 source: 'quick_capture',
             });
 
@@ -143,6 +160,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
             setRole('other');
             setNotes('');
             setPhotoPreview(null);
+            setPhotoFile(null);
             onClose();
         } catch (error) {
             logger.error('[QuickCapture] Failed to save contact:', error);
@@ -150,7 +168,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
         } finally {
             setIsSaving(false);
         }
-    }, [name, phone, email, instagram, role, notes, captureLocation, contextString, userId, toast, onClose]);
+    }, [name, phone, email, instagram, role, notes, captureLocation, contextString, userId, photoFile, toast, onClose]);
 
     // Don't render on non-phone viewports
     if (!isAnyPhone) return null;
