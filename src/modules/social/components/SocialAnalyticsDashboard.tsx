@@ -12,7 +12,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart3, TrendingUp, Users, Eye, Heart, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { syncSpotifyStats, type PlatformStats } from '@/services/social/SocialPlatformService';
+import {
+    syncSpotifyStats,
+    syncInstagramStats,
+    syncTikTokStats,
+    syncTwitterStats,
+    syncYouTubeStats,
+    type PlatformStats,
+} from '@/services/social/SocialPlatformService';
 import { logger } from '@/utils/logger';
 
 interface PlatformCard {
@@ -101,21 +108,32 @@ export default function SocialAnalyticsDashboard() {
                     return { platform: 'spotify', stats, connected: stats.followers !== undefined };
                 }
 
-                // Other platforms: read from Firestore cache
-                const { db } = await import('@/services/firebase');
-                const { doc, getDoc } = await import('firebase/firestore');
-                const cacheRef = doc(db, 'users', uid, 'platformStats', meta.platform);
-                const snap = await getDoc(cacheRef);
-
-                if (snap.exists()) {
-                    const data = snap.data() as PlatformStats;
-                    return { platform: meta.platform, stats: data, connected: true };
+                // Live sync for each connected platform
+                let liveStats: PlatformStats | undefined;
+                switch (meta.platform) {
+                    case 'instagram': liveStats = await syncInstagramStats(uid); break;
+                    case 'tiktok':    liveStats = await syncTikTokStats(uid);    break;
+                    case 'twitter':   liveStats = await syncTwitterStats(uid);   break;
+                    case 'youtube':   liveStats = await syncYouTubeStats(uid);   break;
                 }
 
-                // Check if token exists (= connected)
-                const tokenRef = doc(db, 'users', uid, 'socialTokens', meta.platform);
-                const tokenSnap = await getDoc(tokenRef);
-                return { platform: meta.platform, stats: undefined, connected: tokenSnap.exists() };
+                const connected = liveStats?.followers !== undefined || liveStats?.plays !== undefined;
+
+                // Fall back to Firestore cache if live sync returned empty (token not yet connected)
+                if (!connected) {
+                    const { db } = await import('@/services/firebase');
+                    const { doc, getDoc } = await import('firebase/firestore');
+                    const cacheRef = doc(db, 'users', uid, 'platformStats', meta.platform);
+                    const snap = await getDoc(cacheRef);
+                    if (snap.exists()) {
+                        return { platform: meta.platform, stats: snap.data() as PlatformStats, connected: true };
+                    }
+                    const tokenRef = doc(db, 'users', uid, 'socialTokens', meta.platform);
+                    const tokenSnap = await getDoc(tokenRef);
+                    return { platform: meta.platform, stats: undefined, connected: tokenSnap.exists() };
+                }
+
+                return { platform: meta.platform, stats: liveStats, connected: true };
             })
         );
 
