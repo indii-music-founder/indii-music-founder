@@ -63,7 +63,7 @@ This document contains **Part 6** of the master production readiness checklist (
 ## Part 6E: TypeScript Quality (350–355)
 
 - [ ] **350. Audit and Fix as-any Casts in Critical Paths:** 626 `as any` casts exist across 177 files. Prioritize eliminating unsafe casts in: `src/services/distribution/DistributionService.ts`, `src/services/finance/`, `src/services/agent/AgentZeroService.ts`. Replace with proper generics or discriminated unions.
-- [ ] **351. Fix @ts-ignore in Core Files:** `src/core/App.tsx`, `src/core/hooks/usePowerState.ts`, and `src/core/components/UpdaterMonitor.tsx` have `@ts-ignore` comments. Investigate the root type mismatch and fix properly — likely requires updating a type definition or adding an overload.
+- [x] **351. Fix @ts-ignore in Core Files:** `src/core/App.tsx`, `src/core/hooks/usePowerState.ts`, and `src/core/components/UpdaterMonitor.tsx` have `@ts-ignore` comments. Investigate the root type mismatch and fix properly — likely requires updating a type definition or adding an overload.
 - [ ] **352. Add Return Type Annotations to Exported CF Functions:** Cloud Functions in `functions/src/` lack explicit return type annotations. Add `Promise<{ result: ... }>` signatures to all `onCall` handlers — improves IDE support and prevents unintentional return shape changes.
 - [ ] **353. Non-Null Assertion Audit in Distribution Service:** `src/services/distribution/DistributionService.ts` uses non-null assertions (`!`) on values derived from user data and external APIs. Replace with explicit null checks and early returns.
 - [x] **354. Strict Mode for Functions TypeScript:** `functions/tsconfig.json` — verify `"strict": true` is set. If not, enable it and fix the resulting errors to enforce null safety at the Cloud Functions layer.
@@ -76,7 +76,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [x] **356. Reduce Vite chunkSizeWarningLimit:** `vite.config.ts:164` sets `chunkSizeWarningLimit: 3000` (3MB). Lower to `1000` and fix resulting warnings by splitting large vendor chunks (Three.js, Fabric.js, Remotion) into separate manual chunks.
 - [x] **357. Three.js Tree-Shaking:** Three.js (`three@0.182`) is imported as `import * as THREE from 'three'` in several files. Switch to named imports: `import { Scene, Camera, Renderer } from 'three'` to enable tree-shaking and reduce bundle by estimated 300KB.
 - [ ] **358. Remotion Lazy-Load:** Remotion (`remotion@4.0`) is a large video rendering library. Wrap the Video module's Remotion usage in `dynamic import()` to defer loading until the Video module is actually activated.
-- [ ] **359. Fabric.js Lazy-Load:** `fabric@6.9` (~500KB gzipped) is used only in the Creative Studio canvas. Ensure it's only loaded when `src/modules/creative/` activates — verify no top-level import in `App.tsx` or shared components.
+- [x] **359. Fabric.js Lazy-Load:** `fabric@6.9` (~500KB gzipped) is used only in the Creative Studio canvas. Ensure it's only loaded when `src/modules/creative/` activates — verify no top-level import in `App.tsx` or shared components.
 - [x] **360. Missing React.memo on High-Rerender Components:** `src/core/components/Sidebar.tsx` re-renders on every store update due to shallow subscription to 6 state slices. Wrap `NavItem` in `React.memo` and verify `useShallow` is correctly preventing parent re-renders.
 - [ ] **361. Wavesurfer.js Deferred Init:** `wavesurfer.js@7.11` initializes on component mount. Move init to first-play event to avoid ~50ms blocking during audio module load.
 - [x] **362. Image Optimization Pipeline:** Cover art uploads in the distribution flow store raw user images (potentially 10MB+). Add client-side canvas resize to 3000×3000px max and convert to WebP before Firebase Storage upload.
@@ -147,7 +147,7 @@ This document contains **Part 6** of the master production readiness checklist (
 
 ## Part 6L: Advanced Agent Features (400–407)
 
-- [ ] **400. Agent Memory Persistence Across Sessions:** Agent conversation history is held in React state and lost on page reload. Persist the last N=50 messages to Firestore `users/{uid}/agent_sessions/{sessionId}/messages` and hydrate on load.
+- [x] **400. Agent Memory Persistence Across Sessions:** Agent conversation history is held in React state and lost on page reload. Persist the last N=50 messages to Firestore `users/{uid}/agent_sessions/{sessionId}/messages` and hydrate on load.
 - [ ] **401. Agent Tool Result Streaming:** Agent tool calls (image gen, video gen, audio analysis) return results in a single response after completion. Add streaming progress updates via Firestore `agent_tasks/{taskId}/progress` that the UI subscribes to.
 - [ ] **402. Multi-Agent Parallel Task Execution:** AgentZero currently executes specialist tasks sequentially. Implement parallel task fan-out for independent subtasks (e.g. generate press release + generate social posts + create campaign brief simultaneously).
 - [x] **403. Agent Cost Circuit Breaker Production Wiring:** `CostCircuitBreaker.ts` exists but verify it is actually called before every AI generation invocation in production code paths — grep for all Gemini API calls and confirm each passes through the circuit breaker.
