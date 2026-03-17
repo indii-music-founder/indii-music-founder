@@ -79,12 +79,12 @@ export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from
 //   1. Set up reCAPTCHA Enterprise in GCP Console for your project.
 //   2. Register your app in Firebase Console → App Check → reCAPTCHA Enterprise.
 //   3. Add VITE_FIREBASE_APP_CHECK_KEY to your .env and CI secrets.
-//   4. Set ENFORCE_APP_CHECK=true in Cloud Functions environment config:
-//      firebase functions:config:set appcheck.enforce=true
-//      OR set the environment variable in GCP Console → Cloud Run → Environment Variables.
+//   4. App Check is ENFORCED by default in production. To disable in local dev:
+//      Set SKIP_APP_CHECK=true in your local .env or GCP Cloud Run environment.
 //   5. Deploy: firebase deploy --only functions
-//   CAUTION: Enabling this without configured reCAPTCHA will block ALL client requests.
-const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true';
+//   CAUTION: Requires reCAPTCHA Enterprise configured in Firebase Console for all clients.
+// Item 331: Default ENFORCE to true — opt-out via SKIP_APP_CHECK=true for dev environments.
+const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== 'true';
 
 /**
  * Security Helper: Validate Organization Access
