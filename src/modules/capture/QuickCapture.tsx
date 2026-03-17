@@ -209,6 +209,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                             </div>
                             <button
                                 onClick={onClose}
+                                aria-label="Close quick capture"
                                 className="p-2 rounded-full bg-white/5 text-slate-400 hover:text-white transition-colors"
                             >
                                 <X size={18} />
@@ -228,23 +229,27 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
 
                             {/* ── Name (required) ── */}
                             <div className="mb-4">
-                                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] block mb-1.5 ml-1">
+                                <label htmlFor="qc-name" className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] block mb-1.5 ml-1">
                                     Name *
                                 </label>
                                 <div className="flex gap-2">
                                     <div className="flex-1 relative">
-                                        <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                        <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
                                         <input
+                                            id="qc-name"
                                             ref={nameInputRef}
                                             type="text"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
                                             placeholder="Who did you meet?"
+                                            aria-required="true"
                                             className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm font-medium"
                                         />
                                     </div>
                                     <button
                                         onClick={() => startVoiceDictation('name')}
+                                        aria-label={isListening && voiceTarget === 'name' ? 'Stop voice dictation for name' : 'Start voice dictation for name'}
+                                        aria-pressed={isListening && voiceTarget === 'name'}
                                         className={`p-3 rounded-xl border transition-all flex-shrink-0 ${
                                             isListening && voiceTarget === 'name'
                                                 ? 'bg-red-500/20 border-red-500/30 text-red-400 animate-pulse'
@@ -262,22 +267,26 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                             {/* ── Contact info row ── */}
                             <div className="grid grid-cols-2 gap-3 mb-4">
                                 <div className="relative">
-                                    <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
                                     <input
+                                        id="qc-phone"
                                         type="tel"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
                                         placeholder="Phone"
+                                        aria-label="Phone number"
                                         className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                                     />
                                 </div>
                                 <div className="relative">
-                                    <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
                                     <input
+                                        id="qc-email"
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="Email"
+                                        aria-label="Email address"
                                         className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                                     />
                                 </div>
@@ -285,25 +294,29 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
 
                             {/* ── Instagram ── */}
                             <div className="mb-4 relative">
-                                <Instagram size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <Instagram size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
                                 <input
+                                    id="qc-instagram"
                                     type="text"
                                     value={instagram}
                                     onChange={(e) => setInstagram(e.target.value)}
                                     placeholder="@instagram"
+                                    aria-label="Instagram handle"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                                 />
                             </div>
 
                             {/* ── Role pills (horizontal scroll) ── */}
                             <div className="mb-4">
-                                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] block mb-2 ml-1">
+                                <p id="qc-role-label" className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] block mb-2 ml-1">
                                     Role
-                                </label>
-                                <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 custom-scrollbar">
+                                </p>
+                                <div role="radiogroup" aria-labelledby="qc-role-label" className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 custom-scrollbar">
                                     {ROLE_OPTIONS.map((opt) => (
                                         <button
                                             key={opt.value}
+                                            role="radio"
+                                            aria-checked={role === opt.value}
                                             onClick={() => setRole(opt.value)}
                                             className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-all flex-shrink-0 ${
                                                 role === opt.value
@@ -323,6 +336,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                                 {/* Photo capture */}
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
+                                    aria-label={photoPreview ? 'Change contact photo' : 'Add contact photo'}
                                     className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden transition-all hover:border-indigo-500/30"
                                 >
                                     {photoPreview ? (
@@ -348,9 +362,11 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                                 <div className="flex-1 relative">
                                     <StickyNote size={14} className="absolute left-3 top-3 text-slate-500" />
                                     <textarea
+                                        id="qc-notes"
                                         value={notes}
                                         onChange={(e) => setNotes(e.target.value)}
                                         placeholder="Quick notes..."
+                                        aria-label="Notes about this contact"
                                         rows={2}
                                         className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm resize-none"
                                     />

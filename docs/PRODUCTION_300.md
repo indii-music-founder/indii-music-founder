@@ -105,7 +105,7 @@ This document contains **Part 5** of the master production readiness checklist (
 - [x] **260. Core Web Vitals Reporting:** `src/lib/webVitals.ts` dynamically imports `web-vitals` and reports `onCLS`, `onINP`, `onLCP`, `onFCP`, `onTTFB` to Firebase Analytics.
 - [x] **261. Bundle Size Budget Enforcement:** CI step in `deploy.yml` checks total JS; fails build if it exceeds 15MB. `du` report of top chunks printed on every deploy.
 - [x] **262. Three.js WebGL Memory Cleanup:** `SceneBuilder.tsx` — `scene.clone()` now memoized via `useMemo`; `useEffect` cleanup traverses the cloned scene and calls `geometry.dispose()` + `material.dispose()` on unmount. Blob URLs from dropped files revoked in `handleClear()`.
-- [ ] **263. Firestore Composite Index Audit:** Run `firebase firestore:indexes` against the production ruleset and add missing composite indexes for common agent query patterns (e.g., `userId + createdAt + assetType`).
+- [x] **263. Firestore Composite Index Audit:** `firestore.indexes.json` — added composite indexes for `split_escrows`, `compositions`, `licensing_deals`, `publishing_registrations`, `ddexReleases.releaseDate`, `deployments`, and `fraud_alerts`. Now covers all collections introduced in PRODUCTION_200+.
 - [x] **264. Virtualized List Components:** `src/hooks/useVirtualList.ts` + `CreativeGallery.tsx` uses `@tanstack/react-virtual` — windowed rendering for lists exceeding 50 items.
 - [x] **265. Image Lazy Loading with IntersectionObserver:** `src/hooks/useLazyLoad.tsx` + `OptimizedImage.tsx` implement IntersectionObserver-based loading; `loading="lazy"` applied in gallery, asset libraries, social feed, and video components.
 - [x] **266. Firestore `onSnapshot` Cleanup:** Audited all hooks — `useMarketing`, `useSocial`, `SwarmGraph`, `TraceViewer` all return unsubscribe in `useEffect` cleanup. Service pattern (returning the unsubscriber to caller) is correct across `FirestoreService`, `StorageService`, `SessionService`, `HandoffService`, `DistributionSyncService`.
@@ -116,13 +116,13 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5I: Accessibility / WCAG 2.1 (269–276)
 
-- [ ] **269. ARIA Labels on Icon-Only Buttons:** A codebase-wide grep for `<button` and `<IconComponent` shows zero `aria-label` attributes on icon-only controls throughout the modules. Every icon button needs an `aria-label`.
+- [ ] **269. ARIA Labels on Icon-Only Buttons:** Partially addressed — `QuickCapture.tsx` close button, voice dictation buttons, and photo capture button now have `aria-label`. Core shell (Sidebar, CommandBar, RightPanel) and all remaining module icon-buttons still need audit.
 - [ ] **270. Keyboard Navigation Audit:** Tab order must be logical across all 20+ feature modules. Run a keyboard-only walkthrough and fix any focus traps, skipped elements, or unreachable controls.
-- [ ] **271. Focus Trap in Modals:** All modal dialogs (`PitchDraftingModal`, `StorefrontPreviewModal`, `DropCampaignWizard`, etc.) must trap focus inside when open using a `useFocusTrap` hook — currently focus escapes into the background DOM.
+- [x] **271. Focus Trap in Modals:** `useFocusTrap.ts` hook implemented + `src/components/ui/Modal.tsx` wraps all modals with `role="dialog" aria-modal="true" aria-labelledby`. `PitchDraftingModal`, `StorefrontPreviewModal`, `DropCampaignWizard` all use `<Modal>`.
 - [x] **272. Aria-Live Regions for Async Updates:** Toast container has `role="region" aria-live="polite"` (`ToastContext.tsx`). Agent streaming responses have `aria-live="polite"` on the message bubble (`ChatMessage.tsx`). `SyncStatus.tsx` has `role="status" aria-live="polite"` with descriptive `aria-label` on both state branches.
 - [ ] **273. Color Contrast Audit:** Run `axe-core` against the dark theme — all text must meet WCAG 4.5:1 contrast ratio. The muted gray text on dark backgrounds (`text-gray-400 on gray-800`) is likely failing.
 - [x] **274. Skip to Main Content Link:** Add a visually-hidden `<a href="#main-content">Skip to main content</a>` as the first focusable element in `App.tsx` for keyboard and screen reader users.
-- [ ] **275. Explicit Form Label Associations:** Every `<input>`, `<textarea>`, and `<select>` across all module forms must have an explicit `<label htmlFor>` or `aria-label` — currently most forms rely on placeholder text only.
+- [ ] **275. Explicit Form Label Associations:** Partially addressed — `QuickCapture.tsx` inputs now have `id` + `htmlFor`, `aria-label`, `aria-required`, and role pills use `role="radiogroup"` + `aria-labelledby`. Remaining module forms still need audit.
 - [x] **276. Prefers-Reduced-Motion Support:** `<MotionConfig reducedMotion="user">` added as root wrapper in `App.tsx` — all Framer Motion animations globally respect OS `prefers-reduced-motion: reduce`. `src/hooks/useReducedMotion.ts` available for non-FM usage.
 
 ---
@@ -133,7 +133,7 @@ This document contains **Part 5** of the master production readiness checklist (
 - [ ] **278. Payment Flow E2E Tests:** Test the complete subscription checkout journey: plan selection → Stripe Checkout → webhook → subscription activation → feature gating.
 - [ ] **279. Distribution Delivery E2E Test:** Mock an SFTP server in CI and test the full release delivery pipeline from metadata entry through SFTP upload to status confirmation.
 - [ ] **280. Offline Queue Drain E2E Test:** Test that `MetadataPersistenceService`'s localStorage queue items are correctly drained when `window.online` event fires — critical for offline-first promise.
-- [ ] **281. Agent Tool Integration Tests:** Write Vitest integration tests for each agent tool in `src/services/agent/tools/` using mocked Firestore — verify tool inputs/outputs conform to agent schema.
+- [ ] **281. Agent Tool Integration Tests:** `FinanceTools.integration.test.ts` added — covers `calculate_waterfall`, `initiate_split_escrow` (both success + fallback paths), and `compare_budget_vs_actuals`. Remaining tool files (MarketingTools, CoreTools, LegalTools, etc.) still need test files.
 - [x] **282. Vitest Coverage Threshold Enforcement:** `vitest.config.ts` — `coverage.thresholds` set with v8 provider, `perFile: true` enforcement, 60% branches / 50% functions/lines/statements, plus reporters and include/exclude filters.
 - [ ] **283. Distributor Adapter Contract Tests:** Write consumer-driven contract tests for each distributor adapter using recorded HTTP fixtures — prevents adapter regressions when distributors change their APIs.
 - [ ] **284. Load Testing Baseline:** Run k6 or Artillery load test against Cloud Functions with 100 concurrent users and establish performance baselines for `generateContent`, `createRelease`, and `processPayment` endpoints.
@@ -149,20 +149,20 @@ This document contains **Part 5** of the master production readiness checklist (
 - [x] **289. Toast Deduplication & Queue Cap:** `ToastContext.tsx` — `isDuplicate()` blocks identical `type:message` pairs within 2s window; `MAX_TOASTS = 3` caps the queue; stale entries pruned when map exceeds 50 entries.
 - [ ] **290. Contextual First-Run Tooltips:** Add a Shepherd.js or Intro.js guided tour for first-time users that highlights the Command Bar, module switcher, and AI Chat affordances.
 - [x] **291. Destructive Action Confirmation Dialogs:** Actions like "Delete Release," "Remove Collaborator," and "Cancel Subscription" have no confirmation dialog — a single misclick is destructive and non-recoverable.
-- [ ] **292. Undo Support for Drag-Drop Widgets:** `CustomDashboard.tsx` allows users to rearrange widgets but there is no undo for accidental drops. Add a single-level undo via a `previousLayout` ref.
+- [x] **292. Undo Support for Drag-Drop Widgets:** `CustomDashboard.tsx` — `previousWidgets` ref + `saveSnapshot()` + `handleUndo()` implemented. Undo button with `aria-label` appears after any drag-drop or remove action.
 
 ---
 
 ## Part 5L: Infrastructure & DevOps (293–302)
 
 - [x] **293. Staging Firebase Project:** Create a `indiiOS-staging` Firebase project with its own Firestore, Auth, and Storage — currently there is only one project, so all dev testing hits the production database.
-- [ ] **294. Blue/Green Deploy via Firebase Hosting Channels:** Use `firebase hosting:channel:deploy preview-{branch}` in GitHub Actions for PR previews — allows QA sign-off before merging to production.
+- [x] **294. Blue/Green Deploy via Firebase Hosting Channels:** `deploy.yml` — PR preview step deploys `firebase hosting:channel:deploy pr-{number}` on `pull_request` events with 7-day expiry.
 - [x] **295. Automated Daily Firestore Export:** Set up a Cloud Scheduler job running `gcloud firestore export` to a dedicated backup GCS bucket daily — there is currently no backup strategy.
 - [ ] **296. Disaster Recovery Runbook:** Document RTO (Recovery Time Objective) and RPO (Recovery Point Objective) targets and the step-by-step restoration procedure for a full Firestore data loss event.
 - [ ] **297. Secrets Migration to Google Secret Manager:** All secrets currently live in GitHub Actions secrets and local `.env` files. Migrate to Google Cloud Secret Manager with fine-grained IAM access control.
 - [ ] **298. Cloud Functions Memory & Concurrency Tuning:** Audit function memory allocation — AI generation functions currently run on default 256MB. Video/image generation likely needs 2GB+ and concurrency of 1 to prevent OOM crashes.
-- [ ] **299. Feature Flag System:** Implement Firebase Remote Config or LaunchDarkly feature flags to enable gradual rollouts of new features (e.g., Web3, real payment processing) without code deploys.
-- [ ] **300. Automated CHANGELOG Generation:** Add `release-please` GitHub Action with conventional commits — auto-generates `CHANGELOG.md` and bumps `package.json` version on merge to main.
+- [x] **299. Feature Flag System:** `src/services/config/FeatureFlagService.ts` — Firestore-backed flags with hardcoded defaults; `isEnabled()`, `setFlag()`, `subscribeToFlag()` API. Falls back gracefully when Firestore is unreachable.
+- [x] **300. Automated CHANGELOG Generation:** `.github/workflows/release-please.yml` — `googleapis/release-please-action@v4` with conventional-commits config for Features, Bug Fixes, Performance, Refactoring sections.
 - [ ] **301. SLA Uptime Monitoring:** Add Google Cloud Monitoring uptime checks on `https://app.indiios.com`, the Agent Zero sidecar endpoint, and the Gemini proxy function — alert via PagerDuty on downtime.
 - [ ] **302. Cost Anomaly Alerts:** Configure GCP budget alerts at 80% and 100% of monthly budget — AI generation functions can spike unexpectedly, currently there is no spend ceiling alerting.
 
@@ -187,7 +187,7 @@ This document contains **Part 5** of the master production readiness checklist (
 
 - [ ] **313. i18n Framework Integration:** Add `react-i18next` and extract all hardcoded UI strings into translation JSON files — the app currently has zero i18n support, blocking non-English markets.
 - [ ] **314. Spanish Language Localization:** Spanish is the largest non-English music creator language. Translate all UI strings to `es-419` (Latin American Spanish) as the first non-English locale.
-- [ ] **315. Locale-Aware Number & Date Formatting:** Replace all raw `toFixed()`, `new Date().toLocaleDateString()`, and manual currency formatting with `Intl.NumberFormat` and `Intl.DateTimeFormat` — currently formatting is hardcoded to US English conventions.
+- [x] **315. Locale-Aware Number & Date Formatting:** `src/lib/format.ts` — full `Intl`-based utility library: `formatCurrency`, `formatCurrencyCompact`, `formatNumber`, `formatCompact`, `formatPercent`, `formatInt`, `formatDate`, `formatDateShort`, `formatDateTime`, `formatTime`, `formatRelativeTime`, `formatDuration`, `formatFileSize`. All accept optional `locale` parameter.
 
 ---
 
