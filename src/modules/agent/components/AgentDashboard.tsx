@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Sparkles, Megaphone, Mail, ExternalLink, RefreshCw, Filter } from 'lucide-react';
+import { MapPin, Sparkles, Megaphone, Mail, ExternalLink, RefreshCw, Filter, Download } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignAsset } from '@/modules/marketing/types';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
@@ -330,6 +330,27 @@ const AgentDashboard: React.FC = () => {
                                         selectedAgentId={selectedAgentId}
                                         onSelect={setSelectedAgentId}
                                     />
+                                    {/* Item 405: Export Chat transcript */}
+                                    {agentMessages.length > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                const lines = agentMessages.map(m =>
+                                                    `[${new Date(m.timestamp ?? Date.now()).toISOString()}] ${m.role === 'user' ? 'You' : 'Agent'}: ${m.content ?? ''}`
+                                                );
+                                                const blob = new Blob([lines.join('\n\n')], { type: 'text/plain' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `agent-chat-${new Date().toISOString().slice(0, 10)}.txt`;
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                            }}
+                                            className="ml-auto p-1.5 rounded-md hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-colors"
+                                            title="Export chat transcript"
+                                        >
+                                            <Download size={14} />
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Message history */}

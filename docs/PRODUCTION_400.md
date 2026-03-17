@@ -124,7 +124,7 @@ This document contains **Part 6** of the master production readiness checklist (
 
 ## Part 6J: Observability & Monitoring (387–393)
 
-- [ ] **387. Structured Error Logging in Cloud Functions:** Cloud Functions use `logger.error()` but log unstructured strings. Switch to structured logging: `logger.error({ message: '...', userId, releaseId, errorCode })` — enables BigQuery log analysis and alerting on specific error types.
+- [x] **387. Structured Error Logging in Cloud Functions:** Cloud Functions use `logger.error()` but log unstructured strings. Switch to structured logging: `logger.error({ message: '...', userId, releaseId, errorCode })` — enables BigQuery log analysis and alerting on specific error types.
 - [ ] **388. Client-Side Error Tracking (Sentry):** Add `@sentry/react` and `@sentry/electron` for production error capture. Configure `Sentry.init({ dsn, environment, tracesSampleRate: 0.1 })` in `App.tsx` and Electron main process.
 - [ ] **389. Firebase Performance Monitoring:** Add `firebase/performance` and instrument the 3 most critical user flows: (1) Release creation → distribution submit, (2) AI image generation end-to-end, (3) Agent chat first response time.
 - [ ] **390. Custom BigQuery Dashboard for Revenue Metrics:** Analytics events fire to Firebase Analytics but no BigQuery dashboard visualizes revenue funnel: free → trial → pro → label plan. Build a Looker Studio report on top of the existing `analytics` Cloud Function data.
@@ -152,7 +152,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **402. Multi-Agent Parallel Task Execution:** AgentZero currently executes specialist tasks sequentially. Implement parallel task fan-out for independent subtasks (e.g. generate press release + generate social posts + create campaign brief simultaneously).
 - [ ] **403. Agent Cost Circuit Breaker Production Wiring:** `CostCircuitBreaker.ts` exists but verify it is actually called before every AI generation invocation in production code paths — grep for all Gemini API calls and confirm each passes through the circuit breaker.
 - [ ] **404. Agent Zero Sidecar Health Auto-Restart:** When the sidecar becomes unreachable, `AgentZeroService` marks it offline but Electron has no auto-restart logic. Add `app.on('renderer-process-crashed')` + Docker restart policy and surface a "Restarting AI service…" overlay.
-- [ ] **405. Agent Conversation Export:** Add a "Export Chat" button to the agent panel that generates a timestamped JSON or Markdown transcript of the full session — useful for artists reviewing AI-generated strategies.
+- [x] **405. Agent Conversation Export:** Add a "Export Chat" button to the agent panel that generates a timestamped JSON or Markdown transcript of the full session — useful for artists reviewing AI-generated strategies.
 - [ ] **406. Agent Tool Use Audit Log:** Every tool invocation (image gen, distribution submit, legal contract review) should write a structured record to `users/{uid}/agent_audit/{id}` — gives artists visibility into what the AI did on their behalf.
 - [ ] **407. Agent Task Queue Persistence:** If the app closes mid-task, queued agent work is lost. Persist the task queue to Firestore `users/{uid}/agent_queue` and resume on next launch.
 
