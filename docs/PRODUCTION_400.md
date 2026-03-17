@@ -128,9 +128,9 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **388. Client-Side Error Tracking (Sentry):** Add `@sentry/react` and `@sentry/electron` for production error capture. Configure `Sentry.init({ dsn, environment, tracesSampleRate: 0.1 })` in `App.tsx` and Electron main process.
 - [ ] **389. Firebase Performance Monitoring:** Add `firebase/performance` and instrument the 3 most critical user flows: (1) Release creation → distribution submit, (2) AI image generation end-to-end, (3) Agent chat first response time.
 - [ ] **390. Custom BigQuery Dashboard for Revenue Metrics:** Analytics events fire to Firebase Analytics but no BigQuery dashboard visualizes revenue funnel: free → trial → pro → label plan. Build a Looker Studio report on top of the existing `analytics` Cloud Function data.
-- [ ] **391. Health Check Endpoint for Agent Zero Sidecar:** `localhost:50080` sidecar has no documented health endpoint. Add `GET /health` returning `{ status: 'ok', version, uptime }` — enables Electron to surface sidecar status and GCP uptime checks to monitor it.
+- [x] **391. Health Check Endpoint for Agent Zero Sidecar:** `localhost:50080` sidecar has no documented health endpoint. Add `GET /health` returning `{ status: 'ok', version, uptime }` — enables Electron to surface sidecar status and GCP uptime checks to monitor it.
 - [ ] **392. Alert on High Agent Error Rate:** Add a Cloud Monitoring metric that alerts when agent task failures exceed 10% of requests in a 5-minute window. Route to PagerDuty or Slack `#incidents` channel.
-- [ ] **393. Release Delivery Audit Log:** Every SFTP upload, DDEX submission, and delivery status change should write an immutable audit record to `distribution_audit/{releaseId}/events/{eventId}`. Currently only Firestore document state is tracked, not event history.
+- [x] **393. Release Delivery Audit Log:** Every SFTP upload, DDEX submission, and delivery status change should write an immutable audit record to `distribution_audit/{releaseId}/events/{eventId}`. Currently only Firestore document state is tracked, not event history.
 
 ---
 
