@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.26.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.26.0...v1.26.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* **lint:** resolve react-hooks/set-state-in-effect blocking CI ([80b4a51](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/80b4a513f9a712b442d2a3f350bc4f47e13e3672))
+
 ## [1.26.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.25.0...v1.26.0) (2026-03-16)
 
 
