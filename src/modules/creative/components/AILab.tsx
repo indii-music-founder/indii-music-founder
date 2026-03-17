@@ -57,12 +57,12 @@ export default function AILab() {
 
         try {
             const getBase64 = async (url: string) => {
-                if (url.startsWith('data:')) return url.split(',')[1];
+                if (url.startsWith('data:')) return url.split(',')[1] ?? '';
                 const res = await fetch(url);
                 const blob = await res.blob();
                 return new Promise<string>((resolve) => {
                     const reader = new FileReader();
-                    reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                    reader.onloadend = () => resolve((reader.result as string).split(',')[1] ?? '');
                     reader.readAsDataURL(blob);
                 });
             };
@@ -110,11 +110,12 @@ export default function AILab() {
             setStatus('complete');
             toast.success("Architectural Chain Complete. Ready for Production.");
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error("Architect Failure:", err);
-            setError(err.message || "Prediction chain failed.");
+            const msg = err instanceof Error ? err.message : 'Prediction chain failed.';
+            setError(msg);
             setStatus('error');
-            toast.error(`Architect Error: ${err.message}`);
+            toast.error(`Architect Error: ${msg}`);
         }
     };
 
@@ -310,7 +311,7 @@ export default function AILab() {
     );
 }
 
-function StepCard({ step, isActive, isComplete, isError }: { step: any, isActive: boolean, isComplete: boolean, isError: boolean }) {
+function StepCard({ step, isActive, isComplete, isError }: { step: { id: number; name: string; description: string }, isActive: boolean, isComplete: boolean, isError: boolean }) {
     return (
         <div className={`p-4 rounded-xl border transition-all duration-500 relative overflow-hidden ${isActive ? 'bg-dept-creative/10 border-dept-creative' :
             isComplete ? 'bg-green-500/5 border-green-500/20' :

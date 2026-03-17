@@ -36,8 +36,8 @@ export default function MarketingAssetGeneratorUI() {
                 setVideoUrl('https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4');
             }
             setStep(4);
-        } catch (err: any) {
-            setError(err.message || "Failed to generate asset");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to generate asset');
             setStep(2);
         } finally {
             setIsGenerating(false);

@@ -45,8 +45,8 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
             if (ev.target?.result) {
                 const dataUrl = ev.target.result as string;
                 toast.info(`Analyzing ${category} reference...`);
-                const [mimeType, b64] = dataUrl.split(',');
-                const pureMime = mimeType.split(':')[1].split(';')[0];
+                const [mimeType = '', b64 = ''] = dataUrl.split(',');
+                const pureMime = mimeType.split(':')[1]?.split(';')[0] ?? 'image/png';
 
                 try {
                     // For motion category, use 'style' for captioning as motion is described visually
@@ -54,10 +54,11 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                     const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, captionCategory);
                     onAdd('image', dataUrl, caption);
                     toast.success(`${title} reference added!`);
-                } catch (err: any) {
+                } catch (err: unknown) {
                     onAdd('image', dataUrl);
-                    if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
-                        toast.error(err.message || 'Quota exceeded.');
+                    const isQuota = err instanceof Error && (err.name === 'QuotaExceededError' || ('code' in err && (err as { code?: string }).code === 'QUOTA_EXCEEDED'));
+                    if (isQuota) {
+                        toast.error(err instanceof Error ? err.message : 'Quota exceeded.');
                     } else {
                         toast.warning('Reference added, but analysis failed.');
                     }
@@ -83,16 +84,16 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
         if (item && item.type === 'image') {
             toast.info(`Analyzing ${category} reference...`);
             try {
-                const [mimeType, b64] = item.url.split(',');
-                const pureMime = mimeType?.split(':')[1]?.split(';')[0] || 'image/png';
+                const [mimeType = '', b64 = ''] = item.url.split(',');
+                const pureMime = mimeType.split(':')[1]?.split(';')[0] ?? 'image/png';
                 // For motion category, use 'style' for captioning as motion is described visually
                 const captionCategory = category === 'motion' ? 'style' : category as 'subject' | 'scene' | 'style';
                 const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, captionCategory);
                 onAdd('image', item.url, caption);
                 toast.success(`${title} reference set!`);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 onAdd('image', item.url);
-                if (err?.name === 'QuotaExceededError') {
+                if (err instanceof Error && err.name === 'QuotaExceededError') {
                     toast.error(err.message);
                 } else {
                     toast.warning('Reference added, but analysis failed.');

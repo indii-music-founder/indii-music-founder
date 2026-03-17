@@ -127,7 +127,7 @@ export class WalletConnectService {
             const chainName = CHAIN_NAMES[chainId] || `Chain ${chainId}`;
 
             this.connectedWallet = {
-                address: accounts[0],
+                address: accounts[0]!,
                 chainId,
                 chainName,
                 isConnected: true,
@@ -137,12 +137,12 @@ export class WalletConnectService {
             this.setupProviderListeners();
 
             this.emit('connect', this.connectedWallet);
-            logger.info(`[WalletConnect] Connected to ${chainName}: ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`);
+            logger.info(`[WalletConnect] Connected to ${chainName}: ${accounts[0]!.slice(0, 6)}...${accounts[0]!.slice(-4)}`);
 
-            return this.connectedWallet;
-        } catch (error: any) {
+            return this.connectedWallet!;
+        } catch (error: unknown) {
             logger.error('[WalletConnect] Injected provider connection failed:', error);
-            throw new Error(`Wallet connection failed: ${error.message || 'Unknown error'}`);
+            throw new Error(`Wallet connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
 
@@ -177,7 +177,7 @@ export class WalletConnectService {
                 logger.info('[WalletConnect] Wallet disconnected (accounts changed to empty).');
             } else {
                 if (this.connectedWallet) {
-                    this.connectedWallet.address = accounts[0];
+                    this.connectedWallet.address = accounts[0]!;
                     this.emit('accountsChanged', this.connectedWallet);
                 }
             }

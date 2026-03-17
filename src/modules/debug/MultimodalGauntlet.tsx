@@ -40,7 +40,7 @@ export default function MultimodalGauntlet() {
                 userProfile
             });
             if (!img1Results.length) throw new Error("Image 1 failed to generate.");
-            const img1 = img1Results[0].url;
+            const img1 = img1Results[0]!.url;
             setResults(prev => ({ ...prev, img1 }));
 
             // STEP 2: IMAGE 2 (THE DERIVATIVE)
@@ -63,7 +63,7 @@ export default function MultimodalGauntlet() {
                 lastFrame: img2,
                 userProfile
             });
-            setResults(prev => ({ ...prev, vid1: vid1Results[0].id }));
+            setResults(prev => ({ ...prev, vid1: vid1Results[0]!.id }));
 
             // STEP 4: VIDEO 2 (LOOP PROOF)
             setStep(4);
@@ -73,14 +73,15 @@ export default function MultimodalGauntlet() {
                 lastFrame: img1,
                 userProfile
             });
-            setResults(prev => ({ ...prev, vid2: vid2Results[0].id }));
+            setResults(prev => ({ ...prev, vid2: vid2Results[0]!.id }));
 
             setStep(5);
             toast.success("Multimodal Gauntlet Triggered Successfully!");
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error("Gauntlet Failure:", err);
-            setErrors({ [step]: err.message });
-            toast.error(`Step ${step} failed: ${err.message}`);
+            const msg = err instanceof Error ? err.message : String(err);
+            setErrors({ [step]: msg });
+            toast.error(`Step ${step} failed: ${msg}`);
         } finally {
             setLoading(false);
         }

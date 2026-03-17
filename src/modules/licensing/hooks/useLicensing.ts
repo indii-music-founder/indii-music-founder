@@ -121,8 +121,8 @@ export function useLicensing() {
       setIsActionLoading(true);
       const id = await licensingService.createLicense(licenseData);
       return id;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
       setIsActionLoading(false);

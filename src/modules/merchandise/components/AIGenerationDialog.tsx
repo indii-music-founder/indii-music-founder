@@ -67,19 +67,22 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
                 toast.dismiss(loadingId);
                 toast.error('No image generated');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('AI generation error:', error);
             toast.dismiss(loadingId);
 
+            const errObj = error as Record<string, unknown> | null;
+            const errMessage = error instanceof Error ? error.message : '';
+
             // Handle Quota Exceeded specifically
-            if (error?.name === 'QuotaExceededError' || error?.code === 'QUOTA_EXCEEDED') {
-                toast.error(error.message || 'Generation limit reached. Please upgrade.');
+            if (error instanceof Error && error.name === 'QuotaExceededError' || errObj?.code === 'QUOTA_EXCEEDED') {
+                toast.error(errMessage || 'Generation limit reached. Please upgrade.');
                 return;
             }
 
             // Handle Firebase/Network errors
-            if (error?.message) {
-                toast.error(`Generation failed: ${error.message}`);
+            if (errMessage) {
+                toast.error(`Generation failed: ${errMessage}`);
             } else {
                 toast.error('Failed to generate image. Please try again.');
             }

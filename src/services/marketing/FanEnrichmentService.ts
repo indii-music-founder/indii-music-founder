@@ -107,7 +107,7 @@ export class FanEnrichmentService {
 
                 const enrichedBatch = (response.data as any).results as EnrichedFanData[];
                 results.push(...enrichedBatch);
-            } catch (error: any) {
+            } catch (error: unknown) {
                 logger.error(`[FanEnrichment] Batch ${i} failed:`, error);
 
                 // Fallback: Add placeholder data for failed enrichments so the UI doesn't lose the record

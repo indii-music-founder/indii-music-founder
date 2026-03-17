@@ -31,8 +31,8 @@ const CartSidebar: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             if (result.data?.url) {
                 window.location.href = result.data.url;
             }
-        } catch (err: any) {
-            setCheckoutError(err.message || 'Checkout failed. Please try again.');
+        } catch (err: unknown) {
+            setCheckoutError(err instanceof Error ? err.message : 'Checkout failed. Please try again.');
         } finally {
             setCheckingOut(false);
         }

@@ -45,8 +45,8 @@ export class MaestroBatchingService {
             const result = await this.batcher.add(fullTask);
             useStore.getState().updateBatchTask(id, { status: 'completed', result });
             return result;
-        } catch (error: any) {
-            useStore.getState().updateBatchTask(id, { status: 'error', error: error.message });
+        } catch (error: unknown) {
+            useStore.getState().updateBatchTask(id, { status: 'error', error: error instanceof Error ? error.message : String(error) });
             throw error;
         }
     }
@@ -104,11 +104,11 @@ export class MaestroBatchingService {
                 message: result.text,
                 data: { taskId: task.id, thoughtSignature: result.thoughtSignature }
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error(`[Maestro] Task ${task.id} failed:`, error);
             return {
                 success: false,
-                error: error.message,
+                error: error instanceof Error ? error.message : String(error),
                 data: { taskId: task.id }
             };
         }

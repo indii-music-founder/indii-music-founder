@@ -32,7 +32,7 @@ import {
     Reply,
     ArrowLeft,
 } from 'lucide-react';
-import { useStore } from '@/core/store';
+import { useStore, type StoreState } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import type { EmailMessage, EmailProvider, ComposeEmailData } from '@/services/email/types';
@@ -288,7 +288,7 @@ const EmailDetailView: React.FC<{
                                 ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
                                 ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
                                 FORCE_BODY: true,
-                                FORBID_SCRIPTS: true,
+                                FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
                                 ADD_ATTR: ['target'],
                                 ALLOW_UNKNOWN_PROTOCOLS: false,
                             }) }}
@@ -448,7 +448,7 @@ const InboxTab: React.FC = () => {
         emailFilteredMessages,
         emailUnreadCount,
         emailSetAccounts,
-    } = useStore(useShallow((s: any) => ({
+    } = useStore(useShallow((s: StoreState) => ({
         emailAccounts: s.emailAccounts as import('@/services/email/types').EmailAccount[],
         emailMessages: s.emailMessages as import('@/services/email/types').EmailMessage[],
         emailSelectedMessage: s.emailSelectedMessage as import('@/services/email/types').EmailMessage | null,
@@ -506,8 +506,8 @@ const InboxTab: React.FC = () => {
         try {
             await emailConnect(provider);
             showToast(`${provider === 'gmail' ? 'Gmail' : 'Outlook'} connected successfully!`, 'success');
-        } catch (err: any) {
-            showToast(err.message || 'Connection failed', 'error');
+        } catch (err: unknown) {
+            showToast(err instanceof Error ? err.message : 'Connection failed', 'error');
         } finally {
             setConnectingProvider(null);
         }

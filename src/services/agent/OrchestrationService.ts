@@ -44,16 +44,16 @@ export class OrchestrationService {
             results.forEach((res: any, index: number) => {
                 const step = workflow.steps[index];
                 const statusIcon = res.success ? '✅' : '❌';
-                report += `## ${statusIcon} Step: ${step.agentId.toUpperCase()}\n`;
+                report += `## ${statusIcon} Step: ${step?.agentId.toUpperCase() ?? 'UNKNOWN'}\n`;
                 report += `${res.message || res.text || res.error || 'No output'}\n\n---\n\n`;
             });
 
             report += `✅ **Orchestration Complete.** All steps processed via Maestro Batching.`;
             return report;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error(`[Orchestration] Workflow ${workflowId} failed:`, error);
-            return `❌ **Workflow Interrupted**: ${error.message}.`;
+            return `❌ **Workflow Interrupted**: ${error instanceof Error ? error.message : String(error)}.`;
         }
     }
 

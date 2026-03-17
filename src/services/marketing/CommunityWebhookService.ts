@@ -49,8 +49,8 @@ export class CommunityWebhookService {
                 default:
                     logger.warn(`[CommunityWebhook] Unsupported platform: ${config.platform}`);
             }
-        } catch (error: any) {
-            logger.error(`[CommunityWebhook] Failed to dispatch to ${config.platform}:`, error.message);
+        } catch (error: unknown) {
+            logger.error(`[CommunityWebhook] Failed to dispatch to ${config.platform}:`, error instanceof Error ? error.message : String(error));
         }
     }
 
