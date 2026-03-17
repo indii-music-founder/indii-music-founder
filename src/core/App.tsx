@@ -251,11 +251,9 @@ function useAppInitialization() {
         const { setSidecarStatus } = useStore.getState();
 
         // window.electronAPI is only available in the Electron environment
-        // @ts-ignore
         if (window.electronAPI?.on) {
-            // @ts-ignore
-            const removeListener = window.electronAPI.on('sidecar:status-update', (status: any) => {
-                setSidecarStatus(status);
+            const removeListener = window.electronAPI.on('sidecar:status-update', (...args) => {
+                setSidecarStatus(args[0] as import('@/core/store/slices/sidecarSlice').SidecarStatus);
             });
             return () => removeListener();
         }

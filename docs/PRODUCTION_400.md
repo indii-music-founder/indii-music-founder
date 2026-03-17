@@ -54,7 +54,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **344. Test Sharding for Vitest:** `.github/workflows/deploy.yml:67-69` uses `--no-file-parallelism`. Replace with `--shard=1/4` across 4 parallel matrix jobs to cut CI time from ~30min to ~8min.
 - [x] **345. Gate E2E on Unit Test Success:** `.github/workflows/deploy.yml` runs E2E tests unconditionally. Add `needs: unit-tests` and `if: success()` to the E2E job to skip expensive Playwright runs when unit tests already fail.
 - [x] **346. Blocking Lighthouse CI Thresholds:** `.github/workflows/deploy.yml:164-167` — Lighthouse failures emit `::warning::` but don't fail the build. Make blocking: performance ≥ 80, accessibility ≥ 90, best-practices ≥ 90. Use `lhci assert` with `--preset=lighthouse:recommended`.
-- [ ] **347. Blocking Accessibility Audit in CI:** axe-core runs in E2E but failures don't block deployment. Add `failOnViolations: true` to the axe configuration and make the job exit non-zero on any WCAG AA critical violation.
+- [x] **347. Blocking Accessibility Audit in CI:** axe-core runs in E2E but failures don't block deployment. Add `failOnViolations: true` to the axe configuration and make the job exit non-zero on any WCAG AA critical violation.
 - [x] **348. Preview Channel Deployment Before Production:** `.github/workflows/deploy.yml` deploys directly to the `app` Firebase Hosting target. Add a preview channel step: `firebase hosting:channel:deploy pr-${PR_NUMBER}` and require manual promotion to production.
 - [x] **349. Dependency Security Audit in CI:** Add `npm audit --audit-level=high` as a non-blocking warning step in the deploy pipeline. Escalate to blocking after a 2-week grace period for fixing existing vulnerabilities.
 
@@ -79,7 +79,7 @@ This document contains **Part 6** of the master production readiness checklist (
 - [ ] **359. Fabric.js Lazy-Load:** `fabric@6.9` (~500KB gzipped) is used only in the Creative Studio canvas. Ensure it's only loaded when `src/modules/creative/` activates — verify no top-level import in `App.tsx` or shared components.
 - [x] **360. Missing React.memo on High-Rerender Components:** `src/core/components/Sidebar.tsx` re-renders on every store update due to shallow subscription to 6 state slices. Wrap `NavItem` in `React.memo` and verify `useShallow` is correctly preventing parent re-renders.
 - [ ] **361. Wavesurfer.js Deferred Init:** `wavesurfer.js@7.11` initializes on component mount. Move init to first-play event to avoid ~50ms blocking during audio module load.
-- [ ] **362. Image Optimization Pipeline:** Cover art uploads in the distribution flow store raw user images (potentially 10MB+). Add client-side canvas resize to 3000×3000px max and convert to WebP before Firebase Storage upload.
+- [x] **362. Image Optimization Pipeline:** Cover art uploads in the distribution flow store raw user images (potentially 10MB+). Add client-side canvas resize to 3000×3000px max and convert to WebP before Firebase Storage upload.
 - [ ] **363. Core Web Vitals: LCP Target < 2.5s:** Run Lighthouse against production build. The main dashboard module is eagerly loaded — verify `<Suspense>` fallback shows within 100ms. Add `fetchpriority="high"` to hero image assets.
 
 ---
