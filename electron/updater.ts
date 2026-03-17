@@ -27,6 +27,9 @@ export function setupAutoUpdater(): void {
     autoUpdater.logger = log;
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
+    // Item 324: Explicitly reject pre-release builds and downgrade attempts
+    autoUpdater.allowPrerelease = false;
+    autoUpdater.allowDowngrade = false;
 
     // Check for updates on startup and every 4 hours
     const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;

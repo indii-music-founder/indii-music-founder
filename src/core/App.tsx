@@ -1,5 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
+import { initSentry, setSentryUser, clearSentryUser } from '@/services/observability/SentryService';
+
+// Item 388: Initialize Sentry before any rendering — captures mount-phase errors
+initSentry();
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
@@ -9,6 +13,7 @@ import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ModuleErrorBoundary } from './components/ModuleErrorBoundary';
 import { MobileTabBar } from './components/MobileTabBar';
 import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
@@ -250,11 +255,9 @@ function useAppInitialization() {
         const { setSidecarStatus } = useStore.getState();
 
         // window.electronAPI is only available in the Electron environment
-        // @ts-ignore
         if (window.electronAPI?.on) {
-            // @ts-ignore
-            const removeListener = window.electronAPI.on('sidecar:status-update', (status: any) => {
-                setSidecarStatus(status);
+            const removeListener = window.electronAPI.on('sidecar:status-update', (...args) => {
+                setSidecarStatus(args[0] as import('@/core/store/slices/sidecarSlice').SidecarStatus);
             });
             return () => removeListener();
         }
@@ -292,6 +295,15 @@ function useOnboardingRedirect() {
             userProfile: s.userProfile,
         }))
     );
+
+    useEffect(() => {
+        // Item 388: Set/clear Sentry user context on auth state change
+        if (user) {
+            setSentryUser(user.uid, user.email ?? undefined);
+        } else if (!authLoading) {
+            clearSentryUser();
+        }
+    }, [user, authLoading]);
 
     useEffect(() => {
         if (authLoading || !user) return;
@@ -497,11 +509,12 @@ export default function App() {
                                             )}
 
                                             <div className={`flex-1 overflow-y-auto relative custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
-                                                <ErrorBoundary key={currentModule}>
+                                                {/* Item 336: ModuleErrorBoundary wraps every lazy module — shows module name in error UI */}
+                                                <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
                                                     <Suspense fallback={<LoadingFallback />}>
                                                         <ModuleRenderer moduleId={currentModule as ModuleId} />
                                                     </Suspense>
-                                                </ErrorBoundary>
+                                                </ModuleErrorBoundary>
                                             </div>
 
 

@@ -2,6 +2,7 @@ import * as functions from "firebase-functions/v1";
 import { z } from "zod";
 import { getGeminiApiKey, geminiApiKey } from "../config/secrets";
 import { FUNCTION_AI_MODELS } from "../config/models";
+import { enforceRateLimit, RATE_LIMITS } from "./rateLimit";
 
 export const GenerateSpeechRequestSchema = z.object({
     text: z.string().min(1, "Text is required"),
@@ -49,6 +50,12 @@ export const analyzeAudioFn = () => functions
                 "User must be authenticated to analyze audio."
             );
         }
+
+        // 1b. Item 327: Rate limit — audio analysis runs up to 30s per call
+        await enforceRateLimit(context.auth.uid, "analyzeAudio", {
+            maxRequests: 10,
+            windowMs: 60 * 60 * 1000, // 10 per hour
+        });
 
         // 2. Validation
         const validation = AnalyzeAudioRequestSchema.safeParse(data);

@@ -569,6 +569,10 @@ export async function syncTikTokStats(uid: string): Promise<PlatformStats> {
             }
             return syncTikTokStats(uid);
         }
+        // Item 339: Guard against non-200 before calling .json()
+        if (!res.ok) {
+            throw new Error(`TikTok API error: ${res.status} ${await res.text()}`);
+        }
 
         const data = await res.json() as { data?: { user?: { follower_count?: number; likes_count?: number } } };
         const user = data.data?.user;
@@ -652,6 +656,10 @@ export async function syncYouTubeStats(uid: string): Promise<PlatformStats> {
                 return { platform: 'youtube', fetchedAt: Date.now() };
             }
             return syncYouTubeStats(uid);
+        }
+        // Item 339: Guard against non-200 before calling .json()
+        if (!res.ok) {
+            throw new Error(`YouTube API error: ${res.status} ${await res.text()}`);
         }
 
         const yt = await res.json() as { items?: Array<{ statistics?: { subscriberCount?: string; viewCount?: string } }> };

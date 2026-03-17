@@ -85,4 +85,33 @@ describe('Sidebar', () => {
         // Check for logout button
         expect(screen.getByTestId('logout-btn')).toHaveAttribute('aria-label', 'Reload System');
     });
+
+    // Item 372: Snapshot test to catch unintended UI regressions in the Sidebar chrome
+    it('matches snapshot in expanded state', () => {
+        (useStore as any).mockReturnValue({
+            currentModule: 'dashboard',
+            setModule: vi.fn(),
+            isSidebarOpen: true,
+            toggleSidebar: vi.fn(),
+            userProfile: { bio: 'Test User' },
+            logout: vi.fn(),
+            setTheme: vi.fn(),
+        });
+        const { container } = render(<Sidebar />);
+        expect(container.firstChild).toMatchSnapshot();
+    });
+
+    it('matches snapshot in collapsed state', () => {
+        (useStore as any).mockReturnValue({
+            currentModule: 'dashboard',
+            setModule: vi.fn(),
+            isSidebarOpen: false,
+            toggleSidebar: vi.fn(),
+            userProfile: { bio: 'Test User' },
+            logout: vi.fn(),
+            setTheme: vi.fn(),
+        });
+        const { container } = render(<Sidebar />);
+        expect(container.firstChild).toMatchSnapshot();
+    });
 });

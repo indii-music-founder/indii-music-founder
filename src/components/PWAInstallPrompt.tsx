@@ -50,16 +50,21 @@ export const PWAInstallPrompt: React.FC = () => {
 
     const handleInstall = async () => {
         haptic('medium');
+        // Item 395: Track prompt accepted event
+        console.info('[PWA] install_prompt_accepted');
         const accepted = await showPWAInstall();
 
         if (accepted) {
             haptic('success');
             setCanInstall(false);
+            console.info('[PWA] install_prompt_installed');
         }
     };
 
     const handleDismiss = () => {
         haptic('light');
+        // Item 395: Track prompt dismissed event
+        console.info('[PWA] install_prompt_dismissed');
         setDismissed(true);
 
         // Save dismissal timestamp (with safe localStorage access)
@@ -76,6 +81,10 @@ export const PWAInstallPrompt: React.FC = () => {
     if (!canInstall || dismissed || isStandalone()) {
         return null;
     }
+
+    // Item 395: Track prompt shown event
+    // Note: This fires on render — intentional for analytics
+    console.info('[PWA] install_prompt_shown');
 
     return (
         <AnimatePresence>

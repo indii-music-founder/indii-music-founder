@@ -31,6 +31,13 @@ export const SidecarStatus: React.FC<SidecarStatusProps> = ({ collapsed }) => {
             color: 'text-amber-500',
             bg: 'bg-amber-500/10',
             label: 'Checking...'
+        },
+        // Item 404: restarting state surfaced from Electron auto-restart logic
+        restarting: {
+            icon: RefreshCw,
+            color: 'text-blue-400',
+            bg: 'bg-blue-400/10',
+            label: 'Restarting…'
         }
     };
 
@@ -38,7 +45,11 @@ export const SidecarStatus: React.FC<SidecarStatusProps> = ({ collapsed }) => {
     const Icon = current.icon;
 
     return (
-        <div className={cn(
+        <div
+            role="status"
+            aria-live="polite"
+            aria-label={`Agent Zero status: ${current.label}`}
+            className={cn(
             "flex items-center gap-2 rounded-lg bg-card/50 border border-border/50 transition-all duration-300",
             collapsed ? "p-1 justify-center" : "px-3 py-2"
         )}>
@@ -47,7 +58,7 @@ export const SidecarStatus: React.FC<SidecarStatusProps> = ({ collapsed }) => {
                     size={14}
                     className={cn(
                         current.color,
-                        sidecarStatus === 'checking' && "animate-spin"
+                        (sidecarStatus === 'checking' || sidecarStatus === 'restarting') && "animate-spin"
                     )}
                 />
             </div>

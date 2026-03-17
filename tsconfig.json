@@ -25,6 +25,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
     /* Paths */
     "baseUrl": ".",
     "paths": {

@@ -203,6 +203,7 @@ export const pollDeliveryStatus = onSchedule({
         logger.info(`[pollDeliveryStatus] Completed. Processed ${updates.length} updates.`);
 
     } catch (error) {
-        logger.error('[pollDeliveryStatus] Error during status poll:', error);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        logger.error({ message: '[pollDeliveryStatus] Error during status poll', errorCode: 'POLL_FAILED', detail: errMsg });
     }
 });

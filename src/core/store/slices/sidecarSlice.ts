@@ -1,7 +1,8 @@
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
 
-export type SidecarStatus = 'online' | 'offline' | 'checking';
+// Item 404: Added 'restarting' state for auto-restart overlay
+export type SidecarStatus = 'online' | 'offline' | 'checking' | 'restarting';
 
 export interface SidecarSlice {
     sidecarStatus: SidecarStatus;

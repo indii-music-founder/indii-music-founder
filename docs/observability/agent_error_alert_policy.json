@@ -1,0 +1,37 @@
+{
+  "displayName": "indiiOS: High Agent Error Rate",
+  "documentation": {
+    "content": "Agent task failure rate exceeded 10% in a 5-minute window.\n\nRunbook: docs/observability/AGENT_ERROR_ALERT.md\nError Ledger: .agent/skills/error_memory/ERROR_LEDGER.md\nLogs: https://console.cloud.google.com/logs",
+    "mimeType": "text/markdown"
+  },
+  "conditions": [
+    {
+      "displayName": "Agent error rate > 10% over 5 minutes",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"logging.googleapis.com/user/agent_task_failure_rate\"",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "crossSeriesReducer": "REDUCE_MEAN",
+            "perSeriesAligner": "ALIGN_RATE"
+          }
+        ],
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0.10,
+        "duration": "0s",
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ],
+  "alertStrategy": {
+    "notificationRateLimit": {
+      "period": "1800s"
+    },
+    "autoClose": "604800s"
+  },
+  "combiner": "OR",
+  "enabled": true,
+  "notificationChannels": []
+}

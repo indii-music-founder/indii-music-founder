@@ -3,15 +3,18 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
+// All values are Firebase project identifiers (not secrets).
+// Using env vars enables staging/production environment isolation.
+// See CLAUDE.md §3.1 and docs/API_CREDENTIALS_POLICY.md for rationale.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: "indiios-v-1-1.firebaseapp.com",
-  databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
-  projectId: "indiios-v-1-1",
-  storageBucket: "indiios-v-1-1.firebasestorage.app",
-  messagingSenderId: "223837784072",
-  appId: "1:223837784072:web:3af738739465ea4095e9bd",
-  measurementId: "G-T6V8WPE7Z7"
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Only initialize Firebase on the client side to prevent SSG build errors
