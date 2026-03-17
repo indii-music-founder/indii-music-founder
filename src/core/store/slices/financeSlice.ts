@@ -1,12 +1,12 @@
 import { StateCreator } from 'zustand';
-import { type DashboardEarningsSummary } from '@/services/revenue/schema';
+import { type EarningsSummary } from '@/services/revenue/schema';
 import { ProfileSlice } from './profileSlice';
 import { SubscriptionSlice } from './subscriptionSlice';
 import { logger } from '@/utils/logger';
 
 export interface FinanceSlice {
     finance: {
-        earningsSummary: any | null; // Use any or properly map to DashboardEarningsSummary
+        earningsSummary: EarningsSummary | null;
         loading: boolean;
         error: string | null;
     };
@@ -36,7 +36,7 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & Subs
             // Clear previous subscription before creating a new one
             state.clearSubscription?.('finance-earnings');
 
-            const unsubscribe = financeService.subscribeToEarnings(userId, (data: any) => {
+            const unsubscribe = financeService.subscribeToEarnings(userId, (data: EarningsSummary | null) => {
                 set((state) => ({
                     finance: {
                         ...state.finance,
@@ -62,3 +62,4 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & Subs
     }
 
 });
+
