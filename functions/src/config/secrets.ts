@@ -11,6 +11,14 @@ export const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 export const pandaDocApiKey = defineSecret("PANDADOC_API_KEY");
 
+// ---------------------------------------------------------------------------
+// Founders Program
+// ---------------------------------------------------------------------------
+// Fine-grained GitHub PAT scoped to contents:write on this repo only.
+// Used by activateFounderPass to commit new founder entries to src/config/founders.ts.
+// Required secret in GCP Secret Manager: GITHUB_TOKEN_FOUNDERS
+export const githubTokenFounders = defineSecret("GITHUB_TOKEN_FOUNDERS");
+
 /**
  * Helper to safely retrieve the Gemini API Key.
  * Handles both production (secrets) and local development (environment variables).
