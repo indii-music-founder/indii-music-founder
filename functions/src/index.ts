@@ -34,6 +34,7 @@ export { createStripeAccount, createTransfer } from './stripe/connect';
 // Stripe Split Escrow (Item 135)
 export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
 
+
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
@@ -1225,7 +1226,7 @@ export const exportUserData = functions
  * Actual deletion happens asynchronously via a scheduled function.
  */
 export const requestAccountDeletion = functions
-    .runWith({ timeoutSeconds: 30, memory: "256MB" })
+    .runWith({ timeoutSeconds: 120, memory: "256MB" })
     .https.onCall(async (_data, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
@@ -1234,20 +1235,59 @@ export const requestAccountDeletion = functions
         const userId = context.auth.uid;
         const db = admin.firestore();
 
-        // Record the deletion request
+        // Step 1 — Record the deletion request (audit trail)
         await db.collection("_deletion_requests").doc(userId).set({
             userId,
             email: context.auth.token.email || null,
             requestedAt: admin.firestore.FieldValue.serverTimestamp(),
-            status: "pending",
+            status: "processing",
         });
 
-        functions.logger.info(`[GDPR] Deletion request recorded for user ${userId}`);
+        functions.logger.info(`[GDPR] Starting account deletion for user ${userId}`);
+
+        const errors: string[] = [];
+        let deletedDocs = 0;
+
+        // Step 2 — Delete user subcollections
+        const subcollections = [
+            'releases', 'tracks', 'contracts', 'campaigns', 'analytics',
+            'splitSheets', 'generatedImages', 'generatedVideos', 'notifications',
+            'invoices', 'auditLogs', 'fanPurchases', 'contacts', 'projects',
+            'history', 'knowledge',
+        ];
+        for (const sub of subcollections) {
+            try {
+                const snap = await db.collection('users').doc(userId).collection(sub).limit(500).get();
+                if (!snap.empty) {
+                    const batch = db.batch();
+                    snap.docs.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    deletedDocs += snap.size;
+                }
+            } catch (err) {
+                errors.push(`${sub}: ${err}`);
+            }
+        }
+
+        // Step 3 — Delete user root document
+        try { await db.collection('users').doc(userId).delete(); }
+        catch (err) { errors.push(`profile: ${err}`); }
+
+        // Step 4 — Delete Firebase Auth account (signs user out of all devices)
+        try {
+            await admin.auth().deleteUser(userId);
+            functions.logger.info(`[GDPR] Auth account deleted for ${userId}`);
+        } catch (err) {
+            errors.push(`auth: ${err}`);
+        }
+
+        functions.logger.info(`[GDPR] Deletion complete for ${userId}. docs=${deletedDocs} errors=${errors.length}`);
 
         return {
-            success: true,
-            message: "Account deletion request received. Your data will be removed within 30 days per our data retention policy.",
-            requestId: userId,
+            success: errors.length === 0,
+            deletedDocs,
+            errors,
+            deletedAt: new Date().toISOString(),
         };
     });
 

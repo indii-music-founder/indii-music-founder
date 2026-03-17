@@ -29,8 +29,9 @@ interface SplitEscrowResponse {
  * Creates a Stripe PaymentIntent (capture_method: manual) to hold funds
  * and records the pending signatures in Firestore.
  */
-export const initiateSplitEscrow = functions.https.onCall(
-    async (data: SplitEscrowRequest, context) => {
+export const initiateSplitEscrow = functions
+    .runWith({ timeoutSeconds: 60, memory: '256MB' })
+    .https.onCall(async (data: SplitEscrowRequest, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 'unauthenticated',
@@ -125,8 +126,9 @@ export const initiateSplitEscrow = functions.https.onCall(
  * Record a collaborator's sign-off on the escrow.
  * When all parties have signed, status transitions to RELEASED.
  */
-export const signEscrow = functions.https.onCall(
-    async (data: { escrowDocId: string }, context) => {
+export const signEscrow = functions
+    .runWith({ timeoutSeconds: 60, memory: '256MB' })
+    .https.onCall(async (data: { escrowDocId: string }, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
         }

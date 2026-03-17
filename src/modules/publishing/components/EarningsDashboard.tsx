@@ -3,6 +3,7 @@ import { useEarnings } from '../hooks/useEarnings';
 import { EarningsBreakdown } from './EarningsBreakdown';
 import { Loader2, DollarSign, Globe, TrendingUp, Download, PieChart } from 'lucide-react';
 import { motion } from 'motion/react';
+import { SkeletonText, Skeleton } from '@/components/ui/Skeleton';
 
 // Compute default period outside component to satisfy react-compiler purity rules
 const DEFAULT_PERIOD = (() => {
@@ -92,9 +93,9 @@ export const EarningsDashboard: React.FC = () => {
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-6 px-1">Active Balance (USD)</p>
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                        <Loader2 size={32} className="text-purple-500 animate-spin mb-4" />
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Calculating...</p>
+                    <div className="py-6 space-y-4">
+                        <Skeleton className="h-12 w-48" />
+                        <SkeletonText lines={4} />
                     </div>
                 ) : earnings ? (
                     <div>
