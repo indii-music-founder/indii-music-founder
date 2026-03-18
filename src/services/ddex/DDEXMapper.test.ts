@@ -24,6 +24,19 @@ describe('DDEXMapper', () => {
             ddexSubGenre: 'Synth Pop',
             language: 'eng',
             isExplicit: false,
+            marketingComment: 'A perfect summer night driving anthem.',
+            timbre: {
+                texture: 'Glassy & Clean',
+                brightness: 'Crisp & Airy',
+                saturation: 'Lightly Compressed',
+                spaceDepth: 'Wide Stereo Field'
+            },
+            productionValue: {
+                era: '2010s Pop',
+                quality: 'Professional Studio',
+                mixBalance: 'Balanced',
+                aiArtifacts: false
+            },
             visualImagery: {
                 abstract: 'Neon lights',
                 narrative: 'City night drive',
@@ -48,7 +61,7 @@ describe('DDEXMapper', () => {
         expect(result.language).toBe('eng');
         expect(result.explicit).toBe(false);
         expect(result.durationFormatted).toBe('3:35');
-        expect(result.marketingComment).toBe('A perfect summer night driving anthem.');
+        expect(result.marketingComment).toBe('A perfect summer night driving anthem.'); // Uses semantic.marketingComment
         expect(result.keywords).toContain('summer');
     });
 

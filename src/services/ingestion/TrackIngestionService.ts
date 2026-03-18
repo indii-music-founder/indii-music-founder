@@ -75,8 +75,8 @@ export class TrackIngestionService {
             mood: semantic.mood,
             keywords: semantic.marketingHooks.keywords,
 
-            // Marketing
-            marketingComment: semantic.marketingHooks.oneLiner,
+            // Marketing — prefer dedicated field from Sonic Cortex Session 1
+            marketingComment: semantic.marketingComment || semantic.marketingHooks.oneLiner,
 
             // Defaults for a "New Ingestion"
             releaseDate: new Date().toISOString().split('T')[0],
@@ -86,10 +86,10 @@ export class TrackIngestionService {
             labelName: DDEX_CONFIG.PARTY_NAME,
             dpid: DDEX_CONFIG.PARTY_ID,
 
-            // AI Content Disclosure
+            // AI Content Disclosure (Goal 3 compliance — surfaced by Sonic Cortex aiArtifacts flag)
             aiGeneratedContent: {
                 isFullyAIGenerated: false,
-                isPartiallyAIGenerated: false
+                isPartiallyAIGenerated: semantic.productionValue?.aiArtifacts ?? false
             },
 
             // Status
