@@ -59,7 +59,7 @@ describe('📚 Keeper: Persistence', () => {
             expect(mockUpdateSession).toHaveBeenCalled();
         }, { timeout: 1000, interval: 50 });
 
-        const [sessionId, updatePayload] = mockUpdateSession.mock.calls[0];
+        const [sessionId, updatePayload] = mockUpdateSession.mock.calls[0]!;
         expect(sessionId).toBe(state.activeSessionId);
         expect(updatePayload.messages).toHaveLength(1);
         expect(updatePayload.messages[0].text).toBe('Hello, Keeper!');
@@ -84,7 +84,7 @@ describe('📚 Keeper: Persistence', () => {
             expect(mockUpdateSession).toHaveBeenCalled();
         }, { timeout: 1000, interval: 50 });
 
-        const [_, updatePayload] = mockUpdateSession.mock.calls[0];
+        const [_, updatePayload] = mockUpdateSession.mock.calls[0]!;
         expect(updatePayload.messages).toEqual([]);
     });
 
@@ -103,7 +103,7 @@ describe('📚 Keeper: Persistence', () => {
             expect(mockUpdateSession).toHaveBeenCalled();
         }, { timeout: 1000, interval: 50 });
 
-        const [_, updatePayload] = mockUpdateSession.mock.calls[0];
+        const [_, updatePayload] = mockUpdateSession.mock.calls[0]!;
         expect(updatePayload.messages[0].text).toBe('Thinking complete.');
     });
 });

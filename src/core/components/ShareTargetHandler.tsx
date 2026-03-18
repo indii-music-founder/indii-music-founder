@@ -37,7 +37,7 @@ export function ShareTargetHandler() {
                 // Get the most recent item
                 const keys = await store.getAllKeys();
                 if (keys.length > 0) {
-                    const lastKey = keys[keys.length - 1];
+                    const lastKey = keys[keys.length - 1]!;
                     const item = await store.get(lastKey) as SharedItem;
 
                     // Add ID for deletion later

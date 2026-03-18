@@ -57,7 +57,7 @@ const DEFAULT_COSTS: Partial<Record<ProductType, number>> = {
 
 export default function ManufacturingPanel({ theme, productType, productId, designUrl, onClose }: ManufacturingPanelProps) {
     const [selectedSize, setSelectedSize] = React.useState('L');
-    const [selectedColor, setSelectedColor] = React.useState(COLORS[0]);
+    const [selectedColor, setSelectedColor] = React.useState(COLORS[0]!);
     const [quantity, setQuantity] = React.useState(100);
     const toast = useToast();
     const { userProfile } = useStore();

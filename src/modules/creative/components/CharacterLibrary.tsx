@@ -269,7 +269,7 @@ export const CharacterLibrary: React.FC = () => {
                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{ref.referenceType}</span>
                             {dimensions[ref.image.id] && (
                                 <span className="text-[9px] font-mono text-blue-300/80">
-                                    {dimensions[ref.image.id].width}×{dimensions[ref.image.id].height}
+                                    {dimensions[ref.image.id]!.width}×{dimensions[ref.image.id]!.height}
                                 </span>
                             )}
                         </div>
@@ -452,7 +452,7 @@ export const CharacterLibrary: React.FC = () => {
                             {dimensions[characterReferences[previewIndex].image.id] && (
                                 <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10">
                                     <span className="text-[10px] font-mono text-gray-400">
-                                        {dimensions[characterReferences[previewIndex].image.id].width}×{dimensions[characterReferences[previewIndex].image.id].height}
+                                        {dimensions[characterReferences[previewIndex].image.id]!.width}×{dimensions[characterReferences[previewIndex].image.id]!.height}
                                     </span>
                                 </div>
                             )}
@@ -518,7 +518,7 @@ export const CharacterLibrary: React.FC = () => {
                                         <span className="text-[9px] font-bold text-gray-500 uppercase px-2 py-0.5 bg-white/5 rounded-full">{ref.referenceType}</span>
                                         {dimensions[ref.image.id] && (
                                             <span className="text-[9px] font-mono text-gray-500">
-                                                {dimensions[ref.image.id].width}×{dimensions[ref.image.id].height}
+                                                {dimensions[ref.image.id]!.width}×{dimensions[ref.image.id]!.height}
                                             </span>
                                         )}
                                     </div>

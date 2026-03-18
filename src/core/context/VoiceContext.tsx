@@ -79,10 +79,10 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     let finalTranscript = '';
 
                     for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        if (event.results[i].isFinal) {
-                            finalTranscript += event.results[i][0].transcript;
+                        if (event.results[i]!.isFinal) {
+                            finalTranscript += event.results[i]![0]!.transcript;
                         } else {
-                            interimTranscript += event.results[i][0].transcript;
+                            interimTranscript += event.results[i]![0]!.transcript;
                         }
                     }
                     setTranscript(finalTranscript || interimTranscript);

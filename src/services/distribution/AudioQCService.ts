@@ -88,7 +88,7 @@ export class AudioQCService {
 
         // Peak detection
         for (let i = 0; i < data.length; i++) {
-            const absVal = Math.abs(data[i]);
+            const absVal = Math.abs(data[i]!);
             if (absVal > peak) peak = absVal;
         }
 
@@ -108,13 +108,13 @@ export class AudioQCService {
 
         // Silence detection at start
         for (let i = 0; i < data.length; i++) {
-            if (Math.abs(data[i]) > SILENCE_THRESHOLD) break;
+            if (Math.abs(data[i]!) > SILENCE_THRESHOLD) break;
             silentSamplesAtStart++;
         }
 
         // Silence detection at end
         for (let i = data.length - 1; i >= 0; i--) {
-            if (Math.abs(data[i]) > SILENCE_THRESHOLD) break;
+            if (Math.abs(data[i]!) > SILENCE_THRESHOLD) break;
             silentSamplesAtEnd++;
         }
 
@@ -163,7 +163,7 @@ export class AudioQCService {
         for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
             const data = buffer.getChannelData(ch);
             for (let i = 0; i < data.length; i++) {
-                sumSquares += data[i] * data[i];
+                sumSquares += data[i]! * data[i]!;
             }
             totalSamples += data.length;
         }

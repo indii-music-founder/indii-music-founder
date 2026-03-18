@@ -50,7 +50,7 @@ export function useFocusTrap(isActive: boolean = true) {
         if (focusable.length > 0) {
             // Delay to ensure DOM is ready after render
             requestAnimationFrame(() => {
-                focusable[0].focus();
+                focusable[0]!.focus();
             });
         }
 
@@ -60,8 +60,8 @@ export function useFocusTrap(isActive: boolean = true) {
             const elements = getFocusableElements();
             if (elements.length === 0) return;
 
-            const firstElement = elements[0];
-            const lastElement = elements[elements.length - 1];
+            const firstElement = elements[0]!;
+            const lastElement = elements[elements.length - 1]!;
 
             if (e.shiftKey) {
                 // Shift+Tab: If focus is on first element, wrap to last

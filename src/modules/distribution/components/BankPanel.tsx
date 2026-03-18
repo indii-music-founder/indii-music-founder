@@ -72,10 +72,11 @@ export const BankPanel: React.FC = () => {
 
     const updateSplit = (index: number, field: 'userId' | 'percentage', value: string | number) => {
         const newSplits = [...splits];
+        if (!newSplits[index]) return;
         if (field === 'percentage') {
-            newSplits[index].percentage = parseFloat(value as string) / 100;
+            newSplits[index]!.percentage = parseFloat(value as string) / 100;
         } else {
-            newSplits[index].userId = value as string;
+            newSplits[index]!.userId = value as string;
         }
         setSplits(newSplits);
     };

@@ -39,7 +39,7 @@ export const ScreenwriterAgent: AgentConfig = {
         return {
             format_screenplay: ScreenwriterTools.format_screenplay,
             analyze_script_structure: ScreenwriterTools.analyze_script_structure
-        };
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     }
 };
 

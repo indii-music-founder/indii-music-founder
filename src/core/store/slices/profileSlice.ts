@@ -141,10 +141,10 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         set({ currentOrganizationId: isValidPreferred.id });
                     } else {
                         // Default to the first found org and sync back to cloud if possible
-                        logger.info('[Profile] Defaulting to first org:', userOrgs[0].id);
-                        set({ currentOrganizationId: userOrgs[0].id });
+                        logger.info('[Profile] Defaulting to first org:', userOrgs[0]!.id);
+                        set({ currentOrganizationId: userOrgs[0]!.id });
                         if (profile && !profile.currentOrganizationId) {
-                            const updatedProfile = { ...profile, currentOrganizationId: userOrgs[0].id };
+                            const updatedProfile = { ...profile, currentOrganizationId: userOrgs[0]!.id };
                             saveProfileToStorage(updatedProfile).catch(err => logger.error("[ProfileSlice] Failed to sync default org:", err));
                         }
                     }

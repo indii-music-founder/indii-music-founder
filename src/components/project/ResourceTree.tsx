@@ -85,7 +85,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
 
         try {
             for (let i = 0; i < totalFiles; i++) {
-                const file = files[i];
+                const file = files[i]!;
                 const fileType = getFileTypeFromMime(file.type);
 
                 // unique storage path: projects/{projectId}/{userId}/{timestamp}_{filename}

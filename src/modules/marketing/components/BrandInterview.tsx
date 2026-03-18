@@ -134,7 +134,7 @@ const BrandInterview: React.FC = () => {
                                             : 'bg-white/5 border border-white/10 text-gray-200'
                                         }
                                     `}>
-                                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</p>
+                                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.parts[0]!.text}</p>
 
                                         {/* Generative UI Components */}
                                         {msg.toolCall?.name === 'askMultipleChoice' && (

@@ -654,17 +654,17 @@ class DistributorServiceImpl {
           deployments: {},
         };
       }
-      grouped[d.internalReleaseId].deployments[d.distributorId] = { status: d.status as unknown as ReleaseStatus };
+      grouped[d.internalReleaseId]!.deployments[d.distributorId] = { status: d.status as unknown as ReleaseStatus };
 
       // Update metadata if a more complete record is found
-      if (d.title && grouped[d.internalReleaseId].title === 'Untitled Release') {
-        grouped[d.internalReleaseId].title = d.title;
+      if (d.title && grouped[d.internalReleaseId]!.title === 'Untitled Release') {
+        grouped[d.internalReleaseId]!.title = d.title;
       }
-      if (d.artist && grouped[d.internalReleaseId].artist === 'Unknown Artist') {
-        grouped[d.internalReleaseId].artist = d.artist;
+      if (d.artist && grouped[d.internalReleaseId]!.artist === 'Unknown Artist') {
+        grouped[d.internalReleaseId]!.artist = d.artist;
       }
-      if (d.coverArtUrl && !grouped[d.internalReleaseId].coverArtUrl) {
-        grouped[d.internalReleaseId].coverArtUrl = d.coverArtUrl;
+      if (d.coverArtUrl && !grouped[d.internalReleaseId]!.coverArtUrl) {
+        grouped[d.internalReleaseId]!.coverArtUrl = d.coverArtUrl;
       }
     });
 

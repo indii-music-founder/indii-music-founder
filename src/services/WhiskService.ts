@@ -100,8 +100,8 @@ export class WhiskService {
 
         return imageRefs.map(item => {
             const [mimeType, b64] = item.content.split(',');
-            const pureMime = mimeType.split(':')[1].split(';')[0];
-            return { mimeType: pureMime, data: b64 };
+            const pureMime = mimeType!.split(':')[1]!.split(';')[0]!;
+            return { mimeType: pureMime, data: b64! };
         });
     }
 
@@ -250,7 +250,7 @@ export class WhiskService {
             });
 
             if (results.length > 0) {
-                return results[0].url;
+                return results[0]!.url;
             }
             return null;
         } catch (error) {

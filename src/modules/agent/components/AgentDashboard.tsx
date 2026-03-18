@@ -335,7 +335,7 @@ const AgentDashboard: React.FC = () => {
                                         <button
                                             onClick={() => {
                                                 const lines = agentMessages.map(m =>
-                                                    `[${new Date(m.timestamp ?? Date.now()).toISOString()}] ${m.role === 'user' ? 'You' : 'Agent'}: ${m.content ?? ''}`
+                                                    `[${new Date(m.timestamp ?? Date.now()).toISOString()}] ${m.role === 'user' ? 'You' : 'Agent'}: ${(m as any).content ?? m.text ?? ''}`
                                                 );
                                                 const blob = new Blob([lines.join('\n\n')], { type: 'text/plain' });
                                                 const url = URL.createObjectURL(blob);

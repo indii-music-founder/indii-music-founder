@@ -185,9 +185,9 @@ export class FirebaseAIService {
     private rateLimiter: RateLimiter = new RateLimiter(60);
 
     // Circuit Breakers
-    private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION);
-    private mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION);
-    private auxBreaker = new CircuitBreaker(BREAKER_CONFIGS.AUX_SERVICES);
+    private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION!);
+    private mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION!);
+    private auxBreaker = new CircuitBreaker(BREAKER_CONFIGS.AUX_SERVICES!);
 
     // Dynamic Configuration
     private remoteConfig: RemoteAIConfig = DEFAULT_REMOTE_CONFIG;
@@ -457,7 +457,7 @@ export class FirebaseAIService {
 
                         // 5. Inject thoughtSignature if present (Critical for Gemini 3 function calling)
                         if (options?.thoughtSignature && Array.isArray(sanitizedPrompt) && sanitizedPrompt.length > 0) {
-                            const lastContent = sanitizedPrompt[sanitizedPrompt.length - 1];
+                            const lastContent = sanitizedPrompt[sanitizedPrompt.length - 1]!;
                             if (lastContent.parts.length > 0) {
                                 const lastPartIdx = lastContent.parts.length - 1;
                                 (lastContent.parts[lastPartIdx] as ContentPart).thoughtSignature = options.thoughtSignature;
@@ -698,7 +698,7 @@ export class FirebaseAIService {
 
                     // 3. Inject thoughtSignature if present
                     if (options?.thoughtSignature && Array.isArray(sanitizedPrompt) && sanitizedPrompt.length > 0) {
-                        const lastContent = sanitizedPrompt[sanitizedPrompt.length - 1];
+                        const lastContent = sanitizedPrompt[sanitizedPrompt.length - 1]!;
                         if (lastContent.parts.length > 0) {
                             const lastPartIdx = lastContent.parts.length - 1;
                             (lastContent.parts[lastPartIdx] as ContentPart).thoughtSignature = options.thoughtSignature;
@@ -1449,7 +1449,7 @@ export class FirebaseAIService {
                 const generatedVideos = operation.response?.generatedVideos;
 
                 if (generatedVideos && generatedVideos.length > 0) {
-                    const firstVideo = generatedVideos[0];
+                    const firstVideo = generatedVideos[0]!;
                     const videoUri = firstVideo.video?.uri;
                     const videoBytes = firstVideo.video?.videoBytes;
 
