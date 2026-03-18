@@ -83,7 +83,7 @@ export default function PublishingDashboard() {
         const now = Date.now();
         const endDate = new Date(now).toISOString().split('T')[0];
         const startDate = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        return { start: startDate, end: endDate };
+        return { start: startDate!, end: endDate! };
     }, []);
 
     const { data: analyticsData, loading: analyticsLoading } = useAnalytics(defaultDateRange);

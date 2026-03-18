@@ -22,7 +22,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
 
     const handleFileChange = async (files: File[]) => {
         if (files.length === 0) return;
-        const selectedFile = files[0];
+        const selectedFile = files[0]!;
         setFile(selectedFile);
         setError(null);
         setParsedReport(null);

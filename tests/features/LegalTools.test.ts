@@ -131,7 +131,7 @@ describe('LegalTools Feature', () => {
             spy.mockResolvedValue({ success: true, data: { content: 'NDA Content' } } as any);
 
             const args = { parties: ['Alice', 'Bob'], purpose: 'Secret Project' };
-            await LegalTools.generate_nda(args);
+            await LegalTools.generate_nda!(args);
 
             expect(spy).toHaveBeenCalledWith({
                 type: 'Non-Disclosure Agreement',
