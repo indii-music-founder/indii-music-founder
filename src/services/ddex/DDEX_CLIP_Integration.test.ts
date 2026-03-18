@@ -30,6 +30,19 @@ describe('CLIP (Audio) -> DDEX Integration Pipeline', () => {
             ddexSubGenre: 'Techno',
             language: 'zxx', // Instrumental
             isExplicit: false,
+            marketingComment: 'A peak-time warehouse weapon.',
+            timbre: {
+                texture: 'Analog Warmth',
+                brightness: 'Dark & Muddy',
+                saturation: 'Heavily Compressed',
+                spaceDepth: 'Cavernous Reverb'
+            },
+            productionValue: {
+                era: 'Modern Techno',
+                quality: 'Independent Pro Studio',
+                mixBalance: 'Bass-Forward',
+                aiArtifacts: false
+            },
             visualImagery: {
                 abstract: 'Strobe lights',
                 narrative: 'Warehouse party',
