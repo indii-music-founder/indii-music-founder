@@ -48,9 +48,16 @@ export class DDEXMapper {
             // For now, we leave aiGeneratedContent to be merged from the Project Source.
         };
 
-        // 2. Marketing Data
-        if (semantic.marketingHooks?.oneLiner) {
-            metadata.marketingComment = semantic.marketingHooks.oneLiner;
+        // 2. Marketing Data — prefer the dedicated marketingComment field (Session 1 Sonic Cortex),
+        // fall back to the one-liner from marketingHooks for backward compat with older profiles
+        metadata.marketingComment = semantic.marketingComment || semantic.marketingHooks?.oneLiner;
+
+        // 3. AI Artifact Disclosure (ERN 4.3 / Goal 3 compliance)
+        if (semantic.productionValue?.aiArtifacts) {
+            metadata.aiGeneratedContent = {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: true
+            };
         }
 
         return metadata;
