@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.28.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.1...v1.28.2) (2026-03-18)
+
+
+### Bug Fixes
+
+* 8 CodeRabbit findings — Stripe tier mapping, Founders security, CI config ([a107c49](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a107c49f71be78c9f1765822aa33695720ed25c6))
+* **ci:** remove duplicate deploy-staging/e2e/production job blocks causing YAML syntax error ([c365ed8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c365ed87735dfb636829ad056becc207c5dbf5e5))
+
 ## [1.28.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.0...v1.28.1) (2026-03-17)
 
 
