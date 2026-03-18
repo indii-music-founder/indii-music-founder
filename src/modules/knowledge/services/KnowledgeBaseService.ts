@@ -47,6 +47,7 @@ class KnowledgeBaseService {
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
+            if (!file) continue;
             uploadPromises.push((async () => {
                 try {
                     if (onProgress) onProgress(file.name);

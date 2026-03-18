@@ -56,7 +56,7 @@ describe('DevOpsTools Feature', () => {
                 data: { success: true, message: 'Scaled successfully' }
             });
 
-            const result = await DevOpsTools.scale_deployment(validArgs);
+            const result = await DevOpsTools.scale_deployment!(validArgs);
 
             expect(result.success).toBe(true);
             expect(result.message).toContain('Successfully scaled');
@@ -75,7 +75,7 @@ describe('DevOpsTools Feature', () => {
         });
 
         it('should fail if nodeCount is negative', async () => {
-            const result = await DevOpsTools.scale_deployment({
+            const result = await DevOpsTools.scale_deployment!({
                 ...validArgs,
                 nodeCount: -1
             });
@@ -90,7 +90,7 @@ describe('DevOpsTools Feature', () => {
         });
 
         it('should fail if nodeCount is not an integer', async () => {
-            const result = await DevOpsTools.scale_deployment({
+            const result = await DevOpsTools.scale_deployment!({
                 ...validArgs,
                 nodeCount: 5.5
             });
@@ -104,7 +104,7 @@ describe('DevOpsTools Feature', () => {
         });
 
         it('should fail if nodeCount exceeds safety limit', async () => {
-            const result = await DevOpsTools.scale_deployment({
+            const result = await DevOpsTools.scale_deployment!({
                 ...validArgs,
                 nodeCount: 101
             });
@@ -120,7 +120,7 @@ describe('DevOpsTools Feature', () => {
         it('should fail if user denies approval', async () => {
             mockRequestApproval.mockResolvedValue(false);
 
-            const result = await DevOpsTools.scale_deployment(validArgs);
+            const result = await DevOpsTools.scale_deployment!(validArgs);
 
             expect(result.success).toBe(false);
             expect(result.error).toContain("User denied");

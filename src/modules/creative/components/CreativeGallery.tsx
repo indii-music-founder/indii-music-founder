@@ -344,7 +344,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     useEffect(() => {
         if (!parentRef.current) return;
         const observer = new ResizeObserver((entries) => {
-            const width = entries[0].contentRect.width;
+            const width = entries[0]!.contentRect.width;
             if (compact) {
                 setColumns(2);
             } else {

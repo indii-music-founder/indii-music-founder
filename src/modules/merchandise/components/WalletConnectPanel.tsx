@@ -52,8 +52,8 @@ export function WalletConnectPanel() {
             if (accounts.length === 0) {
                 handleDisconnect();
             } else {
-                localStorage.setItem(STORAGE_KEY, accounts[0]);
-                setAddress(accounts[0]);
+                localStorage.setItem(STORAGE_KEY, accounts[0]!);
+                setAddress(accounts[0] ?? null);
             }
         };
         const onChainChanged = (...args: unknown[]) => {
@@ -84,10 +84,10 @@ export function WalletConnectPanel() {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
                 const chainId = await window.ethereum.request({ method: 'eth_chainId' }) as string;
 
-                localStorage.setItem(STORAGE_KEY, accounts[0]);
-                localStorage.setItem(CHAIN_KEY, chainId);
-                setAddress(accounts[0]);
-                setChain(chainId);
+                localStorage.setItem(STORAGE_KEY, accounts[0]!);
+                localStorage.setItem(CHAIN_KEY, chainId as string);
+                setAddress(accounts[0] ?? null);
+                setChain(chainId as string);
 
             } else {
                 // WalletConnect v2: uses WalletConnectService (backed by @reown/appkit when project ID is set)

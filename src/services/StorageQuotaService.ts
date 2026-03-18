@@ -188,7 +188,7 @@ export class StorageQuotaService {
     private static enrichQuota(data: Record<string, unknown>, tier = 'free'): StorageQuotaWithLimits {
         const totalGB = (data.totalGB as number) || 0;
         const resolvedTier = TIER_LIMITS_GB[tier] !== undefined ? tier : 'free';
-        const limitGB = TIER_LIMITS_GB[resolvedTier] ?? TIER_LIMITS_GB.free;
+        const limitGB = (TIER_LIMITS_GB[resolvedTier] ?? TIER_LIMITS_GB.free)!;
         const usedPercent = limitGB > 0 ? Math.min(100, Math.round((totalGB / limitGB) * 100)) : 0;
 
         return {
@@ -220,7 +220,7 @@ export class StorageQuotaService {
             scanDate: '',
             updatedAt: null,
             tier: resolvedTier,
-            limitGB: TIER_LIMITS_GB[resolvedTier] ?? TIER_LIMITS_GB.free,
+            limitGB: (TIER_LIMITS_GB[resolvedTier] ?? TIER_LIMITS_GB.free)!,
             usedPercent: 0,
             isNearLimit: false,
             isOverLimit: false,

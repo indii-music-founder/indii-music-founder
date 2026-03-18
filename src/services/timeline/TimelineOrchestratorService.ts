@@ -372,7 +372,7 @@ Return a JSON object with:
         const milestoneIndex = timeline.milestones.findIndex(m => m.id === milestoneId);
         if (milestoneIndex === -1) throw new Error(`Milestone not found: ${milestoneId}`);
 
-        const milestone = timeline.milestones[milestoneIndex];
+        const milestone = timeline.milestones[milestoneIndex]!;
         if (milestone.status !== 'pending') {
             logger.warn(`[TimelineOrchestrator] Milestone ${milestoneId} is not pending (status: ${milestone.status}). Skipping.`);
             return;

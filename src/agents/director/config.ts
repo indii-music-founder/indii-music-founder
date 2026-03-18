@@ -24,7 +24,7 @@ export const DirectorAgent: AgentConfig = {
             render_cinematic_grid: DirectorTools.render_cinematic_grid,
             extract_grid_frame: DirectorTools.extract_grid_frame,
             interpolate_sequence: VideoTools.interpolate_sequence,
-        };
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     tools: [{
         functionDeclarations: [

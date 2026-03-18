@@ -206,7 +206,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     }, [currentVideoJobId, toast, motionPrompt, addToHistory, currentProjectId]);
 
     // Get current placement options based on product type
-    const currentPlacements = placementOptions[productType] || placementOptions['t-shirt'];
+    const currentPlacements = placementOptions[productType] || placementOptions['t-shirt'] || [];
 
     // Handlers
     const handleAssetUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -332,7 +332,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
             const match = productAsset.match(/^data:(.+);base64,(.+)$/);
             if (!match) throw new Error("Invalid asset data");
 
-            const assetImage = { mimeType: match[1], data: match[2] };
+            const assetImage = { mimeType: match[1]!, data: match[2]! };
             const placementDesc = getPlacementDescription(productType, placement);
 
             // Enhanced texture mapping prompt with placement awareness
@@ -603,7 +603,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                                 // Reset placement to first option for new product type
                                                 const newPlacements = placementOptions[type.id];
                                                 if (newPlacements && newPlacements.length > 0) {
-                                                    setPlacement(newPlacements[0].id);
+                                                    setPlacement(newPlacements[0]!.id);
                                                 }
                                             }}
                                             data-testid={`showroom-product-${type.id}`}

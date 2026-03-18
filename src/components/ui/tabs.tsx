@@ -76,7 +76,7 @@ const TabsList = React.forwardRef<
         }
 
         e.preventDefault()
-        const nextTab = tabs[nextIndex]
+        const nextTab = tabs[nextIndex]!
         nextTab.focus()
         nextTab.click()
     }

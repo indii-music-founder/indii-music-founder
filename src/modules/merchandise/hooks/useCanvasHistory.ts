@@ -104,7 +104,7 @@ export const useCanvasHistory = (
 
     try {
       const prevIndex = history.index - 1;
-      const prevState = history.states[prevIndex];
+      const prevState = history.states[prevIndex]!;
       const parsedJson = JSON.parse(prevState.json);
 
       lastSavedJson.current = prevState.json;
@@ -132,7 +132,7 @@ export const useCanvasHistory = (
 
     try {
       const nextIndex = history.index + 1;
-      const nextState = history.states[nextIndex];
+      const nextState = history.states[nextIndex]!;
       const parsedJson = JSON.parse(nextState.json);
 
       lastSavedJson.current = nextState.json;

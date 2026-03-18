@@ -358,7 +358,7 @@ const BrandManager: React.FC = () => {
                 suggestions: result.suggestions
             };
 
-            const updatedHistory = [newHistoryItem, ...(brandKit.healthHistory || [])].slice(0, 10);
+            const updatedHistory = [newHistoryItem, ...(brandKit.healthHistory || []).map(h => ({ ...h, date: h.date ?? '' }))].slice(0, 10);
             updateBrandKit({ healthHistory: updatedHistory });
             saveBrandKit({ healthHistory: updatedHistory });
 

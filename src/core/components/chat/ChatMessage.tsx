@@ -48,8 +48,8 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             if (toolMatch) {
                 // ... existing logic ...
                 try {
-                    const toolName = toolMatch[1];
-                    const json = JSON.parse(toolMatch[2]);
+                    const toolName = toolMatch[1]!;
+                    const json = JSON.parse(toolMatch[2]!);
                     const { generatedHistory } = useStore.getState();
 
                     let imageIds: string[] = [];
@@ -85,7 +85,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             if (delegateMatch) {
                 // ... existing logic ...
                 try {
-                    const json = JSON.parse(delegateMatch[1]);
+                    const json = JSON.parse(delegateMatch[1]!);
                     if (json.text) {
                         const innerToolMatch = json.text.match(/\[Tool: ([^\]]+)\] Output: (?:Success: )?(\{.*\})/s);
                         if (innerToolMatch) {

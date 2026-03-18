@@ -150,12 +150,12 @@ LIMIT 8`;
             }>;
 
             // Derive a narrative insight from the cohort data
-            const best = rows.reduce((a, b) => (b.retention_d30 > a.retention_d30 ? b : a), rows[0]);
-            const worst = rows.reduce((a, b) => (b.retention_d30 < a.retention_d30 ? b : a), rows[0]);
+            const best = rows.reduce((a, b) => (b.retention_d30 > a.retention_d30 ? b : a), rows[0]!);
+            const worst = rows.reduce((a, b) => (b.retention_d30 < a.retention_d30 ? b : a), rows[0]!);
             const insight = rows.length > 0
-                ? `Best D30 retention: cohort starting ${best?.cohort} (${(best.retention_d30 * 100).toFixed(0)}%). ` +
-                  `Lowest: ${worst?.cohort} (${(worst.retention_d30 * 100).toFixed(0)}%). ` +
-                  `${best.retention_d30 > 0.45 ? 'Strong retention — investigate what drove that cohort.' : 'Retention below 45% — consider playlist refresh or re-engagement campaign.'}`
+                ? `Best D30 retention: cohort starting ${best?.cohort} (${(best!.retention_d30 * 100).toFixed(0)}%). ` +
+                  `Lowest: ${worst?.cohort} (${(worst!.retention_d30 * 100).toFixed(0)}%). ` +
+                  `${best!.retention_d30 > 0.45 ? 'Strong retention — investigate what drove that cohort.' : 'Retention below 45% — consider playlist refresh or re-engagement campaign.'}`
                 : 'No cohort data available for the selected table.';
 
             return toolSuccess({

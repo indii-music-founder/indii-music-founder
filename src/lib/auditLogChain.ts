@@ -63,7 +63,7 @@ async function getLatestEntry(userId: string): Promise<{ prevHash: string; seque
 
         if (snapshot.empty) return null;
 
-        const latestDoc = snapshot.docs[0].data();
+        const latestDoc = snapshot.docs[0]!.data();
         return {
             prevHash: latestDoc.entryHash as string,
             sequenceNumber: latestDoc.sequenceNumber as number,

@@ -128,7 +128,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
     const handleSave = () => {
         if (!generatedPlan) return;
 
-        const campaign = CampaignAI.planToCampaignAsset(generatedPlan, startDate);
+        const campaign = CampaignAI.planToCampaignAsset(generatedPlan, startDate!);
         onSave(campaign);
         toast.success('Campaign created!');
         onClose();

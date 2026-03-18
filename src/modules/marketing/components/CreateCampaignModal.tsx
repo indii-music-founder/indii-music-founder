@@ -84,7 +84,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                 assetType: 'campaign',
                 title,
                 description,
-                startDate,
+                startDate: startDate!,
                 endDate,
                 budget: budget ? parseFloat(budget) : 0,
                 durationDays: 30, // Default for now

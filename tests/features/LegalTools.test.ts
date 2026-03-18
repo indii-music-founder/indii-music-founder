@@ -41,7 +41,7 @@ describe('LegalTools Feature', () => {
             // Mock DB response
             (LegalService.saveContract as any).mockResolvedValue('contract-123');
 
-            const result = await LegalTools.draft_contract(validArgs);
+            const result = await LegalTools.draft_contract!(validArgs);
 
             // Assert Success
             expect(result.success).toBe(true);
@@ -67,7 +67,7 @@ describe('LegalTools Feature', () => {
         it('should handle AI service failure gracefully', async () => {
              (firebaseAI.generateContent as any).mockRejectedValue(new Error("AI Service Down"));
 
-             const result = await LegalTools.draft_contract(validArgs);
+             const result = await LegalTools.draft_contract!(validArgs);
 
              expect(result.success).toBe(false);
              expect(result.error).toBe("AI Service Down");
@@ -80,7 +80,7 @@ describe('LegalTools Feature', () => {
             });
             (LegalService.saveContract as any).mockRejectedValue(new Error("DB Error"));
 
-            const result = await LegalTools.draft_contract(validArgs);
+            const result = await LegalTools.draft_contract!(validArgs);
 
             // The tool implementation catches persistence errors and returns success with content but no ID
             expect(result.success).toBe(true);
@@ -94,7 +94,7 @@ describe('LegalTools Feature', () => {
         it('should fail if parties is not an array', async () => {
             const invalidArgs = { ...validArgs, parties: "Not an array" as any };
 
-            const result = await LegalTools.draft_contract(invalidArgs);
+            const result = await LegalTools.draft_contract!(invalidArgs);
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('Validation Error');
@@ -103,7 +103,7 @@ describe('LegalTools Feature', () => {
         it('should fail if parties array is empty', async () => {
              const invalidArgs = { ...validArgs, parties: [] };
 
-             const result = await LegalTools.draft_contract(invalidArgs);
+             const result = await LegalTools.draft_contract!(invalidArgs);
 
              expect(result.success).toBe(false);
              expect(result.error).toContain('Validation Error');
@@ -112,7 +112,7 @@ describe('LegalTools Feature', () => {
         it('should fail if type is missing', async () => {
             const invalidArgs = { ...validArgs, type: undefined as any };
 
-            const result = await LegalTools.draft_contract(invalidArgs);
+            const result = await LegalTools.draft_contract!(invalidArgs);
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('Validation Error');

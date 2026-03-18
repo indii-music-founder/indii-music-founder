@@ -132,7 +132,7 @@ export default function GrowthIntelligenceDashboard() {
             addAnalyticsAlerts(reports.flatMap(r => r.alerts));
 
             if (!analyticsSelectedTrackId && reports.length > 0) {
-                setAnalyticsSelectedTrackId(reports[0].track.trackId);
+                setAnalyticsSelectedTrackId(reports[0]!.track.trackId);
             }
             setAnalyticsLastRefresh(Date.now());
         } catch (err) {
