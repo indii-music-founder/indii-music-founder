@@ -75,7 +75,7 @@ export class LoopDetector {
         // Check 2: Alternating pattern (A→B→A→B)
         if (this.toolCallHistory.length >= 3) {
             const last3 = this.toolCallHistory.slice(-3);
-            const [call1, call2, call3] = last3;
+            const [call1, call2, call3] = last3 as [typeof last3[number], typeof last3[number], typeof last3[number]];
 
             if (call1.name === call3.name && call1.args === call3.args &&
                 call2.name === name && call2.args === argsStr) {

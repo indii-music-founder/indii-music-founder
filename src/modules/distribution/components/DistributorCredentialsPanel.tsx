@@ -112,7 +112,7 @@ export default function DistributorCredentialsPanel() {
     }, []);
 
     const updateForm = (id: string, field: keyof CredentialFormState, value: string) => {
-        setForms(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+        setForms(prev => ({ ...prev, [id]: { apiKey: '', sftpUsername: '', sftpPassword: '', sftpPort: '22', ...prev[id], [field]: value } }));
     };
 
     const handleSave = async (dist: DistributorEntry) => {

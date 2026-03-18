@@ -119,7 +119,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
             }
 
             if (results.length > 0) {
-                const firstResult = results[0];
+                const firstResult = results[0]!;
                 if (firstResult.url) {
                     // Synchronous return
                     results.forEach(res => {

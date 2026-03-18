@@ -41,7 +41,7 @@ export const ProducerAgent: AgentConfig = {
         return {
             create_call_sheet: ProducerTools.create_call_sheet,
             breakdown_script: ProducerTools.breakdown_script
-        };
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     }
 };
 

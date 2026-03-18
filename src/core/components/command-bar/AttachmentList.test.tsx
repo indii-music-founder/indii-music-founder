@@ -47,7 +47,7 @@ describe('AttachmentList', () => {
     render(<AttachmentList attachments={mockAttachments} onRemove={mockOnRemove} />);
 
     const removeButtons = screen.getAllByRole('button', { name: /remove/i });
-    fireEvent.click(removeButtons[0]);
+    fireEvent.click(removeButtons[0]!);
 
     expect(mockOnRemove).toHaveBeenCalledWith(0);
   });

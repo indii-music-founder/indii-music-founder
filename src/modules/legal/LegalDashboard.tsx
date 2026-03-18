@@ -62,7 +62,7 @@ export default function LegalDashboard() {
         setIsDragging(false);
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            handleFileUpload(files[0]);
+            handleFileUpload(files[0]!);
         }
     };
 
@@ -139,7 +139,7 @@ Only return valid JSON.
     const handleGenerateNDA = async () => {
         setIsGenerating('NDA');
         try {
-            const nda = await LegalTools.generate_nda({
+            const nda = await LegalTools.generate_nda!({
                 parties: ['[ARTIST NAME]', '[COMPANY/INDIVIDUAL NAME]'],
                 purpose: 'general business discussion and project collaboration'
             });
@@ -154,7 +154,7 @@ Only return valid JSON.
     const handleGenerateIPAssignment = async () => {
         setIsGenerating('IP');
         try {
-            const assignment = await LegalTools.draft_contract({
+            const assignment = await LegalTools.draft_contract!({
                 type: 'Intellectual Property Assignment',
                 parties: ['[ASSIGNOR NAME]', '[ASSIGNEE NAME]'],
                 terms: 'Transfer of all rights, title, and interest in and to the specified creative works.'

@@ -722,7 +722,7 @@ export default function MerchDesigner() {
                     title={deleteConfirm.length === 1 ? "Delete Layer?" : "Delete Layers?"}
                     message={
                         deleteConfirm.length === 1
-                            ? `Are you sure you want to delete "${deleteConfirm[0].name}"? This action cannot be undone.`
+                            ? `Are you sure you want to delete "${deleteConfirm[0]!.name}"? This action cannot be undone.`
                             : `Are you sure you want to delete ${deleteConfirm.length} layers? This action cannot be undone.`
                     }
                     confirmLabel="Delete"

@@ -403,7 +403,7 @@ export default function FileUpload({
       }
 
       if (!multiple) {
-        const selectedFile = selectedFiles[0];
+        const selectedFile = selectedFiles[0]!;
         setFile(selectedFile);
         setStatus("uploading");
         setProgress(0);

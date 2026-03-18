@@ -42,12 +42,12 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
             });
 
             if (result && result.length > 0) {
-                const imageUrl = result[0].url;
+                const imageUrl = result[0]!.url;
 
                 // Add to history
                 if (currentProjectId) {
                     addToHistory({
-                        id: result[0].id,
+                        id: result[0]!.id,
                         url: imageUrl,
                         prompt: prompt.trim(),
                         type: 'image',

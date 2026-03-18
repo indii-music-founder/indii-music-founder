@@ -59,7 +59,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
-        const file = files[0];
+        const file = files[0]!;
         if (!file.type.startsWith('image/')) {
             toast.error('Please upload an image file');
             return;
@@ -81,7 +81,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
                 toast.error('Failed to load image');
                 setIsUploading(false);
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(file as Blob);
         } catch (error) {
             logger.error('Upload error:', error);
             toast.error('Failed to upload image');

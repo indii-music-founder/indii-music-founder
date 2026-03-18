@@ -101,7 +101,7 @@ export default function UnifiedAssetLibrary({
     };
 
     const handleDelete = async (assetId: string, index: number) => {
-        const asset = currentAssets[index];
+        const asset = currentAssets[index]!;
 
         if (asset.id && userId) {
             const path = `users/${userId}/${storagePath}/${asset.id}`;

@@ -161,7 +161,7 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
         undo: () => {
             if (historyIndex.current > 0) {
                 historyIndex.current--;
-                const json = history.current[historyIndex.current];
+                const json = history.current[historyIndex.current]!;
                 fabricCanvas.current?.loadFromJSON(json).then(() => {
                     fabricCanvas.current?.renderAll();
                 });
@@ -170,7 +170,7 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
         redo: () => {
             if (historyIndex.current < history.current.length - 1) {
                 historyIndex.current++;
-                const json = history.current[historyIndex.current];
+                const json = history.current[historyIndex.current]!;
                 fabricCanvas.current?.loadFromJSON(json).then(() => {
                     fabricCanvas.current?.renderAll();
                 });

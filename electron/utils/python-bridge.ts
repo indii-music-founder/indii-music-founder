@@ -22,7 +22,7 @@ export class PythonBridge {
         const sensitiveFlags = ['--password', '--key', '--token', '-p', '--api-key'];
         const redacted = [...args];
         for (let i = 0; i < redacted.length; i++) {
-            if (sensitiveFlags.includes(redacted[i])) {
+            if (sensitiveFlags.includes(redacted[i]!)) {
                 if (i + 1 < redacted.length) {
                     redacted[i + 1] = '[REDACTED]';
                 }
@@ -52,7 +52,7 @@ export class PythonBridge {
                     return '[REDACTED]';
                 }
                 // Check if the PREVIOUS argument was a sensitive flag
-                if (index > 0 && sensitiveFlags.includes(args[index - 1])) {
+                if (index > 0 && sensitiveFlags.includes(args[index - 1]!)) {
                     return '[REDACTED]';
                 }
                 return arg;
@@ -101,7 +101,7 @@ export class PythonBridge {
                 try {
                     // Try to parse the last line as JSON, as our scripts print the result at the end
                     const lines = stdout.trim().split('\n');
-                    const lastLine = lines[lines.length - 1];
+                    const lastLine = lines[lines.length - 1]!;
                     const result = JSON.parse(lastLine);
                     resolve(result);
                 } catch (e) {

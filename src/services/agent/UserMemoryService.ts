@@ -30,9 +30,9 @@ function cosineSimilarity(a: number[], b: number[]): number {
   let normA = 0;
   let normB = 0;
   for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
+    dotProduct += a[i]! * b[i]!;
+    normA += a[i]! * a[i]!;
+    normB += b[i]! * b[i]!;
   }
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
@@ -467,7 +467,7 @@ Be specific and actionable. Avoid generic statements.
         const sessionMemories = activeMemories.filter(m => m.sourceSessionId === sessionId);
         if (sessionMemories.length >= 2) {
           const times = sessionMemories.map(m => m.createdAt.toMillis()).sort((a, b) => a - b);
-          sessionDurations.push(times[times.length - 1] - times[0]);
+          sessionDurations.push(times[times.length - 1]! - times[0]!);
         }
       });
       if (sessionDurations.length > 0) {
@@ -541,7 +541,7 @@ Be specific and actionable. Avoid generic statements.
     }
 
     // Return most recent context
-    const latestContext = contexts.sort((a, b) => b.lastUpdated.toMillis() - a.lastUpdated.toMillis())[0];
+    const latestContext = contexts.sort((a, b) => b.lastUpdated.toMillis() - a.lastUpdated.toMillis())[0]!;
 
     // Refresh if older than 24 hours
     const isStale = Date.now() - latestContext.lastUpdated.toMillis() > 86400000;
@@ -551,7 +551,7 @@ Be specific and actionable. Avoid generic statements.
       );
     }
 
-    return latestContext;
+    return latestContext ?? null;
   }
 
   /**

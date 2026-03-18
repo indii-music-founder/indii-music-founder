@@ -127,7 +127,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         });
 
         if (results.length > 0) {
-            const videoJob = results[0];
+            const videoJob = results[0]!;
 
             // WAIT for job if URL is missing
             let finalUrl = videoJob.url;
@@ -165,8 +165,8 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             return toolError("Invalid image or mask data. Must be base64 data URIs.", 'INVALID_INPUT');
         }
 
-        const image = { mimeType: imgMatch[1], data: imgMatch[2] };
-        const mask = { mimeType: maskMatch[1], data: maskMatch[2] };
+        const image = { mimeType: imgMatch[1]!, data: imgMatch[2]! };
+        const mask = { mimeType: maskMatch[1]!, data: maskMatch[2]! };
 
         const uri = await Video.generateMotionBrush(image, mask);
 
@@ -206,9 +206,9 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         }
 
         const videoDataList = targetVideos.map(vid => {
-            const match = vid.url.match(/^data:(.+);base64,(.+)$/);
+            const match = vid!.url.match(/^data:(.+);base64,(.+)$/);
             if (match) {
-                return { mimeType: match[1], data: match[2] };
+                return { mimeType: match[1]!, data: match[2]! };
             }
             return null;
         }).filter(vid => vid !== null) as { mimeType: string; data: string }[];
@@ -274,7 +274,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         const results = await VideoGeneration.generateVideo(options);
 
         if (results.length > 0) {
-            const videoJob = results[0];
+            const videoJob = results[0]!;
 
             let finalUrl = videoJob.url;
             if (!finalUrl) {
@@ -367,7 +367,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         });
 
         if (results.length > 0) {
-            const jobId = results[0].id;
+            const jobId = results[0]!.id;
             return toolSuccess({
                 jobId
             }, `Long-form generation job started. Job ID: ${jobId}. You will see segments appear in your history as they are generated.`);
@@ -386,7 +386,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         });
 
         if (results.length > 0) {
-            const videoJob = results[0];
+            const videoJob = results[0]!;
             let finalUrl = videoJob.url;
 
             if (!finalUrl) {

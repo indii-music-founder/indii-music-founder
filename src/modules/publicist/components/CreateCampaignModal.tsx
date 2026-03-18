@@ -24,7 +24,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
         setIsSubmitting(true);
         try {
             // Determine a basic start date (today)
-            const startDate = new Date().toISOString().split('T')[0];
+            const startDate = new Date().toISOString().split('T')[0]!;
 
             await PublicistService.addCampaign(userId, {
                 title,

@@ -71,7 +71,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 
                 // Auto-expand the most recent date
                 if (fetchedVersions.length > 0) {
-                    const firstDate = formatDateKey(fetchedVersions[0].lastModified);
+                    const firstDate = formatDateKey(fetchedVersions[0]!.lastModified);
                     setExpandedDates(new Set([firstDate]));
                 }
             } catch (error) {

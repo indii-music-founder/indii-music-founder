@@ -19,7 +19,7 @@ export const RevenueProjections = () => {
     const handleForecast = async () => {
         setLoading(true);
         try {
-            const result = await FinanceTools.forecast_revenue({
+            const result = await FinanceTools.forecast_revenue!({
                 currentStreams: streams,
                 platform: platform,
                 rightsHolderSplit: 100 // Assuming independent artist for this view

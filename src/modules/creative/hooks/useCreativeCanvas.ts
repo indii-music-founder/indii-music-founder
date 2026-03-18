@@ -39,7 +39,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     // Data State
     const [prompt, setPrompt] = useState('');
-    const [activeColor, setActiveColor] = useState<CreativeColor>(STUDIO_COLORS[0]);
+    const [activeColor, setActiveColor] = useState<CreativeColor>(STUDIO_COLORS[0]!);
     const [definitions, setDefinitions] = useState<Record<string, string>>({});
     const [referenceImages, setReferenceImages] = useState<Record<string, { mimeType: string, data: string } | null>>({});
     const [generatedCandidates, setGeneratedCandidates] = useState<Candidate[]>([]);
@@ -258,7 +258,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 const mimeType = blob.type || 'image/png';
                 const base64data = await new Promise<string>((resolve) => {
                     const reader = new FileReader();
-                    reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                    reader.onloadend = () => resolve((reader.result as string).split(',')[1] ?? '');
                     reader.readAsDataURL(blob);
                 });
 

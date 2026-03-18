@@ -81,7 +81,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
     useEffect(() => {
         if (history.length === 0) {
             const randomGreeting = greetingsToUse[Math.floor(Math.random() * greetingsToUse.length)];
-            setHistory([{ role: 'model', parts: [{ text: randomGreeting }] }]);
+            setHistory([{ role: 'model', parts: [{ text: randomGreeting ?? '' }] }]);
             if (shouldTrackAnalytics) {
                 onboardingAnalytics.start();
             }
@@ -277,7 +277,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                 `Lost the thread there for a second. What were you saying?`,
                 `Connection blip. Run that by me again?`,
             ];
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] }] }]);
+            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] ?? '' }] }]);
         } finally {
             setIsProcessing(false);
         }
