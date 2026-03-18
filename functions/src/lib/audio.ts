@@ -2,7 +2,7 @@ import * as functions from "firebase-functions/v1";
 import { z } from "zod";
 import { getGeminiApiKey, geminiApiKey } from "../config/secrets";
 import { FUNCTION_AI_MODELS } from "../config/models";
-import { enforceRateLimit, RATE_LIMITS } from "./rateLimit";
+import { enforceRateLimit } from "./rateLimit";
 
 export const GenerateSpeechRequestSchema = z.object({
     text: z.string().min(1, "Text is required"),
