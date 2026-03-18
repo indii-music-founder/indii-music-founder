@@ -20,6 +20,14 @@ import { defineConfig, devices } from '@playwright/test';
  *   maestro-workflows.spec.ts – Maestro batch task orchestration
  *   chaos.spec.ts             – Resilience and error recovery
  */
+
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4242';
+
+// Only start the local dev server when baseURL points to localhost.
+// When PLAYWRIGHT_BASE_URL is a remote staging URL (from CI deploy-staging),
+// spinning up a local server is wasteful and can fail in headless CI.
+const isLocalhost = baseURL.startsWith('http://localhost') || baseURL.startsWith('http://127.0.0.1');
+
 export default defineConfig({
     testDir: './e2e',
     fullyParallel: true,
@@ -28,7 +36,7 @@ export default defineConfig({
     workers: process.env.CI ? 1 : undefined,
     reporter: [['html'], ['list']],
     use: {
-        baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4242',
+        baseURL,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
@@ -47,10 +55,12 @@ export default defineConfig({
             use: { ...devices['iPhone 14'] },
         },
     ],
-    webServer: {
-        command: 'npm run dev',
-        url: 'http://localhost:4242',
-        reuseExistingServer: !process.env.CI,
-        timeout: 60_000,
-    },
+    ...(isLocalhost ? {
+        webServer: {
+            command: 'npm run dev',
+            url: 'http://localhost:4242',
+            reuseExistingServer: !process.env.CI,
+            timeout: 60_000,
+        },
+    } : {}),
 });

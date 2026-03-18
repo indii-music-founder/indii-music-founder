@@ -36,7 +36,7 @@ async function handleFounderPassCheckoutCompleted(session: Stripe.Checkout.Sessi
       `[handleFounderPassCheckoutCompleted] Missing userId or paymentIntentId. ` +
       `sessionId=${session.id}, userId=${userId ?? 'MISSING'}, ` +
       `paymentIntentId=${paymentIntentId ?? 'MISSING'}, ` +
-      `metadata=${JSON.stringify(session.metadata)}`
+      `metadataKeys=${session.metadata ? Object.keys(session.metadata).join(',') : 'NONE'}`
     );
     return;
   }
@@ -132,7 +132,11 @@ async function updateSubscriptionByCustomer(
  */
 async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
   const subscription = event.data.object as Stripe.Subscription;
-  const tier = mapStripeTierToSubscriptionTier(subscription.items.data[0]?.price.product as string);
+  const priceItem = subscription.items.data[0];
+  const tier = mapStripeTierToSubscriptionTier(
+    priceItem?.price.product as string,
+    priceItem?.price.recurring?.interval ?? null
+  );
 
   if (!tier) {
     console.error('[handleSubscriptionCreated] Unknown tier');
@@ -154,7 +158,11 @@ async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
  */
 async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
   const subscription = event.data.object as Stripe.Subscription;
-  const tier = mapStripeTierToSubscriptionTier(subscription.items.data[0]?.price.product as string);
+  const priceItem = subscription.items.data[0];
+  const tier = mapStripeTierToSubscriptionTier(
+    priceItem?.price.product as string,
+    priceItem?.price.recurring?.interval ?? null
+  );
 
   if (!tier) {
     console.error('[handleSubscriptionUpdated] Unknown tier');
