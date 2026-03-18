@@ -1672,11 +1672,11 @@ export class FirebaseAIService {
             const candidates = result.response.candidates;
             if (!candidates || candidates.length === 0) throw new Error('No candidates returned');
 
-            const imagePart = candidates[0].content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
+            const imagePart = candidates[0]!.content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
 
             if (!imagePart || !imagePart.inlineData) {
                 // Check if it was blocked or just text returned (e.g. "I cannot generate that")
-                const textPart = candidates[0].content?.parts?.find(p => 'text' in p);
+                const textPart = candidates[0]!.content?.parts?.find(p => 'text' in p);
                 if (textPart && 'text' in textPart) {
                     throw new Error(`Generation blocked or failed: ${textPart.text}`);
                 }
@@ -1730,7 +1730,7 @@ export class FirebaseAIService {
                         throw new Error('No candidates returned from TTS fallback model');
                     }
 
-                    const parts = (candidates[0].content?.parts || []) as ContentPart[];
+                    const parts = (candidates[0]!.content?.parts || []) as ContentPart[];
                     const audioPart = parts.find(p => 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
 
                     if (!audioPart || !('inlineData' in audioPart)) {
@@ -1773,7 +1773,7 @@ export class FirebaseAIService {
                     throw new Error('No candidates returned from TTS model');
                 }
 
-                const audioPart = candidates[0].content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/')) as InlineDataPart | undefined;
+                const audioPart = candidates[0]!.content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/')) as InlineDataPart | undefined;
 
                 if (!audioPart || !audioPart.inlineData) {
                     throw new Error('No audio data found in response parts');
