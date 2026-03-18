@@ -40,6 +40,19 @@ describe('TrackIngestionService', () => {
             ddexSubGenre: 'Dance Pop',
             language: 'eng',
             isExplicit: false,
+            marketingComment: 'Best song ever',
+            timbre: {
+                texture: 'Glassy & Clean',
+                brightness: 'Crisp & Airy',
+                saturation: 'Lightly Compressed',
+                spaceDepth: 'Wide Stereo Field'
+            },
+            productionValue: {
+                era: 'Modern Pop',
+                quality: 'Professional Studio',
+                mixBalance: 'Balanced',
+                aiArtifacts: false
+            },
             visualImagery: {
                 abstract: 'Colorful swirls',
                 narrative: 'A dance party',
