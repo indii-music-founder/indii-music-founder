@@ -52,25 +52,25 @@ export function isPrivateIP(ip: string): boolean {
         // 10.0.0.0/8 (Private)
         if (parts[0] === 10) return true;
         // 172.16.0.0/12 (Private)
-        if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+        if (parts[0] === 172 && parts[1]! >= 16 && parts[1]! <= 31) return true;
         // 192.168.0.0/16 (Private)
         if (parts[0] === 192 && parts[1] === 168) return true;
         // 169.254.0.0/16 (Link-Local)
         if (parts[0] === 169 && parts[1] === 254) return true;
         // 100.64.0.0/10 (Carrier Grade NAT)
-        if (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) return true;
+        if (parts[0] === 100 && parts[1]! >= 64 && parts[1]! <= 127) return true;
         // 192.0.0.0/24 (IETF Protocol Assignments)
         if (parts[0] === 192 && parts[1] === 0 && parts[2] === 0) return true;
         // 192.0.2.0/24 (TEST-NET-1)
         if (parts[0] === 192 && parts[1] === 0 && parts[2] === 2) return true;
         // 198.18.0.0/15 (Benchmarking)
-        if (parts[0] === 198 && parts[1] >= 18 && parts[1] <= 19) return true;
+        if (parts[0] === 198 && parts[1]! >= 18 && parts[1]! <= 19) return true;
         // 198.51.100.0/24 (TEST-NET-2)
         if (parts[0] === 198 && parts[1] === 51 && parts[2] === 100) return true;
         // 203.0.113.0/24 (TEST-NET-3)
         if (parts[0] === 203 && parts[1] === 0 && parts[2] === 113) return true;
         // 224.0.0.0/4 (Multicast)
-        if (parts[0] >= 224) return true;
+        if (parts[0]! >= 224) return true;
 
         return false;
     } else if (family === 6) {
@@ -98,8 +98,8 @@ export function isPrivateIP(ip: string): boolean {
         if (expanded.startsWith('0000:0000:0000:0000:0000:ffff:')) {
             const lastPart = expanded.substring(30);
             const parts = lastPart.split(':');
-            const p1 = parseInt(parts[0], 16);
-            const p2 = parseInt(parts[1], 16);
+            const p1 = parseInt(parts[0]!, 16);
+            const p2 = parseInt(parts[1]!, 16);
             const ip4 = `${(p1 >> 8) & 255}.${p1 & 255}.${(p2 >> 8) & 255}.${p2 & 255}`;
             return isPrivateIP(ip4);
         }
@@ -110,8 +110,8 @@ export function isPrivateIP(ip: string): boolean {
             const lastPart = expanded.substring(30);
             if (lastPart !== '0000:0001' && lastPart !== '0000:0000') {
                 const parts = lastPart.split(':');
-                const p1 = parseInt(parts[0], 16);
-                const p2 = parseInt(parts[1], 16);
+                const p1 = parseInt(parts[0]!, 16);
+                const p2 = parseInt(parts[1]!, 16);
                 const ip4 = `${(p1 >> 8) & 255}.${p1 & 255}.${(p2 >> 8) & 255}.${p2 & 255}`;
                 return isPrivateIP(ip4);
             }
