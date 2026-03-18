@@ -9,7 +9,7 @@ import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
 
 const SEMANTIC_SCHEMA: Schema = {
-    type: 'OBJECT' as const, // Cast to const to satisfy strict typing
+    type: 'OBJECT' as const,
     properties: {
         mood: { type: 'ARRAY', items: { type: 'STRING' } },
         genre: { type: 'ARRAY', items: { type: 'STRING' } },
@@ -18,6 +18,27 @@ const SEMANTIC_SCHEMA: Schema = {
         ddexSubGenre: { type: 'STRING' },
         language: { type: 'STRING' },
         isExplicit: { type: 'BOOLEAN' },
+        marketingComment: { type: 'STRING' },
+        timbre: {
+            type: 'OBJECT',
+            properties: {
+                texture: { type: 'STRING' },
+                brightness: { type: 'STRING' },
+                saturation: { type: 'STRING' },
+                spaceDepth: { type: 'STRING' }
+            },
+            required: ['texture', 'brightness', 'saturation', 'spaceDepth']
+        },
+        productionValue: {
+            type: 'OBJECT',
+            properties: {
+                era: { type: 'STRING' },
+                quality: { type: 'STRING' },
+                mixBalance: { type: 'STRING' },
+                aiArtifacts: { type: 'BOOLEAN' }
+            },
+            required: ['era', 'quality', 'mixBalance', 'aiArtifacts']
+        },
         visualImagery: {
             type: 'OBJECT',
             properties: {
@@ -44,8 +65,13 @@ const SEMANTIC_SCHEMA: Schema = {
             required: ['image', 'veo']
         }
     },
-    required: ['mood', 'genre', 'instruments', 'ddexGenre', 'ddexSubGenre', 'language', 'isExplicit', 'visualImagery', 'marketingHooks', 'targetPrompts']
-} as unknown as Schema; // Cast to unknown then Schema to bypass deep type strictness if needed
+    required: [
+        'mood', 'genre', 'instruments',
+        'ddexGenre', 'ddexSubGenre', 'language', 'isExplicit', 'marketingComment',
+        'timbre', 'productionValue',
+        'visualImagery', 'marketingHooks', 'targetPrompts'
+    ]
+} as unknown as Schema;
 
 export class AudioIntelligenceService {
 
@@ -112,25 +138,43 @@ export class AudioIntelligenceService {
         const base64Audio = await this.fileToBase64(file);
 
         const systemPrompt = `
-You are a world-class Musicologist, A&R Director, and Audio Engineer. 
-Your primary task is to physically LISTEN to this audio track and generate highly accurate, structured metadata for music industry distribution (DDEX) and creative expression agents.
+You are a world-class Musicologist, A&R Director, and Mastering Engineer with 20 years of experience at major labels.
+PHYSICALLY LISTEN to this audio track. Every field below must be derived from what you ACTUALLY HEAR — not assumptions.
 
-Technical Context (Do NOT ignore this):
+Technical Context (Do NOT override this with your assumptions):
 - BPM: ${Math.round(bpm)}
 - Key: ${key}
 
-Output Targets:
-1. DDEX Metadata (Industry Standard):
-   - 'ddexGenre': Choose the exact primary genre (e.g., Rock, Hip-Hop, R&B, Electronic, Country, Pop, Jazz). Be extremely precise. DO NOT default to a genre.
-   - 'ddexSubGenre': Choose the exact sub-genre (e.g., Grunge, Nu-Metal, Trap, Ambient).
-   - 'language': The ISO 639-2 code for the language of performance (e.g., 'eng', 'spa'). Use 'zxx' if purely instrumental.
-   - 'isExplicit': True if the lyrics contain explicit content, False otherwise.
+=== OUTPUT TARGETS ===
 
-2. Creative Direction (For Agents):
-   - 'targetPrompts.image': A highly visual rendering prompt optimized for Google Gemini Image 3.1. What does this song LOOK like? Focus on lighting, texture, and cinematic composition matching the exact emotional vibe of the song.
-   - 'targetPrompts.veo': A video prompt optimized for Google Veo. What camera movement, atmosphere, and narrative perfectly fit the timbre and genre?
+1. DDEX Industry Metadata:
+   - 'ddexGenre': Exact primary genre (Hip-Hop, R&B, Electronic, Rock, Pop, Jazz, Country, etc.). Be precise — do NOT default.
+   - 'ddexSubGenre': Exact sub-genre (Trap, Boom Bap, Nu-Soul, Ambient, etc.).
+   - 'language': ISO 639-2 code ('eng', 'spa', etc.). Use 'zxx' if purely instrumental.
+   - 'isExplicit': true if you can clearly hear explicit language.
+   - 'marketingComment': Write 2-3 sentences of high-conversion DSP pitch copy (as if pitching to Spotify Editorial). Capture the emotional hook, reference points, and who this is for. Be specific — no generic phrases.
 
-Listen deeply to the instrumentation, vocal delivery, and mix. If it is aggressive, tag it aggressive. If it is sad, tag it sad. Do NOT hallucinate happiness if the tone is dark.
+2. Sonic Soul — Timbre & Production Texture (Session 1 Calibration):
+   - 'timbre.texture': The single most accurate descriptor of the sonic texture (e.g., "Analog Warmth", "Digital Quantization", "Gritty Lo-Fi", "Glassy & Clean", "Saturated Tape").
+   - 'timbre.brightness': High-frequency character (e.g., "Dark & Muddy", "Crisp & Airy", "Harsh & Bright", "Midrange-Heavy").
+   - 'timbre.saturation': Dynamic range / compression character (e.g., "Heavily Brick-Walled", "Lightly Compressed", "Punchy with Headroom", "Dynamic & Unprocessed").
+   - 'timbre.spaceDepth': Reverb/stereo field (e.g., "Cavernous Hall Reverb", "Dry & Intimate", "Wide Stereo Field", "Mono Club Sound").
+   - 'productionValue.era': What era does the production most accurately evoke? (e.g., "Late 90s Boom Bap", "2010s Trap", "Modern Hyperpop", "70s Soul", "80s Synthwave").
+   - 'productionValue.quality': Production tier (e.g., "Bedroom Producer", "Independent Pro Studio", "Major Label Mastered", "Lo-Fi Aesthetic — Intentional").
+   - 'productionValue.mixBalance': Dominant frequency/element focus (e.g., "Bass-Forward", "Vocal-Forward", "Balanced", "Mid-Heavy", "High-End Shimmer").
+   - 'productionValue.aiArtifacts': true if you detect unnatural quantization, robotic phrasing, or clear signs of AI-generated audio. This is a GOAL 3 COMPLIANCE check.
+
+3. Creative Direction (For Visual Agents):
+   - 'visualImagery.abstract': Abstract visual for a motion visualizer.
+   - 'visualImagery.narrative': Scene description for stock footage or AI video generation.
+   - 'visualImagery.lighting': Specific lighting (e.g., "Red neon backlight through rain-soaked glass").
+   - 'targetPrompts.image': A render-ready prompt for Gemini Image 3.1 that captures this song's visual soul.
+   - 'targetPrompts.veo': A scene-ready prompt for Veo 3.1 with camera movement and atmosphere.
+
+CRITICAL RULES:
+- If it's dark, tag it dark. If it's happy, tag it happy. Do NOT hallucinate tone.
+- Do NOT produce generic output. Every field must be specific to THIS track.
+- 'aiArtifacts' must be based on audio evidence, not assumption.
 `;
 
         const response = await firebaseAI.generateStructuredData<AudioSemanticData>(
