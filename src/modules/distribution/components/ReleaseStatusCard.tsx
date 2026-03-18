@@ -60,7 +60,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
     }, [releaseTitle, artistName]);
     // Determine overall status (most critical one)
     const deploymentList = Object.values(deployments);
-    const overallStatus = deploymentList.length > 0 ? deploymentList[0].status : 'draft';
+    const overallStatus = deploymentList.length > 0 ? deploymentList[0]!.status : 'draft';
 
     return (
         <Card className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-dept-distribution/30 transition-all duration-300 hover:shadow-2xl hover:shadow-dept-distribution/10 backdrop-blur-sm">
@@ -127,7 +127,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                             <span className="text-[10px] text-gray-600 font-mono">UPC: {upc}</span>
                         )}
                         {/* Item 398: Web Share API */}
-                        {typeof navigator !== 'undefined' && navigator.share && (
+                        {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
                             <button
                                 onClick={handleShare}
                                 className="p-1.5 rounded-md hover:bg-white/5 text-gray-600 hover:text-gray-300 transition-colors mr-2"

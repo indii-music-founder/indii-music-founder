@@ -49,7 +49,7 @@ function BreakdownRow({ label, pts, maxPts, color }: BreakdownRowProps) {
 }
 
 export const ViralScorePanel: React.FC<ViralScorePanelProps> = ({ viralScore, metrics }) => {
-    const style = LABEL_STYLES[viralScore.label] ?? LABEL_STYLES['Low'];
+    const style = LABEL_STYLES[viralScore.label] ?? LABEL_STYLES['Low'] ?? { ring: 'border-slate-600', glow: '', text: 'text-slate-400', bar: 'bg-slate-500' };
     const momentum = viralScoreService.detectMomentumSignal(metrics.momentumRatio);
     const circumference = 2 * Math.PI * 44; // r=44
     const dashOffset = circumference * (1 - viralScore.score / 100);

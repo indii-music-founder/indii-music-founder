@@ -56,18 +56,20 @@ function detectAnomalies(data: DailyStream[]): Anomaly[] {
         for (let i = 3; i < data.length; i++) {
             const window = data.slice(Math.max(0, i - 7), i);
             const avg = window.reduce((s, d) => s + d[key], 0) / window.length;
-            const current = data[i][key];
+            const row = data[i]!;
+            const current = row[key];
             if (current > avg * THRESHOLD) {
                 const pct = Math.round((current / avg - 1) * 100);
                 const confidence: Confidence = pct > 500 ? 'High' : pct > 200 ? 'Medium' : 'Low';
+                const trackName = TRACK_NAMES[key] ?? key;
                 anomalies.push({
-                    id: `${key}-${data[i].date}`,
+                    id: `${key}-${row.date}`,
                     trackKey: key,
-                    trackName: TRACK_NAMES[key],
-                    date: data[i].label,
+                    trackName,
+                    date: row.label,
                     pctIncrease: pct,
                     confidence,
-                    message: `'${TRACK_NAMES[key]}' spiked ${pct}% on ${data[i].label} — possible viral TikTok or botting`,
+                    message: `'${trackName}' spiked ${pct}% on ${row.label} — possible viral TikTok or botting`,
                     dismissed: false,
                 });
             }
@@ -81,7 +83,7 @@ function isAnomalousBar(data: DailyStream[], idx: number, key: 'trackA' | 'track
     if (idx < 3) return false;
     const window = data.slice(Math.max(0, idx - 7), idx);
     const avg = window.reduce((s, d) => s + d[key], 0) / window.length;
-    return data[idx][key] > avg * 2.5;
+    return (data[idx]?.[key] ?? 0) > avg * 2.5;
 }
 
 interface TooltipPayload {

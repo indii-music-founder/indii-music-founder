@@ -301,7 +301,7 @@ export class CanvasOperationsService {
 
         return {
             mimeType: 'image/png',
-            data: dataUrl.split(',')[1]
+            data: dataUrl.split(',')[1] ?? ''
         };
     }
 
@@ -336,7 +336,7 @@ export class CanvasOperationsService {
         const baseDataUrl = this.canvas.toDataURL({ format: 'png', multiplier: 1 });
         const baseImage = {
             mimeType: 'image/png',
-            data: baseDataUrl.split(',')[1]
+            data: baseDataUrl.split(',')[1] ?? ''
         };
 
         const masks: MaskData[] = [];
@@ -371,7 +371,7 @@ export class CanvasOperationsService {
 
                 masks.push({
                     mimeType: 'image/png',
-                    data: maskDataUrl.split(',')[1],
+                    data: maskDataUrl.split(',')[1] ?? '',
                     prompt,
                     colorId,
                     referenceImage: referenceImages[colorId] || undefined
@@ -480,6 +480,7 @@ export class CanvasOperationsService {
 
         originalObjects.forEach((obj, index) => {
             const state = originalState[index];
+            if (!state) return;
             obj.set({
                 visible: state.visible,
                 stroke: state.stroke,
@@ -490,7 +491,7 @@ export class CanvasOperationsService {
 
         this.canvas.renderAll();
 
-        return dataUrl.split(',')[1];
+        return dataUrl.split(',')[1] ?? null;
     }
 
     /**
@@ -540,6 +541,7 @@ export class CanvasOperationsService {
 
         originalObjects.forEach((obj, index) => {
             const state = originalState[index];
+            if (!state) return;
             obj.set({
                 visible: state.visible,
                 stroke: state.stroke,
@@ -549,7 +551,7 @@ export class CanvasOperationsService {
 
         this.canvas.renderAll();
 
-        return dataUrl.split(',')[1];
+        return dataUrl.split(',')[1] ?? null;
     }
 
     /**

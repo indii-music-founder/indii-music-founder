@@ -340,11 +340,16 @@ describe('FirebaseAIService', () => {
     });
 
     it('should handle generateVideo with polling', async () => {
-        vi.useFakeTimers();
-        // Mock fallback client initialization
+        // Bootstrap with real timers to avoid freezing async init
         await service.bootstrap();
         service['useFallbackMode'] = true;
         await service['initializeFallbackMode']();
+
+        // Mock fetch to reject immediately so the fallback URI path is taken
+        // (the real fetch would require authentication and hang in test env)
+        const fetchSpy = vi.spyOn(global, 'fetch').mockRejectedValue(new Error('fetch unavailable in tests'));
+
+        vi.useFakeTimers();
 
         const generatePromise = service.generateVideo({
             prompt: 'Cinematic video',
@@ -353,14 +358,16 @@ describe('FirebaseAIService', () => {
             timeoutMs: 10000 // large enough to pass the maxAttempts check
         });
 
-        // Advance timers to trigger the setTimeout inside the polling loop
+        // Advance timers to trigger the 5000ms setTimeout inside the polling loop
         await vi.advanceTimersByTimeAsync(5500);
 
         const result = await generatePromise;
 
         expect(result).toBe('http://video.mp4');
+
         vi.useRealTimers();
-    });
+        fetchSpy.mockRestore();
+    }, 15000);
 
     it('should retry on transient errors', async () => {
         vi.useFakeTimers();

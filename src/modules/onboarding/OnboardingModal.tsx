@@ -46,7 +46,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
     useEffect(() => {
         if (isOpen && history.length === 0) {
             const greeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
-            setHistory([{ role: 'model', parts: [{ text: greeting }] }]);
+            setHistory([{ role: 'model', parts: [{ text: greeting ?? '' }] }]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
@@ -169,7 +169,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 `Lost the thread there for a second. What were you saying?`,
                 `Connection blip. Run that by me again?`,
             ];
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] }] }]);
+            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] ?? '' }] }]);
         } finally {
             setIsProcessing(false);
         }
@@ -212,10 +212,10 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                     }`}>
                                     {msg.role === 'model' ? (
                                         <TextEffect per='char' preset='fade'>
-                                            {msg.parts[0].text}
+                                            {msg.parts[0]!.text}
                                         </TextEffect>
                                     ) : (
-                                        msg.parts[0].text
+                                        msg.parts[0]!.text
                                     )}
                                 </div>
                             </div>

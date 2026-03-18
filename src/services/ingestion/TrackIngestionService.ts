@@ -79,7 +79,7 @@ export class TrackIngestionService {
             marketingComment: semantic.marketingComment || semantic.marketingHooks.oneLiner,
 
             // Defaults for a "New Ingestion"
-            releaseDate: new Date().toISOString().split('T')[0],
+            releaseDate: new Date().toISOString().split('T')[0] ?? '',
             releaseType: 'Single',
             territories: ['Worldwide'],
             distributionChannels: ['streaming', 'download'],

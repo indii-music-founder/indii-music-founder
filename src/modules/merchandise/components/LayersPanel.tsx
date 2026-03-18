@@ -215,10 +215,10 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                             onDeleteLayer(layer);
                                         } else if (e.key === 'ArrowUp' && index > 0) {
                                             e.preventDefault();
-                                            onSelectLayer(displayLayers[index - 1]);
+                                            onSelectLayer(displayLayers[index - 1]!);
                                         } else if (e.key === 'ArrowDown' && index < displayLayers.length - 1) {
                                             e.preventDefault();
-                                            onSelectLayer(displayLayers[index + 1]);
+                                            onSelectLayer(displayLayers[index + 1]!);
                                         }
                                     }}
                                     className={`group relative p-2 rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50 ${isSelected

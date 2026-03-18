@@ -39,7 +39,7 @@ export class UPCService {
                     throw new Error('UPC pool is exhausted. Please add more UPC codes to the pool.');
                 }
 
-                const upcDoc = snapshot.docs[0];
+                const upcDoc = snapshot.docs[0]!;
                 const upcData = upcDoc.data() as UPCRecord;
 
                 transaction.update(upcDoc.ref, {
@@ -87,7 +87,7 @@ export class UPCService {
         const q = query(this.registryRef, where('upc', '==', upc), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) return null;
-        return { id: snap.docs[0].id, ...snap.docs[0].data() } as UPCRegistryEntry;
+        return { id: snap.docs[0]!.id, ...snap.docs[0]!.data() } as UPCRegistryEntry;
     }
 
     /** Look up the UPC assigned to a specific release. Returns null if not assigned. */
@@ -95,7 +95,7 @@ export class UPCService {
         const q = query(this.registryRef, where('releaseId', '==', releaseId), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) return null;
-        return { id: snap.docs[0].id, ...snap.docs[0].data() } as UPCRegistryEntry;
+        return { id: snap.docs[0]!.id, ...snap.docs[0]!.data() } as UPCRegistryEntry;
     }
 
     /** Get all UPC assignments belonging to the current user. */
@@ -127,7 +127,7 @@ export class UPCService {
         let sum = 0;
         for (let i = 0; i < digits.length; i++) {
             const weight = isEAN13 ? (i % 2 === 0 ? 1 : 3) : (i % 2 === 0 ? 3 : 1);
-            sum += digits[i] * weight;
+            sum += digits[i]! * weight;
         }
         const computed = (10 - (sum % 10)) % 10;
         return computed === checkDigit;

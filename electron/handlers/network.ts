@@ -26,7 +26,7 @@ export function registerNetworkHandlers() {
         } catch (error) {
             if (error instanceof z.ZodError) {
                 console.error('[Network] Validation failed:', error.errors);
-                throw new Error(`Invalid URL: ${error.errors[0].message}`);
+                throw new Error(`Invalid URL: ${error.errors[0]!.message}`);
             }
             console.error('[Network] Fetch failed:', error);
             throw new Error(`Network Request Failed: ${(error as Error).message}`);

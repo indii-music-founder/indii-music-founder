@@ -99,7 +99,7 @@ export default function AssetSpotlight() {
             {/* Grid — 2 columns */}
             <div className="grid grid-cols-2 gap-2">
                 {assets.map((asset, i) => {
-                    const badge = BADGE[asset.type] || BADGE.image;
+                    const badge = BADGE[asset.type] ?? BADGE['image']!;
                     const BadgeIcon = badge.icon;
                     const isSelected = selIdx === i;
                     return (

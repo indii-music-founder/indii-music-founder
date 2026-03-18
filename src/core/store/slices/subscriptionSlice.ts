@@ -77,7 +77,7 @@ export const createSubscriptionSlice: StateCreator<SubscriptionSlice> = (set, ge
         set((state) => {
             const newSubscriptions = { ...state.activeSubscriptions };
             keysToRemove.forEach(key => {
-                newSubscriptions[key](); // Execute unsubscribe
+                newSubscriptions[key]!(); // Execute unsubscribe
                 delete newSubscriptions[key];
                 logger.debug(`[SubscriptionManager] Cleared subscription by prefix: ${key}`);
             });
@@ -92,7 +92,7 @@ export const createSubscriptionSlice: StateCreator<SubscriptionSlice> = (set, ge
         if (keys.length === 0) return;
 
         keys.forEach(key => {
-            activeSubscriptions[key]();
+            activeSubscriptions[key]!();
         });
 
         logger.info(`[SubscriptionManager] Cleared all (${keys.length}) active subscriptions`);

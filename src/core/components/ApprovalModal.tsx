@@ -19,7 +19,7 @@ export function ApprovalModal() {
 
     if (!pendingApproval) return null;
 
-    const config = TYPE_CONFIG[pendingApproval.type] || TYPE_CONFIG['default'];
+    const config = TYPE_CONFIG[pendingApproval.type] || TYPE_CONFIG['default']!;
 
     const handleApprove = () => {
         resolveApproval(true);

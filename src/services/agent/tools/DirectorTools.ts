@@ -108,7 +108,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             if (refImg) {
                 const match = refImg.url.match(/^data:(.+);base64,(.+)$/);
                 if (match) {
-                    sourceImages = [{ mimeType: match[1], data: match[2] }];
+                    sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
                 }
             }
         } else if (args.referenceAssetIndex !== undefined) {
@@ -118,7 +118,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             if (asset) {
                 const match = asset.url.match(/^data:(.+);base64,(.+)$/);
                 if (match) {
-                    sourceImages = [{ mimeType: match[1], data: match[2] }];
+                    sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
                 }
             }
         } else if (args.uploadedImageIndex !== undefined) {
@@ -128,7 +128,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             if (upload) {
                 const match = upload.url.match(/^data:(.+);base64,(.+)$/);
                 if (match) {
-                    sourceImages = [{ mimeType: match[1], data: match[2] }];
+                    sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
                 }
             }
         }
@@ -229,9 +229,9 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         }
 
         const imageDataList = targetImages.map((img) => {
-            const match = img.url.match(/^data:(.+);base64,(.+)$/);
+            const match = img!.url.match(/^data:(.+);base64,(.+)$/);
             if (match) {
-                return { mimeType: match[1], data: match[2] };
+                return { mimeType: match[1]!, data: match[2]! };
             }
             return null;
         }).filter((img): img is { mimeType: string, data: string } => img !== null);
@@ -282,7 +282,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      * Specialized tool for rendering high-res showroom mockups
      */
     run_showroom_mockup: wrapTool('run_showroom_mockup', async (args: { productType: string, scenePrompt: string }) => {
-        return DirectorTools.generate_image({
+        return DirectorTools.generate_image!({
             prompt: `Professional product photography of a ${args.productType}, ${args.scenePrompt}, high end, 8k resolution, photorealistic`,
             count: 1
         });
@@ -319,7 +319,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 });
             });
             return toolSuccess({
-                asset_id: results[0].id
+                asset_id: results[0]!.id
             }, `High-resolution asset (${args.templateType}) generated successfully.`);
         }
         return toolError("Failed to generate high-resolution asset.", "GENERATION_FAILED");
@@ -337,7 +337,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         if (firstRef) {
             const match = firstRef.image.url.match(/^data:(.+);base64,(.+)$/);
             if (match) {
-                sourceImages = [{ mimeType: match[1], data: match[2] }];
+                sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
                 fullPrompt += " Maintain strict character consistency with the provided reference.";
             }
         }
@@ -351,7 +351,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         });
 
         if (results.length > 0) {
-            const res = results[0];
+            const res = results[0]!;
             addToHistory({
                 id: res.id,
                 url: res.url,

@@ -183,7 +183,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve({
                     mimeType: file.type,
-                    base64: (reader.result as string).split(',')[1]
+                    base64: (reader.result as string).split(',')[1]!
                 });
                 reader.onerror = reject;
                 reader.readAsDataURL(file);

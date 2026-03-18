@@ -48,7 +48,7 @@ export default function CommunityWebhookPanel() {
     };
 
     const handleTestWebhook = (idx: number) => {
-        const p = platforms[idx];
+        const p = platforms[idx]!;
         if (!p.webhookUrl) {
             showToast('Please enter a webhook URL first.', 'error');
             return;

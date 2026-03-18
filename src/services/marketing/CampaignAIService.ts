@@ -301,7 +301,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
 
         // Process sequentially to avoid rate limits
         for (let i = 0; i < total; i++) {
-            const post = postsNeedingImages[i];
+            const post = postsNeedingImages[i]!;
 
             if (onProgress) {
                 onProgress({
@@ -326,7 +326,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                         ...post.imageAsset,
                         imageUrl: `data:image/png;base64,${base64}`
                     }
-                });
+                } as ScheduledPost);
 
             } catch (error) {
                 // Continue with other posts, don't fail the whole batch

@@ -231,8 +231,12 @@ CRITICAL RULES:
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => {
-                const result = reader.result as string;
-                resolve(result.split(',')[1]);
+                const result = reader.result;
+                if (typeof result !== 'string') {
+                    reject(new Error('FileReader returned unexpected type'));
+                    return;
+                }
+                resolve(result.split(',')[1] ?? '');
             };
             reader.onerror = error => reject(error);
         });

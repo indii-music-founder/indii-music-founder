@@ -70,9 +70,9 @@ function buildStreamTimeline(releaseCount: number): StreamDataPoint[] {
     }
 
     // Compute smoothed baseline for forecasting
-    let smoothed = actualValues[0];
+    let smoothed = actualValues[0] ?? 0;
     for (let i = 1; i < actualValues.length; i++) {
-        smoothed = alpha * actualValues[i] + (1 - alpha) * smoothed;
+        smoothed = alpha * (actualValues[i] ?? 0) + (1 - alpha) * smoothed;
     }
 
     // Forecast next 15 days with continuing decay and ±15% CI
@@ -102,9 +102,9 @@ function refineTimeline(current: StreamDataPoint[]): StreamDataPoint[] {
     if (actuals.length < 2) return current;
 
     const recentWindow = actuals.slice(-7);
-    const trend = (recentWindow[recentWindow.length - 1] - recentWindow[0]) / Math.max(1, recentWindow.length - 1);
+    const trend = ((recentWindow[recentWindow.length - 1] ?? 0) - (recentWindow[0] ?? 0)) / Math.max(1, recentWindow.length - 1);
     const phi = 0.85; // dampening factor
-    const lastActual = actuals[actuals.length - 1];
+    const lastActual = actuals[actuals.length - 1] ?? 0;
     const CI = 0.15;
 
     return current.map((d, idx) => {

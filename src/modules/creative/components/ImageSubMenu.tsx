@@ -32,7 +32,7 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
             </button>
 
             <button
-                onClick={() => generatedHistory.length > 0 && setSelectedItem(generatedHistory[0])}
+                onClick={() => generatedHistory.length > 0 && setSelectedItem(generatedHistory[0] ?? null)}
                 className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
             >
                 Edit
@@ -40,7 +40,7 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
             <button
                 onClick={() => {
                     if (generatedHistory.length > 0) {
-                        setActiveReferenceImage(generatedHistory[0]);
+                        setActiveReferenceImage(generatedHistory[0] ?? null);
                         toast.success("Latest image set as reference");
                     }
                 }}
@@ -51,7 +51,7 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
             <button
                 onClick={() => {
                     if (generatedHistory.length > 0) {
-                        setPrompt(generatedHistory[0].prompt);
+                        setPrompt(generatedHistory[0]!.prompt);
                         toast.success("Prompt copied from latest image");
                     }
                 }}

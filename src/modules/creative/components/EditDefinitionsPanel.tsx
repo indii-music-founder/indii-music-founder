@@ -31,7 +31,7 @@ export default function EditDefinitionsPanel({
                     const result = ev.target.result as string;
                     const match = result.match(/^data:(.+);base64,(.+)$/);
                     if (match) {
-                        onUpdateReferenceImage(colorId, { mimeType: match[1], data: match[2] });
+                        onUpdateReferenceImage(colorId, { mimeType: match[1] ?? '', data: match[2] ?? '' });
                     }
                 }
             };

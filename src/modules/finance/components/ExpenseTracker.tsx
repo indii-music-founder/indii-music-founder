@@ -74,7 +74,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         return;
                     }
 
-                    const resultJson = await FinanceTools.analyze_receipt({
+                    const resultJson = await FinanceTools.analyze_receipt!({
                         image_data: base64String,
                         mime_type: file.type
                     });
@@ -94,7 +94,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         const expenseData = {
                             userId: userProfile.id,
                             vendor: data.vendor || 'Unknown Vendor',
-                            date: data.date || new Date().toISOString().split('T')[0],
+                            date: data.date || (new Date().toISOString().split('T')[0] ?? ''),
                             amount: Number(data.amount) || 0,
                             category: data.category || 'Other',
                             description: data.description || '',
@@ -126,7 +126,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
         const expenseData = {
             userId: userProfile.id as string,
             vendor: data.vendor || 'Unknown Vendor',
-            date: data.date || new Date().toISOString().split('T')[0],
+            date: data.date || (new Date().toISOString().split('T')[0] ?? ''),
             amount: Number(data.amount),
             category: data.category || 'Other',
             description: data.description || 'Manual Entry',

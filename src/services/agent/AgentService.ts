@@ -407,7 +407,7 @@ export class AgentService {
                     artistName = authUser.displayName;
                 } else if (authUser?.email) {
                     // Extract name from email as last resort (e.g., "john.doe@gmail.com" → "john doe")
-                    const emailName = authUser.email.split('@')[0].replace(/[._-]+/g, ' ');
+                    const emailName = authUser.email.split('@')[0]!.replace(/[._-]+/g, ' ');
                     // Only use if it looks like a real name (more than 2 chars, not all numbers)
                     if (emailName.length > 2 && !/^\d+$/.test(emailName)) {
                         artistName = emailName;

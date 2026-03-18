@@ -9,7 +9,7 @@ export const OrganizationSelector = () => {
     const [showNewOrgInput, setShowNewOrgInput] = useState(false);
     const [newOrgName, setNewOrgName] = useState('');
 
-    const currentOrg = organizations.find(o => o.id === currentOrganizationId) || organizations[0];
+    const currentOrg = organizations.find(o => o.id === currentOrganizationId) ?? organizations[0];
 
     const handleCreateOrg = () => {
         if (!newOrgName.trim()) return;
@@ -25,6 +25,8 @@ export const OrganizationSelector = () => {
         setShowNewOrgInput(false);
         setIsOpen(false);
     };
+
+    if (!currentOrg) return null;
 
     return (
         <div className="relative z-50">

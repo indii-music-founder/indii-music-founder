@@ -33,7 +33,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
     const handleGenerate = async () => {
         setStep('generating');
         try {
-            const result = await PUBLICIST_TOOLS.generate_campaign_assets({
+            const result = await PUBLICIST_TOOLS.generate_campaign_assets!({
                 trackTitle: formData.trackTitle,
                 artistName: formData.artistName,
                 releaseDate: formData.releaseDate,

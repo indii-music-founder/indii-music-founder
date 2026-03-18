@@ -68,7 +68,7 @@ export const TimelineTrack = memo(({
                             const x = e.clientX - rect.left;
                             const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
 
-                            const file = files[0];
+                            const file = files[0]!;
                             const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'image' : 'video';
                             const url = URL.createObjectURL(file);
 

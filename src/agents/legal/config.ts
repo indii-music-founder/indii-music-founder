@@ -56,7 +56,7 @@ export const LegalAgent: AgentConfig = {
             analyze_contract: AnalysisTools.analyze_contract,
             draft_contract: LegalTools.draft_contract,
             generate_nda: LegalTools.generate_nda
-        };
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     }
 };
 
