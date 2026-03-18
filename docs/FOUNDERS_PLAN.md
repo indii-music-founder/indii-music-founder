@@ -127,15 +127,26 @@ export const FOUNDERS_SEATS_REMAINING = COVENANT_TERMS.seats_total - FOUNDERS.le
 
 Cloud Function (`onCall`) that:
 1. Verifies the caller is authenticated
-2. Confirms a `payment_intent` was paid via Stripe API
-3. Checks `founders` collection count < 10
-4. Generates covenant hash: `SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")`
-5. Validates payment amount ($2,500 USD) and currency
-6. Writes to Firestore `founders/{uid}` and `subscriptions/{uid}` with `tier: 'founder'`
-7. Makes a direct commit to `main` via the GitHub Contents API (PUT), writing the new entry permanently to `src/config/founders.ts`
-8. Returns `{ covenantHash, seat, joinedAt, message, githubCommitPending }` to the client
+2. Sanitizes `displayName` input (character whitelist, 64-char max length cap)
+3. Short-circuits duplicate activations via `paymentIntentId` idempotency guard
+4. Confirms a `payment_intent` was paid via Stripe API
+5. Validates payment amount ($2,500 USD), currency, no refunds/disputes
+6. Checks `founders` collection count < 10 atomically via Firestore transaction
+7. Generates covenant hash: `SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")`
+8. Writes to Firestore `founders/{uid}` and `subscriptions/{uid}` with `tier: 'founder'`
+9. Makes a commit to `main` via the GitHub Contents API (PUT), writing the new entry permanently to `src/config/founders.ts` — with a 15s AbortController timeout per API call
+10. Returns `{ covenantHash, seat, joinedAt, message, githubCommitPending }` to the client
 
-The direct commit to `main` makes the record immediately permanent and publicly verifiable. If the GitHub commit fails (non-fatal), the Firestore record remains authoritative and the commit is queued for manual retry. The `githubCommitPending` flag in the response lets the client distinguish committed vs queued states.
+> **Note on PR vs Direct Push (Open Question #3, resolved):**
+> The current implementation uses a direct push to `main` for immediate public verifiability.
+> This is acceptable for the initial 10-seat program because:
+> - The file SHA provides optimistic locking (concurrent commits will conflict-fail)
+> - `injectFounderEntry` uses `JSON.stringify` for all string values (proper escaping)
+> - `displayName` is sanitized server-side before any file generation
+> - If CI is a concern, a future iteration can switch to the GitHub Pull Request API
+>   with auto-merge after CI passes — the GitH commit queue already handles failures gracefully.
+
+The direct commit to `main` makes the record immediately permanent and publicly verifiable. If the GitHub commit fails or times out (non-fatal), the Firestore record remains authoritative and the commit is queued for manual retry via `founder_github_commit_queue`. The `githubCommitPending` flag in the response lets the client distinguish committed vs queued states.
 
 #### MODIFIED: `functions/src/shared/subscription/SubscriptionTier.ts`
 
@@ -193,13 +204,16 @@ Add a `GITHUB_TOKEN_FOUNDERS` secret with a fine-grained PAT scoped to:
 
 1. `SubscriptionTier.ts` — add `FOUNDER` tier (15 min)
 2. `src/config/founders.ts` — create the covenant file (15 min)
-3. `activateFounderPass.ts` — Cloud Function with payment verification + Firestore write + GitHub commit (2–3 hrs)
+3. `activateFounderPass.ts` — Cloud Function with payment verification, input sanitization, idempotency guard, refund/dispute checks, Firestore transaction, GitHub commit with timeout (1–2 days, including unit tests, integration tests, manual Stripe test-mode validation, and security review for GitHub token usage)
 4. `webhookHandler.ts` — add `founder_pass` metadata routing (30 min)
 5. `StorageQuotaService.ts` — add founder → unlimited (5 min)
 6. `LoginForm.tsx` (studio) — sign-up mode toggle UI fix (1 hr)
 7. `FoundersSection.tsx` (landing page) — marketing + CTA (2–3 hrs)
 8. `FounderBadge.tsx` (studio settings) — profile badge + covenant viewer (1 hr)
 9. Wire checkout: `createOneTimeCheckout` called with founder product price ID (30 min)
+10. E2E staging test with Stripe test-mode for full activation flow
+11. Monitoring/alerting for `founder_github_commit_queue` failures
+12. Documentation of rollback/recovery procedure
 
 ---
 
@@ -217,17 +231,14 @@ This gives founders a trust mechanism that doesn't rely on a database (which can
 
 ---
 
-### Open Questions (Resolve Before Implementation)
+### Open Questions (Resolved)
 
-1. **API cost pass-through:** How are founder API costs billed? Options:
-   - Monthly invoice via Stripe for actual Gemini/Vertex usage
-   - Founders pre-fund a credit balance (simpler)
-   - Founders provide their own API keys (most direct)
+1. **API cost pass-through:** **Decision: Founders provide their own API keys.** This is the simplest approach — founders set their own `VITE_API_KEY` in the studio settings. No monthly invoicing or credit balance needed. The covenant promise is "pass-through at cost" — with their own key, cost is exactly what Google charges.
 
-2. **Name in code:** Public name/handle, or can founders choose to remain anonymous (listed as "Founder #N")?
+2. **Name in code:** **Decision: Founder's choice — public name/handle or `Founder #N`.** The `displayName` field in `activateFounderPass` is sanitized (character whitelist, 64-char max) but can be any valid string. If a founder prefers anonymity, they can use "Founder #N" as their display name.
 
-3. **GitHub commit:** Direct push to `main` on activation, or a PR that auto-merges? (PR is safer but adds latency between payment and proof)
+3. **GitHub commit:** **Decision: Direct push to `main` (current implementation).** The file SHA provides optimistic locking. `injectFounderEntry` uses `JSON.stringify` for proper escaping. Input is sanitized server-side. The `founder_github_commit_queue` handles failures. A PR-based flow can be added later if CI gating is desired.
 
-4. **Landing page:** Should the Founders section be gated (visible only when < 10 seats remain) or always visible for credibility?
+4. **Landing page:** **Decision: Always visible.** The `FoundersSection` component shows the seat counter and existing founders — this builds credibility and FOMO. When all seats are taken, it displays "All 10 founding seats have been claimed" with a link to Pro/Studio plans.
 
-5. **VITE_STUDIO_URL:** What is the production studio URL that `SignupForm` redirects to? Needs to be set in landing-page env.
+5. **VITE_STUDIO_URL:** **TODO:** Set production studio URL in `landing-page/.env.production`. The `SignupForm` and `FoundersSection` both use `getStudioUrl()` which reads `VITE_STUDIO_URL`. For local development, defaults to `http://localhost:4242`.

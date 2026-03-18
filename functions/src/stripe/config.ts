@@ -88,11 +88,15 @@ export const STRIPE_PRICES: Record<SubscriptionTier, {
 export const STRIPE_FOUNDER_PRICE_ID = resolvePriceId('STRIPE_PRICE_FOUNDER_PASS');
 
 /**
- * Get Stripe price ID for a tier and billing period
+ * Get Stripe price ID for a tier and billing period.
+ * For FOUNDER tier, returns the oneTime price regardless of isYearly.
  */
 export function getPriceId(tier: SubscriptionTier, isYearly: boolean): string | null {
   const prices = STRIPE_PRICES[tier];
   if (!prices) return null;
+
+  // Founder pass is a one-time purchase — return oneTime if present
+  if (prices.oneTime) return prices.oneTime;
 
   return (isYearly ? prices.yearly : prices.monthly) || null;
 }
@@ -129,13 +133,33 @@ const PRODUCT_TIER_MAP: Record<string, SubscriptionTier> = {
 };
 
 /**
- * Map a Stripe product ID to our SubscriptionTier.
+ * Map a Stripe product ID (and optional billing interval) to our SubscriptionTier.
  * Checks env overrides first (for live-mode product IDs), then the baked-in map.
+ *
+ * When a Pro product has both monthly and yearly prices under the same product ID,
+ * the caller should pass the billing interval from `price.recurring.interval`.
+ * Without the interval, Pro defaults to PRO_MONTHLY.
  */
-export function mapStripeTierToSubscriptionTier(productId: string): SubscriptionTier | null {
-  if (process.env.STRIPE_PRODUCT_PRO     && productId === process.env.STRIPE_PRODUCT_PRO)     return SubscriptionTier.PRO_MONTHLY;
-  if (process.env.STRIPE_PRODUCT_STUDIO  && productId === process.env.STRIPE_PRODUCT_STUDIO)  return SubscriptionTier.STUDIO;
+export function mapStripeTierToSubscriptionTier(
+  productId: string,
+  billingInterval?: 'month' | 'year' | string | null
+): SubscriptionTier | null {
+  // Founder (one-time — no interval)
   if (process.env.STRIPE_PRODUCT_FOUNDER && productId === process.env.STRIPE_PRODUCT_FOUNDER) return SubscriptionTier.FOUNDER;
-  return PRODUCT_TIER_MAP[productId] ?? null;
+
+  // Studio (interval doesn't distinguish tiers here — Studio is Studio)
+  if (process.env.STRIPE_PRODUCT_STUDIO  && productId === process.env.STRIPE_PRODUCT_STUDIO)  return SubscriptionTier.STUDIO;
+
+  // Pro — use billing interval to distinguish monthly vs yearly
+  if (process.env.STRIPE_PRODUCT_PRO && productId === process.env.STRIPE_PRODUCT_PRO) {
+    return billingInterval === 'year' ? SubscriptionTier.PRO_YEARLY : SubscriptionTier.PRO_MONTHLY;
+  }
+
+  // Fallback to baked-in test-mode map
+  const bakedTier = PRODUCT_TIER_MAP[productId] ?? null;
+  if (bakedTier === SubscriptionTier.PRO_MONTHLY && billingInterval === 'year') {
+    return SubscriptionTier.PRO_YEARLY;
+  }
+  return bakedTier;
 }
 
