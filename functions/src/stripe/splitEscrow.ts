@@ -6,7 +6,7 @@
  * When all parties call signEscrow(), the escrow transitions to RELEASED
  * and the FinanceTools client can call createTransfer() for each split.
  */
-import * as functions from 'firebase-functions';
+import * as functions from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
 import { stripe } from './config';
 
