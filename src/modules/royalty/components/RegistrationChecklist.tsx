@@ -7,12 +7,14 @@ import { CopyrightSection } from './CopyrightSection';
 import { ActionPanel } from './ActionPanel';
 import { ReleaseGateBanner } from './ReleaseGateBanner';
 import { RegistrationChecklistProps } from '../types';
+import { useStore } from '@/core/store';
 
 export const RegistrationChecklist: React.FC<RegistrationChecklistProps> = ({
     profile,
     onProSelect,
     isReleaseGate = false
 }) => {
+    const setModule = useStore(state => state.setModule);
     // Determine which section should be open initially
     // Default to PRO Registration if it's not complete, otherwise none
     const [expandedSection, setExpandedSection] = useState<'pro' | 'soundexchange' | 'mlc' | 'copyright' | null>(
@@ -81,10 +83,7 @@ export const RegistrationChecklist: React.FC<RegistrationChecklistProps> = ({
             {/* Sticky Bottom Action Panel */}
             <ActionPanel
                 profile={profile}
-                onComplete={() => {
-                    // TODO(hunter): Wire up actual navigation to dashboard
-                    // This should call setCurrentModule('dashboard') from the app store
-                }}
+                onComplete={() => setModule('dashboard')}
             />
         </div>
     );

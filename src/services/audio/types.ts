@@ -10,6 +10,21 @@ export interface AudioSemanticData {
     ddexSubGenre: string;   // SubGenre for DDEX (e.g., "Techno")
     language: string;       // ISO 639-2 (e.g., "eng", "zxx" for instrumental)
     isExplicit: boolean;    // Content advisory
+    marketingComment: string; // DDEX SoundRecording/MarketingComment — DSP pitch copy
+
+    // Sonic Soul (Session 1) — Timbre & Production Texture
+    timbre: {
+        texture: string;    // e.g., "Analog Warmth", "Digital Quantization", "Gritty Lo-Fi"
+        brightness: string; // e.g., "Dark & Muddy", "Crisp & Airy", "Midrange-Heavy"
+        saturation: string; // e.g., "Heavily Compressed", "Dynamic & Unprocessed"
+        spaceDepth: string; // e.g., "Cavernous Reverb", "Dry & Intimate", "Wide Stereo Field"
+    };
+    productionValue: {
+        era: string;        // e.g., "Late 90s Boom Bap", "Modern Hyperpop", "70s Soul"
+        quality: string;    // e.g., "Bedroom Producer", "Professional Studio", "Lo-Fi Aesthetic"
+        mixBalance: string; // e.g., "Bass-Forward", "Vocal-Forward", "Balanced"
+        aiArtifacts: boolean; // True if quantization/AI artifacts are audible (Goal 3 compliance)
+    };
 
     visualImagery: {
         abstract: string;   // For abstract visualizers
