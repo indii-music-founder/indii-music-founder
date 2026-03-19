@@ -65,6 +65,7 @@ export interface CampaignBrief {
 export interface GeneratedPostContent {
     platform: Platform;
     day: number;
+    subject?: string; // Email subject line (Email platform only)
     copy: string;
     imagePrompt: string;
     hashtags: string[];

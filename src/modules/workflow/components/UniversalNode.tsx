@@ -5,6 +5,24 @@ import { getNodeDefinition, getJobDefinition, DATA_TYPE_COLORS, DataType } from 
 import { CheckCircle, Hourglass, LoaderCircle, AlertTriangle, Settings, Pencil } from 'lucide-react';
 import { useStore } from '@/core/store';
 
+/**
+ * Extended asset shape for workflow node results.
+ * Covers AI-generated images, concept sets, videos, and generic outputs.
+ * AnyAsset already has `[key: string]: unknown` but these helpers
+ * make the property access explicit and TypeScript-checked.
+ */
+interface WorkflowResultAsset extends AnyAsset {
+    imageUrl?: string;
+    videoUrl?: string;
+    aiMetadata?: Record<string, unknown>;
+    aiGenerationInfo?: Record<string, unknown>;
+    base64?: string;
+    mimeType?: string;
+    label?: string;
+    description?: string;
+    concepts?: Array<{ imageUrl: string; aiMetadata?: Record<string, unknown> }>;
+}
+
 interface StatusStyle {
     icon: React.ElementType;
     color: string;
@@ -68,7 +86,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
         }
 
         // Deep check for result structure
-        let asset: AnyAsset | null = null;
+        let asset: WorkflowResultAsset | null = null;
         try {
             const rawResult = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
 
@@ -81,9 +99,9 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     aiMetadata: rawResult.aiMetadata,
                     aiGenerationInfo: rawResult.aiGenerationInfo,
                     title: 'AI Generated Artwork'
-                } as any;
+                };
             } else {
-                asset = rawResult as AnyAsset;
+                asset = rawResult as WorkflowResultAsset;
             }
         } catch (e) {
             return <p className="text-gray-400 text-[10px] p-1 truncate">{String(data.result).substring(0, 30)}</p>;
@@ -93,8 +111,8 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
         if (asset.assetType === 'image') return (
             <div className="relative w-full h-full">
-                <img src={(asset as unknown as { imageUrl: string }).imageUrl} alt="Result" className="w-full h-full object-cover" />
-                {(asset as any).aiMetadata && (
+                <img src={asset.imageUrl ?? ''} alt="Result" className="w-full h-full object-cover" />
+                {asset.aiMetadata && (
                     <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
                         AI Provenance Locked
                     </div>
@@ -102,11 +120,11 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             </div>
         );
         if (asset.assetType === 'imageConceptSet') {
-            const conceptSet = asset as unknown as { concepts: { imageUrl: string; aiMetadata?: any }[] };
+            const firstConcept = asset.concepts?.[0];
             return (
                 <div className="relative w-full h-full">
-                    <img src={conceptSet.concepts[0]?.imageUrl} alt="Result" className="w-full h-full object-cover" />
-                    {conceptSet.concepts[0]?.aiMetadata && (
+                    <img src={firstConcept?.imageUrl} alt="Result" className="w-full h-full object-cover" />
+                    {firstConcept?.aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
                             AI Provenance Locked
                         </div>
@@ -114,16 +132,16 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                 </div>
             );
         }
-        if (asset.assetType === 'video') return <video src={(asset as unknown as { videoUrl: string }).videoUrl} className="w-full h-full object-cover" />;
+        if (asset.assetType === 'video') return <video src={asset.videoUrl ?? ''} className="w-full h-full object-cover" />;
 
         // --- ENHANCEMENT: Detect raw base64 data and render as image ---
         const resultString = String(data.result);
-        if (resultString.startsWith('data:image/') || (asset as any).base64) {
-            const src = (asset as any).base64 ? `data:${(asset as any).mimeType || 'image/png'};base64,${(asset as any).base64}` : resultString;
+        if (resultString.startsWith('data:image/') || asset.base64) {
+            const src = asset.base64 ? `data:${asset.mimeType || 'image/png'};base64,${asset.base64}` : resultString;
             return (
                 <div className="relative w-full h-full">
                     <img src={src} alt="AI Result" className="w-full h-full object-cover" />
-                    {(asset as any).aiMetadata && (
+                    {asset.aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm flex items-center gap-1">
                             <div className="w-1 h-1 bg-teal-500 rounded-full animate-pulse" />
                             AI Provenance Locked
@@ -133,7 +151,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             );
         }
 
-        const displayLabel = (asset as any).title || (asset as any).label || (asset as any).description || (typeof asset === 'string' ? asset : 'Output Received');
+        const displayLabel = asset.title || asset.label || asset.description || (typeof asset === 'string' ? asset : 'Output Received');
         return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{displayLabel}</div>;
     };
 

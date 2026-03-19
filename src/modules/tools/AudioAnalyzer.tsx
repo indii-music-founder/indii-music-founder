@@ -97,7 +97,7 @@ const AudioAnalyzer: React.FC = () => {
         const toastId = toast.loading("Pushing DDEX and Agent context to Knowledge Graph...");
 
         try {
-            await audioAnalysisService.saveAnalysisToFirestore(profile.technical, file.name, profile.semantic);
+            await audioAnalysisService.saveAnalysisToFirestore(profile.technical, file.name, { ...profile.semantic });
             toast.dismiss(toastId);
             toast.success("DDEX Standards and Acoustic Profile logged to Database.");
         } catch (error) {

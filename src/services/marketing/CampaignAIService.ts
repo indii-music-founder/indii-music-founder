@@ -16,6 +16,21 @@ import {
 import { AppException, AppErrorCode } from '@/shared/types/errors';
 
 /**
+ * Mock interface for test injection via window global.
+ * Used by E2E and integration tests to stub image generation.
+ */
+interface CampaignAIMockService {
+    generatePostImages: (posts: ScheduledPost[], onProgress?: (progress: BatchImageProgress) => void) => Promise<ScheduledPost[]>;
+    generateSingleImage: (post: ScheduledPost) => Promise<string | null>;
+}
+
+declare global {
+    interface Window {
+        __MOCK_CAMPAIGN_AI_SERVICE__?: CampaignAIMockService;
+    }
+}
+
+/**
  * CampaignAIService - AI-powered campaign features
  *
  * Following patterns from:
@@ -98,7 +113,7 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
         };
 
         try {
-            const result = await GenAI.generateStructuredData<GeneratedCampaignPlan>(prompt, schema as any);
+            const result = await GenAI.generateStructuredData<GeneratedCampaignPlan>(prompt, schema);
 
             // Validate and clean up the result
             return {
@@ -118,8 +133,8 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
         const posts: ScheduledPost[] = plan.posts.map((p, index) => ({
             id: `post_${Date.now()}_${index}`,
             platform: p.platform as Platform,
-            subject: (p as any).subject,
-            copy: (p as any).subject ? p.copy : (p.copy + '\n\n' + p.hashtags.join(' ')),
+            subject: p.subject,
+            copy: p.subject ? p.copy : (p.copy + '\n\n' + p.hashtags.join(' ')),
             imageAsset: {
                 assetType: 'image' as const,
                 title: `${plan.title} - Day ${p.day}`,
@@ -216,7 +231,7 @@ Ensure all versions respect the platform's character limit.
         };
 
         try {
-            const result = await GenAI.generateStructuredData<PostEnhancement>(prompt, schema as any);
+            const result = await GenAI.generateStructuredData<PostEnhancement>(prompt, schema);
 
             return {
                 enhancedCopy: result.enhancedCopy || post.copy,
@@ -286,8 +301,8 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
         onProgress?: (progress: BatchImageProgress) => void
     ): Promise<ScheduledPost[]> {
         // Mock Support
-        if (typeof window !== 'undefined' && (window as any).__MOCK_CAMPAIGN_AI_SERVICE__) {
-            return (window as any).__MOCK_CAMPAIGN_AI_SERVICE__.generatePostImages(posts, onProgress);
+        if (typeof window !== 'undefined' && window.__MOCK_CAMPAIGN_AI_SERVICE__) {
+            return window.__MOCK_CAMPAIGN_AI_SERVICE__.generatePostImages(posts, onProgress);
         }
 
         const postsNeedingImages = posts.filter(p => !p.imageAsset.imageUrl);
@@ -351,8 +366,8 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
      */
     async generateSingleImage(post: ScheduledPost): Promise<string | null> {
         // Mock Support
-        if (typeof window !== 'undefined' && (window as any).__MOCK_CAMPAIGN_AI_SERVICE__) {
-            return (window as any).__MOCK_CAMPAIGN_AI_SERVICE__.generateSingleImage(post);
+        if (typeof window !== 'undefined' && window.__MOCK_CAMPAIGN_AI_SERVICE__) {
+            return window.__MOCK_CAMPAIGN_AI_SERVICE__.generateSingleImage(post);
         }
 
         try {
@@ -512,7 +527,7 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
         };
 
         try {
-            const result = await GenAI.generateStructuredData<EngagementPrediction>(prompt, schema as any);
+            const result = await GenAI.generateStructuredData<EngagementPrediction>(prompt, schema);
 
             return {
                 overallScore: result.overallScore || 50,
