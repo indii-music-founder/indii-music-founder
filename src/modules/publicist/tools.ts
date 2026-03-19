@@ -53,7 +53,7 @@ const CampaignAssetsSchema = z.object({
 
 // --- Tools Implementation ---
 
-export const PUBLICIST_TOOLS: Record<string, AnyToolFunction> = {
+export const PUBLICIST_TOOLS = {
     write_press_release: wrapTool('write_press_release', async (args: { headline: string, company_name: string, key_points: string[], contact_info: string }) => {
         const prompt = `
         You are a Senior Publicist.
@@ -174,4 +174,4 @@ export const PUBLICIST_TOOLS: Record<string, AnyToolFunction> = {
             return toolError("Error generating campaign assets.", 'GENERATION_ERROR');
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;

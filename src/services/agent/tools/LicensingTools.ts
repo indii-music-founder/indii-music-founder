@@ -17,7 +17,7 @@ const SyncMatchSchema = z.object({
     }))
 });
 
-export const LicensingTools: Record<string, AnyToolFunction> = {
+export const LicensingTools = {
     match_sync_licensing_brief: wrapTool('match_sync_licensing_brief', async (args: { briefDescription: string; mood: string; targetBpm: number }) => {
         // Item 133: Use Gemini to intelligently match catalog tracks to sync briefs
         const { trackLibrary } = await import('@/services/metadata/TrackLibraryService');
@@ -87,7 +87,7 @@ export const LicensingTools: Record<string, AnyToolFunction> = {
             `Effective Date: ${new Date().toISOString().split('T')[0]}`
         ].join('\n');
 
-        const result = await LegalTools.draft_contract({
+        const result = await LegalTools.draft_contract!({
             type: `${args.leaseType} Beat Lease Agreement`,
             parties: [args.producerName, args.buyerName],
             terms
@@ -106,7 +106,7 @@ export const LicensingTools: Record<string, AnyToolFunction> = {
             content: result?.data?.content
         }, `${args.leaseType} beat-leasing contract generated for "${args.beatTitle}" priced at $${args.price}. Contract ID: ${contractId}`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 export const {
     match_sync_licensing_brief,

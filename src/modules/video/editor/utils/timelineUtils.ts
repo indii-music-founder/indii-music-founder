@@ -5,7 +5,7 @@ export const groupClipsByTrack = (clips: VideoClip[]): Record<string, VideoClip[
     const grouped: Record<string, VideoClip[]> = {};
     for (const clip of clips) {
         if (!grouped[clip.trackId]) grouped[clip.trackId] = [];
-        grouped[clip.trackId].push(clip);
+        grouped[clip.trackId]!.push(clip);
     }
     return grouped;
 };

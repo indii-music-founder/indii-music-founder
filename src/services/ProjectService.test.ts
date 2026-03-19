@@ -62,8 +62,8 @@ describe('ProjectService', () => {
         const projects = await ProjectService.getProjectsForOrg('org-123');
 
         // Verify result is sorted by date descending (2000 > 1000)
-        expect(projects[0].id).toBe('2');
-        expect(projects[1].id).toBe('1');
+        expect(projects[0]!.id).toBe('2');
+        expect(projects[1]!.id).toBe('1');
 
         // Verify query construction (orderBy is NOT called on server in new impl)
         expect(mockQuery).toHaveBeenCalled();

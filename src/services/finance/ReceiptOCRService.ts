@@ -1,7 +1,7 @@
 import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
-import type { Content } from '@google/firebase-ai';
+import type { Content } from 'firebase/ai';
 
 export interface ReceiptData {
     amount: number;
@@ -54,7 +54,7 @@ export class ReceiptOCRService {
                         {
                             inlineData: {
                                 mimeType: file.type,
-                                data: base64Data.split(',')[1] // Remove data:image/png;base64, prefix
+                                data: base64Data.split(',')[1]! // Remove data:image/png;base64, prefix
                             }
                         }
                     ]

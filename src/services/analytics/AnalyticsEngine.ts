@@ -66,10 +66,10 @@ export class AnalyticsEngine {
             const streams = Math.round(baseStreams * Math.pow(dailyGrowthRate * saturationFactor + (1 - saturationFactor), i));
             const uncertainty = 0.15 + (i / horizonDays) * 0.20; // uncertainty grows over time
 
-            if (streams > peak) { peak = streams; peakDay = dateStr; }
+            if (streams > peak) { peak = streams; peakDay = dateStr!; }
 
             projected.push({
-                date: dateStr,
+                date: dateStr!,
                 streams,
                 lower: Math.round(streams * (1 - uncertainty)),
                 upper: Math.round(streams * (1 + uncertainty)),

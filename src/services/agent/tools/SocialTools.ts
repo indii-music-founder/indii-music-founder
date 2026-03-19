@@ -9,7 +9,7 @@ import { logger } from '@/utils/logger';
 // SocialTools Implementation
 // ============================================================================
 
-export const SocialTools: Record<string, AnyToolFunction> = {
+export const SocialTools = {
     generate_social_post: wrapTool('generate_social_post', async ({ platform, topic, tone }: { platform: string; topic: string; tone?: string }) => {
         const prompt = `Generate a ${tone || 'professional'} social media post for ${platform} about ${topic}. Include hashtags.`;
 
@@ -97,7 +97,7 @@ Be specific and data-driven based on the post content above.`;
             `Weekly sentiment report for ${accounts.join(', ')}: ${result.sentiment} (score ${normalizedTrendScore}/100).`
         );
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases
 export const { generate_social_post, analyze_social_sentiment } = SocialTools;

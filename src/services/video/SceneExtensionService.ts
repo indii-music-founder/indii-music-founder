@@ -104,7 +104,7 @@ class SceneExtensionServiceImpl {
         let previousLastFrame: { mimeType: string; data: string } | undefined = options.firstFrame;
 
         for (let i = 0; i < project.segments.length; i++) {
-            const segment = project.segments[i];
+            const segment = project.segments[i]!;
             segment.status = 'generating';
             options.onProgress?.(project);
 
@@ -279,7 +279,7 @@ class SceneExtensionServiceImpl {
 
                     ctx.drawImage(video, 0, 0);
                     const dataUrl = canvas.toDataURL('image/png');
-                    const base64 = dataUrl.split(',')[1];
+                    const base64 = dataUrl.split(',')[1] ?? '';
 
                     resolve({
                         mimeType: 'image/png',

@@ -53,8 +53,8 @@ describe('🧬 Helix: Population Control (Anti-Explosion)', () => {
     expect(nextGen).toHaveLength(5);
 
     // ASSERTION 2: Only the top 5 survived
-    expect(nextGen[0].id).toBe('gene-0');
-    expect(nextGen[4].id).toBe('gene-4');
+    expect(nextGen[0]!.id).toBe('gene-0');
+    expect(nextGen[4]!.id).toBe('gene-4');
   });
 
   it('Memory Safety: Trims large input populations down to the configured limit', async () => {

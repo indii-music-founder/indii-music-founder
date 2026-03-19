@@ -65,11 +65,11 @@ export const TouringService = {
 
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
-                const data = snapshot.docs[0].data();
+                const data = snapshot.docs[0]!.data();
                 try {
                     VehicleStatsSchema.passthrough().parse(data);
                     return {
-                        id: snapshot.docs[0].id,
+                        id: snapshot.docs[0]!.id,
                         ...data
                     } as VehicleStats;
                 } catch (validationError) {
@@ -149,7 +149,7 @@ export const TouringService = {
         const snapshot = await getDocs(q);
 
         if (!snapshot.empty) {
-            const docRef = snapshot.docs[0].ref;
+            const docRef = snapshot.docs[0]!.ref;
             await updateDoc(docRef, { ...stats, updatedAt: serverTimestamp() });
         } else {
             // Validate creation payload if possible, though 'stats' is Partial.

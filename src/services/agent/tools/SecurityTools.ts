@@ -64,7 +64,7 @@ const SENSITIVE_TERMS = ['password', 'secret', 'key', 'ssn', 'credit_card'];
 
 // --- Tools Implementation ---
 
-export const SecurityTools: Record<string, AnyToolFunction> = {
+export const SecurityTools = {
     check_api_status: wrapTool('check_api_status', async ({ api_name }: { api_name: string }) => {
         const apiKey = api_name.toLowerCase();
 
@@ -260,7 +260,7 @@ export const SecurityTools: Record<string, AnyToolFunction> = {
             biometricPassed: true
         }, `Biometric authentication (TouchID/FaceID) successfully enforced for high-security action: "${args.action}".`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases
 export const {

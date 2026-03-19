@@ -68,7 +68,7 @@ export class HistoryManager {
         // 1. Semantic Recall (Tier 2 Integration)
         let semanticRecall = '';
         if (projectId && sessionId && history.length > 0) {
-            const lastMessage = history[history.length - 1].text;
+            const lastMessage = history[history.length - 1]!.text;
             const relevant = await memoryService.retrieveRelevantMemories(projectId, {
                 query: lastMessage,
                 filters: { sessionId, types: ['session_message', 'fact'] },

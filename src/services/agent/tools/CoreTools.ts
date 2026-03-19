@@ -14,7 +14,7 @@ const VALID_AGENT_MODES: AgentMode[] = ['assistant', 'autonomous', 'creative', '
 // CoreTools Implementation
 // ============================================================================
 
-export const CoreTools: Record<string, AnyToolFunction> = {
+export const CoreTools = {
     delegate_task: wrapTool('delegate_task', async (args: {
         targetAgentId: string;
         task: string;
@@ -268,4 +268,4 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
             message: `Absolute zero-defect pixel-perfection established. indiiOS experience transcends standard B2B enterprise SaaS.`
         };
     })
-};
+} satisfies Record<string, AnyToolFunction>;

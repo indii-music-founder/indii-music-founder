@@ -127,7 +127,7 @@ describe('VenueScoutService', () => {
 
             expect(mockWriteBatch).toHaveBeenCalled();
             // Should have seeded 5 venues (based on SEED_VENUES length)
-            const batchMock = mockWriteBatch.mock.results[0].value;
+            const batchMock = mockWriteBatch.mock.results[0]!.value;
             expect(batchMock.set).toHaveBeenCalledTimes(5);
         });
 
@@ -159,8 +159,8 @@ describe('VenueScoutService', () => {
             const results = await VenueScoutService.searchVenues('Nashville', 'Rock');
 
             expect(results).toHaveLength(1);
-            expect(results[0].name).toBe('Venue A');
-            expect(results[0].fitScore).toBeGreaterThan(0);
+            expect(results[0]!.name).toBe('Venue A');
+            expect(results[0]!.fitScore).toBeGreaterThan(0);
         });
 
         it('should handle invalid Firestore data gracefully', async () => {
@@ -179,7 +179,7 @@ describe('VenueScoutService', () => {
 
             // Should only return the valid one
             expect(results).toHaveLength(1);
-            expect(results[0].name).toBe('Venue A');
+            expect(results[0]!.name).toBe('Venue A');
         });
 
         it('should fallback to seed data on Firestore error', async () => {
@@ -190,7 +190,7 @@ describe('VenueScoutService', () => {
 
             // Should return results from local seed data
             expect(results.length).toBeGreaterThan(0);
-            expect(results[0].city).toBe('Nashville');
+            expect(results[0]!.city).toBe('Nashville');
         });
 
         it('should cache results', async () => {

@@ -258,13 +258,13 @@ export const LOGIC_REGISTRY: Record<string, NodeDefinition> = {
 };
 
 export const getNodeDefinition = (departmentName: string): NodeDefinition | null => {
-    if (departmentName === 'Logic') return LOGIC_REGISTRY['Logic'];
-    if (departmentName === 'Variables') return LOGIC_REGISTRY['Variables'];
+    if (departmentName === 'Logic') return LOGIC_REGISTRY['Logic'] ?? null;
+    if (departmentName === 'Variables') return LOGIC_REGISTRY['Variables'] ?? null;
     return NODE_REGISTRY[departmentName] || null;
 };
 
 export const getJobDefinition = (departmentName: string, jobId?: string): NodeJob | null => {
     const def = getNodeDefinition(departmentName);
     if (!def) return null;
-    return def.jobs.find(j => j.id === jobId) || def.jobs[0];
+    return def.jobs.find(j => j.id === jobId) ?? def.jobs[0] ?? null;
 };

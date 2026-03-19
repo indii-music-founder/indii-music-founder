@@ -140,7 +140,7 @@ describe('📚 Keeper: Context Integrity', () => {
 
         // 3. Assert
         expect(mockGenerateContent).toHaveBeenCalled();
-        const callArgs = mockGenerateContent.mock.calls[0][0];
+        const callArgs = mockGenerateContent.mock.calls[0]![0];
 
         // Extract the text passed to the model
         const sentPrompt = callArgs[0].parts[0].text;

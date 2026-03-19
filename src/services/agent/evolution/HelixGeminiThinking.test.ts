@@ -96,8 +96,8 @@ describe('🧬 Helix: Gemini 3 Pro Thinking Budget Evolution', () => {
 
     // A. Elitism: MidThinker (Highest Fitness) should survive
     const elite = nextGen[0];
-    expect(elite.id).toBe('MidThinker');
-    expect(elite.parameters.thinkingBudget).toBe(2048);
+    expect(elite!.id).toBe('MidThinker');
+    expect(elite!.parameters.thinkingBudget).toBe(2048);
 
     // B. Evolution: Offspring should have INCREASED thinking budget
     // Parents likely: MidThinker (2048) & LowThinker (1024) -> Crossover (1536) -> Mutation (+1024) = 2560

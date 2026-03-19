@@ -8,7 +8,7 @@ describe('DSRService Fee Calculation', () => {
     it('should apply distributor fee for Symphonic (15% fee)', async () => {
         // Symphonic has 85% payout, so fee is 15%.
         // Party ID: PADPIDA2011030901S
-        const symphonicPartyId = DISTRIBUTORS.symphonic.ddexPartyId;
+        const symphonicPartyId = DISTRIBUTORS.symphonic!.ddexPartyId;
 
         const mockReport: DSRReport = {
             reportId: 'RPT-SYM-001',
@@ -60,18 +60,18 @@ describe('DSRService Fee Calculation', () => {
         const royalty = result.royalties[0];
 
         // Gross Revenue = 100
-        expect(royalty.grossRevenue).toBe(100);
+        expect(royalty!.grossRevenue).toBe(100);
 
         // Fee should be 15% of 100 = 15
-        expect(royalty.distributorFees).toBe(15);
+        expect(royalty!.distributorFees).toBe(15);
 
         // Net Revenue should be 100 - 15 = 85
-        expect(royalty.netRevenue).toBe(85);
+        expect(royalty!.netRevenue).toBe(85);
     });
 
     it('should apply 0 fee for DistroKid (100% payout)', async () => {
         // DistroKid has 100% payout, so fee is 0%.
-        const distrokidPartyId = DISTRIBUTORS.distrokid.ddexPartyId;
+        const distrokidPartyId = DISTRIBUTORS.distrokid!.ddexPartyId;
 
         const mockReport: DSRReport = {
             reportId: 'RPT-DK-001',
@@ -111,7 +111,7 @@ describe('DSRService Fee Calculation', () => {
         const result = await dsrService.processReport(mockReport, catalog);
         const royalty = result.royalties[0];
 
-        expect(royalty.distributorFees).toBe(0);
-        expect(royalty.netRevenue).toBe(100);
+        expect(royalty!.distributorFees).toBe(0);
+        expect(royalty!.netRevenue).toBe(100);
     });
 });

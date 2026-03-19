@@ -241,7 +241,7 @@ describe('📚 Keeper: End-to-End Context & Persistence', () => {
 
         // 3. ASSERTION: Context Window (RAM/AI)
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-        const aiCallArgs = mockGenerateContent.mock.calls[0][0];
+        const aiCallArgs = mockGenerateContent.mock.calls[0]![0];
 
         // Extract the prompt parts
         const promptText = aiCallArgs[0].parts[0].text;
@@ -273,8 +273,8 @@ describe('📚 Keeper: End-to-End Context & Persistence', () => {
         expect(mockSaveHistory).toHaveBeenCalledTimes(1);
         const saveCallArgs = mockSaveHistory.mock.calls[0];
 
-        const savedSessionId = saveCallArgs[0];
-        const savedData = saveCallArgs[1];
+        const savedSessionId = saveCallArgs![0];
+        const savedData = saveCallArgs![1];
 
         expect(savedSessionId).toBe('session-keeper-1');
         expect(savedData.messages).toHaveLength(102); // 100 + 2

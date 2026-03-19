@@ -184,7 +184,7 @@ describe('🛡️ Shield: Agent Torture Test', () => {
         expect(capturedExecuteArgs.length).toBeGreaterThan(0);
 
         // The jailbreak prompt should be passed to the agent's execute method
-        const executedGoal = capturedExecuteArgs[0].userGoal;
+        const executedGoal = capturedExecuteArgs[0]!.userGoal;
         expect(executedGoal).toContain(jailbreakPrompt);
     });
 

@@ -54,7 +54,7 @@ const TrackPerformanceSchema = z.object({
 
 // --- Tools Implementation ---
 
-export const MarketingTools: Record<string, AnyToolFunction> = {
+export const MarketingTools = {
     create_campaign_brief: wrapTool('create_campaign_brief', async ({ product, goal, budget, duration, assetIds }: { product: string; goal: string; budget?: string; duration?: string; assetIds?: string[] }) => {
         const schema = zodToJsonSchema(CreateCampaignBriefSchema);
         const prompt = `
@@ -136,7 +136,7 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
             status: "scheduled",
             count: schedule.length,
             schedule: schedule,
-            nextPost: schedule.length > 0 ? schedule[0].date : "None"
+            nextPost: schedule.length > 0 ? schedule[0]!.date : "None"
         }, `Content schedule generated with ${schedule.length} posts across ${platforms.join(', ')}.`);
     }),
 
@@ -289,7 +289,7 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
             trend: momentumScore > 50 ? 'Accelerating' : 'Decelerating'
         }, `Post-release momentum tracked for ${args.trackId} on ${args.dsp}. Momentum Score: ${Math.round(momentumScore)}/100. Trend: ${momentumScore > 50 ? 'Accelerating' : 'Decelerating'}.`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases
 export const {

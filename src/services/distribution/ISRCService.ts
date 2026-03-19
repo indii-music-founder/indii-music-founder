@@ -30,7 +30,7 @@ export class ISRCService {
                     throw new Error('ISRC pool is exhausted. Please ingestion more codes.');
                 }
 
-                const isrcDoc = snapshot.docs[0];
+                const isrcDoc = snapshot.docs[0]!;
                 const isrcData = isrcDoc.data() as ISRCRecord;
 
                 transaction.update(isrcDoc.ref, {
@@ -79,7 +79,7 @@ export class ISRCService {
         const q = query(this.registryRef, where('isrc', '==', isrc), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) return null;
-        return { id: snap.docs[0].id, ...snap.docs[0].data() } as ISRCRecordDocument;
+        return { id: snap.docs[0]!.id, ...snap.docs[0]!.data() } as ISRCRecordDocument;
     }
 
     /** Look up all registry records for a given release. */

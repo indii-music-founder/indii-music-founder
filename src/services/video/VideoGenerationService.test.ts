@@ -130,7 +130,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
             }));
 
             expect(result).toHaveLength(1);
-            expect(result[0].id).toBe('mock-uuid');
+            expect(result[0]!.id).toBe('mock-uuid');
         });
     });
 
@@ -226,10 +226,10 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
 
             // Verify prompt format for each segment
             const calls = mocks.firebaseAI.generateVideo.mock.calls;
-            expect(calls[0][0].prompt).toContain('Epic space battle');
-            expect(calls[0][0].prompt).toContain('Part 1/3');
-            expect(calls[1][0].prompt).toContain('Part 2/3');
-            expect(calls[2][0].prompt).toContain('Part 3/3');
+            expect(calls[0]![0].prompt).toContain('Epic space battle');
+            expect(calls[0]![0].prompt).toContain('Part 1/3');
+            expect(calls[1]![0].prompt).toContain('Part 2/3');
+            expect(calls[2]![0].prompt).toContain('Part 3/3');
         });
 
         it('should generate single block for short duration (Flash scenario)', async () => {
@@ -240,7 +240,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
             });
 
             expect(mocks.firebaseAI.generateVideo).toHaveBeenCalledTimes(1);
-            expect(mocks.firebaseAI.generateVideo.mock.calls[0][0].prompt).toContain('Part 1/1');
+            expect(mocks.firebaseAI.generateVideo.mock.calls[0]![0].prompt).toContain('Part 1/1');
         });
 
         it('should pass firstFrame image to the first segment only', async () => {
@@ -256,14 +256,14 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
             expect(mocks.firebaseAI.generateVideo).toHaveBeenCalledTimes(2);
 
             // First segment should have the image
-            const firstCall = mocks.firebaseAI.generateVideo.mock.calls[0][0];
+            const firstCall = mocks.firebaseAI.generateVideo.mock.calls[0]![0];
             expect(firstCall.image).toEqual({
                 imageBytes: startImage,
                 mimeType: 'image/jpeg'
             });
 
             // Second segment should NOT have the image
-            const secondCall = mocks.firebaseAI.generateVideo.mock.calls[1][0];
+            const secondCall = mocks.firebaseAI.generateVideo.mock.calls[1]![0];
             expect(secondCall.image).toBeUndefined();
         });
     });

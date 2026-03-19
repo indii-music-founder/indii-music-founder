@@ -105,7 +105,7 @@ Think in terms of "Gross vs. Net," "Artist Share," and "Burn Rate."
 
                 // Extract JSON if it's wrapped in markdown code blocks
                 const jsonMatch = textResult.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-                const rawJson = jsonMatch ? jsonMatch[1] : textResult;
+                const rawJson = jsonMatch ? jsonMatch[1]! : textResult;
 
                 return { success: true, data: { receipt_data: JSON.parse(rawJson) } };
             } catch (error: unknown) {

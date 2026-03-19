@@ -103,7 +103,7 @@ describe('SmartContractService', () => {
         expect(mockWhere).toHaveBeenCalledWith('entityId', '==', isrc);
 
         expect(history).toHaveLength(1);
-        expect(history[0].action).toBe('SPLIT_EXECUTION');
+        expect(history[0]!.action).toBe('SPLIT_EXECUTION');
     });
 
     it('should mint tokens (SongShares)', async () => {
@@ -127,6 +127,6 @@ describe('SmartContractService', () => {
         expect(tokenAddr).toMatch(/^pending:token:/); // No wallet in test env — returns pending token
 
         const history = await smartContractService.getChainOfCustody('US-TOKEN');
-        expect(history[0].action).toBe('TOKEN_MINT');
+        expect(history[0]!.action).toBe('TOKEN_MINT');
     });
 });

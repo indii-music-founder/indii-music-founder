@@ -20,7 +20,7 @@ describe('LegalTools', () => {
         mockGenerateContent.mockResolvedValue({
             response: { text: () => '[MOCK] Generated NDA for Alice and Bob' }
         });
-        const result = await LegalTools.generate_nda({
+        const result = await LegalTools.generate_nda!({
             parties: ['Alice', 'Bob'],
             purpose: 'Collaboration'
         });
@@ -34,7 +34,7 @@ describe('LegalTools', () => {
         mockGenerateContent.mockResolvedValue({
             response: { text: () => '# LEGAL AGREEMENT\n\nThis agreement is between...' }
         });
-        const result = await LegalTools.draft_contract({
+        const result = await LegalTools.draft_contract!({
             type: 'Sync License',
             parties: ['Artist', 'Label'],
             terms: 'Exclusive rights for 2 years'

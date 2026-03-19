@@ -54,8 +54,8 @@ describe('🧬 Helix: Icarus Check (Infinite Fitness Handling)', () => {
     const nextGen = await engine.evolve(population);
 
     const survivor = nextGen[0];
-    expect(survivor.id).toBe('god');
-    expect(survivor.fitness).toBe(Number.MAX_VALUE);
+    expect(survivor!.id).toBe('god');
+    expect(survivor!.fitness).toBe(Number.MAX_VALUE);
   });
 
   it('Persistence: Infinity survives JSON serialization (Simulation of DB Save)', async () => {

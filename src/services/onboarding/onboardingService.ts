@@ -533,7 +533,7 @@ ALWAYS preserve what they're NOT changing.`;
 
     // Attach files to the last message if it's from the user
     if (files.length > 0 && contents.length > 0) {
-        const lastMsg = contents[contents.length - 1];
+        const lastMsg = contents[contents.length - 1]!;
         if (lastMsg.role === 'user') {
             files.forEach(file => {
                 if (file.type === 'image' && file.base64) {
@@ -876,7 +876,7 @@ const transitions = {
 };
 
 function randomPick<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
+    return arr[Math.floor(Math.random() * arr.length)]!;
 }
 
 export function generateNaturalFallback(

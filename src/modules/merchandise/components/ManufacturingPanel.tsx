@@ -139,7 +139,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
     const handleSubmission = async () => {
         try {
             // Use provided ID or generate a draft ID
-            const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
+            const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0]!.toUpperCase()}`;
 
             if (fulfillmentMode === 'pod' && podConfigured && designUrl) {
                 // POD Mode - Use Print-on-Demand service
@@ -430,7 +430,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                             }
 
                             toast.info("Requesting physical sample...");
-                            const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
+                            const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0]!.toUpperCase()}`;
 
                             const result = await MerchandiseService.requestSample({
                                 productId: effectiveProductId,

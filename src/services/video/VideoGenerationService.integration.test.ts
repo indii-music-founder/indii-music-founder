@@ -76,7 +76,7 @@ describe('VideoGenerationService Integration', () => {
 
         const result = await service.generateVideo(validOptions);
 
-        expect(result[0].id).toBe('job-123');
+        expect(result[0]!.id).toBe('job-123');
         expect(mockTriggerVideoJob).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining("A cyberpunk city"),
             duration: 5,

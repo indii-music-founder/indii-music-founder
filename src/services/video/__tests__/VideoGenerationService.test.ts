@@ -80,8 +80,8 @@ describe('VideoGenerationService', () => {
             const result = await VideoGeneration.generateVideo({ prompt: 'test video' });
 
             expect(result).toHaveLength(1);
-            expect(result[0].id).toBeDefined();
-            expect(result[0].url).toBe('https://storage.googleapis.com/mock-video.mp4');
+            expect(result[0]!.id).toBeDefined();
+            expect(result[0]!.url).toBe('https://storage.googleapis.com/mock-video.mp4');
             // Verify it calls the direct SDK path, not Cloud Functions
             expect(firebaseAI.generateVideo).toHaveBeenCalled();
         });
@@ -113,7 +113,7 @@ describe('VideoGenerationService', () => {
             });
 
             expect(result).toHaveLength(1);
-            expect(result[0].id).toMatch(/^long_/);
+            expect(result[0]!.id).toMatch(/^long_/);
             // Long-form should also call generateVideo for each segment
             expect(firebaseAI.generateVideo).toHaveBeenCalled();
         });

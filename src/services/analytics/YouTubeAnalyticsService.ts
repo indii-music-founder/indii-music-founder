@@ -98,7 +98,7 @@ function parseDuration(iso: string): number {
 
 /** Format date as YYYY-MM-DD */
 function toDateStr(date: Date): string {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split('T')[0]!;
 }
 
 /** Get a date N days ago */
@@ -480,7 +480,7 @@ export class YouTubeAnalyticsService {
 
         return geo.slice(0, 8).map((g, i) => {
             const meta = countryMeta[g.country] ?? { region: 'Other', flag: '🌍' };
-            const prevShare = i > 0 ? geo[i - 1].views / totalViews : g.views / totalViews;
+            const prevShare = i > 0 ? geo[i - 1]!.views / totalViews : g.views / totalViews;
             const currShare = g.views / totalViews;
             // Approximate week-over-week growth (not directly available from this endpoint)
             const growthRate = ((currShare - prevShare) / Math.max(prevShare, 0.001)) * 100;

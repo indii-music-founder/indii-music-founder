@@ -13,12 +13,12 @@ describe('RINService', () => {
         // (Assuming MOCK_METADATA has tracks, usually ERNService.test.ts mock has 1)
         if (result.rinMessageContent.soundRecordings.length > 0) {
             const recording = result.rinMessageContent.soundRecordings[0];
-            expect(recording.title).toBeDefined();
-            expect(recording.contributors.length).toBeGreaterThan(0);
+            expect(recording!.title).toBeDefined();
+            expect(recording!.contributors.length).toBeGreaterThan(0);
 
             // Check session mapping
-            expect(recording.studioSessions).toBeDefined();
-            expect(recording.studioSessions?.[0].studioLocation.studioName).toBe('Home Studio');
+            expect(recording!.studioSessions).toBeDefined();
+            expect(recording!.studioSessions?.[0].studioLocation.studioName).toBe('Home Studio');
         }
     });
 });

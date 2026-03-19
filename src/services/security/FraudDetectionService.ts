@@ -33,7 +33,7 @@ export class FraudDetectionService {
         // 1. Group by User and IP
         for (const event of events) {
             if (!userPlays[event.userId]) userPlays[event.userId] = [];
-            userPlays[event.userId].push(event);
+            userPlays[event.userId]!.push(event);
 
             ipPlays[event.ipAddress] = (ipPlays[event.ipAddress] || 0) + 1;
         }

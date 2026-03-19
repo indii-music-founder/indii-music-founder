@@ -148,7 +148,7 @@ describe('📚 Keeper: Context Integrity', () => {
         const callArgs = mockGenerateContent.mock.calls[0];
 
         // Extract the text passed to the model. First arg is contents array.
-        const sentPrompt = callArgs[0][0].parts[0].text;
+        const sentPrompt = callArgs![0][0].parts[0].text;
 
         // Verify we are NOT using naive slicing
         expect(sentPrompt).not.toContain('[...Older history truncated...]');

@@ -15,7 +15,7 @@ export class TrackLibraryService extends FirestoreService<ExtendedGoldenMetadata
             where('masterFingerprint', '==', fingerprint)
         ]);
 
-        return results.length > 0 ? results[0] : null;
+        return results.length > 0 ? results[0]! : null;
     }
 
     /**

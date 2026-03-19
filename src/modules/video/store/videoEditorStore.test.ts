@@ -53,7 +53,7 @@ describe('useVideoEditorStore', () => {
             });
         });
 
-        const clipId = result.current.project.clips[0].id;
+        const clipId = result.current.project.clips[0]!.id;
 
         act(() => {
             result.current.updateClip(clipId, {
@@ -63,8 +63,8 @@ describe('useVideoEditorStore', () => {
             });
         });
 
-        expect(result.current.project.clips[0].keyframes?.scale).toHaveLength(2);
-        expect(result.current.project.clips[0].keyframes?.scale[1].value).toBe(2);
+        expect(result.current.project.clips[0]!.keyframes?.scale).toHaveLength(2);
+        expect(result.current.project.clips[0]!.keyframes?.scale![1]!.value).toBe(2);
     });
 
     it('manages keyframes via specific actions', () => {
@@ -80,28 +80,28 @@ describe('useVideoEditorStore', () => {
             });
         });
 
-        const clipId = result.current.project.clips[0].id;
+        const clipId = result.current.project.clips[0]!.id;
 
         // Add Keyframe
         act(() => {
             result.current.addKeyframe(clipId, 'opacity', 10, 0.5);
         });
 
-        expect(result.current.project.clips[0].keyframes?.opacity).toHaveLength(1);
-        expect(result.current.project.clips[0].keyframes?.opacity[0]).toEqual({ frame: 10, value: 0.5 });
+        expect(result.current.project.clips[0]!.keyframes?.opacity).toHaveLength(1);
+        expect(result.current.project.clips[0]!.keyframes?.opacity![0]).toEqual({ frame: 10, value: 0.5 });
 
         // Update Keyframe (value and easing)
         act(() => {
             result.current.updateKeyframe(clipId, 'opacity', 10, { value: 0.8, easing: 'easeIn' });
         });
 
-        expect(result.current.project.clips[0].keyframes?.opacity[0]).toEqual({ frame: 10, value: 0.8, easing: 'easeIn' });
+        expect(result.current.project.clips[0]!.keyframes?.opacity![0]).toEqual({ frame: 10, value: 0.8, easing: 'easeIn' });
 
         // Remove Keyframe
         act(() => {
             result.current.removeKeyframe(clipId, 'opacity', 10);
         });
 
-        expect(result.current.project.clips[0].keyframes?.opacity).toHaveLength(0);
+        expect(result.current.project.clips[0]!.keyframes?.opacity).toHaveLength(0);
     });
 });

@@ -64,7 +64,7 @@ describe('FraudDetectionService', () => {
             const alerts = await FraudDetectionService.detectArtificialStreaming(events);
 
             expect(alerts).toHaveLength(1);
-            expect(alerts[0].reason).toContain('looped track > 20 times');
+            expect(alerts[0]!.reason).toContain('looped track > 20 times');
 
             // Verify persistence
             expect(mockCollection).toHaveBeenCalledWith('fraud_alerts');
@@ -85,8 +85,8 @@ describe('FraudDetectionService', () => {
             const alerts = await FraudDetectionService.detectArtificialStreaming(events);
 
             expect(alerts.length).toBeGreaterThan(0);
-            expect(alerts[0].severity).toBe('CRITICAL');
-            expect(alerts[0].reason).toContain('High volume');
+            expect(alerts[0]!.severity).toBe('CRITICAL');
+            expect(alerts[0]!.reason).toContain('High volume');
 
             // Verify persistence
             expect(mockCollection).toHaveBeenCalledWith('fraud_alerts');

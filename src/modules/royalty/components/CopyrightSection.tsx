@@ -18,7 +18,7 @@ export const CopyrightSection: React.FC<CopyrightSectionProps> = ({
 
     // Aggregate status
     const hasRegistrations = profile.copyrightRegistrations.length > 0;
-    const status = hasRegistrations ? profile.copyrightRegistrations[0].status : 'not_started';
+    const status = hasRegistrations ? profile.copyrightRegistrations[0]!.status : 'not_started';
 
     return (
         <RegistrationSection

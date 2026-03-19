@@ -230,7 +230,7 @@ describe('onboardingService', () => {
 
             const { updatedProfile, updates } = processFunctionCalls(calls, baseProfile, files);
             expect(updatedProfile.brandKit!.brandAssets).toHaveLength(1);
-            expect(updatedProfile.brandKit!.brandAssets[0].description).toBe('Main Logo');
+            expect(updatedProfile!.brandKit!.brandAssets[0].description).toBe('Main Logo');
             expect(updates).toContain('Brand Asset');
         });
 
@@ -255,7 +255,7 @@ describe('onboardingService', () => {
                 response: {
                     text: () => 'Hello',
                     functionCalls: () => {
-                        const parts = mockResponse.response.candidates[0].content.parts;
+                        const parts = mockResponse.response.candidates[0]!.content.parts;
                         return parts
                             .filter((p: any) => 'functionCall' in p)
                             .map((p: any) => p.functionCall);
@@ -281,7 +281,7 @@ describe('onboardingService', () => {
             expect(AI.generateContent).toHaveBeenCalled();
             expect(result.text).toBe('Hello');
             expect(result.functionCalls).toHaveLength(1);
-            expect(result.functionCalls![0].name).toBe('updateProfile');
+            expect(result!.functionCalls![0].name).toBe('updateProfile');
         });
     });
 });

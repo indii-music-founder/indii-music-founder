@@ -97,7 +97,7 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
 
         // Assert
         expect(firebaseAI.generateVideo).toHaveBeenCalled();
-        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("4111 1111 1111 1111");
@@ -119,7 +119,7 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
 
         // Assert
         expect(firebaseAI.generateVideo).toHaveBeenCalled();
-        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("SuperSecretPassword123!");

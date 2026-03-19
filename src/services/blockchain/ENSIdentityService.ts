@@ -234,8 +234,8 @@ export class ENSIdentityService {
         const dynamicParts: string[] = [];
 
         for (let i = 0; i < argTypes.length; i++) {
-            const type = argTypes[i];
-            const param = params[i];
+            const type = argTypes[i]!;
+            const param = params[i]!;
 
             if (type === 'bytes32') {
                 // bytes32: pad to 32 bytes
@@ -305,7 +305,7 @@ export class ENSIdentityService {
             const combined = new Uint8Array(64);
             combined.set(node, 0);
             combined.set(labelHash, 32);
-            node = this.keccak256Bytes(combined);
+            node = this.keccak256Bytes(combined.slice());
         }
 
         return '0x' + Array.from(node).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -316,7 +316,7 @@ export class ENSIdentityService {
      * Uses the tiny-keccak algorithm (Ethereum standard hash).
      * NOTE: This is a basic implementation for namehash — NOT for security-critical signing.
      */
-    private keccak256Bytes(data: Uint8Array): Uint8Array {
+    private keccak256Bytes(data: Uint8Array<ArrayBufferLike>): Uint8Array<ArrayBuffer> {
         // Keccak-256 state constants
         const RC: bigint[] = [
             0x0000000000000001n, 0x0000000000008082n, 0x800000000000808an, 0x8000000080008000n,
@@ -337,8 +337,8 @@ export class ENSIdentityService {
         // Pad message
         const padded = new Uint8Array(Math.ceil((data.length + 1) / rate) * rate || rate);
         padded.set(data);
-        padded[data.length] = 0x01;
-        padded[padded.length - 1] |= 0x80;
+        padded[data.length]! = 0x01;
+        padded[padded.length - 1]! |= 0x80;
 
         // State: 5×5 64-bit lanes as BigInt
         const state: bigint[] = new Array(25).fill(0n);
@@ -348,30 +348,30 @@ export class ENSIdentityService {
             for (let i = 0; i < rate / 8; i++) {
                 const lo = BigInt(view.getUint32(offset + i * 8, true));
                 const hi = BigInt(view.getUint32(offset + i * 8 + 4, true));
-                state[i] ^= (hi << 32n) | lo;
+                state[i]! ^= (hi << 32n) | lo;
             }
 
             // Keccak-f[1600]
             for (let r = 0; r < 24; r++) {
                 // θ (theta)
-                const C = state.slice(0, 5).map((_, i) => state[i] ^ state[i + 5] ^ state[i + 10] ^ state[i + 15] ^ state[i + 20]);
-                const D = C.map((_, i) => C[M5[i + 4]] ^ this.rotl64(C[M5[i + 1]], 1n));
-                for (let i = 0; i < 25; i++) state[i] ^= D[i % 5];
+                const C = state.slice(0, 5).map((_: bigint, i: number) => state[i]! ^ state[i + 5]! ^ state[i + 10]! ^ state[i + 15]! ^ state[i + 20]!);
+                const D = C.map((_: bigint, i: number) => C[M5[i + 4]!]! ^ this.rotl64(C[M5[i + 1]!]!, 1n));
+                for (let i = 0; i < 25; i++) state[i]! ^= D[i % 5]!;
 
                 // ρ (rho) + π (pi)
                 const B: bigint[] = new Array(25).fill(0n);
                 for (let i = 1; i < 25; i++) {
-                    B[PIL[i - 1]] = this.rotl64(state[i], BigInt(ROTC[i - 1]));
+                    B[PIL[i - 1]!] = this.rotl64(state[i]!, BigInt(ROTC[i - 1]!));
                 }
-                B[0] = state[0];
+                B[0] = state[0]!;
 
                 // χ (chi)
                 for (let i = 0; i < 25; i++) {
-                    state[i] = B[i] ^ (~B[M5[i % 5 + 1] + Math.floor(i / 5) * 5] & B[M5[i % 5 + 2] + Math.floor(i / 5) * 5]);
+                    state[i] = B[i]! ^ (~B[M5[i % 5 + 1]! + Math.floor(i / 5) * 5]! & B[M5[i % 5 + 2]! + Math.floor(i / 5) * 5]!);
                 }
 
                 // ι (iota)
-                state[0] ^= RC[r];
+                state[0]! ^= RC[r]!;
             }
         }
 
@@ -379,7 +379,7 @@ export class ENSIdentityService {
         const hash = new Uint8Array(hashLen);
         const hashView = new DataView(hash.buffer);
         for (let i = 0; i < hashLen / 8; i++) {
-            const lane = state[i];
+            const lane = state[i]!;
             hashView.setUint32(i * 8, Number(lane & 0xFFFFFFFFn), true);
             hashView.setUint32(i * 8 + 4, Number((lane >> 32n) & 0xFFFFFFFFn), true);
         }

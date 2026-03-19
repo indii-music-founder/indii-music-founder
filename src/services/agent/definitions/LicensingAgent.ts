@@ -130,7 +130,7 @@ export const LicensingAgent: AgentConfig = {
         },
         draft_license: async (args: { type: string, parties: string[], terms: string }) => {
             try {
-                const toolResult = await LegalTools.draft_contract({
+                const toolResult = await LegalTools.draft_contract!({
                     type: args.type,
                     parties: args.parties,
                     terms: args.terms

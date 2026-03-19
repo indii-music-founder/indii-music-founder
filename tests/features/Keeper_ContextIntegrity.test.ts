@@ -231,7 +231,7 @@ describe('📚 Keeper: Context Integrity', () => {
 
             // 3. Inspect the call to AI.generateContent
             expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-            const callArgs = mockGenerateContent.mock.calls[0][0];
+            const callArgs = mockGenerateContent.mock.calls[0]![0];
             const promptParts = callArgs.contents[0].parts;
             const textPart = promptParts.find((p: { text?: string }) => p.text && p.text.includes('# HISTORY'));
 
@@ -261,7 +261,7 @@ describe('📚 Keeper: Context Integrity', () => {
                 orgId: 'test-org'
             });
 
-            const callArgs = mockGenerateContent.mock.calls[0][0];
+            const callArgs = mockGenerateContent.mock.calls[0]![0];
             const fullPrompt = callArgs.contents[0].parts[0].text;
 
             expect(fullPrompt).not.toContain('[...Older history truncated...]');

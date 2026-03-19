@@ -42,7 +42,7 @@ export class MetadataOrchestrator {
             explicit: profile.semantic.isExplicit,
             durationSeconds: profile.technical.duration,
             durationFormatted: this.formatDuration(profile.technical.duration),
-            releaseDate: initialData.releaseDate || new Date().toISOString().split('T')[0],
+            releaseDate: initialData.releaseDate || new Date().toISOString().split('T')[0]!,
             releaseType: initialData.releaseType || 'Single',
             isGolden: true, // Mark as Golden since it's AI-verified and ID-assigned
             aiGeneratedContent: {

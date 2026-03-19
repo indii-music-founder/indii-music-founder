@@ -80,9 +80,9 @@ function haversine(a: City, b: City): number {
 function optimizeRoute(cities: City[]): City[] {
     if (cities.length <= 2) return [...cities];
     const unvisited = [...cities];
-    const route: City[] = [unvisited.splice(0, 1)[0]];
+    const route: City[] = [unvisited.splice(0, 1)[0]!];
     while (unvisited.length > 0) {
-        const last = route[route.length - 1];
+        const last = route[route.length - 1]!;
         // Score = distance penalized, listener-weighted
         let bestIdx = 0;
         let bestScore = Infinity;
@@ -92,7 +92,7 @@ function optimizeRoute(cities: City[]): City[] {
             const score = dist * (0.7 + 0.3 * listenerBonus);
             if (score < bestScore) { bestScore = score; bestIdx = i; }
         });
-        route.push(unvisited.splice(bestIdx, 1)[0]);
+        route.push(unvisited.splice(bestIdx, 1)[0]!);
     }
     return route;
 }
@@ -119,7 +119,7 @@ export function TourRouteOptimizer() {
 
     const totalDistance = useMemo(() => {
         let d = 0;
-        for (let i = 0; i < route.length - 1; i++) d += haversine(route[i], route[i + 1]);
+        for (let i = 0; i < route.length - 1; i++) d += haversine(route[i]!, route[i + 1]!);
         return Math.round(d);
     }, [route]);
 

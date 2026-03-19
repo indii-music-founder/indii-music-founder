@@ -85,7 +85,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid')
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('9:16');
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
@@ -96,7 +96,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('tunecore')
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('9:16');
             expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         });
@@ -109,7 +109,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('cdbaby')
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             // Default aspect ratio is '16:9' when no distributor constraint applies
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
@@ -121,7 +121,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('ditto')
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -132,7 +132,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('awal')
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -143,7 +143,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('unitedmasters')
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -154,7 +154,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('amuse')
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -167,7 +167,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile() // No distributor
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
             expect(callArgs.prompt).not.toContain('Optimized for Spotify Canvas');
         });
@@ -178,7 +178,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 // No userProfile at all
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
 
@@ -189,7 +189,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid') // Would normally be 9:16
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
 
@@ -199,7 +199,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('unknown_distributor')
             });
 
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
             // Should NOT crash, just use defaults
             expect(callArgs.config?.aspectRatio).toBe('16:9');
         });
@@ -220,7 +220,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
             expect(calls.length).toBeGreaterThan(0);
 
             // Each segment should have 9:16 for DistroKid
-            const firstCallArgs = calls[0][0];
+            const firstCallArgs = calls[0]![0];
             expect(firstCallArgs.config?.aspectRatio).toBe('9:16');
             // Prompt segments should contain Canvas optimization
             expect(firstCallArgs.prompt).toContain('Optimized for Spotify Canvas');

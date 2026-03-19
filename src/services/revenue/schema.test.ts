@@ -39,8 +39,8 @@ describe('Revenue Schemas', () => {
             const result = EarningsSummarySchema.parse(data);
             expect(result.totalGrossRevenue).toBe(0);
             expect(result.byPlatform).toHaveLength(1);
-            expect(result.byPlatform[0].platformName).toBe('Spotify');
-            expect(result.byPlatform[0].streams).toBe(0); // Default
+            expect(result.byPlatform[0]!.platformName).toBe('Spotify');
+            expect(result.byPlatform[0]!.streams).toBe(0); // Default
         });
     });
 });

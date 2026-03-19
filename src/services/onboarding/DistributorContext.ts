@@ -124,12 +124,12 @@ function parseSizeString(sizeStr: string): { width: number; height: number } {
     // Parse strings like "3000x3000" or "3000 x 3000"
     const match = sizeStr.match(/(\d+)\s*x\s*(\d+)/i);
     if (match) {
-        return { width: parseInt(match[1]), height: parseInt(match[2]) };
+        return { width: parseInt(match[1]!), height: parseInt(match[2]!) };
     }
     // Fallback for single number (assumes square)
     const single = sizeStr.match(/(\d+)/);
     if (single) {
-        const size = parseInt(single[1]);
+        const size = parseInt(single[1]!);
         return { width: size, height: size };
     }
     return { width: 3000, height: 3000 };
@@ -139,11 +139,11 @@ function parseLeadTime(timeStr: string): number {
     // Parse strings like "2-4 weeks", "7 days", "1 week"
     const weeksMatch = timeStr.match(/(\d+)(?:-\d+)?\s*week/i);
     if (weeksMatch) {
-        return parseInt(weeksMatch[1]) * 7;
+        return parseInt(weeksMatch[1]!) * 7;
     }
     const daysMatch = timeStr.match(/(\d+)\s*day/i);
     if (daysMatch) {
-        return parseInt(daysMatch[1]);
+        return parseInt(daysMatch[1]!);
     }
     return 7; // Default 1 week
 }

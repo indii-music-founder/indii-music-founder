@@ -121,8 +121,8 @@ describe('🧬 Helix: Gemini 3 Pro Real Mutation Loop', () => {
     );
 
     // Assert the offspring has the mutated phenotype from the mocked response
-    expect(offspring.systemPrompt).toBe("Original Prompt [MUTATED BY GEMINI 3 PRO]");
-    expect(offspring.parameters.temperature).toBe(0.99);
-    expect(offspring.parameters.thinkingBudget).toBe(4000);
+    expect(offspring!.systemPrompt).toBe("Original Prompt [MUTATED BY GEMINI 3 PRO]");
+    expect(offspring!.parameters.temperature).toBe(0.99);
+    expect(offspring!.parameters.thinkingBudget).toBe(4000);
   });
 });

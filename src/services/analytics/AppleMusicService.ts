@@ -241,7 +241,7 @@ export class AppleMusicService {
             const d = new Date();
             d.setDate(d.getDate() - i);
             history.push({
-                date:             d.toISOString().split('T')[0],
+                date:             d.toISOString().split('T')[0]!,
                 streams:          0,
                 saves:            0,
                 completions:      0,

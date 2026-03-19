@@ -153,8 +153,8 @@ describe('SocialService', () => {
 
             expect(mockQuery).toHaveBeenCalled();
             expect(feed).toHaveLength(1);
-            expect(feed[0].content).toBe('Post 1');
-            expect(feed[0].timestamp).toBe(1000);
+            expect(feed[0]!.content).toBe('Post 1');
+            expect(feed[0]!.timestamp).toBe(1000);
         });
     });
     describe('schedulePost', () => {

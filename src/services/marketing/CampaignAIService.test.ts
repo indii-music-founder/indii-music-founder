@@ -103,7 +103,7 @@ describe('CampaignAIService', () => {
 
             await CampaignAI.generateCampaign(brief);
 
-            const callArgs = (AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
+            const callArgs = !(AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
             expect(callArgs).toContain('Test Artist');
             expect(callArgs).toContain('indie pop artist');
             expect(callArgs).toContain('Midnight Dreams');
@@ -175,8 +175,8 @@ describe('CampaignAIService', () => {
             expect(result.startDate).toBe('2024-01-15');
             expect(result.durationDays).toBe(2);
             expect(result.posts).toHaveLength(2);
-            expect(result.posts[0].copy).toContain('#test');
-            expect(result.posts[0].imageAsset.caption).toBe('Test image');
+            expect(result.posts[0]!.copy).toContain('#test');
+            expect(result.posts[0]!.imageAsset.caption).toBe('Test image');
             expect(result.status).toBe(CampaignStatus.PENDING);
         });
     });
@@ -225,7 +225,7 @@ describe('CampaignAIService', () => {
 
             await CampaignAI.enhancePostCopy(post, 'shorter');
 
-            const callArgs = (AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
+            const callArgs = !(AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
             expect(callArgs).toContain('Twitter');
             expect(callArgs).toContain('280'); // Twitter character limit
         });
@@ -279,8 +279,8 @@ describe('CampaignAIService', () => {
             const result = await CampaignAI.generatePostImages(posts);
 
             expect(AI.generateImage).toHaveBeenCalledTimes(2);
-            expect(result[0].imageAsset.imageUrl).toContain('base64');
-            expect(result[1].imageAsset.imageUrl).toContain('base64');
+            expect(result[0]!.imageAsset.imageUrl).toContain('base64');
+            expect(result[1]!.imageAsset.imageUrl).toContain('base64');
         });
 
         it('should skip posts that already have images', async () => {
@@ -340,9 +340,9 @@ describe('CampaignAIService', () => {
             });
 
             expect(progressCalls.length).toBeGreaterThanOrEqual(2);
-            expect(progressCalls[0].current).toBe(1);
-            expect(progressCalls[0].total).toBe(2);
-            expect(progressCalls[progressCalls.length - 1].status).toBe('complete');
+            expect(progressCalls[0]!.current).toBe(1);
+            expect(progressCalls[0]!.total).toBe(2);
+            expect(progressCalls[progressCalls.length - 1]!.status).toBe('complete');
         });
 
         it('should continue processing if one image fails', async () => {
@@ -372,8 +372,8 @@ describe('CampaignAIService', () => {
 
             const result = await CampaignAI.generatePostImages(posts);
 
-            expect(result[0].imageAsset.imageUrl).toBe(''); // Failed
-            expect(result[1].imageAsset.imageUrl).toContain('base64'); // Succeeded
+            expect(result[0]!.imageAsset.imageUrl).toBe(''); // Failed
+            expect(result[1]!.imageAsset.imageUrl).toContain('base64'); // Succeeded
         });
 
         it('should return original posts if none need images', async () => {
@@ -520,7 +520,7 @@ describe('CampaignAIService', () => {
 
             await CampaignAI.predictEngagement(campaign);
 
-            const callArgs = (AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
+            const callArgs = !(AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
             expect(callArgs).toContain('Album Launch');
             expect(callArgs).toContain('14 days');
         });

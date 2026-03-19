@@ -74,7 +74,7 @@ Key Terms: ${args.terms}`;
         purpose: string;
     }) => {
         // We reuse the implementation but wrap it in a tool result correctly
-        const result = await LegalTools.draft_contract({
+        const result = await LegalTools.draft_contract!({
             type: 'Non-Disclosure Agreement',
             parties: args.parties,
             terms: `Purpose: ${args.purpose}. Standard confidentiality obligations apply.`
@@ -94,7 +94,7 @@ Key Terms: ${args.terms}`;
 
         const terms = `Track Title: ${args.trackTitle}\nContributors:\n` + args.contributors.map(c => `- ${c.name} (${c.role}): ${c.percentage}%`).join('\n');
 
-        const result = await LegalTools.draft_contract({
+        const result = await LegalTools.draft_contract!({
             type: 'Split Sheet',
             parties: args.contributors.map(c => c.name),
             terms: terms

@@ -236,7 +236,7 @@ export class VideoGenerationInstrument implements Instrument {
       return {
         success: true,
         data: {
-          id: results[0].id,
+          id: results[0]!.id,
           status: 'processing',
           estimatedTime
         },

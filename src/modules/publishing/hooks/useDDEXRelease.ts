@@ -273,13 +273,13 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
   const goToNextStep = useCallback(() => {
     if (canGoNext) {
-      setCurrentStep(STEP_ORDER[currentStepIndex + 1]);
+      setCurrentStep(STEP_ORDER[currentStepIndex + 1]!);
     }
   }, [canGoNext, currentStepIndex]);
 
   const goToPreviousStep = useCallback(() => {
     if (canGoPrevious) {
-      setCurrentStep(STEP_ORDER[currentStepIndex - 1]);
+      setCurrentStep(STEP_ORDER[currentStepIndex - 1]!);
     }
   }, [canGoPrevious, currentStepIndex]);
 

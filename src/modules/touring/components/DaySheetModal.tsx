@@ -40,13 +40,13 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
 
     const handleScheduleChange = (index: number, field: keyof ScheduleItem, value: string) => {
         const newSchedule = [...schedule];
-        newSchedule[index] = { ...newSchedule[index], [field]: value };
+        newSchedule[index] = { ...newSchedule[index]!, [field]: value };
         setSchedule(newSchedule);
     };
 
     const handleContactChange = (index: number, field: keyof Contact, value: string) => {
         const newContacts = [...contacts];
-        newContacts[index] = { ...newContacts[index], [field]: value };
+        newContacts[index] = { ...newContacts[index]!, [field]: value };
         setContacts(newContacts);
     };
 

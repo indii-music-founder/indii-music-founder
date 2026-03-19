@@ -76,7 +76,7 @@ export async function fetchAsBase64(url: string): Promise<{ base64: string; mime
 // --- Internal helpers ---
 
 function guessMimeFromUrl(url: string): string {
-    const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
+    const ext = url.split('?')[0]!.split('.').pop()?.toLowerCase();
     const mimeMap: Record<string, string> = {
         png: 'image/png',
         jpg: 'image/jpeg',

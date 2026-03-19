@@ -82,7 +82,7 @@ export class MasteringService {
      * Recommends a mastering chain based on a target preset and audio analysis.
      */
     async getRecommendation(file: File, presetId: string): Promise<MasteringRecommendation> {
-        const preset = MASTERING_PRESETS[presetId] || MASTERING_PRESETS.spotify;
+        const preset: MasteringPreset = MASTERING_PRESETS[presetId] ?? MASTERING_PRESETS['spotify']!;
 
         logger.info(`[Mastering] Generating recommendation for ${file.name} using ${preset.name} preset.`);
 

@@ -189,7 +189,7 @@ export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     samples: [],
     isGolden: false,
     releaseType: 'Single',
-    releaseDate: new Date().toISOString().split('T')[0],
+    releaseDate: new Date().toISOString().split('T')[0]!,
     territories: ['Worldwide'],
     distributionChannels: ['streaming', 'download'],
     aiGeneratedContent: {

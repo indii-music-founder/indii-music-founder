@@ -89,7 +89,7 @@ describe('LicensingService', () => {
             expect(mockQuery).toHaveBeenCalled();
             expect(mockWhere).toHaveBeenCalledWith('status', '==', 'active');
             expect(result).toHaveLength(1);
-            expect(result[0].title).toBe('Song A');
+            expect(result[0]!.title).toBe('Song A');
         });
     });
 
@@ -109,7 +109,7 @@ describe('LicensingService', () => {
             expect(mockQuery).toHaveBeenCalled();
             expect(mockWhere).toHaveBeenCalledWith('status', 'in', ['checking', 'pending_approval', 'negotiating']);
             expect(result).toHaveLength(1);
-            expect(result[0].title).toBe('Request A');
+            expect(result[0]!.title).toBe('Request A');
         });
     });
 

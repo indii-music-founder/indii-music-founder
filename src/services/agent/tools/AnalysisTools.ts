@@ -5,7 +5,7 @@ import type { AnyToolFunction } from '../types';
 // AnalysisTools Implementation
 // ============================================================================
 
-export const AnalysisTools: Record<string, AnyToolFunction> = {
+export const AnalysisTools = {
     analyze_contract: wrapTool('analyze_contract', async (args: { file_data: string, mime_type: string }) => {
         const { functions } = await import('@/services/firebase');
         const { httpsCallable } = await import('firebase/functions');
@@ -102,7 +102,7 @@ export const AnalysisTools: Record<string, AnyToolFunction> = {
             severity
         }, message);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 export const {
     analyze_contract,

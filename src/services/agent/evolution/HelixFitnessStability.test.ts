@@ -64,10 +64,10 @@ describe('🧬 Helix: Fitness Stability & Edge Cases', () => {
 
     // 1. Sort Check
     // Infinity - 100 = Infinity (Positive). So God comes before Mortal.
-    expect(nextGen[0].id).toBe('God');
+    expect(nextGen[0]!.id).toBe('God');
     // Helix: We sanitize Infinity to Number.MAX_VALUE for safety
     // Helix: God Mode Safety clamps Infinity to MAX_VALUE for serialization
-    expect(nextGen[0].fitness).toBe(Number.MAX_VALUE);
+    expect(nextGen[0]!.fitness).toBe(Number.MAX_VALUE);
 
     // 2. Breeding Check
     // God should be in the mating pool.
@@ -96,7 +96,7 @@ describe('🧬 Helix: Fitness Stability & Edge Cases', () => {
 
     // 1. Survival Check
     // Good should be elite.
-    expect(nextGen[0].id).toBe('Good');
+    expect(nextGen[0]!.id).toBe('Good');
 
     // 2. Exclusion Check
     // Bad and Zero should NOT breed.
@@ -126,7 +126,7 @@ describe('🧬 Helix: Fitness Stability & Edge Cases', () => {
     const nextGen = await engine.evolve(population);
 
     // If sort is stable, A should remain at index 0 and be picked as the Elite.
-    expect(nextGen[0].id).toBe('A');
+    expect(nextGen[0]!.id).toBe('A');
   });
 
   it('NaN Handling: NaN fitness is treated as Zero/Failure', async () => {
@@ -152,7 +152,7 @@ describe('🧬 Helix: Fitness Stability & Edge Cases', () => {
 
     const nextGen = await engine.evolve(population);
 
-    expect(nextGen[0].id).toBe('Valid');
+    expect(nextGen[0]!.id).toBe('Valid');
 
     // Check that NaN was treated as 0 (effectively)
     const nanAgent = nextGen.find(g => g.id === 'NotANumber');

@@ -242,7 +242,7 @@ describe('FirebaseAIService', () => {
         await service.analyzeImage('What is this?', 'data:image/png;base64,encoded...', 'image/png');
 
         const args = mockGenerateContent.mock.calls[0];
-        expect(args[0]).toMatchObject({
+        expect(args![0]).toMatchObject({
             contents: [{
                 role: 'user',
                 parts: [
@@ -258,7 +258,7 @@ describe('FirebaseAIService', () => {
         await service.analyzeMultimodal('Explain', parts);
 
         const args = mockGenerateContent.mock.calls[0];
-        expect(args[0]).toMatchObject({
+        expect(args![0]).toMatchObject({
             contents: [{
                 role: 'user',
                 parts: [

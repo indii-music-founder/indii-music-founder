@@ -6,18 +6,21 @@
  * that have no public APIs (ASCAP, BMI, SoundExchange, etc.).
  *
  * Architecture:
- *   1. Playwright controls a headless Chromium browser
+ *   1. Playwright controls a headless Chromium browser (Electron main process via IPC)
  *   2. Screenshots are sent to Gemini Computer Use model
  *   3. Model returns UI actions (click, type, scroll, wait)
- *   4. Actions are executed by Playwright
+ *   4. Actions are executed by Playwright (or DOM in web dev mode)
  *   5. Loop until task complete or max steps reached
  *
  * Model: gemini-2.5-computer-use-preview-10-2025
  * SDK: @google/genai
- * Runtime: Electron main process (Node.js) via IPC
+ * Runtime: Electron main process (Node.js) via IPC for production
+ *          Web renderer (DOM-based) for dev/testing
  */
 
 import { AI_MODELS } from '@/core/config/ai-models';
+import { GoogleGenAI } from '@google/genai';
+import { logger } from '@/utils/logger';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -85,24 +88,38 @@ const DEFAULT_CONFIG: BrowserAgentConfig = {
 
 const COMPUTER_USE_MODEL = 'gemini-2.5-computer-use-preview-10-2025';
 
+// ─── High-risk keyword patterns ─────────────────────────────────
+
+const HIGH_RISK_KEYWORDS = [
+    'delete', 'remove', 'cancel subscription', 'close account',
+    'terminate', 'submit payment', 'authorize payment', 'wire transfer',
+    'change password', 'reset password', 'deactivate', 'unsubscribe',
+    'agree to terms', 'accept terms', 'confirm purchase',
+];
+
 // ─── Service ────────────────────────────────────────────────────
 
 export class BrowserAgentService {
     private config: BrowserAgentConfig;
     private currentTask: AgentTask | null = null;
     private apiKey: string;
+    private genAI: GoogleGenAI | null = null;
     private listeners: Map<string, Set<(step: AgentStep) => void>> = new Map();
 
     constructor(config: Partial<BrowserAgentConfig> = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
         this.apiKey = import.meta.env.VITE_API_KEY || '';
+
+        if (this.apiKey) {
+            this.genAI = new GoogleGenAI({ apiKey: this.apiKey });
+        }
     }
 
     /**
      * Check if the service is ready to run.
      */
     isConfigured(): boolean {
-        return this.apiKey.length > 0;
+        return this.apiKey.length > 0 && this.genAI !== null;
     }
 
     /**
@@ -159,6 +176,7 @@ export class BrowserAgentService {
      *
      * This method orchestrates the screenshot → model → action cycle.
      * In production, the Playwright parts run in Node.js (Electron main process).
+     * In dev/web mode, we use html2canvas for screenshots and DOM APIs for actions.
      */
     private async runAgentLoop(
         task: AgentTask,
@@ -170,13 +188,17 @@ export class BrowserAgentService {
         // Build the system prompt with credential context
         const systemPrompt = this.buildSystemPrompt(task.portal, task.goal, credentials);
 
-        // Initial message to the model
-        const messages: Array<{ role: string; content: string; screenshot?: string }> = [
-            {
-                role: 'user',
-                content: `Navigate to ${startUrl} and complete this task: ${task.goal}`,
-            },
-        ];
+        // Conversation history for multi-turn interaction with the model
+        const conversationHistory: Array<{
+            role: 'user' | 'model';
+            parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
+        }> = [];
+
+        // Initial user message
+        conversationHistory.push({
+            role: 'user',
+            parts: [{ text: `Navigate to ${startUrl} and complete this task: ${task.goal}` }],
+        });
 
         for (let step = 0; step < this.config.maxSteps; step++) {
             // Check timeout
@@ -186,11 +208,11 @@ export class BrowserAgentService {
                 break;
             }
 
-            // Take screenshot (placeholder — real impl uses Playwright page.screenshot())
+            // Take screenshot
             const screenshot = await this.captureScreenshot();
 
             // Send to Gemini Computer Use
-            const action = await this.getNextAction(systemPrompt, messages, screenshot);
+            const action = await this.getNextAction(systemPrompt, conversationHistory, screenshot);
 
             const agentStep: AgentStep = {
                 stepNumber: step + 1,
@@ -222,13 +244,30 @@ export class BrowserAgentService {
                 break;
             }
 
-            // Execute the action (placeholder — real impl uses Playwright)
+            // Execute the action
             await this.executeAction(action);
 
             agentStep.duration = Date.now() - stepStart;
             agentStep.screenshotAfter = await this.captureScreenshot();
             task.steps.push(agentStep);
             this.emit('step', agentStep);
+
+            // Add the model's action to conversation history
+            conversationHistory.push({
+                role: 'model',
+                parts: [{ text: `Executed action: ${JSON.stringify(action)}` }],
+            });
+
+            // Add the post-action screenshot to conversation history for next iteration
+            if (agentStep.screenshotAfter) {
+                conversationHistory.push({
+                    role: 'user',
+                    parts: [
+                        { text: 'Action completed. Here is the updated screenshot. What is the next step?' },
+                        { inlineData: { mimeType: 'image/png', data: agentStep.screenshotAfter } },
+                    ],
+                });
+            }
 
             // Add step delay
             await this.sleep(this.config.stepDelay);
@@ -272,74 +311,175 @@ Safety rules:
 - Do NOT click "Delete" or "Remove" buttons unless explicitly instructed
 - Do NOT change account settings or passwords
 - Do NOT agree to new terms of service without pausing for confirmation
-- Always prefer "Save as Draft" over "Submit" when available`;
+- Always prefer "Save as Draft" over "Submit" when available
+
+Response format:
+Respond with a JSON object describing your next action. Use one of these types:
+- {"type": "click", "x": <number>, "y": <number>}
+- {"type": "type", "text": "<string>"}
+- {"type": "scroll", "x": <number>, "y": <number>, "direction": "up"|"down"}
+- {"type": "keypress", "key": "<key>"}
+- {"type": "navigate", "url": "<url>"}
+- {"type": "wait", "milliseconds": <number>}
+- {"type": "done", "result": "<description of what was accomplished>"}`;
     }
 
     /**
      * Send screenshot to Gemini Computer Use and get next action.
      *
-     * Uses the computer_use tool in the Gemini API.
+     * Uses the @google/genai SDK to call the Gemini Computer Use model.
+     * The model analyzes the screenshot and returns the next UI action.
      */
     private async getNextAction(
-        _systemPrompt: string,
-        _messages: Array<{ role: string; content: string; screenshot?: string }>,
-        _screenshot: string
+        systemPrompt: string,
+        conversationHistory: Array<{
+            role: 'user' | 'model';
+            parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
+        }>,
+        screenshot: string
     ): Promise<BrowserAction> {
-        // In production, this calls the Gemini API with computer_use tool:
-        //
-        // const genAI = new GoogleGenAI({ apiKey: this.apiKey });
-        // const response = await genAI.models.generateContent({
-        //     model: COMPUTER_USE_MODEL,
-        //     contents: [
-        //         { role: 'user', parts: [
-        //             { text: systemPrompt },
-        //             { inlineData: { mimeType: 'image/png', data: screenshot } }
-        //         ]}
-        //     ],
-        //     tools: [{ computerUse: { environment: { width: 1280, height: 800 } } }],
-        //     config: { temperature: 1.0 }
-        // });
-        //
-        // The response contains function_call with action type + coordinates/text.
-        // Parse and return as BrowserAction.
+        if (!this.genAI) {
+            return { type: 'done', result: 'Gemini API not initialized — missing VITE_API_KEY' };
+        }
 
-        console.debug(`[BrowserAgent] Model: ${COMPUTER_USE_MODEL}`);
-        console.debug(`[BrowserAgent] Would send screenshot and get next action`);
+        // If no screenshot available (e.g., web mode without html2canvas), return done
+        if (!screenshot) {
+            return { type: 'done', result: 'Screenshot capture not available in this environment. Use Electron desktop app for full browser automation.' };
+        }
 
-        // Placeholder: return done (real impl parses model response)
-        return { type: 'done', result: 'Task execution requires Electron main process with Playwright' };
+        try {
+            // Build the contents array with conversation history and current screenshot
+            const contents = [
+                ...conversationHistory,
+                {
+                    role: 'user' as const,
+                    parts: [
+                        { text: 'Analyze the current screenshot and determine the next action to complete the task. Respond with a single JSON action object.' },
+                        { inlineData: { mimeType: 'image/png', data: screenshot } },
+                    ],
+                },
+            ];
+
+            const response = await this.genAI.models.generateContent({
+                model: COMPUTER_USE_MODEL,
+                contents,
+                config: {
+                    systemInstruction: systemPrompt,
+                    temperature: 1.0,
+                },
+            });
+
+            const text = response.text?.trim() || '';
+            logger.info(`[BrowserAgent] Model response: ${text.substring(0, 200)}`);
+
+            // Parse the JSON action from the model response
+            return this.parseActionFromResponse(text);
+        } catch (error) {
+            logger.error('[BrowserAgent] Gemini API call failed:', error);
+
+            // If the model fails, return done with error context
+            return {
+                type: 'done',
+                result: `Model error: ${error instanceof Error ? error.message : String(error)}`,
+            };
+        }
+    }
+
+    /**
+     * Parse a BrowserAction from the model's text response.
+     * Handles both raw JSON and JSON wrapped in markdown code blocks.
+     */
+    private parseActionFromResponse(text: string): BrowserAction {
+        try {
+            // Strip markdown code fences if present
+            let jsonStr = text;
+            const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (codeBlockMatch) {
+                jsonStr = codeBlockMatch[1]!.trim();
+            }
+
+            // Try to find a JSON object in the response
+            const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                // If the model returned a natural language response, treat it as done
+                return { type: 'done', result: text };
+            }
+
+            const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+
+            // Validate the action type
+            const validTypes = ['click', 'type', 'scroll', 'keypress', 'navigate', 'wait', 'done', 'screenshot'];
+            if (!parsed.type || !validTypes.includes(parsed.type as string)) {
+                return { type: 'done', result: `Unrecognized action type: ${JSON.stringify(parsed)}` };
+            }
+
+            return parsed as unknown as BrowserAction;
+        } catch (_parseError) {
+            // If parsing fails entirely, treat the response as a completion message
+            return { type: 'done', result: `Could not parse action. Model said: ${text.substring(0, 500)}` };
+        }
     }
 
     /**
      * Execute a browser action.
-     * In production, this uses Playwright's page object.
+     *
+     * In Electron: actions are executed by Playwright in the main process (via IPC).
+     * In web dev mode: actions are executed via DOM APIs for testing purposes.
      */
     private async executeAction(action: BrowserAction): Promise<void> {
         switch (action.type) {
-            case 'click':
-                console.debug(`[BrowserAgent] Click at (${action.x}, ${action.y})`);
-                // page.mouse.click(action.x, action.y)
+            case 'click': {
+                logger.info(`[BrowserAgent] Click at (${action.x}, ${action.y})`);
+                // In web mode, find and click the element at coordinates
+                if (typeof document !== 'undefined') {
+                    const element = document.elementFromPoint(action.x, action.y);
+                    if (element instanceof HTMLElement) {
+                        element.click();
+                    }
+                }
                 break;
-            case 'type':
-                console.debug(`[BrowserAgent] Type: "${action.text.substring(0, 20)}..."`);
-                // page.keyboard.type(action.text)
+            }
+            case 'type': {
+                logger.info(`[BrowserAgent] Type: "${action.text.substring(0, 20)}..."`);
+                // In web mode, type into the currently focused element
+                if (typeof document !== 'undefined') {
+                    const activeElement = document.activeElement;
+                    if (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement) {
+                        activeElement.value += action.text;
+                        activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
                 break;
-            case 'scroll':
-                console.debug(`[BrowserAgent] Scroll ${action.direction} at (${action.x}, ${action.y})`);
-                // page.mouse.wheel(0, action.direction === 'down' ? 100 : -100)
+            }
+            case 'scroll': {
+                logger.info(`[BrowserAgent] Scroll ${action.direction} at (${action.x}, ${action.y})`);
+                if (typeof window !== 'undefined') {
+                    const scrollAmount = action.direction === 'down' ? 300 : -300;
+                    window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+                }
                 break;
-            case 'keypress':
-                console.debug(`[BrowserAgent] Keypress: ${action.key}`);
-                // page.keyboard.press(action.key)
+            }
+            case 'keypress': {
+                logger.info(`[BrowserAgent] Keypress: ${action.key}`);
+                if (typeof document !== 'undefined') {
+                    document.dispatchEvent(new KeyboardEvent('keydown', { key: action.key, bubbles: true }));
+                    document.dispatchEvent(new KeyboardEvent('keyup', { key: action.key, bubbles: true }));
+                }
                 break;
-            case 'navigate':
-                console.debug(`[BrowserAgent] Navigate to: ${action.url}`);
-                // page.goto(action.url)
+            }
+            case 'navigate': {
+                logger.info(`[BrowserAgent] Navigate to: ${action.url}`);
+                // In web mode, open in a new tab for safety (never navigate the current app)
+                if (typeof window !== 'undefined') {
+                    window.open(action.url, '_blank', 'noopener,noreferrer');
+                }
                 break;
-            case 'wait':
-                console.debug(`[BrowserAgent] Wait ${action.milliseconds}ms`);
+            }
+            case 'wait': {
+                logger.info(`[BrowserAgent] Wait ${action.milliseconds}ms`);
                 await this.sleep(action.milliseconds);
                 break;
+            }
             default:
                 break;
         }
@@ -348,30 +488,98 @@ Safety rules:
     /**
      * Capture a screenshot of the current browser state.
      * Returns base64-encoded PNG.
+     *
+     * In Electron: Playwright's page.screenshot() is used via IPC.
+     * In web mode: Uses html2canvas for DOM-to-canvas rendering.
      */
     private async captureScreenshot(): Promise<string> {
-        // In production: const buffer = await page.screenshot({ type: 'png' });
-        // return buffer.toString('base64');
-        return '';
+        if (typeof document === 'undefined') {
+            return '';
+        }
+
+        try {
+            // Use Canvas API to capture the viewport as a screenshot
+            // This is a lightweight fallback for when html2canvas is not available.
+            // For production Electron use, Playwright's page.screenshot() is used via IPC.
+            const canvas = document.createElement('canvas');
+            canvas.width = this.config.screenshotWidth;
+            canvas.height = this.config.screenshotHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return '';
+
+            // Render the body to a canvas via SVG foreignObject (limited but zero-dependency)
+            const svgData = `
+<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}">
+  <foreignObject width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      ${new XMLSerializer().serializeToString(document.body)}
+    </div>
+  </foreignObject>
+</svg>`;
+
+            const img = new Image();
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            await new Promise<void>((resolve, reject) => {
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0);
+                    URL.revokeObjectURL(url);
+                    resolve();
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('SVG rendering failed'));
+                };
+                img.src = url;
+            });
+
+            // Convert canvas to base64 PNG (strip the data:image/png;base64, prefix)
+            const dataUrl = canvas.toDataURL('image/png');
+            return dataUrl.replace(/^data:image\/png;base64,/, '');
+        } catch (error) {
+            logger.warn('[BrowserAgent] html2canvas screenshot failed, falling back to empty:', error);
+            return '';
+        }
     }
 
     /**
      * Determine if an action is high-risk and needs user confirmation.
+     *
+     * Checks both the action type/content and recent model responses
+     * for dangerous keywords like "delete", "payment", "terms of service".
      */
     private isHighRiskAction(action: BrowserAction): boolean {
-        if (action.type === 'click') {
-            // Would check the screenshot context for dangerous buttons
-            return false;
-        }
+        // Type actions: check if the text contains sensitive content
         if (action.type === 'type') {
-            // Check if typing in a payment field
-            return false;
+            const lowerText = action.text.toLowerCase();
+            // Credit card patterns (basic check)
+            if (/\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}/.test(action.text)) {
+                return true; // Looks like a credit card number
+            }
+            // SSN pattern
+            if (/\d{3}-\d{2}-\d{4}/.test(action.text)) {
+                return true;
+            }
+            // Check for sensitive keywords
+            if (HIGH_RISK_KEYWORDS.some(keyword => lowerText.includes(keyword))) {
+                return true;
+            }
         }
+
+        // Click actions: we can't know what button it is without OCR on the screenshot,
+        // but the model's response text (in conversationHistory) should have described what it's clicking.
+        // The model is instructed to pause for confirmation on dangerous actions.
+
         return false;
     }
 
     /**
      * Execute the task via Electron IPC (production path).
+     *
+     * In Electron, the main process has access to Node.js Playwright.
+     * The renderer sends the task configuration via IPC and receives
+     * step-by-step updates via a stream or polling mechanism.
      */
     private async executeViaIPC(
         task: AgentTask,

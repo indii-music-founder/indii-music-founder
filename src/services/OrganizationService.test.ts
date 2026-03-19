@@ -66,6 +66,6 @@ describe('OrganizationService', () => {
         expect(mockQuery).toHaveBeenCalled();
         expect(mockWhere).toHaveBeenCalledWith('members', 'array-contains', 'user-123');
         expect(orgs.length).toBe(1);
-        expect(orgs[0].id).toBe('org-1');
+        expect(orgs[0]!.id).toBe('org-1');
     });
 });

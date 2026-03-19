@@ -56,7 +56,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                     src: initialVideo.url,
                     startFrame: 0,
                     durationInFrames: 150,
-                    trackId: project.tracks[0].id,
+                    trackId: project.tracks[0]!.id,
                     name: initialVideo.prompt || 'Imported Video'
                 });
             }

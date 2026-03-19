@@ -18,7 +18,7 @@ import type { MemoryCategory, MemoryImportance } from '@/types/UserMemory';
 // Types for UserMemoryTools
 // ============================================================================
 
-export const UserMemoryTools: Record<string, AnyToolFunction> = {
+export const UserMemoryTools = {
   /**
    * Save a new memory to the user's persistent memory database
    */
@@ -393,4 +393,4 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       }
     }
   ),
-};
+} satisfies Record<string, AnyToolFunction>;

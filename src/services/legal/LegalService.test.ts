@@ -74,8 +74,8 @@ describe('LegalService', () => {
         });
         const contracts = await LegalService.getContracts();
         expect(contracts).toHaveLength(1);
-        expect(contracts[0].id).toBe('c-1');
-        expect(contracts[0].title).toBe('NDA');
+        expect(contracts[0]!.id).toBe('c-1');
+        expect(contracts[0]!.title).toBe('NDA');
     });
 
     // ── Analysis persistence ───────────────────────────────────────────────
@@ -122,10 +122,10 @@ describe('LegalService', () => {
         });
         const analyses = await LegalService.getAnalyses();
         expect(analyses).toHaveLength(2);
-        expect(analyses[0].id).toBe('a-1');
-        expect(analyses[0].fileName).toBe('deal.pdf');
-        expect(analyses[0].score).toBe(72);
-        expect(analyses[1].score).toBe(90);
+        expect(analyses[0]!.id).toBe('a-1');
+        expect(analyses[0]!.fileName).toBe('deal.pdf');
+        expect(analyses[0]!.score).toBe(72);
+        expect(analyses[1]!.score).toBe(90);
     });
 });
 

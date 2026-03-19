@@ -117,8 +117,8 @@ describe('🧬 Helix: Gene Loss Prevention', () => {
 
     // The Elite (Index 0) MUST remain pure
     const eliteSurvivor = nextGen[0];
-    expect(eliteSurvivor.id).toBe('elite');
-    expect(eliteSurvivor.systemPrompt).toBe('ORIGINAL_PURE_PROMPT');
-    expect(eliteSurvivor.systemPrompt).not.toBe('CORRUPTED_MUTATION');
+    expect(eliteSurvivor!.id).toBe('elite');
+    expect(eliteSurvivor!.systemPrompt).toBe('ORIGINAL_PURE_PROMPT');
+    expect(eliteSurvivor!.systemPrompt).not.toBe('CORRUPTED_MUTATION');
   });
 });

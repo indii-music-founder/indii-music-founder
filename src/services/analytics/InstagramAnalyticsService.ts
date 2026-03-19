@@ -285,14 +285,14 @@ export class InstagramAnalyticsService {
 
         for (const series of (res.data ?? [])) {
             for (const point of (series.values ?? [])) {
-                const dateStr = point.end_time.split('T')[0];
+                const dateStr = point.end_time.split('T')[0]!;
                 const existing = byDate.get(dateStr) ?? { impressions: 0, reach: 0, profileViews: 0 };
 
                 if (series.name === 'impressions')   existing.impressions  = point.value;
                 if (series.name === 'reach')         existing.reach        = point.value;
                 if (series.name === 'profile_views') existing.profileViews = point.value;
 
-                byDate.set(dateStr, existing);
+                byDate.set(dateStr!, existing);
             }
         }
 
@@ -368,11 +368,11 @@ export class InstagramAnalyticsService {
         for (let i = 29; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
+            const dateStr = d.toISOString().split('T')[0]!;
             const day = byDate.get(dateStr);
 
             history.push({
-                date:             dateStr,
+                date:             dateStr!,
                 streams:          day?.impressions ?? 0,
                 saves:            0,
                 completions:      0,

@@ -162,7 +162,7 @@ export class EditingService {
                     // Extract data for next step using strict regex
                     const match = result.url.match(DATA_URI_REGEX);
                     if (match) {
-                        currentImageData = { mimeType: match[1], data: match[2] };
+                        currentImageData = { mimeType: match[1]!, data: match[2]! };
                         compositePromptParts.push(mask.prompt);
                     } else {
                         throw new Error("Failed to parse intermediate result data URI");
@@ -204,7 +204,7 @@ export class EditingService {
 
             try {
                 const result = await this.editImage({
-                    image: img,
+                    image: img!,
                     prompt: options.prompt
                 });
                 if (result) {

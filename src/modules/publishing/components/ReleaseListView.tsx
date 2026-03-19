@@ -213,6 +213,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                         }}
                         itemContent={(index) => {
                             const release = releases[index];
+                            if (!release) return null;
                             return (
                                 <div className="mb-2">
                                     <ReleaseStatusCard

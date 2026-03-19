@@ -84,7 +84,7 @@ describe('useReleases', () => {
         });
 
         expect(result.current.releases).toHaveLength(1);
-        expect(result.current.releases[0].metadata.trackTitle).toBe('Song 1');
+        expect(result.current.releases[0]!.metadata.trackTitle).toBe('Song 1');
     });
 
     it('handles errors from Firestore', async () => {

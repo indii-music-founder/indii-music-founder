@@ -157,11 +157,11 @@ export class ERNMapper {
         let h = 0, m = 0, s = 0;
 
         if (parts.length === 3) {
-            [h, m, s] = parts;
+            [h, m, s] = parts as [number, number, number];
         } else if (parts.length === 2) {
-            [m, s] = parts;
+            [m, s] = parts as [number, number];
         } else {
-            s = parts[0] || 0;
+            s = parts[0] ?? 0;
         }
 
         let iso = 'PT';

@@ -149,15 +149,15 @@ export class ViralScoreService {
 
     private _computeVelocity(history: StreamDataPoint[]): number {
         if (history.length < 2) return 1;
-        const today = history[history.length - 1].streams;
-        const yesterday = history[history.length - 2].streams;
+        const today = history[history.length - 1]!.streams;
+        const yesterday = history[history.length - 2]!.streams;
         return yesterday > 0 ? today / yesterday : 1;
     }
 
     private _computeMomentumRatio(history: StreamDataPoint[]): number {
         if (history.length < 3) return 1;
-        const day1 = history[0].streams;
-        const day3 = history[2].streams;
+        const day1 = history[0]!.streams;
+        const day3 = history[2]!.streams;
         return day1 > 0 ? day3 / day1 : 1;
     }
 

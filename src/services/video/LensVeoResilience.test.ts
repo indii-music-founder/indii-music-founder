@@ -115,13 +115,13 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
 
         // Assert: Video was still generated
         expect(result).toHaveLength(1);
-        expect(result[0].id).toBe('mock-job-id');
+        expect(result[0]!.id).toBe('mock-job-id');
 
         // firebaseAI.generateVideo should have been called
         expect(mocks.generateVideo).toHaveBeenCalledTimes(1);
 
         // Prompt should contain original but NOT the failed analysis
-        const callArgs = mocks.generateVideo.mock.calls[0][0];
+        const callArgs = mocks.generateVideo.mock.calls[0]![0];
         expect(callArgs.prompt).toContain('A cinematic shot of a cyberpunk city');
     });
 
@@ -138,7 +138,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
 
         // Assert
         expect(result).toHaveLength(1);
-        expect(result[0].id).toBe('mock-job-id');
+        expect(result[0]!.id).toBe('mock-job-id');
         expect(mocks.generateVideo).toHaveBeenCalledTimes(1);
     });
 
@@ -172,7 +172,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
 
         // Assert that firebaseAI.generateVideo was called with enriched prompt
         expect(mocks.generateVideo).toHaveBeenCalledTimes(1);
-        const callArgs = mocks.generateVideo.mock.calls[0][0];
+        const callArgs = mocks.generateVideo.mock.calls[0]![0];
         expect(callArgs.prompt).toContain('cinematic pan camera movement');
         expect(callArgs.prompt).toContain('high dynamic motion');
     });
@@ -206,7 +206,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         // 2. Execute: Generate and Wait
         const options = { prompt: 'Test video' };
         const generationResult = await service.generateVideo(options);
-        const jobId = generationResult[0].id;
+        const jobId = generationResult[0]!.id;
 
         const waitPromise = service.waitForJob(jobId, 1000);
 

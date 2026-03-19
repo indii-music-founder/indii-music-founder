@@ -43,7 +43,7 @@ export class DSRService {
 
         // Find distributor by DDEX Party ID
         const distributorKey = Object.keys(DISTRIBUTORS).find(
-            key => DISTRIBUTORS[key].ddexPartyId === report.senderId
+            key => DISTRIBUTORS[key]!.ddexPartyId === report.senderId
         );
 
         if (distributorKey) {

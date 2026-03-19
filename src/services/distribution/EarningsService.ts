@@ -36,10 +36,10 @@ export class EarningsService {
             const snapshot = await getDocs(q);
             if (snapshot.empty) return null;
 
-            const data = snapshot.docs[0].data();
+            const data = snapshot.docs[0]!.data();
             return ({
                 ...data,
-                id: snapshot.docs[0].id,
+                id: snapshot.docs[0]!.id,
                 // Handle Timestamp conversion
                 lastUpdated: data.lastUpdated?.toDate?.()?.toISOString() || new Date().toISOString()
             } as unknown) as DistributorEarnings;

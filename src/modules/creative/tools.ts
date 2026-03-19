@@ -10,7 +10,7 @@ import { logger } from '@/utils/logger';
  * Allows agents to access and utilize generated/uploaded assets.
  */
 
-export const CREATIVE_TOOLS: Record<string, AnyToolFunction> = {
+export const CREATIVE_TOOLS = {
     get_studio_assets: wrapTool('get_studio_assets', async (args: {
         query?: string,
         limit?: number,
@@ -54,4 +54,4 @@ export const CREATIVE_TOOLS: Record<string, AnyToolFunction> = {
             return toolError("Error retrieving studio assets.", 'RETRIEVAL_ERROR');
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;

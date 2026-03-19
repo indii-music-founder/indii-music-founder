@@ -54,7 +54,7 @@ function parseGmailMessage(raw: any, accountId: string): EmailMessage {
     const parseAddress = (str: string): EmailAddress => {
         const match = str.match(/^(.+?)\s*<(.+?)>$/);
         if (match) {
-            return { name: match[1].trim().replace(/^"|"$/g, ''), email: match[2] };
+            return { name: match[1]!.trim().replace(/^"|"$/g, ''), email: match[2]! };
         }
         return { name: str.trim(), email: str.trim() };
     };

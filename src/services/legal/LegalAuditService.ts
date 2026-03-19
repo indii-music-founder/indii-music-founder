@@ -64,7 +64,7 @@ export class LegalAuditService {
             const lastSnapshot = await getDocs(lastEntryQuery);
             const prevHash = lastSnapshot.empty
                 ? '0'.repeat(64)  // Genesis hash (no previous entry)
-                : (lastSnapshot.docs[0].data() as LegalAuditRecord).entryHash || '0'.repeat(64);
+                : (lastSnapshot.docs[0]!.data() as LegalAuditRecord).entryHash || '0'.repeat(64);
 
             // Compute this entry's canonical hash (deterministic fields only — not timestamp)
             const canonicalData = JSON.stringify({ actionType, actorUid, targetId, targetType, prevHash });

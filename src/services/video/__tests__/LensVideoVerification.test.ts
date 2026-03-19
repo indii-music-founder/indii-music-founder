@@ -205,7 +205,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
             });
 
             // Inspect the call to firebaseAI.generateVideo (direct SDK path)
-            const callArgs = vi.mocked(firebaseAI.generateVideo).mock.calls[0][0];
+            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0][0];
 
             // Verify camera movement enrichment
             expect(callArgs.prompt).toContain('cinematic pan right camera movement');

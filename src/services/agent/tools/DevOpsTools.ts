@@ -64,7 +64,7 @@ async function requireApproval(action: string, details: string): Promise<boolean
     return approved;
 }
 
-export const DevOpsTools: Record<string, AnyToolFunction> = {
+export const DevOpsTools = {
     list_clusters: wrapTool('list_clusters', async (args?: { projectId?: string; location?: string }) => {
         logger.info('[DevOps] Listing GKE clusters');
 
@@ -396,4 +396,4 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
             }, `QA Sandbox '${args.environmentName}' provisioned locally. Deploy Cloud Function 'provisionQASandbox' for real GCP environment.`);
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;

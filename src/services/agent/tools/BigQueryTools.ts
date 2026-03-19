@@ -32,7 +32,7 @@ interface QueryResult {
     jobId: string;
 }
 
-export const BigQueryTools: Record<string, AnyToolFunction> = {
+export const BigQueryTools = {
     execute_bigquery_query: wrapTool('execute_bigquery_query', async (args: {
         query: string;
         projectId?: string;
@@ -180,7 +180,7 @@ LIMIT 8`;
             }, `Cohort analysis failed: ${msg}`);
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases
 export const {

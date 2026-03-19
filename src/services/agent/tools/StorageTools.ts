@@ -2,7 +2,7 @@ import { StorageService } from '@/services/StorageService';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
-export const StorageTools: Record<string, AnyToolFunction> = {
+export const StorageTools = {
     list_files: wrapTool('list_files', async (args: { limit?: number, type?: string }) => {
         const count = args.limit || 20;
         const items = await StorageService.loadHistory(count);
@@ -70,7 +70,7 @@ export const StorageTools: Record<string, AnyToolFunction> = {
             }, `Storage scrub queued for bucket ${args.bucketId}. Deploy Cloud Function 'scrubOrphanedMedia' for actual cleanup.`);
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases
 export const { list_files, search_files, scrub_orphaned_media } = StorageTools;

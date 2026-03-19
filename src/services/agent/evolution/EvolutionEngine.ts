@@ -184,14 +184,14 @@ export class EvolutionEngine {
   private selectParent(population: AgentGene[]): AgentGene {
     // Simple implementation: Tournament selection of size 3
     const tournamentSize = 3;
-    let best = population[Math.floor(Math.random() * population.length)];
+    let best = population[Math.floor(Math.random() * population.length)]!;
 
     for (let i = 0; i < tournamentSize - 1; i++) {
-      const contender = population[Math.floor(Math.random() * population.length)];
+      const contender = population[Math.floor(Math.random() * population.length)]!;
       if ((contender.fitness || 0) > (best.fitness || 0)) {
         best = contender;
       }
     }
-    return best;
+    return best!;
   }
 }

@@ -256,7 +256,7 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         // Assert AI received the truncated context
         // mockGenerateContent was called by BaseAgent (1st call, as Orchestrator routing is mocked/skipped)
         // Note: With current mocks, Orchestrator and Coordinator are mocked out, so AI is called only ONCE by BaseAgent.
-        const aiCall = mockGenerateContent.mock.calls[0][0];
+        const aiCall = mockGenerateContent.mock.calls[0]![0];
         const sentText = aiCall[0].parts[0].text;
         expect(sentText).toContain('TRUNCATED');
 
@@ -276,6 +276,6 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         expect(hasMessages).toBe(true);
 
         // Verify the session ID
-        expect(calls[0][0]).toBe('session-123');
+        expect(calls[0]![0]).toBe('session-123');
     });
 });

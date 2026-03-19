@@ -63,7 +63,7 @@ const TechnicalRiderSchema = z.object({
 
 // --- Tools Implementation ---
 
-export const RoadTools: Record<string, AnyToolFunction> = {
+export const RoadTools = {
     plan_tour_route: wrapTool('plan_tour_route', async ({ locations, start_location, end_location, stops, timeframe }: { locations?: string[], start_location?: string, end_location?: string, stops?: string[], timeframe?: string }) => {
         const stopsList = locations || (stops && start_location && end_location ? [start_location, ...stops, end_location] : []);
         const context = timeframe ? `Timeframe: ${timeframe}` : '';
@@ -290,7 +290,7 @@ export const RoadTools: Record<string, AnyToolFunction> = {
             note: userId ? 'Setlist saved to your account for PRO submission.' : 'Sign in to persist setlist data.'
         }, `Live setlist logged for ${args.venue} on ${args.date}. ${args.tracks.length} tracks queued for PRO performance royalty submission.`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases for historical reasons if needed
 export const {

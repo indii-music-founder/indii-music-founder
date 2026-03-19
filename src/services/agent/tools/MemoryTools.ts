@@ -11,7 +11,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 // Types for MemoryTools
 // ============================================================================
 
-export const MemoryTools: Record<string, AnyToolFunction> = {
+export const MemoryTools = {
     save_memory: wrapTool('save_memory', async (args: { content: string; type?: 'fact' | 'summary' | 'rule' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const { useStore } = await import('@/core/store');
         // Phase 3.6: Use execution context when available, fallback to direct store
@@ -102,4 +102,4 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
             message: `Retrieved ${recentHistory.length} most recent history items.`
         };
     })
-};
+} satisfies Record<string, AnyToolFunction>;

@@ -4,7 +4,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 
-export const ProjectTools: Record<string, AnyToolFunction> = {
+export const ProjectTools = {
     create_project: wrapTool('create_project', async (args: { name: string, type: AppSlice['currentModule'], orgId?: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const { useStore } = await import('@/core/store');
         const store = useStore.getState();
@@ -81,4 +81,4 @@ export const ProjectTools: Record<string, AnyToolFunction> = {
             projectType: project.type
         }, `Opened project: ${project.name}`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;

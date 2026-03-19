@@ -107,7 +107,7 @@ describe('Filmmaking Grammar Tools', () => {
                 url: 'data:image/png;base64,gridurl'
             }] as Awaited<ReturnType<typeof ImageGeneration.generateImages>>);
 
-            const result = await DirectorTools.render_cinematic_grid({ prompt: "A forest scene" });
+            const result = await DirectorTools.render_cinematic_grid!({ prompt: "A forest scene" });
 
             expect(result.success).toBe(true);
             expect(result.message).toContain("Cinematic grid generated");
@@ -119,7 +119,7 @@ describe('Filmmaking Grammar Tools', () => {
         });
 
         it('add_character_reference should update store state and return ToolFunctionResult', async () => {
-            const result = await DirectorTools.add_character_reference({ image: "data:image/png;base64,newdata" });
+            const result = await DirectorTools.add_character_reference!({ image: "data:image/png;base64,newdata" });
 
             expect(mockSetEntityAnchor).toHaveBeenCalledWith(expect.objectContaining({
                 image: expect.objectContaining({

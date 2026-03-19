@@ -51,10 +51,10 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
 
             if (results.length > 0) {
                 const newItem: HistoryItem = {
-                    id: results[0].id,
+                    id: results[0]!.id,
                     type: 'image',
-                    url: results[0].url,
-                    prompt: results[0].prompt,
+                    url: results[0]!.url,
+                    prompt: results[0]!.prompt,
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 };

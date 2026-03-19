@@ -522,7 +522,7 @@ export class VideoGenerationService {
                 options.onProgress?.(i, numBlocks);
 
                 const videoUrl = await firebaseAI.generateVideo({
-                    prompt: prompts[i],
+                    prompt: prompts[i]!,
                     model: options.model || DEFAULT_VIDEO_MODEL,
                     image: i === 0 && options.firstFrame
                         ? { imageBytes: options.firstFrame, mimeType: 'image/jpeg' }
@@ -555,9 +555,9 @@ export class VideoGenerationService {
             const { updateDoc } = await import('firebase/firestore');
             await updateDoc(jobRef, {
                 status: 'completed',
-                videoUrl: segmentUrls[0], // Primary URL is first segment
+                videoUrl: segmentUrls[0]!, // Primary URL is first segment
                 segmentUrls,
-                'output.url': segmentUrls[0],
+                'output.url': segmentUrls[0]!,
                 'output.metadata.quality': 'pro',
                 'output.metadata.mime_type': 'video/mp4',
                 updatedAt: serverTimestamp(),
@@ -566,7 +566,7 @@ export class VideoGenerationService {
 
             return [{
                 id: jobId,
-                url: segmentUrls[0],
+                url: segmentUrls[0]!,
                 prompt: options.prompt
             }];
         } catch (error) {

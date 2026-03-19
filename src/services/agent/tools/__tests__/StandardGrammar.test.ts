@@ -100,7 +100,7 @@ describe('Standard Grammar Tools', () => {
             const mockResponse = { response: { text: () => mockContent } };
             vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const result = await LegalTools.draft_contract({
+            const result = await LegalTools.draft_contract!({
                 type: 'NDA',
                 parties: ['Alice', 'Bob'],
                 terms: 'Secrecy'

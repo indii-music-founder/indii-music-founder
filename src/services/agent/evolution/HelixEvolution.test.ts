@@ -75,21 +75,21 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
 
     // Elitism: The best agent must survive unchanged at index 0
     const survivor = nextGen[0];
-    expect(survivor.id).toBe('elite');
-    expect(survivor.fitness).toBe(1.0);
-    expect(survivor.generation).toBe(0);
+    expect(survivor!.id).toBe('elite');
+    expect(survivor!.fitness).toBe(1.0);
+    expect(survivor!.generation).toBe(0);
 
     // Evolution: Offspring must be new
     const offspring = nextGen[1];
-    expect(offspring.id).not.toBe('elite');
-    expect(offspring.id).not.toBe('mid');
+    expect(offspring!.id).not.toBe('elite');
+    expect(offspring!.id).not.toBe('mid');
 
     // Generation Check: Offspring must be next generation
-    expect(offspring.generation).toBe(1);
+    expect(offspring!.generation).toBe(1);
 
     // Mutation Check: Content must be different (Diversity)
-    expect(offspring.systemPrompt).toContain('[MUTATED]');
-    expect(offspring.systemPrompt).not.toEqual(survivor.systemPrompt);
+    expect(offspring!.systemPrompt).toContain('[MUTATED]');
+    expect(offspring!.systemPrompt).not.toEqual(survivor!.systemPrompt);
   });
 
   it('Selection Pressure: High fitness parents are preferred', async () => {
@@ -201,7 +201,7 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
     // 4. Assertions
     // Should return ONLY the elite because no offspring could be created
     expect(nextGen).toHaveLength(1);
-    expect(nextGen[0].id).toBe('elite');
+    expect(nextGen[0]!.id).toBe('elite');
 
     // Verify we tried up to the limit (Population * 5 = 25 attempts)
     // The engine loop breaks when attempts >= MAX_ATTEMPTS

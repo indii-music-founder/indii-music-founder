@@ -623,14 +623,14 @@ function FindCounselPanel() {
                     />
                 </div>
 
-                {/* Placeholder directory entries */}
+                {/* Attorney directory entries */}
                 <div className="space-y-2">
                     {[
-                        { specialty: 'Music IP & Licensing', location: 'New York, NY', note: 'Verified listing coming soon' },
-                        { specialty: 'Entertainment Contracts', location: 'Los Angeles, CA', note: 'Verified listing coming soon' },
-                        { specialty: 'Independent Artist Law', location: 'Nashville, TN', note: 'Verified listing coming soon' },
+                        { specialty: 'Music IP & Licensing', location: 'New York, NY' },
+                        { specialty: 'Entertainment Contracts', location: 'Los Angeles, CA' },
+                        { specialty: 'Independent Artist Law', location: 'Nashville, TN' },
                     ].map((entry, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 opacity-50">
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
                             <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
                                 <Scale size={14} className="text-gray-500" />
                             </div>
@@ -638,10 +638,15 @@ function FindCounselPanel() {
                                 <p className="text-xs text-gray-400 font-medium">{entry.specialty}</p>
                                 <div className="flex items-center gap-1 text-[10px] text-gray-600 mt-0.5">
                                     <MapPin size={9} /> {entry.location}
-                                    <span className="mx-1">·</span>
-                                    <span className="italic">{entry.note}</span>
                                 </div>
                             </div>
+                            <a
+                                href="mailto:legal@indiios.com?subject=Attorney%20Directory%20Listing%20Application"
+                                className="text-[10px] text-blue-400 hover:text-blue-300 font-medium whitespace-nowrap"
+                                rel="noopener noreferrer"
+                            >
+                                Apply for listing →
+                            </a>
                         </div>
                     ))}
                 </div>

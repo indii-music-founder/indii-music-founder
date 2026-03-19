@@ -57,8 +57,8 @@ describe('ERNMapper', () => {
         expect(ern.dealList.length).toBeGreaterThan(0);
 
         const mainRelease = ern.releaseList[0];
-        expect(mainRelease.releaseTitle.titleText).toBe('Test Track');
-        expect(mainRelease.releaseId.icpn).toBe(MOCK_METADATA_BASE.upc);
+        expect(mainRelease!.releaseTitle.titleText).toBe('Test Track');
+        expect(mainRelease!.releaseId.icpn).toBe(MOCK_METADATA_BASE.upc);
     });
 
     it('should generate Streaming deals correctly', () => {
@@ -78,13 +78,13 @@ describe('ERNMapper', () => {
 
         const subDeal = deals.find(d =>
             d.dealTerms.commercialModelType === 'SubscriptionModel' &&
-            d.dealTerms.usage[0].useType === 'OnDemandStream'
+            d.dealTerms.usage[0]!.useType === 'OnDemandStream'
         );
         expect(subDeal).toBeDefined();
 
         const adDeal = deals.find(d =>
             d.dealTerms.commercialModelType === 'AdvertisementSupportedModel' &&
-            d.dealTerms.usage[0].useType === 'OnDemandStream'
+            d.dealTerms.usage[0]!.useType === 'OnDemandStream'
         );
         expect(adDeal).toBeDefined();
     });
@@ -102,7 +102,7 @@ describe('ERNMapper', () => {
 
         const downloadDeal = deals.find(d =>
             d.dealTerms.commercialModelType === 'PayAsYouGoModel' &&
-            d.dealTerms.usage[0].useType === 'PermanentDownload'
+            d.dealTerms.usage[0]!.useType === 'PermanentDownload'
         );
         expect(downloadDeal).toBeDefined();
     });
@@ -149,9 +149,9 @@ describe('ERNMapper', () => {
         const deals = getDeals(metadata);
         const deal = deals[0];
 
-        expect(deal.dealTerms.territoryCode).toEqual(['US', 'CA']);
-        expect(deal.dealTerms.validityPeriod.startDate).toBe('2025-05-01');
-        expect(deal.dealTerms.releaseDisplayStartDate).toBe('2025-05-01');
+        expect(deal!.dealTerms.territoryCode).toEqual(['US', 'CA']);
+        expect(deal!.dealTerms.validityPeriod.startDate).toBe('2025-05-01');
+        expect(deal!.dealTerms.releaseDisplayStartDate).toBe('2025-05-01');
     });
 
     it('should ignore "physical" channel and fallback if it is the only channel', () => {
@@ -195,9 +195,9 @@ describe('ERNMapper', () => {
         const ern = ERNMapper.mapMetadataToERN(aiMetadata, defaultOptions);
         const release = ern.releaseList[0];
 
-        expect(release.aiGenerationInfo).toBeDefined();
-        expect(release.aiGenerationInfo?.isFullyAIGenerated).toBe(true);
-        expect(release.aiGenerationInfo?.aiToolsUsed).toContain('Suno');
+        expect(release!.aiGenerationInfo).toBeDefined();
+        expect(release!.aiGenerationInfo?.isFullyAIGenerated).toBe(true);
+        expect(release!.aiGenerationInfo?.aiToolsUsed).toContain('Suno');
     });
 
     it('should format duration correctly for DDEX', () => {
@@ -209,14 +209,14 @@ describe('ERNMapper', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
         const resource = ern.resourceList[0];
 
-        expect(resource.duration).toBe('PT3M4S');
+        expect(resource!.duration).toBe('PT3M4S');
 
         const metadataLong: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             durationFormatted: '1:05:30'
         };
         const ernLong = ERNMapper.mapMetadataToERN(metadataLong, defaultOptions);
-        expect(ernLong.resourceList[0].duration).toBe('PT1H5M30S');
+        expect(ernLong.resourceList[0]!.duration).toBe('PT1H5M30S');
     });
 
     // 2026 Compliance Tests
@@ -235,8 +235,8 @@ describe('ERNMapper', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
         const release = ern.releaseList[0];
 
-        expect(release.aiGenerationInfo).toBeDefined();
-        expect(release.aiGenerationInfo?.disclosureType).toBe('AI_Assisted');
+        expect(release!.aiGenerationInfo).toBeDefined();
+        expect(release!.aiGenerationInfo?.disclosureType).toBe('AI_Assisted');
     });
 
     it('should classify as Human_Composed_AI_Produced when human wrote the music', () => {
@@ -253,7 +253,7 @@ describe('ERNMapper', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
         const release = ern.releaseList[0];
 
-        expect(release.aiGenerationInfo?.disclosureType).toBe('Human_Composed_AI_Produced');
+        expect(release!.aiGenerationInfo?.disclosureType).toBe('Human_Composed_AI_Produced');
     });
 
     it('should classify as Human_Created when no AI involvement', () => {
@@ -268,7 +268,7 @@ describe('ERNMapper', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
         const release = ern.releaseList[0];
 
-        expect(release.aiGenerationInfo?.disclosureType).toBe('Human_Created');
+        expect(release!.aiGenerationInfo?.disclosureType).toBe('Human_Created');
     });
 
     it('should add RightsController for self-publishing releases', () => {
@@ -281,11 +281,11 @@ describe('ERNMapper', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
         const release = ern.releaseList[0];
 
-        expect(release.rightsControllers).toBeDefined();
-        expect(release.rightsControllers).toHaveLength(1);
-        expect(release.rightsControllers![0].partyName).toBe('Artist Records LLC');
-        expect(release.rightsControllers![0].role).toBe('OriginalPublisher');
-        expect(release.rightsControllers![0].rightSharePercentage).toBe(100);
+        expect(release!.rightsControllers).toBeDefined();
+        expect(release!.rightsControllers).toHaveLength(1);
+        expect(release!.rightsControllers![0].partyName).toBe('Artist Records LLC');
+        expect(release!.rightsControllers![0].role).toBe('OriginalPublisher');
+        expect(release!.rightsControllers![0].rightSharePercentage).toBe(100);
     });
 
     it('should NOT add RightsController when artist has an external publisher', () => {
@@ -297,7 +297,7 @@ describe('ERNMapper', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
         const release = ern.releaseList[0];
 
-        expect(release.rightsControllers).toBeUndefined();
+        expect(release!.rightsControllers).toBeUndefined();
     });
 
     it('should flag Image resource as AI-generated when cover art is AI-made', () => {

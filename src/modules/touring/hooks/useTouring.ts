@@ -68,7 +68,7 @@ export const useTouring = () => {
             // Safer logic to set current itinerary only if none is selected
             setCurrentItinerary(prev => {
                 if (data.length > 0 && !prev) {
-                    return data[0];
+                    return data[0]!;
                 }
                 return prev;
             });

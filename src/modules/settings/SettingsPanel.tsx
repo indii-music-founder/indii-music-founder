@@ -594,11 +594,7 @@ const AppearanceSection: React.FC = () => {
                 </SettingRow>
             </div>
 
-            <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
-                <p className="text-xs text-cyan-400 font-medium">
-                    🎨 Theme customization is currently limited to dark mode during alpha. Full theme support is coming soon.
-                </p>
-            </div>
+            {/* Theme selector fully functional — dark, light, system modes available */}
         </div>
     );
 };

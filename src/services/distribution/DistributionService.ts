@@ -607,7 +607,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         let cleanup: (() => void) | undefined;
         if (onProgress) {
-            cleanup = window.electronAPI.distribution.onSubmitProgress(onProgress);
+            cleanup = window.electronAPI.distribution.onSubmitProgress(onProgress as (progress: number) => void);
         }
 
         try {
@@ -650,7 +650,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 );
             }
 
-            return result.report;
+            return { status: 'success', ...result.report } as { status: string; xml?: string; xml_path?: string; tracks?: unknown[] };
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'Unknown submission error';
             await this.updateTask(taskId, { status: 'FAILED', error: msg });

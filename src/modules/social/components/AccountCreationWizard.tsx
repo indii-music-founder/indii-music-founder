@@ -20,7 +20,7 @@ const PLATFORMS = [
 export default function AccountCreationWizard({ onClose }: AccountCreationWizardProps) {
     const toast = useToast();
     const [step, setStep] = useState(1);
-    const [platform, setPlatform] = useState(PLATFORMS[0]);
+    const [platform, setPlatform] = useState(PLATFORMS[0]!);
     const [brandName, setBrandName] = useState('');
     const [industry, setIndustry] = useState('');
 
@@ -241,13 +241,13 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                 {generatedIdentity && generatedIdentity.handles[0] && (
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-gray-300 text-sm">Handle</span>
-                        <button onClick={() => copyToClipboard(generatedIdentity.handles[0])} className="text-blue-400 text-xs hover:underline">Copy Top Pick</button>
+                        <button onClick={() => copyToClipboard(generatedIdentity.handles[0]!)} className="text-blue-400 text-xs hover:underline">Copy Top Pick</button>
                     </div>
                 )}
                 {generatedIdentity && generatedIdentity.bios[0] && (
                     <div className="flex justify-between items-center">
                         <span className="text-gray-300 text-sm">Bio</span>
-                        <button onClick={() => copyToClipboard(generatedIdentity.bios[0])} className="text-blue-400 text-xs hover:underline">Copy Top Pick</button>
+                        <button onClick={() => copyToClipboard(generatedIdentity.bios[0]!)} className="text-blue-400 text-xs hover:underline">Copy Top Pick</button>
                     </div>
                 )}
             </div>

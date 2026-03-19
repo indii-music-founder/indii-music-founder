@@ -93,7 +93,7 @@ describe('Agent System Verification', () => {
 
     // 7. Test a Tool Execution (Mock)
     it('should execute a tool successfully', async () => {
-        const result = (await TOOL_REGISTRY['verify_output']({ goal: "Test goal", content: "Test content" })) as any;
+        const result = (await TOOL_REGISTRY['verify_output']!({ goal: "Test goal", content: "Test content" })) as any;
         expect(result.success).toBe(true);
         expect(result.data.score).toBeGreaterThan(0);
     });

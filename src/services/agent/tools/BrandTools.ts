@@ -54,7 +54,7 @@ const AuditVisualAssetsSchema = z.object({
 
 // --- Tools Implementation ---
 
-export const BrandTools: Record<string, AnyToolFunction> = {
+export const BrandTools = {
     verify_output: wrapTool('verify_output', async ({ goal, content }: { goal: string; content: string }) => {
         const schema = zodToJsonSchema(VerifyOutputSchema);
         const prompt = `
@@ -169,4 +169,4 @@ export const BrandTools: Record<string, AnyToolFunction> = {
                 : `Flagged ${validated.flagged_assets.length} non-compliant assets.`
         };
     })
-};
+} satisfies Record<string, AnyToolFunction>;

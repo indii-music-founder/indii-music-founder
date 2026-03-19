@@ -15,9 +15,9 @@ describe('ZodUtils', () => {
             expect(params.type).toBe('OBJECT');
             expect(params.required).toContain('name');
             expect(params.required).toContain('age');
-            expect(params.properties['name'].type).toBe('STRING');
-            expect(params.properties['name'].description).toBe('The name property');
-            expect(params.properties['age'].type).toBe('INTEGER');
+            expect(params.properties['name']!.type).toBe('STRING');
+            expect(params.properties['name']!.description).toBe('The name property');
+            expect(params.properties['age']!.type).toBe('INTEGER');
         });
 
         it('should handle nested objects', () => {

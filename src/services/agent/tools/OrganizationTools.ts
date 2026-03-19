@@ -5,7 +5,7 @@ import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 
-export const OrganizationTools: Record<string, AnyToolFunction> = {
+export const OrganizationTools = {
     list_organizations: wrapTool('list_organizations', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const { useStore } = await import('@/core/store');
         // Phase 3.6: Read state through execution context when available
@@ -117,4 +117,4 @@ export const OrganizationTools: Record<string, AnyToolFunction> = {
             message: `Details retrieved for ${org.name}.`
         };
     })
-};
+} satisfies Record<string, AnyToolFunction>;

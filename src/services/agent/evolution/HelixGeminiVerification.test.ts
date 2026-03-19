@@ -95,40 +95,40 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Verification', () => {
 
     // 4. Assert: Elitism (Selection)
     // The top 2 agents (Alpha, Beta) must survive untouched
-    expect(nextGen[0].id).toBe('Agent-A');
-    expect(nextGen[1].id).toBe('Agent-B');
-    expect(nextGen[0].fitness).toBe(100);
-    expect(nextGen[1].fitness).toBe(50);
+    expect(nextGen[0]!.id).toBe('Agent-A');
+    expect(nextGen[1]!.id).toBe('Agent-B');
+    expect(nextGen[0]!.fitness).toBe(100);
+    expect(nextGen[1]!.fitness).toBe(50);
 
     // 5. Assert: The Offspring (Breeding)
     const offspring = nextGen[2];
 
     // A. Identity: Must be new
-    expect(offspring.id).not.toBe('Agent-A');
-    expect(offspring.id).not.toBe('Agent-B');
-    expect(offspring.id).not.toBe('Agent-C');
+    expect(offspring!.id).not.toBe('Agent-A');
+    expect(offspring!.id).not.toBe('Agent-B');
+    expect(offspring!.id).not.toBe('Agent-C');
 
     // B. Lineage: Must come from the pool (Likely Alpha & Beta due to high fitness)
     // Note: With Tournament Selection, C is unlikely to be picked, but possible.
     // We check that lineage contains valid IDs.
-    expect(['Agent-A', 'Agent-B', 'Agent-C']).toContain(offspring.lineage[0]);
-    expect(['Agent-A', 'Agent-B', 'Agent-C']).toContain(offspring.lineage[1]);
+    expect(['Agent-A', 'Agent-B', 'Agent-C']).toContain(offspring!.lineage[0]);
+    expect(['Agent-A', 'Agent-B', 'Agent-C']).toContain(offspring!.lineage[1]);
 
     // C. Crossover: Prompt must show combination
     // The Crossover mock produces "Prompt + Prompt"
     // The Mutation mock wraps it in "[GEMINI-3-PRO: ...]"
     // We verify both layers happened.
-    expect(offspring.systemPrompt).toContain('GEMINI-3-PRO');
-    expect(offspring.systemPrompt).toContain('+');
+    expect(offspring!.systemPrompt).toContain('GEMINI-3-PRO');
+    expect(offspring!.systemPrompt).toContain('+');
 
     // D. Mutation: Parameters changed
-    expect(offspring.parameters.temperature).toBe(0.9);
+    expect(offspring!.parameters.temperature).toBe(0.9);
 
     // E. Fitness: Must be reset (Zombie Check)
-    expect(offspring.fitness).toBeUndefined();
+    expect(offspring!.fitness).toBeUndefined();
 
     // F. Generation: Must be incremented
-    expect(offspring.generation).toBe(1);
+    expect(offspring!.generation).toBe(1);
   });
 
   it('Mutation Resilience: Ensures valid offspring despite flaky Gemini calls', async () => {
@@ -152,7 +152,7 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Verification', () => {
 
     expect(nextGen).toHaveLength(3);
     const offspring = nextGen[2];
-    expect(offspring.systemPrompt).toBe('Stable Gemini Output');
+    expect(offspring!.systemPrompt).toBe('Stable Gemini Output');
 
     // Verify we kept trying
     expect(mockGeminiMutation).toHaveBeenCalledTimes(3);

@@ -1,5 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Video, Mic } from 'lucide-react';
+// Web Speech API type declarations (not in default TS lib)
+interface SpeechRecognitionEvent extends Event {
+    results: SpeechRecognitionResultList;
+}
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: ((event: SpeechRecognitionEvent) => void) | null;
+    onend: (() => void) | null;
+    onerror: ((event: Event) => void) | null;
+    start(): void;
+    stop(): void;
+    abort(): void;
+}
+interface SpeechRecognitionConstructor {
+    new(): SpeechRecognition;
+}
+declare global {
+    interface Window {
+        SpeechRecognition?: SpeechRecognitionConstructor;
+        webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    }
+}
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Sparkles, Video, Mic, MicOff } from 'lucide-react';
+
+// ── Voice Input Button (Web Speech API) ──────────────────────────────────────
+
+interface VoiceInputButtonProps {
+    onTranscript: (text: string) => void;
+}
+
+function VoiceInputButton({ onTranscript }: VoiceInputButtonProps) {
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+    const startListening = useCallback(() => {
+        const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognitionAPI) {
+            return; // Browser doesn't support speech recognition
+        }
+
+        const recognition = new SpeechRecognitionAPI();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
+            const transcript = event.results[0]?.[0]?.transcript;
+            if (transcript) {
+                onTranscript(transcript);
+            }
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+            recognitionRef.current = null;
+        };
+
+        recognition.onerror = () => {
+            setIsListening(false);
+            recognitionRef.current = null;
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        setIsListening(true);
+    }, [onTranscript]);
+
+    const stopListening = useCallback(() => {
+        recognitionRef.current?.stop();
+        setIsListening(false);
+    }, []);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            recognitionRef.current?.abort();
+        };
+    }, []);
+
+    const supported = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+    if (!supported) return null;
+
+    return (
+        <button
+            onClick={isListening ? stopListening : startListening}
+            className={`p-2 transition-colors rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-dept-creative/50 outline-none ${
+                isListening ? 'text-red-400 animate-pulse' : 'text-gray-500 hover:text-white'
+            }`}
+            title={isListening ? 'Stop listening' : 'Voice input'}
+            aria-label={isListening ? 'Stop listening' : 'Voice input'}
+            type="button"
+        >
+            {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+        </button>
+    );
+}
+
+// ── Director Prompt Bar ──────────────────────────────────────────────────────
 
 interface DirectorPromptBarProps {
     prompt: string;
@@ -70,15 +171,8 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
                     }}
                 />
 
-                {/* Microphone (Visual Only for now) */}
-                <button
-                    className="p-2 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-dept-creative/50 outline-none"
-                    title="Voice Input (Coming Soon)"
-                    aria-label="Voice Input (Coming Soon)"
-                    type="button"
-                >
-                    <Mic size={16} />
-                </button>
+                {/* Voice Input via Web Speech API */}
+                <VoiceInputButton onTranscript={(text) => setLocalValue(prev => prev ? `${prev} ${text}` : text)} />
 
                 {/* Generate Button */}
                 <button

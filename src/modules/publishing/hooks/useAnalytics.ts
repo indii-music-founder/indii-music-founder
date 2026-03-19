@@ -59,7 +59,7 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
                 for (let i = 0; i <= days; i++) {
                     const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
                     placeholderData.push({
-                        date: date.toISOString().split('T')[0],
+                        date: date.toISOString().split('T')[0]!,
                         streams: 0,
                         revenue: 0
                     });

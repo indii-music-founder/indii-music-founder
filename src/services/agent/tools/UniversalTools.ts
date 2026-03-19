@@ -8,7 +8,7 @@ import type { AnyToolFunction } from '../types';
  * In "Direct" (browser) mode, these provide basic functionality or stubs.
  * In "Agent Zero Sidecar" (Python) mode, these are handled by actual Python scripts.
  */
-export const UniversalTools: Record<string, AnyToolFunction> = {
+export const UniversalTools = {
     /**
      * Browser Tool stub for the fallback layer.
      * Maps to general research/search capabilities.
@@ -38,9 +38,9 @@ export const UniversalTools: Record<string, AnyToolFunction> = {
      * Alias for generate_image.
      */
     indii_image_gen: wrapTool('indii_image_gen', async (args: { prompt: string; aspect_ratio?: string }) => {
-        const { CREATIVE_TOOLS } = await import('@/modules/creative/tools');
-        if (CREATIVE_TOOLS.generate_image) {
-            return CREATIVE_TOOLS.generate_image(args, {} as any, {} as any);
+        const { DirectorTools } = await import('@/services/agent/tools/DirectorTools');
+        if (DirectorTools.generate_image) {
+            return DirectorTools.generate_image(args, {} as any, {} as any);
         }
         return toolError('Image generation tool not found in registry', 'NOT_FOUND');
     }),
@@ -63,7 +63,7 @@ export const UniversalTools: Record<string, AnyToolFunction> = {
     payment_gate: wrapTool('payment_gate', async (args: { amount: number; vendor: string; reason: string }) => {
         const { CoreTools } = await import('./CoreTools');
         const content = `Authorize payment of $${args.amount} to ${args.vendor} for: ${args.reason}`;
-        return CoreTools.request_approval({ content, type: 'payment' }, {} as any, {} as any);
+        return CoreTools.request_approval!({ content, type: 'payment' }, {} as any, {} as any);
     }),
 
     /**
@@ -86,4 +86,4 @@ export const UniversalTools: Record<string, AnyToolFunction> = {
             message: `Querying local documents for: ${args.query}. Context weight: 0.85`
         });
     })
-};
+} satisfies Record<string, AnyToolFunction>;

@@ -7,7 +7,7 @@ import type { AnyToolFunction } from '../types';
 // Types for ProducerTools
 // ============================================================================
 
-export const ProducerTools: Record<string, AnyToolFunction> = {
+export const ProducerTools = {
     create_call_sheet: wrapTool('create_call_sheet', async (args: {
         date: string;
         location: string;
@@ -80,4 +80,4 @@ Output a JSON list of:
 
         return toolSuccess({ breakdown: data }, "Script breakdown completed.");
     })
-};
+} satisfies Record<string, AnyToolFunction>;

@@ -84,18 +84,18 @@ describe('DSRService', () => {
         expect(result.royalties.length).toBe(1);
 
         const royalty = result.royalties[0];
-        expect(royalty.isrc).toBe('US1234567890');
-        expect(royalty.grossRevenue).toBe(200);
+        expect(royalty!.isrc).toBe('US1234567890');
+        expect(royalty!.grossRevenue).toBe(200);
 
         // Check Splits
-        expect(royalty.contributorPayments.length).toBe(2);
+        expect(royalty!.contributorPayments.length).toBe(2);
 
-        const artistPayment = royalty.contributorPayments.find(p => p.role === 'Main Artist');
+        const artistPayment = royalty!.contributorPayments.find(p => p.role === 'Main Artist');
         expect(artistPayment).toBeDefined();
         // 80% of 200 = 160
         expect(artistPayment?.grossAmount).toBe(160);
 
-        const producerPayment = royalty.contributorPayments.find(p => p.role === 'Producer');
+        const producerPayment = royalty!.contributorPayments.find(p => p.role === 'Producer');
         expect(producerPayment).toBeDefined();
         // 20% of 200 = 40
         expect(producerPayment?.grossAmount).toBe(40);
