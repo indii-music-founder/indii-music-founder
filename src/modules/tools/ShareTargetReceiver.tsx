@@ -37,7 +37,7 @@ export const ShareTargetReceiver: React.FC = () => {
 
                 // Route the content based on type
                 if (url || text) {
-                    setMessage(`Received link/text. Forwarding to Agent Zero...`);
+                    setMessage(`Received link/text. Forwarding to indii Conductor...`);
                     setTimeout(() => {
                         // Pass the shared link directly into the chat input via query param
                         navigate(`/?initialPrompt=${encodeURIComponent(`Analyze this shared content: ${title || ''} ${text || ''} ${url || ''}`)}`);

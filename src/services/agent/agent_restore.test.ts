@@ -33,7 +33,7 @@ vi.mock('./MemoryService', () => ({
     }
 }));
 
-describe('Agent Zero Restoration', () => {
+describe('indii Conductor Restoration', () => {
     it('should have the new tools registered', () => {
         expect(TOOL_REGISTRY).toHaveProperty('save_memory');
         expect(TOOL_REGISTRY).toHaveProperty('recall_memories');

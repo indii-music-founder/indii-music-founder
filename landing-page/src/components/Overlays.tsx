@@ -74,7 +74,7 @@ export default function Overlays() {
                 </div>
             </section>
 
-            {/* Agent Zero (Page 2) */}
+            {/* Intelligence Core (Page 2) */}
             <section className="h-screen w-full flex items-center justify-end px-8 md:px-20 pointer-events-none">
                 <div className="glass-panel max-w-xl p-12 rounded-[2rem] bg-black/20 backdrop-blur-xl border border-white/5 text-right">
                     <div className="mb-4 text-neon-purple font-mono text-sm tracking-widest uppercase">

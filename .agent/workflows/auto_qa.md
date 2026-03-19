@@ -4,7 +4,7 @@ description: Autonomous Visual QA Workflow for Antigravity
 
 # Auto QA Workflow
 
-This workflow allows Antigravity to autonomously test the application and report back to OpenClaw via `AGENT_BRIDGE.md`.
+This workflow allows Antigravity to autonomously test the application and report back to INDEX via `AGENT_BRIDGE.md`.
 
 ## Steps
 
@@ -32,8 +32,8 @@ This workflow allows Antigravity to autonomously test the application and report
     - If clean -> Write `STATUS: QA_PASSED`.
 
 5. **Signal Handoff**
-    Add a log entry: "QA Cycle Complete. Waiting for OpenClaw."
+    Add a log entry: "QA Cycle Complete. Waiting for INDEX."
 
 ## Usage
 
-Run directly when OpenClaw signals a build is ready, or use via trigger.
+Run directly when INDEX signals a build is ready, or use via trigger.

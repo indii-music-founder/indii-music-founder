@@ -81,7 +81,7 @@ indiiOS-Alpha-Electron/
 │   │   ├── onboarding/         # Onboarding flow
 │   │   └── ...                 # debug, files, history, observability, publicist, tools
 │   ├── services/               # 40+ business logic services
-│   │   ├── agent/              # Agent Zero integration
+│   │   ├── agent/              # indii Conductor orchestration
 │   │   ├── ai/                 # Gemini, Vertex AI wrappers
 │   │   ├── audio/              # Audio analysis (Essentia.js)
 │   │   ├── ddex/               # DDEX ERN/DSR handling
@@ -111,7 +111,7 @@ indiiOS-Alpha-Electron/
 │   └── preload.ts              # IPC bridge to renderer
 │
 ├── agents/                     # AI agent definitions (hub-and-spoke architecture)
-│   ├── agent0/                 # Hub orchestrator
+│   ├── agent0/                 # Hub orchestrator (indii Conductor)
 │   ├── creative-director/      # Creative direction agent
 │   ├── indii_executor/         # Task executor
 │   └── [specialist agents]/    # brand, finance, legal, licensing, marketing,
@@ -305,7 +305,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 - Environment: jsdom with `@testing-library/jest-dom`
 - Co-locate tests with source: `*.test.ts` / `*.test.tsx`
 - Firebase services are fully mocked (auth, firestore, storage, functions, messaging, app-check, AI)
-- AgentZeroService is mocked to prevent 60s interaction timeouts
+- AgentZeroService is retired (tombstone export) — mock prevents test hangs
 - Run: `npm test` (watch) or `npm test -- --run` (CI)
 
 ### E2E Tests (Playwright)
@@ -338,8 +338,8 @@ The `build` script runs three steps sequentially:
 
 ```
          ┌─────────────────────┐
-         │   AgentZero (Hub)   │
-         │   (Orchestrator)    │
+         │  indii Conductor (Hub) │
+         │    (Orchestrator)      │
          └──────────┬──────────┘
                     │
     ┌───────────────┼───────────────┐
@@ -350,9 +350,9 @@ The `build` script runs three steps sequentially:
   [Finance, Publishing, Road Manager, Licensing, Social, Publicist, etc.]
 ```
 
-- **Agent Zero** (`agents/agent0/`) - Central hub, routes tasks to specialists
+- **indii Conductor** (`agents/agent0/`) - Central hub, routes tasks to specialists
 - **Specialist Agents** - Domain experts with focused capabilities
-- **Agent Zero Sidecar** - Dockerized Python runtime (`docker-compose.yml`) on `localhost:50080`
+- **AI Sidecar** - Dockerized Python runtime (`docker-compose.yml`) on `localhost:50080`
 - **Python Tools** (`python/tools/`) - 20+ execution tools (image gen, video gen, audio analysis, browser automation, DDEX, payment gate, etc.)
 
 ---
@@ -451,7 +451,7 @@ mcp_mem0_add-memory(
 | `storage.rules` | Cloud Storage security rules |
 | `electron/main.ts` | Electron main process |
 | `electron/preload.ts` | Electron IPC bridge |
-| `docker-compose.yml` | Agent Zero + Ollama containers |
+| `docker-compose.yml` | AI Sidecar + Ollama containers |
 | `.env.example` | Environment variable template |
 | `src/test/setup.ts` | Vitest global test setup and Firebase mocks |
 

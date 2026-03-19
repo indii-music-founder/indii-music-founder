@@ -2,12 +2,12 @@
  * WebSocket Control Plane
  *
  * Implements the Gateway Control Plane pattern: a centralized WebSocket router
- * that multiplexes inputs across Agent Zero and all 17+ specialist agents while
+ * that multiplexes inputs across indii Conductor and all 17+ specialist agents while
  * maintaining strict per-session namespaces and a command queue with locking to
  * prevent concurrent corruption.
  *
- * Architecture: OpenClaw-inspired persistent session abstractions WITHOUT the
- * plain-text credential vulnerability — all auth is delegated to Agent Zero's
+ * Architecture: Persistent session abstractions WITHOUT the
+ * plain-text credential vulnerability — all auth is delegated to indii's
  * SHA256 token system and Firebase security rules.
  */
 

@@ -100,11 +100,11 @@ describe('Agent Tool Accessibility Audit', () => {
         });
     });
 
-    describe('GeneralistAgent (Agent Zero) Tool Access', () => {
+    describe('GeneralistAgent (indii Conductor) Tool Access', () => {
         it('should have access to full TOOL_REGISTRY', async () => {
             const agent = await agentRegistry.getAsync('generalist');
             expect(agent).toBeDefined();
-            expect(agent?.name).toBe('Agent Zero');
+            expect(agent?.name).toBe('indii Conductor');
 
             // GeneralistAgent uses TOOL_REGISTRY directly
             // Check that it's properly constructed

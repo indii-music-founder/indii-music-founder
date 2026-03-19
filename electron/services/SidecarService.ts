@@ -10,7 +10,7 @@
  *   - Dev / Docker  → fall back to DockerService (zero changes to the dev loop)
  *
  * The sidecar binary listens on localhost:50080, identical to the Docker container.
- * AgentZeroService in the renderer requires no changes.
+ * The renderer's agent service requires no changes.
  */
 
 import { app } from 'electron';

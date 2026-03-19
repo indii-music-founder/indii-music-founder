@@ -10,7 +10,7 @@ import { logger } from '@/utils/logger';
 
 /**
  * HybridOrchestrator: The "Best of Both Worlds" engine.
- * Merges OpenClaw's system/browser integration with Agent Zero's autonomous multi-turn reasoning.
+ * Merges system/browser integration with autonomous multi-turn reasoning — indii's native orchestration engine.
  */
 export class HybridOrchestrator {
     private MAX_TURNS = 10;
@@ -75,7 +75,7 @@ export class HybridOrchestrator {
 
             const prompt = `
             You are the Hybrid indii Orchestrator (A0). 
-            You combine the autonomous multi-step reasoning of Agent Zero with the system tools of OpenClaw.
+            You are the indii Conductor, combining autonomous multi-step reasoning with system tools.
 
             GOAL: Resolve the user's request by coordinating specialists or using system tools.
             USER REQUEST: "${sanitizedQuery}"

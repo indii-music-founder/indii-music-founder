@@ -1,17 +1,17 @@
 ---
 name: auto_qa
-description: Autonomous Visual QA for indiiOS. Uses the browser subagent to visually inspect the live app at localhost:4242, capture screenshots, and report results back via AGENT_BRIDGE.md for OpenClaw to read. Triggered when a build completes or when OpenClaw signals BUILD_COMPLETE.
+description: Autonomous Visual QA for indiiOS. Uses the browser subagent to visually inspect the live app at localhost:4242, capture screenshots, and report results back via AGENT_BRIDGE.md for INDEX to read. Triggered when a build completes or when INDEX signals BUILD_COMPLETE.
 ---
 
 # @auto_qa — Autonomous Visual QA
 
 ## Purpose
 
-Perform eyes-on validation of the running application without human intervention. The browser subagent navigates the UI, checks for visual regressions, console errors, and broken states, then writes a structured report to `AGENT_BRIDGE.md` for OpenClaw to consume.
+Perform eyes-on validation of the running application without human intervention. The browser subagent navigates the UI, checks for visual regressions, console errors, and broken states, then writes a structured report to `AGENT_BRIDGE.md` for INDEX to consume.
 
 ## When to Invoke
 
-- OpenClaw signals `STATUS: BUILD_COMPLETE` in `AGENT_BRIDGE.md`
+- INDEX signals `STATUS: BUILD_COMPLETE` in `AGENT_BRIDGE.md`
 - After a major feature deployment
 - As part of CI validation before pushing to `main`
 - When `/go` Gauntlet is not sufficient (UI-only bugs)
@@ -108,7 +108,7 @@ NEEDS:
 Add to `AGENT_BRIDGE.md`:
 
 ```
-LOG: QA Cycle complete @ [timestamp]. Waiting for OpenClaw directive.
+LOG: QA Cycle complete @ [timestamp]. Waiting for INDEX directive.
 ```
 
 If failures found → immediately begin fixing. If clean → wait.

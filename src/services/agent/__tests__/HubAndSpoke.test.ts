@@ -126,10 +126,10 @@ describe('Hub-and-Spoke Architecture', () => {
             expect(result).toContain('legal');
         });
 
-        it('instructs specialists to delegate to generalist (Agent Zero)', () => {
+        it('instructs specialists to delegate to generalist (indii Conductor)', () => {
             const result = validateHubAndSpoke('video', 'finance');
             expect(result).toContain('generalist');
-            expect(result).toContain('Agent Zero');
+            expect(result).toContain('indii Conductor');
         });
 
         it('uses INDII_MESSAGES.hubSpokeViolation for consistency', () => {
@@ -303,9 +303,9 @@ describe('Hub-and-Spoke Architecture', () => {
             expect(message).toContain('indii');
         });
 
-        it('violation message references Agent Zero', () => {
+        it('violation message references indii Conductor', () => {
             const message = INDII_MESSAGES.hubSpokeViolation('brand', 'social');
-            expect(message).toContain('Agent Zero');
+            expect(message).toContain('indii Conductor');
         });
 
         it('violation message instructs proper delegation path', () => {

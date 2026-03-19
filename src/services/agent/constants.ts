@@ -30,7 +30,7 @@ export const INDII_MESSAGES = Object.freeze({
   orchestrating: 'indii is coordinating specialists to help you...',
   error: 'indii encountered an issue:',
   hubSpokeViolation: (source: string, target: string) =>
-    `indii architecture rule: Specialist agent '${source}' cannot delegate directly to '${target}'. Specialists must delegate to 'generalist' (Agent Zero), who will coordinate with other specialists as needed.`,
+    `indii architecture rule: Specialist agent '${source}' cannot delegate directly to '${target}'. Specialists must delegate to 'generalist' (indii Conductor), who will coordinate with other specialists as needed.`,
   loopDetected: 'indii detected a potential infinite loop and stopped execution.',
   routingToAgent: (agentName: string) => `indii is routing your request to ${agentName}...`
 } as const);

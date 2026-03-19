@@ -1,7 +1,7 @@
 /**
- * AgentZeroService — RETIRED
+ * AgentZeroService — RETIRED (External Dependency Tombstone)
  *
- * This service previously proxied all agent requests to an external Agent Zero
+ * This service previously proxied all agent requests to an external "Agent Zero"
  * Docker container (localhost:50080). It has been removed as of indiiOS 1.23.0.
  *
  * indiiOS is now a fully self-contained AI operating system:

@@ -80,7 +80,7 @@ function CoreReactor() {
 
 export default function NeuralForge() {
     return (
-        <group position={[0, -36, 0]}> {/* Positioned between Agent Zero (-32) and Business (will be -64) */}
+        <group position={[0, -36, 0]}> {/* Positioned between IntelligenceCore (-32) and Business (will be -64) */}
             <ambientLight intensity={0.5} />
             <pointLight position={[0, 0, 0]} intensity={5} color="#ff00ff" distance={10} />
 

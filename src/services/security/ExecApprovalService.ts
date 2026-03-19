@@ -6,7 +6,7 @@
  * to `exec-approvals.json` (Electron user-data directory) so users are never
  * asked twice for the same safe pattern.
  *
- * Security model (hardened vs. OpenClaw's disabled-by-default sandboxing):
+ * Security model (hardened beyond typical disabled-by-default sandboxing):
  *   - ALL untrusted inputs default to DENY
  *   - Approvals are scoped to (commandPattern, scope) pairs
  *   - Scope can be 'once', 'session', or 'permanent'

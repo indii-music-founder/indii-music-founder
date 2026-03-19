@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import Effects from './Effects';
 import Hero from './Hero';
 import DeepListening from './DeepListening';
-import AgentZero from './AgentZero';
+import IntelligenceCore from './IntelligenceCore';
 import NeuralForge from './NeuralForge';
 import SecurityGrid from './SecurityGrid';
 import Business from './Business';
@@ -92,7 +92,7 @@ function NeuralAether() {
             const targetColor = new THREE.Color();
             if (scrollOffset < 0.1) targetColor.set('#00f3ff'); // Hero
             else if (scrollOffset < 0.3) targetColor.set('#ffffff'); // Deep Listening
-            else if (scrollOffset < 0.5) targetColor.set('#00f3ff'); // Agent Zero
+            else if (scrollOffset < 0.5) targetColor.set('#00f3ff'); // Intelligence Core
             else if (scrollOffset < 0.7) targetColor.set('#ffffff'); // The Remix
             else targetColor.set('#ffffff'); // Final Fade (Platinum)
 
@@ -172,7 +172,7 @@ export default function Scene() {
                         <Scroll>
                             <Hero />
                             <DeepListening />
-                            <AgentZero />
+                            <IntelligenceCore />
                             <NeuralForge />
                             <SecurityGrid />
                             <Business />

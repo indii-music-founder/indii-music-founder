@@ -37,14 +37,14 @@ export class AgentRegistry {
     }
 
     private initializeAgents() {
-        // Register Complex Agents (Agent Zero)
+        // Register Complex Agents (indii Conductor — Hub)
         // CRITICAL: Generalist MUST be registered first to ensure fallback availability
         try {
             const generalistKey = 'generalist';
             // Generalist metadata
             const meta = {
                 id: generalistKey,
-                name: 'Agent Zero',
+                name: 'indii Conductor',
                 description: 'General assistance, complex reasoning, fallback.',
                 color: '#fff',
                 category: 'specialist',
@@ -141,7 +141,7 @@ export class AgentRegistry {
         } catch (e) {
             logger.warn("[AgentRegistry] Failed to register Keeper agent:", e);
         }
-        // Register Curriculum Agent (Agent Zero Automation)
+        // Register Curriculum Agent (Branding Alignment)
         try {
             const curriculumMeta = {
                 id: 'curriculum',

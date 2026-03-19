@@ -267,6 +267,17 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
     }
 
+    // Check if the authenticated user is Anonymous
+    function isAnonymous() {
+      return isAuthenticated() &&
+             request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    // Check if user is a verified (non-anonymous) authenticated user.
+    function isVerifiedUser() {
+      return isAuthenticated() && !isAnonymous();
+    }
+
     // =========================================================================
     // Knowledge Base / RAG Documents
     // =========================================================================
@@ -280,6 +291,80 @@ service cloud.firestore {
       
       allow update, delete: if isAuthenticated() &&
         resource.data.userId == request.auth.uid;
+    }
+
+    // =========================================================================
+    // Publishing Registrations (verified users only — PRO/MLC filings)
+    // =========================================================================
+    match /publishing_registrations/{registrationId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // Split Escrows (verified users only — financial holds)
+    // =========================================================================
+    match /split_escrows/{escrowId} {
+      allow read: if isVerifiedUser() && (
+        resource.data.initiatorUid == request.auth.uid ||
+        request.auth.uid in resource.data.parties
+      );
+      allow create: if isVerifiedUser() && request.resource.data.initiatorUid == request.auth.uid;
+      allow update: if isVerifiedUser() && request.auth.uid in resource.data.parties;
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // Audit Logs (read-only — written by Cloud Functions only)
+    // =========================================================================
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // =========================================================================
+    // Push Notification Tokens (user-scoped)
+    // =========================================================================
+    match /notification_tokens/{tokenId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // =========================================================================
+    // Cross-Device Handoff (user-scoped subcollection)
+    // =========================================================================
+    match /users/{userId}/handoff/{stateId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // =========================================================================
+    // Licensing Clearances
+    // =========================================================================
+    match /licensing_clearances/{clearanceId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // Label Deals
+    // =========================================================================
+    match /label_deals/{dealId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // Deletion Requests
+    // =========================================================================
+    match /_deletion_requests/{userId} {
+      allow read: if isVerifiedUser() && request.auth.uid == userId;
+      allow create: if isVerifiedUser() && request.auth.uid == userId;
+      allow update, delete: if false;
     }
 
     // =========================================================================
