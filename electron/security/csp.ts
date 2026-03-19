@@ -11,6 +11,7 @@
  */
 
 import { session } from 'electron';
+import crypto from 'node:crypto';
 
 // ============================================================================
 // Configuration
@@ -222,7 +223,6 @@ export const securityHeaders = {
  * 3. Add to script tags: <script nonce="{nonce}">
  */
 export function generateNonce(): string {
-    const crypto = require('crypto');
     return crypto.randomBytes(16).toString('base64');
 }
 

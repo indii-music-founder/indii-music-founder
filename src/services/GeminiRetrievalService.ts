@@ -62,7 +62,7 @@ export interface RetrievalOptions {
 // ============================================================================
 
 const API_KEY = import.meta.env.VITE_API_KEY || process.env.VITE_API_KEY;
-const MODEL_NAME = 'gemini-2.0-flash'; // Use latest model with best retrieval
+const MODEL_NAME = 'gemini-3-flash-preview'; // Use latest model with best retrieval
 const FILE_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/files';
 
 // Supported MIME types for upload
@@ -391,7 +391,7 @@ Only return the JSON array, no other text.`;
         // This would integrate with your Firestore setup
         // Using dynamic import to avoid bundling Firebase in non-web contexts
         const { getFirestore, doc, setDoc } = await import('firebase/firestore');
-        const { db } = await import('../firebase'); // Adjust path as needed
+        const { db } = await import('./firebase');
 
         const docId = uploadedFile.name.replace('files/', '');
         const expiresAt = new Date(uploadedFile.expirationTime);
@@ -419,7 +419,7 @@ Only return the JSON array, no other text.`;
      */
     async refreshExpiringFiles(userId: string): Promise<number> {
         const { getFirestore, collection, query, where, getDocs } = await import('firebase/firestore');
-        const { db } = await import('../firebase');
+        const { db } = await import('./firebase');
 
         // Find files expiring in the next 6 hours
         const expirationThreshold = new Date(Date.now() + 6 * 60 * 60 * 1000);
