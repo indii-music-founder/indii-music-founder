@@ -277,8 +277,52 @@ export class SocialService {
         limit(50),
       );
     } else if (filter === "following") {
-      // Placeholder: currently global, but intended for mutuals
-      q = query(postsRef, orderBy("timestamp", "desc"), limit(50));
+      // Fetch the current user's following list, then query posts by those author IDs
+      const { useStore } = await import("@/core/store");
+      const currentUser = useStore.getState().userProfile;
+
+      if (!currentUser?.id) {
+        // Not logged in — return empty feed
+        return [];
+      }
+
+      // Get all user IDs this user follows
+      const followingSnap = await getDocs(
+        collection(db, `users/${currentUser.id}/following`),
+      );
+      const followingIds = followingSnap.docs.map((d) => d.id);
+
+      if (followingIds.length === 0) {
+        // User doesn't follow anyone — return empty feed
+        return [];
+      }
+
+      // Firestore 'in' queries support max 30 values, so batch if needed
+      const batchSize = 30;
+      const allPosts: SocialPost[] = [];
+
+      for (let i = 0; i < followingIds.length; i += batchSize) {
+        const batch = followingIds.slice(i, i + batchSize);
+        const batchQuery = query(
+          postsRef,
+          where("authorId", "in", batch),
+          orderBy("timestamp", "desc"),
+          limit(50),
+        );
+        const batchSnap = await getDocs(batchQuery);
+        batchSnap.docs.forEach((d) => {
+          const data = d.data();
+          allPosts.push({
+            id: d.id,
+            ...data,
+            timestamp: (data.timestamp as Timestamp)?.toMillis() || Date.now(),
+          } as SocialPost);
+        });
+      }
+
+      // Sort combined results by timestamp descending and take top 50
+      allPosts.sort((a, b) => b.timestamp - a.timestamp);
+      return allPosts.slice(0, 50);
     } else {
       // 'all' or fallback Home Feed
       q = query(postsRef, orderBy("timestamp", "desc"), limit(50));

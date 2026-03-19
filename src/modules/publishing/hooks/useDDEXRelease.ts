@@ -116,6 +116,75 @@ export interface UseDDEXReleaseReturn {
 
 const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', 'assets', 'review'];
 
+/**
+ * Extract real audio metadata (sample rate, bit depth) from a File using the Web Audio API.
+ * Falls back to format-based defaults if AudioContext decoding fails.
+ */
+async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; bitDepth: number }> {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const audioContext = new AudioContextClass();
+
+    try {
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      const sampleRate = audioBuffer.sampleRate; // Real sample rate (e.g., 44100, 48000, 96000)
+
+      // Bit depth: Web Audio API always decodes to 32-bit float internally.
+      // We derive the original bit depth from the file extension / MIME type.
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      let bitDepth = 16; // Default
+      if (ext === 'wav') {
+        // WAV files: check file size to estimate bit depth
+        // size ≈ sampleRate * channels * (bitDepth/8) * duration
+        const channels = audioBuffer.numberOfChannels;
+        const duration = audioBuffer.duration;
+        const expectedBytesPerSample = file.size / (sampleRate * channels * duration);
+        if (expectedBytesPerSample >= 3.8) bitDepth = 32;
+        else if (expectedBytesPerSample >= 2.8) bitDepth = 24;
+        else bitDepth = 16;
+      } else if (ext === 'flac') {
+        // FLAC is typically 16 or 24-bit; estimate from file size ratio
+        const rawPcmSize = audioBuffer.sampleRate * audioBuffer.numberOfChannels * 2 * audioBuffer.duration;
+        bitDepth = file.size > rawPcmSize * 0.8 ? 24 : 16;
+      } else if (ext === 'mp3' || ext === 'aac') {
+        // Lossy formats: bit depth concept doesn't apply, but DSPs expect 16
+        bitDepth = 16;
+      }
+
+      return { sampleRate, bitDepth };
+    } finally {
+      await audioContext.close();
+    }
+  } catch (error) {
+    logger.warn('[useDDEXRelease] AudioContext decoding failed, using format defaults:', error);
+    // Fallback: derive from file extension
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext === 'wav') return { sampleRate: 44100, bitDepth: 24 };
+    if (ext === 'flac') return { sampleRate: 44100, bitDepth: 24 };
+    return { sampleRate: 44100, bitDepth: 16 };
+  }
+}
+
+/**
+ * Extract real image dimensions from an image URL using the Image API.
+ * Returns { width, height } or falls back to 3000x3000 on error.
+ */
+async function extractImageDimensions(imageUrl: string): Promise<{ width: number; height: number }> {
+  try {
+    return await new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error('Image failed to load'));
+      img.src = imageUrl;
+    });
+  } catch {
+    logger.warn('[useDDEXRelease] Failed to extract image dimensions, using 3000x3000 default');
+    return { width: 3000, height: 3000 };
+  }
+}
+
 export function useDDEXRelease(): UseDDEXReleaseReturn {
   const { currentOrganizationId, organizations, userProfile } = useStore();
 
@@ -191,24 +260,27 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
         }
       );
 
-      // Extract metadata from file if audio
+      // Extract real metadata from audio file using Web Audio API
       if (type === 'audio') {
+        const audioMetadata = await extractAudioMetadata(file);
         const audioInfo = {
           url,
           mimeType: file.type,
           sizeBytes: file.size,
           format: (file.name.split('.').pop()?.toLowerCase() || 'wav') as 'wav' | 'flac' | 'mp3' | 'aac',
-          sampleRate: 44100, // Placeholder, would ideally use audio context to detect
-          bitDepth: 16       // Placeholder
+          sampleRate: audioMetadata.sampleRate,
+          bitDepth: audioMetadata.bitDepth,
         };
         updateAssets({ audioFile: audioInfo });
       } else {
+        // Extract real image dimensions
+        const dimensions = await extractImageDimensions(url);
         const coverInfo = {
           url,
           mimeType: file.type,
           sizeBytes: file.size,
-          width: 3000,  // Placeholder
-          height: 3000  // Placeholder
+          width: dimensions.width,
+          height: dimensions.height,
         };
         updateAssets({ coverArt: coverInfo });
       }

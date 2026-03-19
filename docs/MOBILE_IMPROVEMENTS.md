@@ -223,9 +223,9 @@ getBatteryStatus() // Get battery level & charging state
 
 ---
 
-## Testing Checklist (Future QA)
+## Testing Checklist (Device-Specific Manual QA)
 
-> **Note:** These are manual testing items for future QA cycles. Core PWA functionality is already implemented and production-ready.
+> **Note:** These are **hardware-dependent** testing items that require physical iOS/Android devices or emulators. They cannot be automated via Vitest/Playwright because they depend on real device APIs (vibration, safe area insets, PWA install prompts). All underlying code is production-ready and deployed. The checklist below is for your first physical device QA pass.
 
 ### iOS Safari
 

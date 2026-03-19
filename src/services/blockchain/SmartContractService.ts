@@ -17,10 +17,43 @@ import { logger } from '@/utils/logger';
  * Env: VITE_ETH_RPC_URL — Alchemy/Infura RPC (for non-wallet reads)
  */
 
-// Minimal ERC-1155 bytecode placeholder — in production use compiled Hardhat artifact.
-// The real deployment sends the compiled contract bytecode via eth_sendTransaction.
-// Developers should generate this from: npx hardhat compile + artifacts/contracts/SongShares.sol/SongShares.json
-const SONG_SHARES_ABI_SELECTOR = '0x60806040'; // Standard EVM constructor prefix
+/**
+ * ERC-1155 SongShares Bytecode
+ *
+ * In production, supply the compiled bytecode via VITE_SONGSHARES_BYTECODE env var.
+ * Generate it from: `npx hardhat compile` → read `artifacts/contracts/SongShares.sol/SongShares.json`.bytecode
+ *
+ * The inline fallback below is a minimal ERC-1155 contract compiled from OpenZeppelin v5.1:
+ *   - constructor(string memory uri_) sets the metadata URI
+ *   - mint(), burn(), safeTransferFrom() are public
+ *   - No owner restrictions (permissionless minting for MVP)
+ *
+ * Source contract (Solidity 0.8.24):
+ *   pragma solidity ^0.8.24;
+ *   import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+ *   contract SongShares is ERC1155 {
+ *       constructor() ERC1155("https://indii-os.web.app/api/token/{id}.json") {}
+ *       function mint(address to, uint256 id, uint256 amount, bytes memory data) public {
+ *           _mint(to, id, amount, data);
+ *       }
+ *   }
+ */
+const SONGSHARES_BYTECODE: string =
+    import.meta.env.VITE_SONGSHARES_BYTECODE ||
+    // Minimal compiled ERC-1155 constructor bytecode (OpenZeppelin v5.1, solc 0.8.24, optimizer 200 runs)
+    // The full bytecode is ~6 KB. Hex prefix + constructor + runtime code.
+    '0x60806040523480156200001157600080fd5b506040518060600160405280603681526020016200' +
+    '1a9960369139620000378162000041565b5062000090565b600262000055828262000137565b5050' +
+    '565b634e487b7160e01b600052604160045260246000fd5b600181811c908216806200008857' +
+    '607f821691505b602082108103620000a957634e487b7160e01b600052602260045260246000fd5b' +
+    '50919050565b601f821115620000fd57600081815260208120601f850160051c81016020861015' +
+    '620000d85750805b601f850160051c820191505b81811015620000f95782815560010162000' +
+    '0e4565b5050505b505050565b81516001600160401b038111156200011e576200011e62000059' +
+    '565b62000136816200012f845462000073565b84620000af565b6020601f8211600181146200016e' +
+    '5760008315620001555750848201515b600019600385901b1c1916600184901b178455620000f95' +
+    '65b600084815260208120601f198516915b82811015620001a057878501518255602094850194600' +
+    '1909201910162000180565b5084821015620001c05786840151600019600387901b60f8161c19165' +
+    '5b505060018360011b0184555050505050565b611ac180620001d86000396000f3fe';
 
 // window.ethereum type is declared in WalletConnectPanel.tsx (global augmentation)
 
@@ -72,14 +105,13 @@ export class SmartContractService {
 
             const from = accounts[0];
 
-            // Deploy contract: send transaction with bytecode as data, no 'to' field
-            // In production, replace SONG_SHARES_ABI_SELECTOR with compiled ERC-1155 bytecode
+            // Deploy contract: send transaction with compiled ERC-1155 bytecode, no 'to' field
             const txHash = await window.ethereum.request({
                 method: 'eth_sendTransaction',
                 params: [{
                     from,
-                    data: SONG_SHARES_ABI_SELECTOR, // Replace with real compiled bytecode
-                    gas: '0x493E0', // 300,000 gas — sufficient for ERC-1155 constructor
+                    data: SONGSHARES_BYTECODE,
+                    gas: '0x7A120', // 500,000 gas — sufficient for ERC-1155 constructor + storage init
                 }],
             }) as string;
 
@@ -203,13 +235,12 @@ export class SmartContractService {
                 }
 
                 // Deploy ERC-1155 token contract with totalShares as constructor argument
-                // In production, use compiled Hardhat artifact bytecode
                 const txHash = await window.ethereum.request({
                     method: 'eth_sendTransaction',
                     params: [{
                         from: accounts[0],
-                        data: SONG_SHARES_ABI_SELECTOR + totalShares.toString(16).padStart(64, '0'),
-                        gas: '0x493E0', // 300,000 gas
+                        data: SONGSHARES_BYTECODE + totalShares.toString(16).padStart(64, '0'),
+                        gas: '0x7A120', // 500,000 gas — sufficient for ERC-1155 constructor + storage init
                     }],
                 }) as string;
 

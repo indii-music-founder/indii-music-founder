@@ -1,7 +1,24 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { DirectorPromptBar } from './DirectorPromptBar';
+
+// Mock Web Speech API for test environment
+beforeAll(() => {
+    // Provide SpeechRecognition mock so VoiceInputButton renders
+    const MockSpeechRecognition = vi.fn().mockImplementation(() => ({
+        continuous: false,
+        interimResults: false,
+        lang: '',
+        onresult: null,
+        onend: null,
+        onerror: null,
+        start: vi.fn(),
+        stop: vi.fn(),
+        abort: vi.fn(),
+    }));
+    (window as any).SpeechRecognition = MockSpeechRecognition;
+});
 
 describe('DirectorPromptBar Accessibility', () => {
     it('should have an accessible input label', () => {
@@ -18,7 +35,7 @@ describe('DirectorPromptBar Accessibility', () => {
         expect(input).toBeInTheDocument();
     });
 
-    it('should have an accessible microphone button', () => {
+    it('should have an accessible voice input button', () => {
         render(
             <DirectorPromptBar
                 prompt=""
@@ -27,13 +44,40 @@ describe('DirectorPromptBar Accessibility', () => {
                 isGenerating={false}
             />
         );
-        // This will fail if the button is icon-only without aria-label
+        // VoiceInputButton has aria-label="Voice input" when not listening
         const micButton = screen.getByRole('button', { name: /voice input/i });
         expect(micButton).toBeInTheDocument();
     });
 
+    it('should have an accessible generate button', () => {
+        render(
+            <DirectorPromptBar
+                prompt="test prompt"
+                onPromptChange={vi.fn()}
+                onGenerate={vi.fn()}
+                isGenerating={false}
+            />
+        );
+        const generateButton = screen.getByRole('button', { name: /generate video/i });
+        expect(generateButton).toBeInTheDocument();
+    });
+
+    it('should indicate generating state accessibly', () => {
+        render(
+            <DirectorPromptBar
+                prompt="test prompt"
+                onPromptChange={vi.fn()}
+                onGenerate={vi.fn()}
+                isGenerating={true}
+            />
+        );
+        const generatingButton = screen.getByRole('button', { name: /generating video/i });
+        expect(generatingButton).toBeInTheDocument();
+    });
+
     it('should have visible focus indicators', () => {
-        // This is a manual check usually, but we can check for focus classes if we want to be thorough.
-        // For now, checking the semantic HTML is the priority.
+        // Input and buttons use focus-visible:ring-2 classes for keyboard navigation.
+        // This is a CSS concern that requires visual/manual testing.
+        // Semantic HTML checks are the priority here — covered by the tests above.
     });
 });
