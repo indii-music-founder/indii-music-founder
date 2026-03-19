@@ -41,6 +41,9 @@ export class BaseAgent implements SpecializedAgent {
     public systemPrompt: string;
     public tools: ToolDefinition[];
     protected functions: Record<string, AnyToolFunction> = {};
+    /** Explicit allowlist of tool names. Populated from AgentConfig.authorizedTools.
+     *  If undefined, all declared functionDeclarations are allowed. */
+    protected authorizedTools?: string[];
     private toolSchemas: Map<string, ZodType> = new Map();
 
     // CRITICAL: Execution lock to prevent concurrent agent execution for same user/project
@@ -60,6 +63,9 @@ export class BaseAgent implements SpecializedAgent {
 
         // Phase 4: Use shallow clone for tools to preserve Zod schemas
         this.tools = config.tools ? [...config.tools] : [];
+
+        // Store explicit tool allowlist from config (undefined = infer from declarations)
+        this.authorizedTools = config.authorizedTools;
 
         // Populate tool schemas for validation
         this.tools.forEach(def => {
@@ -525,6 +531,27 @@ export class BaseAgent implements SpecializedAgent {
 
                     // Record this tool call for future loop detection
                     this.loopDetector.recordToolCall(name, args);
+
+                    // Runtime tool authorization enforcement
+                    // Build the allowed set: explicit authorizedTools > declared functionDeclarations > allow-all
+                    const declaredToolNames = this.tools.flatMap(
+                        (t: ToolDefinition) => t.functionDeclarations.map((d: FunctionDeclaration) => d.name)
+                    );
+                    const authorizedTools: string[] | undefined = this.authorizedTools ?? (
+                        declaredToolNames.length > 0 ? declaredToolNames : undefined
+                    );
+                    if (authorizedTools !== undefined && !authorizedTools.includes(name)) {
+                        logger.warn(`[BaseAgent] SECURITY: Agent '${this.id}' attempted unauthorized tool call: '${name}'`);
+                        const blockedResult: ToolFunctionResult = {
+                            success: false,
+                            error: `Tool '${name}' is not authorized for agent '${this.id}'.`
+                        };
+                        toolCalls.push({ name, args, result: blockedResult });
+                        lastToolResult = blockedResult;
+                        // Inject block notice into conversation and continue loop
+                        fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
+                        continue;
+                    }
 
                     const argsStr = JSON.stringify(args);
                     onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });

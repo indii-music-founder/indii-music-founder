@@ -7,8 +7,11 @@
  *   npx ts-node execution/training/export_ft_dataset.ts --agent=finance --tier=gold
  *   npx ts-node execution/training/export_ft_dataset.ts --agent=all --output=./ft_export/
  *
- * Output format: Vertex AI Supervised Fine-Tuning JSONL
- * See: https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini-supervised-tuning
+ * Output format: Vertex AI Gemini Supervised Fine-Tuning JSONL (March 2026)
+ * Each line: { systemInstruction: { role, parts:[{text}] }, contents: [{role, parts:[{text}]}] }
+ * Supported base models: gemini-2.5-flash, gemini-2.5-flash-lite, gemini-2.5-pro
+ * Minimum dataset: 16 examples. Recommended: 100–500 per agent.
+ * See: https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini-supervised-tuning-prepare
  */
 
 import * as fs from 'fs';
@@ -40,13 +43,28 @@ interface GoldenExample {
     notes?: string;
 }
 
-interface VertexAIMessage {
-    role: 'system' | 'user' | 'model';
-    content: string;
+// Vertex AI Gemini SFT format (March 2026):
+// https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini-supervised-tuning-prepare
+// Uses systemInstruction + contents[{role, parts:[{text}]}]
+// NOT the OpenAI-style messages[{role, content}] format.
+
+interface VertexAIPart {
+    text: string;
+}
+
+interface VertexAIContent {
+    role: 'user' | 'model';
+    parts: VertexAIPart[];
+}
+
+interface VertexAISystemInstruction {
+    role: 'system';
+    parts: VertexAIPart[];
 }
 
 interface VertexAIExample {
-    messages: VertexAIMessage[];
+    systemInstruction: VertexAISystemInstruction;
+    contents: VertexAIContent[];
 }
 
 // ─── Agent System Prompt Registry ────────────────────────────────────────────
@@ -107,18 +125,18 @@ function toVertexAIFormat(
         : '';
 
     return {
-        messages: [
-            {
-                role: 'system',
-                content: systemPrompt,
-            },
+        systemInstruction: {
+            role: 'system',
+            parts: [{ text: systemPrompt }],
+        },
+        contents: [
             {
                 role: 'user',
-                content: `${example.input.user_message}${contextNote}`,
+                parts: [{ text: `${example.input.user_message}${contextNote}` }],
             },
             {
                 role: 'model',
-                content: example.expected.output_sample,
+                parts: [{ text: example.expected.output_sample }],
             },
         ],
     };

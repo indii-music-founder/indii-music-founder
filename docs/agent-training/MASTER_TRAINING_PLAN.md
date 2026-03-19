@@ -11,10 +11,10 @@
 | Item | Value |
 |------|-------|
 | Started | 2026-03-19 |
-| Last Updated | 2026-03-20 |
-| Current Phase | ✅ Phase 2 COMPLETE — All 20 agents trained |
+| Last Updated | 2026-03-20 (full QA pass) |
+| Current Phase | ✅ Phase 2 + Phase 3 COMPLETE — All 20 agents trained + guard rails reinforced |
 | Active Agent | — (all done) |
-| Next Agent | — (all done) |
+| Next Agent | — (Phase 4: Vertex AI fine-tuning when 100+ examples per agent) |
 | Plan File | `/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans/effervescent-brewing-patterson.md` |
 
 ---
@@ -239,9 +239,14 @@ If a request spans 2+ domains, apply this priority chain:
 | Issue | Agent | Severity | Status |
 |-------|-------|----------|--------|
 | `agents/agent0/prompts/agent.system.main.role.md` is legacy/unused — real prompt is in GeneralistAgent.ts | generalist | Medium | Documented |
-| No runtime tool authorization enforcement in `registry.ts` | All | High | TODO |
-| `indii_oracle.py` not wired to score dev responses | All | Medium | TODO |
-| Many specialist definitions import from `@agents/<name>/prompt.md?raw` but the .md files are thin | Multiple | High | Fixing per agent |
+| No runtime tool authorization enforcement in `registry.ts` | All | High | TODO — Phase 4 |
+| `indii_oracle.py` not wired to score dev responses | All | Medium | TODO — Phase 4 |
+| specialist .md files now fully rewritten (director, producer, screenwriter, curriculum, licensing) | Multiple | High | ✅ FIXED |
+| AgentPromptBuilder.ts had no injection sanitization on user task input | All | High | ✅ FIXED — sanitizeTask() added with 13 injection patterns |
+| SCORECARD.md was not updated after agent rewrites | All | High | ✅ FIXED — all 20 agents scored |
+| TRAINING_LOG.md missing 19 agent entries | All | High | ✅ FIXED — all 20 entries complete |
+| 6 datasets had only 19 examples (brand, curriculum, merchandise, producer, screenwriter, video) | 6 agents | Medium | ✅ FIXED — all 20 datasets have 20 examples |
+| 6 agents had fewer than 5 worked examples (Security:3, DevOps:3, Curriculum:3, Director:4, Producer:4, Licensing:4) | 6 agents | Medium | ✅ FIXED — all agents now have 5 worked examples |
 
 ---
 
