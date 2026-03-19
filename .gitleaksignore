@@ -1,0 +1,6 @@
+# Gitleaks Allowlist
+# This file contains fingerprints of known false positives detected by gitleaks.
+# These are mock/example secrets in training data, not actual credentials.
+
+# Mock Stripe key in security agent training dataset (intentional example of secret detection)
+8f2fc749eedc3a1d7cddfcadef5ca054a10b667b:docs/agent-training/datasets/security.jsonl:generic-api-key:20
