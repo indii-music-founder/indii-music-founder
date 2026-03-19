@@ -92,11 +92,11 @@ describe('🧬 Helix: Selection Pressure (Tournament Logic)', () => {
     const child = nextGen[0];
 
     // The child must be born of Mid and Elite
-    expect(child.lineage).toContain('Mid');
-    expect(child.lineage).toContain('Elite');
+    expect(child!.lineage).toContain('Mid');
+    expect(child!.lineage).toContain('Elite');
 
     // Crucially, 'Weak' should NOT be a parent, even though it started as the "Best" candidate in both tournaments.
     // This proves that fitness comparison logic works.
-    expect(child.lineage).not.toContain('Weak');
+    expect(child!.lineage).not.toContain('Weak');
   });
 });

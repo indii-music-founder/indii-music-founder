@@ -55,6 +55,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
 
         // Resample data to fit width
         const samples = audioData.channelWaveforms[0]; // Use first channel
+        if (!samples) return;
         const step = Math.ceil(samples.length / width);
         const resampled: number[] = [];
 
@@ -66,7 +67,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
             for (let j = 0; j < step; j++) {
                 const idx = i * step + j;
                 if (idx < samples.length) {
-                    const val = Math.abs(samples[idx]);
+                    const val = Math.abs(samples[idx]!);
                     if (val > max) max = val;
                 }
             }

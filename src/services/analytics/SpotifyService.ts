@@ -323,7 +323,7 @@ export class SpotifyService {
         recent.items
             .filter(item => item.track.id === trackId)
             .forEach(item => {
-                const day = item.played_at.split('T')[0];
+                const day = item.played_at.split('T')[0]!;
                 playsByDay.set(day, (playsByDay.get(day) ?? 0) + 1);
             });
 
@@ -333,11 +333,11 @@ export class SpotifyService {
         for (let i = 29; i >= 0; i--) {
             const date = new Date(today);
             date.setDate(today.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = date.toISOString().split('T')[0]!;
             const plays = playsByDay.get(dateStr) ?? 0;
 
             history.push({
-                date: dateStr,
+                date: dateStr!,
                 streams: plays,
                 saves: 0,           // Not available via Web API without Spotify for Artists
                 completions: 0,     // Not available via Web API

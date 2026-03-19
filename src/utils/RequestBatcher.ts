@@ -49,7 +49,7 @@ export class RequestBatcher<T, R> {
                 // Fail the whole batch to be safe.
                 throw new Error(`Batch result count mismatch: expected ${batch.length}, got ${results.length}`);
             }
-            batch.forEach((b, i) => b.resolve(results[i]));
+            batch.forEach((b, i) => b.resolve(results[i]!));
         } catch (error) {
             batch.forEach(b => b.reject(error));
         }

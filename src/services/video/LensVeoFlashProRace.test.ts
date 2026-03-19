@@ -103,7 +103,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         const flashCallback = snapshotCallbacks[`doc-ref-${flashJobId}`];
         expect(flashCallback).toBeDefined();
 
-        flashCallback({
+        flashCallback!({
             exists: () => true,
             id: flashJobId,
             data: () => ({
@@ -123,7 +123,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         const proCallback = snapshotCallbacks[`doc-ref-${proJobId}`];
         expect(proCallback).toBeDefined();
 
-        proCallback({
+        proCallback!({
             exists: () => true,
             id: proJobId,
             data: () => ({
@@ -159,7 +159,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         const internalCallback = snapshotCallbacks[`doc-ref-${jobId}`];
         expect(internalCallback).toBeDefined();
 
-        internalCallback({
+        internalCallback!({
             exists: () => true,
             id: jobId,
             data: () => ({
@@ -189,7 +189,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             })
         }));
 
-        internalCallback({
+        internalCallback!({
             exists: () => true,
             id: jobId,
             data: () => ({
@@ -219,7 +219,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         const internalCallback = snapshotCallbacks[`doc-ref-${jobId}`];
         expect(internalCallback).toBeDefined();
 
-        internalCallback({
+        internalCallback!({
             exists: () => true,
             id: jobId,
             data: () => ({
@@ -249,7 +249,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             })
         }));
 
-        internalCallback({
+        internalCallback!({
             exists: () => true,
             id: jobId,
             data: () => ({

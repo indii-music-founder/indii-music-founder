@@ -25,7 +25,7 @@ const SCREENSHOTS = [
   staticFile('brand/screenshot-agent.png'),
   staticFile('brand/screenshot-creative.png'),
   staticFile('brand/screenshot-distribution.png'),
-];
+] as const;
 
 // ─────────────────────────────────────────────────────────────
 // Helper: seamless loop easing
@@ -573,7 +573,7 @@ export const BannerOrbit: React.FC = () => {
                 }}
               >
                 <Img
-                  src={SCREENSHOTS[i]}
+                  src={SCREENSHOTS[i]!}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </div>

@@ -72,7 +72,7 @@ export class LODService {
             'share_percentage': `${params.sharePercentage ?? 100}%`,
             'isrc_list': params.isrcList.join(', '),
             'isrc_count': params.isrcList.length.toString(),
-            'current_date': new Date().toISOString().split('T')[0],
+            'current_date': new Date().toISOString().split('T')[0]!,
         };
 
         // Create the document
@@ -82,7 +82,7 @@ export class LODService {
             recipients: [
                 {
                     email: params.artistEmail,
-                    firstName: params.artistLegalName.split(' ')[0],
+                    firstName: params.artistLegalName.split(' ')[0]!,
                     lastName: params.artistLegalName.split(' ').slice(1).join(' ') || '',
                     role: 'Artist',
                     signingOrder: 1,

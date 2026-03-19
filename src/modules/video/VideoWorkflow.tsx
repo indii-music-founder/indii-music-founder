@@ -348,7 +348,7 @@ export default function VideoWorkflow() {
             }
 
             if (results && results.length > 0) {
-                const firstResult = results[0];
+                const firstResult = results[0]!;
 
                 // If the URL is provided immediately, complete it. Otherwise, set jobId to listen for updates.
                 if (firstResult.url) {
@@ -380,10 +380,10 @@ export default function VideoWorkflow() {
                     toast.success('Scene generated!');
                 } else {
                     // Start listening for the background job
-                    setJobId(firstResult.id);
+                    setJobId(firstResult!.id);
                     setJobStatus('processing');
                     useStore.getState().addJob({
-                        id: firstResult.id,
+                        id: firstResult!.id,
                         title: `Generative Video: Rendering scene...`,
                         progress: 0,
                         status: 'running',

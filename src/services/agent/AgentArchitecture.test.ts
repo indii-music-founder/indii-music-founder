@@ -137,7 +137,7 @@ describe('Multi-Agent Architecture Tests', () => {
             expect(functions).toHaveProperty('get_project_details');
 
             // Test the tool execution - returns { success, data } structure
-            const result = await functions.get_project_details({ projectId: 'p1' });
+            const result = await functions.get_project_details!({ projectId: 'p1' });
             expect(result).toHaveProperty('success', true);
             expect(result.data).toHaveProperty('id', 'p1');
             expect(result.data).toHaveProperty('name', 'Test Project');

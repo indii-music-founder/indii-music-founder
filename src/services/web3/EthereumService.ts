@@ -127,8 +127,8 @@ export class EthereumService {
         return {
             hash: txHash,
             status: receipt.status === '0x1' ? 'confirmed' : 'failed',
-            blockNumber: parseInt(receipt.blockNumber, 16),
-            gasUsed: parseInt(receipt.gasUsed, 16).toString(),
+            blockNumber: parseInt(receipt.blockNumber!, 16),
+            gasUsed: parseInt(receipt.gasUsed!, 16).toString(),
         };
     }
 

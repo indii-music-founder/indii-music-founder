@@ -80,7 +80,7 @@ export class FinanceService {
         return null;
       }
 
-      const docData = snapshot.docs[0].data();
+      const docData = snapshot.docs[0]!.data();
 
       // Zod Validation for Production Safety
       const parseResult = EarningsSummarySchema.safeParse(docData);
@@ -209,7 +209,7 @@ export class FinanceService {
 
     return onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
-        const docData = snapshot.docs[0].data();
+        const docData = snapshot.docs[0]!.data();
         const parseResult = EarningsSummarySchema.safeParse(docData);
 
         if (parseResult.success) {

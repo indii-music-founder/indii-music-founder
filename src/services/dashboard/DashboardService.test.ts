@@ -219,7 +219,7 @@ describe('DashboardService', () => {
 
             expect(mockLoadProjects).not.toHaveBeenCalled();
             expect(projects).toHaveLength(1);
-            expect(projects[0].name).toBe('Cached Project');
+            expect(projects[0]!.name).toBe('Cached Project');
         });
     });
 });

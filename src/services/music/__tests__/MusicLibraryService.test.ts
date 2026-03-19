@@ -57,7 +57,7 @@ describe('MusicLibraryService', () => {
 
         expect(setDoc).toHaveBeenCalled();
         const callArgs = vi.mocked(setDoc).mock.calls[0];
-        const data = callArgs[1] as any;
+        const data = callArgs![1] as any;
 
         expect(data.id).toBe('track-1');
         expect(data.filename).toBe('test.mp3');
@@ -111,6 +111,6 @@ describe('MusicLibraryService', () => {
 
         const items = await musicLibraryService.listLibrary();
         expect(items).toHaveLength(2);
-        expect(items[0].filename).toBe('one.mp3');
+        expect(items[0]!.filename).toBe('one.mp3');
     });
 });

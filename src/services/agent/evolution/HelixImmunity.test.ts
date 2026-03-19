@@ -117,11 +117,11 @@ describe('🧬 Helix: Immune System & Gene Integrity', () => {
     // 3. Assert: The survivor is strictly identical to the original elite
     const survivor = nextGen[0];
 
-    expect(survivor.id).toBe(complexGene.id);
-    expect(survivor.systemPrompt).toBe(complexGene.systemPrompt);
-    expect(survivor.parameters).toEqual(complexGene.parameters);
+    expect(survivor!.id).toBe(complexGene.id);
+    expect(survivor!.systemPrompt).toBe(complexGene.systemPrompt);
+    expect(survivor!.parameters).toEqual(complexGene.parameters);
 
     // Ensure mutation did NOT touch the elite
-    expect(survivor.systemPrompt).not.toContain('[MUT]');
+    expect(survivor!.systemPrompt).not.toContain('[MUT]');
   });
 });

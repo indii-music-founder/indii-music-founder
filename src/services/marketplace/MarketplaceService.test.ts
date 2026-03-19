@@ -128,8 +128,8 @@ describe('MarketplaceService', () => {
             expect(mockQuery).toHaveBeenCalled();
             expect(mockWhere).toHaveBeenCalledWith('sellerId', '==', 'artist-1');
             expect(products).toHaveLength(2);
-            expect(products[0].id).toBe('prod-1');
-            expect(products[1].title).toBe('Product 2');
+            expect(products[0]!.id).toBe('prod-1');
+            expect(products[1]!.title).toBe('Product 2');
         });
     });
 

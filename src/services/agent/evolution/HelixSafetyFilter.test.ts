@@ -83,8 +83,8 @@ describe('🧬 Helix: Safety Filter Resilience', () => {
     // B. Quality Control: Verify survivors are the SAFE ones
     const offspring = nextGen.slice(1);
     expect(offspring.length).toBe(2);
-    expect(offspring[0].systemPrompt).toBe('Safe Mutation 1');
-    expect(offspring[1].systemPrompt).toBe('Safe Mutation 2');
+    expect(offspring[0]!.systemPrompt).toBe('Safe Mutation 1');
+    expect(offspring[1]!.systemPrompt).toBe('Safe Mutation 2');
 
     // C. Retry Verification: Verify that we called mutation 4 times (2 fails + 2 successes)
     expect(mockMutationFn).toHaveBeenCalledTimes(4);

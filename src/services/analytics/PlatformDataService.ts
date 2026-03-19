@@ -49,7 +49,7 @@ function emptyHistory(): StreamDataPoint[] {
         const d = new Date();
         d.setDate(d.getDate() - i);
         result.push({
-            date: d.toISOString().split('T')[0],
+            date: d.toISOString().split('T')[0]!,
             streams: 0,
             saves: 0,
             completions: 0,
@@ -300,7 +300,7 @@ export class PlatformDataService {
             trackName:    channel.snippet.title,
             artistName:   channel.snippet.title,
             coverUrl:     undefined,
-            releaseDate:  new Date().toISOString().split('T')[0],
+            releaseDate:  new Date().toISOString().split('T')[0]!,
             genre:        'Music',
             totalStreams: platforms.reduce((s, p) => s + p.streams, 0),
             platforms,
@@ -335,7 +335,7 @@ export class PlatformDataService {
             trackName:    displayName,
             artistName:   displayName,
             coverUrl:     undefined,
-            releaseDate:  new Date().toISOString().split('T')[0],
+            releaseDate:  new Date().toISOString().split('T')[0]!,
             genre:        'Music',
             totalStreams: platforms.reduce((s, p) => s + p.streams, 0),
             platforms,

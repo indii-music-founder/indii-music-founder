@@ -96,22 +96,22 @@ describe('🧬 Helix: Gemini 3 Pro Evolution & Defect Elimination', () => {
     expect(nextGen).toHaveLength(3);
 
     // Elites (A & B) survive
-    expect(nextGen[0].id).toBe('Agent-A');
-    expect(nextGen[1].id).toBe('Agent-B');
+    expect(nextGen[0]!.id).toBe('Agent-A');
+    expect(nextGen[1]!.id).toBe('Agent-B');
 
     // Offspring (Index 2) is born
     const offspring = nextGen[2];
-    expect(offspring.id).not.toBe('Agent-A');
-    expect(offspring.id).not.toBe('Agent-B');
-    expect(offspring.id).not.toBe('Agent-C');
+    expect(offspring!.id).not.toBe('Agent-A');
+    expect(offspring!.id).not.toBe('Agent-B');
+    expect(offspring!.id).not.toBe('Agent-C');
 
     // Lineage Verification
-    expect(offspring.lineage).toHaveLength(2);
+    expect(offspring!.lineage).toHaveLength(2);
 
     // Mutation Verification (Gemini 3 Pro Signature)
-    expect(offspring.systemPrompt).toContain('[GEMINI-3-PRO-ENHANCED]');
-    expect(offspring.parameters.temperature).toBe(0.95);
-    expect(offspring.parameters.model).toBe('gemini-3-pro');
+    expect(offspring!.systemPrompt).toContain('[GEMINI-3-PRO-ENHANCED]');
+    expect(offspring!.parameters.temperature).toBe(0.95);
+    expect(offspring!.parameters.model).toBe('gemini-3-pro');
   });
 
   it('Defect Elimination: "Death to the Buggy" - Kills agents that crash the Fitness Function', async () => {
@@ -180,8 +180,8 @@ describe('🧬 Helix: Gemini 3 Pro Evolution & Defect Elimination', () => {
     const survivor1 = scoredGen[0]; // Elite 1
     const survivor2 = scoredGen[1]; // Elite 2
 
-    expect(survivor1.fitness).toBe(50);
-    expect(survivor2.fitness).toBe(50);
+    expect(survivor1!.fitness).toBe(50);
+    expect(survivor2!.fitness).toBe(50);
 
     // Verify that the Toxic Agent was indeed evaluated and assigned 0.0
     // We can't easily check the internal state, but we can check if it survived as an elite if it was the *only* one?

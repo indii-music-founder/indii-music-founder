@@ -91,16 +91,16 @@ describe('🧬 Helix: Gemini 3 Pro Evolution Scenario', () => {
     expect(nextGen).toHaveLength(3);
 
     // 4. Assert: Elitism (Agent 10 should survive as index 0)
-    expect(nextGen[0].id).toBe('agent-10');
-    expect(nextGen[0].fitness).toBe(10);
+    expect(nextGen[0]!.id).toBe('agent-10');
+    expect(nextGen[0]!.fitness).toBe(10);
 
     // 5. Assert: Offspring (Index 1 & 2 should be new)
     const offspring = nextGen[1];
-    expect(offspring.id).not.toBe('agent-10');
-    expect(offspring.generation).toBe(1);
+    expect(offspring!.id).not.toBe('agent-10');
+    expect(offspring!.generation).toBe(1);
 
     // 6. Assert: Mutation Applied
-    expect(offspring.systemPrompt).toContain('[Improved by Gemini]');
+    expect(offspring!.systemPrompt).toContain('[Improved by Gemini]');
     expect(mockGeminiMutation).toHaveBeenCalled();
   });
 
@@ -116,7 +116,7 @@ describe('🧬 Helix: Gemini 3 Pro Evolution Scenario', () => {
 
     const nextGen = await engine.evolve(population);
 
-    expect(nextGen[0].id).toBe('agent-100');
+    expect(nextGen[0]!.id).toBe('agent-100');
   });
 
   it('Death to the Buggy: Should reject invalid JSON (Schema Failures) and retry', async () => {

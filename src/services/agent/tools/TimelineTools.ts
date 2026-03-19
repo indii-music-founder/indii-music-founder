@@ -27,7 +27,7 @@ import type { TimelineBrief, PhaseCadence } from '@/services/timeline/TimelineTy
 // Tool Implementations
 // ============================================================================
 
-export const TimelineTools: Record<string, AnyToolFunction> = {
+export const TimelineTools = {
     create_timeline: wrapTool('create_timeline', async (args: {
         goal: string;
         domain: string;
@@ -273,7 +273,7 @@ export const TimelineTools: Record<string, AnyToolFunction> = {
             `Available templates:\n${templates.map(t => `• **${t.name}** (${t.recommendedWeeks} weeks): ${t.description}`).join('\n')}`,
         );
     }),
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases
 export const {

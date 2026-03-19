@@ -235,7 +235,7 @@ export class CareerMemoryArchiveService {
             if (!grouped[memory.category]) {
                 grouped[memory.category] = [];
             }
-            grouped[memory.category].push(memory);
+            grouped[memory.category]!.push(memory);
         }
 
         return grouped as Record<CareerMemoryCategory, CareerMemory[]>;

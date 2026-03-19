@@ -59,7 +59,7 @@ describe('ERNService', () => {
         const parseResult = ernService.parseERN(result.xml!);
         expect(parseResult.success).toBe(true);
         const release = parseResult.data!.releaseList[0];
-        expect(release.aiGenerationInfo?.isFullyAIGenerated).toBe(true);
+        expect(release!.aiGenerationInfo?.isFullyAIGenerated).toBe(true);
     });
 });
 
@@ -84,7 +84,7 @@ describe('ERNMapper', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, OPTIONS);
 
         const release = ern.releaseList[0];
-        const contributors = release.contributors;
+        const contributors = release!.contributors;
 
         const mainArtist = contributors.find(c => c.name === 'Artist A');
         expect(mainArtist).toBeDefined();
@@ -112,12 +112,12 @@ describe('ERNMapper', () => {
 
             const subscriptionDeal = deals.find(d =>
                 d.dealTerms.commercialModelType === 'SubscriptionModel' &&
-                d.dealTerms.usage[0].useType === 'OnDemandStream'
+                d.dealTerms.usage[0]!.useType === 'OnDemandStream'
             );
 
             const adSupportedDeal = deals.find(d =>
                 d.dealTerms.commercialModelType === 'AdvertisementSupportedModel' &&
-                d.dealTerms.usage[0].useType === 'OnDemandStream'
+                d.dealTerms.usage[0]!.useType === 'OnDemandStream'
             );
 
             expect(subscriptionDeal).toBeDefined();
@@ -135,7 +135,7 @@ describe('ERNMapper', () => {
 
             const downloadDeal = deals.find(d =>
                 d.dealTerms.commercialModelType === 'PayAsYouGoModel' &&
-                d.dealTerms.usage[0].useType === 'PermanentDownload'
+                d.dealTerms.usage[0]!.useType === 'PermanentDownload'
             );
 
             expect(downloadDeal).toBeDefined();

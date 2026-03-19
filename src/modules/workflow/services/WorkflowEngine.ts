@@ -227,7 +227,7 @@ export class WorkflowEngine {
                     ? [{
                         role: 'user' as const,
                         parts: [
-                            { inlineData: { mimeType: prompt.split(':')[1].split(';')[0], data: prompt.split(',')[1] } },
+                            { inlineData: { mimeType: prompt.split(':')[1]!.split(';')[0]! as string, data: prompt.split(',')[1]! as string } },
                             { text: 'Write marketing copy for this visual asset.' },
                         ],
                     }]

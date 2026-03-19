@@ -24,7 +24,7 @@ export class ERNService {
     ): Promise<{ success: boolean; xml?: string; error?: string }> {
         try {
             const { DISTRIBUTORS } = await import('@/core/config/distributors');
-            const distributor = DISTRIBUTORS[distributorKey as keyof typeof DISTRIBUTORS] || DISTRIBUTORS.merlin;
+            const distributor = (DISTRIBUTORS[distributorKey as keyof typeof DISTRIBUTORS] || DISTRIBUTORS.merlin)!;
             const recipientPartyId = distributor.ddexPartyId;
             const timestamp = new Date().toISOString();
 

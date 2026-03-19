@@ -118,8 +118,8 @@ describe('🧬 Helix: Macro-Evolution Trajectory', () => {
     // We keep the assertions relatively loose (>110) to allow for minor logic tweaks,
     // but strict enough to prove optimization.
     const finalStat = history[history.length - 1];
-    expect(finalStat.avgIQ).toBeGreaterThan(110);
-    expect(finalStat.maxIQ).toBeGreaterThan(120);
+    expect(finalStat!.avgIQ).toBeGreaterThan(110);
+    expect(finalStat!.maxIQ).toBeGreaterThan(120);
 
     // C. Diversity Check
     const ids = new Set(population.map(g => g.id));

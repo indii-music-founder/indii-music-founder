@@ -38,7 +38,7 @@ const loadGoogleMaps = (): Promise<void> => {
 };
 
 // Tool: Search Places
-export const MapsTools: Record<string, AnyToolFunction> = {
+export const MapsTools = {
     search_places: wrapTool('search_places', async ({ query, type }: { query: string; type?: string }) => {
         await loadGoogleMaps();
         return new Promise((resolve) => {
@@ -126,4 +126,4 @@ export const MapsTools: Record<string, AnyToolFunction> = {
             });
         });
     })
-};
+} satisfies Record<string, AnyToolFunction>;

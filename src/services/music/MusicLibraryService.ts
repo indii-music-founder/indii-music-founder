@@ -86,7 +86,7 @@ export class MusicLibraryService {
             const snap = await getDocs(q);
             if (!snap.empty) {
                 console.info(`[MusicLibrary] Cache hit by hash: ${fileHash}`);
-                return snap.docs[0].data() as AnalyzedTrack;
+                return snap.docs[0]!.data() as AnalyzedTrack;
             }
         } catch (error) {
             logger.error(`[MusicLibrary] Error fetching analysis by hash:`, error);

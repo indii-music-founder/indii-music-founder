@@ -26,12 +26,12 @@ function noteName(n: number): string {
 }
 
 function parseMIDI(data: Uint8Array): Omit<MIDIEvent, 'timestamp'> {
-    const status = data[0];
+    const status = data[0]!;
     const channel = (status & 0x0F) + 1;
     const type = status & 0xF0;
 
-    if (type === 0x90 && data[2] > 0) {
-        return { channel, type: 'Note On', note: data[1], velocity: data[2] };
+    if (type === 0x90 && data[2]! > 0) {
+        return { channel, type: 'Note On', note: data[1]!, velocity: data[2]! };
     }
     if (type === 0x80 || (type === 0x90 && data[2] === 0)) {
         return { channel, type: 'Note Off', note: data[1], velocity: data[2] };
@@ -40,7 +40,7 @@ function parseMIDI(data: Uint8Array): Omit<MIDIEvent, 'timestamp'> {
         return { channel, type: 'CC', controller: data[1], value: data[2] };
     }
     if (type === 0xE0) {
-        const pb = ((data[2] << 7) | data[1]) - 8192;
+        const pb = ((data[2]! << 7) | data[1]!) - 8192;
         return { channel, type: 'Pitch Bend', value: pb };
     }
     return { channel, type: `0x${type.toString(16).toUpperCase()}` };

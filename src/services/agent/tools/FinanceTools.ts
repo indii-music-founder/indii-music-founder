@@ -35,7 +35,7 @@ function saveEcbCache(cache: { rates: Record<string, number>; fetchedAt: number 
 
 let _ecbCache = loadEcbCache();
 
-export const FinanceTools: Record<string, AnyToolFunction> = {
+export const FinanceTools = {
     analyze_receipt: wrapTool('analyze_receipt', async (args: { image_data: string, mime_type: string }) => {
         const { firebaseAI } = await import('@/services/ai/FirebaseAIService');
 
@@ -101,7 +101,7 @@ export const FinanceTools: Record<string, AnyToolFunction> = {
             'Other': 0.003
         };
 
-        const rate = PAYOUT_RATES[args.platform] || PAYOUT_RATES['Other'];
+        const rate = PAYOUT_RATES[args.platform] || PAYOUT_RATES['Other']!;
         const gross = args.currentStreams * rate;
 
         // Standard management fee is ~20%
@@ -307,7 +307,7 @@ export const FinanceTools: Record<string, AnyToolFunction> = {
                 const regex = /currency=['"]([A-Z]+)['"]\s+rate=['"]([\d.]+)['"]/g;
                 let match: RegExpExecArray | null;
                 while ((match = regex.exec(xml)) !== null) {
-                    rateMap[match[1]] = parseFloat(match[2]);
+                    rateMap[match[1]!] = parseFloat(match[2]!);
                 }
 
                 // Update in-memory + localStorage cache
@@ -444,7 +444,7 @@ export const FinanceTools: Record<string, AnyToolFunction> = {
             }, `Successfully ingested ${args.csvFiles.length} CSV statements. AI-enhanced normalization unavailable.`);
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases
 export const {

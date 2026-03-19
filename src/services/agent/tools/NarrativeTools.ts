@@ -6,7 +6,7 @@ import type { AnyToolFunction } from '../types';
 // Types for NarrativeTools
 // ============================================================================
 
-export const NarrativeTools: Record<string, AnyToolFunction> = {
+export const NarrativeTools = {
     generate_visual_script: wrapTool('generate_visual_script', async (args: { synopsis: string }) => {
         const systemPrompt = `
 You are a master filmmaker and narrative structuralist.
@@ -66,4 +66,4 @@ Return ONLY a valid JSON object with the following structure:
 
         return toolSuccess(response, `Successfully generated a visual script: ${response.title}`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;

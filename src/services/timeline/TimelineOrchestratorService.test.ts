@@ -202,9 +202,9 @@ describe('TimelineOrchestratorService', () => {
 
             expect(timeline.phases.length).toBe(3);
             expect(timeline.milestones.length).toBe(5);
-            expect(timeline.phases[0].name).toBe('Tease');
-            expect(timeline.phases[1].name).toBe('Launch');
-            expect(timeline.phases[2].name).toBe('Sustain');
+            expect(timeline.phases[0]!.name).toBe('Tease');
+            expect(timeline.phases[1]!.name).toBe('Launch');
+            expect(timeline.phases[2]!.name).toBe('Sustain');
         });
 
         it('should reject invalid start dates', async () => {
@@ -217,8 +217,8 @@ describe('TimelineOrchestratorService', () => {
             const timeline = await service.createTimeline(brief);
 
             for (let i = 1; i < timeline.milestones.length; i++) {
-                expect(timeline.milestones[i].scheduledAt).toBeGreaterThanOrEqual(
-                    timeline.milestones[i - 1].scheduledAt
+                expect(timeline.milestones[i]!.scheduledAt).toBeGreaterThanOrEqual(
+                    timeline.milestones[i - 1]!.scheduledAt
                 );
             }
         });
@@ -500,7 +500,7 @@ describe('TimelineOrchestratorService', () => {
 
             const due = await service.getDueMillestones(mockUserId);
             expect(due.length).toBe(1);
-            expect(due[0].milestone.id).toBe('ms_due');
+            expect(due[0]!.milestone.id).toBe('ms_due');
         });
     });
 });

@@ -110,8 +110,8 @@ describe('🧬 Helix: Diversity & Gene Preservation (Evolutionary Loop)', () => 
     expect(nextGen).toHaveLength(4);
 
     // 1. Elite Verification
-    expect(nextGen[0].id).toBe('elite');
-    expect(nextGen[0].fitness).toBe(1.0);
+    expect(nextGen[0]!.id).toBe('elite');
+    expect(nextGen[0]!.fitness).toBe(1.0);
 
     // 2. Offspring Verification
     // All other 3 agents must be offspring of 'elite' and 'elite'

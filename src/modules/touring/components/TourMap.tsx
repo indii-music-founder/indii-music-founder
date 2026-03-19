@@ -43,9 +43,9 @@ const MapUnavailableFallback: React.FC<{ reason: 'missing_key' | 'auth_failure' 
 
             <MapPinOff size={48} className="text-gray-700 relative z-10 group-hover:text-yellow-500/50 transition-colors duration-500" />
             <div className="relative z-10">
-                <h3 className="text-lg font-bold text-gray-300">{msg.title}</h3>
+                <h3 className="text-lg font-bold text-gray-300">{msg!.title}</h3>
                 <p className="text-xs font-mono mt-2 max-w-xs mx-auto text-gray-500">
-                    {msg.detail}
+                    {msg!.detail}
                 </p>
             </div>
 
@@ -303,7 +303,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
         // Immediate FitBounds for Markers
         if (markers.length > 0 && !bounds.isEmpty()) {
             map.fitBounds(bounds);
-            if (markers.length === 1 && markers[0].type === 'current') {
+            if (markers.length === 1 && markers[0]!.type === 'current') {
                 map.setZoom(15);
             } else if (markers.length === 1) {
                 map.setZoom(rangeRadiusMiles ? 10 : 12);

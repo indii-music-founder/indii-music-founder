@@ -126,7 +126,7 @@ class EventLoggerService {
         const currentIdx = TIER_ORDER.indexOf(record.tier);
         if (currentIdx === TIER_ORDER.length - 1) continue; // already archived
 
-        const nextTier = TIER_ORDER[currentIdx + 1];
+        const nextTier = TIER_ORDER[currentIdx + 1]!;
         const ageMs = now - record.ts;
 
         if (ageMs > TIER_THRESHOLDS[record.tier]) {

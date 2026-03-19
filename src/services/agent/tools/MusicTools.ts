@@ -5,7 +5,7 @@ import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
-export const MusicTools: Record<string, AnyToolFunction> = {
+export const MusicTools = {
     /**
      * Highly advanced tool that analyzes audio and creates industry-standard "Golden Metadata".
      * This metadata is DDEX-ready and includes AI-detected genre, mood, and identifiers.
@@ -221,7 +221,7 @@ export const MusicTools: Record<string, AnyToolFunction> = {
             status: 'Ready for Atmos Mixing'
         }, `${args.stemCount} stems for track ${args.trackId} have been tagged with spatial coordinates and exported for Dolby Atmos mixing.`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // --- Helpers for spatial audio ---
 

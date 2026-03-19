@@ -70,16 +70,16 @@ export class RINService {
                 // Session data sourced from track.credits when available;
                 // falls back to release-level metadata (date, contributors)
                 studioSessions: [({
-                    sessionDate: (track as any).sessionDate || metadata.releaseDate,
+                    sessionDate: (track as any).sessionDate || metadata.releaseDate || '',
                     studioLocation: {
                         studioName: (track as any).studioName || '',
                         countryCode: (track as any).studioCountry || 'US'
                     },
                     participants: contributors.map(c => ({
                         partyName: c.partyName,
-                        role: c.roles[0]
+                        role: c.roles[0]!
                     }))
-                })]
+                })] as RINSoundRecording['studioSessions']
             };
         });
     }

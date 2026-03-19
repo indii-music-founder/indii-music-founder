@@ -4,7 +4,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 
-export const Web3Tools: Record<string, AnyToolFunction> = {
+export const Web3Tools = {
     /**
      * Generates real, compilable Solidity source code for an ERC-721 or ERC-1155
      * royalty-split contract via Gemini. The contract embeds the split schedule
@@ -83,7 +83,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
                 const snap = await getDocs(q);
 
                 if (!snap.empty) {
-                    const data = snap.docs[0].data();
+                    const data = snap.docs[0]!.data();
                     if (data.blockchainTxHash) {
                         return toolSuccess({
                             isrc: args.isrc,
@@ -143,7 +143,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
             status: 'Active',
         }, `Token-gated preview active for "${args.trackTitle}". Share: ${previewUrl}`);
     }),
-};
+} satisfies Record<string, AnyToolFunction>;
 
 export const {
     generate_smart_contract,

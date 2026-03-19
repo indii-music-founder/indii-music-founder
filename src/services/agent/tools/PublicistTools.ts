@@ -55,7 +55,7 @@ const PitchStorySchema = z.object({
 
 // --- Tools Implementation ---
 
-export const PublicistTools: Record<string, AnyToolFunction> = {
+export const PublicistTools = {
     write_press_release: wrapTool('write_press_release', async ({ topic, angle, quotes_from, generate_pdf = false }: { topic: string; angle?: string; quotes_from?: string[]; generate_pdf?: boolean }) => {
         const schema = zodToJsonSchema(WritePressReleaseSchema);
         const prompt = `
@@ -139,7 +139,7 @@ export const PublicistTools: Record<string, AnyToolFunction> = {
         const validated = PitchStorySchema.parse(data);
         return toolSuccess(validated, `Personalized pitch email drafted for Spotify playlist "${args.playlistName}".`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases for historical reasons if needed, but the object is the preferred way
 export const {

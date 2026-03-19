@@ -1,4 +1,6 @@
 import { logger } from '@/utils/logger';
+import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '@/services/firebase';
 /**
  * Print-on-Demand Service Abstraction Layer
  *
@@ -583,7 +585,7 @@ class InternalProvider implements IPODProvider {
         crypto.getRandomValues(array);
         const orderId = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
 
-        return {
+        const order: PODOrder = {
             id: `INT-${orderId}`,
             provider: 'internal',
             status: 'pending',
@@ -591,23 +593,85 @@ class InternalProvider implements IPODProvider {
             shippingAddress: address,
             shippingMethod,
             subtotal: pricing.subtotal,
-            shippingCost: selectedShipping.rate,
+            shippingCost: selectedShipping!.rate,
             tax: 0,
-            total: pricing.subtotal + selectedShipping.rate,
+            total: pricing.subtotal + selectedShipping!.rate,
             currency: 'USD',
-            estimatedDelivery: selectedShipping.estimatedDays,
+            estimatedDelivery: selectedShipping!.estimatedDays,
             createdAt: new Date().toISOString()
         };
+
+        // Persist to Firestore
+        try {
+            const uid = auth.currentUser?.uid;
+            if (uid) {
+                const orderRef = doc(collection(db, 'users', uid, 'pod_orders'), order.id);
+                await setDoc(orderRef, order);
+                logger.info(`[InternalPOD] Order ${order.id} persisted to Firestore`);
+            }
+        } catch (e) {
+            // Persistence failure should not block order creation
+            logger.warn('[InternalPOD] Failed to persist order to Firestore:', e);
+        }
+
+        return order;
     }
 
-    async getOrder(_orderId: string): Promise<PODOrder | null> {
-        // In a real implementation, this would fetch from Firestore
-        return null;
+    async getOrder(orderId: string): Promise<PODOrder | null> {
+        try {
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                logger.warn('[InternalPOD] No authenticated user, cannot fetch order');
+                return null;
+            }
+
+            const orderRef = doc(db, 'users', uid, 'pod_orders', orderId);
+            const snapshot = await getDoc(orderRef);
+
+            if (!snapshot.exists()) {
+                return null;
+            }
+
+            return snapshot.data() as PODOrder;
+        } catch (e) {
+            logger.error('[InternalPOD] Failed to fetch order from Firestore:', e);
+            return null;
+        }
     }
 
-    async cancelOrder(_orderId: string): Promise<boolean> {
-        // In a real implementation, this would update Firestore
-        return true;
+    async cancelOrder(orderId: string): Promise<boolean> {
+        try {
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                logger.warn('[InternalPOD] No authenticated user, cannot cancel order');
+                return false;
+            }
+
+            const orderRef = doc(db, 'users', uid, 'pod_orders', orderId);
+            const snapshot = await getDoc(orderRef);
+
+            if (!snapshot.exists()) {
+                logger.warn(`[InternalPOD] Order ${orderId} not found`);
+                return false;
+            }
+
+            const order = snapshot.data() as PODOrder;
+            if (order.status === 'shipped' || order.status === 'delivered') {
+                logger.warn(`[InternalPOD] Cannot cancel ${orderId} — already ${order.status}`);
+                return false;
+            }
+
+            await updateDoc(orderRef, {
+                status: 'cancelled',
+                cancelledAt: new Date().toISOString(),
+            });
+
+            logger.info(`[InternalPOD] Order ${orderId} cancelled`);
+            return true;
+        } catch (e) {
+            logger.error('[InternalPOD] Failed to cancel order:', e);
+            return false;
+        }
     }
 
     async generateMockup(productId: string, variantId: string, designUrl: string, printArea = 'front'): Promise<string> {
@@ -626,7 +690,7 @@ class InternalProvider implements IPODProvider {
 
             let imageBytes = '';
             if (designUrl.startsWith('data:')) {
-                imageBytes = designUrl.split(',')[1];
+                imageBytes = designUrl.split(',')[1] ?? '';
             } else {
                 try {
                     const response = await fetch(designUrl);

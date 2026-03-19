@@ -36,7 +36,7 @@ export class ContractVersioningService {
         const q = query(versionsRef, orderBy('version', 'desc'));
         const snapshot = await getDocs(q);
 
-        const nextVersion = snapshot.empty ? 1 : snapshot.docs[0].data().version + 1;
+        const nextVersion = snapshot.empty ? 1 : snapshot.docs[0]!.data().version + 1;
 
         // Add new version
         const docRef = await addDoc(versionsRef, {
@@ -62,8 +62,8 @@ export class ContractVersioningService {
 
         if (snapshot.empty) return null;
 
-        const doc = snapshot.docs[0];
-        return { id: doc.id, ...doc.data() } as ContractTemplateVersion;
+        const firstDoc = snapshot.docs[0]!;
+        return { id: firstDoc.id, ...firstDoc.data() } as ContractTemplateVersion;
     }
 
     /**

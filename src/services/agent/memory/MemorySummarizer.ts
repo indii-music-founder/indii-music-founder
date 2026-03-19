@@ -48,7 +48,7 @@ export class MemorySummarizer {
      */
     public static async summarizeMemories(memories: Array<{ content: string; type?: string }>): Promise<string> {
         if (memories.length === 0) return '';
-        if (memories.length === 1) return memories[0].content;
+        if (memories.length === 1) return memories[0]!.content;
 
         try {
             const memoryText = memories.map(m => `- [${m.type || 'fact'}] ${m.content}`).join('\n');

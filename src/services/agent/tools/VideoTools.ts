@@ -57,7 +57,7 @@ function validateDuration(duration: number | undefined, maxDuration: number = MA
 // VideoTools Implementation
 // ============================================================================
 
-export const VideoTools: Record<string, AnyToolFunction> = {
+export const VideoTools = {
     generate_video: wrapTool('generate_video', async (args: { prompt: string, image?: string, duration?: number, aspectRatio?: string, resolution?: string }) => {
         // FIX #10: Comprehensive input validation
         if (!args.prompt || args.prompt.trim().length === 0) {
@@ -430,7 +430,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             renderQueue: prompts
         }, `Video Agent orchestrated render queue with ${prompts.length} scenes targeting veo-3.1.`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 // Aliases
 export const {

@@ -93,8 +93,8 @@ describe("ImageGenerationService", () => {
       });
 
       expect(results).toHaveLength(1);
-      expect(results[0].prompt).toBe("A test image");
-      expect(results[0].url).toMatch(/^data:image\/png;base64,/);
+      expect(results[0]!.prompt).toBe("A test image");
+      expect(results[0]!.url).toMatch(/^data:image\/png;base64,/);
 
       expect(httpsCallable).toHaveBeenCalledWith(expect.anything(), "generateImageV3");
       expect(mockGenerateImage).toHaveBeenCalledWith(

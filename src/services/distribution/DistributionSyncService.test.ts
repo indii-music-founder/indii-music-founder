@@ -98,7 +98,7 @@ describe('DistributionSyncService', () => {
         });
 
         const result = await DistributionSyncService.fetchReleases('org-1');
-        expect(result[0].title).toBe('Single Title');
+        expect(result[0]!.title).toBe('Single Title');
     });
 
     it('should fetch a single release by ID', async () => {

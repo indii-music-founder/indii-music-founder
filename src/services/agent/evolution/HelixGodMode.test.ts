@@ -64,11 +64,11 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
 
     // The Elite (Index 0) should be 'God'
     const elite = nextGen[0];
-    expect(elite.id).toBe('God');
+    expect(elite!.id).toBe('God');
 
     // CRITICAL ASSERTION: Fitness must be clamped
-    expect(elite.fitness).toBe(Number.MAX_VALUE);
-    expect(elite.fitness).not.toBe(Infinity);
+    expect(elite!.fitness).toBe(Number.MAX_VALUE);
+    expect(elite!.fitness).not.toBe(Infinity);
 
     // Verify JSON safety
     const json = JSON.stringify(elite);

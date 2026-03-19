@@ -77,12 +77,12 @@ describe('🧬 Helix: Lifecycle & State Integrity', () => {
     const offspring = nextGen[1]; // Index 1 is the first child
 
     // Assert Elite behavior (Control Group)
-    expect(elite.id).toBe('elite');
-    expect(elite.fitness).toBe(1.0); // Elite preserves fitness (efficiency)
+    expect(elite!.id).toBe('elite');
+    expect(elite!.fitness).toBe(1.0); // Elite preserves fitness (efficiency)
 
     // Assert Zombie Prevention
-    expect(offspring.id).not.toBe('elite');
-    expect(offspring.fitness).toBeUndefined(); // MUST be undefined
+    expect(offspring!.id).not.toBe('elite');
+    expect(offspring!.fitness).toBeUndefined(); // MUST be undefined
 
     // 3. Verify that if we ran another cycle, this offspring WOULD be evaluated
     // (We simulate this by checking if the engine would call fitnessFn for it)
@@ -106,12 +106,12 @@ describe('🧬 Helix: Lifecycle & State Integrity', () => {
     const child = nextGen[0];
 
     // Assert Parameters still exist
-    expect(child.parameters).toBeDefined();
-    expect(child.parameters.temp).toBe(0.8);
-    expect(child.parameters.model).toBe('gemini-pro');
+    expect(child!.parameters).toBeDefined();
+    expect(child!.parameters.temp).toBe(0.8);
+    expect(child!.parameters.model).toBe('gemini-pro');
 
     // Assert Metadata was updated
-    expect(child.generation).toBe(1);
-    expect(child.lineage.length).toBe(2);
+    expect(child!.generation).toBe(1);
+    expect(child!.lineage.length).toBe(2);
   });
 });

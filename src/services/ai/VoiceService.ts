@@ -46,7 +46,7 @@ export class VoiceService {
         this.isListening = true;
 
         this.recognition.onresult = (event: { results: { transcript: string }[][] }) => {
-            const transcript = event.results[0][0].transcript;
+            const transcript = event.results[0]![0]!.transcript;
             onResult(transcript);
             this.isListening = false;
         };

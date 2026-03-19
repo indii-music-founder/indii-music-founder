@@ -7,7 +7,7 @@ import type { AnyToolFunction } from '../types';
 // ScreenwriterTools Implementation
 // ============================================================================
 
-export const ScreenwriterTools: Record<string, AnyToolFunction> = {
+export const ScreenwriterTools = {
   format_screenplay: wrapTool('format_screenplay', async (args: { text: string }) => {
     const systemPrompt = `
 You are a professional screenwriter formatting expert.
@@ -80,4 +80,4 @@ Return ONLY valid JSON with this structure:
 
     return toolSuccess(data, `Script structure analyzed: ${data.title || 'Untitled'}`);
   })
-};
+} satisfies Record<string, AnyToolFunction>;

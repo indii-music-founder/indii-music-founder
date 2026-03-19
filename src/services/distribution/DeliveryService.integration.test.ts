@@ -110,7 +110,7 @@ describe('DeliveryService Integration', () => {
 
         // Audio Copy
         expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
-            assets.audioFiles[0].url,
+            assets.audioFiles[0]!.url,
             path.join(resourcesDir, 'A1.wav')
         );
 
@@ -153,7 +153,7 @@ describe('DeliveryService Integration', () => {
 
         // Should not copy audio
         expect(mockFs.promises.copyFile).not.toHaveBeenCalledWith(
-            assets.audioFiles[0].url,
+            assets.audioFiles[0]!.url,
             expect.anything()
         );
 

@@ -41,7 +41,7 @@ describe('ERNMapper - Comprehensive Deal Types', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, DEFAULT_OPTIONS);
         const deals = ern.dealList;
 
-        const streamDeal = deals.find(d => d.dealTerms.usage[0].useType === 'OnDemandStream');
+        const streamDeal = deals.find(d => d.dealTerms.usage[0]!.useType === 'OnDemandStream');
         expect(streamDeal).toBeDefined();
         // This is expected to fail before implementation
         expect(streamDeal?.dealTerms.usage[0].distributionChannelType).toBe('Stream');
@@ -56,7 +56,7 @@ describe('ERNMapper - Comprehensive Deal Types', () => {
         const ern = ERNMapper.mapMetadataToERN(metadata, DEFAULT_OPTIONS);
         const deals = ern.dealList;
 
-        const downloadDeal = deals.find(d => d.dealTerms.usage[0].useType === 'PermanentDownload');
+        const downloadDeal = deals.find(d => d.dealTerms.usage[0]!.useType === 'PermanentDownload');
         expect(downloadDeal).toBeDefined();
         // This is expected to fail before implementation
         expect(downloadDeal?.dealTerms.usage[0].distributionChannelType).toBe('Download');

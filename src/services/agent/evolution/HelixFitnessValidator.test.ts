@@ -89,7 +89,7 @@ describe('🧬 Helix: Fitness Validator (Quality Control)', () => {
 
     // Should return only the elites. Config eliteCount is 1.
     expect(nextGen).toHaveLength(1);
-    expect(nextGen[0].id).toMatch(/Dead/);
+    expect(nextGen[0]!.id).toMatch(/Dead/);
 
     // Ensure NO breeding happened
     expect(mockCrossoverFn).not.toHaveBeenCalled();
@@ -114,7 +114,7 @@ describe('🧬 Helix: Fitness Validator (Quality Control)', () => {
     const nextGen = await engine.evolve(population);
 
     // Healthy should be elite (1.0 > 0.0)
-    expect(nextGen[0].id).toBe('Healthy');
+    expect(nextGen[0]!.id).toBe('Healthy');
 
     // Offspring should be born from Healthy (since Toxic is 0.0/excluded)
     const offspring = nextGen.slice(1);

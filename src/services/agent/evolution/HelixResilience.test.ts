@@ -58,8 +58,8 @@ describe('🧬 Helix: Evolutionary Resilience', () => {
     // The toxic one (fitness 0 or undefined) should likely not be elite.
 
     const survivor = nextGen[0];
-    expect(survivor.id).not.toBe('toxic');
-    expect(survivor.fitness).toBe(1.0);
+    expect(survivor!.id).not.toBe('toxic');
+    expect(survivor!.fitness).toBe(1.0);
   });
 
   it('Infinite Loop Protection: Returns partial population when breeding consistently fails (Retry Exhaustion)', async () => {
@@ -84,7 +84,7 @@ describe('🧬 Helix: Evolutionary Resilience', () => {
     // Assertion 1: Did not crash
     // Assertion 2: Returns ONLY the elite (since no offspring could be born)
     expect(nextGen).toHaveLength(1);
-    expect(nextGen[0].id).toBe('elite');
+    expect(nextGen[0]!.id).toBe('elite');
 
     // Assertion 3: Tried HARD enough (MAX_ATTEMPTS)
     // Formula: populationSize * 5 = 5 * 5 = 25 attempts

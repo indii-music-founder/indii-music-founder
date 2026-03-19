@@ -65,23 +65,23 @@ describe('EvolutionEngine (Helix Guardrails)', () => {
 
     // 1. Elitism Check
     // The best agent (A2, fitness 0.9) should survive exactly as is (first element)
-    expect(nextGen[0].id).toBe('a2');
-    expect(nextGen[0].fitness).toBe(0.9);
+    expect(nextGen[0]!.id).toBe('a2');
+    expect(nextGen[0]!.fitness).toBe(0.9);
 
     // 2. Offspring Check
     const offspring = nextGen[1];
-    expect(offspring.id).not.toBe('a1');
-    expect(offspring.id).not.toBe('a2');
-    expect(offspring.id).not.toBe('a3');
-    expect(offspring.generation).toBe(1); // 0 + 1
+    expect(offspring!.id).not.toBe('a1');
+    expect(offspring!.id).not.toBe('a2');
+    expect(offspring!.id).not.toBe('a3');
+    expect(offspring!.generation).toBe(1); // 0 + 1
 
     // 3. Lineage Check
-    expect(offspring.lineage).toHaveLength(2);
-    expect(offspring.lineage[0]).toMatch(/a[1-3]/);
+    expect(offspring!.lineage).toHaveLength(2);
+    expect(offspring!.lineage[0]).toMatch(/a[1-3]/);
 
     // 4. Mutation Check
     expect(mockMutationFn).toHaveBeenCalled();
-    expect(offspring.systemPrompt).toContain('(mutated)');
+    expect(offspring!.systemPrompt).toContain('(mutated)');
   });
 
   it('Gene Loss: Should preserve high fitness agents via elitism', async () => {
@@ -93,7 +93,7 @@ describe('EvolutionEngine (Helix Guardrails)', () => {
 
     const nextGen = await engine.evolve(population);
 
-    expect(nextGen[0].id).toBe('strong');
+    expect(nextGen[0]!.id).toBe('strong');
     expect(nextGen).toHaveLength(4); // Config pop size
   });
 
@@ -115,8 +115,8 @@ describe('EvolutionEngine (Helix Guardrails)', () => {
     const nextGen = await engine.evolve(population);
 
     expect(nextGen).toHaveLength(2);
-    expect(nextGen[0].id).toBe('p1'); // Elite (or p2 depending on sort, but both 0.8)
-    expect(nextGen[1].id).not.toBe('p1'); // New offspring
+    expect(nextGen[0]!.id).toBe('p1'); // Elite (or p2 depending on sort, but both 0.8)
+    expect(nextGen[1]!.id).not.toBe('p1'); // New offspring
     expect(mockMutationFn).toHaveBeenCalledTimes(2); // One fail, one success
   });
 
@@ -148,20 +148,20 @@ describe('EvolutionEngine (Helix Guardrails)', () => {
 
     // 2. Verify Elitism based on the calculated fitness
     // A2 should be the elite (0.9)
-    expect(nextGen[0].id).toBe('a2');
-    expect(nextGen[0].fitness).toBe(0.9);
+    expect(nextGen[0]!.id).toBe('a2');
+    expect(nextGen[0]!.fitness).toBe(0.9);
 
     // 3. Verify Offspring creation (Selection + Crossover + Mutation)
     const offspring = nextGen[1];
-    expect(offspring.generation).toBe(1);
-    expect(offspring.fitness).toBeUndefined(); // Offspring should be unscored
-    expect(offspring.systemPrompt).toContain('(mutated)');
+    expect(offspring!.generation).toBe(1);
+    expect(offspring!.fitness).toBeUndefined(); // Offspring should be unscored
+    expect(offspring!.systemPrompt).toContain('(mutated)');
 
     // 4. Verify Selection used the scored population
     expect(mockCrossoverFn).toHaveBeenCalled();
     const crossoverCall = mockCrossoverFn.mock.calls[0];
-    const p1 = crossoverCall[0] as AgentGene;
-    const p2 = crossoverCall[1] as AgentGene;
+    const p1 = crossoverCall![0] as AgentGene;
+    const p2 = crossoverCall![1] as AgentGene;
     expect(p1.fitness).toBeDefined();
     expect(p2.fitness).toBeDefined();
   });

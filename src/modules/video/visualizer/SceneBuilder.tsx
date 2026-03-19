@@ -68,6 +68,7 @@ const DroppableArea = ({ onDrop }: { onDrop: (url: string) => void }) => {
         const files = e.dataTransfer.files;
         if (files && files.length > 0) {
             const file = files[0];
+            if (!file) return;
             if (file.name.endsWith('.glb') || file.name.endsWith('.gltf')) {
                 const url = URL.createObjectURL(file);
                 onDrop(url);

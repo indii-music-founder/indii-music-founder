@@ -19,7 +19,7 @@ export const ChecklistHeader: React.FC<ChecklistHeaderProps> = ({ profile }) => 
         if (index === 0) status = profile.proRegistration.status;
         if (index === 1) status = profile.soundExchangeRegistration.status;
         if (index === 2) status = profile.mlcRegistration.status;
-        if (index === 3) status = profile.copyrightRegistrations.length > 0 ? profile.copyrightRegistrations[0].status : 'not_started';
+        if (index === 3) status = profile.copyrightRegistrations.length > 0 ? profile.copyrightRegistrations[0]!.status : 'not_started';
 
         if (status === 'active') return 'bg-green-500';
         if (status === 'in_progress') return 'bg-yellow-500 animate-pulse';

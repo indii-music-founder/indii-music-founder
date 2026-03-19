@@ -112,27 +112,27 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     const elite1 = nextGen[0];
     const elite2 = nextGen[1];
 
-    expect(elite1.id).toBe('Agent-A');
-    expect(elite1.fitness).toBe(100);
-    expect(elite1.generation).toBe(0);
+    expect(elite1!.id).toBe('Agent-A');
+    expect(elite1!.fitness).toBe(100);
+    expect(elite1!.generation).toBe(0);
 
-    expect(elite2.id).toBe('Agent-B');
-    expect(elite2.fitness).toBe(80);
-    expect(elite2.generation).toBe(0);
+    expect(elite2!.id).toBe('Agent-B');
+    expect(elite2!.fitness).toBe(80);
+    expect(elite2!.generation).toBe(0);
 
     // 5. Assert: The Offspring (Breeding)
     const offspring = nextGen[2];
 
     // A. Identity Check: Must be a new entity
-    expect(offspring.id).not.toBe('Agent-A');
-    expect(offspring.id).not.toBe('Agent-B');
-    expect(offspring.id).not.toBe('Agent-C');
+    expect(offspring!.id).not.toBe('Agent-A');
+    expect(offspring!.id).not.toBe('Agent-B');
+    expect(offspring!.id).not.toBe('Agent-C');
 
     // B. Lineage Check: Must have distinct parents (Sexual Selection)
     // In a pool of 3 with 2 elites, Agent-A and Agent-B are the likely parents.
     // Agent-C is unlikely to be picked (Tournament Selection).
     // Crucially, we check that we didn't self-crossover (p1 !== p2).
-    expect(offspring.lineage).toHaveLength(2);
+    expect(offspring!.lineage).toHaveLength(2);
 
     // STRICT DETERMINISTIC CHECK:
     // With Math.random() fixed to 0.0:
@@ -140,21 +140,21 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     // 2. Parent 1 selection: index 0 -> Agent-A
     // 3. Remaining Pool: [B, C]
     // 4. Parent 2 selection: index 0 -> Agent-B
-    expect(offspring.lineage).toEqual(['Agent-A', 'Agent-B']);
+    expect(offspring!.lineage).toEqual(['Agent-A', 'Agent-B']);
 
     // C. Crossover Check: System Prompt combination
-    expect(offspring.systemPrompt).toContain('You are a helpful AI.');
-    expect(offspring.systemPrompt).toContain('+');
+    expect(offspring!.systemPrompt).toContain('You are a helpful AI.');
+    expect(offspring!.systemPrompt).toContain('+');
 
     // D. Mutation Check: Gemini 3 Pro Signature
-    expect(offspring.systemPrompt).toContain('[GEMINI-3-PRO-EVOLVED]');
-    expect(offspring.parameters.temperature).toBe(0.99);
+    expect(offspring!.systemPrompt).toContain('[GEMINI-3-PRO-EVOLVED]');
+    expect(offspring!.parameters.temperature).toBe(0.99);
 
     // E. Fitness Reset: Offspring must not inherit fitness ("Zombie Check")
-    expect(offspring.fitness).toBeUndefined();
+    expect(offspring!.fitness).toBeUndefined();
 
     // F. Generation Clock: Time must move forward
-    expect(offspring.generation).toBe(1);
+    expect(offspring!.generation).toBe(1);
   });
 
   it('Gene Integrity: Rejects invalid mutation outputs ("The Brainless Check")', async () => {
@@ -189,9 +189,9 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
 
     // Assert we got the valid one
     // Note: Engine overwrites ID with a new UUID, so we check content
-    expect(offspring.systemPrompt).toBe('Valid [GEMINI-3-PRO-EVOLVED]');
-    expect(offspring.parameters.temperature).toBe(0.7);
-    expect(offspring.parameters).toBeDefined();
+    expect(offspring!.systemPrompt).toBe('Valid [GEMINI-3-PRO-EVOLVED]');
+    expect(offspring!.parameters.temperature).toBe(0.7);
+    expect(offspring!.parameters).toBeDefined();
 
     // Assert Mutation was called twice (Retry happened)
     expect(mockMutationFn).toHaveBeenCalledTimes(2);
@@ -233,8 +233,8 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     const offspring = nextGen[2];
 
     // Assert we got the valid one
-    expect(offspring.systemPrompt).toBe('Valid [GEMINI-3-PRO-EVOLVED]');
-    expect(offspring.parameters.temperature).toBe(0.8);
+    expect(offspring!.systemPrompt).toBe('Valid [GEMINI-3-PRO-EVOLVED]');
+    expect(offspring!.parameters.temperature).toBe(0.8);
 
     // Assert Mutation was called 3 times (2 failures + 1 success)
     expect(mockMutationFn).toHaveBeenCalledTimes(3);

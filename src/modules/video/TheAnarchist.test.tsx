@@ -65,7 +65,7 @@ describe('The Anarchist Ⓐ', () => {
         // Map based update (c.id === id ? ... : c) is safe.
         const clips = useVideoEditorStore.getState().project.clips;
         expect(clips.length).toBe(1); // Default clip only
-        expect(clips[0].startFrame).toBe(0); // Unchanged
+        expect(clips[0]!.startFrame).toBe(0); // Unchanged
     });
 
     it('Scenario: The Mutiny (State Rebellion) - survives impossible states', () => {

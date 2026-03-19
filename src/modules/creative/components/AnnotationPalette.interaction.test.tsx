@@ -14,8 +14,8 @@ describe('AnnotationPalette Interaction (🖱️ Click)', () => {
     };
 
     // We'll use the first real color for testing to ensure integration is correct
-    const firstColor = STUDIO_COLORS[0];
-    const secondColor = STUDIO_COLORS[1];
+    const firstColor = STUDIO_COLORS[0]!;
+    const secondColor = STUDIO_COLORS[1]!;
 
     it('verifies the Color Selection lifecycle (Click → Active State)', () => {
         const { rerender } = render(

@@ -122,7 +122,7 @@ class DDEXParserImpl {
       }
 
       // Parse header line
-      const headers = lines[0].split('\t');
+      const headers = lines[0]!.split('\t');
 
       // Parse data lines
       const transactions = lines.slice(1).map((line, index) => {
@@ -421,7 +421,7 @@ class DDEXParserImpl {
         isrc: record['ISRC'] || record['ResourceISRC'],
         title: record['Title'] || record['TrackTitle'],
       },
-      usageType: this.mapUsageType(record['UsageType'] || record['TransactionType']),
+      usageType: this.mapUsageType(record['UsageType'] || record['TransactionType'] || ''),
       usageCount: parseInt(record['UsageCount'] || record['Quantity'] || '0', 10),
       revenueAmount: parseFloat(record['Revenue'] || record['Amount'] || '0'),
       currencyCode: record['Currency'] || 'USD',

@@ -64,7 +64,7 @@ describe('🧬 Helix: Doomsday Switch Verification', () => {
     // 3. Assertions
     // Should simply return the sorted population, stripped to populationSize
     expect(nextGen).toHaveLength(4);
-    expect(nextGen[0].id).toBe('old1'); // Highest fitness
+    expect(nextGen[0]!.id).toBe('old1'); // Highest fitness
 
     // CRITICAL: Breeding functions must NOT be called
     expect(mockCrossoverFn).not.toHaveBeenCalled();
@@ -118,6 +118,6 @@ describe('🧬 Helix: Doomsday Switch Verification', () => {
     // Should halt because max(generations) == 5
     expect(mockCrossoverFn).not.toHaveBeenCalled();
     expect(nextGen).toHaveLength(2); // Just the sorted parents
-    expect(nextGen[0].id).toBe('young'); // Fitness 0.9 wins sort
+    expect(nextGen[0]!.id).toBe('young'); // Fitness 0.9 wins sort
   });
 });

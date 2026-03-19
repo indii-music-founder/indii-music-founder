@@ -58,7 +58,7 @@ export class DistributionRevenueService {
             if (!acc[earning.releaseId]) {
                 acc[earning.releaseId] = [];
             }
-            acc[earning.releaseId].push(earning);
+            acc[earning.releaseId]!.push(earning);
             return acc;
         }, {} as Record<string, DistributorEarnings[]>);
 

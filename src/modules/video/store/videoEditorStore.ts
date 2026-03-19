@@ -317,7 +317,7 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
                     ...c,
                     keyframes: {
                         ...c.keyframes,
-                        [property]: clip.keyframes![property].filter(k => k.frame !== frame)
+                        [property]: clip.keyframes![property]!.filter(k => k.frame !== frame)
                     }
                 } : c)
             }
@@ -335,7 +335,7 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
                     ...c,
                     keyframes: {
                         ...c.keyframes,
-                        [property]: clip.keyframes![property].map(k => k.frame === frame ? { ...k, ...updates } : k)
+                        [property]: clip.keyframes![property]!.map(k => k.frame === frame ? { ...k, ...updates } : k)
                     }
                 } : c)
             }

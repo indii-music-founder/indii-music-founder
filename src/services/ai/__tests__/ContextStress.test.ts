@@ -42,7 +42,7 @@ describe('ContextManager Stress Tests', () => {
         const maxTokens = 100;
         const truncated = ContextManager.truncateContext(history, maxTokens);
 
-        expect(truncated[0].parts[0]).toMatchObject({ text: 'INITIAL_CONTEXT_ANCHOR' });
+        expect(truncated[0]!.parts[0]).toMatchObject({ text: 'INITIAL_CONTEXT_ANCHOR' });
         expect(truncated.length).toBeLessThan(history.length);
     });
 
@@ -114,7 +114,7 @@ describe('ContextManager Stress Tests', () => {
         // But since it's only 1 message, it should be kept if it's within MIN_RECENT_MESSAGES
         const truncated = ContextManager.truncateContext(history, 1000);
         expect(truncated.length).toBe(1);
-        expect(truncated[0].parts.length).toBe(26);
+        expect(truncated[0]!.parts.length).toBe(26);
     });
 
     it('should handle mixed content types (text, multimodal, tool calls) in stress scenario', () => {

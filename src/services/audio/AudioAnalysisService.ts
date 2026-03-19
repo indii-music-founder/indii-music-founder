@@ -228,7 +228,7 @@ export class AudioAnalysisService {
 
         let hasSignal = false;
         for (let i = 0; i < Math.min(channelData.length, 1000); i++) {
-            if (Math.abs(channelData[i]) > 0.0001) {
+            if (Math.abs(channelData[i]!) > 0.0001) {
                 hasSignal = true;
                 break;
             }
@@ -256,7 +256,7 @@ export class AudioAnalysisService {
             // TECHNICAL AUDIT
             let maxPeak = 0;
             for (let i = 0; i < channelData.length; i++) {
-                const abs = Math.abs(channelData[i]);
+                const abs = Math.abs(channelData[i]!);
                 if (abs > maxPeak) maxPeak = abs;
             }
 
@@ -282,7 +282,7 @@ export class AudioAnalysisService {
             for (let i = 0; i < channelData.length; i += windowSize) {
                 const subArr = channelData.slice(i, i + windowSize);
                 let subEnergy = 0;
-                for (let j = 0; j < subArr.length; j++) subEnergy += subArr[j] * subArr[j];
+                for (let j = 0; j < subArr.length; j++) subEnergy += subArr[j]! * subArr[j]!;
                 subEnergy = Math.sqrt(subEnergy / subArr.length);
 
                 if (subEnergy > energyValue * 1.5) {

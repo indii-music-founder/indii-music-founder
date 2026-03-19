@@ -96,14 +96,14 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     const survivor1 = nextGen[0];
     const survivor2 = nextGen[1];
 
-    expect(survivor1.id).toBe('agent-1'); // Alpha
-    expect(survivor1.fitness).toBe(1.0);
+    expect(survivor1!.id).toBe('agent-1'); // Alpha
+    expect(survivor1!.fitness).toBe(1.0);
     // Helix: Verify Gene Loss Prevention (Thinking Budget must be preserved in Elites)
-    expect(survivor1.parameters.thinkingBudget).toBe(2048);
+    expect(survivor1!.parameters.thinkingBudget).toBe(2048);
 
-    expect(survivor2.id).toBe('agent-2'); // Beta
-    expect(survivor2.fitness).toBe(0.8);
-    expect(survivor2.parameters.thinkingBudget).toBe(1024);
+    expect(survivor2!.id).toBe('agent-2'); // Beta
+    expect(survivor2!.fitness).toBe(0.8);
+    expect(survivor2!.parameters.thinkingBudget).toBe(1024);
 
     // Helix: Verify Elites were NOT mutated (Gene Preservation)
     // The mutation function should NOT have been called for these agents
@@ -118,40 +118,40 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
     // Offspring must exist and be distinct
     expect(offspring).toBeDefined();
-    expect(offspring.id).not.toBe('agent-1');
-    expect(offspring.id).not.toBe('agent-2');
-    expect(offspring.id).not.toBe('agent-3');
+    expect(offspring!.id).not.toBe('agent-1');
+    expect(offspring!.id).not.toBe('agent-2');
+    expect(offspring!.id).not.toBe('agent-3');
 
     // Valid Lineage (Should be from top pool)
-    expect(offspring.lineage.length).toBe(2);
+    expect(offspring!.lineage.length).toBe(2);
 
     // STRICT SELECTION CHECK:
     // Because we mocked random to 0, Selection MUST pick the top agents.
     // Parent 1: Alpha (Index 0 of Full Pool)
     // Parent 2: Beta (Index 0 of Remaining Pool)
-    expect(offspring.lineage).toEqual(['agent-1', 'agent-2']);
+    expect(offspring!.lineage).toEqual(['agent-1', 'agent-2']);
 
     // Valid Mutation (Mocked Gemini Call) - Phenotype Check
-    expect(offspring.systemPrompt).toContain('[GEMINI_MUTATION]');
+    expect(offspring!.systemPrompt).toContain('[GEMINI_MUTATION]');
 
     // Verify Crossover Logic happened (Prompt Combination) - Phenotype Check
-    expect(offspring.systemPrompt).toContain('PROMPT_A');
-    expect(offspring.systemPrompt).toContain('PROMPT_B');
-    expect(offspring.systemPrompt).toContain('+');
+    expect(offspring!.systemPrompt).toContain('PROMPT_A');
+    expect(offspring!.systemPrompt).toContain('PROMPT_B');
+    expect(offspring!.systemPrompt).toContain('+');
 
     // Verify Parameter Evolution (Genotype Check)
     // Parent 1 (Alpha) Temp: 0.8
     // Parent 2 (Beta) Temp: 0.6
     // Crossover Average: (0.8 + 0.6) / 2 = 0.7
     // Mutation Drift: 0.7 + 0.1 = 0.8
-    expect(offspring.parameters.temperature).toBeCloseTo(0.8);
+    expect(offspring!.parameters.temperature).toBeCloseTo(0.8);
 
     // Verify Thinking Budget Evolution
     // Parent 1 (Alpha) Budget: 2048
     // Parent 2 (Beta) Budget: 1024
     // Crossover Average: (2048 + 1024) / 2 = 1536
     // Mutation Drift: 1536 + 512 = 2048
-    expect(offspring.parameters.thinkingBudget).toBe(2048);
+    expect(offspring!.parameters.thinkingBudget).toBe(2048);
   });
 
   it('Mutation Safety: Rejects invalid JSON/Empty Mutations and Retries (Death to the buggy)', async () => {
@@ -181,7 +181,7 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
     // Check that we eventually got a valid offspring
     const offspring = nextGen[2];
-    expect(offspring.systemPrompt).toBe('VALID_MUTATION');
+    expect(offspring!.systemPrompt).toBe('VALID_MUTATION');
 
     // Verify Retries happened
     // Should be called EXACTLY 3 times (Fail, Fail, Success)

@@ -31,7 +31,7 @@ async function runEvolutionStep(
 ): Promise<EvoAgent[]> {
     if (population.length === 0) return [];
 
-    const currentGen = population[0].generation;
+    const currentGen = population[0]!.generation;
     if (currentGen >= generationLimit) {
         return population; // Stop evolution
     }
@@ -49,7 +49,7 @@ async function runEvolutionStep(
         const parent2 = survivors[Math.floor(Math.random() * survivors.length)];
 
         // Crossover: Combine prompts
-        const crossoverPrompt = `${parent1.prompt} + ${parent2.prompt}`;
+        const crossoverPrompt = `${parent1!.prompt} + ${parent2!.prompt}`;
 
         // Mutation: Use Gemini (Mocked)
         const mutatedPrompt = await mockAIMutation(crossoverPrompt);
@@ -87,7 +87,7 @@ describe('🧬 Helix: Evolutionary Loop', () => {
 
         // Assertions
         expect(nextGen).toHaveLength(3); // Population size maintained
-        expect(nextGen[0].generation).toBe(0); // Elitism: survivor keeps gen 0 (or strictly, should we bump it? Logic preserves object)
+        expect(nextGen[0]!.generation).toBe(0); // Elitism: survivor keeps gen 0 (or strictly, should we bump it? Logic preserves object)
 
         // Check Elitism (Best agent should survive)
         const bestAgentId = 'gen0-2';
@@ -110,7 +110,7 @@ describe('🧬 Helix: Evolutionary Loop', () => {
         const nextGen = await runEvolutionStep(population, 5);
 
         // Should not evolve past limit
-        expect(nextGen[0].generation).toBe(5);
+        expect(nextGen[0]!.generation).toBe(5);
         expect(nextGen).toEqual(population);
     });
 
@@ -125,7 +125,7 @@ describe('🧬 Helix: Evolutionary Loop', () => {
         // Strong agent must be present in next gen
         expect(nextGen.find(a => a.id === 'strong')).toBeDefined();
         // Ideally weak agent is replaced or at least the strong one is top
-        expect(nextGen[0].id).toBe('strong'); // Since we sorted
+        expect(nextGen[0]!.id).toBe('strong'); // Since we sorted
     });
 
     it('should produce valid offspring that are distinct from parents', async () => {

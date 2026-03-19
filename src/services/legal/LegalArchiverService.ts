@@ -48,7 +48,7 @@ export class LegalArchiverService {
             const snapshot = await getDocs(q);
             if (snapshot.empty) return null;
 
-            const doc = snapshot.docs[0];
+            const doc = snapshot.docs[0]!;
             return { id: doc.id, ...doc.data() } as LegalAgreement;
         } catch (error) {
             logger.error(`[LegalArchiver] Failed to get latest for ${type}:`, error);

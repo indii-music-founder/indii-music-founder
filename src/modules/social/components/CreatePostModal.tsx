@@ -22,7 +22,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram' | 'LinkedIn'>('Twitter');
     const [copy, setCopy] = useState('');
     const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(null);
-    const [scheduledDate, setScheduledDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [scheduledDate, setScheduledDate] = useState<string>(new Date().toISOString().split('T')[0]!);
     const [scheduledTime, setScheduledTime] = useState<string>('12:00');
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -81,7 +81,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
         const validation = ScheduledPostSchema.safeParse(newPostData);
 
         if (!validation.success) {
-            const errorMsg = validation.error.issues[0].message;
+            const errorMsg = validation.error.issues[0]!.message;
             toast.error(errorMsg);
             return;
         }

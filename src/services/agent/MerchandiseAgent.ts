@@ -344,7 +344,7 @@ You: "Order submitted! Your order ID is INDII-782941-552. Expected delivery in 1
                         // Parse data URL
                         const match = assetUrl.match(/^data:(.+);base64,(.+)$/);
                         if (!match) throw new Error('Invalid data URL format');
-                        imageData = { mimeType: match[1], data: match[2] };
+                        imageData = { mimeType: match[1]!, data: match[2]! };
                     } else {
                         // Fetch image from URL and convert to base64
                         const response = await fetch(assetUrl);
@@ -353,7 +353,7 @@ You: "Order submitted! Your order ID is INDII-782941-552. Expected delivery in 1
                             const reader = new FileReader();
                             reader.onloadend = () => {
                                 const result = reader.result as string;
-                                const base64Data = result.split(',')[1];
+                                const base64Data = result.split(',')[1]!;
                                 resolve(base64Data);
                             };
                             reader.readAsDataURL(blob);

@@ -418,7 +418,7 @@ export class DashboardService {
             const wordCounts: Record<string, number> = {};
 
             for (let i = 0; i < history.length; i++) {
-                const item = history[i];
+                const item = history[i]!
                 // 1. Counts and Duration
                 if (item.type === 'image') {
                     imageCount++;

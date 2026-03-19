@@ -3,7 +3,7 @@ import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 
-export const CommerceTools: Record<string, AnyToolFunction> = {
+export const CommerceTools = {
     mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string }) => {
         // Use AI image generation to produce an actual product mockup
         const productDescriptions: Record<string, string> = {
@@ -100,7 +100,7 @@ export const CommerceTools: Record<string, AnyToolFunction> = {
             notificationsQueued: true
         }, `Limited drop campaign "${args.dropName}" scheduled for ${args.releaseDate} with ${args.totalItems} total items. Pre-sales are locked and superfan notifications queued.`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 export const {
     mockup_merchandise,

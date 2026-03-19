@@ -139,9 +139,9 @@ export class IdentifierService {
             // For GTIN-12: The 1st digit (index 0) is considered "odd" in the 1-based indexing for the algorithm
             // (Position 1, 3, 5, 7, 9, 11)
             if ((i + 1) % 2 !== 0) {
-                sum += digits[i] * 3;
+                sum += digits[i]! * 3;
             } else {
-                sum += digits[i] * 1;
+                sum += digits[i]! * 1;
             }
         }
 

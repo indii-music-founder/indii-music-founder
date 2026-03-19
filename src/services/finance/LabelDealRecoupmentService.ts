@@ -180,7 +180,7 @@ class LabelDealRecoupmentService {
                 const monthsRemaining = remainingToRecoup / avgMonthly;
                 const estimated = new Date();
                 estimated.setMonth(estimated.getMonth() + Math.ceil(monthsRemaining));
-                estimatedRecoupmentDate = estimated.toISOString().split('T')[0];
+                estimatedRecoupmentDate = estimated.toISOString().split('T')[0]!;
             }
         }
 

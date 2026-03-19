@@ -138,7 +138,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
 
         const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
         if (deployments.length > 0) {
-            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
+            await distributionStore.updateDeploymentStatus(deployments[0]!.id, 'processing');
         }
 
         return {

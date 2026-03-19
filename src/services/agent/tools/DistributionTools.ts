@@ -80,7 +80,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
             genre: 'Pop',
             subGenre: '',
             language: 'eng',
-            releaseDate: new Date().toISOString().split('T')[0],
+            releaseDate: new Date().toISOString().split('T')[0]!,
             explicit: false,
             tracks: [],
             splits: [{ legalName: artist, role: 'performer', percentage: 100, email: '' }],
@@ -513,7 +513,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
     return toolError('Merlin check requires Electron environment (Keys Layer).', 'ELECTRON_REQUIRED');
 });
 
-export const DistributionTools: Record<string, AnyToolFunction> = {
+export const DistributionTools = {
     prepare_release,
     run_audio_qc,
     issue_isrc,
@@ -841,4 +841,4 @@ export const DistributionTools: Record<string, AnyToolFunction> = {
             }, `Takedown for release ${args.releaseId} recorded. Distributor notification pending Cloud Function deployment.`);
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;

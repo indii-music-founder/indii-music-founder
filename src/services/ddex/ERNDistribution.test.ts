@@ -44,14 +44,14 @@ describe('ERNMapper - Deal Logic Verification', () => {
         // Expect Subscription + OnDemandStream
         const subscription = deals.find(d =>
             d.dealTerms.commercialModelType === 'SubscriptionModel' &&
-            d.dealTerms.usage[0].useType === 'OnDemandStream'
+            d.dealTerms.usage[0]!.useType === 'OnDemandStream'
         );
         expect(subscription).toBeDefined();
 
         // Expect Ad-Supported + OnDemandStream
         const adSupported = deals.find(d =>
             d.dealTerms.commercialModelType === 'AdvertisementSupportedModel' &&
-            d.dealTerms.usage[0].useType === 'OnDemandStream'
+            d.dealTerms.usage[0]!.useType === 'OnDemandStream'
         );
         expect(adSupported).toBeDefined();
 
@@ -73,7 +73,7 @@ describe('ERNMapper - Deal Logic Verification', () => {
 
         const download = deals.find(d =>
             d.dealTerms.commercialModelType === 'PayAsYouGoModel' &&
-            d.dealTerms.usage[0].useType === 'PermanentDownload'
+            d.dealTerms.usage[0]!.useType === 'PermanentDownload'
         );
         expect(download).toBeDefined();
 

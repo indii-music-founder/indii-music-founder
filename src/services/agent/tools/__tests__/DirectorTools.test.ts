@@ -62,7 +62,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.generate_image({ prompt: 'A beautiful landscape' });
+            await DirectorTools.generate_image!({ prompt: 'A beautiful landscape' });
 
             expect(ImageGeneration.generateImages).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -78,7 +78,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.generate_image({ prompt: 'A beautiful landscape' });
+            await DirectorTools.generate_image!({ prompt: 'A beautiful landscape' });
 
             expect(mockAddToHistory).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -101,7 +101,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.generate_image({ prompt: 'A scene', referenceImageIndex: 0 });
+            await DirectorTools.generate_image!({ prompt: 'A scene', referenceImageIndex: 0 });
 
             expect(ImageGeneration.generateImages).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -113,7 +113,7 @@ describe('DirectorTools', () => {
         it('returns error message on failure', async () => {
             vi.mocked(ImageGeneration.generateImages).mockRejectedValue(new Error('API Error'));
 
-            const result = await DirectorTools.generate_image({ prompt: 'test' });
+            const result = await DirectorTools.generate_image!({ prompt: 'test' });
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('API Error');
@@ -123,7 +123,7 @@ describe('DirectorTools', () => {
             const error = new QuotaExceededError('images', 'free', 'Upgrade to Pro', 5, 5);
             vi.mocked(ImageGeneration.generateImages).mockRejectedValue(error);
 
-            const result = await DirectorTools.generate_image({ prompt: 'test' });
+            const result = await DirectorTools.generate_image!({ prompt: 'test' });
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('Quota exceeded');
@@ -136,7 +136,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.generate_high_res_asset({
+            await DirectorTools.generate_high_res_asset!({
                 prompt: 'Album art',
                 templateType: 'jacket'
             });
@@ -153,7 +153,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.generate_high_res_asset({
+            await DirectorTools.generate_high_res_asset!({
                 prompt: 'Album art',
                 templateType: 'vinyl'
             });
@@ -170,7 +170,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.generate_high_res_asset({
+            await DirectorTools.generate_high_res_asset!({
                 prompt: 'Poster art',
                 templateType: 'poster'
             });
@@ -186,7 +186,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.generate_high_res_asset({
+            await DirectorTools.generate_high_res_asset!({
                 prompt: 'Poster art',
                 templateType: 'poster'
             });
@@ -214,7 +214,7 @@ describe('DirectorTools', () => {
             ];
             vi.mocked(Editing.batchEdit).mockResolvedValue({ results: mockResults, failures: [] });
 
-            const result = await DirectorTools.batch_edit_images({ prompt: 'Make it brighter' });
+            const result = await DirectorTools.batch_edit_images!({ prompt: 'Make it brighter' });
 
             expect(Editing.batchEdit).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -231,7 +231,7 @@ describe('DirectorTools', () => {
         it('returns error when no images uploaded', async () => {
             (useStore.getState as any).mockReturnValue(createMockStoreState({ uploadedImages: [] }));
 
-            const result = await DirectorTools.batch_edit_images({ prompt: 'Edit' });
+            const result = await DirectorTools.batch_edit_images!({ prompt: 'Edit' });
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('No images found');
@@ -243,7 +243,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'grid-1', url: 'data:image/png;base64,grid', prompt: 'grid' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.render_cinematic_grid({ prompt: 'Action scene' });
+            await DirectorTools.render_cinematic_grid!({ prompt: 'Action scene' });
 
             expect(ImageGeneration.generateImages).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -260,7 +260,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'grid-1', url: 'data:image/png;base64,grid', prompt: 'grid' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.render_cinematic_grid({ prompt: 'Scene with character' });
+            await DirectorTools.render_cinematic_grid!({ prompt: 'Scene with character' });
 
             expect(ImageGeneration.generateImages).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -274,7 +274,7 @@ describe('DirectorTools', () => {
         it('returns error when no grid image exists', async () => {
             (useStore.getState as any).mockReturnValue(createMockStoreState({ generatedHistory: [] }));
 
-            const result = await DirectorTools.extract_grid_frame({ gridIndex: 0 });
+            const result = await DirectorTools.extract_grid_frame!({ gridIndex: 0 });
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('No grid image found');
@@ -292,7 +292,7 @@ describe('DirectorTools', () => {
             }];
             (useStore.getState as any).mockReturnValue(createMockStoreState({ generatedHistory: mockHistory }));
 
-            const result = await DirectorTools.extract_grid_frame({ gridIndex: 5 });
+            const result = await DirectorTools.extract_grid_frame!({ gridIndex: 5 });
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('Invalid grid index');
@@ -301,7 +301,7 @@ describe('DirectorTools', () => {
 
     describe('add_character_reference', () => {
         it('validates base64 data URI format', async () => {
-            const result = await DirectorTools.add_character_reference({ image: 'invalid-data' });
+            const result = await DirectorTools.add_character_reference!({ image: 'invalid-data' });
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('Invalid image data');
@@ -315,7 +315,7 @@ describe('DirectorTools', () => {
                 addToHistory: mockAddToHistory
             }));
 
-            const result = await DirectorTools.add_character_reference({
+            const result = await DirectorTools.add_character_reference!({
                 image: 'data:image/png;base64,validdata'
             });
 
@@ -335,7 +335,7 @@ describe('DirectorTools', () => {
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
 
-            await DirectorTools.run_showroom_mockup({
+            await DirectorTools.run_showroom_mockup!({
                 productType: 'vinyl record',
                 scenePrompt: 'on a wooden shelf'
             });

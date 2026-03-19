@@ -88,7 +88,7 @@ export class AgentBuilder {
         this.config.tools.push(definition);
 
         if (implementation && definition.functionDeclarations.length > 0) {
-            const name = definition.functionDeclarations[0].name;
+            const name = definition.functionDeclarations[0]!.name;
             if (!this.config.functions) {
                 this.config.functions = {};
             }

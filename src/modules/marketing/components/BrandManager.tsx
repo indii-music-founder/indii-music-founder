@@ -350,7 +350,7 @@ const BrandManager: React.FC = () => {
             setAnalysisResult(result);
             const newHistoryItem = {
                 id: Date.now().toString(),
-                date: new Date().toISOString().split('T')[0],
+                date: new Date().toISOString().split('T')[0]!,
                 type: contentType,
                 score: result.score,
                 content: contentToCheck.substring(0, 30) + (contentToCheck.length > 30 ? '...' : ''),
@@ -358,7 +358,7 @@ const BrandManager: React.FC = () => {
                 suggestions: result.suggestions
             };
 
-            const updatedHistory = [newHistoryItem, ...(brandKit.healthHistory || []).map(h => ({ ...h, date: h.date ?? '' }))].slice(0, 10);
+            const updatedHistory: { id: string; date: string; type: string; score: number; content: string; issues: string[]; suggestions: string[] }[] = [newHistoryItem, ...(brandKit.healthHistory || []).map(({ date, type, ...rest }) => ({ ...rest, date: date ?? '', type: type as string }))].slice(0, 10);
             updateBrandKit({ healthHistory: updatedHistory });
             saveBrandKit({ healthHistory: updatedHistory });
 

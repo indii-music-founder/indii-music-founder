@@ -175,7 +175,7 @@ describe('Distribution System Verification', () => {
             const result = await symphonic.createRelease(mockMetadata as any, mockAssets as any);
             // Current stub returns success: false
             expect(result.success).toBe(false);
-            expect(result.errors?.[0].code).toBe('DELIVERY_UNAVAILABLE');
+            expect(result!.errors?.[0].code).toBe('DELIVERY_UNAVAILABLE');
             expect(result.distributorReleaseId).toBeDefined();
         });
     });

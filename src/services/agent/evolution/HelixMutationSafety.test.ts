@@ -110,7 +110,7 @@ describe('🧬 Helix: Mutation Safety (Evolutionary Loop)', () => {
     // A. Population Integrity: Should only contain the Elite (since no offspring survived)
     // Config: EliteCount = 1.
     expect(nextGen).toHaveLength(1);
-    expect(nextGen[0].id).toBe('p1'); // p1 is first in list, assuming fit. (Mock fitness is 1.0)
+    expect(nextGen[0]!.id).toBe('p1'); // p1 is first in list, assuming fit. (Mock fitness is 1.0)
 
     // B. Infinite Loop Check: Verify we didn't run forever, but DID try enough times
     // MAX_ATTEMPTS = 4 * 5 = 20.

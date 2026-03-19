@@ -118,7 +118,7 @@ describe('TouringService', () => {
                 { id: '1', ...validItinerary }
             ]);
             // Should contain only the valid one
-            expect(callback.mock.calls[0][0]).toHaveLength(1);
+            expect(callback.mock.calls[0]![0]).toHaveLength(1);
         });
     });
 });

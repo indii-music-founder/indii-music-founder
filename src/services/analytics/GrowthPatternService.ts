@@ -158,10 +158,10 @@ export class GrowthPatternService {
 
     private _detect72HourSpike(history: { date: string; streams: number }[]): DetectedPattern | null {
         if (history.length < 5) return null;
-        const day1 = history[0].streams;
-        const day2 = history[1].streams;
-        const day3 = history[2].streams;
-        const day4 = history[3].streams;
+        const day1 = history[0]!.streams;
+        const day2 = history[1]!.streams;
+        const day3 = history[2]!.streams;
+        const day4 = history[3]!.streams;
         const avg4to7 = history.slice(4, 7).reduce((s, d) => s + d.streams, 0) / 3;
 
         // Spike pattern: peaks around day 1-3, then stabilizes
@@ -206,7 +206,7 @@ export class GrowthPatternService {
 
     private _detectRegionalSpark(track: TrackAnalytics): DetectedPattern | null {
         if (!track.regions.length) return null;
-        const top = track.regions[0];
+        const top = track.regions[0]!;
         const total = track.regions.reduce((s, r) => s + r.streams, 0);
         const topShare = total > 0 ? top.streams / total : 0;
 

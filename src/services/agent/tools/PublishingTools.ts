@@ -2,7 +2,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 
-export const PublishingTools: Record<string, AnyToolFunction> = {
+export const PublishingTools = {
     query_pro_database: wrapTool('query_pro_database', async (args: {
         trackTitle: string;
         writers?: string[];
@@ -61,6 +61,6 @@ export const PublishingTools: Record<string, AnyToolFunction> = {
             message: `"${args.trackTitle}" not found in local catalog. No PRO API key configured — verify manually at ${pro === 'ASCAP' ? 'https://www.ascap.com/repertory' : pro === 'BMI' ? 'https://repertoire.bmi.com' : 'https://www.sesac.com'} before registering.`
         }, `"${args.trackTitle}" not found in the local catalog. Manual verification at ${pro} is required before new registration.`);
     })
-};
+} satisfies Record<string, AnyToolFunction>;
 
 export const { query_pro_database } = PublishingTools;

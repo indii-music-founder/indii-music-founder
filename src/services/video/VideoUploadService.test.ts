@@ -106,7 +106,7 @@ describe('VideoUploadService', () => {
         await VideoUploadService.uploadVideo(file, 'videos/testuser/meta.mp4');
 
         const { uploadBytesResumable } = await import('firebase/storage');
-        const callArgs = (uploadBytesResumable as ReturnType<typeof vi.fn>).mock.calls[0][2];
+        const callArgs = !(uploadBytesResumable as ReturnType<typeof vi.fn>).mock.calls[0][2];
         expect(callArgs.customMetadata).toHaveProperty('generatedAt');
         expect(callArgs.customMetadata.source).toBe('veo-pipeline');
     });

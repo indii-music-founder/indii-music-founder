@@ -7,7 +7,7 @@ import { logger } from '@/utils/logger';
  * Provides browser automation via the Electron IPC bridge (native desktop).
  * Web sessions without the IPC bridge return a clear error — no silent fallback.
  */
-export const BrowserTools: Record<string, AnyToolFunction> = {
+export const BrowserTools = {
     /**
      * Navigates to a URL and returns a snapshot of the page.
      */
@@ -76,4 +76,4 @@ export const BrowserTools: Record<string, AnyToolFunction> = {
             return toolError(`Failed to invoke browser snapshot: ${String(error)}`, 'BROWSER_INVOKE_ERROR');
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;

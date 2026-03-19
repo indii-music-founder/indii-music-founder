@@ -3,7 +3,7 @@ import type { AnyToolFunction } from '../types';
 import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-export const SovereignTools: Record<string, AnyToolFunction> = {
+export const SovereignTools = {
     /**
      * Creates a "Sovereign Artifact Drop" - a high-value purchase link for assets.
      * Packages artwork, audio, and a generated license into a single commercial artifact.
@@ -55,4 +55,4 @@ export const SovereignTools: Record<string, AnyToolFunction> = {
             return toolError(`Failed to create artifact drop: ${message}`, "DROP_FAILED");
         }
     })
-};
+} satisfies Record<string, AnyToolFunction>;

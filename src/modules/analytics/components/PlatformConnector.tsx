@@ -37,7 +37,6 @@ interface PlatformDef {
     bgColor: string;
     borderColor: string;
     icon: React.ReactNode;
-    comingSoon?: boolean;
 }
 
 const PLATFORMS: PlatformDef[] = [
@@ -266,11 +265,9 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className={`relative rounded-xl border p-4 transition-all duration-200 ${
-                                    platform.comingSoon
-                                        ? 'border-white/8 bg-slate-800/30 opacity-60'
-                                        : isConnected
-                                            ? `${platform.borderColor} ${platform.bgColor}`
-                                            : 'border-white/8 bg-slate-800/40 hover:bg-slate-800/70'
+                                    isConnected
+                                        ? `${platform.borderColor} ${platform.bgColor}`
+                                        : 'border-white/8 bg-slate-800/40 hover:bg-slate-800/70'
                                 }`}
                             >
                                 {/* Header */}
@@ -284,10 +281,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                                 {platform.label}
                                             </p>
                                             <div className="mt-0.5">
-                                                {platform.comingSoon
-                                                    ? <span className="text-[10px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full">Coming soon</span>
-                                                    : <StatusPill connected={isConnected} />
-                                                }
+                                                <StatusPill connected={isConnected} />
                                             </div>
                                         </div>
                                     </div>
@@ -324,28 +318,26 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                 </AnimatePresence>
 
                                 {/* Action button */}
-                                {!platform.comingSoon && (
-                                    <button
-                                        onClick={() => isConnected ? handleDisconnect(platform.id) : handleConnect(platform.id)}
-                                        disabled={isLoading}
-                                        className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-50 ${
-                                            isConnected
-                                                ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-white/10'
-                                                : `${platform.bgColor} border ${platform.borderColor} ${platform.color} hover:brightness-125`
-                                        }`}
-                                    >
-                                        {isLoading ? (
-                                            <Loader2 size={12} className="animate-spin" />
-                                        ) : isConnected ? (
-                                            'Disconnect'
-                                        ) : (
-                                            <>
-                                                <ExternalLink size={11} />
-                                                Connect {platform.label}
-                                            </>
-                                        )}
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => isConnected ? handleDisconnect(platform.id) : handleConnect(platform.id)}
+                                    disabled={isLoading}
+                                    className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-50 ${
+                                        isConnected
+                                            ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-white/10'
+                                            : `${platform.bgColor} border ${platform.borderColor} ${platform.color} hover:brightness-125`
+                                    }`}
+                                >
+                                    {isLoading ? (
+                                        <Loader2 size={12} className="animate-spin" />
+                                    ) : isConnected ? (
+                                        'Disconnect'
+                                    ) : (
+                                        <>
+                                            <ExternalLink size={11} />
+                                            Connect {platform.label}
+                                        </>
+                                    )}
+                                </button>
                             </motion.div>
                         );
                     })}

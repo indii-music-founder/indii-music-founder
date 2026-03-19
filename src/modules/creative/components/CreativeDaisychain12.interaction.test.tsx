@@ -225,13 +225,13 @@ describe('Creative Director 12-Click Daisychain', () => {
         render(<DaisychainApp />);
 
         // --- CLICK 1: Like Item A in Gallery ---
-        const likeBtn = screen.getAllByTestId('like-btn')[0];
+        const likeBtn = screen.getAllByTestId('like-btn')[0]!;
         fireEvent.click(likeBtn);
         expect(mockToastSuccess).toHaveBeenCalledWith("Feedback recorded: Liked");
 
         // --- CLICK 2: Maximize Item A ---
         const maximizeButtons = screen.getAllByTestId('view-fullsize-btn');
-        fireEvent.click(maximizeButtons[0]); // Item A
+        fireEvent.click(maximizeButtons[0]!); // Item A
 
         // Updated: The "Refine" button now triggers Magic Fill.
         const refineBtn = await screen.findByTestId('magic-generate-btn');
@@ -321,7 +321,7 @@ describe('Creative Director 12-Click Daisychain', () => {
 
         // --- CLICK 14: Set Item B as Character Reference (Originally 12) ---
         const anchorButtons = screen.getAllByTestId('set-anchor-btn');
-        fireEvent.click(anchorButtons[1]); // Anchor for Item B
+        fireEvent.click(anchorButtons[1]!); // Anchor for Item B
         expect(mockAddCharacterReference).toHaveBeenCalledWith({ image: mockItemB, referenceType: 'subject' });
         expect(mockToastSuccess).toHaveBeenCalledWith("Character Reference Set");
     });

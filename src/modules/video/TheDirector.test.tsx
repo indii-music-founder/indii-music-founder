@@ -41,13 +41,13 @@ describe('The Director 🎬', () => {
         // Move the last added clip to the beginning (Time 0)
         const lastClip = currentClips[currentClips.length - 1];
         act(() => {
-            useVideoEditorStore.getState().updateClip(lastClip.id, {
+            useVideoEditorStore.getState().updateClip(lastClip!.id, {
                 startFrame: 0,
                 trackId: 'track-2' // Move to different track to avoid overlap logic (if any)
             });
         });
 
-        const updatedLastClip = useVideoEditorStore.getState().project.clips.find(c => c.id === lastClip.id);
+        const updatedLastClip = useVideoEditorStore.getState().project.clips.find(c => c.id === lastClip!.id);
         expect(updatedLastClip?.startFrame).toBe(0);
         expect(updatedLastClip?.trackId).toBe('track-2');
 

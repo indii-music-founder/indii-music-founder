@@ -228,7 +228,7 @@ export class SocialService {
     // Validate Input
     const validation = CreatePostRequestSchema.safeParse({ content, mediaUrls, productId });
     if (!validation.success) {
-      throw new Error(`Invalid post content: ${validation.error.issues[0].message}`);
+      throw new Error(`Invalid post content: ${validation.error.issues[0]!.message}`);
     }
 
     const postData = {

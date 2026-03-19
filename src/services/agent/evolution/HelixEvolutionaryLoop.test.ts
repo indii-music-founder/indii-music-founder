@@ -89,29 +89,29 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
 
     // 4. Assert: Selection (Elitism)
     // The top 2 agents must survive strictly based on fitness
-    expect(nextGen[0].id).toBe('Agent-A');
-    expect(nextGen[0].fitness).toBe(100);
-    expect(nextGen[1].id).toBe('Agent-B');
-    expect(nextGen[1].fitness).toBe(80);
+    expect(nextGen[0]!.id).toBe('Agent-A');
+    expect(nextGen[0]!.fitness).toBe(100);
+    expect(nextGen[1]!.id).toBe('Agent-B');
+    expect(nextGen[1]!.fitness).toBe(80);
 
     // 5. Assert: The Offspring (Breeding)
     const offspring = nextGen[2];
 
     // Identity: Must be new
-    expect(offspring.id).not.toBe('Agent-A');
-    expect(offspring.id).not.toBe('Agent-B');
-    expect(offspring.id).not.toBe('Agent-C');
+    expect(offspring!.id).not.toBe('Agent-A');
+    expect(offspring!.id).not.toBe('Agent-B');
+    expect(offspring!.id).not.toBe('Agent-C');
 
     // Lineage: Must have distinct parents (Sexual Selection)
-    expect(offspring.lineage).toHaveLength(2);
-    expect(offspring.lineage[0]).not.toBe(offspring.lineage[1]);
+    expect(offspring!.lineage).toHaveLength(2);
+    expect(offspring!.lineage[0]).not.toBe(offspring!.lineage[1]);
 
     // Mutation: Gemini 3 Pro Signature
-    expect(offspring.systemPrompt).toContain('[GEMINI-3-PRO-EVOLVED]');
-    expect(offspring.parameters.temperature).toBe(0.99);
+    expect(offspring!.systemPrompt).toContain('[GEMINI-3-PRO-EVOLVED]');
+    expect(offspring!.parameters.temperature).toBe(0.99);
 
     // Time: Generation must advance
-    expect(offspring.generation).toBe(1);
+    expect(offspring!.generation).toBe(1);
   });
 
   it('Fitness Validator: Zero-fitness agents are strictly excluded from mating', async () => {
@@ -151,7 +151,7 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
 
     // Should return sorted population without breeding
     expect(nextGen).toHaveLength(3);
-    expect(nextGen[0].id).toBe('Old-1');
+    expect(nextGen[0]!.id).toBe('Old-1');
     expect(mockCrossoverFn).not.toHaveBeenCalled();
     expect(mockMutationFn).not.toHaveBeenCalled();
   });
@@ -180,7 +180,7 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
 
     // We expect the 3rd slot (offspring) to be the valid one
     const offspring = nextGen[2];
-    expect(offspring.parameters.temperature).toBe(0.7);
+    expect(offspring!.parameters.temperature).toBe(0.7);
     expect(mockMutationFn).toHaveBeenCalledTimes(3); // 2 fails + 1 success
   });
 
@@ -209,7 +209,7 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
 
     // We expect the 3rd slot (offspring) to be the valid one
     const offspring = nextGen[2];
-    expect(offspring.systemPrompt).toBe('Valid Compact Prompt');
+    expect(offspring!.systemPrompt).toBe('Valid Compact Prompt');
     expect(mockMutationFn).toHaveBeenCalledTimes(2); // 1 fail + 1 success
   });
 
@@ -255,11 +255,11 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
     // Offspring is at index 2 (EliteCount=2)
     const offspring = nextGen[2];
 
-    expect(offspring.id).not.toBe('Parent-A');
-    expect(offspring.id).not.toBe('Parent-B');
-    expect(offspring.systemPrompt).not.toBe('Prompt A');
-    expect(offspring.systemPrompt).not.toBe('Prompt B');
+    expect(offspring!.id).not.toBe('Parent-A');
+    expect(offspring!.id).not.toBe('Parent-B');
+    expect(offspring!.systemPrompt).not.toBe('Prompt A');
+    expect(offspring!.systemPrompt).not.toBe('Prompt B');
     // Ensure mutation happened (based on our mock that adds [GEMINI-3-PRO-EVOLVED])
-    expect(offspring.systemPrompt).toContain('[GEMINI-3-PRO-EVOLVED]');
+    expect(offspring!.systemPrompt).toContain('[GEMINI-3-PRO-EVOLVED]');
   });
 });

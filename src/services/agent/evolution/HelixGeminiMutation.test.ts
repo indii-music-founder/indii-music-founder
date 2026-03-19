@@ -69,9 +69,9 @@ describe('🧬 Helix: Gemini 3 Pro Mutation Integration', () => {
 
     // B. Elitism Check (Agent 1 must survive as is)
     const elite = nextGen[0];
-    expect(elite.id).toBe('agent-1');
-    expect(elite.fitness).toBe(1.0);
-    expect(elite.systemPrompt).not.toContain('GEMINI-ENHANCED'); // Elites are not mutated
+    expect(elite!.id).toBe('agent-1');
+    expect(elite!.fitness).toBe(1.0);
+    expect(elite!.systemPrompt).not.toContain('GEMINI-ENHANCED'); // Elites are not mutated
 
     // C. Offspring Validation (Agent 2 or 3 parents)
     // Check the new agents
@@ -136,6 +136,6 @@ describe('🧬 Helix: Gemini 3 Pro Mutation Integration', () => {
 
     // Assert we have a full population of good genes
     expect(nextGen).toHaveLength(3);
-    expect(nextGen[1].parameters).not.toBeNull();
+    expect(nextGen[1]!.parameters).not.toBeNull();
   });
 });
