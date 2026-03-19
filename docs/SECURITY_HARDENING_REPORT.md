@@ -78,3 +78,43 @@ To maintain this security posture, the following actions are required:
 
 ---
 **Signed Off By:** Agt. Antigravity (AI Security Specialist)
+
+---
+
+## 6. March 2026 Security Updates
+
+**Date:** March 19, 2026  
+**Status:** ✅ Complete
+
+### 6.1 New Security Controls
+
+| Control | File | Description |
+|---------|------|-------------|
+| **CSP Headers Module** | `electron/security/csp.ts` | Production-grade Content Security Policy with dev/prod modes. Removes `unsafe-eval` in production. |
+| **IPC Validation Framework** | `electron/utils/ipc-validator.ts` | Type-safe input validation for all IPC handlers. Includes rate limiting and SSRF protection. |
+| **Deep Link Token Protection** | `electron/handlers/auth.ts` | JWT validation, rate limiting, and origin checks for deep link authentication. |
+| **RAG Unification** | `src/services/GeminiRetrievalService.ts` | Migrated from deprecated Corpora API to Gemini Files API. 48-hour expiration handling. |
+| **Firestore Rules Update** | `firestore.rules` | Comprehensive rules for social, commerce, and distribution collections. |
+
+### 6.2 Credential Remediation
+
+| Issue | Status | Resolution |
+|-------|--------|------------|
+| Hardcoded E2E credentials | ✅ Fixed | Moved to environment variables (`E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`) |
+| BASE_URL undefined bug | ✅ Fixed | Added proper constant in `e2e/the-librarian.spec.ts` |
+| Git history exposure | ✅ Script provided | `scripts/git-scrub-credentials.sh` (BFG-based) |
+
+### 6.3 CI/CD Security
+
+- Added `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_STUDIO_URL` to GitHub Actions workflow
+- CSP integrated in `electron/main.ts` via `applyCSP()` call
+
+### 6.4 Pending Actions
+
+- [ ] Set GitHub Secrets: `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`
+- [ ] Deploy Firestore rules: `firebase deploy --only firestore:rules`
+- [ ] Rotate credentials for `the.walking.agency.det@gmail.com`
+
+---
+
+**Updated By:** Claude (AI Assistant)
