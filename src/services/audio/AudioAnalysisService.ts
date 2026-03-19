@@ -6,6 +6,42 @@ import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { logger } from '@/utils/logger';
 
+/**
+ * Types for Essentia.js WASM module interop.
+ * The library has inconsistent exports across build targets (ESM vs CJS vs Vite),
+ * so we model the various shapes it can take at runtime.
+ */
+interface EssentiaWASMConfig {
+    locateFile: (path: string) => string;
+}
+
+/** The WASM module can be a factory function or an already-instantiated object */
+type EssentiaWASMFactory = (config: EssentiaWASMConfig) => Promise<EssentiaWASMInstance>;
+
+interface EssentiaWASMInstance {
+    EssentiaWASM?: EssentiaWASMInstance;
+    [key: string]: unknown;
+}
+
+interface EssentiaImport {
+    Essentia: EssentiaModule['Essentia'];
+    EssentiaWASM?: EssentiaWASMFactory | EssentiaWASMInstance;
+    default?: {
+        EssentiaWASM?: EssentiaWASMFactory | EssentiaWASMInstance;
+    };
+}
+
+/** Extended essentia instance with optional vector cleanup */
+interface EssentiaInstance extends InstanceType<EssentiaModule['Essentia']> {
+    deleteVector?: (vector: unknown) => void;
+}
+
+declare global {
+    interface Window {
+        EssentiaWASM?: EssentiaWASMConfig;
+    }
+}
+
 export interface TechnicalAudit {
     peakLevel: number;
     integratedLoudness: number;
@@ -45,7 +81,7 @@ export interface DeepAudioFeatures extends AudioFeatures {
 const GENRE_LABELS = ['Classical', 'Dance', 'Hip-Hop', 'Jazz', 'Metal', 'Pop', 'Reggae', 'Rock'];
 
 export class AudioAnalysisService {
-    private essentia: InstanceType<EssentiaModule['Essentia']> | null = null;
+    private essentia: EssentiaInstance | null = null;
     private initPromise: Promise<void> | null = null;
 
     // private models: { [key: string]: any } = {}; // Removed
@@ -66,34 +102,34 @@ export class AudioAnalysisService {
 
                 logger.debug(`[AudioAnalysis] WASM URL: ${wasmUrl}`);
 
-                (window as any).EssentiaWASM = {
+                (window).EssentiaWASM = {
                     locateFile: (path: string) => {
                         if (path.endsWith('.wasm')) return wasmUrl;
                         return path;
                     }
                 };
 
-                const imported = await import('essentia.js') as any;
+                const imported: EssentiaImport = await import('essentia.js');
                 const { Essentia } = imported;
-                let { EssentiaWASM } = imported;
+                let EssentiaWASM = imported.EssentiaWASM;
 
                 // Handle Vite/Rollup interop for EssentiaWASM import
                 if (!EssentiaWASM && imported.default?.EssentiaWASM) {
                     EssentiaWASM = imported.default.EssentiaWASM;
                 }
 
-                let moduleInstance;
+                let moduleInstance: EssentiaWASMInstance | undefined;
                 if (typeof EssentiaWASM === 'function') {
-                    moduleInstance = await (EssentiaWASM as any)({
+                    moduleInstance = await EssentiaWASM({
                         locateFile: (path: string) => {
                             if (path.endsWith('.wasm')) return wasmUrl;
                             return path;
                         }
                     });
-                } else {
+                } else if (EssentiaWASM) {
                     // Check if EssentiaWASM is nested (common in some builds)
-                    if ((EssentiaWASM as any).EssentiaWASM) {
-                        moduleInstance = (EssentiaWASM as any).EssentiaWASM;
+                    if (EssentiaWASM.EssentiaWASM) {
+                        moduleInstance = EssentiaWASM.EssentiaWASM;
                     } else {
                         moduleInstance = EssentiaWASM;
                     }
@@ -320,8 +356,8 @@ export class AudioAnalysisService {
                 danceability_ml: danceabilityValue
             };
         } finally {
-            if ((this.essentia as any).deleteVector && signal) {
-                (this.essentia as any).deleteVector(signal);
+            if (this.essentia?.deleteVector && signal) {
+                this.essentia.deleteVector(signal);
             }
         }
     }
@@ -329,7 +365,7 @@ export class AudioAnalysisService {
     /**
      * Saves analysis result to Firestore using the centralized persistence service.
      */
-    async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string, semantic?: any): Promise<void> {
+    async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string, semantic?: Record<string, unknown>): Promise<void> {
         const result = await metadataPersistenceService.save('audio', {
             filename,
             features: analysis,

@@ -28,6 +28,8 @@ import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
 import { SessionTimeoutOverlay } from '@/components/shared/SessionTimeoutOverlay';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
+import { getGatedModuleIds } from '@/config/featureFlags';
+import { GatedModuleFallback } from '@/core/components/GatedModuleFallback';
 import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
@@ -395,6 +397,12 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
                 <div className="text-sm text-gray-500">The page <code className="text-purple-400">/{moduleId}</code> doesn't exist.</div>
             </div>
         );
+    }
+
+    // Pre-launch feature gate: block direct URL navigation to gated modules
+    const gatedModules = getGatedModuleIds();
+    if (gatedModules.has(moduleId)) {
+        return <GatedModuleFallback moduleName={moduleId} />;
     }
 
     // Check for invalid sub-paths: if the URL has a sub-segment that is purely numeric

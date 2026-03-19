@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useGatedModules } from '@/config/featureFlags';
 
 // Navigation debounce interval in ms — prevents Firestore b815 crash from rapid module switching
 const NAV_DEBOUNCE_MS = 150;
@@ -132,6 +133,12 @@ export default function Sidebar() {
         { id: 'history', icon: Clock, label: 'History' },
     ];
 
+    // Pre-launch feature gating — filter out modules that are behind disabled flags
+    const gatedModules = useGatedModules();
+    const visibleManagerItems = managerItems.filter(item => !gatedModules.has(item.id));
+    const visibleDepartmentItems = departmentItems.filter(item => !gatedModules.has(item.id));
+    const visibleToolItems = toolItems.filter(item => !gatedModules.has(item.id));
+
     return (
         <motion.nav
             aria-label="Main navigation"
@@ -207,7 +214,7 @@ export default function Sidebar() {
                 <div data-testid="manager-section">
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Manager's Office</h3>}
                     <div className="space-y-0.5">
-                        {managerItems.map(item => (
+                        {visibleManagerItems.map(item => (
                             <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
                         ))}
                     </div>
@@ -217,7 +224,7 @@ export default function Sidebar() {
                 <div>
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Departments</h3>}
                     <div className="space-y-0.5">
-                        {departmentItems.map(item => (
+                        {visibleDepartmentItems.map(item => (
                             <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
                         ))}
                     </div>
@@ -227,7 +234,7 @@ export default function Sidebar() {
                 <div>
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Tools</h3>}
                     <div className="space-y-0.5">
-                        {toolItems.map(item => (
+                        {visibleToolItems.map(item => (
                             <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
                         ))}
                     </div>

@@ -72,14 +72,14 @@ const ensureGoogleMapsLoaded = (): Promise<void> => {
         }
 
         // Case 1: Places library is already loaded (by TourMap or MapsTools)
-        if ((window as any).google?.maps?.places?.PlacesService) {
+        if (typeof google !== 'undefined' && google.maps?.places?.PlacesService) {
             return;
         }
 
         // Case 2: Google Maps core is loaded but Places isn't — use importLibrary
-        if ((window as any).google?.maps?.importLibrary) {
+        if (typeof google !== 'undefined' && google.maps?.importLibrary) {
             logger.info('[NearbyPlaces] Loading Places library via importLibrary...');
-            await (window as any).google.maps.importLibrary('places');
+            await google.maps.importLibrary('places');
             return;
         }
 
@@ -95,8 +95,8 @@ const ensureGoogleMapsLoaded = (): Promise<void> => {
             if (existingScript) {
                 // Wait for it to load, then import Places
                 const waitForLoad = () => {
-                    if ((window as any).google?.maps?.importLibrary) {
-                        (window as any).google.maps.importLibrary('places').then(resolve).catch(reject);
+                    if (typeof google !== 'undefined' && google.maps?.importLibrary) {
+                        google.maps.importLibrary('places').then(() => resolve()).catch(reject);
                     } else {
                         setTimeout(waitForLoad, 200);
                     }
