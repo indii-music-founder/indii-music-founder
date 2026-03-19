@@ -1,47 +1,70 @@
 # Documentation Index
 
+**Last Updated:** 2026-03-19
+
 This directory contains detailed architectural and technical documentation for indiiOS.
 
-## Architecture
+---
 
-- [Agent System Architecture](./AGENT_SYSTEM_ARCHITECTURE.md)
-  - Details the "Hub-and-Spoke" model, `AgentService`, and specialist agent implementation.
-  - Explains the tool calling standard and future roadmap for the agent system.
+## 🏗️ Architecture
 
-- [Backend Architecture](./BACKEND_ARCHITECTURE.md)
-  - Outlines the hybrid client/server architecture.
-  - Documents the migration of heavy AI tasks (Image/Video generation) to Firebase Functions and Vertex AI.
-  - Lists available backend services and their triggers.
-- [Systems & Logic Hooks](./HOOKS.md)
-  - Documents the Antigravity Protocol (System AI Hooks) and Core React Hooks logic.
-  - Tracking status for Alpha release-ready hooks.
-- [Application & Code Overview](./APP_OVERVIEW.md)
-  - Maps product surfaces (Landing, Studio, Electron) to repository directories.
-  - Summarizes core creative suites, operational modules, and the multi-agent hub/spoke model.
-  - Highlights frontend layering, backend functions, and how to extend the platform safely.
+| Document | Description |
+|----------|-------------|
+| [APP_OVERVIEW.md](./APP_OVERVIEW.md) | Product surfaces, repository structure, extension guide |
+| [AGENT_SYSTEM_ARCHITECTURE.md](./AGENT_SYSTEM_ARCHITECTURE.md) | Hub-and-spoke model, specialists, tool calling |
+| [BACKEND_ARCHITECTURE.md](./BACKEND_ARCHITECTURE.md) | Firebase Functions, Vertex AI, hybrid architecture |
 
-## AI Models & Capabilities
+## 🔐 Security
 
-- [Audio Generation & TTS](./AUDIO_GENERATION.md)
-  - Documentation for Gemini 2.5 Flash and Pro TTS models.
-  - Covers expressivity, pacing, and multi-speaker capabilities.
+| Document | Description |
+|----------|-------------|
+| [SECURITY_HARDENING_REPORT.md](./SECURITY_HARDENING_REPORT.md) | Commercial-grade hardening, vulnerability matrix |
+| [PRODUCTION_SECURITY_PROTOCOL.md](./PRODUCTION_SECURITY_PROTOCOL.md) | Zero Touch Prod, Security Rings |
+| [API_CREDENTIALS_POLICY.md](./API_CREDENTIALS_POLICY.md) | Credential management policy |
 
-## UI & Design
+## 🚀 Operations
 
-- [UI State & Branding](./UI_STATE.md)
-  - Defines the "indii" brand identity and "Business Partner" persona.
-  - Lists critical "Do Not Break" rules for UI elements and copy.
-  - Tracks key visual components like the Landing Page and Creative Studio.
+| Document | Description |
+|----------|-------------|
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Build, deploy, Firebase hosting |
+| [HANDOFF.md](./HANDOFF.md) | Session handoff notes, current status |
 
-## Legacy & Archives
+## 🎨 UI & Design
 
-- [Legacy Architecture](./LEGACY_ARCHITECTURE.md)
-  - Documentation for the archived `src/_archive_legacy` directory (now removed).
-  - Kept for historical reference of the previous vanilla TypeScript implementation.
+| Document | Description |
+|----------|-------------|
+| [UI_STATE.md](./UI_STATE.md) | Brand identity, "Do Not Break" rules |
+| [UI_DESIGN_SYSTEM_STRATEGY.md](./UI_DESIGN_SYSTEM_STRATEGY.md) | Component kit, design tokens |
 
-## Research & Planning
+## 🤖 AI & Models
 
-- [Component Kit Research](./component-kit-research.md)
-  - Analysis of UI component libraries and design systems.
-- [Video Editing Deep Dive](./video-editing-deep-dive.md)
-  - Research into programmatic video editing tools (Remotion, etc.).
+| Document | Description |
+|----------|-------------|
+| [AUDIO_GENERATION.md](./AUDIO_GENERATION.md) | Gemini TTS models, expressivity |
+
+## 📚 Research & Planning
+
+| Document | Description |
+|----------|-------------|
+| [component-kit-research.md](./component-kit-research.md) | UI library analysis |
+| [video-editing-deep-dive.md](./video-editing-deep-dive.md) | Remotion, Motion Canvas |
+| [DDEX_IMPLEMENTATION_PLAN.md](./DDEX_IMPLEMENTATION_PLAN.md) | Distribution infrastructure |
+
+## 🗄️ Archive
+
+Historical documentation moved to `docs/_archive/`:
+
+| Document | Reason |
+|----------|--------|
+| ELECTRON_AUTH_FIX_STATUS.md | Auth fix completed |
+| RAG_STATUS.md | Migrated to Files API |
+| SECURITY_AUDIT_LOG_2025-12-12.md | Issues addressed |
+
+---
+
+## Quick Links
+
+- **New to the project?** → [APP_OVERVIEW.md](./APP_OVERVIEW.md)
+- **Deploying?** → [DEPLOYMENT.md](./DEPLOYMENT.md)
+- **Security status?** → [SECURITY_HARDENING_REPORT.md](./SECURITY_HARDENING_REPORT.md)
+- **Session context?** → [HANDOFF.md](./HANDOFF.md)
