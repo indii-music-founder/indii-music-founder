@@ -112,7 +112,7 @@ describe('VideoTimeline', () => {
         const projectWithKeyframe = {
             ...mockProject,
             clips: [{
-                ...mockProject.clips[0],
+                ...mockProject.clips[0]!,
                 keyframes: {
                     scale: [{ frame: 10, value: 1.5, easing: 'linear' as const }]
                 }
@@ -136,7 +136,7 @@ describe('VideoTimeline', () => {
         const projectWithKeyframe = {
             ...mockProject,
             clips: [{
-                ...mockProject.clips[0],
+                ...mockProject.clips[0]!,
                 keyframes: {
                     scale: [{ frame: 10, value: 1.5, easing: 'linear' as const }]
                 }

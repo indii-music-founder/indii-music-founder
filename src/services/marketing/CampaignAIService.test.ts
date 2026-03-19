@@ -103,7 +103,7 @@ describe('CampaignAIService', () => {
 
             await CampaignAI.generateCampaign(brief);
 
-            const callArgs = !(AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
+            const callArgs = (AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0]![0];
             expect(callArgs).toContain('Test Artist');
             expect(callArgs).toContain('indie pop artist');
             expect(callArgs).toContain('Midnight Dreams');
@@ -225,7 +225,7 @@ describe('CampaignAIService', () => {
 
             await CampaignAI.enhancePostCopy(post, 'shorter');
 
-            const callArgs = !(AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
+            const callArgs = (AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0]![0];
             expect(callArgs).toContain('Twitter');
             expect(callArgs).toContain('280'); // Twitter character limit
         });
@@ -520,7 +520,7 @@ describe('CampaignAIService', () => {
 
             await CampaignAI.predictEngagement(campaign);
 
-            const callArgs = !(AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0][0];
+            const callArgs = (AI.generateStructuredData as ReturnType<typeof vi.fn>).mock.calls[0]![0];
             expect(callArgs).toContain('Album Launch');
             expect(callArgs).toContain('14 days');
         });

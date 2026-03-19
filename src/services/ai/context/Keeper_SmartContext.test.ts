@@ -48,9 +48,9 @@ describe('📚 Keeper: Smart Context Window', () => {
         // Indices: 0, 1, 2, ..., 9.
         // Target: Keep 0 (Anchor), 8, 9 (Recent). Drop 1..7.
 
-        const anchor = messages[0];
-        const recent1 = messages[8];
-        const recent2 = messages[9];
+        const anchor = messages[0]!;
+        const recent1 = messages[8]!;
+        const recent2 = messages[9]!;
 
         const keepTokens = getTokens([anchor, recent1, recent2]);
         // Set limit exactly to what we want to keep + a tiny buffer that is NOT enough for another message
@@ -71,7 +71,7 @@ describe('📚 Keeper: Smart Context Window', () => {
         );
         // 0 (Anchor), 1, 2, 3 (Recent), 4 (Recent)
 
-        const recentTokens = getTokens([messages[3], messages[4]]);
+        const recentTokens = getTokens([messages[3]!, messages[4]!]);
         const limit = recentTokens + 2;
 
         // Logic check:

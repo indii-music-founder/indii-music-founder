@@ -25,7 +25,7 @@ describe('PODCredentialService', () => {
             await PODCredentialService.saveCredential(USER_ID, 'printful', 'pk_test_abc');
 
             expect(mockSetDoc).toHaveBeenCalledOnce();
-            const [, data, options] = mockSetDoc.mock.calls[0];
+            const [, data, options] = mockSetDoc.mock.calls[0]!;
             expect(data).toEqual({ printful: 'pk_test_abc' });
             expect(options).toEqual({ merge: true });
         });
@@ -34,7 +34,7 @@ describe('PODCredentialService', () => {
             mockSetDoc.mockResolvedValueOnce(undefined as unknown as void);
             await PODCredentialService.saveCredential(USER_ID, 'printify', 'py_key_xyz');
 
-            const [, data] = mockSetDoc.mock.calls[0];
+            const [, data] = mockSetDoc.mock.calls[0]!;
             expect(data).toEqual({ printify: 'py_key_xyz' });
         });
     });
@@ -128,7 +128,7 @@ describe('PODCredentialService', () => {
             await PODCredentialService.removeCredential(USER_ID, 'printful');
 
             expect(mockUpdateDoc).toHaveBeenCalledOnce();
-            const [, fields] = mockUpdateDoc.mock.calls[0];
+            const [, fields] = mockUpdateDoc.mock.calls[0]!;
             // deleteField() returns a sentinel object — just verify the key exists
             expect(Object.keys(fields as object)).toContain('printful');
         });

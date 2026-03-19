@@ -44,7 +44,7 @@ describe('ERNMapper - Comprehensive Deal Types', () => {
         const streamDeal = deals.find(d => d.dealTerms.usage[0]!.useType === 'OnDemandStream');
         expect(streamDeal).toBeDefined();
         // This is expected to fail before implementation
-        expect(streamDeal?.dealTerms.usage[0].distributionChannelType).toBe('Stream');
+        expect(streamDeal?.dealTerms.usage[0]!.distributionChannelType).toBe('Stream');
     });
 
     it('should include distributionChannelType="Download" for download deals', () => {
@@ -59,6 +59,6 @@ describe('ERNMapper - Comprehensive Deal Types', () => {
         const downloadDeal = deals.find(d => d.dealTerms.usage[0]!.useType === 'PermanentDownload');
         expect(downloadDeal).toBeDefined();
         // This is expected to fail before implementation
-        expect(downloadDeal?.dealTerms.usage[0].distributionChannelType).toBe('Download');
+        expect(downloadDeal?.dealTerms.usage[0]!.distributionChannelType).toBe('Download');
     });
 });

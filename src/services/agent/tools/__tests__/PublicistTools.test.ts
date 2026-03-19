@@ -68,7 +68,7 @@ describe('PublicistTools', () => {
         };
         (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
-        const result = await PublicistTools.pitch_story({ story_summary: 'We cool', outlet_type: 'blog' });
+        const result = await PublicistTools.pitch_story({ story_summary: 'We cool', recipient_type: 'blog' });
 
         expect(result.success).toBe(true);
         expect(result.data).toEqual(mockResponse);

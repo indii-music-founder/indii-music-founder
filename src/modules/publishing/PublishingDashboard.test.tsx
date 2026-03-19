@@ -193,8 +193,8 @@ describe('PublishingDashboard', () => {
         fireEvent.click(screen.getByLabelText('List view'));
         const checkboxes = screen.getAllByRole('checkbox');
         // Select first two items (index 0 is header checkbox)
-        fireEvent.click(checkboxes[1]);
-        fireEvent.click(checkboxes[2]);
+        fireEvent.click(checkboxes[1]!);
+        fireEvent.click(checkboxes[2]!);
 
         // Verify Bulk Action Bar appears
         expect(screen.getByText(/2 items? selected/i)).toBeInTheDocument();
@@ -258,7 +258,7 @@ describe('PublishingDashboard', () => {
         fireEvent.click(screen.getByLabelText('List view'));
         const checkboxes = screen.getAllByRole('checkbox');
         // Select item (index 0 is header)
-        fireEvent.click(checkboxes[1]);
+        fireEvent.click(checkboxes[1]!);
 
         // Find delete button in floating bar
         const deleteBtn = screen.getByRole('button', { name: /Delete/i });
@@ -292,7 +292,7 @@ describe('PublishingDashboard', () => {
         fireEvent.click(screen.getByLabelText('List view'));
         const checkboxes = screen.getAllByRole('checkbox');
         // Select item (index 0 is header)
-        fireEvent.click(checkboxes[1]);
+        fireEvent.click(checkboxes[1]!);
 
         // Find archive button
         const archiveBtn = screen.getByRole('button', { name: /Archive/i });

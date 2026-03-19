@@ -121,7 +121,7 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
         }));
 
         // Verify prompt enrichment
-        const callArgs = !(firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
         expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         expect(callArgs.prompt).toContain('9:16');
     });

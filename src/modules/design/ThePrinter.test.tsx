@@ -42,12 +42,12 @@ describe('The Printer 🖨️ - Physical Media Stress Test', () => {
     // Scenario 2: The Zoom Lens
     // Rapidly change props to trigger re-renders
     it('The Zoom Lens: Survives 100 rapid zoom updates', async () => {
-        const template = PHYSICAL_MEDIA_TEMPLATES.cd_front_cover;
+        const template = PHYSICAL_MEDIA_TEMPLATES.cd_front_cover!;
         const { rerender } = render(<PhysicalMediaLayout template={template} zoom={0.1} />);
 
         for (let i = 0; i < 100; i++) {
             // Simulate animation frame updates
-            rerender(<PhysicalMediaLayout template={template} zoom={0.1 + (i * 0.01)} />);
+            rerender(<PhysicalMediaLayout template={template!} zoom={0.1 + (i * 0.01)} />);
         }
         expect(true).toBe(true);
     });
@@ -59,7 +59,7 @@ describe('The Printer 🖨️ - Physical Media Stress Test', () => {
 
         for (let i = 0; i < 50; i++) {
             const t = templates[i % templates.length];
-            render(<PhysicalMediaLayout template={t} />);
+            render(<PhysicalMediaLayout template={t!} />);
             cleanup();
         }
         expect(true).toBe(true);

@@ -56,9 +56,9 @@ describe('FinanceTools', () => {
             const result = await FinanceTools.calculate_waterfall({
                 trackTitle: 'Test Track',
                 totalRevenue: 1000,
-                splits: [
-                    { party: 'Artist A', percentage: 50 },
-                    { party: 'Artist B', percentage: 50 },
+                payees: [
+                    { name: 'Artist A', percentage: 50, is1099Eligible: true },
+                    { name: 'Artist B', percentage: 50, is1099Eligible: false },
                 ],
             });
             expect(result).toBeDefined();

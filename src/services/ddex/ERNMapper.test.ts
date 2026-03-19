@@ -283,9 +283,9 @@ describe('ERNMapper', () => {
 
         expect(release!.rightsControllers).toBeDefined();
         expect(release!.rightsControllers).toHaveLength(1);
-        expect(release!.rightsControllers![0].partyName).toBe('Artist Records LLC');
-        expect(release!.rightsControllers![0].role).toBe('OriginalPublisher');
-        expect(release!.rightsControllers![0].rightSharePercentage).toBe(100);
+        expect(release!.rightsControllers![0]!.partyName).toBe('Artist Records LLC');
+        expect(release!.rightsControllers![0]!.role).toBe('OriginalPublisher');
+        expect(release!.rightsControllers![0]!.rightSharePercentage).toBe(100);
     });
 
     it('should NOT add RightsController when artist has an external publisher', () => {

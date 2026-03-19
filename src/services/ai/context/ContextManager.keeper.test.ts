@@ -53,7 +53,7 @@ describe('📚 Keeper: Context Window Integrity', () => {
         // Budget: Enough for Anchor + Recent (3 messages) + a tiny bit of wiggle room,
         // but DEFINITELY not enough for 4 messages.
         // We need to calculate the exact size of the ones we want to keep to set a tight limit.
-        const tokensToKeep = ContextManager.estimateContextTokens([history[0], history[4], history[5]]);
+        const tokensToKeep = ContextManager.estimateContextTokens([history[0]!, history[4]!, history[5]!]);
         const maxTokens = tokensToKeep + 2; // Allow tiny margin, but strictly less than adding another message
 
         // Act

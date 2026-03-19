@@ -85,7 +85,7 @@ describe('VideoPropertiesPanel', () => {
 
         // Find the keyframe button for Scale (first one usually, or use title)
         const keyframeButtons = screen.getAllByTitle('Add/Update Keyframe');
-        fireEvent.click(keyframeButtons[0]); // Scale is usually first
+        fireEvent.click(keyframeButtons[0]!); // Scale is usually first
 
         expect(mockUpdateClip).toHaveBeenCalledWith('clip-1', expect.objectContaining({
             keyframes: expect.objectContaining({
@@ -113,7 +113,7 @@ describe('VideoPropertiesPanel', () => {
         );
 
         const keyframeButtons = screen.getAllByTitle('Add/Update Keyframe');
-        fireEvent.click(keyframeButtons[0]); // Scale
+        fireEvent.click(keyframeButtons[0]!); // Scale
 
         // Should call update with the SAME frame but potentially new value (logic in component handles replace)
         // In our component, clicking adds/updates.
