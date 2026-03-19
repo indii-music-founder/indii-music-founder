@@ -91,7 +91,7 @@ vi.mock('@/utils/RequestBatcher', () => ({
         constructor(private processor: (items: T[]) => Promise<R[]>) { }
         async add(item: T): Promise<R> {
             const results = await this.processor([item]);
-            return results[0];
+            return results[0]!;
         }
     },
 }));

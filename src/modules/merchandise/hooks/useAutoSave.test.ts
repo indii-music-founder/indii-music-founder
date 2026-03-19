@@ -254,7 +254,7 @@ describe('useAutoSave', () => {
         });
         await waitFor(() => expect(result.current.isSaving).toBe(false));
 
-        const firstSaveCall = vi!.mocked(mockSetDoc).mock.calls[0][1];
+        const firstSaveCall = vi!.mocked(mockSetDoc).mock.calls[0]![1];
         expect(firstSaveCall).toHaveProperty('createdAt');
 
         // Second save
@@ -263,7 +263,7 @@ describe('useAutoSave', () => {
         });
         await waitFor(() => expect(result.current.isSaving).toBe(false));
 
-        const secondSaveCall = vi!.mocked(mockSetDoc).mock.calls[1][1] as any;
+        const secondSaveCall = vi!.mocked(mockSetDoc).mock.calls[1]![1] as any;
         expect(secondSaveCall.createdAt).toBeUndefined();
     });
 

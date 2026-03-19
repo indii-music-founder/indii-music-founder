@@ -41,6 +41,6 @@ describe('ContextResolver', () => {
 
         expect(context.whiskState).toEqual(mockWhiskState);
         expect(context.whiskState?.preciseReference).toBe(true);
-        expect(context!.whiskState?.subjects[0].content).toBe('Test Subject');
+        expect(context!.whiskState?.subjects[0]!.content).toBe('Test Subject');
     });
 });

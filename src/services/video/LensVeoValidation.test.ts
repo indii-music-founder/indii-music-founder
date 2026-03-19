@@ -210,8 +210,8 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
 
             // 16:9 check
             expect(job.output!.metadata!.resolution).toBeDefined();
-            const [w, h] = (job.output!.metadata!.resolution as string).split('x').map(Number);
-            const ratio = w / h;
+            const parts = (job.output!.metadata!.resolution as string).split('x').map(Number);
+            const ratio = parts[0]! / parts[1]!;
             expect(ratio).toBeCloseTo(16 / 9, 1);
         });
     });

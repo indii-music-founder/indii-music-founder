@@ -91,7 +91,7 @@ describe('GeneralistAgent', () => {
 
     it('handles tool execution errors gracefully', async () => {
         // Mock tool to throw an error
-        vi!.mocked(TOOL_REGISTRY.test_tool).mockRejectedValueOnce(new Error('Tool crashed'));
+        vi!.mocked(TOOL_REGISTRY.test_tool!).mockRejectedValueOnce(new Error('Tool crashed'));
 
         // First call returns function call that will fail
         // Second call returns recovery response
@@ -116,7 +116,7 @@ describe('GeneralistAgent', () => {
         // Should detect the loop and stop
         expect(result.error || result.text).toBeDefined();
         // Tool should be called at most twice before loop detection kicks in
-        expect(vi!.mocked(TOOL_REGISTRY.test_tool).mock.calls.length).toBeLessThanOrEqual(2);
+        expect(vi!.mocked(TOOL_REGISTRY.test_tool!).mock.calls.length).toBeLessThanOrEqual(2);
     });
 
     it('has proper tool declarations for native function calling', async () => {

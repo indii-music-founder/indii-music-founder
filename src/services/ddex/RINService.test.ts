@@ -18,7 +18,7 @@ describe('RINService', () => {
 
             // Check session mapping
             expect(recording!.studioSessions).toBeDefined();
-            expect(recording!.studioSessions?.[0].studioLocation.studioName).toBe('Home Studio');
+            expect(recording!.studioSessions?.[0]!.studioLocation.studioName).toBe('Home Studio');
         }
     });
 });

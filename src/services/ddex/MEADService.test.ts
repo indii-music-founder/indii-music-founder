@@ -25,16 +25,16 @@ describe('MEADService', () => {
         expect(mead.meadMessageContent.releases.length).toBe(1);
 
         const release = mead.meadMessageContent.releases[0];
-        expect(release!.detailsByTerritory[0].promotionalDetails?.marketingMessage).toBe('A revolutionary album that changes everything.');
+        expect(release!.detailsByTerritory[0]!.promotionalDetails?.marketingMessage).toBe('A revolutionary album that changes everything.');
 
         // BIO Check
-        expect(release!.detailsByTerritory[0].artistBiographies).toBeDefined();
-        expect(release!.detailsByTerritory[0].artistBiographies?.[0].biographyText).toContain('revolutionary');
+        expect(release!.detailsByTerritory[0]!.artistBiographies).toBeDefined();
+        expect(release!.detailsByTerritory[0]!.artistBiographies?.[0]!.biographyText).toContain('revolutionary');
 
         // LYRICS Check
         expect(release!.resourceList.length).toBe(1);
         const resource = release!.resourceList[0];
         expect(resource!.lyrics).toBeDefined();
-        expect(resource!.lyrics?.[0].text).toBe('Verse 1: Hello World...');
+        expect(resource!.lyrics?.[0]!.text).toBe('Verse 1: Hello World...');
     });
 });

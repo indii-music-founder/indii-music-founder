@@ -451,7 +451,7 @@ describe('MerchDesigner — view & work mode toggles', () => {
     renderDesigner();
     const showroomBtns = screen.queryAllByRole('button', { name: /showroom/i });
     if (showroomBtns.length > 0) {
-      fireEvent.click(showroomBtns[0]);
+      fireEvent.click(showroomBtns[0]!);
       // After click the design toggle should still be present
       expect(screen.queryAllByRole('button', { name: /design/i }).length).toBeGreaterThan(0);
     }
@@ -629,7 +629,7 @@ describe('MerchDesigner — AI Gen toolbar integration', () => {
     const aiGenBtns = screen.queryAllByRole('button', { name: /ai gen/i });
     expect(aiGenBtns.length).toBeGreaterThan(0);
 
-    fireEvent.click(aiGenBtns[0]);
+    fireEvent.click(aiGenBtns[0]!);
 
     await waitFor(() => {
       expect(screen.getByText(/ai image generation/i)).toBeInTheDocument();
@@ -650,7 +650,7 @@ describe('MerchDesigner — Export dialog flow', () => {
     // Export button must exist
     expect(exportBtns.length).toBeGreaterThan(0);
     // Clicking it should not throw
-    expect(() => fireEvent.click(exportBtns[0])).not.toThrow();
+    expect(() => fireEvent.click(exportBtns[0]!)).not.toThrow();
   });
 });
 

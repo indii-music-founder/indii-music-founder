@@ -248,9 +248,9 @@ describe('indii Branding Constants', () => {
             const parts = version.split('.');
 
             expect(parts).toHaveLength(3);
-            expect(parseInt(parts[0])).toBeGreaterThanOrEqual(0);
-            expect(parseInt(parts[1])).toBeGreaterThanOrEqual(0);
-            expect(parseInt(parts[2])).toBeGreaterThanOrEqual(0);
+            expect(parseInt(parts[0]!)).toBeGreaterThanOrEqual(0);
+            expect(parseInt(parts[1]!)).toBeGreaterThanOrEqual(0);
+            expect(parseInt(parts[2]!)).toBeGreaterThanOrEqual(0);
         });
     });
 });

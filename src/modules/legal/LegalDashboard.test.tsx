@@ -76,7 +76,7 @@ describe('LegalDashboard', () => {
         // Find the first file input (Drop zone)
         const fileInput = container.querySelectorAll('input[type="file"]')[0];
 
-        fireEvent.change(fileInput, { target: { files: [file] } });
+        fireEvent.change(fileInput!, { target: { files: [file] } });
 
         expect(await screen.findByText('Analysis Report')).toBeInTheDocument();
         expect(screen.getByText('Test Summary')).toBeInTheDocument();

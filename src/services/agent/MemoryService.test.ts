@@ -28,7 +28,7 @@ vi.mock('@/utils/RequestBatcher', () => {
             constructor(private processor: (items: T[]) => Promise<R[]>) { }
             async add(item: T): Promise<R> {
                 const results = await this.processor([item]);
-                return results[0];
+                return results[0]!;
             }
         }
     };
@@ -180,7 +180,7 @@ describe('MemoryService', () => {
             // In my mock data, none are explicitly rules in the 'type' field except I should probably update mock data or add one.
             // Let's add a temporary mock item.
             const RuleMemory: MemoryItem = {
-                ...mockMemories[0], id: 'rule-1', type: 'rule', content: 'Always do X'
+                ...mockMemories[0]!, id: 'rule-1', type: 'rule', content: 'Always do X'
             };
             mockList.mockResolvedValue([...mockMemories, RuleMemory]);
 

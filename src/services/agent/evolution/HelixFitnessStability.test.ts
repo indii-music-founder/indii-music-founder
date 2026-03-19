@@ -159,7 +159,7 @@ describe('🧬 Helix: Fitness Stability & Edge Cases', () => {
     // If it survived (as non-elite), its fitness should be NaN (preserved)
     // but it should not have beaten 'Valid'.
     if (nanAgent) {
-        expect(nextGen.indexOf(nanAgent)).toBeGreaterThan(nextGen.indexOf(nextGen[0]));
+        expect(nextGen.indexOf(nanAgent)).toBeGreaterThan(nextGen.indexOf(nextGen[0]!));
     }
   });
 });
