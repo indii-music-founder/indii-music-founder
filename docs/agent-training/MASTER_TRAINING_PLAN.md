@@ -11,10 +11,10 @@
 | Item | Value |
 |------|-------|
 | Started | 2026-03-19 |
-| Last Updated | 2026-03-19 |
-| Current Phase | Phase 2 (Serial Agent Training Loop) |
-| Active Agent | `marketing` |
-| Next Agent | `brand` |
+| Last Updated | 2026-03-20 |
+| Current Phase | ✅ Phase 2 COMPLETE — All 20 agents trained |
+| Active Agent | — (all done) |
+| Next Agent | — (all done) |
 | Plan File | `/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans/effervescent-brewing-patterson.md` |
 
 ---
@@ -49,6 +49,21 @@ We do **two things simultaneously for each agent:**
 | `docs/agent-training/datasets/generalist.jsonl` | ✅ DONE | Agent Zero golden dataset — 20 gold examples |
 | `execution/training/export_ft_dataset.ts` | ✅ DONE | Export golden datasets to Vertex AI JSONL format |
 | `docs/agent-training/datasets/security.jsonl` | ✅ DONE | Security agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/marketing.jsonl` | ✅ DONE | Marketing agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/brand.jsonl` | ✅ DONE | Brand agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/video.jsonl` | ✅ DONE | Video agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/music.jsonl` | ✅ DONE | Music agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/social.jsonl` | ✅ DONE | Social agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/publicist.jsonl` | ✅ DONE | Publicist agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/licensing.jsonl` | ✅ DONE | Licensing agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/publishing.jsonl` | ✅ DONE | Publishing agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/road.jsonl` | ✅ DONE | Road agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/devops.jsonl` | ✅ DONE | DevOps agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/merchandise.jsonl` | ✅ DONE | Merchandise agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/director.jsonl` | ✅ DONE | Director agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/producer.jsonl` | ✅ DONE | Producer agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/screenwriter.jsonl` | ✅ DONE | Screenwriter agent golden dataset — 20 gold examples |
+| `docs/agent-training/datasets/curriculum.jsonl` | ✅ DONE | Curriculum agent golden dataset — 20 gold examples |
 
 ---
 
@@ -61,21 +76,21 @@ We do **two things simultaneously for each agent:**
 | 3 | `legal` | `src/agents/legal/prompt.md` | — | 30/35 | 20/20 | ✅ | ✅ DONE |
 | 4 | `distribution` | `src/services/agent/definitions/DistributionAgent.ts` | — | 31/35 | 20/20 | ✅ | ✅ DONE |
 | 5 | `security` | `src/services/agent/definitions/SecurityAgent.ts` | — | 30/35 | 20/20 | ✅ | ✅ DONE |
-| 6 | `marketing` | `src/services/agent/definitions/MarketingAgent.ts` | — | — | — | ❌ | ⏳ IN PROGRESS |
-| 7 | `brand` | `src/services/agent/definitions/BrandAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 8 | `video` | `src/services/agent/definitions/VideoAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 9 | `music` | `src/services/agent/definitions/MusicAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 10 | `social` | `src/services/agent/definitions/SocialAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 11 | `publicist` | `src/services/agent/definitions/PublicistAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 12 | `licensing` | `src/services/agent/definitions/LicensingAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 13 | `publishing` | `src/services/agent/definitions/PublishingAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 14 | `road` | `src/services/agent/definitions/RoadAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 15 | `merchandise` | `src/services/agent/definitions/MerchandiseAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 16 | `director` | `src/agents/director/config.ts` | — | — | — | ❌ | 📋 TODO |
-| 17 | `producer` | `src/agents/producer/config.ts` | — | — | — | ❌ | 📋 TODO |
-| 18 | `devops` | `src/services/agent/definitions/DevOpsAgent.ts` | — | — | — | ❌ | 📋 TODO |
-| 19 | `screenwriter` | `src/agents/screenwriter/config.ts` | — | — | — | ❌ | 📋 TODO |
-| 20 | `curriculum` | `agents/indii_curriculum/agent.system.md` | — | — | — | ❌ | 📋 TODO |
+| 6 | `marketing` | `src/services/agent/definitions/MarketingAgent.ts` | — | 29/35 | 20/20 | ✅ | ✅ DONE |
+| 7 | `brand` | `src/services/agent/definitions/BrandAgent.ts` | — | 29/35 | 20/20 | ✅ | ✅ DONE |
+| 8 | `video` | `src/services/agent/definitions/VideoAgent.ts` | — | 30/35 | 20/20 | ✅ | ✅ DONE |
+| 9 | `music` | `src/services/agent/definitions/MusicAgent.ts` | — | 28/35 | 20/20 | ✅ | ✅ DONE |
+| 10 | `social` | `src/services/agent/definitions/SocialAgent.ts` | — | 30/35 | 20/20 | ✅ | ✅ DONE |
+| 11 | `publicist` | `src/services/agent/definitions/PublicistAgent.ts` | — | 30/35 | 20/20 | ✅ | ✅ DONE |
+| 12 | `licensing` | `agents/licensing/prompt.md` | — | 29/35 | 20/20 | ✅ | ✅ DONE |
+| 13 | `publishing` | `src/services/agent/definitions/PublishingAgent.ts` | — | 30/35 | 20/20 | ✅ | ✅ DONE |
+| 14 | `road` | `src/services/agent/definitions/RoadAgent.ts` | — | 29/35 | 20/20 | ✅ | ✅ DONE |
+| 15 | `merchandise` | `src/services/agent/MerchandiseAgent.ts` | — | 30/35 | 20/20 | ✅ | ✅ DONE |
+| 16 | `director` | `src/agents/director/prompt.md` | — | 31/35 | 20/20 | ✅ | ✅ DONE |
+| 17 | `producer` | `src/agents/producer/prompt.md` | — | 29/35 | 20/20 | ✅ | ✅ DONE |
+| 18 | `devops` | `src/services/agent/definitions/DevOpsAgent.ts` | — | 29/35 | 20/20 | ✅ | ✅ DONE |
+| 19 | `screenwriter` | `src/agents/screenwriter/prompt.md` | — | 30/35 | 20/20 | ✅ | ✅ DONE |
+| 20 | `curriculum` | `agents/indii_curriculum/agent.system.md` | — | 28/35 | 20/20 | ✅ | ✅ DONE |
 
 ---
 
