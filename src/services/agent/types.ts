@@ -287,6 +287,11 @@ export interface AgentConfig {
     systemPrompt: string;
     tools: ToolDefinition[];
     functions?: Record<string, AnyToolFunction>;
+    /** Explicit allowlist of tool names this agent may invoke at runtime.
+     *  If omitted, defaults to the names declared in tools[0].functionDeclarations.
+     *  An empty array [] means the agent has NO tool access at runtime.
+     */
+    authorizedTools?: string[];
 }
 
 export interface AgentResponse {

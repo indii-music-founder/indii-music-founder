@@ -289,24 +289,6 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         class="space-y-0.5"
       >
         <button
-          aria-label="Merch Tool"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
-          data-state="closed"
-          data-testid="nav-item-merch"
-          style="--dept-color: var(--color-test);"
-        >
-          <svg
-            class=""
-            data-testid="icon-ShoppingBag"
-            size="16"
-          />
-        </button>
-        <button
           aria-label="Audio Analyzer"
           class="
                             w-full flex items-center gap-3 px-4 py-2 text-sm
@@ -827,28 +809,6 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
       <div
         class="space-y-0.5"
       >
-        <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
-          data-state="closed"
-          data-testid="nav-item-merch"
-          style="--dept-color: var(--color-test);"
-        >
-          <svg
-            class=""
-            data-testid="icon-ShoppingBag"
-            size="16"
-          />
-          <span
-            class="truncate"
-          >
-            Merch Tool
-          </span>
-        </button>
         <button
           class="
                             w-full flex items-center gap-3 px-4 py-2 text-sm

@@ -106,9 +106,11 @@ Authorization is enforced at two levels:
 
 ---
 
-## Enforcement TODO
+## Enforcement Status (updated 2026-03-20)
 
-- [ ] Implement runtime tool authorization check in `src/services/agent/registry.ts`
-- [ ] Add `authorizedTools: string[]` field to `AgentConfig` type in `src/services/agent/types.ts`
-- [ ] Block unauthorized tool calls and route them to the correct agent via `delegate_task`
-- [ ] Log unauthorized tool attempts to `AgentService.security.test.ts` audit trail
+- [x] Add `authorizedTools?: string[]` field to `AgentConfig` type → `src/services/agent/types.ts` line 294
+- [x] Store `authorizedTools` in `BaseAgent` constructor → `src/services/agent/BaseAgent.ts` (property `protected authorizedTools`)
+- [x] Block unauthorized tool calls at runtime → `BaseAgent.ts` — enforcement block after loop detection uses `this.tools.flatMap(...)` to build declared set; blocked calls are logged with `logger.warn` and returned as `{ success: false, error: ... }` to the LLM conversation
+- [x] Log unauthorized attempts → `[BaseAgent] SECURITY: Agent '{id}' attempted unauthorized tool call: '{name}'` via `logger.warn`
+- [ ] Populate `authorizedTools` explicitly in each agent definition (currently relies on `functionDeclarations` inference — adequate for now, hardcode when fine-tuning begins)
+- [ ] Automated test: verify blocked tool call returns correct error structure (add to `AgentService.security.test.ts`)
