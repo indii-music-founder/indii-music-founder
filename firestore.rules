@@ -1,849 +1,292 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ========================================
-    // HELPER FUNCTIONS
-    // ========================================
-
+    // =========================================================================
+    // Helper Functions
+    // =========================================================================
+    
     // Check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
-
-    // Check if the authenticated user is an Anonymous user
-    // (signed in via signInAnonymously - used for testing/ephemeral sessions only)
-    function isAnonymous() {
-      return isAuthenticated() &&
-             request.auth.token.firebase.sign_in_provider == 'anonymous';
+    
+    // Check if user is authenticated with email (not anonymous)
+    function isEmailAuthenticated() {
+      return isAuthenticated() && request.auth.token.email != null;
     }
-
-    // Check if user is a verified (non-anonymous) authenticated user.
-    // Use this to gate commercial operations: distribution, org management,
-    // ISRC allocation, tax, royalties, deployments, licensing writes.
-    function isVerifiedUser() {
-      return isAuthenticated() && !isAnonymous();
-    }
-
-    // Check if user has admin custom claim (set via Firebase Admin SDK server-side only)
-    function isAdmin() {
-      return isAuthenticated() && request.auth.token.admin == true;
-    }
-
-    // Check if user is the owner of the document
+    
+    // Check if user owns this resource
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-
-    // Check if user is a member of the organization
+    
+    // Check if user is member of organization
     function isOrgMember(orgId) {
-      let orgPath = /databases/$(database)/documents/organizations/$(orgId);
-      return isAuthenticated() && exists(orgPath) &&
-        request.auth.uid in get(orgPath).data.members;
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/organizations/$(orgId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.members;
+    }
+    
+    // Check if user is owner of organization
+    function isOrgOwner(orgId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerId == request.auth.uid;
     }
 
-    // Check if orgId in resource data matches and user is a member
-    function isResourceOrgMember() {
-      return isAuthenticated() && isOrgMember(resource.data.orgId);
+    // Validate string field
+    function isValidString(field, minLen, maxLen) {
+      return field is string && field.size() >= minLen && field.size() <= maxLen;
     }
 
-    // For creates: check orgId in incoming data
-    function isRequestOrgMember() {
-      return isAuthenticated() && isOrgMember(request.resource.data.orgId);
-    }
-
-    // Check if user can access the project this resource belongs to
-    // Requires resource to have 'projectId' field
-    function canViewProject(projectId) {
-      let projectPath = /databases/$(database)/documents/projects/$(projectId);
-      let project = get(projectPath);
-      // Access if:
-      // 1. Project exists AND
-      // 2. User is member of the project's organization
-      return isAuthenticated() && exists(projectPath) && isOrgMember(project.data.orgId);
-    }
-
-
-    // --- Schema Validation ---
-
-    function isValidUser(data) {
-      return data.keys().hasAll(['id', 'email', 'role', 'onboarded']) &&
-             data.id is string &&
-             data.email is string &&
-             data.role in ['user', 'artist', 'admin', 'manager'] &&
-             data.onboarded is bool;
-    }
-
-    function isValidAnalyzedTrack(data) {
-      return data.keys().hasAll(['id', 'userId', 'filename', 'features', 'analyzedAt']) &&
-             data.userId == request.auth.uid &&
-             data.features.bpm is number &&
-             data.features.key is string &&
-             data.features.energy is number;
-    }
-
-    function isValidProject(data) {
-      return data.keys().hasAll(['id', 'name', 'orgId', 'createdAt']) &&
-             data.name is string &&
-             data.name.size() > 0 &&
-             data.orgId is string;
-    }
-
-    function isValidDistributionTask(data) {
-      return data.keys().hasAll(['userId', 'type', 'status', 'progress', 'title', 'createdAt', 'updatedAt']) &&
-             data.userId == request.auth.uid &&
-             data.type in ['QC', 'STAGING', 'PACKAGING', 'DELIVERY'] &&
-             data.status in ['PENDING', 'RUNNING', 'COMPLETED', 'FAILED'] &&
-             data.progress >= 0 && data.progress <= 100 &&
-             data.title is string;
-    }
-
-    function isValidDeployment(data) {
-      return data.keys().hasAll(['internalReleaseId', 'userId', 'orgId', 'distributorId', 'status', 'submittedAt', 'lastCheckedAt', 'createdAt', 'updatedAt']) &&
-             data.userId == request.auth.uid &&
-             data.status in ['validating', 'pending_review', 'in_review', 'processing', 'submitted', 'failed', 'delivered', 'live', 'takedown_pending', 'takedown_complete'] &&
-             data.submittedAt is timestamp &&
-             data.lastCheckedAt is timestamp;
-    }
-
-    function isValidISRC(data) {
-      return data.keys().hasAll(['isrc', 'releaseId', 'userId', 'trackTitle', 'artistName', 'assignedAt', 'createdAt', 'updatedAt']) &&
-             data.userId == request.auth.uid &&
-             data.isrc.matches('^[A-Z]{2}-[A-Z0-9]{3}-[0-9]{2}-[0-9]{5}$') &&
-             data.assignedAt is timestamp;
-    }
-
-    function isValidTaxProfile(data) {
-      return data.keys().hasAll(['userId', 'formType', 'country', 'tinMasked', 'tinValid', 'certified', 'payoutStatus', 'certTimestamp', 'createdAt', 'updatedAt']) &&
-             data.userId == request.auth.uid &&
-             data.formType in ['W-9', 'W-8BEN', 'W-8BEN-E'] &&
-             data.payoutStatus in ['ACTIVE', 'HELD'];
-    }
-
-
-    // ========================================
-    // LICENSING (verified users only — commercial operation)
-    // ========================================
-
-    match /licenses/{licenseId} {
-      // Read if user is verified (non-anonymous)
-      allow read: if isVerifiedUser();
-      // Write only if verified user owns the license
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-    }
-
-    match /license_requests/{requestId} {
-      // Read if verified user owns the request
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // USER DOCUMENTS
-    // ========================================
-
-    // Users can only read/write their own profile
+    // =========================================================================
+    // User Profiles
+    // =========================================================================
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
-
-      // Music Library (Analyzed Tracks)
-      match /analyzed_tracks/{trackId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId);
-        allow update, delete: if isOwner(userId);
-      }
-
-      // Usage tracking subcollection
-      match /usage/{date} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Saved workflows subcollection
-      match /workflows/{workflowId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Social: following subcollection
-      match /following/{targetUserId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Social: followers subcollection (write by anyone who wants to follow)
-      match /followers/{followerId} {
-        allow read: if isOwner(userId);
-        allow create, delete: if isOwner(followerId);
-      }
-
-      // Legal: contracts subcollection (user-scoped)
-      match /contracts/{contractId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Licensing: sync briefs subcollection (user-scoped, seeded by LicensingService)
-      match /syncBriefs/{briefId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // User Stats subcollection
-      match /stats/{statId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // User Memory subcollection (long-term persistent memory)
-      match /memories/{memoryId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update, delete: if isOwner(userId) && resource.data.userId == userId;
-      }
-
-      // User Context subcollection (aggregated memory context)
-      match /context/{contextId} {
-        allow read: if isOwner(userId);
-        allow create, update: if isOwner(userId) && request.resource.data.userId == userId;
-        allow delete: if isOwner(userId);
-      }
-
-      // Always-On Memory Engine: persistent memories
-      match /alwaysOnMemories/{memoryId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Always-On Memory Engine: consolidation insights
-      match /consolidationInsights/{insightId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Always-On Memory Engine: ingestion event log
-      match /ingestionEvents/{eventId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Generated Images (MetadataPersistenceService — image generation metadata)
-      match /generated_images/{imageId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Generated Videos (MetadataPersistenceService — video generation metadata)
-      match /generated_videos/{videoId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Generic Assets (MetadataPersistenceService — fallback asset metadata)
-      match /assets/{assetId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Knowledge Base (MetadataPersistenceService — document metadata)
-      match /knowledge_base/{docId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Projects subcollection (MetadataPersistenceService — project metadata)
-      match /projects/{projectId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Email Integration: connected account metadata (user-readable/writable)
-      match /emailAccounts/{accountId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Email Integration: OAuth tokens (server-only — NEVER client-readable)
-      // Refresh tokens are stored here by Cloud Functions only.
-      // Client reads are blocked; token refresh goes through Cloud Functions.
-      match /emailTokens/{tokenId} {
-        allow read, write: if false;
-      }
-
-      // Cross-device Handoff Settings (HandoffService — session continuity)
-      match /settings/{settingId} {
-        allow read, write: if isOwner(userId);
-      }
+      // Users can read their own profile
+      allow read: if isOwner(userId);
+      
+      // Users can create their own profile
+      allow create: if isOwner(userId);
+      
+      // Users can update their own profile with validation
+      allow update: if isOwner(userId) &&
+        // Prevent changing uid
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid']));
+      
+      // Users cannot delete their profile (admin action only)
+      allow delete: if false;
     }
 
-    // ========================================
-    // ORGANIZATIONS (verified users only — no anonymous org membership)
-    // ========================================
-
+    // =========================================================================
+    // Organizations
+    // =========================================================================
     match /organizations/{orgId} {
-      // Only verified (non-anonymous) members can read
-      allow read: if isVerifiedUser() && request.auth.uid in resource.data.members;
-
-      // Only verified users can create organizations
-      allow create: if isVerifiedUser() && request.auth.uid in request.resource.data.members;
-
-      // Only verified members can update (DELETION RESTRICTED to admins via backend)
-      allow update: if isVerifiedUser() && request.auth.uid in resource.data.members;
-
-      // Prevent deletion (only admins via backend should delete orgs)
-      allow delete: if false;
+      // Members can read org data
+      allow read: if isOrgMember(orgId);
+      
+      // Authenticated users with email can create orgs
+      allow create: if isEmailAuthenticated() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.auth.uid in request.resource.data.members;
+      
+      // Only org owner can update
+      allow update: if isOrgOwner(orgId) &&
+        // Cannot change owner without explicit transfer
+        request.resource.data.ownerId == resource.data.ownerId;
+      
+      // Only org owner can delete
+      allow delete: if isOrgOwner(orgId);
+      
+      // Projects subcollection
+      match /projects/{projectId} {
+        allow read: if isOrgMember(orgId);
+        allow create: if isOrgMember(orgId);
+        allow update: if isOrgMember(orgId);
+        allow delete: if isOrgOwner(orgId);
+        
+        // Project history
+        match /history/{historyId} {
+          allow read: if isOrgMember(orgId);
+          allow write: if isOrgMember(orgId);
+        }
+      }
     }
 
-    // ========================================
-    // PROJECTS (org-scoped)
-    // ========================================
-
-    match /projects/{projectId} {
-      allow read: if isResourceOrgMember();
-      allow create: if isRequestOrgMember() && isValidProject(request.resource.data);
-      allow update: if isResourceOrgMember() && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['orgId']) ||
-          isAdmin()
-      );
-      allow delete: if isResourceOrgMember();
-    }
-
-    // ========================================
-    // HISTORY (org-scoped generation history)
-    // ========================================
-
-    match /history/{docId} {
-        allow read: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
-        allow create: if isRequestOrgMember() || (request.resource.data.orgId == 'personal' && request.resource.data.userId == request.auth.uid);
-        allow update, delete: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
-    }
-
-    // ========================================
-    // VIDEO JOBS (org-scoped)
-    // ========================================
-
-    match /videoJobs/{jobId} {
-      // Owner-based access: users can always read/write their own video jobs
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Org-based access: org members can access org video jobs
-      allow read: if isResourceOrgMember();
-      allow create: if isRequestOrgMember();
-      allow update, delete: if isResourceOrgMember();
-    }
-
-    // ========================================
-    // OBSERVABILITY & TRACES (user-scoped)
-    // ========================================
-
-    match /agent_traces/{traceId} {
-      // Users can only read their own traces
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Users can only create traces for themselves
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Users can only update/delete their own traces
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // AI USAGE & RATE LIMITING (user-scoped)
-    // ========================================
-
-    match /user_usage_stats/{docId} {
-      // Users can only read their own usage stats
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Users can only create usage stats for themselves
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Users can only update/delete their own usage stats
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    match /user_rate_limits/{docId} {
-      // Document ID format: userId_timestamp
-      // Users can only access their own rate limit documents (docId starts with userId_)
-      allow read, write: if isAuthenticated() &&
-        docId.matches('^' + request.auth.uid + '_[0-9]+$');
-    }
-
-    // ========================================
-    // PROJECT MEMORIES (project-scoped)
-    // ========================================
-
-    match /projects/{projectId}/memories/{memoryId} {
-      // Only members of the project's organization can access memories
-      allow read, write: if canViewProject(projectId);
-    }
-
-    match /projects/{projectId}/context/{contextId} {
-      // Only members of the project's organization can access context
-      allow read, write: if canViewProject(projectId);
-    }
-
-    // ========================================
-    // DDEX RELEASES (verified users only — commercial distribution)
-    // ========================================
-
-    match /ddexReleases/{releaseId} {
-      allow read: if isVerifiedUser() && isResourceOrgMember();
-      allow create: if isVerifiedUser() && isRequestOrgMember();
-      allow update, delete: if isVerifiedUser() && isResourceOrgMember();
-    }
-
-    // ========================================
-    // DSR REPORTS (verified users only — commercial royalty reports)
-    // ========================================
-
-    match /dsrReports/{reportId} {
-      allow read: if isVerifiedUser() && isResourceOrgMember();
-      allow create: if isVerifiedUser() && isRequestOrgMember();
-      allow update, delete: if isVerifiedUser() && isResourceOrgMember();
-    }
-
-    // ========================================
-    // ROYALTY PAYMENTS (verified users only — financial data)
-    // ========================================
-
-    match /royaltyPayments/{paymentId} {
-      allow read: if isVerifiedUser() && isResourceOrgMember();
-      allow create: if isVerifiedUser() && isRequestOrgMember();
-      allow update, delete: if isVerifiedUser() && isResourceOrgMember();
-    }
-
-    // ========================================
-    // CAMPAIGNS (user-scoped)
-    // ========================================
-
-    // ========================================
-    // CAMPAIGNS (user-scoped) - Handled below in MARKETING CAMPAIGNS
-    // ========================================
-
-
-    // ========================================
-    // SOCIAL POSTS (user-scoped)
-    // ========================================
-
-    match /posts/{postId} {
-      // Anyone authenticated can read posts (public feed)
+    // =========================================================================
+    // SOCIAL LAYER - Follows, Activity, Posts
+    // =========================================================================
+    
+    // Follow relationships
+    match /social_follows/{followId} {
+      // Anyone can read follow relationships (public social graph)
       allow read: if isAuthenticated();
-
-      // Item 317: Scoped to post owner — prevents any user from editing/deleting others' posts
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      
+      // Users can create follows where they are the follower
+      allow create: if isAuthenticated() &&
+        request.resource.data.followerId == request.auth.uid &&
+        request.resource.data.followerId != request.resource.data.followingId && // Can't follow self
+        isValidString(request.resource.data.followingId, 1, 128);
+      
+      // Users can only delete their own follows (unfollow)
+      allow delete: if isAuthenticated() &&
+        resource.data.followerId == request.auth.uid;
+      
+      // No updates allowed - delete and recreate
+      allow update: if false;
     }
-
-    match /scheduled_posts/{postId} {
-      // Item 317: Scoped to post owner
-      allow read, create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // FINANCE (user-scoped)
-    // ========================================
-
-    match /revenue/{revenueId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-
-    match /earnings_reports/{reportId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-
-    match /expenses/{expenseId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-
-    // ========================================
-    // FILE NODES (Project Resources)
-    // ========================================
-
-    match /file_nodes/{nodeId} {
-      // Allow read if user owns the node OR has access to the project
-      // Note: canViewProject checks for isAuthenticated, existence, and organization membership
-      allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        canViewProject(resource.data.projectId)
-      );
-
-      // Allow create/update/delete only if user owns the node
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // MERCHANDISE CATALOG (admin-managed, public read)
-    // ========================================
-
-    match /merchandise_catalog/{productId} {
-      // Anyone authenticated can read the catalog
+    
+    // Activity feed items
+    match /social_activity/{activityId} {
+      // Anyone authenticated can read activity (for feeds)
       allow read: if isAuthenticated();
-      // Only admins can write
-      allow write: if isAuthenticated() && isAdmin();
+      
+      // Users can create activity for themselves
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.type in ['follow', 'post', 'release', 'achievement', 'collaboration', 'product_drop'] &&
+        request.resource.data.timestamp == request.time;
+      
+      // Users can delete their own activity
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      
+      // No updates - activity is immutable
+      allow update: if false;
     }
-
-    // ========================================
-    // SAMPLE PLATFORMS (knowledge base, public read)
-    // ========================================
-
-    match /sample_platforms/{platformId} {
-      // Anyone authenticated can read platform info
+    
+    // User social stats (follower/following counts)
+    match /social_stats/{userId} {
+      // Public read for profile display
       allow read: if isAuthenticated();
-      // Only admins can write
-      allow write: if isAuthenticated() && isAdmin();
+      
+      // Only the user can initialize their stats
+      allow create: if isOwner(userId);
+      
+      // Stats are updated via atomic increments only
+      // In practice, this should be done via Cloud Functions for accuracy
+      allow update: if isOwner(userId) &&
+        // Only allow incrementing/decrementing counters
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['followersCount', 'followingCount', 'postsCount', 'updatedAt']);
     }
 
-    // ========================================
-    // VENUES (Autonomous Scouting)
-    // ========================================
-
-    match /venues/{venueId} {
-      // Anyone authenticated can read venue data
-      allow read: if isAuthenticated();
-      // Item 318: Scoped to venue creator — prevents venue spam/overwrite by unrelated users
-      allow create: if isVerifiedUser() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isVerifiedUser() && resource.data.createdBy == request.auth.uid;
-      // Only admins can delete
-      allow delete: if isAdmin();
-    }
-
-    // ========================================
-    // API INVENTORY (system config, admin only)
-    // ========================================
-
-    match /api_inventory/{apiId} {
-      // Authenticated users can read API status
-      allow read: if isAuthenticated();
-      // Only admins can write
-      allow write: if isAuthenticated() && isAdmin();
-    }
-
-    // ========================================
-    // ONBOARDING TEMPLATES (admin-managed)
-    // ========================================
-
-    match /onboarding_templates/{templateId} {
-      // Anyone authenticated can read templates
-      allow read: if isAuthenticated();
-      // Only admins can write
-      allow write: if isAuthenticated() && isAdmin();
-    }
-
-    // ========================================
-    // DISTRIBUTION DEPLOYMENTS (verified users only — commercial releases)
-    // ========================================
-
-    match /deployments/{deploymentId} {
-      allow read: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isVerifiedUser() && isResourceOrgMember());
-      allow create: if ((isVerifiedUser() && request.resource.data.userId == request.auth.uid) || (isVerifiedUser() && isRequestOrgMember())) &&
-                      isValidDeployment(request.resource.data);
-      allow update: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isVerifiedUser() && isResourceOrgMember());
-      allow delete: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || (isVerifiedUser() && isResourceOrgMember());
-    }
-
-    // ========================================
-    // DISTRIBUTION TASKS (verified users only — commercial pipeline)
-    // ========================================
-
-    match /distribution_tasks/{taskId} {
-      allow read: if isVerifiedUser() && isOwner(resource.data.userId);
-      allow create: if isVerifiedUser() && isOwner(request.resource.data.userId) && isValidDistributionTask(request.resource.data);
-      allow update: if isVerifiedUser() && isOwner(resource.data.userId);
-      allow delete: if isVerifiedUser() && isOwner(resource.data.userId);
-    }
-
-    // ========================================
-    // MERCHANDISE (verified users only — commercial products)
-    // ========================================
-
-    match /merchandise/{productId} {
-      allow read, update, delete: if isVerifiedUser() && isOwner(resource.data.userId);
-      allow create: if isVerifiedUser() && isOwner(request.resource.data.userId);
-    }
-
-    // ========================================
-    // DESIGNS (merchandise design canvas - org-scoped)
-    // ========================================
-
-    match /designs/{designId} {
-      // Read if user is org member
-      allow read: if isResourceOrgMember();
-      // Create if user is authenticated and is org member
-      allow create: if isRequestOrgMember();
-      // Update/delete if user is org member
-      allow update, delete: if isResourceOrgMember();
-    }
-
-    // ========================================
-    // TAX PROFILES (verified users only — financial/compliance data)
-    // ========================================
-
-    match /tax_profiles/{profileId} {
-      // Only verified users can access tax profiles (never anonymous)
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && isOwner(request.resource.data.userId) && isValidTaxProfile(request.resource.data);
-      allow update: if isVerifiedUser() && isOwner(resource.data.userId) && isValidTaxProfile(request.resource.data);
-      // Delete restricted (compliance record retention)
-      allow delete: if false;
-    }
-
-    // ========================================
-    // ISRC REGISTRY (verified users only — permanent identifiers)
-    // ========================================
-
-    match /isrc_registry/{isrcId} {
-      // Only verified users can access ISRCs (never anonymous)
-      allow read: if isVerifiedUser() && isOwner(resource.data.userId);
-      allow create: if isVerifiedUser() && isOwner(request.resource.data.userId) && isValidISRC(request.resource.data);
-      // No updates or deletes (ISRCs are permanent identifiers)
-      allow update, delete: if false;
-    }
-
-    // ========================================
-    // MARKETING CAMPAIGNS (User Scoped)
-    // ========================================
-
-    match /campaigns/{campaignId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-
-    // ========================================
-    // TOURING & LOGISTICS (User Scoped)
-    // ========================================
-
-    match /tour_vehicles/{vehicleId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-
-    match /tour_itineraries/{itineraryId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-
-    match /tour_rider_items/{itemId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-
-    // ========================================
-    // COLLECTION GROUP: analyzed_tracks
-    // ========================================
-    // Allow users to query their own tracks globally (e.g., via search/aggregation)
-    match /{path=**}/analyzed_tracks/{trackId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // SECURITY: FRAUD DETECTION (user-scoped)
-    // ========================================
-
-    match /fraud_alerts/{alertId} {
-      // Users can only read their own fraud alerts
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Users can create fraud alerts for themselves
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Users can update/delete their own alerts; admins can clear
-      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
-    }
-
-    match /content_rules/{ruleId} {
-      // Authenticated users can read known infringement rules (for content scanning)
-      allow read: if isAuthenticated();
-      // Only admins can write content rules
-      allow write: if isAdmin();
-    }
-
-    // ========================================
-    // MERCHANDISE REQUESTS (verified users only — commercial)
-    // ========================================
-
-    match /manufacture_requests/{requestId} {
-      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /sample_requests/{requestId} {
-      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /mockup_generations/{generationId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // AGENT: PROACTIVE TASKS (user-scoped)
-    // ========================================
-
-    match /proactive_tasks/{taskId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // AGENT: CONVERSATION SESSIONS (user-scoped)
-    // ========================================
-
-    match /sessions/{sessionId} {
-      // Users can only access their own sessions
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // MARKETPLACE: PRODUCTS (public discovery, owner writes)
-    // ========================================
-
+    // =========================================================================
+    // COMMERCE ENGINE - Products, Transactions, Carts
+    // =========================================================================
+    
+    // Products / Marketplace listings
     match /products/{productId} {
-      // Any authenticated user can browse products (marketplace discovery)
+      // Anyone authenticated can browse products
       allow read: if isAuthenticated();
-      // Only the verified owner can create/update/delete their listings
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      
+      // Sellers can create products
+      allow create: if isAuthenticated() &&
+        request.resource.data.sellerId == request.auth.uid &&
+        request.resource.data.type in ['digital', 'physical', 'nft', 'subscription'] &&
+        request.resource.data.status in ['draft', 'active'] &&
+        request.resource.data.price >= 0 &&
+        isValidString(request.resource.data.title, 1, 200);
+      
+      // Sellers can update their own products
+      allow update: if isAuthenticated() &&
+        resource.data.sellerId == request.auth.uid &&
+        // Cannot change seller
+        request.resource.data.sellerId == resource.data.sellerId;
+      
+      // Sellers can delete their own products (soft delete preferred)
+      allow delete: if isAuthenticated() &&
+        resource.data.sellerId == request.auth.uid;
     }
-
-    // ========================================
-    // MARKETPLACE: STEM PACKS (public discovery, owner writes)
-    // ========================================
-
-    match /stem_packs/{packId} {
-      // Any authenticated user can browse stem packs
+    
+    // Transactions / Purchase records
+    match /transactions/{transactionId} {
+      // Users can read their own transactions (as buyer or seller)
+      allow read: if isAuthenticated() &&
+        (resource.data.buyerId == request.auth.uid || 
+         resource.data.sellerId == request.auth.uid);
+      
+      // Buyers can create transactions (initiate purchase)
+      allow create: if isAuthenticated() &&
+        request.resource.data.buyerId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.amount >= 0 &&
+        request.resource.data.createdAt == request.time;
+      
+      // Status updates should go through Cloud Functions for payment verification
+      // Allow limited updates for status progression
+      allow update: if isAuthenticated() &&
+        (resource.data.buyerId == request.auth.uid || 
+         resource.data.sellerId == request.auth.uid) &&
+        // Only status can change, and only to valid next states
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) &&
+        (
+          // Buyer can cancel pending
+          (resource.data.buyerId == request.auth.uid && 
+           resource.data.status == 'pending' && 
+           request.resource.data.status == 'cancelled') ||
+          // Seller can mark as shipped (for physical goods)
+          (resource.data.sellerId == request.auth.uid && 
+           resource.data.status == 'completed' && 
+           request.resource.data.status == 'shipped')
+        );
+      
+      // No deletes - transactions are permanent records
+      allow delete: if false;
+    }
+    
+    // Shopping carts
+    match /carts/{userId} {
+      // Users can only access their own cart
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+      
+      // Cart items subcollection
+      match /items/{itemId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+    }
+    
+    // Seller stats/profiles
+    match /seller_stats/{userId} {
+      // Public read for marketplace display
       allow read: if isAuthenticated();
-      // Only the verified owner can create/update/delete their packs
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      
+      // Only the seller can initialize
+      allow create: if isOwner(userId);
+      
+      // Stats should be updated via Cloud Functions after transactions
+      // Allow limited self-updates for profile info
+      allow update: if isOwner(userId) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['storeName', 'storeDescription', 'updatedAt']);
     }
 
-    // Stem pack purchases — verified users only
-    match /stem_pack_purchases/{purchaseId} {
-      allow read: if isVerifiedUser() && resource.data.buyerId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.buyerId == request.auth.uid;
-      // Purchases are immutable once created
-      allow update, delete: if false;
+    // =========================================================================
+    // Generated Content / History
+    // =========================================================================
+    match /history/{historyId} {
+      // Users can read their own history or org history
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid ||
+         (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      
+      // Users can create history entries
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their own history
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      
+      // Users can delete their own history
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
     }
 
-    // ========================================
-    // COMPOSITIONS (verified users only — publishing/PRO registration)
-    // ========================================
-
-    match /compositions/{compositionId} {
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      // Compositions are permanent records — deletion restricted
-      allow delete: if false;
+    // =========================================================================
+    // Knowledge Base / RAG Documents
+    // =========================================================================
+    match /knowledge/{docId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid ||
+         (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      
+      allow update, delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
     }
 
-    // ========================================
-    // LICENSING DEALS (verified users only — commercial contracts)
-    // ========================================
-
-    match /licensing_deals/{dealId} {
-      allow read: if isVerifiedUser() && (
-        resource.data.licenseeUid == request.auth.uid ||
-        resource.data.licensorUid == request.auth.uid
-      );
-      allow create: if isVerifiedUser() && request.resource.data.licensorUid == request.auth.uid;
-      allow update: if isVerifiedUser() && (
-        resource.data.licensorUid == request.auth.uid ||
-        resource.data.licenseeUid == request.auth.uid
-      );
-      // Licensing deals are compliance records — deletion restricted
-      allow delete: if false;
+    // =========================================================================
+    // Deny all other access by default
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
     }
-
-    // ========================================
-    // PUBLISHING REGISTRATIONS (verified users only — PRO/MLC filings)
-    // ========================================
-
-    match /publishing_registrations/{registrationId} {
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      // Registration records are permanent — deletion restricted
-      allow delete: if false;
-    }
-
-    // ========================================
-    // SPLIT ESCROWS (verified users only — financial holds)
-    // ========================================
-
-    match /split_escrows/{escrowId} {
-      // Initiator and all parties can read
-      allow read: if isVerifiedUser() && (
-        resource.data.initiatorUid == request.auth.uid ||
-        request.auth.uid in resource.data.parties
-      );
-      // Only verified users can create escrow (server-side via Cloud Function preferred)
-      allow create: if isVerifiedUser() && request.resource.data.initiatorUid == request.auth.uid;
-      // Updates restricted to parties signing off (enforced by Cloud Function)
-      allow update: if isVerifiedUser() && request.auth.uid in resource.data.parties;
-      // Escrow records are financial audit trails — no client deletion
-      allow delete: if false;
-    // AUDIT LOGS (read-only for authenticated users)
-    // Written by Cloud Functions / Admin SDK only
-    // ========================================
-
-    match /audit_logs/{logId} {
-      // Any authenticated user can read audit logs
-      allow read: if isAuthenticated();
-      // Only server-side (Admin SDK) can write — never client
-      allow write: if false;
-    }
-
-    // ========================================
-    // PUSH NOTIFICATION TOKENS (user-scoped)
-    // ========================================
-
-    match /notification_tokens/{tokenId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
-    // CROSS-DEVICE HANDOFF (user-scoped subcollection)
-    // ========================================
-
-    match /users/{userId}/handoff/{stateId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // ========================================
-    // LICENSING CLEARANCES (Item 310)
-    // ========================================
-
-    match /licensing_clearances/{clearanceId} {
-      // Only the submitting user can read their own clearances
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      // Verified users can create their own clearance submissions
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      // No updates or deletes from client — managed by staff review process
-      allow update, delete: if false;
-    }
-
-    // ========================================
-    // LABEL DEALS (Item 312)
-    // ========================================
-
-    match /label_deals/{dealId} {
-      // Only the owning user can read their label deals
-      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      // Verified users can create and update their own deals
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      // No deletion — deals are financial records
-      allow delete: if false;
-    }
-
-    // ========================================
-    // DELETION REQUESTS (Item 306)
-    // ========================================
-
-    match /_deletion_requests/{userId} {
-      // Users can only read/create their own deletion requests
-      allow read: if isVerifiedUser() && request.auth.uid == userId;
-      allow create: if isVerifiedUser() && request.auth.uid == userId;
-      allow update, delete: if false;
-    }
-
-    // ========================================
-    // DENY ALL OTHER ACCESS
-    // ========================================
-
-    // Any paths not explicitly matched above are denied by default
   }
 }
