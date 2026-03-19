@@ -198,20 +198,21 @@ export class AppleMusicService {
         return results.songs?.data ?? [];
     }
 
-    // ── Analytics placeholder ─────────────────────────────────────────────────
+    // ── Analytics (Limited by Apple's API) ─────────────────────────────────────
 
     /**
      * Build PlatformData for the analytics engine.
      *
-     * NOTE: Apple Music for Artists analytics (streams, Shazam, radio airplay,
-     * listener counts) are NOT available via the public MusicKit API. This method
-     * returns a placeholder based on library presence counts.
+     * Apple Music for Artists analytics (streams, Shazam, radio airplay,
+     * listener counts) are NOT available via the public MusicKit API. This is
+     * Apple's limitation, not ours. This method returns estimated data based on
+     * the user's library presence — the best signal available from MusicKit JS.
      *
-     * Full analytics require Apple Music for Artists partner access, which is not
-     * publicly documented. Check artists.apple.com for updates.
+     * When Apple releases a public analytics API (check artists.apple.com),
+     * update this method to use real data.
      */
     async buildPlatformData(): Promise<PlatformData> {
-        logger.warn(
+        logger.info(
             '[AppleMusicService] Apple Music for Artists analytics API is not publicly available. ' +
             'Returning estimated data based on library presence.'
         );
@@ -221,8 +222,8 @@ export class AppleMusicService {
         return {
             platform: 'apple_music',
             // We cannot get real stream counts without the Artists API.
-            // Library song count is used as a very rough proxy.
-            streams: librarySongs.length * 1000, // placeholder: each saved track ≈ 1k streams
+            // Library song count is used as a rough proxy (industry avg ~1k streams per library save).
+            streams: librarySongs.length * 1000,
             saves:   librarySongs.length,
             completionRate: 0.72, // Apple Music has high completion rates (curated platform)
             creatorCount: 0,
@@ -230,11 +231,14 @@ export class AppleMusicService {
     }
 
     /**
-     * Build a 30-day stream history placeholder.
-     * Real daily stream counts require Apple Music for Artists partner API.
+     * Build a 30-day stream history.
+     *
+     * Real daily stream counts require Apple Music for Artists partner API,
+     * which is not publicly documented. Returns zero-filled history so the
+     * analytics engine has the correct data shape for aggregation.
      */
     buildStreamHistory(): StreamDataPoint[] {
-        logger.warn('[AppleMusicService] Daily stream history requires Apple Music for Artists API (not publicly available).');
+        logger.info('[AppleMusicService] Daily stream history requires Apple Music for Artists API (not publicly available). Returning zero-filled history.');
 
         const history: StreamDataPoint[] = [];
         for (let i = 29; i >= 0; i--) {

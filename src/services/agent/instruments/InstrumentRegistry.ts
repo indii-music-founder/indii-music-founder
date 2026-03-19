@@ -1,12 +1,4 @@
-/**
- * Instrument Registry
- *
- * Central registry for all instruments that agents can use.
- * Provides discovery, validation, and execution capabilities.
- */
-
-import {
-  Instrument,
+import { Instrument,
   InstrumentMetadata,
   InstrumentResult,
   InstrumentRegistryEntry,
@@ -15,11 +7,15 @@ import {
 import { ImageGenerationInstrument } from './ImageGenerationInstrument';
 import { VideoGenerationInstrument } from './VideoGenerationInstrument';
 import { CacheService } from '@/services/cache/CacheService';
+import { db } from '@/services/firebase';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { logger } from '@/utils/logger';
 
 class InstrumentRegistry {
   private instruments: Map<string, Instrument> = new Map();
   private usageStats: Map<string, InstrumentRegistryEntry['usageStats']> = new Map();
   private cache: CacheService;
+  private readonly STATS_COLLECTION = 'instrument_usage_stats';
 
   constructor() {
     this.cache = new CacheService();
@@ -40,19 +36,60 @@ class InstrumentRegistry {
   }
 
   /**
-   * Load usage statistics from cache (placeholder - would load from Firestore in production)
+   * Load usage statistics from Firestore.
+   * Initializes empty stats for instruments without existing data.
    */
-  private loadUsageStats(): void {
-    // Initialize empty stats for all registered instruments
-    this.instruments.forEach((instrument, id) => {
+  private async loadUsageStats(): Promise<void> {
+    try {
+      const statsSnap = await getDocs(collection(db, this.STATS_COLLECTION));
+      statsSnap.docs.forEach((docSnap) => {
+        const data = docSnap.data() as InstrumentRegistryEntry['usageStats'];
+        this.usageStats.set(docSnap.id, {
+          totalExecutions: data.totalExecutions || 0,
+          successfulExecutions: data.successfulExecutions || 0,
+          failedExecutions: data.failedExecutions || 0,
+          lastExecutionTime: data.lastExecutionTime,
+        });
+      });
+      logger.info(`[InstrumentRegistry] Loaded usage stats for ${statsSnap.size} instruments from Firestore`);
+    } catch (error) {
+      logger.warn('[InstrumentRegistry] Failed to load usage stats from Firestore, using empty defaults:', error);
+    }
+
+    // Initialize empty stats for any registered instruments without persisted data
+    this.instruments.forEach((_instrument, id) => {
       if (!this.usageStats.has(id)) {
         this.usageStats.set(id, {
           totalExecutions: 0,
           successfulExecutions: 0,
-          failedExecutions: 0
+          failedExecutions: 0,
         });
       }
     });
+  }
+
+  /**
+   * Persist usage statistics after each execution to Firestore.
+   */
+  private async persistUsageStats(instrumentId: string): Promise<void> {
+    const stats = this.usageStats.get(instrumentId);
+    if (!stats) return;
+
+    try {
+      await setDoc(
+        doc(db, this.STATS_COLLECTION, instrumentId),
+        {
+          totalExecutions: stats.totalExecutions,
+          successfulExecutions: stats.successfulExecutions,
+          failedExecutions: stats.failedExecutions,
+          lastExecutionTime: stats.lastExecutionTime || null,
+          updatedAt: Date.now(),
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      logger.warn(`[InstrumentRegistry] Failed to persist stats for ${instrumentId}:`, error);
+    }
   }
 
   /**
@@ -259,6 +296,8 @@ class InstrumentRegistry {
       };
     } finally {
       this.usageStats.set(instrumentId, stats);
+      // Persist to Firestore (fire-and-forget, don't block execution return)
+      this.persistUsageStats(instrumentId);
     }
   }
 

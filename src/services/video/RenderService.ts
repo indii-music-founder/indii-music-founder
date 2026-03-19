@@ -91,11 +91,8 @@ export class RenderService {
 
             // In a real implementation, we would bundle the composition first
             // or point to a pre-bundled serve URL.
-            // For this service stub, we assume the bundle logic is handled externally
-            // or we use a placeholder bundle path.
-
-            // Mocking the bundle location for the purpose of the service definition
-            const bundleLocation = './dist/remotion-bundle';
+            // The bundle location is configured via environment variable.
+            const bundleLocation = import.meta.env.VITE_REMOTION_BUNDLE_PATH || './dist/remotion-bundle';
 
             await renderMedia({
                 composition: {
