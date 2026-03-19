@@ -48,7 +48,7 @@ export class AgentOrchestrator {
 
         const AGENTS = [
             ...specializedAgents,
-            { id: 'generalist', name: 'Agent Zero', description: 'General assistance, complex reasoning, fallback.' }
+            { id: 'generalist', name: 'indii Conductor', description: 'General assistance, complex reasoning, fallback.' }
         ];
 
         const prompt = `

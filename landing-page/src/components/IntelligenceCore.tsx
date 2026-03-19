@@ -93,7 +93,7 @@ function AgentEntities() {
     );
 }
 
-export default function AgentZero() {
+export default function IntelligenceCore() {
     return (
         <group position={[0, -32, 0]}>
             <ambientLight intensity={0.2} />

@@ -68,9 +68,9 @@ export const VALID_AGENT_IDS = [
     'merchandise',  // Merchandise creation & production
     'distribution', // Industrial Direct-to-DSP Engine
     'music',        // Sonic Director - Audio Analysis & Metadata
-    'curriculum',   // Agent Zero Automation (Branding Alignment)
+    'curriculum',   // indii Curriculum (Branding Alignment)
     'keeper',       // Context Integrity Guardian
-    'generalist'  // Agent Zero
+    'generalist'  // indii Conductor (Hub)
 ] as const;
 
 export type ValidAgentId = typeof VALID_AGENT_IDS[number];
@@ -100,7 +100,7 @@ export const HUB_AGENT_ID = 'generalist';
 export const SPOKE_AGENT_IDS = VALID_AGENT_IDS.filter(id => id !== HUB_AGENT_ID);
 
 /**
- * Checks if an agent is the hub (generalist/Agent Zero).
+ * Checks if an agent is the hub (generalist / indii Conductor).
  */
 export function isHubAgent(agentId: string): boolean {
     return agentId === HUB_AGENT_ID;

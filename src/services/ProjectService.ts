@@ -61,7 +61,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
 
         const id = await this.add(newProjectData as unknown as Project);
 
-        // SEEDING: Agent Zero Branding Injection
+        // SEEDING: indii Branding Injection
         // We inject a default branding template into this project's isolated knowledge container.
         try {
             const { knowledgeBaseService } = await import('@/modules/knowledge/services/KnowledgeBaseService');

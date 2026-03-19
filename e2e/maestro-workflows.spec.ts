@@ -55,7 +55,7 @@ test.describe('Maestro Batch Orchestration', () => {
             });
         });
 
-        // Mock Agent Zero sidecar
+        // Mock AI sidecar
         await page.route('**/localhost:50080/**', async route => {
             await route.fulfill({
                 status: 200,

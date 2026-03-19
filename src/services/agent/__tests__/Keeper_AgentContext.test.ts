@@ -137,7 +137,7 @@ vi.mock('../registry', () => ({
         }),
         get: vi.fn(), // Legacy
         getAll: vi.fn().mockReturnValue([
-            { id: 'generalist', name: 'Agent Zero', description: 'Generalist' },
+            { id: 'generalist', name: 'indii Conductor', description: 'Generalist' },
             { id: 'marketing', name: 'Marketing', description: 'Marketing Specialist' }
         ])
     }

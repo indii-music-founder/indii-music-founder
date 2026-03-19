@@ -40,7 +40,7 @@ export default function App() {
                     <>
                         <Text style={styles.text}>Welcome back, {user.email}</Text>
                         <Text style={styles.subtitle}>Critical Paths to Scaffold:</Text>
-                        <Text style={styles.listItem}>1. Agent Zero Direct Chat (Voice/Text)</Text>
+                        <Text style={styles.listItem}>1. indii Conductor Direct Chat (Voice/Text)</Text>
                         <Text style={styles.listItem}>2. Daily Streams Dashboard (Finance)</Text>
                         <Text style={styles.listItem}>3. Offline Music Player (Item 163)</Text>
                     </>

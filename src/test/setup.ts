@@ -363,7 +363,7 @@ vi.mock('firebase/ai', () => ({
     })
 }));
 
-// AgentZeroService is retired — mock returns the tombstone null export
+// AgentZeroService is retired (tombstone) — mock returns the null export to prevent import errors
 vi.mock('@/services/agent/AgentZeroService', () => ({
     agentZeroService: null
 }));

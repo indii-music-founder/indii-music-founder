@@ -6,7 +6,7 @@ import { events } from '@/core/events';
 
 /**
  * AssetObserver monitors the Creative History for newly completed AI assets.
- * When a high-fidelity asset is finalized, it notifies Agent Zero to initiate
+ * When a high-fidelity asset is finalized, it notifies indii Conductor to initiate
  * a proactive "Handover" conversation with the user.
  */
 class AssetObserver {
@@ -109,7 +109,7 @@ class AssetObserver {
     }
 
     /**
-     * Notifies Agent Zero about the new asset.
+     * Notifies indii Conductor about the new asset.
      */
     private handleNewlyFinalizedAsset(item: HistoryItem) {
         Logger.info('AssetObserver', `New asset detected: ${item.type} (${item.id})`);

@@ -255,7 +255,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
             dawName: args.dawName,
             focusArea: args.focusArea || 'Arrangement View',
             status: 'Vision Link Established',
-            message: `Electron screen capture bridge linked Agent Zero vision API to user's ${args.dawName} workspace. Live production feedback enabled.`
+            message: `Electron screen capture bridge linked indii vision API to user's ${args.dawName} workspace. Live production feedback enabled.`
         };
     }),
 

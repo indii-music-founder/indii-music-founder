@@ -12,7 +12,7 @@ export class WorkflowCoordinator {
      * Main entry point for user requests.
      * Decisions:
      * 1. Is this a simple generation task? (Direct AI)
-     * 2. Is this a complex orchestration task? (Agent Zero)
+     * 2. Is this a complex orchestration task? (indii Conductor)
      */
     async handleUserRequest(
         userMessage: string,

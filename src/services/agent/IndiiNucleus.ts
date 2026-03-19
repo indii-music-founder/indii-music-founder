@@ -4,7 +4,7 @@
  * Assembles the full indii persona from Living Files (SOUL, ARTIST, SHOWROOM, PULSE)
  * and executes requests natively through Gemini via GenAI — no external container.
  *
- * Previously this acted as a DNA-injection layer on top of an external Agent Zero
+ * Previously this acted as a DNA-injection layer on top of an external orchestration sidecar.
  * container. That dependency has been removed. indii now runs on its own runtime.
  */
 import { livingFileService } from './living/LivingFileService';

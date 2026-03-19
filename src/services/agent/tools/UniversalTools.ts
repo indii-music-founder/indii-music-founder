@@ -6,7 +6,7 @@ import type { AnyToolFunction } from '../types';
  *
  * These are tools that are shared across multiple specialist agents.
  * In "Direct" (browser) mode, these provide basic functionality or stubs.
- * In "Agent Zero Sidecar" (Python) mode, these are handled by actual Python scripts.
+ * In sidecar (Python) mode, these are handled by actual Python scripts.
  */
 export const UniversalTools = {
     /**

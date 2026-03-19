@@ -73,9 +73,9 @@ describe('indii Branding Constants', () => {
                 expect(message).toContain('indii architecture rule');
             });
 
-            it('references Agent Zero', () => {
+            it('references indii Conductor', () => {
                 const message = INDII_MESSAGES.hubSpokeViolation('brand', 'social');
-                expect(message).toContain('Agent Zero');
+                expect(message).toContain('indii Conductor');
             });
 
             it('references generalist hub agent', () => {
@@ -96,8 +96,8 @@ describe('indii Branding Constants', () => {
                 // Both should follow same structure
                 expect(msg1).toContain('indii architecture rule');
                 expect(msg2).toContain('indii architecture rule');
-                expect(msg1).toContain('Agent Zero');
-                expect(msg2).toContain('Agent Zero');
+                expect(msg1).toContain('indii Conductor');
+                expect(msg2).toContain('indii Conductor');
             });
 
             it('produces unique messages for different agent pairs', () => {

@@ -137,7 +137,7 @@ describe('Agent Delegation and Collaboration', () => {
 
             // Error should tell them what to do instead
             expect(error).toContain('generalist');
-            expect(error).toContain('Agent Zero');
+            expect(error).toContain('indii Conductor');
         });
 
         it('maintains hub-spoke integrity even with circular requests', () => {

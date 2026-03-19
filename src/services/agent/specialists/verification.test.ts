@@ -149,11 +149,11 @@ describe('Specialist Agent Fleet Verification', () => {
         });
     });
 
-    // Special check for Generalist (Agent Zero) since it's custom
-    it('should verify GeneralistAgent (Agent Zero)', async () => {
+    // Special check for Generalist (indii Conductor) since it's custom
+    it('should verify GeneralistAgent (indii Conductor)', async () => {
         const agent = await agentRegistry.getAsync('generalist');
         expect(agent).toBeDefined();
-        expect(agent?.name).toBe('Agent Zero');
+        expect(agent?.name).toBe('indii Conductor');
     });
 });
 
