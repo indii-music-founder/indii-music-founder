@@ -20,6 +20,7 @@ import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { configureSecurity, auditSessionCookies } from './security';
+import { applyCSP } from './security/csp';
 import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
@@ -336,6 +337,10 @@ if (!gotTheLock) {
 
     app.on('ready', () => {
         log.info('App Ready (Primary Instance)');
+        
+        // Apply Content Security Policy headers
+        applyCSP();
+        
         registerSystemHandlers();
         // registerAuthHandlers(); // Removed
         registerAudioHandlers();

@@ -260,6 +260,9 @@ jobs:
         continue-on-error: true
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deploy-staging.outputs.staging-url }}
+          E2E_STUDIO_URL: ${{ needs.deploy-staging.outputs.staging-url }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
