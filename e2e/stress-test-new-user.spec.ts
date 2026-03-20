@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
 
+// Typed window interface for Zustand store access in E2E tests
+interface TestWindow extends Window {
+    useStore: {
+        getState: () => Record<string, unknown>;
+        setState: (state: Record<string, unknown>) => void;
+    };
+    __TEST_MODE__: boolean;
+}
+
 // Configuration - use environment variables for sensitive data
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
 const TEST_USER_ID = `gauntlet_user_${Date.now()}`;
@@ -42,7 +51,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         // Force app state to Onboarding (SPA state takes precedence over URL)
         console.log('[Gauntlet] Forcing module state to "onboarding"...');
         await page.evaluate(() => {
-            const store = (window as any).useStore;
+            const store = (window as unknown as TestWindow).useStore;
             console.log('[Gauntlet] PRE-Bypass Logic - Current Module:', store.getState().currentModule);
 
             store.setState({
@@ -81,7 +90,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] State set to Onboarding. Checking for Chat Input...');
 
         // Re-inject TEST_MODE in case of navigation/reload
-        await page.evaluate(() => (window as any).__TEST_MODE__ = true);
+        await page.evaluate(() => (window as unknown as TestWindow).__TEST_MODE__ = true);
 
         // 1. Send a message to the AI
         const chatInput = page.getByPlaceholder(/Tell me about your music/i);
@@ -194,7 +203,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         // Force app state to a known ready state
         await page.evaluate(() => {
-            const store = (window as any).useStore;
+            const store = (window as unknown as TestWindow).useStore;
             store.setState({
                 currentModule: 'dashboard',
                 isAuthenticated: true,
@@ -233,7 +242,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         // Test 1: Verify FREE tier limits
         const freeTierLimits = await page.evaluate(() => {
-            const store = (window as any).useStore;
+            const store = (window as unknown as TestWindow).useStore;
             store.setState({
                 currentModule: 'dashboard',
                 isAuthenticated: true,
@@ -259,7 +268,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         // Test 2: Verify PRO tier limits
         const proTierLimits = await page.evaluate(() => {
-            const store = (window as any).useStore;
+            const store = (window as unknown as TestWindow).useStore;
             store.setState({
                 organizations: [{
                     id: 'org-pro',
@@ -281,7 +290,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         // Test 3: Verify ENTERPRISE tier limits
         const enterpriseTierLimits = await page.evaluate(() => {
-            const store = (window as any).useStore;
+            const store = (window as unknown as TestWindow).useStore;
             store.setState({
                 organizations: [{
                     id: 'org-enterprise',
@@ -303,7 +312,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         // Test 4: Navigate to Video Studio and check for duration limits
         await page.evaluate(() => {
-            const store = (window as any).useStore;
+            const store = (window as unknown as TestWindow).useStore;
             store.setState({
                 currentModule: 'video',
                 organizations: [{
@@ -340,7 +349,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             const tier = tiers[i % 3];
 
             await page.evaluate((tierValue) => {
-                const store = (window as any).useStore;
+                const store = (window as unknown as TestWindow).useStore;
                 store.setState({
                     currentModule: 'dashboard',
                     isAuthenticated: true,
@@ -357,7 +366,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             }, tier);
 
             const currentPlan = await page.evaluate(() => {
-                const store = (window as any).useStore;
+                const store = (window as unknown as TestWindow).useStore;
                 return store.getState().organizations[0]?.plan;
             });
 
@@ -368,7 +377,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         }
 
         const finalState = await page.evaluate(() => {
-            const store = (window as any).useStore;
+            const store = (window as unknown as TestWindow).useStore;
             return {
                 isAuthenticated: store.getState().isAuthenticated,
                 hasOrg: store.getState().organizations.length > 0
