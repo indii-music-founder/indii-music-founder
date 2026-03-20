@@ -16,6 +16,7 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     DEV: z.boolean().default(false),
 
     // Firebase specific overrides (optional)
+    firebaseAuthDomain: z.string().optional(),
     firebaseProjectId: z.string().optional(),
     firebaseStorageBucket: z.string().optional(),
     firebaseDatabaseURL: z.union([z.string().url(), z.literal('')]).optional(),
@@ -71,6 +72,7 @@ const processEnv = {
 
     // Firebase specific overrides
     firebaseApiKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_API_KEY'), process.env.VITE_FIREBASE_API_KEY),
+    firebaseAuthDomain: getEnv(getSafeMetaEnv('VITE_FIREBASE_AUTH_DOMAIN'), process.env.VITE_FIREBASE_AUTH_DOMAIN),
     firebaseProjectId: getEnv(getSafeMetaEnv('VITE_FIREBASE_PROJECT_ID'), process.env.VITE_FIREBASE_PROJECT_ID),
     firebaseStorageBucket: getEnv(getSafeMetaEnv('VITE_FIREBASE_STORAGE_BUCKET'), process.env.VITE_FIREBASE_STORAGE_BUCKET),
     firebaseDatabaseURL: getEnv(getSafeMetaEnv('VITE_FIREBASE_DATABASE_URL'), process.env.VITE_FIREBASE_DATABASE_URL),
@@ -140,22 +142,27 @@ export const firebaseDefaultConfig = {
 
 const firebaseEnv = processEnv;
 
+// Firebase API keys are identifiers, not secrets (see docs/API_CREDENTIALS_POLICY.md).
+// The active key is hardcoded as a fallback to ensure auth works even when
+// VITE_FIREBASE_API_KEY is not set in CI/CD (e.g. preview channels, forks).
+// authDomain must match the hosting domain (indiios-studio.web.app) or iOS
+// Google Sign-In will cycle back to the login page due to Safari's cross-origin
+// cookie restrictions. See docs/FIREBASE_AUTH_MIGRATION_NOTES.md §1.
 export const firebaseConfig = {
-    apiKey: firebaseEnv.firebaseApiKey || "",
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
-    projectId: "indiios-v-1-1",
-    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-alpha-electron",
+    apiKey: firebaseEnv.firebaseApiKey || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
+    authDomain: firebaseEnv.firebaseAuthDomain || "indiios-studio.web.app",
+    databaseURL: firebaseEnv.firebaseDatabaseURL || "https://indiios-v-1-1-default-rtdb.firebaseio.com",
+    projectId: firebaseEnv.firebaseProjectId || "indiios-v-1-1",
+    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-v-1-1.firebasestorage.app",
     messagingSenderId: "223837784072",
     appId: "1:223837784072:web:3af738739465ea4095e9bd",
-    measurementId: "G-7WW3HEHFTF"
+    measurementId: "G-T6V8WPE7Z7"
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
     const msg = "Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID";
     Logger.error('Env', msg);
-
-    if (getSafeMetaEnv('PROD')) {
-        throw new Error(msg);
-    }
+    // Do not throw in production — the hardcoded fallbacks above should prevent
+    // this branch from ever being reached. If they do, we log and continue so
+    // users see the login form rather than a blank page.
 }

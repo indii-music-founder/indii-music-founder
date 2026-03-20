@@ -44,9 +44,12 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
             const isConfigError = firebaseError.code === 'auth/argument-error' || firebaseError.code === 'auth/invalid-api-key';
+            const isPopupClosed = firebaseError.code === 'auth/popup-closed-by-user' || firebaseError.code === 'auth/cancelled-popup-request';
             const errorMessage = isConfigError
-                ? "Firebase Config Missing. Check .env or use Guest Login."
-                : firebaseError.message ?? 'Authentication failed';
+                ? "Authentication service unavailable. Please try again later."
+                : isPopupClosed
+                    ? null
+                    : firebaseError.message ?? 'Authentication failed';
             set({ authError: errorMessage, authLoading: false });
         }
     },
@@ -60,8 +63,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             const firebaseError = error as FirebaseAuthError;
             const isConfigError = firebaseError.code === 'auth/argument-error' || firebaseError.code === 'auth/invalid-api-key';
             const errorMessage = isConfigError
-                ? "Firebase Config Missing. Check .env or use Guest Login."
-                : firebaseError.message ?? 'Authentication failed';
+                ? "Authentication service unavailable. Please try again later."
+                : firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential'
+                    ? 'Incorrect email or password. Please try again.'
+                    : firebaseError.message ?? 'Authentication failed';
             set({ authError: errorMessage, authLoading: false });
             throw error;
         }
@@ -87,7 +92,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     break;
                 case 'auth/argument-error':
                 case 'auth/invalid-api-key':
-                    errorMessage = 'Firebase Config Missing. Check .env or use Guest Login.';
+                    errorMessage = 'Authentication service unavailable. Please try again later.';
                     break;
                 case 'auth/admin-restricted-operation':
                     errorMessage = 'Email/Password sign-up is disabled. Enable it in Firebase Console → Authentication → Sign-in method → Email/Password.';
@@ -153,7 +158,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         const apiKey = auth.app.options.apiKey;
         if (!apiKey || apiKey.includes('Fake')) {
             logger.warn('[Auth] No valid API Key found.');
-            set({ authLoading: false, authError: "Firebase Configuration Missing" });
+            set({ authLoading: false });
             return () => { };
         }
 
