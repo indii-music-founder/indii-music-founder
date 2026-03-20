@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Globe, Plus, Trash2, CheckSquare, Clock, AlertTriangle, FileText } from 'lucide-react';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 /* ================================================================== */
 /*  Visa / Immigration Checklist — International Tour Documentation    */
@@ -107,11 +108,11 @@ const AVAILABLE_COUNTRIES = Object.keys(COUNTRY_DATA) as CountryKey[];
 function createEntry(country: CountryKey): CountryEntry {
     const data = COUNTRY_DATA[country];
     return {
-        id: Math.random().toString(36).slice(2, 9),
+        id: secureRandomAlphanumeric(7),
         country,
         visaType: data.visaType,
         processingDays: data.processingDays,
-        docs: data.docs.map(d => ({ ...d, id: Math.random().toString(36).slice(2, 9), checked: false })),
+        docs: data.docs.map(d => ({ ...d, id: secureRandomAlphanumeric(7), checked: false })),
     };
 }
 

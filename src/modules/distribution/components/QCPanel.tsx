@@ -3,6 +3,7 @@ import { Loader2, AlertTriangle, CheckCircle, XCircle, FileText, Youtube } from 
 import { useToast } from '@/core/context/ToastContext';
 import { distributionService } from '@/services/distribution/DistributionService';
 import type { ValidationReport } from '@/types/distribution';
+import { secureRandomInt } from '@/utils/crypto-random';
 
 interface QCError {
     field: string;
@@ -55,7 +56,7 @@ export const QCPanel: React.FC = () => {
             const cidPayload: import('@/types/distribution').ContentIdData = {
                 tracks: [{
                     title: metadata.title || 'Test Track',
-                    isrc: metadata.isrc || `US-S1Z-25-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`,
+                    isrc: metadata.isrc || `US-S1Z-25-${secureRandomInt(0, 99999).toString().padStart(5, '0')}`,
                     asset_id: `ASSET-${Date.now()}`
                 }]
             };

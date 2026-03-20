@@ -1,6 +1,16 @@
-import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { ExtendedGoldenMetadata, GoldenMetadata } from '@/services/metadata/types';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 import { RINMessage, RINContent, RINSoundRecording, RINContributor } from './types/rin';
+
+/**
+ * Optional session/studio fields available on tracks for RIN messages.
+ * These may be populated when extended track metadata is captured during recording.
+ */
+interface RINTrackMetadata extends GoldenMetadata {
+    sessionDate?: string;
+    studioName?: string;
+    studioCountry?: string;
+}
 
 /**
  * RIN Service
@@ -43,7 +53,10 @@ export class RINService {
     private buildSoundRecordings(metadata: ExtendedGoldenMetadata): RINSoundRecording[] {
         if (!metadata.tracks) return [];
 
-        return metadata.tracks.map((track, index) => {
+        // Tracks may carry optional session metadata for RIN purposes
+        const tracks = metadata.tracks as RINTrackMetadata[];
+
+        return tracks.map((track, index) => {
             // In a real app, track extended metadata would contain session info.
             // For now, we infer/map from available contributor fields.
 
@@ -70,10 +83,10 @@ export class RINService {
                 // Session data sourced from track.credits when available;
                 // falls back to release-level metadata (date, contributors)
                 studioSessions: [({
-                    sessionDate: (track as any).sessionDate || metadata.releaseDate || '',
+                    sessionDate: track.sessionDate || metadata.releaseDate || '',
                     studioLocation: {
-                        studioName: (track as any).studioName || '',
-                        countryCode: (track as any).studioCountry || 'US'
+                        studioName: track.studioName || '',
+                        countryCode: track.studioCountry || 'US'
                     },
                     participants: contributors.map(c => ({
                         partyName: c.partyName,

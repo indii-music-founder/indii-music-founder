@@ -3,6 +3,7 @@ import { ShieldAlert, Database, FileText, ArrowRight } from 'lucide-react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
+import { logger } from '@/utils/logger';
 
 interface AuditLogEntry {
     id: string;
@@ -41,7 +42,7 @@ export const AuditLogDashboard: React.FC = () => {
             setLogs(entries);
             setLoading(false);
         }, (error) => {
-            console.error('[AuditLogDashboard] Firestore listener error:', error);
+            logger.error('[AuditLogDashboard] Firestore listener error:', error);
             setLoading(false);
         });
 

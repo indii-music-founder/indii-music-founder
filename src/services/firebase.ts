@@ -158,7 +158,6 @@ let appCheck = null;
 if (typeof window !== 'undefined') {
     // Debug token for local development - only set if explicitly configured
     if (env.DEV && env.appCheckDebugToken) {
-        // @ts-expect-error - Firebase App Check debug token property not in Window interface
         window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
     }
 
@@ -217,6 +216,8 @@ declare global {
         firebaseInternals: { doc: typeof doc; setDoc: typeof setDoc };
         functions: typeof functions;
         auth: typeof auth;
+        httpsCallable: typeof httpsCallable;
+        FIREBASE_APPCHECK_DEBUG_TOKEN?: string;
     }
 }
 
@@ -227,7 +228,6 @@ if (env.DEV && env.VITE_EXPOSE_INTERNALS === 'true' && typeof window !== 'undefi
     window.db = db;
     window.firebaseInternals = { doc, setDoc };
     window.functions = functions;
-    // @ts-expect-error - exposing for testing
     window.httpsCallable = httpsCallable;
     window.auth = auth;
 }

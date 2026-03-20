@@ -20,12 +20,13 @@ import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { MerchCard } from './components/MerchCard';
 import { logger } from '@/utils/logger';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 type WorkMode = 'agent' | 'user';
 type ViewMode = 'design' | 'showroom';
 
 // Generate unique design ID (persistent per session)
-const generateDesignId = () => `design-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateDesignId = () => `design-${Date.now()}-${secureRandomAlphanumeric(9)}`;
 // UI Components
 const IconButton = ({ icon, onClick, label, disabled, title }: { icon: React.ReactNode, onClick: () => void, label?: string, disabled?: boolean, title?: string }) => (
     <button
@@ -241,7 +242,7 @@ export default function MerchDesigner() {
     }, []);
 
     const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: string | number | boolean | object | null) => {
-        layer.fabricObject.set(property as any, value);
+        layer.fabricObject.set({ [property]: value });
         fabricCanvasRef.current?.renderAll();
     }, []);
 
@@ -303,7 +304,7 @@ export default function MerchDesigner() {
                         selectable: objData.selectable,
                         evented: objData.evented
                     });
-                    (text as any).name = objData.name;
+                    text.set('name' as keyof fabric.Textbox, objData.name);
                     canvas.add(text);
                 } else if (objData.type === 'rect') {
                     const rect = new fabric.Rect({
@@ -321,8 +322,8 @@ export default function MerchDesigner() {
                         selectable: objData.selectable,
                         evented: objData.evented
                     });
-                    (rect as any).name = objData.name;
-                    (rect as any).isPlaceholder = objData.isPlaceholder;
+                    rect.set('name' as keyof fabric.Rect, objData.name);
+                    rect.set('isPlaceholder' as keyof fabric.Rect, objData.isPlaceholder);
                     canvas.add(rect);
                 }
             } catch (error) {

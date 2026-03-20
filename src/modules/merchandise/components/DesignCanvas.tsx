@@ -9,9 +9,10 @@ import type {
     FabricActiveSelectionWithIterator,
     FabricTextObject,
 } from '../types/fabric-extensions';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 // Generate unique IDs
-const generateId = () => `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateId = () => `obj-${Date.now()}-${secureRandomAlphanumeric(9)}`;
 
 export interface CanvasObject {
     id: string;

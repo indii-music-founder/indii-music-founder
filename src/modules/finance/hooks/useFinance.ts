@@ -41,7 +41,7 @@ export function useFinance() {
             setEarningsSummary(data);
             setEarningsLoading(false);
             if (!data) {
-                console.info('[useFinance] No validated earnings data available for user.');
+                logger.info('[useFinance] No validated earnings data available for user.');
             }
         });
 

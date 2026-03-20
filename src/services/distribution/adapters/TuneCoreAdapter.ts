@@ -14,6 +14,7 @@ import {
 } from '@/services/distribution/types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
 import { DDEX_CONFIG } from '@/core/config/ddex';
+import { logger } from '@/utils/logger';
 
 export class TuneCoreAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'tunecore';
@@ -116,9 +117,9 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
                             }
                         };
                     }
-                    console.warn('[TuneCore] HTTP API returned non-OK, falling back to pending status');
+                    logger.warn('[TuneCore] HTTP API returned non-OK, falling back to pending status');
                 } catch (apiErr) {
-                    console.warn('[TuneCore] HTTP API delivery failed, returning ERN-ready status:', apiErr);
+                    logger.warn('[TuneCore] HTTP API delivery failed, returning ERN-ready status:', apiErr);
                 }
             }
 

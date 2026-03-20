@@ -13,6 +13,8 @@
  *   - Error Rate: < 0.1%
  */
 
+import { logger } from '@/utils/logger';
+
 export interface SLATarget {
     uptimePercent: number;      // e.g., 99.9
     p95ResponseMs: number;      // e.g., 2000
@@ -129,7 +131,7 @@ export class UptimeMonitorService {
 
         this.intervalId = setInterval(() => {
             this.checkAll().catch(err => {
-                console.error('[UptimeMonitor] Check failed:', err);
+                logger.error('[UptimeMonitor] Check failed:', err);
             });
         }, intervalMs);
 

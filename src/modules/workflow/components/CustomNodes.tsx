@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
-import type { InputNodeData, OutputNodeData, AudioSegmentNodeData } from '../types';
+import type { InputNodeData, OutputNodeData, AudioSegmentNodeData, AnyAsset } from '../types';
 import { Pencil, AudioWaveform, Play, Sparkles } from 'lucide-react';
 import { useStore } from '@/core/store';
 import UniversalNode from './UniversalNode';
@@ -100,8 +100,8 @@ export const OutputNode = memo(({ data, selected }: NodeProps<OutputNodeData>) =
     const resultIsAsset = typeof data.result === 'object' && data.result !== null;
     let displayText = 'Workflow output';
     if (resultIsAsset) {
-        // @ts-expect-error workflow result can be an asset object with optional title
-        displayText = `Asset: ${data.result.title || data.result.assetType}`;
+        const asset = data.result as AnyAsset;
+        displayText = `Asset: ${asset.title || asset.assetType}`;
     } else if (typeof data.result === 'string' && data.result) {
         displayText = `Report generated`;
     }

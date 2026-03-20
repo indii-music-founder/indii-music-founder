@@ -79,7 +79,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
 
             // 2. Real Transmission (If SFTP is connected)
             if (this.credentials?.sftpHost && window.electronAPI?.distribution?.stageRelease) {
-                console.info('[DistroKid] Executing real SFTP delivery...');
+                logger.info('[DistroKid] Executing real SFTP delivery...');
 
                 const files: { type: 'content' | 'path'; data: string; name: string }[] = [
                     { type: 'content', data: ernResult.xml!, name: 'batch.xml' }
@@ -129,7 +129,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
                     throw new Error(stagingValues.error || 'Failed to stage release files locally');
                 }
 
-                console.info(`[DistroKid] Files staged at ${stagingValues.packagePath}. Starting upload...`);
+                logger.info(`[DistroKid] Files staged at ${stagingValues.packagePath}. Starting upload...`);
 
                 // Using BaseDistributorAdapter's protected uploadBundle method
                 await this.uploadBundle(stagingValues.packagePath!, `/incoming/${metadata.upc || releaseId}`);

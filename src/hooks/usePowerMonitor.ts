@@ -10,12 +10,12 @@ export function usePowerMonitor() {
     const [isOnBattery, setIsOnBattery] = useState(false);
 
     useEffect(() => {
-        // Safe check for Electron environment
-        if (typeof window !== 'undefined' && (window as any).electron) {
-            const electron = (window as any).electron;
+        // Safe check for Electron environment using the typed ElectronAPI
+        if (typeof window !== 'undefined' && window.electronAPI) {
+            const api = window.electronAPI;
 
             // Get initial state
-            electron.ipcRenderer.invoke('power:get-state').then((state: string) => {
+            api.invoke('power:get-state').then((state) => {
                 setIsOnBattery(state === 'battery');
             }).catch((e: Error) => logger.warn('[usePowerMonitor] Failed to get initial power state', e));
 
@@ -30,15 +30,13 @@ export function usePowerMonitor() {
                 setIsOnBattery(false);
             };
 
-            electron.ipcRenderer.on('power:on-battery', handleBattery);
-            electron.ipcRenderer.on('power:on-ac', handleAC);
+            const unsubBattery = api.on('power:on-battery', handleBattery);
+            const unsubAC = api.on('power:on-ac', handleAC);
 
             return () => {
                 // Cleanup IPC listeners
-                if (electron.ipcRenderer.removeListener) {
-                    electron.ipcRenderer.removeListener('power:on-battery', handleBattery);
-                    electron.ipcRenderer.removeListener('power:on-ac', handleAC);
-                }
+                unsubBattery?.();
+                unsubAC?.();
             };
         }
     }, []);

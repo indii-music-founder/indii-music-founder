@@ -20,7 +20,7 @@ export class AcousticFingerprintService {
      */
     async generateAcousticFingerprint(filePath: string): Promise<AcousticFingerprint | null> {
         // Prevent browser-side execution crashes
-        if (typeof window !== 'undefined' && !((window as any).process?.type)) {
+        if (typeof window !== 'undefined' && !window.electronAPI) {
             logger.error('[AcousticFingerprint] Cannot run fpcalc in a pure browser environment.');
             return null;
         }

@@ -90,14 +90,14 @@ export class FraudDetectionService {
      * Combines SHA-256 binary hash and Chromaprint acoustic fingerprint.
      */
     static async checkContentIntegrity(file: File, filePath?: string): Promise<{ safe: boolean; match?: string; fingerprint?: string }> {
-        console.info(`[FraudDetection] Generating acoustic fingerprint for file...`);
+        logger.info(`[FraudDetection] Generating acoustic fingerprint for file...`);
 
         const fingerprint = await fingerprintService.generateFingerprint(file, filePath);
         if (!fingerprint) {
             return { safe: true }; // Fallback to safe if fingerprinting fails (or log error)
         }
 
-        console.info(`[FraudDetection] Fingerprint: ${fingerprint}`);
+        logger.info(`[FraudDetection] Fingerprint: ${fingerprint}`);
 
         try {
             // Check against known infringements in Firestore
@@ -147,7 +147,7 @@ export class FraudDetectionService {
      * Backwards compatibility: If file is not provided (legacy call), we skip fingerprinting and only check URL.
      */
     static async checkCopyright(audioFileUrlOrFile: string | File, audioFileUrlLegacy?: string): Promise<{ safe: boolean; match?: string; fingerprint?: string }> {
-        console.info(`[FraudDetection] Scanning audio for copyright infringement...`);
+        logger.info(`[FraudDetection] Scanning audio for copyright infringement...`);
 
         try {
             let fingerprint: string | null = null;
@@ -159,7 +159,7 @@ export class FraudDetectionService {
             }
 
             if (!fingerprint && !audioFileUrl) {
-                console.warn('[FraudDetection] No file or URL provided for copyright scan. Proceeding as safe.');
+                logger.warn('[FraudDetection] No file or URL provided for copyright scan. Proceeding as safe.');
                 return { safe: true };
             }
 
@@ -205,7 +205,7 @@ export class FraudDetectionService {
      * Specialized detection for transformed audio.
      */
     static async checkBroadSpectrum(audioFileUrl: string): Promise<{ safe: boolean; details?: string }> {
-        console.info(`[FraudDetection] Running Broad Spectrum analysis...`);
+        logger.info(`[FraudDetection] Running Broad Spectrum analysis...`);
 
         try {
             const q = query(

@@ -19,9 +19,7 @@ export const StandardMerch: React.FC = () => {
                     src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2000&q=80"
                     alt="Standard Collection Hero"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2000ms] ease-out"
-                    // HTML attribute support for high priority
-                    // @ts-expect-error - React expects lowercase for custom attributes if not in types
-                    fetchpriority="high"
+                    fetchPriority="high"
                 />
                 <div className="absolute inset-0 z-20 flex flex-col justify-center px-12 bg-background/30 backdrop-blur-[4px]">
                     <div className="w-fit mb-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">

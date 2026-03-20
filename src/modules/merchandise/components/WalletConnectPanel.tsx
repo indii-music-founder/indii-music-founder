@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, CheckCircle2, Copy, LogOut, Link2, Shield, AlertCircle } from 'lucide-react';
 import { walletConnectService } from '@/services/web3/WalletConnectService';
+import { logger } from '@/utils/logger';
 
 const STORAGE_KEY = 'indii_wallet_address';
 const CHAIN_KEY = 'indii_wallet_chain';
@@ -118,7 +119,7 @@ export function WalletConnectPanel() {
         localStorage.removeItem(CHAIN_KEY);
         setAddress(null);
         setError(null);
-        walletConnectService.disconnect().catch((err) => { console.error('[WalletConnect] disconnect error:', err); });
+        walletConnectService.disconnect().catch((err) => { logger.error('[WalletConnect] disconnect error:', err); });
     };
 
     const handleCopy = async () => {

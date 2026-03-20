@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Scan, Upload, FileImage, Plus, CheckCircle, Tag, Calendar, DollarSign, Store, AlertTriangle } from 'lucide-react';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  Item 160 — Expense Receipt OCR                                     */
@@ -101,7 +102,7 @@ export function ReceiptOCR() {
             const { GoogleGenAI } = await import('@google/genai');
             const apiKey = import.meta.env.VITE_API_KEY;
             if (!apiKey) {
-                console.warn('[ReceiptOCR] No API key configured — cannot analyze receipt');
+                logger.warn('[ReceiptOCR] No API key configured — cannot analyze receipt');
                 setIsAnalyzing(false);
                 return;
             }
@@ -146,7 +147,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`,
                 category: parsed.category || 'Other',
             });
         } catch (error) {
-            console.error('[ReceiptOCR] Analysis failed:', error);
+            logger.error('[ReceiptOCR] Analysis failed:', error);
             setError(error instanceof Error ? error.message : 'Analysis failed. Please try again.');
         } finally {
             setIsAnalyzing(false);

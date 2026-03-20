@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import { Mesh } from 'three'; // Item 357: Named import enables Three.js tree-shaking
 import { Download, Trash2, BoxSelect, MonitorPlay } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 /**
  * Advanced 3D Scene Builder component implementing requirement 105.
@@ -24,7 +25,7 @@ class ModelErrorBoundary extends Component<{ children: React.ReactNode }, { hasE
     }
     static getDerivedStateFromError(_: Error) { return { hasError: true }; }
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error('Failed to load GLTF model:', error, errorInfo);
+        logger.error('Failed to load GLTF model:', error, errorInfo);
     }
     render() {
         if (this.state.hasError) return null;

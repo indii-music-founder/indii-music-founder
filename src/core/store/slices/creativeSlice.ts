@@ -277,7 +277,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
 
             if (updatedItem) {
                 import('@/services/StorageService').then(({ StorageService }) => {
-                    StorageService.saveItem(updatedItem).catch(console.error);
+                    StorageService.saveItem(updatedItem).catch((e) => logger.error('[Store] Async operation failed:', e));
                 });
             }
 

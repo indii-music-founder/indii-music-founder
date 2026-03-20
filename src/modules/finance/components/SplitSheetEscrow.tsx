@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard, Loader2, Download } from 'lucide-react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  Split Sheet Escrow — Collaborative Funds Release Tool              */
@@ -70,7 +71,7 @@ export function SplitSheetEscrow() {
             await Promise.all(transferPromises);
             setReleased(true);
         } catch (err: unknown) {
-            console.error('[SplitSheetEscrow] Transfer failed:', err);
+            logger.error('[SplitSheetEscrow] Transfer failed:', err);
             setReleaseError(err instanceof Error ? err.message : 'Transfer failed. Please try again.');
         } finally {
             setReleasing(false);
@@ -100,7 +101,7 @@ export function SplitSheetEscrow() {
             setExportUrl(result.data.url);
             window.open(result.data.url, '_blank');
         } catch (err: unknown) {
-            console.error('[SplitSheetEscrow] Export failed:', err);
+            logger.error('[SplitSheetEscrow] Export failed:', err);
         } finally {
             setExporting(false);
         }

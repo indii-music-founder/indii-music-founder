@@ -39,7 +39,7 @@ export class AudioContextManager {
         logger.info('[AudioContextManager] Initializing shared AudioContext...');
 
         // Use standard or prefixed AudioContext (for Safari)
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         this.context = new AudioContextClass();
         this.isInitialized = true;
 

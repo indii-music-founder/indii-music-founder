@@ -1,7 +1,9 @@
+import { logger } from '@/utils/logger';
+
 export async function downloadAsset(url: string, defaultFilename: string = 'download') {
     try {
-        if (typeof window !== 'undefined' && (window as any).electron?.video?.saveAsset) {
-            await (window as any).electron.video.saveAsset(url, defaultFilename);
+        if (typeof window !== 'undefined' && window.electronAPI?.video?.saveAsset) {
+            await window.electronAPI.video.saveAsset(url, defaultFilename);
             return true;
         }
 
@@ -26,7 +28,8 @@ export async function downloadAsset(url: string, defaultFilename: string = 'down
         }
         return true;
     } catch (error) {
-        console.error('Failed to download asset:', error);
+        logger.error('Failed to download asset:', error);
         return false;
     }
 }
+

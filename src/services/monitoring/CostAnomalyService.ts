@@ -11,6 +11,8 @@
  *   - AI API token usage estimation
  */
 
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
+
 export interface CostMetric {
     service: string;
     metric: string;
@@ -167,7 +169,7 @@ export class CostAnomalyService {
 
         if (!isDuplicate) {
             this.alerts.push({
-                id: `alert-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                id: `alert-${Date.now()}-${secureRandomAlphanumeric(4)}`,
                 severity,
                 service,
                 message,

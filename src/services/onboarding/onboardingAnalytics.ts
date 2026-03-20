@@ -132,7 +132,7 @@ class OnboardingAnalytics {
         // Send to Firebase Analytics via gtag if available
         try {
             if (typeof window !== 'undefined' && 'gtag' in window) {
-                (window as any).gtag('event', event.event, {
+                window.gtag?.('event', event.event, {
                     event_category: 'onboarding',
                     ...event,
                 });

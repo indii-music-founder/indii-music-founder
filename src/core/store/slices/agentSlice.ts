@@ -210,7 +210,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
         // Persist the new session immediately
         import('@/services/agent/SessionService').then(({ sessionService }) => {
-            sessionService.createSession(newSession).catch(console.error);
+            sessionService.createSession(newSession).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
         });
 
         return id;
@@ -233,7 +233,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
         // Persist the deletion
         import('@/services/agent/SessionService').then(({ sessionService }) => {
-            sessionService.deleteSession(sessionId).catch(console.error);
+            sessionService.deleteSession(sessionId).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
         });
 
         // If deleting active session, fallback to another or null
@@ -268,7 +268,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
         // Persist the title change
         import('@/services/agent/SessionService').then(({ sessionService }) => {
-            sessionService.updateSession(sessionId, { title }).catch(console.error);
+            sessionService.updateSession(sessionId, { title }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
         });
     },
 
@@ -298,7 +298,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
         // Persist the updated session messages
         import('@/services/agent/SessionService').then(({ sessionService }) => {
-            sessionService.updateSession(currentSessionId, { messages: updatedSession.messages }).catch(console.error);
+            sessionService.updateSession(currentSessionId, { messages: updatedSession.messages }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
         });
 
         return {
@@ -319,7 +319,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         // Persist the updated messages
         import('@/services/agent/SessionService').then(({ sessionService }) => {
             if (state.activeSessionId) {
-                sessionService.updateSession(state.activeSessionId, { messages: updatedMessages }).catch(console.error);
+                sessionService.updateSession(state.activeSessionId, { messages: updatedMessages }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
             }
         });
 
@@ -341,7 +341,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         // Persist the cleared history
         import('@/services/agent/SessionService').then(({ sessionService }) => {
             if (state.activeSessionId) {
-                sessionService.updateSession(state.activeSessionId, { messages: [] }).catch(console.error);
+                sessionService.updateSession(state.activeSessionId, { messages: [] }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
             }
         });
 
@@ -405,7 +405,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         const newParticipants = [...session.participants, agentId];
 
         import('@/services/agent/SessionService').then(({ sessionService }) => {
-            sessionService.updateSession(sessionId, { participants: newParticipants }).catch(console.error);
+            sessionService.updateSession(sessionId, { participants: newParticipants }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
         });
 
         return {

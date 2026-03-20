@@ -255,7 +255,7 @@ export class RevenueService {
         ...validatedEntry,
         createdAt: entry.timestamp ? Timestamp.fromMillis(entry.timestamp) : serverTimestamp()
       });
-      console.info('[RevenueService] Sale recorded successfully');
+      logger.info('[RevenueService] Sale recorded successfully');
     } catch (error) {
       logger.error("[RevenueService] Failed to record sale:", error);
       throw error;

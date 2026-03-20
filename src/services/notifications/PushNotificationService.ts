@@ -102,9 +102,9 @@ export class PushNotificationService {
     }
 
     private detectPlatform(): string {
-        const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+        const userAgent = navigator.userAgent || navigator.vendor || (window.opera as string) || '';
         if (/android/i.test(userAgent)) return 'Android';
-        if (/iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream) return 'iOS';
+        if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) return 'iOS';
         return 'Web';
     }
 }

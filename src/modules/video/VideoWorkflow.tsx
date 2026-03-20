@@ -315,7 +315,7 @@ export default function VideoWorkflow() {
                     model: studioControls.model,
                     onProgress: (current, total) => {
                         // Optional: Could wire this up to a local progress update if store supports it
-                        console.info(`Segment ${current}/${total}`);
+                        logger.info(`Segment ${current}/${total}`);
                     }
                 });
             } else {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { FileUp, FileAudio, FileImage, FileText, AlertTriangle } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?: string }> {
     if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
@@ -31,7 +32,7 @@ async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?
                         });
                     }
                 } catch (err) {
-                    console.error('Error parsing WAV header:', err);
+                    logger.error('Error parsing WAV header:', err);
                 }
                 resolve({ valid: true });
             };

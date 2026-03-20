@@ -3,6 +3,7 @@ import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { Project } from '@/core/store/slices/appSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
 import { logger } from '@/utils/logger';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 export interface ProjectMetadata {
     id: string;
@@ -317,7 +318,7 @@ export class DashboardService {
                 const { id: _, ...data } = item;
                 await StorageService.saveItem({
                     ...data,
-                    id: `copy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ID is usually ignored by saveItem but required by type
+                    id: `copy_${Date.now()}_${secureRandomAlphanumeric(9)}`, // ID is usually ignored by saveItem but required by type
                     projectId: newProject.id,
                     timestamp: Date.now()
                 });

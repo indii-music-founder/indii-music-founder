@@ -31,7 +31,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
 
         // Auto-seed Demo Project if empty and valid user
         if (results.length === 0 && userId && (orgId === 'org-default' || orgId === 'personal')) {
-            console.info("No projects found, seeding Demo Project...");
+            logger.info("No projects found, seeding Demo Project...");
             try {
                 const demoProject = await this.createProject('Demo Project', 'creative', orgId);
                 return [demoProject];
@@ -91,7 +91,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
             const dt = new DataTransfer();
             dt.items.add(file);
             await knowledgeBaseService.uploadFiles(dt.files, id);
-            console.info(`[ProjectService] Seeded branding guidelines for project ${id}`);
+            logger.info(`[ProjectService] Seeded branding guidelines for project ${id}`);
 
         } catch (e) {
             logger.warn("[ProjectService] Failed to seed branding guidelines:", e);

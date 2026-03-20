@@ -39,6 +39,8 @@ export const FEATURE_FLAG_NAMES = {
     WEB3: 'enable_web3',
     MERCH_STORE: 'enable_merch_store',
     MARKETPLACE: 'enable_marketplace',
+    SOCIAL_POSTING: 'enable_social_posting',
+    AVATAR_GENERATION: 'enable_avatar_generation',
 } as const;
 
 export type FeatureFlagName = typeof FEATURE_FLAG_NAMES[keyof typeof FEATURE_FLAG_NAMES];
@@ -63,6 +65,8 @@ const DEFAULTS: Record<string, boolean> = {
     [FEATURE_FLAG_NAMES.WEB3]: false,
     [FEATURE_FLAG_NAMES.MERCH_STORE]: false,
     [FEATURE_FLAG_NAMES.MARKETPLACE]: false,
+    [FEATURE_FLAG_NAMES.SOCIAL_POSTING]: false,
+    [FEATURE_FLAG_NAMES.AVATAR_GENERATION]: false,
 };
 
 // ============================================================================

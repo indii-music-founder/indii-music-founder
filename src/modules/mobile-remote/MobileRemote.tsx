@@ -108,7 +108,6 @@ export default function MobileRemote() {
 
       if (typeof window !== 'undefined' && window.electronAPI) {
         try {
-          // @ts-expect-error — getMobileRemoteInfo added in updated preload
           const info = await window.electronAPI.system?.getMobileRemoteInfo?.();
           if (info) {
             localIp = info.localIp ?? localIp;

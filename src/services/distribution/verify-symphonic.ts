@@ -1,3 +1,9 @@
+/**
+ * @deprecated Move to `scripts/verify-symphonic.ts` or `e2e/`.
+ *             This is a standalone verification script with mock data and Node.js
+ *             imports (fs, path) that should NOT be in the browser bundle.
+ * @mock Uses hardcoded mock credentials and test metadata.
+ */
 
 import { SymphonicAdapter } from './adapters/SymphonicAdapter';
 import type { ExtendedGoldenMetadata } from '../metadata/types';
@@ -7,7 +13,7 @@ import * as path from 'path';
 import { logger } from '@/utils/logger';
 
 async function verifySymphonicIntegration() {
-    console.info('🚀 Verifying Symphonic Integration...\n');
+    logger.info('🚀 Verifying Symphonic Integration...\n');
 
     // 1. Setup Adapter
     const symphonic = new SymphonicAdapter();
@@ -66,13 +72,13 @@ async function verifySymphonicIntegration() {
     };
 
     // 3. Execute Release Creation
-    console.info('📦 Creating Release Package...');
+    logger.info('📦 Creating Release Package...');
     const result = await symphonic.createRelease(mockMetadata, mockAssets);
 
     // 4. Verify Result
     if (result.success && result.status === 'delivered') {
-        console.info(`✅ Success! Release ID: ${result.releaseId}`);
-        console.info(`✅ Status: ${result.status}`);
+        logger.info(`✅ Success! Release ID: ${result.releaseId}`);
+        logger.info(`✅ Status: ${result.status}`);
     } else {
         logger.error('❌ Failed:', result);
     }
@@ -86,10 +92,10 @@ async function verifySymphonicIntegration() {
     if (fs.existsSync(dummyAudioPath)) fs.unlinkSync(dummyAudioPath);
     if (fs.existsSync(dummyCoverPath)) fs.unlinkSync(dummyCoverPath);
 
-    console.info('\n✨ Verification Complete!');
+    logger.info('\n✨ Verification Complete!');
 }
 
 // Only execute when run directly (not on import)
 if (typeof process !== 'undefined' && process.argv[1]?.includes('verify-symphonic')) {
-    verifySymphonicIntegration().catch(console.error);
+    verifySymphonicIntegration().catch((err) => logger.error('[verify-symphonic] Failed:', err));
 }
