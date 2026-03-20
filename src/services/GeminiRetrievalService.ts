@@ -11,7 +11,8 @@
  * The Files API is simpler, more reliable, and actively maintained.
  */
 
-import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
+import type { Part, Content } from '@google/genai';
 import { logger } from '@/utils/logger';
 
 // ============================================================================
@@ -83,7 +84,7 @@ const SUPPORTED_MIME_TYPES = new Set([
 // ============================================================================
 
 export class GeminiRetrievalService {
-    private genAI: GoogleGenerativeAI;
+    private genAI: GoogleGenAI;
     private uploadedFiles: Map<string, UploadedFile> = new Map();
 
     constructor(apiKey?: string) {
@@ -91,7 +92,7 @@ export class GeminiRetrievalService {
         if (!key) {
             throw new Error('Gemini API key is required. Set VITE_API_KEY environment variable.');
         }
-        this.genAI = new GoogleGenerativeAI(key);
+        this.genAI = new GoogleGenAI({ apiKey: key });
     }
 
     // =========================================================================
@@ -272,14 +273,6 @@ export class GeminiRetrievalService {
             throw new Error('At least one file must be provided for retrieval');
         }
 
-        const model = this.genAI.getGenerativeModel({
-            model: MODEL_NAME,
-            generationConfig: {
-                maxOutputTokens: options.maxTokens || 2048,
-                temperature: options.temperature || 0.3, // Lower temp for factual retrieval
-            },
-        });
-
         // Build file parts for the prompt
         const fileParts: Part[] = fileNames.map(name => ({
             fileData: {
@@ -295,16 +288,25 @@ If the answer is not in the documents, say "I couldn't find that information in 
 Always cite which document(s) your answer comes from.`;
 
         try {
-            const result = await model.generateContent([
-                { text: systemPrompt },
-                ...fileParts,
-                { text: `Question: ${query}` },
-            ]);
+            const result = await this.genAI.models.generateContent({
+                model: MODEL_NAME,
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { text: systemPrompt },
+                        ...fileParts,
+                        { text: `Question: ${query}` },
+                    ] as Part[],
+                }] as Content[],
+                config: {
+                    maxOutputTokens: options.maxTokens || 2048,
+                    temperature: options.temperature || 0.3,
+                },
+            });
 
-            const response = result.response;
-            const text = response.text();
+            const text = result.text ?? '';
 
-            // Extract source citations (simplified - could be enhanced with structured output)
+            // Extract source citations
             const sources = fileNames.map(name => ({
                 fileName: this.uploadedFiles.get(name)?.displayName || name,
                 relevanceScore: 1.0, // Files API doesn't return relevance scores
@@ -330,14 +332,6 @@ Always cite which document(s) your answer comes from.`;
         fileNames: string[],
         topK: number = 5
     ): Promise<Array<{ excerpt: string; source: string; score: number }>> {
-        const model = this.genAI.getGenerativeModel({
-            model: MODEL_NAME,
-            generationConfig: {
-                maxOutputTokens: 4096,
-                temperature: 0,
-            },
-        });
-
         const fileParts: Part[] = fileNames.map(name => ({
             fileData: {
                 mimeType: this.uploadedFiles.get(name)?.mimeType || 'application/octet-stream',
@@ -355,13 +349,20 @@ Return the ${topK} most relevant excerpts as a JSON array:
 Only return the JSON array, no other text.`;
 
         try {
-            const result = await model.generateContent([
-                ...fileParts,
-                { text: searchPrompt },
-            ]);
+            const result = await this.genAI.models.generateContent({
+                model: MODEL_NAME,
+                contents: [{
+                    role: 'user',
+                    parts: [...fileParts, { text: searchPrompt }] as Part[],
+                }] as Content[],
+                config: {
+                    maxOutputTokens: 4096,
+                    temperature: 0,
+                },
+            });
 
-            const text = result.response.text();
-            
+            const text = result.text ?? '';
+
             // Parse JSON response (handle potential markdown code blocks)
             const jsonMatch = text.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
