@@ -32,10 +32,10 @@ vi.mock('electron', () => ({
 // Mock 'electron-store' to prevent filesystem access in CI
 vi.mock('electron-store', () => ({
     default: class MockStore {
-        store: Record<string, any> = {};
+        store: Record<string, unknown> = {};
         path = '/mock/store.json';
         get(key: string) { return this.store[key]; }
-        set(key: string, val: any) { this.store[key] = val; }
+        set(key: string, val: unknown) { this.store[key] = val; }
         delete(key: string) { delete this.store[key]; }
         clear() { this.store = {}; }
     }
@@ -72,8 +72,15 @@ vi.mock('node:dns', async () => {
     };
 });
 
+// Typed result for IPC handler responses
+interface HandlerResult {
+    success: boolean;
+    error?: string;
+    data?: unknown;
+}
+
 describe('🛡️ Shield: Agent IPC Security Test', () => {
-    let handlers: Record<string, (...args: any[]) => any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -83,7 +90,7 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
         handlers = {};
 
         // Capture handlers
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
             handlers[channel] = handler;
         });
 
@@ -95,11 +102,11 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
         vi.resetModules();
     });
 
-    const invokeHandler = async (channel: string, ...args: any[]) => {
+    const invokeHandler = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`Handler for ${channel} not found`);
         const event = { senderFrame: { url: 'file:///app/index.html' } };
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     it('should BLOCK navigation to Localhost (SSRF)', async () => {
