@@ -63,6 +63,24 @@ import {
     streamWithFallback as fallbackStream,
 } from './fallback/FallbackClient';
 import { generateVideo as mediaGenerateVideo } from './generators/MediaGenerator';
+import {
+    generateText as hlGenerateText,
+    generateStructuredData as hlGenerateStructuredData,
+    chat as hlChat,
+    analyzeImage as hlAnalyzeImage,
+    analyzeMultimodal as hlAnalyzeMultimodal,
+    generateGroundedContent as hlGenerateGroundedContent,
+    captionImage as hlCaptionImage,
+    analyzeAudio as hlAnalyzeAudio,
+    parseJSON as hlParseJSON,
+} from './generators/HighLevelAPI';
+import { generateImage as imgGenerate } from './generators/ImageGenerator';
+import { generateSpeech as speechGenerate } from './generators/SpeechGenerator';
+import {
+    embedContent as embeddingEmbed,
+    batchEmbedContents as embeddingBatchEmbed,
+} from './generators/EmbeddingGenerator';
+import type { AIContext } from './AIContext';
 import type {
     ImportMetaEnvWithKeys,
     GenAIEmbedResult,
@@ -81,26 +99,26 @@ export type { ChatMessage } from './types';
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
 
-export class FirebaseAIService {
-    private model: ExtendedGenerativeModel | null = null;
+export class FirebaseAIService implements AIContext {
+    public model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
-    private defaultConfig: GenerationConfig = {};
+    public defaultConfig: GenerationConfig = {};
 
     // Fallback mode: use direct Gemini SDK when App Check is not available
-    private fallbackClient: GoogleGenAI | null = null;
-    private useFallbackMode = false;
-    private activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
+    public fallbackClient: GoogleGenAI | null = null;
+    public useFallbackMode = false;
+    public activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
 
     // Default: 60 RPM (adjust based on quota)
-    private rateLimiter: RateLimiter = new RateLimiter(60);
+    public rateLimiter: RateLimiter = new RateLimiter(60);
 
     // Circuit Breakers
-    private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION!);
-    private mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION!);
-    private auxBreaker = new CircuitBreaker(BREAKER_CONFIGS.AUX_SERVICES!);
+    public contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION!);
+    public mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION!);
+    public auxBreaker = new CircuitBreaker(BREAKER_CONFIGS.AUX_SERVICES!);
 
     // Dynamic Configuration
-    private remoteConfig: RemoteAIConfig = DEFAULT_REMOTE_CONFIG;
+    public remoteConfig: RemoteAIConfig = DEFAULT_REMOTE_CONFIG;
 
     /**
      * Permanently switches the service to direct Gemini SDK for the current session.
@@ -215,7 +233,7 @@ export class FirebaseAIService {
      * Get the model name, either from remote config or fallback
      * Handles DYNAMIC INTERCEPTION/REPLACEMENT of models.
      */
-    private getModelName(modelOverride?: string): string {
+    public getModelName(modelOverride?: string): string {
         // If the user provided a specific override, checking if WE want to override THAT.
         // But usually, an explicit override in code means "I need this specific model".
         // HOWEVER, for "system" defined constants, we might want to swap them too.
@@ -744,74 +762,19 @@ export class FirebaseAIService {
 
     /**
      * HIGH LEVEL: Generate text with optional thinking budget and system instruction.
+     * @see generators/HighLevelAPI.ts
      */
     async generateText(
         prompt: string | Part[],
         thinkingBudgetOrModel?: number | string,
         systemInstructionOrConfig?: string | Record<string, unknown>
     ): Promise<string> {
-        await this.ensureInitialized();
-        let model: string | undefined;
-        let config: Record<string, unknown> = {};
-        let systemInstruction: string | undefined;
-
-        // Item 250: Sanitize user-provided string prompts before sending to Gemini
-        if (typeof prompt === 'string') {
-            prompt = PromptSanitizer.sanitizeOrThrow(prompt);
-        }
-
-        if (typeof thinkingBudgetOrModel === 'string') {
-            model = thinkingBudgetOrModel;
-        }
-
-        const modelName = model || this.getModelName();
-        const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
-
-        if (typeof thinkingBudgetOrModel === 'number') {
-            const isGemini3 = modelName.includes('gemini-3');
-            if (isGemini3) {
-                config.thinkingConfig = {
-                    thinkingLevel: thinkingBudgetOrModel > 4096 ? 'HIGH' : 'MEDIUM',
-                    includeThoughts: true
-                };
-            } else {
-                config.thinkingConfig = {
-                    thinkingBudget: thinkingBudgetOrModel,
-                    includeThoughts: true
-                };
-            }
-            systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
-        } else if (typeof thinkingBudgetOrModel === 'string') {
-            if (typeof systemInstructionOrConfig === 'string') {
-                systemInstruction = systemInstructionOrConfig;
-            } else {
-                config = (systemInstructionOrConfig as Record<string, unknown>) || {};
-                systemInstruction = config && typeof config === 'object' && 'systemInstruction' in config ? (config as { systemInstruction: string }).systemInstruction : undefined;
-            }
-        }
-
-        // Semantic Cache Check
-        const cached = await aiCache.get(cacheKey, modelName, config);
-        if (cached) return cached;
-
-        const result = await this.rawGenerateContent(
-            typeof prompt === 'string' ? prompt : [{ role: 'user', parts: prompt }],
-            modelName,
-            config,
-            systemInstruction
-        );
-
-        if (!result?.response) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service returned an invalid response structure');
-        }
-
-        const text = typeof result.response.text === 'function' ? result.response.text() : '';
-        await aiCache.set(cacheKey, text, modelName, config);
-        return text;
+        return hlGenerateText(this, prompt, thinkingBudgetOrModel, systemInstructionOrConfig);
     }
 
     /**
      * HIGH LEVEL: Generate structured data from a prompt/parts and schema.
+     * @see generators/HighLevelAPI.ts
      */
     async generateStructuredData<T>(
         promptOrOptions: string | Part[] | GenerateContentOptions,
@@ -820,201 +783,74 @@ export class FirebaseAIService {
         systemInstruction?: string,
         modelOverride?: string
     ): Promise<T> {
-        await this.ensureInitialized();
-
-        let prompt: string | Content[];
-        let schema: Schema | undefined;
-        let config: GenerationConfig = {};
-        let finalSystemInstruction = systemInstruction;
-        let modelName = modelOverride || this.getModelName();
-
-        if (typeof promptOrOptions === 'object' && !Array.isArray(promptOrOptions) && 'contents' in promptOrOptions) {
-            // Options object pattern
-            const options = promptOrOptions as GenerateContentOptions;
-            prompt = options.contents as Content[];
-            config = options.config || {};
-            schema = config.responseSchema as Schema;
-            finalSystemInstruction = options.systemInstruction;
-            modelName = options.model || modelName;
-        } else {
-            // Positional arguments pattern
-            prompt = typeof promptOrOptions === 'string' ? promptOrOptions : [{ role: 'user', parts: promptOrOptions as Part[] }];
-            schema = schemaOrConfig as Schema;
-            config = {
-                responseMimeType: 'application/json',
-                responseSchema: schema
-            };
-            if (thinkingBudget) {
-                const isGemini3 = modelName.includes('gemini-3');
-                if (isGemini3) {
-                    config.thinkingConfig = {
-                        thinkingLevel: thinkingBudget > 4096 ? 'HIGH' : 'MEDIUM',
-                        includeThoughts: true
-                    };
-                } else {
-                    config.thinkingConfig = {
-                        thinkingBudget,
-                        includeThoughts: true
-                    };
-                }
-            }
-        }
-
-        // Create a lean cache key that avoids stringifying large binary/base64 data
-        const leanPrompt = Array.isArray(prompt)
-            ? prompt.map(p => ({
-                ...p,
-                parts: p.parts.map(part => 'inlineData' in part ? { ...part, inlineData: { ...part.inlineData, data: '[REDACTED_FOR_CACHE_KEY]' } } : part)
-            }))
-            : typeof prompt === 'string' ? prompt : '[COMPLEX_OBJECT]';
-
-        const cacheKeyString = JSON.stringify(leanPrompt) + JSON.stringify(schema || {}) + modelName;
-
-        const cached = await aiCache.get(cacheKeyString, modelName, config);
-        if (cached) {
-            try {
-                return safeJsonParse(cached) as T;
-            } catch (_e) {
-                // Ignore parse failure
-            }
-        }
-
-        const result = await this.rawGenerateContent(
-            prompt,
-            modelName,
-            config,
-            finalSystemInstruction
-        );
-
-        if (!result?.response) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service returned an invalid response structure for structured data');
-        }
-
-        const text = typeof result.response.text === 'function' ? result.response.text() : '';
-        if (!text) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service returned an empty response for structured data');
-        }
-        await aiCache.set(cacheKeyString, text, modelName, config);
-
-        // Use the robust parser
-        const cleaned = text.replace(/```json\n ?| ```/g, '').trim();
-        return safeJsonParse(cleaned) as T;
+        return hlGenerateStructuredData<T>(this, promptOrOptions, schemaOrConfig, thinkingBudget, systemInstruction, modelOverride);
     }
 
     /**
      * HIGH LEVEL: Multi-turn chat.
+     * @see generators/HighLevelAPI.ts
      */
     async chat(
         history: ChatMessage[],
         newMessage: string,
         systemInstruction?: string
     ): Promise<string> {
-        await this.ensureInitialized();
-        const contents: Content[] = history.map(h => ({
-            role: h.role,
-            parts: h.parts as Part[] // Cast to satisfy firebase/ai types while preserving extra fields like thoughtSignature
-        }));
-        contents.push({ role: 'user', parts: [{ text: newMessage }] });
-
-        const result = await this.rawGenerateContent(
-            contents,
-            this.model?.model,
-            {},
-            systemInstruction
-        );
-
-        return result.response.text();
+        return hlChat(this, history, newMessage, systemInstruction);
     }
 
     /**
      * MULTIMODAL: Analyze an image (base64).
+     * @see generators/HighLevelAPI.ts
      */
     async analyzeImage(
         prompt: string,
         imageBase64: string,
         mimeType: string = 'image/jpeg'
     ): Promise<string> {
-        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-        const imagePart: Part = {
-            inlineData: { data: base64Data, mimeType }
-        };
-
-        const result = await this.rawGenerateContent([{ role: 'user', parts: [{ text: prompt }, imagePart] }]);
-        return result.response.text();
+        return hlAnalyzeImage(this, prompt, imageBase64, mimeType);
     }
 
     /**
      * MULTIMODAL: Analyze generic parts (Video, Audio, PDF).
+     * @see generators/HighLevelAPI.ts
      */
     async analyzeMultimodal(
         prompt: string,
         parts: Part[]
     ): Promise<string> {
-        const result = await this.rawGenerateContent([{ role: 'user', parts: [{ text: prompt }, ...parts] }]);
-        return result.response.text();
+        return hlAnalyzeMultimodal(this, prompt, parts);
     }
 
     /**
      * ADVANCED: Grounding with Google Search.
+     * @see generators/HighLevelAPI.ts
      */
     async generateGroundedContent(prompt: string, options?: { dynamicThreshold?: number }): Promise<GenerateContentResult> {
-        await this.ensureInitialized();
-        const tools: Tool[] = [{
-            googleSearch: {},
-            googleSearchRetrieval: options?.dynamicThreshold ? {
-                dynamicRetrievalConfig: {
-                    mode: 'MODE_DYNAMIC',
-                    dynamicThreshold: options.dynamicThreshold
-                }
-            } : undefined
-        }] as unknown as Tool[];
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools as unknown as Tool[]);
+        return hlGenerateGroundedContent(this, prompt, options);
     }
 
     /**
      * MULTIMODAL: Caption an image.
+     * @see generators/HighLevelAPI.ts
      */
     async captionImage(image: string | ArrayBuffer, prompt: string = 'Describe this image in detail...'): Promise<string> {
-        const base64 = typeof image === 'string' ? image : Buffer.from(image).toString('base64');
-        const content: Content[] = [{
-            role: 'user',
-            parts: [
-                { text: prompt },
-                { inlineData: { mimeType: 'image/png', data: base64 } }
-            ]
-        }];
-        const result = await this.rawGenerateContent(content);
-        return result.response.text();
+        return hlCaptionImage(this, image, prompt);
     }
 
     /**
-     * HIGH LEVEL: Analyze audio content
+     * HIGH LEVEL: Analyze audio content.
+     * @see generators/HighLevelAPI.ts
      */
     async analyzeAudio(audio: string | ArrayBuffer, prompt: string = 'Analyze this audio content in detail...'): Promise<string> {
-        const base64 = typeof audio === 'string' ? audio : Buffer.from(audio).toString('base64');
-        const content: Content[] = [{
-            role: 'user',
-            parts: [
-                { text: prompt },
-                { inlineData: { mimeType: 'audio/mpeg', data: base64 } }
-            ]
-        }];
-        const result = await this.rawGenerateContent(content);
-        return result.response.text();
+        return hlAnalyzeAudio(this, audio, prompt);
     }
 
     /**
-     * UTILITY: Parse JSON from AI response, handling markdown code blocks
+     * UTILITY: Parse JSON from AI response, handling markdown code blocks.
+     * @see generators/HighLevelAPI.ts
      */
     parseJSON<T = Record<string, unknown>>(text: string | undefined): T | Record<string, never> {
-        if (!text) return {};
-        try {
-            const cleaned = text.replace(/```json\n?|```/g, '').trim();
-            return safeJsonParse(cleaned) as T;
-        } catch {
-            logger.error('[FirebaseAIService] Failed to parse JSON:', text);
-            return {} as T;
-        }
+        return hlParseJSON<T>(text);
     }
 
     /**
@@ -1075,332 +911,45 @@ export class FirebaseAIService {
 
 
     /**
-     * BATCHING: Embed multiple documents in parallel
+     * BATCHING: Embed multiple documents in parallel.
+     * @see generators/EmbeddingGenerator.ts
      */
     async batchEmbedContents(
         contentsOrStrings: Content[] | string[],
         modelOverride?: string
     ): Promise<number[][]> {
-        // Normalize input to Content[]
-        const contents: Content[] = contentsOrStrings.map(item => {
-            if (typeof item === 'string') {
-                return { role: 'user', parts: [{ text: item }] };
-            }
-            return item;
-        });
-
-        return this.contentBreaker.execute(async () => {
-            await this.ensureInitialized();
-
-            const userId = auth.currentUser?.uid;
-            if (userId) {
-                await TokenUsageService.checkQuota(userId);
-            }
-
-            const modelName = modelOverride || APPROVED_MODELS.EMBEDDING_DEFAULT;
-
-            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
-            if (this.useFallbackMode && this.fallbackClient) {
-                const promises = contents.map(async (c) => {
-                    // Extract text from content parts
-                    const text = c.parts.map(p => 'text' in p ? p.text : '').join(' ');
-                    const result = await this.fallbackClient!.models.embedContent({
-                        model: modelName,
-                        contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                        config: { outputDimensionality: AI_CONFIG.EMBEDDING.DIMENSIONS }
-                    });
-                    const embedResult = result as unknown as GenAIEmbedResult;
-                    return embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [];
-                });
-                return Promise.all(promises);
-            }
-
-            // NORMAL MODE: Use Firebase AI SDK
-            const firebaseAI = getFirebaseAI();
-            if (!firebaseAI) {
-                logger.warn('[FirebaseAIService] Firebase AI not available for embeddings (batch), switching to fallback');
-                await this.initializeFallbackMode();
-                return this.batchEmbedContents(contents, modelOverride);
-            }
-
-            const modelCallback = getGenerativeModel(firebaseAI, { model: modelName });
-
-            try {
-                // If batchEmbedContents is available, use it
-                // Otherwise fall back to Promise.all
-                const modelExtended = modelCallback as ExtendedGenerativeModel;
-
-                if (typeof modelExtended.batchEmbedContents === 'function') {
-                    const requests = contents.map(c => ({ content: c }));
-                    const result = await modelExtended.batchEmbedContents({ requests });
-                    return result.embeddings.map((e: { values: number[] }) => e.values);
-                } else {
-                    // Polyfill: Run in parallel
-                    const modelWithEmbed = modelCallback as unknown as { embedContent: (req: unknown) => Promise<{ embedding: { values: number[] } }> };
-                    if (typeof modelWithEmbed.embedContent === 'function') {
-                        const promises = contents.map(c => modelWithEmbed.embedContent({ content: c }));
-                        const results = await Promise.all(promises);
-                        return results.map(r => r.embedding.values);
-                    }
-                    throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
-                }
-            } catch (error) {
-                // If we hit an App Check error during normal mode, switch to fallback
-                if (isAppCheckError(error) && !this.useFallbackMode) {
-                    logger.warn('[FirebaseAIService] App Check error during batch embedding, switching to fallback mode');
-                    await this.initializeFallbackMode();
-                    return this.batchEmbedContents(contents, modelOverride);
-                }
-                throw this.handleError(error);
-            }
-        });
+        return embeddingBatchEmbed(this, contentsOrStrings, modelOverride);
     }
 
     /**
-     * HIGH LEVEL: Generate image using backend proxy
+     * HIGH LEVEL: Generate image using Gemini 3 native image generation.
+     * @see generators/ImageGenerator.ts
      */
     async generateImage(promptOrOptions: string | GenerateImageOptions, modelOverride?: string, configOverride?: GenerationConfig): Promise<string> {
-        return this.mediaBreaker.execute(async () => {
-            await this.ensureInitialized();
-
-            let prompt: string;
-            let model = modelOverride || 'gemini-3-pro-image-preview';
-            let config = configOverride;
-
-            if (typeof promptOrOptions === 'object' && 'prompt' in promptOrOptions) {
-                prompt = promptOrOptions.prompt;
-                model = promptOrOptions.model || model;
-                config = promptOrOptions.config || config;
-            } else {
-                prompt = promptOrOptions as string;
-            }
-
-            // 1. Setup Tools (Enable Google Search for grounding by default, aka "Nano Banana Pro" logic)
-            const tools: Tool[] = [{ googleSearch: {} }];
-
-            // 2. Setup Config
-            const generationConfig: GenerationConfig = {
-                responseModalities: ['IMAGE'], // Specific to Gemini 3 Image
-                mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as GenerationConfig['mediaResolution'],
-                imageConfig: {
-                    aspectRatio: config?.aspectRatio || '1:1',
-                    imageSize: '4K', // "Perfect" quality
-                    personGenerationConfig: config?.imageConfig?.personGenerationConfig
-                }
-            };
-
-            if (config?.numberOfImages) {
-                generationConfig.candidateCount = config.numberOfImages as number;
-            }
-
-            // 3. Generate
-            const result = await this.rawGenerateContent(
-                prompt,
-                model,
-                generationConfig,
-                undefined,
-                tools
-            );
-
-            // 4. Extract Image
-            // Gemini 3 returns images as inlineData in the parts
-            const candidates = result.response.candidates;
-            if (!candidates || candidates.length === 0) throw new Error('No candidates returned');
-
-            const imagePart = candidates[0]!.content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
-
-            if (!imagePart || !imagePart.inlineData) {
-                // Check if it was blocked or just text returned (e.g. "I cannot generate that")
-                const textPart = candidates[0]!.content?.parts?.find(p => 'text' in p);
-                if (textPart && 'text' in textPart) {
-                    throw new Error(`Generation blocked or failed: ${textPart.text}`);
-                }
-                throw new Error('No image data found in response');
-            }
-
-            return imagePart.inlineData.data;
-        });
+        return imgGenerate(this, promptOrOptions, modelOverride, configOverride);
     }
 
     /**
-     * TTS: Generate speech from text using gemini-2.5-pro-preview-tts
+     * TTS: Generate speech from text.
+     * @see generators/SpeechGenerator.ts
      */
     async generateSpeech(
         text: string,
         voice: string = 'Kore',
         modelOverride?: string
     ): Promise<GenerateSpeechResponse> {
-        if (!text || text.trim().length === 0) {
-            throw new AppException(AppErrorCode.INVALID_ARGUMENT, 'Cannot generate speech for empty text');
-        }
-
-        return this.mediaBreaker.execute(async () => {
-            await this.ensureInitialized();
-
-            const modelName = modelOverride || AI_MODELS.AUDIO.PRO;
-
-            const config: GenerationConfig = {
-                responseModalities: ['AUDIO'],
-                speechConfig: {
-                    voiceConfig: {
-                        prebuiltVoiceConfig: {
-                            voiceName: voice
-                        }
-                    }
-                }
-            };
-
-            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
-            if (this.useFallbackMode && this.fallbackClient) {
-                try {
-                    const result = await this.fallbackClient.models.generateContent({
-                        model: modelName,
-                        contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                        config: config as unknown as Record<string, unknown>
-                    });
-
-                    const candidates = result.candidates;
-
-                    if (!candidates || candidates.length === 0) {
-                        throw new Error('No candidates returned from TTS fallback model');
-                    }
-
-                    const parts = (candidates[0]!.content?.parts || []) as ContentPart[];
-                    const audioPart = parts.find(p => 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
-
-                    if (!audioPart || !('inlineData' in audioPart)) {
-                        throw new Error('No audio data found in fallback response parts');
-                    }
-
-                    return {
-                        audio: {
-                            inlineData: {
-                                mimeType: audioPart.inlineData.mimeType,
-                                data: audioPart.inlineData.data
-                            }
-                        }
-                    };
-                } catch (error) {
-                    throw this.handleError(error);
-                }
-            }
-
-            // NORMAL MODE: Use Firebase AI SDK
-            const firebaseAI = getFirebaseAI();
-
-            // Auto-switch to fallback if Firebase AI is missing
-            if (!firebaseAI) {
-                logger.warn('[FirebaseAIService] Firebase AI not available for speech, switching to fallback');
-                await this.initializeFallbackMode();
-                return this.generateSpeech(text, voice, modelOverride);
-            }
-
-            const modelCallback = getGenerativeModel(firebaseAI, {
-                model: modelName,
-                generationConfig: config as unknown as Record<string, unknown>
-            });
-
-            try {
-                const result = await modelCallback.generateContent(text);
-                const candidates = result.response.candidates;
-
-                if (!candidates || candidates.length === 0) {
-                    throw new Error('No candidates returned from TTS model');
-                }
-
-                const audioPart = candidates[0]!.content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/')) as InlineDataPart | undefined;
-
-                if (!audioPart || !audioPart.inlineData) {
-                    throw new Error('No audio data found in response parts');
-                }
-
-                return {
-                    audio: {
-                        inlineData: {
-                            mimeType: audioPart.inlineData.mimeType,
-                            data: audioPart.inlineData.data
-                        }
-                    }
-                };
-            } catch (error) {
-                // If we hit an App Check error during normal mode, switch to fallback
-                if (isAppCheckError(error) && !this.useFallbackMode) {
-                    logger.warn('[FirebaseAIService] App Check error during speech, switching to fallback mode');
-                    await this.initializeFallbackMode();
-                    return this.generateSpeech(text, voice, modelOverride);
-                }
-                throw this.handleError(error);
-            }
-        });
+        return speechGenerate(this, text, voice, modelOverride);
     }
 
     /**
-     * CORE: Embed content
+     * CORE: Embed content.
+     * @see generators/EmbeddingGenerator.ts
      */
-
-    async embedContent(options: { model: string, content: Content }): Promise<{ values: number[] }> {
-        return this.auxBreaker.execute(async () => {
-            await this.ensureInitialized();
-
-            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
-            if (this.useFallbackMode && this.fallbackClient) {
-                try {
-                    // Extract text from content parts
-                    const text = options.content.parts.map(p => 'text' in p ? p.text : '').join(' ');
-                    const result = await this.fallbackClient.models.embedContent({
-                        model: options.model,
-                        contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                        config: { outputDimensionality: AI_CONFIG.EMBEDDING.DIMENSIONS }
-                    });
-                    const embedResult = result as unknown as GenAIEmbedResult;
-                    return { values: embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [] };
-                } catch (error) {
-                    throw this.handleError(error);
-                }
-            }
-
-            // NORMAL MODE: Use Firebase AI SDK
-            const firebaseAI = getFirebaseAI();
-
-            // Auto-switch to fallback if Firebase AI is missing
-            if (!firebaseAI) {
-                logger.warn('[FirebaseAIService] Firebase AI not available for embeddings, switching to fallback');
-                await this.initializeFallbackMode();
-                return this.embedContent(options);
-            }
-
-            const modelCallback = getGenerativeModel(firebaseAI, {
-                model: options.model
-            });
-
-            try {
-                interface GenerativeModelWithEmbed {
-                    embedContent(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
-                }
-                const modelWithEmbed = modelCallback as unknown as GenerativeModelWithEmbed;
-
-                // Defensive check: Firebase SDK model may not expose embedContent
-                if (typeof modelWithEmbed.embedContent !== 'function') {
-                    logger.warn('[FirebaseAIService] Firebase SDK model lacks embedContent, switching to fallback');
-                    await this.initializeFallbackMode();
-                    return this.embedContent(options);
-                }
-
-                const result = await modelWithEmbed.embedContent({ content: options.content });
-                return { values: result.embedding.values };
-            } catch (error) {
-                // If we hit an App Check error during normal mode, switch to fallback
-                if (isAppCheckError(error) && !this.useFallbackMode) {
-                    logger.warn('[FirebaseAIService] App Check error during embedding, switching to fallback mode');
-                    await this.initializeFallbackMode();
-                    return this.embedContent(options);
-                }
-                throw this.handleError(error);
-            }
-        });
+    async embedContent(options: { model: string; content: Content }): Promise<{ values: number[] }> {
+        return embeddingEmbed(this, options);
     }
 
-    private async ensureInitialized() {
+    public async ensureInitialized() {
         if (!this.isInitialized) {
             await this.bootstrap();
         }
@@ -1409,7 +958,7 @@ export class FirebaseAIService {
         }
     }
 
-    private handleError(error: unknown): AppException {
+    public handleError(error: unknown): AppException {
         if (error instanceof AppException) return error;
         const msg = error instanceof Error ? error.message : String(error);
 
@@ -1467,7 +1016,7 @@ export class FirebaseAIService {
         return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`, { retryable: false });
     }
 
-    private async withRetry<T>(
+    public async withRetry<T>(
         operation: () => Promise<T>,
         retries = 3,
         initialDelay = 1000,
@@ -1519,7 +1068,7 @@ export class FirebaseAIService {
         throw this.handleError(lastError);
     }
 
-    private sanitizePrompt(prompt: string | Content[]): string | Content[] {
+    public sanitizePrompt(prompt: string | Content[]): string | Content[] {
         if (typeof prompt === 'string') {
             return InputSanitizer.sanitize(prompt);
         }

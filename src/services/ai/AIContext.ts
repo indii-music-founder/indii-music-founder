@@ -44,7 +44,6 @@ export interface AIContext {
     // ── Infrastructure Methods ────────────────────────────────────────
     ensureInitialized(): Promise<void>;
     initializeFallbackMode(): Promise<void>;
-    triggerGlobalFallback(): Promise<void>;
     handleError(error: unknown): AppException;
     sanitizePrompt(prompt: string | Content[]): string | Content[];
     getModelName(override?: string): string;
