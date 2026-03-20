@@ -58,7 +58,7 @@ export const LicensingTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = SyncMatchSchema.parse(data);

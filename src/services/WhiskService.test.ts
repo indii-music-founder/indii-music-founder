@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { WhiskService } from './WhiskService';
-import { WhiskState } from '@/core/store/slices/creativeSlice';
+import { WhiskState } from '@/core/store/slices/creative';
 import { firebaseConfig } from '@/config/env';
 
 // Mock the firebase/env module

@@ -2,7 +2,7 @@ import React from 'react';
 import { Disc3, Image, Share2, Sparkles, Music, Palette } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { motion } from 'motion/react';
-import type { TargetMedia } from '@/core/store/slices/creativeSlice';
+import type { TargetMedia } from '@/core/store/slices/creative';
 
 // Predefined style presets customized for music/creative industry
 export interface StylePreset {

@@ -174,7 +174,7 @@ export class AgentContextBridge {
     }
 
     // Check if approval is required
-    const requiresApproval = await (instrument as any).requiresApproval?.(parameters) ?? instrument.metadata.requiresApproval;
+    const requiresApproval = await instrument.requiresApproval?.(parameters) ?? instrument.metadata.requiresApproval;
 
     if (requiresApproval) {
       // Trigger approval flow

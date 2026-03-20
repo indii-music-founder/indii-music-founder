@@ -101,7 +101,7 @@ class InstrumentRegistry {
     // Validate instrument before registration
     if (this.validateInstrument(instrument)) {
       this.instruments.set(id, instrument);
-      console.debug(`[InstrumentRegistry] Registered instrument: ${id}`);
+      logger.debug(`[InstrumentRegistry] Registered instrument: ${id}`);
     } else {
       throw new Error(`Invalid instrument: ${id}`);
     }
@@ -113,7 +113,7 @@ class InstrumentRegistry {
   unregister(instrumentId: string): void {
     if (this.instruments.delete(instrumentId)) {
       this.usageStats.delete(instrumentId);
-      console.debug(`[InstrumentRegistry] Unregistered instrument: ${instrumentId}`);
+      logger.debug(`[InstrumentRegistry] Unregistered instrument: ${instrumentId}`);
     }
   }
 

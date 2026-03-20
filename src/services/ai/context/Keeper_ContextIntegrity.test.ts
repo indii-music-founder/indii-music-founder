@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '@/services/agent/BaseAgent';
-import { AgentMessage } from '@/core/store/slices/agentSlice';
+import { AgentMessage } from '@/core/store/slices/agent';
 
 // ----------------------------------------------------------------------------
 // Mocks

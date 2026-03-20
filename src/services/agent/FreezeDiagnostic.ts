@@ -25,7 +25,7 @@ export function freezeAgentConfig(agent: any) {
                         required,
                         parameters: JSON.stringify(fn.parameters)
                     });
-                    console.trace('Corruption Trace:');
+                    logger.error('[FreezeDiagnostic] Corruption stack trace:', new Error('Corruption Trace'));
                 }
             }
         });

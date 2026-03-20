@@ -117,7 +117,7 @@ export class AgentOrchestrator {
             // Optional enhancement: if a corpus was detected, attach it to context directly here.
             if (ragCorpus && ragCorpus !== 'general') {
                 context.ragCorpus = ragCorpus;
-                console.info(`[AgentOrchestrator] Detected intent bound to RAG corpus: ${ragCorpus}`);
+                logger.info(`[AgentOrchestrator] Detected intent bound to RAG corpus: ${ragCorpus}`);
             }
 
             const validRoutes = AGENTS.map(a => a.id);
@@ -126,12 +126,12 @@ export class AgentOrchestrator {
             // Confidence Threshold Check
             const CONFIDENCE_THRESHOLD = 0.7;
             if (confidence < CONFIDENCE_THRESHOLD) {
-                console.info(`[AgentOrchestrator] Low confidence (${confidence}) for ${targetAgentId}, falling back to generalist.`);
+                logger.info(`[AgentOrchestrator] Low confidence (${confidence}) for ${targetAgentId}, falling back to generalist.`);
                 finalRoute = 'generalist';
             }
 
             // Log Step
-            console.info(`[AgentOrchestrator] Routing: "${sanitizedQuery}" -> ${finalRoute} (original: ${targetAgentId}, conf: ${confidence})`);
+            logger.info(`[AgentOrchestrator] Routing: "${sanitizedQuery}" -> ${finalRoute} (original: ${targetAgentId}, conf: ${confidence})`);
             await TraceService.addStep(traceId, 'routing', {
                 selectedAgent: finalRoute,
                 ragCorpus: ragCorpus || 'general',

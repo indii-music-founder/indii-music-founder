@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
-import { createAgentSlice, AgentSlice, AgentMessage } from '@/core/store/slices/agentSlice';
+import { createAgentSlice, AgentSlice, AgentMessage } from '@/core/store/slices/agent';
 
 // Mock SessionService to verify persistence
 const { mockUpdateSession } = vi.hoisted(() => ({

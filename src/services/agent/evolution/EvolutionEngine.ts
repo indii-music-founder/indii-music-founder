@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AgentGene, EvolutionConfig, FitnessFunction, MutationFunction, CrossoverFunction } from './types';
+import { secureRandomInt } from '@/utils/crypto-random';
 
 export class EvolutionEngine {
   private config: EvolutionConfig;
@@ -102,7 +103,7 @@ export class EvolutionEngine {
         }
 
         // Mutation
-        if (Math.random() < this.config.mutationRate) {
+        if (secureRandomInt(0, 1000) / 1000 < this.config.mutationRate) {
           offspring = await this.mutationFn(offspring);
         }
 
@@ -184,10 +185,10 @@ export class EvolutionEngine {
   private selectParent(population: AgentGene[]): AgentGene {
     // Simple implementation: Tournament selection of size 3
     const tournamentSize = 3;
-    let best = population[Math.floor(Math.random() * population.length)]!;
+    let best = population[secureRandomInt(0, population.length)]!;
 
     for (let i = 0; i < tournamentSize - 1; i++) {
-      const contender = population[Math.floor(Math.random() * population.length)]!;
+      const contender = population[secureRandomInt(0, population.length)]!;
       if ((contender.fitness || 0) > (best.fitness || 0)) {
         best = contender;
       }

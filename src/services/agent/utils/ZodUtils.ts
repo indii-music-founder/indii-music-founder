@@ -8,7 +8,7 @@ import { FunctionDeclaration, ToolParameters, ToolParameterSchema, SchemaType } 
  */
 export function zodToToolParameters(schema: z.ZodType): ToolParameters {
     // Generate standard JSON schema
-    const jsonSchema = zodToJsonSchema(schema, { target: 'jsonSchema7' }) as any;
+    const jsonSchema = zodToJsonSchema(schema, { target: 'jsonSchema7' }) as { properties?: Record<string, unknown>; required?: string[] };
 
     if (!jsonSchema || typeof jsonSchema !== 'object') {
         throw new Error('Failed to generate JSON schema from Zod type');

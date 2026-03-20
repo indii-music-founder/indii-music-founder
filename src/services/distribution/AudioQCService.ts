@@ -34,7 +34,9 @@ export class AudioQCService {
     }
 
     /**
-     * Checks sample rate, bit depth (simulated), duration, and channels.
+     * Checks sample rate, duration, and channels.
+     * NOTE: Bit depth is not available from WebAudio's AudioBuffer (always decoded to 32-bit float).
+     * True bit depth validation requires server-side FFprobe analysis on the original file.
      */
     private static checkTechnicalSpecs(
         buffer: AudioBuffer,

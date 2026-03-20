@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
@@ -39,7 +40,7 @@ export const BigQueryTools = {
         maxResults?: number;
         useLegacySql?: boolean;
     }) => {
-        console.info(`[BigQuery] Executing query: ${args.query.substring(0, 100)}...`);
+        logger.info(`[BigQuery] Executing query: ${args.query.substring(0, 100)}...`);
 
         const executeBigQueryQueryFn = httpsCallable<
             { query: string; projectId?: string; maxResults?: number; useLegacySql?: boolean },
@@ -66,7 +67,7 @@ export const BigQueryTools = {
         dataset_id: string;
         projectId?: string;
     }) => {
-        console.info(`[BigQuery] Getting schema for: ${args.dataset_id}.${args.table_id}`);
+        logger.info(`[BigQuery] Getting schema for: ${args.dataset_id}.${args.table_id}`);
 
         const getBigQueryTableSchemaFn = httpsCallable<
             { tableId: string; datasetId: string; projectId?: string },
@@ -83,7 +84,7 @@ export const BigQueryTools = {
     }),
 
     list_datasets: wrapTool('list_datasets', async (args?: { projectId?: string }) => {
-        console.info(`[BigQuery] Listing datasets`);
+        logger.info(`[BigQuery] Listing datasets`);
 
         const listBigQueryDatasetsFn = httpsCallable<
             { projectId?: string },
@@ -100,7 +101,7 @@ export const BigQueryTools = {
     }),
 
     run_cohort_analysis: wrapTool('run_cohort_analysis', async (args: { dataset_id: string; table_id: string; cohort_dimension: string; timeframe: string }) => {
-        console.info(`[BigQuery] Running cohort analysis on ${args.dataset_id}.${args.table_id}`);
+        logger.info(`[BigQuery] Running cohort analysis on ${args.dataset_id}.${args.table_id}`);
 
         // Build a standard weekly cohort retention SQL query.
         // Table is expected to have: user_id, event_date (YYYYMMDD string), event_name columns.

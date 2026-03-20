@@ -1,7 +1,8 @@
+import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
-// useStore removed
+import type { StoreState } from '@/core/store';
 
-import type { AgentMode } from '@/core/store/slices/agentSlice';
+import type { AgentMode } from '@/core/store/slices/agent';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 
 // ============================================================================
@@ -28,7 +29,7 @@ export const CoreTools = {
             return toolError('Invalid delegation parameters', 'INVALID_ARGS');
         }
 
-        if (!VALID_AGENT_IDS.includes(args.targetAgentId as any)) {
+        if (!(VALID_AGENT_IDS as readonly string[]).includes(args.targetAgentId)) {
             return toolError(
                 `Invalid agent ID: "${args.targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
                 'INVALID_AGENT_ID'
@@ -64,7 +65,7 @@ export const CoreTools = {
         const { requestApproval } = useStore.getState();
         const actionType = args.type || 'default';
 
-        console.info(`[CoreTools] Requesting approval for: ${args.content} (type: ${actionType})`);
+        logger.info(`[CoreTools] Requesting approval for: ${args.content} (type: ${actionType})`);
 
         const approved = await requestApproval(args.content, actionType);
 
@@ -85,7 +86,7 @@ export const CoreTools = {
         const { useStore } = await import('@/core/store');
         const state = toolContext?.getState() || useStore.getState();
         const { setAgentMode } = useStore.getState(); // Actions still via global store for now
-        const currentMode = (state as any).agentMode;
+        const currentMode = (state as Partial<StoreState>).agentMode;
         const requestedMode = args.mode.toLowerCase() as AgentMode;
 
         if (!VALID_AGENT_MODES.includes(requestedMode)) {
@@ -139,7 +140,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     outcome: { type: 'STRING' as const },
                 },
                 required: ['negotiationLog', 'finalTerms', 'outcome'],
-            } as any, undefined, undefined, AI_MODELS.TEXT.FAST);
+            } as Parameters<typeof firebaseAI.generateStructuredData>[1], undefined, undefined, AI_MODELS.TEXT.FAST);
 
             return {
                 success: true,

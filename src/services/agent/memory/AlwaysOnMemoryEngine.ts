@@ -14,7 +14,7 @@ import {
     Timestamp,
 } from 'firebase/firestore';
 import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { MemoryConsolidator } from './MemoryConsolidator';
 import { MemoryIngestionPipeline, memoryIngestionPipeline } from './MemoryIngestionPipeline';
 import { MemorySummarizer } from './MemorySummarizer';
@@ -350,7 +350,7 @@ ANSWER:`;
             const answer = await AIService.getInstance().generateText(
                 prompt,
                 0,
-                { temperature: 0.3 } as any
+                { temperature: 0.3 } as Record<string, unknown>
             );
 
             // Step 6: Reinforce accessed memories (boost importance of relevant ones)

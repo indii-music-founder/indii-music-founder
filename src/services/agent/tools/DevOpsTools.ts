@@ -131,7 +131,7 @@ export const DevOpsTools = {
             return toolError("User denied the scaling request.", "APPROVAL_DENIED");
         }
 
-        console.info(`[DevOps] Scaling node pool ${args.nodePoolName} in ${args.cluster_id} to ${args.nodeCount} nodes`);
+        logger.info(`[DevOps] Scaling node pool ${args.nodePoolName} in ${args.cluster_id} to ${args.nodeCount} nodes`);
 
         const scaleGKENodePoolFn = httpsCallable<
             { clusterName: string; nodePoolName: string; nodeCount: number; projectId?: string; location?: string },
@@ -150,7 +150,7 @@ export const DevOpsTools = {
     }),
 
     list_instances: wrapTool('list_instances', async (args?: { projectId?: string; zone?: string }) => {
-        console.info(`[DevOps] Listing GCE instances`);
+        logger.info(`[DevOps] Listing GCE instances`);
 
         const listGCEInstancesFn = httpsCallable<
             { projectId?: string; zone?: string },
@@ -182,7 +182,7 @@ export const DevOpsTools = {
             return toolError("User denied the restart request.", "APPROVAL_DENIED");
         }
 
-        console.info(`[DevOps] Restarting instance: ${args.instance_name} in ${args.zone}`);
+        logger.info(`[DevOps] Restarting instance: ${args.instance_name} in ${args.zone}`);
 
         const restartGCEInstanceFn = httpsCallable<
             { instanceName: string; zone: string; projectId?: string },

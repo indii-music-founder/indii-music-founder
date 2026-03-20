@@ -181,8 +181,18 @@ Each example MUST be valid JSON on a single line matching this schema:
 1. Generate all examples in the session (display them as you go so the user can review)
 2. After all examples are shown, ask: **"Append these [N] examples to `docs/agent-training/datasets/<agent_id>.jsonl`?"**
 3. On confirmation: append each as a newline to the dataset file
-4. Report the new total count for that agent
-5. If count >= 100: flag it — **"Agent [name] now has [N] examples. Ready to re-export and resubmit for Round 2 fine-tuning."**
+4. **VALIDATE before closing the file** — this is mandatory. A trailing blank line or corrupt entry will silently fail Vertex AI fine-tuning jobs hours later with an "empty or incomplete dataset" error.
+
+   After writing, check the last line:
+   - Read back the last non-empty line of the file
+   - Confirm it parses as valid JSON (no syntax errors)
+   - Confirm `input.user_message` is non-empty (≥ 5 characters)
+   - Confirm `expected.output_sample` is non-empty (≥ 10 characters)
+   - If any check fails: remove that line and report it as skipped
+   - **Never leave a trailing newline after the last example.** The file must end with the closing `}` of the last JSON object.
+
+5. Report the new total count for that agent
+6. If count >= 100: flag it — **"Agent [name] now has [N] examples. Ready to re-export and resubmit for Round 2 fine-tuning."**
 
 ---
 

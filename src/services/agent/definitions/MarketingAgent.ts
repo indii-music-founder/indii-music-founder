@@ -272,7 +272,7 @@ Provide:
         track_performance: async (args: { campaignId: string }) => {
             const prompt = `Generate a realistic performance report for campaign "${args.campaignId}".Metrics: Impressions, Clicks, CTR, ROI.Return as JSON.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' });
                 return { success: true, data: response };
             } catch (e) {
                 return { success: false, error: (e as Error).message };

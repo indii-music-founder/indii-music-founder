@@ -2,6 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
 
+// Mock secureRandomInt to return deterministic values for testing
+// selectParent uses secureRandomInt(0, pool.length) — returning 0 picks index 0 (highest fitness)
+// mutation check uses secureRandomInt(0, 1000) / 1000 — returning 0 always mutates (0 < mutationRate)
+const mockSecureRandomInt = vi.fn().mockReturnValue(0);
+vi.mock('@/utils/crypto-random', () => ({
+    secureRandomInt: (...args: unknown[]) => mockSecureRandomInt(...args),
+    secureRandomHex: vi.fn().mockReturnValue('deadbeef'),
+}));
+
 // Mock dependencies
 const mockFitnessFn = vi.fn();
 const mockMutationFn = vi.fn();
@@ -30,6 +39,9 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+
+    // Re-establish deterministic selection after resetAllMocks clears module-level defaults
+    mockSecureRandomInt.mockReturnValue(0);
 
     // Default favorable mocks
     mockFitnessFn.mockImplementation(async (gene) => gene.fitness || 0);
@@ -72,10 +84,10 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
   it('Runs ONE step of evolution (Select 2, Breed 1) and verifies Genotype/Phenotype evolution', async () => {
     // 0. Enforce Determinism (Helix Philosophy: Randomness is for Evolution, not for Testing)
-    // We mock Math.random to always return 0.
+    // secureRandomInt is mocked to always return 0.
     // Effect on Selection: Always picks index 0 (The Best Available Agent).
-    // Effect on Mutation: 0.0 < 1.0 (Always Mutates).
-    vi.spyOn(Math, 'random').mockReturnValue(0.0);
+    // Effect on Mutation: secureRandomInt(0,1000) = 0, so 0/1000 < 1.0 (Always Mutates).
+    mockSecureRandomInt.mockReturnValue(0);
 
     // 1. Setup Micro-Universe (3 Mock Agents)
     const population: AgentGene[] = [

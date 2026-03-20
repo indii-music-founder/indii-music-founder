@@ -179,7 +179,7 @@ const mockDeleteHistory = vi.fn().mockResolvedValue({ success: true });
 // ----------------------------------------------------------------------------
 
 import { BaseAgent } from '@/services/agent/BaseAgent';
-import { AgentMessage } from '@/core/store/slices/agentSlice';
+import { AgentMessage } from '@/core/store/slices/agent';
 import { sessionService } from '@/services/agent/SessionService';
 
 describe('📚 Keeper: End-to-End Context & Persistence', () => {

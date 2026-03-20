@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { formatSmartDate, cn } from '@/lib/utils';
 import { MessageSquare, Calendar, Trash2, X, Edit2, Check } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { ConversationSession } from '@/core/store/slices/agentSlice';
+import type { ConversationSession } from '@/core/store/slices/agent';
 
 const HistoryItem = memo(({
     session,

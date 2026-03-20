@@ -202,8 +202,8 @@ If a task is outside Brand, say:
         analyze_brand_consistency: async (args: { content?: string, type?: string, assetPath?: string, brandKit?: Record<string, unknown> }) => {
             try {
                 // If an asset path is provided, use the high-fidelity vision tool
-                if (args.assetPath && (window as any).electronAPI?.brand) {
-                    const response = await (window as any).electronAPI.brand.analyzeConsistency(args.assetPath, args.brandKit || {});
+                if (args.assetPath && window.electronAPI?.brand) {
+                    const response = await window.electronAPI.brand.analyzeConsistency(args.assetPath, args.brandKit || {});
                     if (response.success) {
                         return { success: true, data: { analysis: response.report } };
                     }

@@ -22,6 +22,11 @@ export class StateManager {
             ? slices
             : Object.keys(state) as (keyof StoreState)[];
 
+        // Type-safe helper for setting snapshot keys
+        const setKey = <K extends keyof StoreState>(s: Partial<StoreState>, k: K, v: StoreState[K]) => {
+            s[k] = v;
+        };
+
         keysToCapture.forEach(key => {
             const value = state[key];
             // Skip functions and internal Zustand methods
@@ -31,17 +36,17 @@ export class StateManager {
                 // Phase 3 Improvement: Use structuredClone for true deep cloning
                 // Falls back to JSON if structuredClone isn't available or fails
                 if (typeof structuredClone === 'function') {
-                    (snapshot as any)[key] = structuredClone(value);
+                    setKey(snapshot, key, structuredClone(value));
                 } else {
-                    (snapshot as any)[key] = JSON.parse(JSON.stringify(value));
+                    setKey(snapshot, key, JSON.parse(JSON.stringify(value)));
                 }
             } catch (e) {
                 logger.warn(`[StateManager] Failed to deep clone slice ${String(key)}. Falling back to JSON/shallow.`, e);
                 try {
-                    snapshot[key] = JSON.parse(JSON.stringify(value));
+                    setKey(snapshot, key, JSON.parse(JSON.stringify(value)));
                 } catch (jsonErr) {
                     // Final fallback to shallow copy if all else fails
-                    snapshot[key] = value as any;
+                    setKey(snapshot, key, value);
                 }
             }
         });
@@ -49,7 +54,7 @@ export class StateManager {
         // Prevent unintentional mutations of the snapshot
         const frozenSnapshot = Object.freeze(snapshot);
         this.snapshots.set(transactionId, frozenSnapshot);
-        console.debug(`[StateManager] Snapshot captured for ${transactionId}`);
+        logger.debug(`[StateManager] Snapshot captured for ${transactionId}`);
     }
 
     /**
@@ -73,7 +78,7 @@ export class StateManager {
     discardSnapshot(transactionId: string) {
         if (this.snapshots.has(transactionId)) {
             this.snapshots.delete(transactionId);
-            console.debug(`[StateManager] Snapshot discarded (committed) for ${transactionId}`);
+            logger.debug(`[StateManager] Snapshot discarded (committed) for ${transactionId}`);
         }
     }
 

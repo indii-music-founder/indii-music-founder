@@ -1,7 +1,7 @@
-import type { WhiskState } from '@/core/store/slices/creativeSlice';
+import type { WhiskState } from '@/core/store/slices/creative';
 export type { WhiskState };
 
-import type { AgentMessage } from '@/core/store/slices/agentSlice';
+import type { AgentMessage } from '@/core/store/slices/agent';
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { INDII_MESSAGES } from './constants';
 
@@ -177,6 +177,10 @@ export interface AgentContext {
     systemPrompt?: string;
     whiskState?: WhiskState;
     livingContext?: string;
+    /** When set by ProactiveService, carries the triggering proactive task metadata */
+    proactiveTask?: ProactiveTask;
+    /** The trigger type that caused this agent execution (schedule, event, etc.) */
+    triggerType?: ProactiveTriggerType;
 }
 
 export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';

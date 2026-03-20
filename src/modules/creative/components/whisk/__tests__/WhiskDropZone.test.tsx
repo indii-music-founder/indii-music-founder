@@ -4,7 +4,7 @@ import { WhiskDropZone } from '../WhiskDropZone';
 import { useStore } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { useToast } from '@/core/context/ToastContext';
-import { WhiskItem } from '@/core/store/slices/creativeSlice';
+import { WhiskItem } from '@/core/store/slices/creative';
 
 // Mock dependencies
 vi.mock('@/core/store');

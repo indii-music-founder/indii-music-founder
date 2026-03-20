@@ -1,4 +1,4 @@
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creative';
 import React from 'react';
 
 export interface DailyItemProps {

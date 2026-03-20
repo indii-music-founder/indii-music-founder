@@ -1,6 +1,6 @@
 import React from 'react';
 import { MoreHorizontal, Film } from 'lucide-react';
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creative';
 import { DailyItem } from './DailyItem';
 
 interface DailiesStripProps {

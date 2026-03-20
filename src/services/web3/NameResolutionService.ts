@@ -15,6 +15,7 @@
 
 import { ethereumService } from './EthereumService';
 import { logger } from '@/utils/logger';
+import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 
 /** ENS Registry contract address (Ethereum mainnet) */
 const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
@@ -107,6 +108,11 @@ export class NameResolutionService {
      * Automatically detects ENS (.eth) vs Unstoppable (.crypto, .nft, etc.).
      */
     async resolve(name: string): Promise<ResolvedName> {
+        if (!featureFlags.isEnabled(FEATURE_FLAG_NAMES.WEB3)) {
+            logger.warn('[NameResolution] Web3 is not enabled (feature flag: enable_web3).');
+            return { name, address: null, provider: 'ens' };
+        }
+
         const normalized = name.toLowerCase().trim();
 
         if (normalized.endsWith('.eth')) {

@@ -30,7 +30,7 @@ const INJECTION_PATTERNS: RegExp[] = [
 const UNICODE_TAG_REGEX = /[\u{E0000}-\u{E007F}]/gu;
 
 // Zero-width and invisible characters used for steganographic attacks.
-const ZERO_WIDTH_REGEX = /[\u200B\u200C\u200D\u200E\u200F\uFEFF\u2060\u00AD]/g;
+const ZERO_WIDTH_REGEX = /\u{200B}|\u{200C}|\u{200D}|\u{200E}|\u{200F}|\u{FEFF}|\u{2060}|\u{00AD}/gu;
 
 /**
  * AgentPromptBuilder handles the assembly of complex prompts for agents.
@@ -80,7 +80,7 @@ export class AgentPromptBuilder {
         agentName: string,
         agentId: string,
         context: AgentContext | undefined,
-        enrichedContext: any,
+        enrichedContext: Record<string, unknown>,
         safeHistory: string,
         superpowerPrompt: string,
         memorySection: string,

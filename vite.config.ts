@@ -208,5 +208,26 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     css: true,
     exclude: ['**/node_modules/**', '**/dist/**', '**/temp_comparison_repo_backup/**', '**/e2e/**', '**/functions/lib/**', '**/.git/**', '**/landing-page/**', '**/.claude/**'], // Exclude e2e, compiled functions, Next.js landing page, and agent worktrees from unit tests
+    coverage: {
+      provider: 'istanbul',
+      reporter: ['text', 'text-summary', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/services/**/*.ts'],
+      exclude: [
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/*.d.ts',
+        '**/types/**',
+        '**/index.ts',
+      ],
+      thresholds: {
+        // Sprint 6B: Enforce minimum 60% coverage on services
+        // These are per-category minimums for src/services/ files
+        lines: 60,
+        functions: 60,
+        branches: 50,
+        statements: 60,
+      },
+    },
   },
 });

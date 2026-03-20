@@ -1,4 +1,4 @@
-import { WhiskState, WhiskItem } from '@/core/store/slices/creativeSlice';
+import { WhiskState, WhiskItem } from '@/core/store/slices/creative';
 import { ImageGeneration } from './image/ImageGenerationService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';

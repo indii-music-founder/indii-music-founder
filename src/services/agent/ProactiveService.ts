@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { db, auth } from '@/services/firebase';
 import {
     collection,
@@ -14,7 +15,7 @@ import {
 import { events, EventType } from '@/core/events';
 import { v4 as uuidv4 } from 'uuid';
 import { AgentContext, ProactiveTask } from './types';
-import { logger } from '@/utils/logger';
+
 
 export class ProactiveService {
     private unsubscribers: (() => void)[] = [];
@@ -112,7 +113,7 @@ export class ProactiveService {
                 status: 'executing'
             });
 
-            console.info(`[ProactiveService] Triggering agent ${task.agentId} for task: ${task.task}`);
+            logger.info(`[ProactiveService] Triggering agent ${task.agentId} for task: ${task.task}`);
 
             // Construct proactive prompt
             const contextMsg = eventData ? `\nSystem Event Context: ${JSON.stringify(eventData)}` : '';
@@ -122,7 +123,6 @@ export class ProactiveService {
             const { agentService } = await import('./AgentService');
             const context: AgentContext = {
                 traceId: `proactive-${task.id}`,
-                // @ts-expect-error - testing private method access if needed - extensions for proactive details
                 proactiveTask: task,
                 triggerType: task.triggerType
             };

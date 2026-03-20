@@ -14,7 +14,7 @@ const loadGoogleMaps = (): Promise<void> => {
             return;
         }
 
-        if ((window as any).google?.maps) {
+        if ((window as Window & { google?: { maps?: unknown } }).google?.maps) {
             resolve();
             return;
         }

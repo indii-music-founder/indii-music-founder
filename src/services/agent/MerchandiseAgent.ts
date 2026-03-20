@@ -2,6 +2,7 @@ import { BaseAgent } from './BaseAgent';
 import { z } from 'zod';
 import { FunctionDeclaration } from './types';
 import { freezeAgentConfig } from './FreezeDiagnostic';
+import { secureRandomInt } from '@/utils/crypto-random';
 
 /**
  * MerchandiseAgent - AI-First Merchandise Creation
@@ -570,7 +571,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         quantity
                     });
 
-                    const orderId = `INDII-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
+                    const orderId = `INDII-${Date.now().toString().slice(-6)}-${secureRandomInt(0, 1000)}`;
                     return {
                         success: true,
                         data: {

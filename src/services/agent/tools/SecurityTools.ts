@@ -110,12 +110,12 @@ export const SecurityTools = {
     }),
 
     rotate_credentials: wrapTool('rotate_credentials', async ({ service_name }: { service_name: string }) => {
-        if (!(window as any).electronAPI?.security) {
+        if (!window.electronAPI?.security) {
             return toolError("Security bridge unavailable.", "IPC_ERROR");
         }
 
         try {
-            const result = await (window as any).electronAPI.security.rotateCredentials({ serviceName: service_name });
+            const result = await window.electronAPI.security.rotateCredentials({ serviceName: service_name });
             if (!result.success) {
                 return toolError(result.error || "Rotation failed", "ROTATION_FAILED");
             }
@@ -214,24 +214,24 @@ export const SecurityTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
         const validated = AuditPermissionsSchema.parse(data);
         return toolSuccess(validated, "Permissions audit simulated via AI due to missing live data.");
     }),
 
     scan_for_vulnerabilities: wrapTool('scan_for_vulnerabilities', async ({ scope }: { scope: string }) => {
-        if (!(window as any).electronAPI?.security) {
+        if (!window.electronAPI?.security) {
             return toolError("Security bridge unavailable.", "IPC_ERROR");
         }
 
         try {
-            const result = await (window as any).electronAPI.security.scanVulnerabilities({ scope });
+            const result = await window.electronAPI.security.scanVulnerabilities({ scope });
             if (!result.success) {
                 return toolError(result.error || "Scan failed", "SCAN_FAILED");
             }
 
-            return toolSuccess(result.scan, `Vulnerability scan completed for ${scope}. Score: ${result.scan.score}`);
+            return toolSuccess(result.scan, `Vulnerability scan completed for ${scope}. Score: ${result.scan?.score}`);
         } catch (error: unknown) {
             return toolError(`Failed to bridge to security scanner: ${error instanceof Error ? error.message : String(error)}`, "BRIDGE_ERROR");
         }

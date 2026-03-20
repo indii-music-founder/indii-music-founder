@@ -82,7 +82,7 @@ export class BaseAgent implements SpecializedAgent {
             get_project_details: async ({ projectId }, _context, toolContext?: ToolExecutionContext) => {
                 // Use execution context if available, fallback to direct store access for backwards compatibility
                 const projects = toolContext ? toolContext.get('projects') : (await import('@/core/store')).useStore.getState().projects;
-                const project = (projects as any[])?.find((p: any) => p.id === projectId);
+                const project = (projects as Array<{ id: string }>)?.find(p => p.id === projectId);
                 if (!project) return { success: false, error: 'Project not found' };
                 return { success: true, data: project };
             },
@@ -184,8 +184,8 @@ export class BaseAgent implements SpecializedAgent {
             subscribe_to_event: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { eventType, task } = args as { eventType: string; task: string };
                 const { proactiveService } = await import('./ProactiveService');
-                // @ts-expect-error - eventType is dynamically checked in proactiveService
-                const taskId = await proactiveService.subscribeToEvent(this.id, eventType, task);
+                // Cast to EventType — runtime validation happens inside proactiveService.subscribeToEvent
+                const taskId = await proactiveService.subscribeToEvent(this.id, eventType as import('@/core/events').EventType, task);
                 return {
                     success: true,
                     data: { taskId },
@@ -458,7 +458,7 @@ export class BaseAgent implements SpecializedAgent {
                     AI_MODELS.TEXT.AGENT, // modelOverride
                     { ...AI_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
-                    allTools as any, // tools
+                    allTools as unknown as Parameters<import('@/services/ai/FirebaseAIService').FirebaseAIService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
                     { thoughtSignature: currentThoughtSignature } // options
                 );
 
@@ -467,7 +467,7 @@ export class BaseAgent implements SpecializedAgent {
                     text: () => result.response?.text?.() || '',
                     functionCalls: () => {
                         // Support mocked results or SDK results that provide a direct functionCalls helper
-                        const res = result.response as any;
+                        const res = result.response as { functionCalls?: () => Array<{ name: string; args: Record<string, unknown> }>; candidates?: Array<{ content?: { parts?: ContentPart[] } }> };
                         if (res && typeof res.functionCalls === 'function') {
                             const calls = res.functionCalls();
                             return Array.isArray(calls) ? calls : [];
@@ -588,7 +588,7 @@ export class BaseAgent implements SpecializedAgent {
                             toolName: name,
                             agentId: this.id,
                             timestamp: serverTimestamp(),
-                            success: typeof result === 'object' && result !== null ? (result as any).success !== false : true,
+                            success: typeof result === 'object' && result !== null ? (result as unknown as Record<string, unknown>).success !== false : true,
                         }).catch(() => { /* audit is best-effort */ });
                     }
 

@@ -55,121 +55,31 @@ import { logger } from '@/utils/logger';
 import { CachedContextService } from './context/CachedContextService';
 import { RateLimiter } from './RateLimiter';
 
-// ============================================================================
-// SDK Bridge Types — Bridging Firebase AI SDK ↔ @google/genai SDK
-// These interfaces cover shape mismatches between the two SDKs.
-// ============================================================================
+// Extracted sub-modules
+import { isAppCheckError, isAppCheckConfigured } from './appcheck';
+import {
+    initializeFallbackClient,
+    generateWithFallback as fallbackGenerate,
+    streamWithFallback as fallbackStream,
+} from './fallback/FallbackClient';
+import { generateVideo as mediaGenerateVideo } from './generators/MediaGenerator';
+import type {
+    ImportMetaEnvWithKeys,
+    GenAIEmbedResult,
+    FileDataPart,
+    FirebaseModelOptions,
+    GenAIGenerateResult,
+    GenAIStreamChunk,
+    BatchEmbedContentsResponse,
+    ExtendedGenerativeModel,
+    ChatMessage,
+} from './types';
 
-/** Vite import.meta.env with optional Google/Gemini API keys */
-interface ImportMetaEnvWithKeys {
-    env?: {
-        GOOGLE_API_KEY?: string;
-        GEMINI_API_KEY?: string;
-        [key: string]: string | undefined;
-    };
-}
-
-/** Shape returned by @google/genai embedContent — differs from Firebase SDK */
-interface GenAIEmbedResult {
-    embeddings?: { values: number[] }[];
-    embedding?: { values: number[] };
-}
-
-/** Extended Part type supporting fileData (used for audio/video analysis) */
-interface FileDataPart {
-    fileData: {
-        mimeType: string;
-        fileUri: string;
-    };
-}
-
-/** Model options shape accepted by getGenerativeModel */
-interface FirebaseModelOptions {
-    model: string;
-    generationConfig?: Record<string, unknown>;
-    systemInstruction?: string;
-    tools?: unknown[];
-    toolConfig?: ToolConfig;
-    safetySettings?: SafetySetting[] | FirebaseSafetySetting[];
-    cachedContent?: string;
-}
-
-/** Result shape from @google/genai generateContent */
-interface GenAIGenerateResult {
-    candidates?: unknown[];
-    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
-    text?: string;
-}
-
-/** Chunk shape from @google/genai generateContentStream */
-interface GenAIStreamChunk {
-    candidates?: { content?: { parts?: unknown[] } }[];
-    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
-    text?: string | (() => string);
-}
-
-// ============================================================================
-// App Check Detection & Fallback Mode
-// ============================================================================
-
-/**
- * Checks if an error indicates App Check is not properly configured.
- * When this happens, we should fall back to direct Gemini SDK.
- */
-function isAppCheckError(error: unknown): boolean {
-    const msg = error instanceof Error ? error.message : String(error);
-    return (
-        msg.includes('installations/request-failed') ||
-        msg.includes('PERMISSION_DENIED') ||
-        msg.includes('permission-denied') ||
-        msg.includes('app-check-token') ||
-        msg.includes('The caller does not have permission') ||
-        msg.includes('403') ||
-        msg.includes('unauthenticated') ||
-        msg.toLowerCase().includes('verification failed')
-    );
-}
-
-/**
- * Check if App Check is configured in the environment.
- * If not, we should use direct Gemini SDK from the start.
- */
-function isAppCheckConfigured(): boolean {
-    // Force fallback in dev mode unless a debug token is explicitly set
-    // This allows localhost to work without App Check emulation
-    logger.debug('[FirebaseAIService] App Check Debug:', {
-        DEV: env.DEV,
-        debugToken: env.appCheckDebugToken,
-        key: env.appCheckKey
-    });
-
-    if (env.DEV && !env.appCheckDebugToken) {
-        logger.warn('[FirebaseAIService] DEV mode detected without Debug Token. Disabling App Check.');
-        return false;
-    }
-    return !!(env.appCheckKey || env.appCheckDebugToken);
-}
+// Re-export ChatMessage for backward compatibility
+export type { ChatMessage } from './types';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
-
-// Interface for BatchEmbedContentsResponse (missing in SDK types)
-interface BatchEmbedContentsResponse {
-    embeddings: { values: number[] }[];
-}
-
-// Interface for GenerativeModel with batching support
-interface ExtendedGenerativeModel extends GenerativeModel {
-    batchEmbedContents?: (req: { requests: { content: Content, model?: string }[] }) => Promise<BatchEmbedContentsResponse>;
-    embedContent?: (req: Content | string) => Promise<{ embedding: { values: number[] } }>;
-}
-
-// Duplicates removed
-
-export interface ChatMessage {
-    role: 'user' | 'model';
-    parts: (Part | ContentPart)[];
-}
 
 export class FirebaseAIService {
     private model: ExtendedGenerativeModel | null = null;
@@ -293,37 +203,12 @@ export class FirebaseAIService {
     /**
      * Initialize fallback mode using direct Gemini SDK (no App Check required).
      * This is used in development or when App Check is not configured.
+     * Delegates to the extracted FallbackClient module.
      */
     public async initializeFallbackMode(): Promise<void> {
-        // Try multiple key locations: VITE_API_KEY, GOOGLE_API_KEY, or GEMINI_API_KEY
-        // Explicitly check sources to log which one is used
-        const keySources = {
-            'env.VITE_API_KEY': env.VITE_API_KEY,
-            'env.apiKey': env.apiKey,
-            'import.meta.env.GOOGLE_API_KEY': (import.meta as unknown as ImportMetaEnvWithKeys).env?.GOOGLE_API_KEY,
-            'import.meta.env.GEMINI_API_KEY': (import.meta as unknown as ImportMetaEnvWithKeys).env?.GEMINI_API_KEY
-        };
-
-        const foundSource = Object.entries(keySources).find(([_, val]) => !!val);
-        const apiKey = foundSource ? foundSource[1] : undefined;
-
-        logger.debug('[FirebaseAIService] Fallback Mode Initialization:', {
-            foundKey: !!apiKey,
-            source: foundSource ? foundSource[0] : 'NONE',
-            keyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : 'N/A'
-        });
-
-        if (!apiKey) {
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                'No API key found. Please set VITE_API_KEY or GOOGLE_API_KEY in your .env file.'
-            );
-        }
-
-        this.fallbackClient = new GoogleGenAI({ apiKey });
+        this.fallbackClient = await initializeFallbackClient();
         this.useFallbackMode = true;
         this.isInitialized = true;
-        logger.info('[FirebaseAIService] Initialized with direct Gemini SDK (fallback mode)');
     }
 
     /**
@@ -583,46 +468,11 @@ export class FirebaseAIService {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
         }
-
-        try {
-            // Build contents array for the new SDK format
-            const contents = typeof prompt === 'string'
-                ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
-                : prompt;
-
-            // Clean config: strip non-generation fields that callers may have mixed in
-            const cleanConfig = { ...config };
-            delete (cleanConfig as Record<string, unknown>).systemInstruction;
-            delete (cleanConfig as Record<string, unknown>).tools;
-            delete (cleanConfig as Record<string, unknown>).toolConfig;
-            delete (cleanConfig as Record<string, unknown>).safetySettings;
-
-            // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
-            // NOT nested inside config (which maps to generation_config in the API payload).
-            const result = await this.fallbackClient.models.generateContent({
-                model: modelName,
-                contents: contents as unknown as Record<string, unknown>[],
-                config: {
-                    ...cleanConfig,
-                    safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
-                    tools: tools as unknown as Record<string, unknown>[],
-                    toolConfig,
-                    systemInstruction,
-                    abortSignal: options?.signal
-                } as Record<string, unknown>,
-            });
-
-            // Convert to Firebase AI SDK format for compatibility
-            return {
-                response: {
-                    candidates: result.candidates,
-                    usageMetadata: result.usageMetadata,
-                    text: () => result.text || ''
-                } as unknown as GenerateContentResponse
-            } as GenerateContentResult;
-        } catch (error) {
-            throw this.handleError(error);
-        }
+        return fallbackGenerate(
+            this.fallbackClient, prompt, modelName, config,
+            systemInstruction, tools, safetySettings, toolConfig,
+            options, (e) => this.handleError(e)
+        );
     }
 
     /**
@@ -848,115 +698,10 @@ export class FirebaseAIService {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
         }
-
-        const userId = auth.currentUser?.uid;
-
-        // Build contents array for the new SDK format
-        const contents = typeof prompt === 'string'
-            ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
-            : prompt;
-
-        // Clean config: strip non-generation fields that callers may have mixed in
-        const cleanConfig = { ...config };
-        delete (cleanConfig as Record<string, unknown>).systemInstruction;
-        delete (cleanConfig as Record<string, unknown>).tools;
-        delete (cleanConfig as Record<string, unknown>).toolConfig;
-        delete (cleanConfig as Record<string, unknown>).safetySettings;
-
-        // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
-        // NOT nested inside config (which maps to generation_config in the API payload).
-        const result = await this.fallbackClient.models.generateContentStream({
-            model: modelName,
-            contents: contents as unknown as Record<string, unknown>[],
-            config: {
-                ...cleanConfig,
-                safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
-                tools: tools as unknown as Record<string, unknown>[],
-                toolConfig: options?.toolConfig,
-                systemInstruction,
-            } as Record<string, unknown>,
-        });
-
-        // Collect chunks for final response
-        const chunks: GenerateContentResponse[] = [];
-        let finalText = '';
-
-        const stream = new ReadableStream<StreamChunk>({
-            async start(controller) {
-                try {
-                    for await (const chunk of result) {
-                        chunks.push(chunk as unknown as GenerateContentResponse);
-                        let chunkText = '';
-                        try {
-                            const c = chunk as unknown as GenAIStreamChunk;
-                            chunkText = typeof c.text === 'function' ? c.text() : (c.text || '');
-                        } catch (e) { logger.debug('CAUGHT CHUNK ERROR', e); }
-                        finalText += chunkText;
-                        const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-                        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
-
-                        controller.enqueue({
-                            text: () => chunkText,
-                            thoughtSignature,
-                            functionCalls: () => {
-                                const part = chunk.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
-                                    typeof p === 'object' && p !== null && 'functionCall' in p
-                                );
-                                return part ? [part.functionCall] : [];
-                            }
-                        });
-                    }
-                    controller.close();
-                } catch (streamError) {
-                    controller.error(streamError);
-                }
-            }
-        });
-
-        // Build wrapped response from accumulated chunks
-        const wrappedResponsePromise = (async () => {
-            const lastChunk = chunks[chunks.length - 1];
-            // Find the first chunk that had a thoughtSignature
-            const firstWithSignature = chunks.find(c => {
-                const part = c.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-                return part && 'thoughtSignature' in part && (part as ContentPart).thoughtSignature;
-            });
-            const firstPart = firstWithSignature?.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-            const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
-
-            // Track usage for fallback mode
-            if (userId && lastChunk?.usageMetadata) {
-                try {
-                    await TokenUsageService.trackUsage(
-                        userId,
-                        modelName,
-                        lastChunk.usageMetadata.promptTokenCount || 0,
-                        lastChunk.usageMetadata.candidatesTokenCount || 0
-                    );
-                } catch {
-                    // Failed to track stream usage (non-critical)
-                }
-            }
-
-            return {
-                response: {
-                    candidates: lastChunk?.candidates || [],
-                    usageMetadata: lastChunk?.usageMetadata,
-                    text: () => finalText
-                } as unknown as GenerateContentResponse,
-                text: () => finalText,
-                thoughtSignature,
-                functionCalls: () => {
-                    const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
-                        typeof p === 'object' && p !== null && 'functionCall' in p
-                    );
-                    return part ? [part.functionCall] : [];
-                },
-                usage: () => lastChunk?.usageMetadata
-            };
-        })();
-
-        return { stream, response: wrappedResponsePromise };
+        return fallbackStream(
+            this.fallbackClient, prompt, modelName, config,
+            systemInstruction, tools, options
+        );
     }
 
     /**
@@ -1324,220 +1069,10 @@ export class FirebaseAIService {
                 );
             }
 
-            const { calculateVideoTimeout, AI_CONFIG } = await import('@/core/config/ai-models');
-            const durationSeconds = options.config?.durationSeconds || AI_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS;
-            const timeoutMs = options.timeoutMs || calculateVideoTimeout(durationSeconds);
-
-            // Determine model — resolve abbreviated UI names to full model IDs
-            const VIDEO_MODEL_ALIASES: Record<string, string> = {
-                'pro': AI_MODELS.VIDEO.PRO,           // 'veo-3.1-generate-preview'
-                'fast': AI_MODELS.VIDEO.FAST,          // 'veo-3.1-fast-generate-preview'
-                'edit': AI_MODELS.VIDEO.EDIT,           // 'veo-3.1-generate-preview'
-                'generation': AI_MODELS.VIDEO.GENERATION, // 'veo-3.1-generate-preview'
-            };
-            const rawModel = options.model || '';
-            const modelId = VIDEO_MODEL_ALIASES[rawModel.toLowerCase()] || rawModel || AI_MODELS.VIDEO.PRO;
-
-            // Map UI resolution strings to Veo API enum values
-            const RESOLUTION_MAP: Record<string, string> = {
-                '1280x720': '720p',
-                '1920x1080': '1080p',
-                '3840x2160': '4k',
-                '720p': '720p',
-                '1080p': '1080p',
-                '4k': '4k',
-            };
-
-            // Clamp duration to API-valid range [5, 8] as integer
-            const clampedDuration = Math.min(8, Math.max(5, Math.round(durationSeconds)));
-
-            // Build properly-typed generateVideos config
-            // NOTE: personGeneration and generateAudio are NOT supported in current Veo preview.
-            // Do NOT include them — the API will return 400 errors.
-            const videoConfig: Record<string, unknown> = {
-                numberOfVideos: 1,
-                durationSeconds: clampedDuration,
-                aspectRatio: options.config?.aspectRatio || '16:9',
-            };
-
-            // Add optional config fields (only API-supported params)
-            if (options.config?.resolution) {
-                const mapped = RESOLUTION_MAP[options.config.resolution];
-                videoConfig.resolution = mapped || options.config.resolution;
-            }
-            // NOTE: generateAudio is NOT supported in the current Gemini/Veo API.
-            // Passing it causes: "generateAudio parameter is not supported in Gemini API."
-            // When the API adds support, uncomment the block below.
-            // if (options.config?.generateAudio !== undefined) {
-            //     videoConfig.generateAudio = options.config.generateAudio;
-            // }
-            if (options.config?.negativePrompt) {
-                videoConfig.negativePrompt = options.config.negativePrompt;
-            }
-            if (options.config?.seed !== undefined) {
-                videoConfig.seed = options.config.seed;
-            }
-            if (options.config?.enhancePrompt !== undefined) {
-                videoConfig.enhancePrompt = options.config.enhancePrompt;
-            }
-            if (options.config?.referenceImages && Array.isArray(options.config.referenceImages) && options.config.referenceImages.length > 0) {
-                videoConfig.referenceImages = options.config.referenceImages;
-            }
-            if (options.config?.lastFrame) {
-                videoConfig.lastFrame = options.config.lastFrame;
-            }
-
-            // Build image input (first frame / image-to-video)
-            let imageInput: { imageBytes: string; mimeType: string } | undefined;
-            if (options.image) {
-                let imageBytes = options.image.imageBytes || options.image.data;
-                const mimeType = options.image.mimeType || 'image/jpeg';
-                if (imageBytes) {
-                    // Strip data URI prefix if present — API expects raw base64
-                    if (imageBytes.startsWith('data:')) {
-                        imageBytes = imageBytes.split(',')[1] || imageBytes;
-                    }
-                    imageInput = { imageBytes, mimeType };
-                }
-            }
-
-            logger.info('[FirebaseAIService] Generating video with @google/genai SDK:', {
-                model: modelId,
-                promptLength: options.prompt.length,
-                durationSeconds,
-                hasImage: !!imageInput,
-            });
-
-            try {
-                // 1. Start the video generation operation
-                let operation = await this.fallbackClient.models.generateVideos({
-                    model: modelId,
-                    prompt: options.prompt,
-                    ...(imageInput ? { image: imageInput } : {}),
-                    config: videoConfig as Parameters<typeof this.fallbackClient.models.generateVideos>[0]['config'],
-                });
-
-                logger.info('[FirebaseAIService] Video generation operation started. Polling for completion...');
-
-                // 2. Poll for completion
-                const pollInterval = 5000; // 5 seconds
-                const maxAttempts = Math.ceil(timeoutMs / pollInterval);
-                let attempts = 0;
-
-                while (!operation.done && attempts < maxAttempts) {
-                    await new Promise(resolve => setTimeout(resolve, pollInterval));
-                    attempts++;
-
-                    // Re-poll the operation
-                    operation = await this.fallbackClient.operations.getVideosOperation({
-                        operation: operation,
-                    });
-
-                    if (attempts % 3 === 0) {
-                        logger.info(`[FirebaseAIService] Video generation poll attempt ${attempts}/${maxAttempts}...`);
-                    }
-                }
-
-                if (!operation.done) {
-                    throw new AppException(
-                        AppErrorCode.TIMEOUT,
-                        `Video generation timed out after ${attempts} poll attempts (${Math.round(timeoutMs / 1000)}s).`
-                    );
-                }
-
-                // 3. Extract the video URL from the typed operation response
-                const generatedVideos = operation.response?.generatedVideos;
-
-                if (generatedVideos && generatedVideos.length > 0) {
-                    const firstVideo = generatedVideos[0]!;
-                    const videoUri = firstVideo.video?.uri;
-                    const videoBytes = firstVideo.video?.videoBytes;
-
-                    if (videoUri) {
-                        logger.info(`[FirebaseAIService] ✅ Video URI received, fetching bytes for playback: ${videoUri.substring(0, 100)}...`);
-
-                        // Native <video> elements cannot attach custom headers (x-goog-api-key).
-                        // The raw Gemini API URI requires authentication, so we fetch the bytes
-                        // via an authenticated request and create a blob URL for the browser.
-                        try {
-                            const apiKey = import.meta.env.VITE_API_KEY;
-                            const fetchUrl = videoUri.includes('?')
-                                ? `${videoUri}&key=${apiKey}`
-                                : `${videoUri}?key=${apiKey}`;
-                            const videoResponse = await fetch(fetchUrl);
-                            if (!videoResponse.ok) {
-                                throw new Error(`HTTP ${videoResponse.status}: ${videoResponse.statusText}`);
-                            }
-                            const videoBlob = await videoResponse.blob();
-                            const blobUrl = URL.createObjectURL(videoBlob);
-                            logger.info(`[FirebaseAIService] ✅ Video ready for playback (blob): ${blobUrl}`);
-                            return blobUrl;
-                        } catch (fetchError) {
-                            logger.warn('[FirebaseAIService] Failed to fetch video bytes, falling back to raw URI:', fetchError);
-                            // Fall back to raw URI — may still fail in <video> but allows Electron/download paths to work
-                            return videoUri;
-                        }
-                    }
-
-                    // If we got raw bytes instead of a URI, create a blob URL
-                    if (videoBytes) {
-                        const mimeType = firstVideo.video?.mimeType || 'video/mp4';
-                        const byteArray = Uint8Array.from(atob(videoBytes), c => c.charCodeAt(0));
-                        const blob = new Blob([byteArray], { type: mimeType });
-                        const blobUrl = URL.createObjectURL(blob);
-                        logger.info(`[FirebaseAIService] ✅ Video generated (blob): ${blobUrl}`);
-                        return blobUrl;
-                    }
-                }
-
-                // Check for RAI filtering
-                if (operation.response?.raiMediaFilteredCount && operation.response.raiMediaFilteredCount > 0) {
-                    const reasons = operation.response.raiMediaFilteredReasons?.join(', ') || 'content policy violation';
-                    throw new AppException(
-                        AppErrorCode.CONTENT_FILTERED,
-                        `Video was blocked by safety filters: ${reasons}. Try a different prompt.`
-                    );
-                }
-
-                // Check for error in the operation
-                if (operation.error) {
-                    throw new AppException(
-                        AppErrorCode.INTERNAL_ERROR,
-                        `Video generation failed: ${JSON.stringify(operation.error)}`
-                    );
-                }
-
-                throw new AppException(
-                    AppErrorCode.INTERNAL_ERROR,
-                    'Video generation completed but no video data was returned.'
-                );
-            } catch (error) {
-                if (error instanceof AppException) throw error;
-
-                const msg = error instanceof Error ? error.message : String(error);
-                logger.error('[FirebaseAIService] Video generation error:', msg);
-
-                // Map common API errors to typed AppExceptions
-                if (msg.includes('quota') || msg.includes('resource-exhausted') || msg.includes('RESOURCE_EXHAUSTED')) {
-                    throw new AppException(AppErrorCode.QUOTA_EXCEEDED, 'Video generation quota exceeded. Please try again later.');
-                }
-                if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
-                    throw new AppException(AppErrorCode.RATE_LIMITED, 'Video generation rate limited. Please wait a moment and try again.', { retryable: true });
-                }
-                if (msg.includes('permission') || msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
-                    throw new AppException(AppErrorCode.UNAUTHORIZED, 'Video generation permission denied. Check your API key permissions.');
-                }
-                if (msg.includes('invalid') || msg.includes('INVALID_ARGUMENT')) {
-                    throw new AppException(AppErrorCode.INVALID_INPUT, `Video generation invalid input: ${msg}`);
-                }
-
-                throw new AppException(
-                    AppErrorCode.INTERNAL_ERROR,
-                    `Video generation failed: ${msg}`
-                );
-            }
+            return mediaGenerateVideo(this.fallbackClient, options);
         });
     }
+
 
     /**
      * BATCHING: Embed multiple documents in parallel
@@ -1650,8 +1185,8 @@ export class FirebaseAIService {
                 imageConfig: {
                     aspectRatio: config?.aspectRatio || '1:1',
                     imageSize: '4K', // "Perfect" quality
-                    personGenerationConfig: (config as any)?.personGenerationConfig
-                } as any
+                    personGenerationConfig: config?.imageConfig?.personGenerationConfig
+                }
             };
 
             if (config?.numberOfImages) {

@@ -1,5 +1,6 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { secureRandomInt } from '@/utils/crypto-random';
 
 import systemPrompt from '@agents/publishing/prompt.md?raw';
 
@@ -121,7 +122,7 @@ When a request falls outside your scope:
                 const response = await firebaseAI.generateStructuredData<any>(prompt, { type: 'object' } as Schema);
                 return { success: true, data: { status: "Submitted", ...response } };
             } catch (e) {
-                const randomISWC = `T-${Math.floor(100 + Math.random() * 900)}.${Math.floor(100 + Math.random() * 900)}.${Math.floor(100 + Math.random() * 900)}-${Math.floor(1 + Math.random() * 9)}`;
+                const randomISWC = `T-${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}-${secureRandomInt(1, 10)}`;
                 return { success: true, data: { status: "Submitted", iswc: randomISWC } };
             }
         },

@@ -18,7 +18,8 @@ vi.mock('@/services/agent/SessionService', () => ({
     }
 }));
 
-import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
+import { createAgentSlice, AgentSlice } from './agent';
+import type { AgentMessage } from './agent';
 import { sessionService } from '@/services/agent/SessionService';
 
 describe('AgentSlice Persistence (The Amnesia Check)', () => {

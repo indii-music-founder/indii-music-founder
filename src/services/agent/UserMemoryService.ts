@@ -52,7 +52,7 @@ class UserMemoryService {
   private embeddingBatcher = new RequestBatcher<string, number[]>(
     async (texts) => {
       try {
-        return await AI.batchEmbedContents(texts as any, this.embeddingModel);
+        return await AI.batchEmbedContents(texts, this.embeddingModel);
       } catch (error) {
         logger.error('[UserMemoryService] Batch embedding failed:', error);
         throw error;
