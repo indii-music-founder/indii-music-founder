@@ -1,7 +1,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { WhiskService } from './WhiskService';
-import { WhiskState } from '@/core/store/slices/creativeSlice';
+import { WhiskState } from '@/core/store/slices/creative';
 import { STYLE_PRESETS } from '@/modules/creative/components/whisk/WhiskPresetStyles';
 
 vi.mock('@/modules/creative/components/whisk/WhiskPresetStyles', () => ({

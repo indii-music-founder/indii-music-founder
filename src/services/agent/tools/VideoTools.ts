@@ -10,7 +10,9 @@ import type { AnyToolFunction } from '../types';
 // ============================================================================
 
 const VALID_ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4'] as const;
+type ValidAspectRatio = typeof VALID_ASPECT_RATIOS[number];
 const VALID_RESOLUTIONS = ['1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024'] as const;
+type ValidResolution = typeof VALID_RESOLUTIONS[number];
 const MAX_DURATION_SECONDS = 300;
 const MAX_CHAIN_DURATION_SECONDS = 300;
 
@@ -19,7 +21,7 @@ const MAX_CHAIN_DURATION_SECONDS = 300;
  */
 function validateAspectRatio(aspectRatio?: string): string | null {
     if (!aspectRatio) return null;
-    if (!VALID_ASPECT_RATIOS.includes(aspectRatio as any)) {
+    if (!(VALID_ASPECT_RATIOS as readonly string[]).includes(aspectRatio)) {
         return `Invalid aspect ratio "${aspectRatio}". Valid options: ${VALID_ASPECT_RATIOS.join(', ')}`;
     }
     return null;
@@ -30,7 +32,7 @@ function validateAspectRatio(aspectRatio?: string): string | null {
  */
 function validateResolution(resolution?: string): string | null {
     if (!resolution) return null;
-    if (!VALID_RESOLUTIONS.includes(resolution as any)) {
+    if (!(VALID_RESOLUTIONS as readonly string[]).includes(resolution)) {
         return `Invalid resolution "${resolution}". Valid options: ${VALID_RESOLUTIONS.join(', ')}`;
     }
     return null;
@@ -86,7 +88,7 @@ export const VideoTools = {
         // WHISK INTEGRATION: Synthesize prompt with locked references
         // =====================================================================
         let finalPrompt = args.prompt;
-        let finalAspectRatio = args.aspectRatio as any;
+        let finalAspectRatio: ValidAspectRatio | undefined = args.aspectRatio as ValidAspectRatio | undefined;
         let finalDuration = args.duration;
 
         // Check if we should use Whisk synthesis (video mode or both)
@@ -101,8 +103,8 @@ export const VideoTools = {
             const videoParams = await WhiskService.getVideoParameters(whiskState);
 
             // Use locked aspect ratio if not explicitly provided
-            if (!args.aspectRatio && videoParams.aspectRatio) {
-                finalAspectRatio = videoParams.aspectRatio;
+            if (!args.aspectRatio && videoParams.aspectRatio && (VALID_ASPECT_RATIOS as readonly string[]).includes(videoParams.aspectRatio)) {
+                finalAspectRatio = videoParams.aspectRatio as ValidAspectRatio;
             }
 
             // Use locked duration if not explicitly provided
@@ -122,7 +124,7 @@ export const VideoTools = {
             firstFrame: args.image,
             duration: finalDuration,
             aspectRatio: finalAspectRatio,
-            resolution: args.resolution as any,
+            resolution: args.resolution as VideoGenerationOptions['resolution'],
             userProfile
         });
 

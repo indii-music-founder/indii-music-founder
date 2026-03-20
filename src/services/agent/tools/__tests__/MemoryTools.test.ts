@@ -20,8 +20,11 @@ vi.mock('@/services/agent/MemoryService', () => ({
 vi.mock('@/services/ai/GenAI', () => ({
     GenAI: {
         rawGenerateContent: vi.fn().mockResolvedValue({
+            getText: () => '{"score": 8, "reason": "Good", "pass": true}',
             response: {
-                text: () => '{"score": 8, "reason": "Good", "pass": true}'
+                text: () => '{"score": 8, "reason": "Good", "pass": true}',
+                candidates: [],
+                usageMetadata: {}
             }
         })
     }
@@ -199,6 +202,7 @@ describe('MemoryTools', () => {
                 pass: true
             };
             (AI.rawGenerateContent as any).mockResolvedValue({
+                getText: () => JSON.stringify(mockVerification),
                 response: {
                     text: () => JSON.stringify(mockVerification),
                     candidates: [],
@@ -230,6 +234,7 @@ describe('MemoryTools', () => {
 
         it('should include goal and content in prompt', async () => {
             (AI.rawGenerateContent as any).mockResolvedValue({
+                getText: () => '{"score": 7, "pass": true}',
                 response: {
                     text: () => '{"score": 7, "pass": true}',
                     candidates: [],

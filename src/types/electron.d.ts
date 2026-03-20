@@ -131,6 +131,17 @@ export interface ElectronAPI {
         check: () => Promise<{ available: boolean; version?: string; error?: string }>;
         install: () => Promise<void>;
     };
+
+    // Security IPC bridge (Electron-only)
+    security?: {
+        rotateCredentials: (options: { serviceName: string }) => Promise<{ success: boolean; error?: string }>;
+        scanVulnerabilities: (options: { scope: string }) => Promise<{ success: boolean; scan?: { scope: string; vulnerabilities: unknown[]; score: number }; error?: string }>;
+    };
+
+    // Brand analysis IPC bridge (Electron-only)
+    brand?: {
+        analyzeConsistency: (assetPath: string, brandKit: Record<string, unknown>) => Promise<{ success: boolean; report?: unknown; issues?: unknown[]; error?: string }>;
+    };
 }
 
 declare global {

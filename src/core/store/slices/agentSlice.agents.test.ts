@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore, StoreApi } from 'zustand';
-import { createAgentSlice, AgentSlice } from './agentSlice';
+import { createAgentSlice, AgentSlice } from './agent';
 import { agentRegistry } from '@/services/agent/registry';
 
 // Mock agentRegistry

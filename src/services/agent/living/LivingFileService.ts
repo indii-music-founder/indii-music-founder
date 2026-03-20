@@ -125,7 +125,7 @@ export class LivingFileService {
                 updatedBy: source
             }, { merge: true });
 
-            console.debug(`[LivingFileService] Wrote ${fileName} for user ${userId}`);
+            logger.debug(`[LivingFileService] Wrote ${fileName} for user ${userId}`);
         } catch (error) {
             logger.error(`[LivingFileService] Failed to write ${fileName}:`, error);
             throw error;

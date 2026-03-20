@@ -474,14 +474,14 @@ If the user asks you to do something that requires active tools (like generating
             }));
 
         // Build the prompt contents: history + current message
-        const currentMessagePart = { role: 'user' as const, parts: [{ text }] };
+        const currentMessagePart: { role: 'user'; parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> } = { role: 'user' as const, parts: [{ text }] };
 
         // Handle image attachments inline
         if (attachments && attachments.length > 0) {
             for (const att of attachments) {
                 currentMessagePart.parts.push({
                     inlineData: { mimeType: att.mimeType, data: att.base64 }
-                } as any);
+                });
             }
         }
 
@@ -579,9 +579,9 @@ If the user asks you to do something that requires active tools (like generating
                     logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
                     const memories = await memoryService.retrieveRelevantMemories(projectId, task, 5);
                     if (memories && memories.length > 0) {
-                        context.relevantMemories = memories.map((m: any) => m.content);
+                        context.relevantMemories = memories;
                         context.memoryContext = memories
-                            .map((m: any) => `- [${new Date(m.timestamp).toLocaleDateString()}] (${m.type}): ${m.content}`)
+                            .map(m => `- ${m}`)
                             .join('\n');
                         logger.debug(`[AgentService] Injected ${memories.length} memories into context.`);
                     }

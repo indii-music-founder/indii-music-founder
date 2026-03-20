@@ -2,6 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
 
+// Mock secureRandomInt — EvolutionEngine uses this for tournament selection and mutation probability
+const mockSecureRandomInt = vi.fn().mockReturnValue(0);
+vi.mock('@/utils/crypto-random', () => ({
+    secureRandomInt: (...args: unknown[]) => mockSecureRandomInt(...args),
+}));
+
 /**
  * 🧬 HELIX: GEMINI 3 PRO EVOLUTIONARY LOOP
  *
@@ -44,6 +50,8 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    // Re-establish mockSecureRandomInt after resetAllMocks clears it
+    mockSecureRandomInt.mockReturnValue(0);
 
     // 1. Fitness Function: Deterministic Ranking
     // Agent-A (100) > Agent-B (80) > Agent-C (20)
@@ -89,10 +97,9 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
 
   it('Micro-Universe: Verifies the full evolutionary cycle (Select -> Breed -> Mutate)', async () => {
     // 0. Enforce Determinism (Helix Philosophy: Randomness is for Evolution, not for Testing)
-    // We mock Math.random to always return 0.0.
+    // secureRandomInt is mocked to always return 0.
     // Effect on Selection: Always picks index 0 (Best available in sorted pool).
-    // Effect on Mutation: 0.0 < 1.0 (Always Mutates).
-    vi.spyOn(Math, 'random').mockReturnValue(0.0);
+    // Effect on Mutation: 0 / 1000 = 0.0 < 1.0 (Always Mutates).
 
     // 1. Setup Population (3 Agents)
     const population: AgentGene[] = [

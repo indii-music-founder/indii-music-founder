@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { runAgenticWorkflow } from '@/services/rag/ragService';
 // useStore removed
 
@@ -21,7 +22,7 @@ export const KnowledgeTools = {
             args.query,
             userProfile,
             null,
-            (update) => console.info(`[KnowledgeTools] ${update}`),
+            (update) => logger.info(`[KnowledgeTools] ${update}`),
             () => { } // Update Doc Status dummy
         );
 

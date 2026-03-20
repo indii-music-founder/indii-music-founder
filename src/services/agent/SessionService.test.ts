@@ -50,7 +50,7 @@ vi.mock('../OrganizationService', () => ({
 
 // 4. Import System Under Test
 import { sessionService } from './SessionService';
-import { ConversationSession } from '@/core/store/slices/agentSlice';
+import { ConversationSession } from '@/core/store/slices/agent';
 
 describe('SessionService Persistence (Dual Write)', () => {
     const mockElectronSave = vi.fn().mockResolvedValue(undefined);

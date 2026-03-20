@@ -6,7 +6,7 @@ import { WhiskDropZone } from '../WhiskDropZone';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import React from 'react';
-import { WhiskItem } from '@/core/store/slices/creativeSlice';
+import { WhiskItem } from '@/core/store/slices/creative';
 
 expect.extend(matchers);
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { DailyItem } from './DailyItem';
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creative';
 
 const mockVideo: HistoryItem = {
     id: '123',

@@ -4,9 +4,9 @@ import { AppSlice, createAppSlice } from './slices/appSlice';
 export type { AppSlice } from './slices/appSlice';
 export { createAppSlice };
 import { ProfileSlice, createProfileSlice } from './slices/profileSlice';
-import { AgentSlice, createAgentSlice } from './slices/agentSlice';
-import { CreativeSlice, createCreativeSlice } from './slices/creativeSlice';
-export type { CanvasImage, ShotItem } from './slices/creativeSlice';
+import { AgentSlice, createAgentSlice } from './slices/agent';
+import { CreativeSlice, createCreativeSlice } from './slices/creative';
+export type { CanvasImage, ShotItem } from './slices/creative';
 export type { HistoryItem } from '@/core/types/history';
 import { WorkflowSlice, createWorkflowSlice } from './slices/workflowSlice';
 import { AuthSlice, createAuthSlice } from './slices/authSlice';
@@ -27,7 +27,7 @@ import { EmailSlice, createEmailSlice } from './slices/emailSlice';
 import { AnalyticsSlice, createAnalyticsSlice } from './slices/analyticsSlice';
 
 
-export type { AgentMessage, AgentThought } from './slices/agentSlice';
+export type { AgentMessage, AgentThought } from './slices/agent';
 
 
 export interface StoreState extends

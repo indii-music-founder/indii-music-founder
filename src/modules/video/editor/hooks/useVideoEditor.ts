@@ -4,7 +4,7 @@ import { PlayerRef } from '@remotion/player';
 import { httpsCallable } from 'firebase/functions';
 import { functionsWest1 } from '@/services/firebase';
 import { useVideoEditorStore, VideoProject, VideoClip } from '../../store/videoEditorStore';
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creative';
 import { useToast } from '@/core/context/ToastContext';
 import { PIXELS_PER_FRAME } from '../constants';
 import { logger } from '@/utils/logger';

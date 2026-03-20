@@ -1,5 +1,5 @@
 import { ModuleId } from '@/core/constants';
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creative';
 import { Project } from '@/core/store/slices/appSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
 import { logger } from '@/utils/logger';

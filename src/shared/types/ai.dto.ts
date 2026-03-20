@@ -106,6 +106,7 @@ export interface PersonGenerationConfig {
 
 export interface ImageConfig {
     imageSize?: '1K' | '2K' | '4K' | string;
+    aspectRatio?: string;
     personGenerationConfig?: PersonGenerationConfig;
 }
 

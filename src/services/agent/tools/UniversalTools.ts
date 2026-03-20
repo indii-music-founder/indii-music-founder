@@ -40,7 +40,7 @@ export const UniversalTools = {
     indii_image_gen: wrapTool('indii_image_gen', async (args: { prompt: string; aspect_ratio?: string }) => {
         const { DirectorTools } = await import('@/services/agent/tools/DirectorTools');
         if (DirectorTools.generate_image) {
-            return DirectorTools.generate_image(args, {} as any, {} as any);
+            return DirectorTools.generate_image(args, undefined, undefined);
         }
         return toolError('Image generation tool not found in registry', 'NOT_FOUND');
     }),
@@ -63,7 +63,7 @@ export const UniversalTools = {
     payment_gate: wrapTool('payment_gate', async (args: { amount: number; vendor: string; reason: string }) => {
         const { CoreTools } = await import('./CoreTools');
         const content = `Authorize payment of $${args.amount} to ${args.vendor} for: ${args.reason}`;
-        return CoreTools.request_approval!({ content, type: 'payment' }, {} as any, {} as any);
+        return CoreTools.request_approval!({ content, type: 'payment' }, undefined, undefined);
     }),
 
     /**

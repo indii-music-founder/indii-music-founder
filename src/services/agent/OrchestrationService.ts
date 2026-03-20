@@ -20,7 +20,7 @@ export class OrchestrationService {
         if (!workflow) throw new Error(`Workflow ${workflowId} not found in registry.`);
 
         const traceId = uuidv4();
-        console.info(`[Orchestration] Starting workflow: ${workflow.name} (${workflowId}), trace: ${traceId}`);
+        logger.info(`[Orchestration] Starting workflow: ${workflow.name} (${workflowId}), trace: ${traceId}`);
 
         let report = `# 🚀 Workflow Report: ${workflow.name}\n\n**Description**: ${workflow.description}\n\n---\n\n`;
 
@@ -37,7 +37,7 @@ export class OrchestrationService {
             }));
 
             // Execute via Maestro Batching
-            console.info(`[Orchestration] Enqueuing ${tasks.length} tasks into Maestro...`);
+            logger.info(`[Orchestration] Enqueuing ${tasks.length} tasks into Maestro...`);
             const results = await maestroBatchingService.executeBatch(tasks);
 
             // Synthesize report

@@ -6,7 +6,7 @@ import { BaseAgent } from '../BaseAgent';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
-import type { WhiskState } from '@/core/store/slices/creativeSlice';
+import type { WhiskState } from '@/core/store/slices/creative';
 import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
 
 /**
@@ -26,7 +26,7 @@ export class GeneralistAgent extends BaseAgent {
     name = 'indii Conductor';
     description = 'Central Studio Head and Creative Orchestrator.';
     color = 'bg-purple-600';
-    category = 'hub' as any;
+    category: 'manager' | 'department' | 'specialist' = 'manager';
 
     private readonly AGENT0_PROTOCOL = `
 ## ROLE: indii (The Central Studio Head)
@@ -525,7 +525,7 @@ CURRENT REQUEST: ${task}
                         ...AI_CONFIG.THINKING.HIGH
                     },
                     undefined,
-                    this.tools as any,
+                    this.tools as Parameters<typeof AI.generateContentStream>[4],
                     { signal }
                 );
 
@@ -533,8 +533,8 @@ CURRENT REQUEST: ${task}
                 const streamIterator = {
                     [Symbol.asyncIterator]: async function* () {
                         const rawStream = stream as unknown;
-                        if (rawStream && typeof (rawStream as any).getReader === 'function') {
-                            const reader = (rawStream as any).getReader();
+                        if (rawStream && typeof (rawStream as ReadableStream).getReader === 'function') {
+                            const reader = (rawStream as ReadableStream).getReader();
                             try {
                                 while (true) {
                                     const { done, value } = await reader.read();

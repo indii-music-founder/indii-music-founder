@@ -1,6 +1,7 @@
 import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
+import type { GenerationConfig } from '@/shared/types/ai.dto';
 import type { AlwaysOnMemory, MemoryEntity, ConsolidationInsight, MemoryConnection } from '@/types/AlwaysOnMemory';
 import { Timestamp } from 'firebase/firestore';
 
@@ -66,7 +67,7 @@ SUMMARY:
             const summary = await AIService.getInstance().generateText(
                 prompt,
                 0,
-                { temperature: 0.2 } as any
+                { temperature: 0.2 } as Record<string, unknown>
             );
 
             return summary;
@@ -126,7 +127,7 @@ Be specific and actionable. Focus on creative workflow, branding, distribution, 
                 {
                     temperature: 0.3,
                     responseMimeType: 'application/json',
-                } as any
+                } as Record<string, unknown>
             );
 
             const parsed = safeParseJson(response, { insight: '', summary: '', confidence: 0, connections: [] });
@@ -191,7 +192,7 @@ Only include clearly identifiable entities. Be precise with names. Return an emp
                 {
                     temperature: 0.1,
                     responseMimeType: 'application/json',
-                } as any
+                } as Record<string, unknown>
             );
 
             const parsed = safeParseJson(response, { entities: [] });
@@ -234,7 +235,7 @@ Respond in JSON format:
                 {
                     temperature: 0.1,
                     responseMimeType: 'application/json',
-                } as any
+                } as Record<string, unknown>
             );
 
             const parsed = safeParseJson(response, { topics: [] });
@@ -285,7 +286,7 @@ Respond with ONLY a JSON object: {"importance": 0.X}`;
                 {
                     temperature: 0.1,
                     responseMimeType: 'application/json',
-                } as any
+                } as Record<string, unknown>
             );
 
             const parsed = safeParseJson(response, { importance: 0.5 });

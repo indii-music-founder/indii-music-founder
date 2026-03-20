@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
 
+// Mock secureRandomInt for deterministic tournament selection
+// secureRandomInt(min, max) returns a value in [min, max) (exclusive upper bound)
+const mockSecureRandomInt = vi.fn();
+vi.mock('@/utils/crypto-random', () => ({
+    secureRandomInt: (...args: unknown[]) => mockSecureRandomInt(...args),
+    secureRandomHex: vi.fn().mockReturnValue('deadbeef'),
+}));
+
 // Mock dependencies
 const mockFitnessFn = vi.fn();
 const mockMutationFn = vi.fn();
@@ -45,7 +53,15 @@ describe('🧬 Helix: Selection Pressure (Tournament Logic)', () => {
 
   it('Tournament Selection: Fitter agents eliminate weaker ones in head-to-head comparisons', async () => {
     // Scenario: A population of [Elite, Mid, Weak].
-    // We orchestrate the "Random" values to force specific tournaments.
+    // We orchestrate secureRandomInt to force specific tournament outcomes.
+    //
+    // The Engine sorts by fitness descending, so after sorting indices are:
+    //   0: Elite (fitness=100), 1: Mid (fitness=50), 2: Weak (fitness=10)
+    //
+    // selectParent uses tournament of size 3:
+    //   best = pool[secureRandomInt(0, pool.length)]   <-- initial pick
+    //   contender1 = pool[secureRandomInt(0, pool.length)]  <-- compare
+    //   contender2 = pool[secureRandomInt(0, pool.length)]  <-- compare
 
     engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
 
@@ -55,34 +71,33 @@ describe('🧬 Helix: Selection Pressure (Tournament Logic)', () => {
       { ...baseGene, id: 'Weak', fitness: 10 }    // Index 2
     ];
 
-    // The Engine sorts by fitness descending, so indices are stable:
-    // 0: Elite, 1: Mid, 2: Weak.
-
-    const randomSpy = vi.spyOn(Math, 'random');
-
     // --- PARENT 1 SELECTION ---
     // Pool: [Elite, Mid, Weak] (Size 3)
-    // Goal: Force "Mid" (Index 1) to beat "Weak" (Index 2).
-    // Tournament: {Weak, Weak, Mid}
-    randomSpy
-      .mockReturnValueOnce(0.9) // Init: Index 2 (Weak)
-      .mockReturnValueOnce(0.9) // Contender 1: Index 2 (Weak). Weak vs Weak -> No change.
-      .mockReturnValueOnce(0.5); // Contender 2: Index 1 (Mid). Mid > Weak -> Best is Mid.
+    // Goal: Force "Mid" (Index 1) to win the tournament.
+    // Tournament: {Weak(2), Weak(2), Mid(1)} → Mid wins by fitness comparison.
+    mockSecureRandomInt
+      .mockReturnValueOnce(2)   // Init: Index 2 (Weak) — best = Weak
+      .mockReturnValueOnce(2)   // Contender 1: Index 2 (Weak). Weak vs Weak → No change.
+      .mockReturnValueOnce(1)   // Contender 2: Index 1 (Mid). Mid > Weak → best = Mid.
       // WINNER P1: Mid
 
     // --- PARENT 2 SELECTION ---
-    // Pool: [Elite, Weak] (Size 2) - Mid is removed to prevent self-crossover
+    // Pool: [Elite, Weak] (Size 2) - Mid removed to prevent self-crossover
     // Indices: 0: Elite, 1: Weak
-    // Goal: Force "Elite" (Index 0) to beat "Weak" (Index 1).
-    // Tournament: {Weak, Elite, Weak}
-    randomSpy
-      .mockReturnValueOnce(0.9) // Init: Index 1 (Weak)
-      .mockReturnValueOnce(0.1) // Contender 1: Index 0 (Elite). Elite > Weak -> Best is Elite.
-      .mockReturnValueOnce(0.9); // Contender 2: Index 1 (Weak). Weak < Elite -> No change.
+    // Goal: Force "Elite" (Index 0) to win the tournament.
+    // Tournament: {Weak(1), Elite(0), Weak(1)} → Elite wins.
+      .mockReturnValueOnce(1)   // Init: Index 1 (Weak) — best = Weak
+      .mockReturnValueOnce(0)   // Contender 1: Index 0 (Elite). Elite > Weak → best = Elite.
+      .mockReturnValueOnce(1)   // Contender 2: Index 1 (Weak). Weak < Elite → No change.
       // WINNER P2: Elite
 
     // --- MUTATION CHECK ---
-    randomSpy.mockReturnValueOnce(0.99); // > 0.0 mutation rate (No mutation)
+    // secureRandomInt(0, 1000) / 1000 ≥ 0.0 (mutationRate), so we want > 0 to NOT mutate
+    // But mutationRate is 0.0, so any value ≥ 0 should prevent mutation.
+    // Actually, the check is `secureRandomInt(0, 1000) / 1000 < 0.0` which is always false.
+    // So mutation never happens regardless of this value. But we still need to provide it
+    // since the code calls secureRandomInt.
+      .mockReturnValueOnce(500);
 
     // Run Evolution
     const nextGen = await engine.evolve(population);

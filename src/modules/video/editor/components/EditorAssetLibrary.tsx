@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creative';
 import { Image, Film, Music, FileText } from 'lucide-react';
 import { Virtuoso } from 'react-virtuoso';
 

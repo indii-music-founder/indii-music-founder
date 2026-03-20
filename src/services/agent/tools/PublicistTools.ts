@@ -100,7 +100,7 @@ export const PublicistTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = GenerateCrisisResponseSchema.parse(data);
@@ -117,7 +117,7 @@ export const PublicistTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = PitchStorySchema.parse(data);
@@ -133,7 +133,7 @@ export const PublicistTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = PitchStorySchema.parse(data);

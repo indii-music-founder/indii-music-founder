@@ -32,10 +32,7 @@ export function generateSecureHex(length: number): string {
     const crypto = globalThis.crypto;
 
     if (!crypto || !crypto.getRandomValues) {
-        // Fallback for older environments or specific test setups where crypto is missing.
-        // In production, this should ideally throw, but for broad compatibility/dev:
-        logger.warn('[Security] crypto.getRandomValues not available. Falling back to Math.random (INSECURE).');
-        return Math.random().toString(16).substring(2, 2 + length);
+        throw new Error('[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.');
     }
 
     crypto.getRandomValues(array);

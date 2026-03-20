@@ -82,7 +82,7 @@ export const RoadTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = TourRouteSchema.parse(data);
@@ -138,7 +138,7 @@ export const RoadTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: fullPrompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = ItinerarySchema.parse(data);
@@ -195,7 +195,7 @@ export const RoadTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = OptimizedRouteSchema.parse(data);
@@ -232,7 +232,7 @@ export const RoadTools = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = TechnicalRiderSchema.parse(data);

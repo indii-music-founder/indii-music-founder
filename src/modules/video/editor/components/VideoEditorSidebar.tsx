@@ -2,7 +2,7 @@ import React from 'react';
 import { Settings, Layers, Image as ImageIcon, Trash2, Plus } from 'lucide-react';
 import { EditorAssetLibrary } from './EditorAssetLibrary'; // Adjust import path as needed
 import { VideoProject } from '../../store/videoEditorStore';
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creative';
 
 interface VideoEditorSidebarProps {
     activeTab: 'project' | 'tracks' | 'assets';

@@ -21,6 +21,7 @@
 import { AI_MODELS } from '@/core/config/ai-models';
 import { GoogleGenAI } from '@google/genai';
 import { logger } from '@/utils/logger';
+import { secureRandomHex } from '@/utils/crypto-random';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -143,7 +144,7 @@ export class BrowserAgentService {
         }
 
         const task: AgentTask = {
-            id: `ba-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            id: `ba-${Date.now()}-${secureRandomHex(4)}`,
             portal,
             goal,
             status: 'running',

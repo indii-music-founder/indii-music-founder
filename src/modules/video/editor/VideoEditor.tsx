@@ -1,6 +1,6 @@
 import React from 'react';
 import { useVideoEditorStore } from '../store/videoEditorStore';
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creative';
 import { VideoPreview } from './components/VideoPreview';
 import { VideoPropertiesPanel } from './components/VideoPropertiesPanel';
 import { VideoTimeline } from './components/VideoTimeline';

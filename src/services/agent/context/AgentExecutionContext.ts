@@ -47,6 +47,15 @@ export class AgentExecutionContext {
     }
 
     /**
+     * Internal factory method — allows ExecutionContextFactory to create instances
+     * without exposing the constructor publicly.
+     * @internal
+     */
+    static _create(options: ExecutionContextOptions, initialState: StoreState): AgentExecutionContext {
+        return new AgentExecutionContext(options, initialState);
+    }
+
+    /**
      * Starts the execution context (architectural compatibility).
      * The snapshot is already taken in the constructor, so this is a no-op
      * but provided for consistency with modular transaction managers.
@@ -60,7 +69,7 @@ export class AgentExecutionContext {
      * (Only snapshot what agents actually need to avoid memory bloat)
      */
     private createSnapshot(state: StoreState): Readonly<Partial<StoreState>> {
-        const snapshot: any = {
+        const snapshot: Partial<StoreState> = {
             // App state
             currentModule: state.currentModule,
             currentProjectId: state.currentProjectId,
@@ -108,14 +117,14 @@ export class AgentExecutionContext {
             return this.modifications.get(key) as StoreState[K];
         }
 
-        return (this.snapshot as any)[key];
+        return this.snapshot[key] as StoreState[K];
     }
 
     /**
      * Get full state object (for tools that need multiple keys)
      */
     getFullState(): Partial<StoreState> {
-        const merged: any = { ...this.snapshot };
+        const merged: Partial<StoreState> = { ...this.snapshot };
 
         // Apply modifications on top
         this.modifications.forEach((value, key) => {
@@ -223,8 +232,8 @@ export class AgentExecutionContext {
         const conflicts: string[] = [];
 
         this.modifications.forEach((modifiedValue, key) => {
-            const snapshotValue = (this.snapshot as any)[key];
-            const currentValue = (currentState as any)[key];
+            const snapshotValue = this.snapshot[key];
+            const currentValue = currentState[key];
 
             // If global state changed since snapshot, we have a conflict
             if (JSON.stringify(snapshotValue) !== JSON.stringify(currentValue)) {
@@ -302,8 +311,7 @@ export class AgentExecutionContext {
 export class ExecutionContextFactory {
     static async create(options: ExecutionContextOptions): Promise<AgentExecutionContext> {
         const { useStore } = await import('@/core/store');
-        // @ts-expect-error - accessing private constructor for internal factory
-        return new AgentExecutionContext(options, useStore.getState());
+        return AgentExecutionContext._create(options, useStore.getState());
     }
 
     /**
@@ -315,8 +323,7 @@ export class ExecutionContextFactory {
         traceId?: string;
     }, agentId: string): Promise<AgentExecutionContext> {
         const { useStore } = await import('@/core/store');
-        // @ts-expect-error - accessing private constructor for internal factory
-        return new AgentExecutionContext({
+        return AgentExecutionContext._create({
             userId: agentContext.userId,
             projectId: agentContext.projectId,
             agentId,

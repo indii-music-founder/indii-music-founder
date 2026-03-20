@@ -17,6 +17,7 @@
 import { FirestoreService } from '../FirestoreService';
 import { FirebaseAIService } from '../ai/FirebaseAIService';
 import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
+import type { GenerationConfig, ContentPart } from '@/shared/types/ai.dto';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
 import { Timestamp } from 'firebase/firestore';
@@ -341,7 +342,7 @@ export class AlwaysOnMemoryEngine {
             ];
 
             const description = await FirebaseAIService.getInstance().generateText(
-                parts as any,
+                parts as ContentPart[],
                 AI_MODELS.TEXT.FAST,
             );
 
@@ -796,7 +797,7 @@ Be thorough but concise. Always cite your sources.`;
             return await FirebaseAIService.getInstance().generateText(
                 prompt,
                 AI_MODELS.TEXT.FAST,
-                { temperature: 0.2 } as any,
+                { temperature: 0.2 } as Record<string, unknown>,
             );
         } catch (error) {
             logger.warn('[AlwaysOnMemoryEngine] Summary generation failed, using truncation:', error);

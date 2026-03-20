@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createCreativeSlice } from './creativeSlice';
+import { createCreativeSlice } from './creative';
 import { HistoryItem } from '@/core/types/history';
 
 // Mock StorageService

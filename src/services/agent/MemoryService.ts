@@ -48,7 +48,7 @@ class MemoryService {
         async (texts) => {
             try {
                 // Pass texts directly to batch API (FirebaseAIService handles the content wrapping)
-                return await AI.batchEmbedContents(texts as any, this.embeddingModel);
+                return await AI.batchEmbedContents(texts, this.embeddingModel);
             } catch (error) {
                 logger.error('[MemoryService] Batch embedding failed:', error);
                 throw error;
@@ -340,7 +340,7 @@ class MemoryService {
                 await Promise.all(addPromises);
             }
 
-            console.info(`[MemoryService] Consolidated ${parsed.idsToDelete?.length || 0} memories into ${parsed.consolidated?.length || 0} summaries.`);
+            logger.info(`[MemoryService] Consolidated ${parsed.idsToDelete?.length || 0} memories into ${parsed.consolidated?.length || 0} summaries.`);
 
         } catch (e) {
             logger.error('[MemoryService] Consolidation failed:', e);

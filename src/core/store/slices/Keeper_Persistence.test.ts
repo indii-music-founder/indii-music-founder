@@ -15,7 +15,8 @@ vi.mock('@/services/agent/SessionService', () => ({
     }
 }));
 
-import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
+import { createAgentSlice, AgentSlice } from './agent';
+import type { AgentMessage } from './agent';
 
 describe('📚 Keeper: Persistence', () => {
     let api: any;

@@ -68,9 +68,12 @@ export const MemoryTools = {
             [{ role: 'user', parts: [{ text: prompt }] }],
             AI_MODELS.TEXT.FAST,
             { responseMimeType: 'application/json' }
-        ) as any;
+        );
 
-        const text = response.text?.() || response.response?.text?.() || '{}';
+        // rawGenerateContent returns WrappedResponse with getText() helper
+        const text = (typeof response === 'object' && response !== null && 'getText' in response && typeof (response as { getText: () => string }).getText === 'function')
+            ? (response as { getText: () => string }).getText()
+            : '{}';
 
         let verification;
         try {
