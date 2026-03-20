@@ -7,6 +7,7 @@ import {
     FolderOpen, Clock, Image, Plus, ArrowUpRight, Sparkles,
 } from 'lucide-react';
 import NewProjectModal from './NewProjectModal';
+import { logger } from '@/utils/logger';
 
 export default function RecentProjects() {
     const { setModule, setProject } = useStore(
@@ -20,7 +21,7 @@ export default function RecentProjects() {
     useEffect(() => {
         DashboardService.getProjects()
             .then((p) => setProjects(p.slice(0, 4))) // Show top 4
-            .catch((err) => { console.error('[RecentProjects] failed to load projects:', err); })
+            .catch((err) => { logger.error('[RecentProjects] failed to load projects:', err); })
             .finally(() => setLoading(false));
     }, []);
 

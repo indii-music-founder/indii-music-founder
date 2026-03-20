@@ -12,6 +12,7 @@
  */
 
 import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { logger } from '@/utils/logger';
 
 // ============================================================================
 // Types
@@ -174,11 +175,11 @@ export class GeminiRetrievalService {
             // Cache the file reference
             this.uploadedFiles.set(readyFile.name, readyFile);
 
-            console.log(`[RAG] File uploaded: ${readyFile.displayName} (${readyFile.name})`);
+            logger.info(`[RAG] File uploaded: ${readyFile.displayName} (${readyFile.name})`);
             return readyFile;
 
         } catch (error) {
-            console.error('[RAG] Upload failed:', error);
+            logger.error('[RAG] Upload failed:', error);
             throw error;
         }
     }
@@ -244,7 +245,7 @@ export class GeminiRetrievalService {
         }
 
         this.uploadedFiles.delete(fileName);
-        console.log(`[RAG] File deleted: ${fileName}`);
+        logger.info(`[RAG] File deleted: ${fileName}`);
     }
 
     // =========================================================================
@@ -315,7 +316,7 @@ Always cite which document(s) your answer comes from.`;
             };
 
         } catch (error) {
-            console.error('[RAG] Query failed:', error);
+            logger.error('[RAG] Query failed:', error);
             throw new Error(`Retrieval query failed: ${error}`);
         }
     }
@@ -370,7 +371,7 @@ Only return the JSON array, no other text.`;
             return [];
 
         } catch (error) {
-            console.error('[RAG] Semantic search failed:', error);
+            logger.error('[RAG] Semantic search failed:', error);
             return [];
         }
     }
@@ -410,7 +411,7 @@ Only return the JSON array, no other text.`;
 
         await setDoc(doc(db, 'knowledge', docId), knowledgeDoc);
 
-        console.log(`[RAG] Synced to Firestore: ${docId}`);
+        logger.info(`[RAG] Synced to Firestore: ${docId}`);
         return knowledgeDoc;
     }
 
@@ -436,7 +437,7 @@ Only return the JSON array, no other text.`;
 
         for (const docSnap of snapshot.docs) {
             const data = docSnap.data() as KnowledgeDocument;
-            console.log(`[RAG] File expiring soon: ${data.fileName}`);
+            logger.info(`[RAG] File expiring soon: ${data.fileName}`);
             // In a real implementation, you'd re-fetch and re-upload the file
             // This requires storing the original file or having a backup
             refreshedCount++;

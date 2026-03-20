@@ -204,7 +204,7 @@ const BrandManager: React.FC = () => {
             logger.error("[BrandManager] Save failed: No userProfile.id");
             return;
         }
-        console.info(`[BrandManager] Saving bio for user: ${userProfile.id}`, { bioDraft });
+        logger.info(`[BrandManager] Saving bio for user: ${userProfile.id}`, { bioDraft });
 
         try {
             const updatedProfile = { ...userProfile, bio: bioDraft };
@@ -213,7 +213,7 @@ const BrandManager: React.FC = () => {
             // which saves to LocalDB AND Firestore (if auth ID matches).
             setUserProfile(updatedProfile);
 
-            console.info("[BrandManager] Bio save triggered via ProfileSlice");
+            logger.info("[BrandManager] Bio save triggered via ProfileSlice");
             setIsEditingBio(false);
             toast.success("Bio updated");
         } catch (e) {
@@ -278,7 +278,7 @@ const BrandManager: React.FC = () => {
     };
 
     // -- RELEASE SECTION HANDLERS --
-    const handleUpdateRelease = (field: string, value: string) => {
+    const handleUpdateRelease = (field: string, value: string | Array<{ title: string; duration: string; collaborators?: string }>) => {
         const newRelease = { ...release, [field]: value };
         updateBrandKit({ releaseDetails: newRelease });
     };
@@ -297,11 +297,11 @@ const BrandManager: React.FC = () => {
     const saveBrandKit = async (updates: Partial<BrandKit>) => {
         if (!userProfile || !userProfile.id) return;
         const userRef = doc(db, 'users', userProfile.id);
-        const firestoreUpdates: Record<string, unknown> = {};
+        const firestoreUpdates: Record<string, any> = {};
         Object.keys(updates).forEach(key => {
             firestoreUpdates[`brandKit.${key}`] = updates[key as keyof BrandKit];
         });
-        await updateDoc(userRef, firestoreUpdates as any);
+        await updateDoc(userRef, firestoreUpdates);
     };
 
     // -- HEALTH CHECK HANDLER --
@@ -887,7 +887,7 @@ const BrandManager: React.FC = () => {
                                             {(release.type === 'EP' || release.type === 'Album') ? (
                                                 <TrackListEditor
                                                     tracks={release.tracks || []}
-                                                    onChange={(newTracks) => { handleUpdateRelease('tracks', newTracks as any); handleSaveRelease(); }}
+                                                    onChange={(newTracks) => { handleUpdateRelease('tracks', newTracks); handleSaveRelease(); }}
                                                 />
                                             ) : (
                                                 <div className="p-8 border border-dashed border-gray-800 rounded-xl text-center">
@@ -920,7 +920,7 @@ const BrandManager: React.FC = () => {
                                                 </h3>
                                                 <select
                                                     value={contentType}
-                                                    onChange={(e) => setContentType(e.target.value as any)}
+                                                    onChange={(e) => setContentType(e.target.value as 'messaging' | 'social' | 'bio' | 'visuals')}
                                                     className="bg-transparent border-none text-[10px] uppercase font-black text-gray-500 focus:text-dept-marketing hover:text-white transition-colors outline-none cursor-pointer"
                                                 >
                                                     <option value="messaging" className="bg-[#111]">Messaging</option>

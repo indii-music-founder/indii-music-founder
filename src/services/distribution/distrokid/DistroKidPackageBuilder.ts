@@ -2,6 +2,7 @@
 // import * as path from 'path';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '@/services/distribution/types/distributor';
+import { logger } from '@/utils/logger';
 
 /**
  * DistroKid Package Builder
@@ -88,7 +89,7 @@ export class DistroKidPackageBuilder {
             packagedFiles.push(destCoverPath);
         }
 
-        console.info(`[DistroKidBuilder] Built package: ${packagePath}`);
+        logger.info(`[DistroKidBuilder] Built package: ${packagePath}`);
         return { packagePath, files: packagedFiles };
     }
 

@@ -53,7 +53,7 @@ export const ThreeDCard = ({
     // Cleanup listeners on unmount
     useEffect(() => {
         return () => {
-            window.removeEventListener('scroll', updateRect, { capture: true } as any);
+            window.removeEventListener('scroll', updateRect, { capture: true });
             if (frameRef.current) {
                 cancelAnimationFrame(frameRef.current);
             }
@@ -95,7 +95,7 @@ export const ThreeDCard = ({
 
     const handleMouseLeave = () => {
         setHovered(false);
-        window.removeEventListener('scroll', updateRect, { capture: true } as any);
+        window.removeEventListener('scroll', updateRect, { capture: true });
         if (frameRef.current) {
             cancelAnimationFrame(frameRef.current);
         }
@@ -255,7 +255,7 @@ export const ThreeDCardContainer = ({
     // Cleanup listeners on unmount
     useEffect(() => {
         return () => {
-            window.removeEventListener('scroll', updateRect, { capture: true } as any);
+            window.removeEventListener('scroll', updateRect, { capture: true });
             if (frameRef.current) {
                 cancelAnimationFrame(frameRef.current);
             }
@@ -295,7 +295,7 @@ export const ThreeDCardContainer = ({
     const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current) return;
         setIsMouseEntered(false);
-        window.removeEventListener('scroll', updateRect, { capture: true } as any);
+        window.removeEventListener('scroll', updateRect, { capture: true });
         if (frameRef.current) {
             cancelAnimationFrame(frameRef.current);
         }

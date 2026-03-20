@@ -6,6 +6,7 @@ import {
     MessageSquare, Bot, Sparkles, Zap, Clock, CheckCircle, Package, AlertCircle
 } from 'lucide-react';
 import { events, EventType } from '@/core/events';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 interface FeedItem {
     id: string;
@@ -28,7 +29,7 @@ export default function ActivityFeed() {
 
     React.useEffect(() => {
         const handleEvent = (type: EventType, data: any) => {
-            const id = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const id = `event-${Date.now()}-${secureRandomAlphanumeric(9)}`;
             let item: FeedItem | null = null;
 
             switch (type) {

@@ -14,6 +14,7 @@ import {
 } from '@/services/distribution/types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
 import { DDEX_CONFIG } from '@/core/config/ddex';
+import { logger } from '@/utils/logger';
 
 export class CDBabyAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'cdbaby';
@@ -78,7 +79,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
 
             // 2. Map Files for Staging
             if (window.electronAPI?.distribution?.stageRelease) {
-                console.info('[CDBaby] Staging release files...');
+                logger.info('[CDBaby] Staging release files...');
 
                 const files: { type: 'content' | 'path'; data: string; name: string }[] = [
                     { type: 'content', data: ernResult.xml!, name: 'batch.xml' }
@@ -124,7 +125,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
                     throw new Error(stagingValues.error || 'Failed to stage CDBaby release locally');
                 }
 
-                console.info(`[CDBaby] Files staged at ${stagingValues.packagePath}.`);
+                logger.info(`[CDBaby] Files staged at ${stagingValues.packagePath}.`);
 
                 // 4. Transmission (Simulation for now, or real if SFTP credentials exist)
                 if (this.credentials?.sftpHost) {

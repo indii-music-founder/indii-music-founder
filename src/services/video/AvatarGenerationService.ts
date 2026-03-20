@@ -1,13 +1,17 @@
 /**
  * AvatarGenerationService.ts
- * 
+ *
  * Orchestrates AI lip-sync and avatar video generation.
  * Connects to SadTalker, HeyGen, or D-ID APIs.
  * Fulfills PRODUCTION_200 item #106.
+ *
+ * @mock This service is ENTIRELY MOCKED. `handleProcessingMock()` simulates progress
+ *       without calling any real API. Gated behind `enable_avatar_generation` feature flag.
  */
 
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
+import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 
 export interface AvatarJob {
     id: string;
@@ -24,6 +28,10 @@ export class AvatarGenerationService {
      * Triggers a new lip-sync generation joining a static image with an audio track.
      */
     async generateLipSync(imageUrl: string, audioUrl: string): Promise<string> {
+        if (!featureFlags.isEnabled(FEATURE_FLAG_NAMES.AVATAR_GENERATION)) {
+            throw new Error('Avatar generation is not enabled. Enable the `enable_avatar_generation` feature flag.');
+        }
+
         const store = useStore.getState();
         const jobId = `avr_${Date.now()}`;
 

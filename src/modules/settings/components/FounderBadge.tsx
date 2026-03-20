@@ -13,6 +13,7 @@ import { motion } from 'motion/react';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { useStore, type StoreState } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { logger } from '@/utils/logger';
 
 interface FounderData {
     seat: number;
@@ -48,7 +49,7 @@ export default function FounderBadge() {
             setHashCopied(true);
             setTimeout(() => setHashCopied(false), 2000);
         } catch (err) {
-            console.error('[FounderBadge] Clipboard write failed:', err);
+            logger.error('[FounderBadge] Clipboard write failed:', err);
         }
     };
 

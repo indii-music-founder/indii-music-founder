@@ -22,7 +22,7 @@ export class RenderService {
      */
     async renderCompositionCloud(config: RenderConfig): Promise<CloudRenderResponse> {
         try {
-            console.info(`[CloudRenderService] Dispatching cloud render for ${config.compositionId}...`);
+            logger.info(`[CloudRenderService] Dispatching cloud render for ${config.compositionId}...`);
 
             // This requires IAM credentials configured in the environment:
             // AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
@@ -42,7 +42,7 @@ export class RenderService {
                 framesPerLambda: 15,
             });
 
-            console.info(`[CloudRenderService] Cloud render dispatched successfully. ID: ${response.renderId}`);
+            logger.info(`[CloudRenderService] Cloud render dispatched successfully. ID: ${response.renderId}`);
 
             return {
                 renderId: response.renderId,
@@ -87,7 +87,7 @@ export class RenderService {
         }
 
         try {
-            console.info(`[RenderService] Starting local render for ${config.compositionId}...`);
+            logger.info(`[RenderService] Starting local render for ${config.compositionId}...`);
 
             // In a real implementation, we would bundle the composition first
             // or point to a pre-bundled serve URL.
@@ -108,7 +108,7 @@ export class RenderService {
                 outputLocation: config.outputLocation,
             } as RenderMediaOptions);
 
-            console.info(`[RenderService] Render complete: ${config.outputLocation}`);
+            logger.info(`[RenderService] Render complete: ${config.outputLocation}`);
             return config.outputLocation;
 
         } catch (error: unknown) {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DownloadCloud, CheckCircle, AlertCircle } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 /**
  * Requirement 169: Native Share Sheet Integration
@@ -52,7 +53,7 @@ export const ShareTargetReceiver: React.FC = () => {
                 setStatus('success');
 
             } catch (error) {
-                console.error('[ShareTarget] Failed to process shared content', error);
+                logger.error('[ShareTarget] Failed to process shared content', error);
                 setStatus('error');
                 setMessage('Failed to process incoming content.');
             }

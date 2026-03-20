@@ -63,7 +63,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             throw new Error('Not connected to Symphonic');
         }
 
-        console.info('[Symphonic] Initiating release delivery:', metadata.trackTitle);
+        logger.info('[Symphonic] Initiating release delivery:', metadata.trackTitle);
         const releaseId = `SYM-${Date.now()}`;
 
         try {
@@ -71,7 +71,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             const folderReleaseId = metadata.upc || `REL-${Date.now()}`;
 
             if (typeof window !== 'undefined' && window.electronAPI?.sftp && this.credentials?.sftpHost) {
-                console.info('[Symphonic] Delivering via Electron SFTP...');
+                logger.info('[Symphonic] Delivering via Electron SFTP...');
 
                 // Generate DDEX ERN for Symphonic delivery
                 const { ernService } = await import('@/services/ddex/ERNService');
@@ -134,7 +134,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             throw new Error('Not connected to Symphonic');
         }
 
-        console.info(`[Symphonic] Sending XML Update for ${releaseId} with changes:`, Object.keys(updates));
+        logger.info(`[Symphonic] Sending XML Update for ${releaseId} with changes:`, Object.keys(updates));
 
         const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
         if (deployments.length > 0) {
@@ -157,7 +157,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
         if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
-        console.info(`[Symphonic] Issuing Takedown for ${releaseId}`);
+        logger.info(`[Symphonic] Issuing Takedown for ${releaseId}`);
         return {
             success: true,
             status: 'takedown_requested',

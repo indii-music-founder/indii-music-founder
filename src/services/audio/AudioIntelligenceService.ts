@@ -214,5 +214,5 @@ CRITICAL RULES:
 export const audioIntelligence = new AudioIntelligenceService();
 
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
-    (window as any).audioIntelligence = audioIntelligence;
+    window.audioIntelligence = audioIntelligence;
 }

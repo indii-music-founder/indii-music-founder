@@ -13,6 +13,10 @@ import { db, auth } from '@/services/firebase';
  * - This is the Execution layer (deterministic API calls)
  * - Orchestration layer decides which provider to use
  * - Directive layer defines the business rules
+ *
+ * @mock The `InternalProvider` fallback uses a hardcoded product catalog and
+ *       placeholder shipping rates. Suitable for demo/preview; production requires
+ *       real Printful/Printify API keys configured in environment.
  */
 
 import { z } from 'zod';

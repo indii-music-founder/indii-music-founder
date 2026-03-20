@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Music, Plus, Trash2, Download, BarChart3, DollarSign, Users, Calendar } from 'lucide-react';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 /* ================================================================== */
 /*  Setlist Analytics — Live Performance Logger & PRO Royalty Tracker  */
@@ -22,7 +23,7 @@ interface Performance {
 }
 
 function generateId() {
-    return Math.random().toString(36).slice(2, 9);
+    return secureRandomAlphanumeric(7);
 }
 
 function calcRoyalty(songs: Song[], attendance: number): number {

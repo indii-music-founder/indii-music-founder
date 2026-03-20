@@ -1,5 +1,6 @@
 import { openDB, IDBPDatabase } from 'idb';
 import { createHash } from 'crypto';
+import { logger } from '@/utils/logger';
 
 interface CachedResponse {
     key: string;
@@ -113,7 +114,7 @@ export class AIResponseCache {
                 const { quota = 0, usage = 0 } = await navigator.storage.estimate();
                 const remaining = quota - usage;
                 if (remaining < 50 * 1024 * 1024) { // < 50MB remaining
-                    console.warn('[AIResponseCache] IndexedDB quota low (<50MB remaining) — skipping cache write');
+                    logger.warn('[AIResponseCache] IndexedDB quota low (<50MB remaining) — skipping cache write');
                     return;
                 }
             }

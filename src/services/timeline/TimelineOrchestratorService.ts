@@ -45,6 +45,7 @@ import type {
     PhaseTemplate,
     AssetStrategy,
 } from './TimelineTypes';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 // ============================================================================
 // Constants
@@ -106,7 +107,7 @@ export class TimelineOrchestratorService {
         }
 
         // Construct the timeline document
-        const timelineId = `tl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const timelineId = `tl_${Date.now()}_${secureRandomAlphanumeric(6)}`;
         const now = Date.now();
 
         const timeline: Timeline = {

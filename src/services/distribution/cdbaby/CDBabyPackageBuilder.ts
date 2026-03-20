@@ -4,6 +4,7 @@ import { ernService } from '@/services/ddex/ERNService';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '../types/distributor';
+import { logger } from '@/utils/logger';
 
 /**
  * CD Baby Package Builder
@@ -85,7 +86,7 @@ export class CDBabyPackageBuilder {
             packagedFiles.push(destCoverPath);
         }
 
-        console.info(`[CDBabyBuilder] Built package at ${packagePath} with ${packagedFiles.length} files.`);
+        logger.info(`[CDBabyBuilder] Built package at ${packagePath} with ${packagedFiles.length} files.`);
 
         return { packagePath, files: packagedFiles };
     }

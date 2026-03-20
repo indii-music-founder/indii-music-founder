@@ -33,6 +33,11 @@ export interface ElectronAPI {
     selectDirectory: (options?: { title?: string }) => Promise<string | null>;
     showNotification: (title: string, body: string) => void;
 
+    // System Info (Mobile Remote, Device Detection)
+    system?: {
+        getMobileRemoteInfo?: () => Promise<{ localIp: string; port: number } | null>;
+    };
+
     // Filesystem (Electron IPC)
     fs?: {
         listFiles: (path: string) => Promise<{ name: string; path: string; extension: string; sizeBytes: number }[]>;
@@ -132,6 +137,24 @@ declare global {
     interface Window {
         electronAPI?: ElectronAPI;
         MSStream?: unknown; // Legacy iOS detection
+
+        // Vendor-prefixed Web APIs
+        webkitSpeechRecognition?: new () => any;
+        SpeechRecognition?: new () => any;
+        webkitAudioContext?: typeof AudioContext;
+
+        // Google Maps auth failure callback
+        gm_authFailure?: () => void;
+
+        // Google Analytics
+        gtag?: (...args: unknown[]) => void;
+
+        // Legacy browser detection
+        opera?: unknown;
+
+        // Dev-only debug exposure (see store/index.ts, AudioIntelligenceService.ts)
+        audioIntelligence?: unknown;
+        useStore?: unknown;
     }
 
     interface Navigator {

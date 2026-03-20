@@ -7,6 +7,7 @@ import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { Candidate } from '../components/CandidatesCarousel';
+import { logger } from '@/utils/logger';
 
 // Basic debounce helper
 function debounce<T extends (...args: any[]) => any>(
@@ -70,7 +71,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         await saveCanvasStateToStorage(item.id, json);
                     }
                 } catch (err) {
-                    console.warn('[CreativeStudio] Auto-save failed', err);
+                    logger.warn('[CreativeStudio] Auto-save failed', err);
                 }
             }, 1000);
 
@@ -87,7 +88,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     canvasOps.initialize(canvasEl.current, item.url, undefined, handleCanvasChange);
                 }
             } catch (err) {
-                console.warn('[CreativeStudio] Failed to restore canvas state', err);
+                logger.warn('[CreativeStudio] Failed to restore canvas state', err);
                 if (isMounted) {
                     // Fallback to fresh canvas
                     canvasOps.initialize(canvasEl.current, item.url, undefined, handleCanvasChange);

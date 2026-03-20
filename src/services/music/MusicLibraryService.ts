@@ -43,7 +43,7 @@ export class MusicLibraryService {
         try {
             const trackRef = doc(db, this.COLLECTION, userId, 'analyzed_tracks', trackId);
             await setDoc(trackRef, data, { merge: true });
-            console.info(`[MusicLibrary] Saved analysis for track: ${filename} (${trackId})`);
+            logger.info(`[MusicLibrary] Saved analysis for track: ${filename} (${trackId})`);
         } catch (error) {
             logger.error(`[MusicLibrary] Failed to save analysis for ${trackId}:`, error);
             // Non-blocking error, analysis is just lost from cache
@@ -62,7 +62,7 @@ export class MusicLibraryService {
         try {
             const snap = await getDoc(trackRef);
             if (snap.exists()) {
-                console.info(`[MusicLibrary] Cache hit for track: ${trackId}`);
+                logger.info(`[MusicLibrary] Cache hit for track: ${trackId}`);
                 return snap.data() as AnalyzedTrack;
             }
         } catch (error) {
@@ -85,7 +85,7 @@ export class MusicLibraryService {
         try {
             const snap = await getDocs(q);
             if (!snap.empty) {
-                console.info(`[MusicLibrary] Cache hit by hash: ${fileHash}`);
+                logger.info(`[MusicLibrary] Cache hit by hash: ${fileHash}`);
                 return snap.docs[0]!.data() as AnalyzedTrack;
             }
         } catch (error) {
@@ -105,10 +105,10 @@ export class MusicLibraryService {
         const tracksRef = collection(db, this.COLLECTION, userId, 'analyzed_tracks');
 
         try {
-            console.info(`[MusicLibrary] Listing library for user: ${userId}`);
+            logger.info(`[MusicLibrary] Listing library for user: ${userId}`);
             const snap = await getDocs(tracksRef);
             const tracks = snap.docs.map(doc => doc.data() as AnalyzedTrack);
-            console.info(`[MusicLibrary] Found ${tracks.length} analyzed tracks.`);
+            logger.info(`[MusicLibrary] Found ${tracks.length} analyzed tracks.`);
             return tracks;
         } catch (error) {
             logger.error(`[MusicLibrary] Error listing library:`, error);

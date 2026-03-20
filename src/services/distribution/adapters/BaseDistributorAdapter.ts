@@ -31,7 +31,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
   }
 
   async connect(credentials: DistributorCredentials): Promise<void> {
-    console.info(`[${this.name}Adapter] Attempting real connection...`);
+    logger.info(`[${this.name}Adapter] Attempting real connection...`);
 
     try {
       // 1. If SFTP credentials provided, try to establish a real connection
@@ -46,7 +46,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
         if (!result.success) {
           throw new Error(`Failed to establish SFTP connection to ${credentials.sftpHost}`);
         }
-        console.info(`[${this.name}Adapter] SFTP Connection Verified.`);
+        logger.info(`[${this.name}Adapter] SFTP Connection Verified.`);
       }
 
       // 2. If API Key provided, we'd ideally verify it here via fetch
@@ -54,7 +54,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
       if (credentials.apiKey || credentials.username || credentials.sftpHost) {
         this.credentials = credentials;
         this.connected = true;
-        console.info(`[${this.name}Adapter] Connected successfully.`);
+        logger.info(`[${this.name}Adapter] Connected successfully.`);
       } else {
         throw new Error(`Missing required credentials for ${this.name}`);
       }
@@ -88,7 +88,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
       return;
     }
 
-    console.info(`[${this.name}] Starting SFTP upload: ${localPath} -> ${remotePath}`);
+    logger.info(`[${this.name}] Starting SFTP upload: ${localPath} -> ${remotePath}`);
 
     try {
       // ensure remote directory exists (naive approach, assumes implementation handles mkdir -p)
@@ -99,7 +99,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
       if (!result.success) {
         throw new Error(`SFTP Upload Failed: ${result.error}`);
       }
-      console.info(`[${this.name}] Upload complete.`);
+      logger.info(`[${this.name}] Upload complete.`);
     } catch (error) {
       logger.error(`[${this.name}] Upload error:`, error);
       throw error;

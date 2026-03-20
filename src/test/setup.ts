@@ -293,7 +293,10 @@ vi.mock('firebase/storage', () => ({
     getStorage: vi.fn(() => ({})),
     ref: vi.fn(),
     uploadBytes: vi.fn(),
-    getDownloadURL: vi.fn(() => Promise.resolve('https://mock-url.com'))
+    uploadBytesResumable: vi.fn(),
+    getDownloadURL: vi.fn(() => Promise.resolve('https://mock-url.com')),
+    listAll: vi.fn(() => Promise.resolve({ items: [], prefixes: [] })),
+    deleteObject: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock Firebase Remote Config

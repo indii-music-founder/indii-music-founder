@@ -271,7 +271,7 @@ export class DeliveryService {
         packagePath: string;
     }): Promise<DeliveryResult> {
         const { releaseId, distributorId, packagePath } = options;
-        console.info(`[DeliveryService] Starting delivery for ${releaseId} to ${distributorId}...`);
+        logger.info(`[DeliveryService] Starting delivery for ${releaseId} to ${distributorId}...`);
 
         const credentials = await credentialService.getCredentials(distributorId);
         if (!credentials) {
@@ -288,7 +288,7 @@ export class DeliveryService {
                     throw new Error(`Incomplete credentials for ${distributorId}. Host and Username are required.`);
                 }
 
-                console.info(`[DeliveryService] Connecting to SFTP host: ${credentials.host}...`);
+                logger.info(`[DeliveryService] Connecting to SFTP host: ${credentials.host}...`);
 
                 if (!credentials.password && !credentials.apiSecret) {
                     throw new Error(`Authentication missing for ${distributorId}. Password or Private Key required.`);
@@ -307,7 +307,7 @@ export class DeliveryService {
                 // For now, let's use a standard 'upload' folder or root
                 const remoteDir = `/${releaseId}`;
 
-                console.info(`[DeliveryService] Uploading package to ${remoteDir}...`);
+                logger.info(`[DeliveryService] Uploading package to ${remoteDir}...`);
                 const deliveredFiles = await this.transporter.uploadDirectory(packagePath, remoteDir);
 
                 await this.transporter.disconnect();

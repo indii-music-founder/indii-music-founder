@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Play, Pause, X, SkipForward, SkipBack, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { logger } from '@/utils/logger';
 
 export default function AudioPIPPlayer() {
     const {
@@ -29,7 +30,7 @@ export default function AudioPIPPlayer() {
         if (currentTrack && audioRef.current) {
             audioRef.current.src = currentTrack.url;
             if (isPlaying) {
-                audioRef.current.play().catch(console.error);
+                audioRef.current.play().catch((e) => logger.error('[AudioPIPPlayer] Playback failed:', e));
             }
         }
     }, [currentTrack, isPlaying]);
@@ -37,7 +38,7 @@ export default function AudioPIPPlayer() {
     useEffect(() => {
         if (audioRef.current) {
             if (isPlaying) {
-                audioRef.current.play().catch(console.error);
+                audioRef.current.play().catch((e) => logger.error('[AudioPIPPlayer] Playback failed:', e));
             } else {
                 audioRef.current.pause();
             }

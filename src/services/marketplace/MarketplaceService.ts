@@ -251,7 +251,7 @@ export class MarketplaceService {
                     await updateDoc(productRef, {
                         inventory: increment(1)
                     });
-                    console.info(`[MarketplaceService] Rolled back inventory for ${productId}`);
+                    logger.info(`[MarketplaceService] Rolled back inventory for ${productId}`);
                 } catch (rollbackError) {
                     logger.error(`[MarketplaceService] CRITICAL: Failed to rollback inventory for ${productId}`, rollbackError);
                     // In a real system, we'd log this to an admin alert queue

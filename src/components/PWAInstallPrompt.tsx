@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import { initPWAInstall, showPWAInstall, canInstallPWA, isStandalone, haptic } from '@/lib/mobile';
 import { motion, AnimatePresence } from 'motion/react';
+import { logger } from '@/utils/logger';
 
 /**
  * PWA Install Prompt
@@ -24,7 +25,7 @@ export const PWAInstallPrompt: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.debug('[PWA] localStorage unavailable during init:', error);
+            logger.debug('[PWA] localStorage unavailable during init:', error);
         }
         return false;
     });
@@ -51,20 +52,20 @@ export const PWAInstallPrompt: React.FC = () => {
     const handleInstall = async () => {
         haptic('medium');
         // Item 395: Track prompt accepted event
-        console.info('[PWA] install_prompt_accepted');
+        logger.info('[PWA] install_prompt_accepted');
         const accepted = await showPWAInstall();
 
         if (accepted) {
             haptic('success');
             setCanInstall(false);
-            console.info('[PWA] install_prompt_installed');
+            logger.info('[PWA] install_prompt_installed');
         }
     };
 
     const handleDismiss = () => {
         haptic('light');
         // Item 395: Track prompt dismissed event
-        console.info('[PWA] install_prompt_dismissed');
+        logger.info('[PWA] install_prompt_dismissed');
         setDismissed(true);
 
         // Save dismissal timestamp (with safe localStorage access)
@@ -73,7 +74,7 @@ export const PWAInstallPrompt: React.FC = () => {
         } catch (error) {
             // localStorage unavailable (private browsing, quota exceeded, etc.)
             // Silently ignore - user dismissed the prompt in memory
-            console.debug('[PWA] localStorage unavailable, dismissal not persisted:', error);
+            logger.debug('[PWA] localStorage unavailable, dismissal not persisted:', error);
         }
     };
 
@@ -84,7 +85,7 @@ export const PWAInstallPrompt: React.FC = () => {
 
     // Item 395: Track prompt shown event
     // Note: This fires on render — intentional for analytics
-    console.info('[PWA] install_prompt_shown');
+    logger.info('[PWA] install_prompt_shown');
 
     return (
         <AnimatePresence>

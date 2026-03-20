@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logger';
 import { PandaDocService } from './PandaDocService';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 /**
  * Item 241: Digital Signature Service
@@ -123,7 +124,7 @@ export class DigitalSignatureService {
             logger.warn('[DigitalSignatureService] Set VITE_DOCUSIGN_BASE_URL, VITE_DOCUSIGN_ACCOUNT_ID, and VITE_DOCUSIGN_ACCESS_TOKEN to enable real signing.');
 
             return {
-                envelopeId: `mock_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+                envelopeId: `mock_${Date.now()}_${secureRandomAlphanumeric(6)}`,
                 status: 'pending_config',
                 recipients: collaborators.map(c => c.email),
                 sentAt: new Date().toISOString(),

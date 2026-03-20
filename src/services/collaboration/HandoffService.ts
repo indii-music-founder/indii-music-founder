@@ -2,6 +2,7 @@ import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db, app } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 /**
  * Requirement 168: Cross-Device Handoff
@@ -23,7 +24,7 @@ export class HandoffService {
 
     constructor() {
         // Generate a pseudo-unique ID for this specific browser/app instance session
-        this.currentDeviceId = `dev_${Math.random().toString(36).substring(2, 9)}`;
+        this.currentDeviceId = `dev_${secureRandomAlphanumeric(7)}`;
     }
 
     /**

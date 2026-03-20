@@ -10,7 +10,7 @@ interface VoiceContextType {
     transcript: string;
 }
 
-interface SpeechRecognitionResult {
+interface VoiceSpeechRecognitionResult {
     isFinal: boolean;
     readonly length: number;
     [index: number]: {
@@ -19,21 +19,21 @@ interface SpeechRecognitionResult {
     };
 }
 
-interface SpeechRecognitionEvent {
+interface VoiceSpeechRecognitionEvent {
     resultIndex: number;
     results: {
         length: number;
-        [index: number]: SpeechRecognitionResult;
+        [index: number]: VoiceSpeechRecognitionResult;
     };
 }
 
-interface SpeechRecognitionInstance {
+interface VoiceSpeechRecognitionInstance {
     continuous: boolean;
     interimResults: boolean;
     lang: string;
     onstart: () => void;
     onend: () => void;
-    onresult: (event: SpeechRecognitionEvent) => void;
+    onresult: (event: VoiceSpeechRecognitionEvent) => void;
     onerror: (event: { error: string }) => void;
     start: () => void;
     stop: () => void;
@@ -50,7 +50,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
-    const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+    const recognitionRef = useRef<VoiceSpeechRecognitionInstance | null>(null);
 
     const setVoiceEnabled = (enabled: boolean) => {
         setVoiceEnabledState(enabled);
@@ -65,9 +65,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize Speech Recognition
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                const recognitionInstance = new SpeechRecognition() as SpeechRecognitionInstance;
+            const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognitionCtor) {
+                const recognitionInstance = new SpeechRecognitionCtor() as unknown as VoiceSpeechRecognitionInstance;
                 recognitionInstance.continuous = true;
                 recognitionInstance.interimResults = true;
                 recognitionInstance.lang = 'en-US';

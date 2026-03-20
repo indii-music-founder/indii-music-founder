@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
+import { logger } from '@/utils/logger';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,14 +11,14 @@ const COMP_ID = process.argv[2] || 'LogoReveal';
 const OUTPUT_DIR = path.resolve(__dirname, '../../docs/assets');
 
 async function render() {
-  console.log(`🎬 Bundling Remotion project...`);
+  logger.info(`🎬 Bundling Remotion project...`);
 
   const bundleLocation = await bundle({
     entryPoint: path.resolve(__dirname, './index.ts'),
     webpackOverride: (config) => config,
   });
 
-  console.log(`📦 Bundle ready. Selecting composition "${COMP_ID}"...`);
+  logger.info(`📦 Bundle ready. Selecting composition "${COMP_ID}"...`);
 
   const composition = await selectComposition({
     serveUrl: bundleLocation,
@@ -26,8 +27,8 @@ async function render() {
 
   const outputPath = path.join(OUTPUT_DIR, `${COMP_ID}.mp4`);
 
-  console.log(`🎥 Rendering ${composition.width}x${composition.height} @ ${composition.fps}fps (${composition.durationInFrames} frames)...`);
-  console.log(`📂 Output: ${outputPath}`);
+  logger.info(`🎥 Rendering ${composition.width}x${composition.height} @ ${composition.fps}fps (${composition.durationInFrames} frames)...`);
+  logger.info(`📂 Output: ${outputPath}`);
 
   await renderMedia({
     composition,
@@ -39,10 +40,10 @@ async function render() {
     },
   });
 
-  console.log(`✅ Rendered: ${outputPath}`);
+  logger.info(`✅ Rendered: ${outputPath}`);
 }
 
 render().catch((err) => {
-  console.error('❌ Render failed:', err);
+  logger.error('❌ Render failed:', err);
   process.exit(1);
 });

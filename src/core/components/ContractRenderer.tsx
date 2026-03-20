@@ -3,6 +3,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Scroll, PenTool, CheckCircle } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 interface ContractRendererProps {
     markdown: string;
@@ -11,7 +12,7 @@ interface ContractRendererProps {
 export default function ContractRenderer({ markdown }: ContractRendererProps) {
     const [signed, setSigned] = React.useState(false);
     const toast = useToast();
-    const [signatureId] = React.useState(() => Math.random().toString(36).substr(2, 9).toUpperCase());
+    const [signatureId] = React.useState(() => secureRandomAlphanumeric(9).toUpperCase());
 
     const handleSign = () => {
         setSigned(true);

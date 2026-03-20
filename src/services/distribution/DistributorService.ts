@@ -70,7 +70,7 @@ class DistributorServiceImpl {
   registerAdapter(adapter: IDistributorAdapter): void {
     this.adapters.set(adapter.id, adapter);
     this.circuitBreakers.set(adapter.id, new CircuitBreaker(5, 60000, 2));
-    console.info(`[DistributorService] Registered adapter: ${adapter.name}`);
+    logger.info(`[DistributorService] Registered adapter: ${adapter.name}`);
   }
 
   /**
@@ -135,12 +135,12 @@ class DistributorServiceImpl {
         );
       });
 
-      console.info(`[DistributorService] Connection verified for ${adapter.name}`);
+      logger.info(`[DistributorService] Connection verified for ${adapter.name}`);
 
       // 3. Save successful credentials if they were passed in
       if (credentials) {
         await credentialService.saveCredentials(distributorId, credentials as Record<string, string | undefined>);
-        console.info(`[DistributorService] Credentials saved for ${distributorId}`);
+        logger.info(`[DistributorService] Credentials saved for ${distributorId}`);
       }
     } catch (error) {
       logger.error(`[DistributorService] Connection failed for ${distributorId}:`, error);
@@ -161,7 +161,7 @@ class DistributorServiceImpl {
       await adapter.disconnect();
       // Remove credentials from secure storage
       await credentialService.deleteCredentials(distributorId);
-      console.info(`[DistributorService] Disconnected from ${adapter.name}`);
+      logger.info(`[DistributorService] Disconnected from ${adapter.name}`);
     } catch (error) {
       logger.error(`[DistributorService] Disconnect failed for ${distributorId}:`, error);
       throw error;

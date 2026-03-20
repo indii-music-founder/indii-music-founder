@@ -1,8 +1,13 @@
 import { logger } from '@/utils/logger';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
+import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 
 /**
  * Requirement 141: Multi-Platform Auto-Poster
- * Mocks direct API integrations to queue and post videos to TikTok, YouTube Shorts, and IG Reels natively.
+ *
+ * @mock This service is ENTIRELY MOCKED. It simulates API delays and random failures.
+ *       Real implementations require TikTok Content Posting API, YouTube Data API v3,
+ *       and IG Graph API credentials. Gated behind `enable_social_posting` feature flag.
  */
 
 export type ShortFormPlatform = 'TikTok' | 'YouTube Shorts' | 'IG Reels';
@@ -27,6 +32,15 @@ export class SocialPostingService {
      * Dispatches a single short-form video to multiple platforms simultaneously.
      */
     async autopostMultiPlatform(request: PostRequest): Promise<PostResult[]> {
+        if (!featureFlags.isEnabled(FEATURE_FLAG_NAMES.SOCIAL_POSTING)) {
+            logger.warn('[SocialPostingService] Social posting is disabled (feature flag: enable_social_posting).');
+            return request.platforms.map(platform => ({
+                platform,
+                success: false,
+                error: 'Social posting is not enabled. Enable the `enable_social_posting` feature flag.',
+            }));
+        }
+
         logger.info(`[SocialPostingService] Initiating multi-platform autopost for ${request.videoUrl}...`);
 
         const results = await Promise.all(request.platforms.map(p => this.postToPlatform(p, request)));
@@ -56,7 +70,7 @@ export class SocialPostingService {
                 throw new Error(`${platform} API rejected the upload token.`);
             }
 
-            const mockedPostId = `${platform.toLowerCase().replace(' ', '_')}_${Math.random().toString(36).substring(7)}`;
+            const mockedPostId = `${platform.toLowerCase().replace(' ', '_')}_${secureRandomAlphanumeric(7)}`;
 
             logger.info(`[SocialPostingService] Successfully posted to ${platform} (ID: ${mockedPostId})`);
 

@@ -8,13 +8,13 @@ import { logger } from '@/utils/logger';
 // This verifies imports, syntax, and basic runtime integrity.
 
 try {
-    console.info('🧪 Verifying Distribution UI Components...');
+    logger.info('🧪 Verifying Distribution UI Components...');
 
     // 1. Verify Exports
     if (!DistributionDashboard) throw new Error('DistributionDashboard export missing');
-    console.info('✅ DistributionDashboard imported successfully');
+    logger.info('✅ DistributionDashboard imported successfully');
 
-    console.info('✨ UI Component Verification Passed (Static Analysis)');
+    logger.info('✨ UI Component Verification Passed (Static Analysis)');
 } catch (error) {
     logger.error('❌ Verification Failed:', error);
     process.exit(1);

@@ -1,5 +1,6 @@
 
 import { ExtendedGoldenMetadata } from '../metadata/types';
+import { logger } from '@/utils/logger';
 
 /**
  * CanonicalMapService
@@ -51,7 +52,7 @@ export class CanonicalMapService {
         const tracks = (metadata.tracks && metadata.tracks.length > 0) ? metadata.tracks : [metadata];
 
         tracks.forEach(track => {
-            console.debug(`[CanonicalMap] Linked: ISWC[${track.iswc}] -> ISRC[${track.isrc}] -> UPC[${metadata.upc}]`);
+            logger.debug(`[CanonicalMap] Linked: ISWC[${track.iswc}] -> ISRC[${track.isrc}] -> UPC[${metadata.upc}]`);
         });
     }
 }

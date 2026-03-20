@@ -15,6 +15,7 @@ import { SyncBriefMatcher } from './components/SyncBriefMatcher';
 import { MicroLicensingPortal } from './components/MicroLicensingPortal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  Licensing Dashboard — Three-Panel Layout                            */
@@ -126,7 +127,7 @@ export default function LicensingDashboard() {
                                             title="No Pending Clearances"
                                             description="Start a new licensing deal to track its progress here. All drafted agreements will appear in this timeline."
                                             actionLabel="Draft New Deal"
-                                            onAction={() => console.info('Open draft modal')}
+                                            onAction={() => logger.info('Open draft modal')}
                                             gradient="from-yellow-500/20 to-orange-500/20"
                                         />
                                     ) : (
@@ -183,7 +184,7 @@ export default function LicensingDashboard() {
                                             title="Portfolio Empty"
                                             description="You haven't registered any active licenses yet. Import existing agreements or scan your catalog for potential sync opportunities."
                                             actionLabel="Import Agreement"
-                                            onAction={() => console.info('Import modal')}
+                                            onAction={() => logger.info('Import modal')}
                                             secondaryLabel="Scan Catalog"
                                             onSecondary={() => toast.info("Beta: Semantic Deal Scanner initiated.")}
                                             gradient="from-emerald-500/20 to-teal-500/20"

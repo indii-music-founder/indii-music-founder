@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import { Loader2, MapPinOff, Map as MapIcon } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 import { MapMarker } from '../types';
 
@@ -66,8 +67,8 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
     // Detect Google Maps auth failure via global callback + MutationObserver
     useEffect(() => {
         // Google Maps fires this global function when API key auth fails
-        (window as any).gm_authFailure = () => {
-            console.warn('[TourMap] Google Maps authentication failure detected');
+        window.gm_authFailure = () => {
+            logger.warn('[TourMap] Google Maps authentication failure detected');
             onAuthFailure();
         };
 
@@ -80,7 +81,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                         const errorDiv = node.querySelector?.('.dismissButton') ||
                             node.querySelector?.('[style*="background-color: white"]');
                         if (errorDiv || node.textContent?.includes('This page didn\'t load Google Maps correctly')) {
-                            console.warn('[TourMap] Google Maps error overlay detected, hiding it');
+                            logger.warn('[TourMap] Google Maps error overlay detected, hiding it');
                             node.style.display = 'none';
                             onAuthFailure();
                             return;
@@ -93,7 +94,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
         observer.observe(document.body, { childList: true, subtree: true });
 
         return () => {
-            delete (window as any).gm_authFailure;
+            delete window.gm_authFailure;
             observer.disconnect();
         };
     }, [onAuthFailure]);
@@ -191,7 +192,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                 });
                 setMap(initialMap);
             } catch (err) {
-                console.error('[TourMap] Failed to initialize Google Maps:', err);
+                logger.error('[TourMap] Failed to initialize Google Maps:', err);
                 onAuthFailure();
             }
         } else if (map && center) {

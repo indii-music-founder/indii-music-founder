@@ -5,11 +5,16 @@
  * and Unstoppable Domains (.crypto, .nft, .wallet, etc.).
  * Uses the Ethereum RPC via Alchemy — no separate API key needed.
  *
+ * @mock The `computeNamehash()` implementation is a PLACEHOLDER — it does NOT
+ *       perform real EIP-137 keccak256 hashing. Production requires ethers.js
+ *       `namehash()` or equivalent. Entire Web3 module gated behind `enable_web3`.
+ *
  * ENS: https://docs.ens.domains/
  * Unstoppable: https://docs.unstoppabledomains.com/
  */
 
 import { ethereumService } from './EthereumService';
+import { logger } from '@/utils/logger';
 
 /** ENS Registry contract address (Ethereum mainnet) */
 const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
@@ -30,7 +35,7 @@ export class NameResolutionService {
      */
     async resolveENS(name: string): Promise<string | null> {
         if (!ethereumService.isConfigured()) {
-            console.warn('[ENS] Alchemy not configured, cannot resolve');
+            logger.warn('[ENS] Alchemy not configured, cannot resolve');
             return null;
         }
 
@@ -61,7 +66,7 @@ export class NameResolutionService {
 
             return '0x' + result.slice(-40);
         } catch (err) {
-            console.error('[ENS] Resolution failed:', err);
+            logger.error('[ENS] Resolution failed:', err);
             return null;
         }
     }
@@ -72,7 +77,7 @@ export class NameResolutionService {
      */
     async resolveUnstoppable(name: string): Promise<string | null> {
         if (!ethereumService.isConfigured()) {
-            console.warn('[UD] Alchemy not configured');
+            logger.warn('[UD] Alchemy not configured');
             return null;
         }
 
@@ -92,7 +97,7 @@ export class NameResolutionService {
 
             return '0x' + result.slice(-40);
         } catch (err) {
-            console.error('[UD] Resolution failed:', err);
+            logger.error('[UD] Resolution failed:', err);
             return null;
         }
     }

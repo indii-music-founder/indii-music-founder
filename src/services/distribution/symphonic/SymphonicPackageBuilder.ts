@@ -4,6 +4,7 @@ import { ernService } from '@/services/ddex/ERNService';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '../types/distributor';
+import { logger } from '@/utils/logger';
 
 /**
  * Symphonic Package Builder
@@ -80,7 +81,7 @@ export class SymphonicPackageBuilder {
             packagedFiles.push(destCoverPath);
         }
 
-        console.info(`[SymphonicBuilder] Built package at ${packagePath} with ${packagedFiles.length} files.`);
+        logger.info(`[SymphonicBuilder] Built package at ${packagePath} with ${packagedFiles.length} files.`);
 
         return { packagePath, files: packagedFiles };
     }

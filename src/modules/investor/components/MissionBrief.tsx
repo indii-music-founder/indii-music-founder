@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Terminal, ShieldAlert } from 'lucide-react';
+import { secureRandomInt } from '@/utils/crypto-random';
 
 interface MissionBriefProps {
     onAccept: () => void;
@@ -77,7 +78,7 @@ const DecodeText = ({ text, delay }: { text: string; delay: number }) => {
                 if (index < iteration) {
                     return text[index];
                 }
-                return chars[Math.floor(Math.random() * chars.length)];
+                return chars[secureRandomInt(0, chars.length - 1)];
             }).join(''));
 
             if (iteration >= text.length) {
