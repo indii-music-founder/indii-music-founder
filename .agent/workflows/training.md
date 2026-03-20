@@ -1,20 +1,25 @@
 ---
-description: Agent training data generation. Accepts a topic (creative or business) and generates gold-quality training examples for the relevant indiiOS agents.
+description: Agent training data generation. Accepts a topic, YouTube URL, or free-form prompt and generates gold-quality training examples for the relevant indiiOS agents.
 ---
 
 # /training - Agent Training Data Generator
 
 **Puts the session in training mode. Generates and appends gold examples to agent datasets.**
 
+Three input modes:
+1. **Topic** — a subject, question, or area of expertise
+2. **YouTube URL** — extracts the transcript and converts it into training examples
+3. **Free-form** — describe anything you watched, read, or know and want the agents to learn
+
 ---
 
 ## How to Use
 
 ```
-/training <topic or prompt>
+/training <topic, YouTube URL, or free-form prompt>
 ```
 
-**Examples:**
+**Topic examples:**
 ```
 /training what makes a great album cover — composition, color theory, era aesthetics
 /training how to negotiate a 360 deal vs a traditional recording contract
@@ -24,22 +29,71 @@ description: Agent training data generation. Accepts a topic (creative or busine
 /training building a merch bundle strategy for a mid-size touring artist
 ```
 
+**YouTube examples:**
+```
+/training https://youtube.com/watch?v=XXXXXXX
+/training https://youtube.com/watch?v=XXXXXXX [agent=finance]
+/training https://youtube.com/watch?v=XXXXXXX — this is about Midjourney prompting for album art
+```
+
+**Free-form examples:**
+```
+/training I just watched a video about how Runway Gen-3 prompt structures work for cinematic shots
+/training my favorite music business channel did a breakdown of 360 deals — here's what they covered: [paste notes]
+/training teach the director agent everything about the Bauhaus aesthetic and its influence on album art
+```
+
 The topic can be as simple or as deep as you want. Creative, business, technical — all valid.
 
 ---
 
-## 1. Topic Analysis (MANDATORY FIRST STEP)
+## 1. Input Detection (MANDATORY FIRST STEP)
 
-When `/training` is invoked with a topic, the agent MUST:
+Detect which input mode is being used, then follow the appropriate path:
 
-1. **Identify the domain** — What area of the music industry does this touch?
-2. **Map to agent(s)** — Which of the 20 indiiOS agents owns this domain?
-3. **Assess depth** — Is this a surface-level topic (5-10 examples) or a deep one (20+ examples)?
-4. **State the plan** before generating anything:
+### Mode A — YouTube URL
 
+If input contains a YouTube URL (`youtube.com/watch` or `youtu.be/`):
+
+1. **Fetch the transcript** using the WebFetch tool on `https://www.youtube.com/watch?v=VIDEO_ID`
+   - If WebFetch returns limited content, try: `https://youtubetranscript.com/?server_vid2=VIDEO_ID`
+2. **Read the transcript** — identify the core subject matter and key insights
+3. **Determine agent mapping** — what domain(s) does this video cover?
+   - If user specified `[agent=X]`, use that
+   - Otherwise infer from content
+4. **Extract knowledge** — identify the 10-20 most valuable, specific, actionable claims in the video
+5. **Convert to examples** — each key insight becomes a realistic user question + expert answer
+
+State before generating:
+```markdown
+### Training Session — YouTube Source
+- **Video:** [title if detectable, otherwise URL]
+- **Content:** [1-sentence summary of what the video covers]
+- **Primary Agent:** [agent_id]
+- **Key insights extracted:** [N]
+- **Examples to generate:** [N]
+```
+
+### Mode B — Free-Form / Notes
+
+If input is a description of something watched, read, or known:
+
+1. **Extract the knowledge** from what the user described
+2. **Map to agent(s)**
+3. **Generate examples** grounded in what the user provided — treat their description as the source of truth
+
+### Mode C — Topic / Prompt
+
+If input is a topic, question, or subject area:
+
+1. **Identify the domain**
+2. **Map to agent(s)**
+3. **Assess depth** — surface-level (5-10 examples) or deep (20+ examples)
+
+State before generating (all modes):
 ```markdown
 ### Training Session
-- **Topic:** [user's topic]
+- **Source:** [topic / YouTube URL / free-form]
 - **Primary Agent:** [agent_id] — [agent name]
 - **Secondary Agents:** [if topic spans multiple domains]
 - **Examples to generate:** [N]
