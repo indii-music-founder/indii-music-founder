@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import path from 'path';
+import type { HandlerResult } from './test-types';
 
 // ============================================================================
 // SHIELD 🛡️: SANDBOX ESCAPE PREVENTION TEST
@@ -52,7 +53,7 @@ vi.mock('../utils/python-bridge', () => ({ PythonBridge: mocks.pythonBridge }));
 import { setupDistributionHandlers } from './distribution';
 
 describe('🛡️ Shield: Distribution Sandbox Escape Test', () => {
-    let handlers: Record<string, any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -72,12 +73,12 @@ describe('🛡️ Shield: Distribution Sandbox Escape Test', () => {
         mocks.fsSync.realpathSync.mockImplementation((p) => p);
     });
 
-    const invoke = async (channel: string, ...args: any[]) => {
+    const invoke = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`Handler for ${channel} not found`);
         // Mock a secure internal sender
         const event = { senderFrame: { url: 'file:///app/index.html' } };
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     const validUUID = '123e4567-e89b-12d3-a456-426614174000';
