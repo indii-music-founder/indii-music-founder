@@ -15,7 +15,7 @@ const ScanSchema = z.object({
 
 export function registerSecurityHandlers() {
     // 1. Rotate Credentials
-    ipcMain.handle('security:rotate-credentials', async (event: IpcMainInvokeEvent, data: any) => {
+    ipcMain.handle('security:rotate-credentials', async (event: IpcMainInvokeEvent, data: unknown) => {
         validateSender(event);
 
         try {
@@ -116,14 +116,15 @@ export function registerSecurityHandlers() {
                 message: `Credentials for ${serviceName} rotated successfully via provider API.`
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             console.error('[SecurityHandler] Rotation Error:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: message };
         }
     });
 
     // 2. Scan for Vulnerabilities
-    ipcMain.handle('security:scan-vulnerabilities', async (event: IpcMainInvokeEvent, data: any) => {
+    ipcMain.handle('security:scan-vulnerabilities', async (event: IpcMainInvokeEvent, data: unknown) => {
         validateSender(event);
 
         try {
@@ -132,7 +133,7 @@ export function registerSecurityHandlers() {
 
             console.log(`[SecurityHandler] Running vulnerability scan on: ${scope}`);
 
-            const result = await AgentSupervisor.execute<any>(
+            const result = await AgentSupervisor.execute<{ success?: boolean; status?: string; error?: string; data?: Record<string, unknown>; vulnerabilities?: unknown[] }>(
                 'security',
                 'vulnerability_scanner.py',
                 [scope],
@@ -145,16 +146,19 @@ export function registerSecurityHandlers() {
 
             // Adjust result mapping if needed based on scanner output
             const scanData = result.status === 'success' ? result : result.data;
+            const vulnCount = scanData && 'vulnerabilities' in scanData && Array.isArray(scanData.vulnerabilities)
+                ? scanData.vulnerabilities.length : 0;
 
             return {
                 success: true,
                 scan: scanData,
-                message: `Vulnerability scan complete. Found ${scanData.vulnerabilities?.length || 0} issues.`
+                message: `Vulnerability scan complete. Found ${vulnCount} issues.`
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             console.error('[SecurityHandler] Scan Error:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: message };
         }
     });
 }
