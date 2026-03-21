@@ -2,6 +2,37 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.29.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.2...v1.29.0) (2026-03-21)
+
+
+### Features
+
+* add script to test Google GenAI Veo video generation with full configuration. ([deacc36](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/deacc3676ef91e9cda15ec40b4373062173803ec))
+* agent tools, feature flags, audio analysis, workflow improvements ([ded6772](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ded67728957fb05ad42c629a558a83970facbd37))
+* agent training datasets, hub-and-spoke agent system improvements, and UI updates ([8f2fc74](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8f2fc749eedc3a1d7cddfcadef5ca054a10b667b))
+* **agents:** complete training program — all 20 agents trained ([8a9063f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8a9063f31c312f8fda0170251c33f8a247928005))
+* GeminiRetrievalService rewrite, security tests, distribution adapters, and broad service improvements ([286502d](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/286502df39591c478da1ed2702546508175b83f6))
+* implement all Phase 3-4 queued items — zero unfinished work remaining ([e77db74](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e77db7423e2e7691fc20a8cfed14843314e27b75))
+* major platform hardening — agent system, AI services, training data, and store refactor ([52cdd0e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/52cdd0e9ba7a939a851d35405fc2dc5c70ce4672))
+* **training:** add /training workflow and synthetic data generator ([4f3f704](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4f3f704f6ad635c4c73a0ffaf1fdabc7fd4cc8a2))
+* **training:** add YouTube + free-form input modes to /training workflow ([b1d4217](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b1d421740d4a3aac8e54593555392966f996afc6))
+* **training:** complete agent training infrastructure with security hardening ([59ca98a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/59ca98a7ab2e969dbc2a06944b8bcaf121e23c1f))
+* **training:** volume expansion — 923 gold examples across 20 agents ([67a56e3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/67a56e3cef05650e4ea7671f43526dce074b3edf))
+
+
+### Bug Fixes
+
+* **auth:** restore valid Firebase config and user-friendly error messages ([#1338](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/issues/1338)) ([0c41cc1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0c41cc1964f5a386b20c4d08a34bb2f92718f009))
+* **ci:** migrate GeminiRetrievalService from banned @google/generative-ai to @google/genai ([b37cdff](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b37cdfff9bf72d592b1a147452aba6ce62cd7e54))
+* **ci:** resolve ESLint errors and TypeScript import issues ([afed667](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/afed667ea9e11b5dcc63204e417ae6a257a8aeeb))
+* **ci:** resolve gitleaks false positive from mock secrets in training data ([7e562a4](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7e562a419351b18ae0b8884c6780631828dc45bb))
+* eliminate all remaining 52 TypeScript errors in test files ([1e3501a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1e3501acb5776aa0e2fd1019a1b8f02f91ffb6c3))
+* resolve TypeScript errors in PublishingDashboard and FirebaseAIService ([c7bc63e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c7bc63ec2e6fcc67f82285b5c1e7c3ef44e19d46))
+* resolve TypeScript possibly-undefined errors across codebase (batch 1) ([26ae07c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/26ae07c77bb1a82f21d77edcaadecfd661bf789c))
+* resolve TypeScript possibly-undefined errors in electron network utils ([02aaa21](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/02aaa21cd94b23b5cd563ec9ae2f4ca0c6f01391))
+* **sonic-cortex:** resolve TypeScript errors across Brain Calibration suite ([6a0d52f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6a0d52f41d40617e1e832df94c6d0051c6cbf155))
+* **test:** resolve flaky generateVideo polling test timeout ([6cebac3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6cebac371ff06b2cb6d4f273226f878032885c12))
+
 ## [1.28.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.1...v1.28.2) (2026-03-18)
 
 
