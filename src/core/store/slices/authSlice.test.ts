@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createStore } from 'zustand';
+import { createStore, type StoreApi } from 'zustand';
 import { createAuthSlice, AuthSlice } from './authSlice';
 import type { UserCredential } from 'firebase/auth';
 import { signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, sendPasswordResetEmail } from 'firebase/auth';
@@ -47,7 +47,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 describe('AuthSlice', () => {
-    let useStore: ReturnType<typeof createStore<AuthSlice>>;
+    let useStore: StoreApi<AuthSlice>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -380,7 +380,7 @@ describe('AuthSlice', () => {
 
             // Simulate User Login
             const mockUser = { uid: '123', email: 'test@example.com' };
-            (auth as Record<string, unknown>).currentUser = mockUser;
+            (auth as unknown as Record<string, unknown>).currentUser = mockUser;
             authCallback(mockUser);
 
             expect(useStore.getState().user).toEqual(mockUser);
@@ -388,7 +388,7 @@ describe('AuthSlice', () => {
 
             // Simulate Logout — with BUG-002 fix, null transitions are debounced by 500ms
             // to prevent spurious logouts during Firebase token refresh cycles.
-            (auth as Record<string, unknown>).currentUser = null;
+            (auth as unknown as Record<string, unknown>).currentUser = null;
             authCallback(null);
 
             // User should NOT be null yet — debounce is in progress
@@ -403,7 +403,7 @@ describe('AuthSlice', () => {
 
         it('should return early with authLoading=false when API key is fake', async () => {
             const { auth } = await import('@/services/firebase');
-            ((auth as Record<string, unknown>).app as Record<string, Record<string, unknown>>).options.apiKey = 'AIzaSy_FAKE_KEY_FOR_DEV_BYPASS_00000000';
+            Object.assign(auth.app.options, { apiKey: 'AIzaSy_FAKE_KEY_FOR_DEV_BYPASS_00000000' });
 
             const { initializeAuthListener } = useStore.getState();
             const unsubscribe = initializeAuthListener();
@@ -413,7 +413,7 @@ describe('AuthSlice', () => {
             unsubscribe();
 
             // Restore
-            ((auth as Record<string, unknown>).app as Record<string, Record<string, unknown>>).options.apiKey = 'mock-api-key';
+            Object.assign(auth.app.options, { apiKey: 'mock-api-key' });
         });
 
         it('should timeout after 10s if onAuthStateChanged never fires', async () => {
@@ -449,12 +449,12 @@ describe('AuthSlice', () => {
 
             // Login
             const mockUser = { uid: '123', email: 'test@example.com' };
-            (auth as Record<string, unknown>).currentUser = mockUser;
+            (auth as unknown as Record<string, unknown>).currentUser = mockUser;
             authCallback(mockUser);
             expect(useStore.getState().user).toEqual(mockUser);
 
             // Trigger null (token refresh)
-            (auth as Record<string, unknown>).currentUser = null;
+            (auth as unknown as Record<string, unknown>).currentUser = null;
             authCallback(null);
 
             // User still present (debounce active)
@@ -462,7 +462,7 @@ describe('AuthSlice', () => {
 
             // Token refresh resolves — user comes back before debounce expires
             const refreshedUser = { uid: '123', email: 'test@example.com', refreshed: true };
-            (auth as Record<string, unknown>).currentUser = refreshedUser;
+            (auth as unknown as Record<string, unknown>).currentUser = refreshedUser;
             authCallback(refreshedUser);
 
             // User should be the refreshed user immediately
