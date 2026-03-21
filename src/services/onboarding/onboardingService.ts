@@ -288,18 +288,38 @@ ALWAYS preserve what they're NOT changing.`;
                     functionDeclarations: ALL_ONBOARDING_TOOL_DECLARATIONS,
                 }],
                 ...AI_CONFIG.THINKING.HIGH,
-            }
+            },
+            undefined, // systemInstruction already in config (extracted by rawGenerateContent)
+            undefined, // tools already in config (extracted by rawGenerateContent)
+            { timeout: 45_000 } // 45s timeout prevents indefinite "THINKING" hang
         );
 
         const text = response.response.text() || "";
         const functionCalls = (response.response.functionCalls?.() as { name: string; args: Record<string, unknown>; }[] | undefined);
+
+        // Guard against empty responses that leave the user with no feedback
+        if (!text && (!functionCalls || functionCalls.length === 0)) {
+            logger.warn('[Onboarding] Model returned empty response with no function calls');
+        }
 
         return {
             text,
             functionCalls,
         };
     } catch (error) {
-        logger.error("Error in onboarding conversation:", error);
+        const msg = error instanceof Error ? error.message : String(error);
+        const isTimeout = msg.includes('timed out') || msg.includes('TIMEOUT');
+        const isRateLimit = msg.includes('429') || msg.includes('rate limit') || msg.includes('RATE_LIMITED');
+
+        logger.error(`[Onboarding] Conversation error (timeout=${isTimeout}, rateLimit=${isRateLimit}):`, error);
+
+        // Re-throw with context so the hook can show appropriate recovery UI
+        if (isTimeout) {
+            throw new Error('ONBOARDING_TIMEOUT: The AI took too long to respond. Please try again.');
+        }
+        if (isRateLimit) {
+            throw new Error('ONBOARDING_RATE_LIMIT: Too many requests. Please wait a moment and try again.');
+        }
         throw error;
     }
 }

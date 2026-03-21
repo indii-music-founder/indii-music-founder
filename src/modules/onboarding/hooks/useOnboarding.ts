@@ -271,13 +271,24 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             }
             setHistory(nextHistory);
         } catch (error) {
-            const errorResponses = [
-                `Hmm, something went sideways on my end. Mind trying that again?`,
-                `Tech hiccup — my bad. Hit me with that one more time?`,
-                `Lost the thread there for a second. What were you saying?`,
-                `Connection blip. Run that by me again?`,
-            ];
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] ?? '' }] }]);
+            const msg = error instanceof Error ? error.message : String(error);
+
+            let errorText: string;
+            if (msg.includes('ONBOARDING_TIMEOUT')) {
+                errorText = `Took me a minute there — my thinking engine timed out. Hit send again and I'll pick up where we left off.`;
+            } else if (msg.includes('ONBOARDING_RATE_LIMIT')) {
+                errorText = `I'm getting a lot of requests right now. Give me about 30 seconds and try again?`;
+            } else {
+                const errorResponses = [
+                    `Hmm, something went sideways on my end. Mind trying that again?`,
+                    `Tech hiccup — my bad. Hit me with that one more time?`,
+                    `Lost the thread there for a second. What were you saying?`,
+                    `Connection blip. Run that by me again?`,
+                ];
+                errorText = errorResponses[Math.floor(Math.random() * errorResponses.length)] ?? '';
+            }
+
+            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorText }] }]);
         } finally {
             setIsProcessing(false);
         }

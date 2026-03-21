@@ -731,7 +731,7 @@ export class FirebaseAIService implements AIContext {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string, timeout?: number }
     ): Promise<GenerateContentResult> {
         // [DEBUG] Log payload for deep diagnosis
         try {

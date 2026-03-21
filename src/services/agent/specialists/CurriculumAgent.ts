@@ -380,7 +380,7 @@ When a request falls outside education scope:
 
             try {
                 const { knowledgeBaseService } = await import('@/modules/knowledge/services/KnowledgeBaseService');
-                const result = await knowledgeBaseService.chat(query, null, context?.projectId || null);
+                const result = await knowledgeBaseService.chat(query, null, context?.projectId ?? undefined);
                 return {
                     success: true,
                     data: { result },
