@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { validateSender } from '../utils/ipc-security';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { BrandConsistencySchema } from '../utils/validation';
+import { z } from 'zod';
 import path from 'path';
 
 /**
@@ -41,7 +42,7 @@ export const registerBrandHandlers = () => {
             return {
                 success: false,
                 error: message,
-                details: error
+                details: error instanceof z.ZodError ? error.errors : undefined
             };
         }
     });
