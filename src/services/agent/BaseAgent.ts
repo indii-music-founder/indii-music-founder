@@ -28,6 +28,7 @@ import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentE
 import { ToolExecutionContext } from './ToolExecutionContext';
 import { wrapTool, toolError } from './utils/ToolUtils';
 import { SUPERPOWER_TOOLS } from './definitions/SuperpowerTools';
+import { getFineTunedModel } from './fine-tuned-models';
 
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
@@ -44,6 +45,9 @@ export class BaseAgent implements SpecializedAgent {
     /** Explicit allowlist of tool names. Populated from AgentConfig.authorizedTools.
      *  If undefined, all declared functionDeclarations are allowed. */
     protected authorizedTools?: string[];
+    /** Fine-tuned model endpoint for this agent. When set and feature flag is enabled,
+     *  this model is used instead of the default AI_MODELS.TEXT.AGENT. */
+    protected modelId?: string;
     private toolSchemas: Map<string, ZodType> = new Map();
 
     // CRITICAL: Execution lock to prevent concurrent agent execution for same user/project
@@ -66,6 +70,9 @@ export class BaseAgent implements SpecializedAgent {
 
         // Store explicit tool allowlist from config (undefined = infer from declarations)
         this.authorizedTools = config.authorizedTools;
+
+        // Store fine-tuned model ID if specified, otherwise check registry
+        this.modelId = config.modelId || getFineTunedModel(config.id as ValidAgentId);
 
         // Populate tool schemas for validation
         this.tools.forEach(def => {
@@ -445,6 +452,9 @@ export class BaseAgent implements SpecializedAgent {
                 iterations++;
                 onProgress?.({ type: 'thought', content: iterations === 1 ? 'Generating response...' : 'Processing tool result...' });
 
+                // Resolve model: fine-tuned endpoint > default base model
+                const resolvedModel = this.modelId || AI_MODELS.TEXT.AGENT;
+
                 const result = await GenAI.generateContent(
                     [{ // contents
                         role: 'user' as const,
@@ -455,7 +465,7 @@ export class BaseAgent implements SpecializedAgent {
                             }))
                         ]
                     }],
-                    AI_MODELS.TEXT.AGENT, // modelOverride
+                    resolvedModel, // modelOverride — fine-tuned or base
                     { ...AI_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
                     allTools as unknown as Parameters<import('@/services/ai/FirebaseAIService').FirebaseAIService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
