@@ -68,7 +68,7 @@ export const VALID_AGENT_IDS = [
     'merchandise',  // Merchandise creation & production
     'distribution', // Industrial Direct-to-DSP Engine
     'music',        // Sonic Director - Audio Analysis & Metadata
-    'curriculum',   // indii Curriculum (Branding Alignment)
+    'curriculum',   // Music Education Specialist
     'keeper',       // Context Integrity Guardian
     'generalist'  // indii Conductor (Hub)
 ] as const;

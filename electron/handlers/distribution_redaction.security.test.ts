@@ -52,7 +52,7 @@ vi.mock('os', () => mocks.os);
 
 
 describe('🛡️ Shield: Distribution PII Redaction', () => {
-    let handlers: Record<string, any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -63,7 +63,7 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
         setupDistributionHandlers();
     });
 
-    const invoke = async (channel: string, ...args: any[]) => {
+    const invoke = async (channel: string, ...args: unknown[]) => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`No handler for ${channel}`);
         return handler({ senderFrame: { url: 'file:///app/index.html' } }, ...args);

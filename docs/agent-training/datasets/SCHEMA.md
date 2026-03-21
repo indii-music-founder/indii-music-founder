@@ -13,13 +13,20 @@ where each line is one JSON object matching this schema.
   "category": "string — one of: routing, tool_use, refusal, edge_case, adversarial, few_shot",
   "quality_tier": "string — gold | silver | bronze",
   "source": "string — human | generated | logged",
+  "difficulty": "string — entry | intermediate | expert (REQUIRED for new examples)",
+  "artist_stance": "string — independent | label-seeking | hybrid | n/a (REQUIRED for new examples)",
   "input": {
     "user_message": "string — the exact user message",
     "context": {
       "currentModule": "string — e.g. finance, creative, dashboard",
       "hasProject": "boolean",
       "hasAudio": "boolean",
-      "hasImages": "boolean"
+      "hasImages": "boolean",
+      "artistProfile": {
+        "goal": "string — fully-independent | label-deal | hybrid (optional — include when relevant to the answer)",
+        "stage": "string — emerging | developing | established (optional)",
+        "genre": "string — e.g. hip-hop, country, punk (optional)"
+      }
     }
   },
   "expected": {
@@ -28,12 +35,37 @@ where each line is one JSON object matching this schema.
     "tools_called": ["array of tool names that should be invoked"],
     "response_contains": ["key phrases that must appear in the response"],
     "response_excludes": ["phrases that must NOT appear (hallucinations, wrong domain)"],
-    "output_sample": "string — a high-quality example response"
+    "output_sample": "string — a high-quality example response written from the artist's advocate perspective"
   },
   "adversarial": false,
   "notes": "string — any special instructions for evaluators"
 }
 ```
+
+## Field Reference
+
+### `difficulty`
+
+| Value | Meaning |
+|-------|---------|
+| `entry` | Artist doesn't know the concept exists — needs plain-language explanation + immediate action step |
+| `intermediate` | Artist knows the concept, needs to understand tradeoffs and make a decision |
+| `expert` | Artist knows the terrain, needs precision: specific numbers, clause language, negotiation tactics |
+
+### `artist_stance`
+
+| Value | Meaning |
+|-------|---------|
+| `independent` | Artist's goal is to stay fully self-owned and self-distributed |
+| `label-seeking` | Artist is pursuing or open to a label or publishing deal |
+| `hybrid` | Artist wants the benefits of a deal without giving up control |
+| `n/a` | Technical/operational question where stance doesn't affect the answer |
+
+**The same user question gets a different `output_sample` depending on `artist_stance`.** Train on both versions for high-impact topics (publishing deals, distribution choice, management contracts).
+
+### `artistProfile` (input context)
+
+Include when the user's profile should visibly affect the answer. The agent should learn to ask for this context when it's missing from a high-stakes question.
 
 ## Quality Tiers
 

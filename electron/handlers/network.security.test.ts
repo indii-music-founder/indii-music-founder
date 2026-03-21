@@ -38,14 +38,14 @@ vi.mock('node:dns', () => ({
 global.fetch = vi.fn();
 
 describe('🛡️ Shield: Network IPC Security (SSRF & Fuzzing)', () => {
-    let handlers: Record<string, (...args: any[]) => any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
         handlers = {};
 
         // Capture IPC handlers
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
             handlers[channel] = handler;
         });
 
@@ -61,13 +61,13 @@ describe('🛡️ Shield: Network IPC Security (SSRF & Fuzzing)', () => {
         });
 
         // Default fetch behavior: Success
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
             ok: true,
             text: async () => 'Safe Content'
         });
     });
 
-    const invokeHandler = async (channel: string, ...args: any[]) => {
+    const invokeHandler = async (channel: string, ...args: unknown[]) => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`Handler for ${channel} not found`);
         // Simulate Electron event with a sender frame

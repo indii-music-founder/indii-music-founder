@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, type Mock } from 'vitest';
 import { registerAudioHandlers } from './audio';
 import { ipcMain } from 'electron';
 import fs from 'fs';
@@ -34,7 +34,7 @@ vi.mock('ffprobe-static', () => ({ default: { path: 'ffprobe-bin' } }));
 
 // Mock fs
 vi.mock('fs', async (importOriginal) => {
-    const mod = await importOriginal() as any;
+    const mod = await importOriginal() as typeof import('fs');
     const mocked = {
         ...mod,
         createReadStream: vi.fn().mockImplementation((path) => {
@@ -67,10 +67,10 @@ describe('Vulnerability: Audio Handler Symlink Exploit', () => {
         registerAudioHandlers();
 
         // Get the registered handler
-        const calls = (ipcMain.handle as any).mock.calls;
-        const handlerEntry = calls.find((call: any[]) => call[0] === 'audio:analyze');
+        const calls = (ipcMain.handle as Mock).mock.calls;
+        const handlerEntry = calls.find((call: unknown[]) => call[0] === 'audio:analyze');
         expect(handlerEntry).toBeDefined();
-        const handler = handlerEntry[1];
+        const handler = handlerEntry![1];
 
         // Simulate a symlink path that looks safe (.wav extension)
         // In reality (mocked), this points to /etc/passwd

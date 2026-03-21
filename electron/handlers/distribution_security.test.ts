@@ -1,5 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { HandlerResult } from './test-types';
 
 // Define hoisted mocks first
 // Define hoisted mocks first
@@ -57,14 +58,14 @@ vi.mock('fs/promises', () => ({
 import { setupDistributionHandlers } from './distribution';
 
 describe('🛡️ Shield: Distribution Security', () => {
-    let handlers: Record<string, (...args: any[]) => any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
         handlers = {};
 
         // Capture handlers
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
             handlers[channel] = handler;
         });
 
@@ -76,11 +77,11 @@ describe('🛡️ Shield: Distribution Security', () => {
         vi.resetModules();
     });
 
-    const invokeHandler = async (channel: string, ...args: any[]) => {
+    const invokeHandler = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`Handler for ${channel} not found`);
         const event = { senderFrame: { url: 'file:///app/index.html' } };
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     it('should BLOCK execution of forensics on non-audio files', async () => {

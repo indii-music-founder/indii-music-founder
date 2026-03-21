@@ -142,12 +142,18 @@ Every example MUST:
 - **Show judgment** — The `output_sample` should demonstrate expert-level reasoning, not just recitation. An expert explains *why*, catches edge cases, and offers next steps.
 - **Vary the scenarios** — Mix easy/common cases with hard/edge cases. Mix beginner questions with expert-level queries. Mix short answers with detailed breakdowns.
 - **Include adversarial examples** — At least 2 per session: a prompt injection attempt, an out-of-scope question, or a jailbreak. The correct response is always: decline + redirect.
+- **Write from the artist's advocate perspective (MANDATORY)** — indiiOS agents represent the independent artist's interests, not the industry's. Every `output_sample` defaults to: "what protects this artist's ownership, income, and long-term control?" Neutral explanations are not enough. When a deal, clause, or structure has tradeoffs, explicitly state what the artist gains AND loses, with specific numbers where possible. Examples:
+  - ❌ Neutral: "A 360 deal gives the label a percentage of touring and merchandise income."
+  - ✅ Advocate: "A 360 deal means the label takes a cut of everything you build — including touring you earned by being on the road 200 nights. Know exactly which revenue streams are included, what the percentages are, and whether there's a sunset clause. At your stage, the advance may not be worth it."
+- **Tag `difficulty` and `artist_stance` on every new example** — `"difficulty": "entry|intermediate|expert"` and `"artist_stance": "independent|label-seeking|hybrid|n/a"`. For high-stakes topics (publishing deals, recording contracts, distribution choices, management), generate PAIRED examples: one `independent` stance + one `label-seeking` — same question, different answer. This teaches the agent that context determines the response.
 
 ---
 
 ## 4. Output Format
 
-Each example MUST be valid JSON on a single line matching this schema:
+**Canonical schema:** [`docs/agent-training/datasets/SCHEMA.md`](../../docs/agent-training/datasets/SCHEMA.md) — that file is the single source of truth. Read it before generating examples. The schema below is a quick reference only.
+
+Each example MUST be valid JSON on a **single line** (no pretty-printing) matching this schema:
 
 ```json
 {
@@ -157,9 +163,19 @@ Each example MUST be valid JSON on a single line matching this schema:
   "category": "royalties|contracts|touring|creative|technical|security|...",
   "quality_tier": "gold",
   "source": "generated",
+  "difficulty": "entry|intermediate|expert",
+  "artist_stance": "independent|label-seeking|hybrid|n/a",
   "input": {
     "user_message": "The exact user message",
-    "context": { "optional": "relevant context object" }
+    "context": {
+      "currentModule": "finance",
+      "hasProject": true,
+      "artistProfile": {
+        "goal": "fully-independent|label-deal|hybrid",
+        "stage": "emerging|developing|established",
+        "genre": "optional"
+      }
+    }
   },
   "expected": {
     "mode": "B",
@@ -167,12 +183,14 @@ Each example MUST be valid JSON on a single line matching this schema:
     "tools_called": [],
     "response_contains": ["key phrase 1", "key phrase 2"],
     "response_excludes": ["wrong answer phrase"],
-    "output_sample": "The full ideal response from the agent. Should be 2-5 paragraphs. Specific, expert, actionable."
+    "output_sample": "The full ideal response. 2-5 paragraphs. Specific, expert, actionable. Written from the artist's advocate perspective — not neutral."
   },
   "adversarial": false,
   "notes": "Optional: why this example is valuable"
 }
 ```
+
+**Required on every new example:** `difficulty` and `artist_stance`. For high-stakes topics (publishing deals, recording contracts, management, distribution), generate PAIRED examples — one `independent` stance + one `label-seeking` — same question, different answer. See SCHEMA.md for full field definitions.
 
 ---
 

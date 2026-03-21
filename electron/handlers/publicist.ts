@@ -21,7 +21,7 @@ const PressReleasePdfSchema = z.object({
     }).optional()
 });
 export function registerPublicistHandlers() {
-    ipcMain.handle('publicist:generate-pdf', async (event: IpcMainInvokeEvent, data: any) => {
+    ipcMain.handle('publicist:generate-pdf', async (event: IpcMainInvokeEvent, data: unknown) => {
         validateSender(event);
 
         try {
@@ -31,7 +31,7 @@ export function registerPublicistHandlers() {
             console.log(`[PublicistHandler] Generating PDF for: ${validated.headline}`);
 
             // Execute Python script
-            const result = await AgentSupervisor.execute<any>(
+            const result = await AgentSupervisor.execute<{ success: boolean; error?: string; filePath?: string; message?: string }>(
                 'publicist',
                 'generate_press_release_pdf.py',
                 [JSON.stringify(validated)],
@@ -48,12 +48,13 @@ export function registerPublicistHandlers() {
                 message: result.message
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             console.error('[PublicistHandler] Error:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: 'Validation failed', details: error.errors };
             }
-            return { success: false, error: error.message };
+            return { success: false, error: message };
         }
     });
 }

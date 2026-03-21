@@ -42,7 +42,7 @@ const calculateFileHash = (filePath: string): Promise<string> => {
         const stream = fs.createReadStream(filePath);
 
         stream.on('error', (err: Error) => reject(err));
-        stream.on('data', (chunk: any) => hash.update(chunk));
+        stream.on('data', (chunk: Buffer | string) => hash.update(chunk));
         stream.on('end', () => resolve(hash.digest('hex')));
     });
 };
@@ -67,7 +67,7 @@ export function registerAudioHandlers() {
             // Parallel execution: Hash + Metadata
             const [hash, probeData] = await Promise.all([
                 calculateFileHash(validatedPath),
-                new Promise<any>((resolve, reject) => {
+                new Promise<{ format: Record<string, unknown>; streams: unknown[] }>((resolve, reject) => {
                     ffmpeg.ffprobe(validatedPath, (err, metadata) => {
                         if (err) reject(err);
                         else resolve(metadata); // full object: { format, streams }
