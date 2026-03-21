@@ -26,31 +26,52 @@ export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS 
  */
 export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = {
     // === MANAGER'S OFFICE ===
-    'generalist':       undefined, // indii Conductor (hub orchestrator)
-    'brand':            undefined, // Brand Agent
-    'road':             undefined, // Road Manager
-    'publicist':        undefined, // Publicist
+    // R3 — gemini-2.5-pro base (40 train / 10 eval)
+    'generalist':       'projects/223837784072/locations/us-central1/endpoints/3273097132063588352',
+    // R3 — gemini-2.5-flash-lite base (24 train / 6 eval)
+    'brand':            'projects/223837784072/locations/us-central1/endpoints/552922957131808768',
+    // R3 — gemini-2.5-flash-lite base (37 train / 9 eval)
+    'road':             'projects/223837784072/locations/us-central1/endpoints/2167463423544131584',
+    // R3 — gemini-2.5-flash-lite base (39 train / 9 eval)
+    'publicist':        'projects/223837784072/locations/us-central1/endpoints/8605359090870255616',
 
     // === DEPARTMENTS ===
-    'marketing':        undefined, // Marketing Agent
-    'social':           undefined, // Social Media Agent
-    'legal':            undefined, // Legal Agent
-    'publishing':       undefined, // Publishing Agent
-    'finance':          undefined, // Finance Agent
-    'licensing':        undefined, // Licensing Agent
+    // R3 — gemini-2.5-flash-lite base (40 train / 10 eval)
+    'marketing':        'projects/223837784072/locations/us-central1/endpoints/3714449895545896960',
+    // R3 — gemini-2.5-flash-lite base (40 train / 10 eval)
+    'social':           'projects/223837784072/locations/us-central1/endpoints/1591002671240708096',
+    // R3 — gemini-2.5-flash base (48 train / 11 eval)
+    'legal':            'projects/223837784072/locations/us-central1/endpoints/3818032686975418368',
+    // R3 — gemini-2.5-flash-lite base (41 train / 10 eval)
+    'publishing':       'projects/223837784072/locations/us-central1/endpoints/733629892180049920',
+    // R3 — gemini-2.5-flash base (52 train / 13 eval)
+    'finance':          'projects/223837784072/locations/us-central1/endpoints/7038106420545323008',
+    // R3 — gemini-2.5-flash-lite base (36 train / 8 eval)
+    'licensing':        'projects/223837784072/locations/us-central1/endpoints/5887436715752161280',
 
     // === SPECIALISTS ===
-    'distribution':     undefined, // Distribution Agent
-    'music':            undefined, // Music Agent
-    'video':            undefined, // Video Agent
-    'devops':           undefined, // DevOps Agent
-    'security':         undefined, // Security Agent
-    'producer':         undefined, // Producer
-    'director':         undefined, // Director
-    'screenwriter':     undefined, // Screenwriter
-    'merchandise':      undefined, // Merchandise Agent
-    'curriculum':       undefined, // Music Education Specialist
-    'keeper':           undefined, // Context Integrity Guardian
+    // R3 — gemini-2.5-flash base (41 train / 10 eval)
+    'distribution':     'projects/223837784072/locations/us-central1/endpoints/5397670256275619840',
+    // R3 — gemini-2.5-flash-lite base (36 train / 8 eval)
+    'music':            'projects/223837784072/locations/us-central1/endpoints/8319380514532229120',
+    // R3 — gemini-2.5-flash-lite base (36 train / 8 eval)
+    'video':            'projects/223837784072/locations/us-central1/endpoints/3047917150695063552',
+    // R3 — Still running (job 3246546245535137792)
+    'devops':           undefined,
+    // R3 — gemini-2.5-flash-lite base (41 train / 10 eval)
+    'security':         'projects/223837784072/locations/us-central1/endpoints/4909592646659342336',
+    // R3 — gemini-2.5-flash-lite base (38 train / 9 eval)
+    'producer':         'projects/223837784072/locations/us-central1/endpoints/4861178950665109504',
+    // R3 — gemini-2.5-flash-lite base (40 train / 9 eval)
+    'director':         'projects/223837784072/locations/us-central1/endpoints/8871071468885114880',
+    // R3 — Still running (job 2271516926209425408)
+    'screenwriter':     undefined,
+    // R3 — gemini-2.5-flash-lite base (40 train / 10 eval)
+    'merchandise':      'projects/223837784072/locations/us-central1/endpoints/329994775576969216',
+    // R3 — Still running (job 375501483086446592)
+    'curriculum':       undefined,
+    // Not included in R3 tuning batch
+    'keeper':           undefined,
 };
 
 /**
