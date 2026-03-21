@@ -22,13 +22,13 @@ import { PythonBridge } from '../utils/python-bridge';
 import { spawn } from 'child_process';
 
 describe('Distribution Security - Argument Leakage', () => {
-    let consoleSpy: any;
+    let consoleSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
         consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
         // Setup spawn mock implementation for each test
-        (spawn as any).mockReturnValue({
+        (spawn as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             stdout: { on: vi.fn() },
             stderr: { on: vi.fn() },
             on: vi.fn().mockImplementation((event, cb) => {
@@ -50,7 +50,7 @@ describe('Distribution Security - Argument Leakage', () => {
         ]);
 
         // Check if the password was logged
-        const logCalls = consoleSpy.mock.calls.map((c: any[]) => c.join(' '));
+        const logCalls = consoleSpy.mock.calls.map((c: unknown[]) => (c as string[]).join(' '));
         const leaked = logCalls.some((log: string) => log.includes(password));
 
         expect(leaked).toBe(false);

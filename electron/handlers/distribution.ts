@@ -149,7 +149,7 @@ export const setupDistributionHandlers = () => {
 
             // Execute Python Script
             const storagePath = getStoragePath();
-            const report = await AgentSupervisor.execute('distribution', 'package_itmsp.py', [
+            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'package_itmsp.py', [
                 releaseId,
                 stagingPath,
                 '--storage-path',
@@ -169,7 +169,7 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:calculate-tax', async (event, data: any) => {
+    ipcMain.handle('distribution:calculate-tax', async (event, data: Record<string, unknown>) => {
         try {
             validateSender(event);
             const { userId, amount } = data || {};
@@ -188,7 +188,7 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:certify-tax', async (event, userId: string, data: any) => {
+    ipcMain.handle('distribution:certify-tax', async (event, userId: string, data: unknown) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
@@ -205,7 +205,7 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:execute-waterfall', async (event, data: any) => {
+    ipcMain.handle('distribution:execute-waterfall', async (event, data: unknown) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
@@ -220,11 +220,11 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:validate-metadata', async (event, metadata: any) => {
+    ipcMain.handle('distribution:validate-metadata', async (event, metadata: unknown) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const report = await AgentSupervisor.execute('distribution', 'qc_validator.py', [
+            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'qc_validator.py', [
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
@@ -235,7 +235,7 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:generate-isrc', async (event, options?: any) => {
+    ipcMain.handle('distribution:generate-isrc', async (event, options?: unknown) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
@@ -246,14 +246,14 @@ export const setupDistributionHandlers = () => {
                 sensitiveIndices = [1];
             }
             args.push('--storage-path', storagePath);
-            const report = await AgentSupervisor.execute('distribution', 'isrc_manager.py', args, { timeoutMs: 30000 }, undefined, {}, sensitiveIndices);
+            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'isrc_manager.py', args, { timeoutMs: 30000 }, undefined, {}, sensitiveIndices);
             return { success: true, isrc: report.isrc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
 
-    ipcMain.handle('distribution:generate-content-id-csv', async (event, data: any) => {
+    ipcMain.handle('distribution:generate-content-id-csv', async (event, data: unknown) => {
         try {
             validateSender(event);
             // Script outputs CSV content to stdout if successful, or maybe a JSON object with location?
@@ -283,7 +283,7 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:generate-upc', async (event, options?: any) => {
+    ipcMain.handle('distribution:generate-upc', async (event, options?: unknown) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
@@ -294,14 +294,14 @@ export const setupDistributionHandlers = () => {
                 sensitiveIndices = [1];
             }
             args.push('--storage-path', storagePath);
-            const report = await AgentSupervisor.execute('distribution', 'isrc_manager.py', args, { timeoutMs: 30000 }, undefined, {}, sensitiveIndices);
+            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'isrc_manager.py', args, { timeoutMs: 30000 }, undefined, {}, sensitiveIndices);
             return { success: process.env.NODE_ENV !== 'production' || !!report.upc, upc: report.upc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
 
-    ipcMain.handle('distribution:register-release', async (event, metadata: any, releaseId?: string) => {
+    ipcMain.handle('distribution:register-release', async (event, metadata: unknown, releaseId?: string) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
@@ -316,11 +316,11 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:generate-ddex', async (event, metadata: any) => {
+    ipcMain.handle('distribution:generate-ddex', async (event, metadata: unknown) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const result = await AgentSupervisor.execute('distribution', 'ddex_generator.py', [
+            const result = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'ddex_generator.py', [
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
@@ -336,11 +336,11 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:generate-bwarm', async (event, data: any) => {
+    ipcMain.handle('distribution:generate-bwarm', async (event, data: unknown) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const report = await AgentSupervisor.execute('distribution', 'keys_manager.py', [
+            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'keys_manager.py', [
                 'bwarm',
                 JSON.stringify(data),
                 '--storage-path',
@@ -352,11 +352,11 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:check-merlin-status', async (event, data: any) => {
+    ipcMain.handle('distribution:check-merlin-status', async (event, data: unknown) => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const report = await AgentSupervisor.execute('distribution', 'keys_manager.py', [
+            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'keys_manager.py', [
                 'merlin_check',
                 JSON.stringify(data),
                 '--storage-path',
@@ -367,10 +367,10 @@ export const setupDistributionHandlers = () => {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
-    ipcMain.handle('distribution:transmit', async (event, config: any) => {
+    ipcMain.handle('distribution:transmit', async (event, config: Record<string, unknown>) => {
         try {
             validateSender(event);
-            const { protocol, host, port, user, password, key, localPath, remotePath } = config;
+            const { protocol, host, port, user, password, key, localPath, remotePath } = config as Record<string, string | number | undefined>;
 
             if (!host || !user || !localPath) {
                 throw new Error('Missing required transmission configuration (host, user, or localPath)');
@@ -419,7 +419,7 @@ export const setupDistributionHandlers = () => {
             if (port) args.push('--port', String(port));
             // Note: Password/Key are now passed via env vars, not CLI args
 
-            const report = await AgentSupervisor.execute(
+            const report = await AgentSupervisor.execute<Record<string, unknown>>(
                 'distribution',
                 scriptName,
                 args,
@@ -445,7 +445,7 @@ export const setupDistributionHandlers = () => {
      * QC validate → assign ISRCs → generate DDEX XML → SFTP upload
      * Progress events are streamed back as 'distribution:submit-progress'.
      */
-    ipcMain.handle('distribution:submit-release', async (event, releaseData: any) => {
+    ipcMain.handle('distribution:submit-release', async (event, releaseData: Record<string, unknown>) => {
         try {
             validateSender(event);
 
@@ -457,7 +457,7 @@ export const setupDistributionHandlers = () => {
 
             // Credentials for SFTP are injected via env vars, never CLI args
             const env: Record<string, string | undefined> = {};
-            const sftpCfg = releaseData.sftpConfig;
+            const sftpCfg = releaseData.sftpConfig as Record<string, string | undefined> | undefined;
             if (sftpCfg?.password) {
                 env.SFTP_PASSWORD = sftpCfg.password;
                 // Redact from the payload before passing to the script
@@ -468,7 +468,7 @@ export const setupDistributionHandlers = () => {
                 releaseData = { ...releaseData, sftpConfig: { ...releaseData.sftpConfig, key: undefined } };
             }
 
-            const result = await AgentSupervisor.execute(
+            const result = await AgentSupervisor.execute<Record<string, unknown>>(
                 'distribution',
                 'ddex_build.py',
                 [JSON.stringify(releaseData), '--storage-path', storagePath],

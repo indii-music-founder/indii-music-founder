@@ -1,7 +1,17 @@
 import { logger } from '@/utils/logger';
 
 import { StateCreator } from 'zustand';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
+import {
+    User,
+    onAuthStateChanged,
+    signInWithPopup,
+    GoogleAuthProvider,
+    signOut,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signInAnonymously,
+    sendPasswordResetEmail
+} from 'firebase/auth';
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -11,12 +21,70 @@ interface FirebaseAuthError {
     message: string;
 }
 
+/**
+ * Maps a Firebase Auth error code to a user-friendly message.
+ * Centralised to avoid duplicating error strings across every auth method.
+ */
+function getAuthErrorMessage(error: FirebaseAuthError): string | null {
+    switch (error.code) {
+        // ── Config / service issues ────────────────────────────────────────
+        case 'auth/argument-error':
+        case 'auth/invalid-api-key':
+            return 'Authentication service unavailable. Please try again later.';
+
+        // ── Popup dismissed (not a real error — user cancelled) ────────────
+        case 'auth/popup-closed-by-user':
+        case 'auth/cancelled-popup-request':
+            return null; // Suppress — the user intentionally dismissed the dialog
+
+        // ── Credential errors ──────────────────────────────────────────────
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+            return 'Incorrect email or password. Please try again.';
+
+        // ── Sign-up specific ───────────────────────────────────────────────
+        case 'auth/email-already-in-use':
+            return 'An account with this email already exists. Try signing in instead.';
+        case 'auth/weak-password':
+            return 'Password must be at least 6 characters.';
+        case 'auth/invalid-email':
+            return 'Please enter a valid email address.';
+
+        // ── Rate limiting ──────────────────────────────────────────────────
+        case 'auth/too-many-requests':
+            return 'Too many sign-in attempts. Please wait a few minutes and try again.';
+
+        // ── Network ────────────────────────────────────────────────────────
+        case 'auth/network-request-failed':
+            return 'Network error. Check your internet connection and try again.';
+
+        // ── Account disabled ───────────────────────────────────────────────
+        case 'auth/user-disabled':
+            return 'This account has been disabled. Contact support for help.';
+
+        // ── Admin-restricted (sign-in provider not enabled) ────────────────
+        case 'auth/admin-restricted-operation':
+        case 'auth/operation-not-allowed':
+            return 'This sign-in method is not enabled. Contact administrator.';
+
+        // ── Re-authentication required (stale session for destructive ops) ─
+        case 'auth/requires-recent-login':
+            return 'Your session has expired. Please sign in again before making this change.';
+
+        // ── Fallback ───────────────────────────────────────────────────────
+        default:
+            return error.message ?? 'Authentication failed';
+    }
+}
+
 // Define the shape of our Auth state
 export interface AuthSlice {
     user: User | null;
     authLoading: boolean;
     authError: string | null;
     isSignUpMode: boolean;
+    passwordResetSent: boolean;
 
     // Actions
     loginWithGoogle: () => Promise<void>;
@@ -24,16 +92,19 @@ export interface AuthSlice {
     signUpWithEmail: (email: string, pass: string) => Promise<void>;
     loginAsGuest: () => Promise<void>;
     logout: () => Promise<void>;
+    resetPassword: (email: string) => Promise<void>;
     setSignUpMode: (isSignUp: boolean) => void;
+    clearAuthError: () => void;
     initializeAuthListener: () => () => void;
 }
 
 // Create the slice
-export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
+export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     user: null,
     authLoading: true,
     authError: null,
     isSignUpMode: false,
+    passwordResetSent: false,
 
     loginWithGoogle: async () => {
         try {
@@ -43,14 +114,13 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             // State update handled by listener
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
-            const isConfigError = firebaseError.code === 'auth/argument-error' || firebaseError.code === 'auth/invalid-api-key';
-            const isPopupClosed = firebaseError.code === 'auth/popup-closed-by-user' || firebaseError.code === 'auth/cancelled-popup-request';
-            const errorMessage = isConfigError
-                ? "Authentication service unavailable. Please try again later."
-                : isPopupClosed
-                    ? null
-                    : firebaseError.message ?? 'Authentication failed';
-            set({ authError: errorMessage, authLoading: false });
+            const errorMessage = getAuthErrorMessage(firebaseError);
+            // If errorMessage is null (popup dismissed), reset loading but don't show an error
+            if (errorMessage === null) {
+                set({ authLoading: false });
+            } else {
+                set({ authError: errorMessage, authLoading: false });
+            }
         }
     },
 
@@ -61,13 +131,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             // State update handled by listener
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
-            const isConfigError = firebaseError.code === 'auth/argument-error' || firebaseError.code === 'auth/invalid-api-key';
-            const errorMessage = isConfigError
-                ? "Authentication service unavailable. Please try again later."
-                : firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential'
-                    ? 'Incorrect email or password. Please try again.'
-                    : firebaseError.message ?? 'Authentication failed';
-            set({ authError: errorMessage, authLoading: false });
+            const errorMessage = getAuthErrorMessage(firebaseError);
+            set({ authError: errorMessage ?? 'Sign-in failed', authLoading: false });
             throw error;
         }
     },
@@ -79,28 +144,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             // State update handled by listener — initializeAuthListener will create the user doc
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
-            let errorMessage: string;
-            switch (firebaseError.code) {
-                case 'auth/email-already-in-use':
-                    errorMessage = 'An account with this email already exists. Try signing in instead.';
-                    break;
-                case 'auth/weak-password':
-                    errorMessage = 'Password must be at least 6 characters.';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = 'Please enter a valid email address.';
-                    break;
-                case 'auth/argument-error':
-                case 'auth/invalid-api-key':
-                    errorMessage = 'Authentication service unavailable. Please try again later.';
-                    break;
-                case 'auth/admin-restricted-operation':
-                    errorMessage = 'Email/Password sign-up is disabled. Enable it in Firebase Console → Authentication → Sign-in method → Email/Password.';
-                    break;
-                default:
-                    errorMessage = firebaseError.message ?? 'Account creation failed';
-            }
-            set({ authError: errorMessage, authLoading: false });
+            const errorMessage = getAuthErrorMessage(firebaseError);
+            set({ authError: errorMessage ?? 'Account creation failed', authLoading: false });
             throw error;
         }
     },
@@ -118,17 +163,48 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             let errorMessage: string;
             if (firebaseError.code === 'auth/admin-restricted-operation') {
                 errorMessage = 'Anonymous Auth is disabled. Enable it in Firebase Console → Authentication → Sign-in method → Anonymous.';
-            } else if (firebaseError.code === 'auth/argument-error' || firebaseError.code === 'auth/invalid-api-key') {
-                errorMessage = 'Firebase Config Missing. Check .env file.';
             } else {
-                errorMessage = firebaseError.message ?? 'Guest login failed';
+                // Use the centralised message mapper for everything else
+                errorMessage = getAuthErrorMessage(firebaseError) ?? 'Guest login failed';
+            }
+            set({ authError: errorMessage, authLoading: false });
+        }
+    },
+
+    resetPassword: async (email: string) => {
+        try {
+            set({ authLoading: true, authError: null, passwordResetSent: false });
+            await sendPasswordResetEmail(auth, email);
+            set({ authLoading: false, passwordResetSent: true });
+        } catch (error: unknown) {
+            const firebaseError = error as FirebaseAuthError;
+            let errorMessage: string;
+
+            switch (firebaseError.code) {
+                case 'auth/user-not-found':
+                    // Security: Don't reveal whether the email exists.
+                    // Still show "success" to prevent enumeration attacks.
+                    set({ authLoading: false, passwordResetSent: true });
+                    return;
+                case 'auth/invalid-email':
+                    errorMessage = 'Please enter a valid email address.';
+                    break;
+                case 'auth/too-many-requests':
+                    errorMessage = 'Too many requests. Please wait a few minutes before trying again.';
+                    break;
+                default:
+                    errorMessage = getAuthErrorMessage(firebaseError) ?? 'Failed to send reset email. Please try again.';
             }
             set({ authError: errorMessage, authLoading: false });
         }
     },
 
     setSignUpMode: (isSignUp: boolean) => {
-        set({ isSignUpMode: isSignUp, authError: null });
+        set({ isSignUpMode: isSignUp, authError: null, passwordResetSent: false });
+    },
+
+    clearAuthError: () => {
+        set({ authError: null });
     },
 
     logout: async () => {
@@ -144,7 +220,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                 useStore.getState().clearAllSubscriptions();
             }).catch(err => logger.error('[Auth] Failed to clear subscriptions during logout:', err));
 
-            set({ user: null, authError: null, isSignUpMode: false });
+            set({ user: null, authError: null, isSignUpMode: false, passwordResetSent: false });
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Logout failed';
             set({ authError: message });
@@ -156,7 +232,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
 
         // FAST FAIL: If no API key, don't wait for Firebase (it might hang or crash)
         const apiKey = auth.app.options.apiKey;
-        if (!apiKey || apiKey.includes('Fake')) {
+        const apiKeyLower = apiKey?.toLowerCase() ?? '';
+        if (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass')) {
             logger.warn('[Auth] No valid API Key found.');
             set({ authLoading: false });
             return () => { };

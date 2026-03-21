@@ -25,10 +25,19 @@ import { networkInterfaces } from 'os';
 import log from 'electron-log';
 
 // Dynamic import of ws to avoid bundler issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- WebSocketServer is dynamically imported; its constructor type varies
 let WebSocketServer: any;
 
+interface WebSocketLike {
+  send(data: string): void;
+  close(code?: number, reason?: string): void;
+  once(event: string, listener: (data: Buffer) => void): void;
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  readyState: number;
+}
+
 interface MobileClient {
-  ws: any;
+  ws: WebSocketLike;
   authenticated: boolean;
 }
 
@@ -82,7 +91,7 @@ async function startMobileRemoteServer(): Promise<{ localIp: string; port: numbe
     const httpServer = createServer();
     const wss = new WebSocketServer({ server: httpServer });
 
-    wss.on('connection', (ws: any, req: any) => {
+    wss.on('connection', (ws: WebSocketLike, req: { socket: { remoteAddress?: string } }) => {
       const client: MobileClient = { ws, authenticated: false };
       activeClients.add(client);
 
@@ -108,9 +117,9 @@ async function startMobileRemoteServer(): Promise<{ localIp: string; port: numbe
             log.info('[MobileRemote] Client authenticated');
 
             // Register persistent listener for commands from authenticated clients
-            ws.on('message', (commandData: Buffer) => {
+            ws.on('message', (commandData: unknown) => {
               try {
-                const cmd = JSON.parse(commandData.toString());
+                const cmd = JSON.parse(String(commandData));
                 if (cmd.type !== 'auth') {
                   // Forward to main renderer window for processing
                   const allWindows = BrowserWindow.getAllWindows();
@@ -141,9 +150,10 @@ async function startMobileRemoteServer(): Promise<{ localIp: string; port: numbe
         log.info('[MobileRemote] Client disconnected');
       });
 
-      ws.on('error', (err: Error) => {
+      ws.on('error', (err: unknown) => {
         clearTimeout(authTimeout);
-        log.error('[MobileRemote] WS client error', err.message);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        log.error('[MobileRemote] WS client error', errMsg);
         activeClients.delete(client);
       });
     });
@@ -209,9 +219,10 @@ export function registerMobileRemoteHandlers(): void {
     try {
       const info = await startMobileRemoteServer();
       return { success: true, ...info };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
       log.error('[MobileRemote] Failed to start WS server', err);
-      return { success: false, error: err.message };
+      return { success: false, error: message };
     }
   });
 
