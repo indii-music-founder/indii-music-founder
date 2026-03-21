@@ -1,6 +1,7 @@
 import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 import { Schema } from 'firebase/ai';
 
 export const FinanceAgent: AgentConfig = {
@@ -197,9 +198,9 @@ If a task is outside Finance, say:
             const prompt = `You are a strict financial accountant. Extract the following details from this receipt image: Vendor, Date, Total Amount, Tax, and Category (e.g., Travel, Equipment, Meals, Lodging). Ensure the amounts are formatted as numbers. Return as structured JSON.`;
             try {
                 // Formatting the image data for Gemini Vision via FirebaseAIService
-                const contents: any[] = [
+                const contents = [
                     {
-                        role: 'user',
+                        role: 'user' as const,
                         parts: [
                             {
                                 inlineData: {
@@ -213,7 +214,7 @@ If a task is outside Finance, say:
                 ];
 
                 // Using standard generateContent to handle multimodal inputs natively
-                const result = await firebaseAI.generateContent(contents, 'gemini-2.5-flash');
+                const result = await firebaseAI.generateContent(contents, AI_MODELS.TEXT.FAST);
                 const textResult = result.response?.text() || '{}';
 
                 // Extract JSON if it's wrapped in markdown code blocks
