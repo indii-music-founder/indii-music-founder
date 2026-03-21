@@ -56,20 +56,20 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'music':            'projects/223837784072/locations/us-central1/endpoints/8319380514532229120',
     // R3 — gemini-2.5-flash-lite base (36 train / 8 eval)
     'video':            'projects/223837784072/locations/us-central1/endpoints/3047917150695063552',
-    // R3 — Still running (job 3246546245535137792)
-    'devops':           undefined,
+    // R3 — gemini-2.5-flash-lite base (36 train / 9 eval)
+    'devops':           'projects/223837784072/locations/us-central1/endpoints/1305587044856102912',
     // R3 — gemini-2.5-flash-lite base (41 train / 10 eval)
     'security':         'projects/223837784072/locations/us-central1/endpoints/4909592646659342336',
     // R3 — gemini-2.5-flash-lite base (38 train / 9 eval)
     'producer':         'projects/223837784072/locations/us-central1/endpoints/4861178950665109504',
     // R3 — gemini-2.5-flash-lite base (40 train / 9 eval)
     'director':         'projects/223837784072/locations/us-central1/endpoints/8871071468885114880',
-    // R3 — Still running (job 2271516926209425408)
-    'screenwriter':     undefined,
+    // R3 — gemini-2.5-flash-lite base (36 train / 9 eval)
+    'screenwriter':     'projects/223837784072/locations/us-central1/endpoints/22061151055511552',
     // R3 — gemini-2.5-flash-lite base (40 train / 10 eval)
     'merchandise':      'projects/223837784072/locations/us-central1/endpoints/329994775576969216',
-    // R3 — Still running (job 375501483086446592)
-    'curriculum':       undefined,
+    // R3 — gemini-2.5-flash-lite base (36 train / 9 eval)
+    'curriculum':       'projects/223837784072/locations/us-central1/endpoints/2544076942382989312',
     // Not included in R3 tuning batch
     'keeper':           undefined,
 };
