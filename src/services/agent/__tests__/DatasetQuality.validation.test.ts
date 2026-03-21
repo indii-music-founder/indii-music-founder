@@ -81,8 +81,8 @@ interface ParsedDataset {
 // Dataset Loading
 // ============================================================================
 
-let datasets: ParsedDataset[] = [];
-let allExamples: DatasetExample[] = [];
+const datasets: ParsedDataset[] = [];
+const allExamples: DatasetExample[] = [];
 let loadError: string | null = null;
 
 /**
