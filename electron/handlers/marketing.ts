@@ -8,7 +8,7 @@ const MarketAnalysisSchema = z.object({
 });
 
 export function registerMarketingHandlers() {
-    ipcMain.handle('marketing:analyze-trends', async (event: IpcMainInvokeEvent, data: any) => {
+    ipcMain.handle('marketing:analyze-trends', async (event: IpcMainInvokeEvent, data: unknown) => {
         validateSender(event);
 
         try {
@@ -16,7 +16,7 @@ export function registerMarketingHandlers() {
 
             console.log(`[MarketingHandler] Analyzing market trends for: ${validated.category || 'general'}`);
 
-            const result = await AgentSupervisor.execute<any>(
+            const result = await AgentSupervisor.execute<{ success: boolean; error?: string; data?: unknown; message?: string }>(
                 'marketing',
                 'analyze_market_trends.py',
                 [validated.category || 'pop'],
@@ -33,12 +33,13 @@ export function registerMarketingHandlers() {
                 message: result.message
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             console.error('[MarketingHandler] Error:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: 'Validation failed', details: error.errors };
             }
-            return { success: false, error: error.message };
+            return { success: false, error: message };
         }
     });
 }

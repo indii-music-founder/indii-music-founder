@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import path from 'path';
+import type { HandlerResult } from './test-types';
 
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
@@ -49,7 +50,7 @@ vi.mock('../utils/python-bridge', () => ({ PythonBridge: mocks.pythonBridge }));
 import { setupDistributionHandlers } from './distribution';
 
 describe('🛡️ Shield: Distribution Security Test', () => {
-    let handlers: Record<string, any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -66,12 +67,12 @@ describe('🛡️ Shield: Distribution Security Test', () => {
         setupDistributionHandlers();
     });
 
-    const invoke = async (channel: string, ...args: any[]) => {
+    const invoke = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`No handler for ${channel}`);
         // Mock secure sender
         const event = { senderFrame: { url: 'file:///app/index.html' } };
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     const validUUID = '123e4567-e89b-12d3-a456-426614174000';

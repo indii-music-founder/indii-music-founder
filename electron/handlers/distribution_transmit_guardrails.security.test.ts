@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { setupDistributionHandlers } from './distribution';
+import type { HandlerResult } from './test-types';
 
 const mocks = vi.hoisted(() => ({
     ipcMain: { handle: vi.fn() },
@@ -51,7 +52,7 @@ vi.mock('../utils/network-security', () => ({
 }));
 
 describe('🛡️ Shield: Distribution Transmit Guardrails (IPC Bridge Safety)', () => {
-    let handlers: Record<string, any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -62,12 +63,12 @@ describe('🛡️ Shield: Distribution Transmit Guardrails (IPC Bridge Safety)',
         setupDistributionHandlers();
     });
 
-    const invoke = async (channel: string, ...args: any[]) => {
+    const invoke = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`No handler for ${channel}`);
         // Fake event
         const event = { senderFrame: { url: 'file:///app/index.html' }, sender: { send: vi.fn() } };
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     it('should BLOCK transmission of unauthorized files (AccessControl Bypass)', async () => {

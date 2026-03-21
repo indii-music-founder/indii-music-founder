@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import path from 'path';
+import type { HandlerResult } from './test-types';
 
 // Define hoisted mocks first
 const mocks = vi.hoisted(() => ({
@@ -71,7 +72,7 @@ vi.mock('../security/AccessControlService', () => ({
 import { registerAudioHandlers } from './audio';
 
 describe('🛡️ Shield: Audio Analysis Security', () => {
-    let handlers: Record<string, (...args: any[]) => any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -86,7 +87,7 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
         mocks.fs.existsSync.mockReturnValue(true);
 
         // Capture handlers
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
             handlers[channel] = handler;
         });
 
@@ -98,11 +99,11 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
         vi.resetModules();
     });
 
-    const invokeHandler = async (channel: string, ...args: any[]) => {
+    const invokeHandler = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`Handler for ${channel} not found`);
         const event = { senderFrame: { url: 'file:///app/index.html' } };
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     it('should BLOCK Path Traversal attempting to analyze system files', async () => {
@@ -156,7 +157,7 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
 
         // Mock stream for hash
         const mockStream = {
-            on: (event: string, cb: (...args: any[]) => void) => {
+            on: (event: string, cb: (...args: unknown[]) => void) => {
                 if (event === 'end') cb();
                 return mockStream;
             },
