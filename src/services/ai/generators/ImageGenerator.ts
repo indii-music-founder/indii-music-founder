@@ -9,7 +9,7 @@
 import type { Tool } from 'firebase/ai';
 import type { AIContext } from '../AIContext';
 import type { GenerationConfig, GenerateImageOptions } from '@/shared/types/ai.dto';
-import { AI_CONFIG } from '@/core/config/ai-models';
+import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
 
 /**
  * Generate an image using the Gemini 3 native image generation model.
@@ -27,7 +27,7 @@ export async function generateImage(
         await ctx.ensureInitialized();
 
         let prompt: string;
-        let model = modelOverride || 'gemini-3-pro-image-preview';
+        let model = modelOverride || AI_MODELS.IMAGE.GENERATION;
         let config = configOverride;
 
         if (typeof promptOrOptions === 'object' && 'prompt' in promptOrOptions) {

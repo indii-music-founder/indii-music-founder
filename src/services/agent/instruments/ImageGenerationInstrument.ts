@@ -17,6 +17,7 @@ import {
 import { ImageGenerationService } from '@/services/image/ImageGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { CacheService } from '@/services/cache/CacheService';
+import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
 
 export class ImageGenerationInstrument implements Instrument {
@@ -42,8 +43,8 @@ export class ImageGenerationInstrument implements Instrument {
       rateLimitPerMinute: 10
     },
     computeType: 'cloud',
-    preferredModel: 'gemini-3-pro-image-preview',
-    fallbackModels: ['gemini-3-flash-image-preview'],
+    preferredModel: AI_MODELS.IMAGE.GENERATION,
+    fallbackModels: [AI_MODELS.IMAGE.FAST],
     tags: ['ai', 'image', 'generation', 'creative'],
     examples: [
       {
