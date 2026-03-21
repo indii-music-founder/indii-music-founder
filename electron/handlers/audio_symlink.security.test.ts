@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerAudioHandlers } from './audio';
+import type { HandlerResult } from './test-types';
 
 // Hoist mocks
 const mocks = vi.hoisted(() => ({
@@ -38,14 +39,14 @@ vi.mock('fluent-ffmpeg', () => ({
 // But we might need to mock the util if we change it. For now, we use real validation.
 
 describe('🛡️ Shield: Audio IPC Symlink Attack', () => {
-    let handlers: Record<string, (...args: any[]) => any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
         handlers = {};
 
         // Capture handlers
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
             handlers[channel] = handler;
         });
 
@@ -53,11 +54,11 @@ describe('🛡️ Shield: Audio IPC Symlink Attack', () => {
         registerAudioHandlers();
     });
 
-    const invokeHandler = async (channel: string, ...args: any[]) => {
+    const invokeHandler = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`Handler for ${channel} not found`);
         const event = { senderFrame: { url: 'file:///app/index.html' } };
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     it('should DETECT and BLOCK symlinks pointing to system files (/etc/passwd)', async () => {
@@ -116,7 +117,7 @@ describe('🛡️ Shield: Audio IPC Symlink Attack', () => {
 
         // Mock success for ffprobe/hash
         mocks.fs.createReadStream.mockReturnValue({
-            on: (event: string, cb: any) => {
+            on: (event: string, cb: (...cbArgs: unknown[]) => void) => {
                 if (event === 'end') cb();
                 return this;
             }

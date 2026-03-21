@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { HandlerResult } from './test-types';
 
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
@@ -35,7 +36,7 @@ import { setupDistributionHandlers } from './distribution';
 import { registerSFTPHandlers } from './sftp';
 
 describe('🛡️ Shield: Distribution & SFTP SSRF Test', () => {
-    let handlers: Record<string, any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -47,11 +48,11 @@ describe('🛡️ Shield: Distribution & SFTP SSRF Test', () => {
         registerSFTPHandlers();
     });
 
-    const invoke = async (channel: string, ...args: any[]) => {
+    const invoke = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`No handler for ${channel}`);
         const event = { senderFrame: { url: 'file:///app/index.html' }, sender: { send: vi.fn() } };
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     it('should BLOCK distribution:transmit to localhost (SSRF Protection)', async () => {

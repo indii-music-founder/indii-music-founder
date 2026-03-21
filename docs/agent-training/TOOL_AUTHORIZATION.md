@@ -103,6 +103,9 @@ Authorization is enforced at two levels:
 | `list_files` | ✅ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | `vulnerability_scan` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
 | `deploy_service` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 📖 | ✅ | ❌ | ❌ |
+| `credential_vault` | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
+
+> **`credential_vault` scope:** Authorized only for agents that need to authenticate with external services (social platform APIs, payment processors, cloud credentials, distributor SFTP). Security enforced at two layers: (1) only registered in authorized agent's `functionDeclarations`, (2) all agents receiving credentials must NEVER echo them to the user — retrieve silently, use internally only.
 
 ---
 

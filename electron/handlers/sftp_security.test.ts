@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import path from 'path';
+import type { HandlerResult } from './test-types';
 
 // Define hoisted mocks
 const mocks = vi.hoisted(() => ({
@@ -56,7 +57,7 @@ vi.mock('../services/SFTPService', () => ({
 import { registerSFTPHandlers } from './sftp';
 
 describe('🛡️ Shield: SFTP Security Integration Test', () => {
-    let handlers: Record<string, (...args: any[]) => any> = {};
+    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -66,7 +67,7 @@ describe('🛡️ Shield: SFTP Security Integration Test', () => {
         handlers = {};
 
         // Capture handlers when they are registered
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
             handlers[channel] = handler;
         });
 
@@ -79,7 +80,7 @@ describe('🛡️ Shield: SFTP Security Integration Test', () => {
     });
 
     // Helper to invoke the handler
-    const invokeHandler = async (channel: string, ...args: any[]) => {
+    const invokeHandler = async (channel: string, ...args: unknown[]): Promise<HandlerResult> => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`Handler for ${channel} not found`);
 
@@ -88,7 +89,7 @@ describe('🛡️ Shield: SFTP Security Integration Test', () => {
             senderFrame: { url: 'file:///app/index.html' }
         };
 
-        return handler(event, ...args);
+        return handler(event, ...args) as Promise<HandlerResult>;
     };
 
     it('should BLOCK upload from unauthorized system directories (Sandbox Escape Attempt)', async () => {
@@ -146,7 +147,7 @@ describe('🛡️ Shield: SFTP Security Integration Test', () => {
         };
         const handler = handlers['sftp:upload-directory'];
 
-        const result = await handler(maliciousEvent, '/mock/tmp/safe', '/remote');
+        const result = await handler(maliciousEvent, '/mock/tmp/safe', '/remote') as HandlerResult;
 
         // It should catch the "Security: Unauthorized sender URL" error and return success: false
         expect(result.success).toBe(false);

@@ -10,7 +10,7 @@ import os from 'os';
 import fs from 'fs';
 
 export const registerSFTPHandlers = () => {
-    ipcMain.handle('sftp:connect', async (event, config: any) => {
+    ipcMain.handle('sftp:connect', async (event, config: unknown) => {
         try {
             validateSender(event);
             const validatedConfig = SFTPConfigSchema.parse(config);

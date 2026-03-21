@@ -63,7 +63,7 @@ vi.mock('fs', () => ({
 }));
 
 describe('🛡️ Shield: Video Render Security Test', () => {
-    let handlers: Record<string, (...args: any[]) => Promise<any>> = {};
+    let handlers: Record<string, (...args: unknown[]) => Promise<unknown>> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -74,7 +74,7 @@ describe('🛡️ Shield: Video Render Security Test', () => {
         registerVideoHandlers();
     });
 
-    const invoke = async (channel: string, sender: any, ...args: any[]) => {
+    const invoke = async (channel: string, sender: unknown, ...args: unknown[]) => {
         const handler = handlers[channel];
         if (!handler) throw new Error(`No handler for ${channel}`);
         return handler(sender, ...args);

@@ -141,12 +141,12 @@ export class AgentRegistry {
         } catch (e) {
             logger.warn("[AgentRegistry] Failed to register Keeper agent:", e);
         }
-        // Register Curriculum Agent (Branding Alignment)
+        // Register Curriculum Agent (Music Business Education)
         try {
             const curriculumMeta = {
                 id: 'curriculum',
-                name: 'Curriculum Agent',
-                description: 'Automates branding alignment by generating tasks and enforcing project-specific style guides.',
+                name: 'Music Education Specialist',
+                description: 'Teaches independent artists the music business — copyright, royalties, contracts, distribution, and building a sustainable career.',
                 color: '#FF4081',
                 category: 'specialist',
                 execute: async () => { throw new Error('Cannot execute metadata-only agent'); }

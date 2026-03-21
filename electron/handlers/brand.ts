@@ -10,7 +10,7 @@ import path from 'path';
 export const registerBrandHandlers = () => {
     console.log('[Handlers] Registering Brand handlers...');
 
-    ipcMain.handle('brand:analyze-consistency', async (event, assetPath: string, brandKit: any) => {
+    ipcMain.handle('brand:analyze-consistency', async (event, assetPath: string, brandKit: Record<string, unknown>) => {
         try {
             // 1. Security & Validation
             validateSender(event);
@@ -22,7 +22,7 @@ export const registerBrandHandlers = () => {
 
             // 2. Execute Python Script via AgentSupervisor
             // Using 60s timeout for vision processing
-            const report = await AgentSupervisor.execute<any>(
+            const report = await AgentSupervisor.execute<Record<string, unknown>>(
                 'brand',
                 'analyze_brand_consistency.py',
                 [validated.assetPath, JSON.stringify(validated.brandKit)],
@@ -35,11 +35,12 @@ export const registerBrandHandlers = () => {
                 report: report
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown consistency analysis error';
             console.error('[Brand] Consistency analysis failed:', error);
             return {
                 success: false,
-                error: error.message || 'Unknown consistency analysis error',
+                error: message,
                 details: error
             };
         }
