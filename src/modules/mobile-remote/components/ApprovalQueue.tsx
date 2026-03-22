@@ -4,6 +4,7 @@
  * the approval card on the phone remote. Approve/Reject calls resolveApproval().
  */
 
+import { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Check, X, AlertTriangle, Shield, Clock } from 'lucide-react';
@@ -21,6 +22,17 @@ export default function ApprovalQueue({ onSendCommand }: ApprovalQueueProps) {
             isAgentProcessing: state.isAgentProcessing,
         }))
     );
+
+    // Compute elapsed seconds in an effect (Date.now() is impure, cannot be called during render)
+    const [timeAgo, setTimeAgo] = useState(0);
+    useEffect(() => {
+        if (!pendingApproval) return;
+        const updateTime = () =>
+            setTimeAgo(Math.round((Date.now() - pendingApproval.timestamp) / 1000));
+        updateTime();
+        const interval = setInterval(updateTime, 1000);
+        return () => clearInterval(interval);
+    }, [pendingApproval]);
 
     const handleApprove = () => {
         if (!pendingApproval) return;
@@ -61,7 +73,6 @@ export default function ApprovalQueue({ onSendCommand }: ApprovalQueueProps) {
 
     // Map approval type to visual cues
     const typeLabel = pendingApproval.type || 'Action';
-    const timeAgo = Math.round((Date.now() - pendingApproval.timestamp) / 1000);
 
     return (
         <div className="space-y-3">
