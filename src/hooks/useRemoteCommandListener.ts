@@ -1,29 +1,42 @@
 /**
- * useRemoteCommandListener — Desktop-side hook.
+ * useRemoteCommandListener — Desktop-side hook (Firestore Cloud Relay).
  *
- * Polls the Vite relay for commands sent from the phone,
- * processes them through the real agentService (full auth, full agent pipeline),
- * and posts responses back to the relay for the phone to pick up.
+ * Uses Firestore onSnapshot to listen for commands from the phone in real-time.
+ * When a command arrives:
+ *   1. Marks it as 'processing'
+ *   2. Runs it through agentService.sendMessage() (full auth, full pipeline)
+ *   3. Writes the response back to Firestore
+ *   4. Marks the command as 'completed'
  *
- * This hook should be mounted ONCE in the desktop app (e.g., in App.tsx or the Shell).
- * It only activates in dev mode when the relay is available.
+ * Also pushes desktop state to Firestore so the phone can see:
+ *   - Current module
+ *   - Whether the agent is processing
+ *   - Online status
+ *
+ * Falls back to the Vite HTTP relay if auth is not available (dev mode).
+ *
+ * Mount ONCE in App.tsx.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
+import { remoteRelayService, type RemoteCommand } from '@/services/agent/RemoteRelayService';
+import { auth } from '@/services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 
-const POLL_INTERVAL = 1500; // Check for new commands every 1.5s
-const BASE_URL = ''; // Same origin — Vite middleware
+// ---------------------------------------------------------------------------
+// Vite HTTP Relay Fallback (for dev mode without auth)
+// ---------------------------------------------------------------------------
+const POLL_INTERVAL = 1500;
+const BASE_URL = '';
 
-export function useRemoteCommandListener() {
+function useHttpRelayFallback(enabled: boolean) {
     const lastPollTime = useRef(0);
     const isProcessing = useRef(false);
-    const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
-    // Read desktop state to push to phone
     const { currentModule, isAgentProcessing, isGenerating, agentHistory } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -33,15 +46,15 @@ export function useRemoteCommandListener() {
         }))
     );
 
-    // Push desktop state to relay periodically
+    // Push state via HTTP
     useEffect(() => {
+        if (!enabled) return;
         const pushState = async () => {
             try {
-                // Get the last 5 agent messages for the phone to see
                 const recentMessages = agentHistory.slice(-5).map(m => ({
                     id: m.id,
                     role: m.role,
-                    text: m.text?.slice(0, 500), // Truncate for network efficiency
+                    text: m.text?.slice(0, 500),
                     timestamp: m.timestamp,
                     agentId: m.agentId,
                 }));
@@ -58,17 +71,19 @@ export function useRemoteCommandListener() {
                     }),
                 });
             } catch {
-                // Non-critical — relay may not be running (production build)
+                // Non-critical
             }
         };
 
-        const stateInterval = setInterval(pushState, 3000);
-        pushState(); // Initial push
-        return () => clearInterval(stateInterval);
-    }, [currentModule, isAgentProcessing, isGenerating, agentHistory]);
+        const interval = setInterval(pushState, 3000);
+        pushState();
+        return () => clearInterval(interval);
+    }, [enabled, currentModule, isAgentProcessing, isGenerating, agentHistory]);
 
-    // Poll for commands from phone and process them
+    // Poll for commands via HTTP
     useEffect(() => {
+        if (!enabled) return;
+
         const pollAndProcess = async () => {
             if (isProcessing.current) return;
 
@@ -80,15 +95,12 @@ export function useRemoteCommandListener() {
                 const commands = data.commands as Array<{ id: string; text: string; timestamp: number }>;
                 if (!commands || commands.length === 0) return;
 
-                // Update last poll time
                 lastPollTime.current = Math.max(...commands.map(c => c.timestamp));
 
-                // Process each command through the REAL agent pipeline
                 for (const cmd of commands) {
                     isProcessing.current = true;
-                    logger.info(`[RemoteRelay] 📱→🖥️ Processing phone command: "${cmd.text}"`);
+                    logger.info(`[RemoteRelay/HTTP] 📱→🖥️ Processing: "${cmd.text}"`);
 
-                    // Post "thinking" status immediately
                     await fetch(`${BASE_URL}/api/remote/respond`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -101,11 +113,8 @@ export function useRemoteCommandListener() {
                     });
 
                     try {
-                        // Run through the FULL agent pipeline (with auth, context, orchestration)
-                        // Tag as mobile-remote so messages are identifiable in history
                         await agentService.sendMessage(cmd.text, undefined, undefined, { source: 'mobile-remote' });
 
-                        // After sendMessage completes, grab the latest agent response
                         const state = useStore.getState();
                         const lastResponse = state.agentHistory
                             .filter(m => m.role === 'model' && m.text)
@@ -123,10 +132,9 @@ export function useRemoteCommandListener() {
                                     agentId: lastResponse.agentId,
                                 }),
                             });
-                            logger.info(`[RemoteRelay] 🖥️→📱 Response sent (${lastResponse.text?.length} chars)`);
                         }
                     } catch (error) {
-                        logger.error('[RemoteRelay] Command processing failed:', error);
+                        logger.error('[RemoteRelay/HTTP] Failed:', error);
                         await fetch(`${BASE_URL}/api/remote/respond`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -142,13 +150,146 @@ export function useRemoteCommandListener() {
                     }
                 }
             } catch {
-                // Relay not available — silently skip (non-dev or relay not running)
+                // Relay not available
             }
         };
 
-        intervalRef.current = setInterval(pollAndProcess, POLL_INTERVAL);
-        return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current);
+        const interval = setInterval(pollAndProcess, POLL_INTERVAL);
+        return () => clearInterval(interval);
+    }, [enabled]);
+}
+
+// ---------------------------------------------------------------------------
+// Firestore Cloud Relay (primary)
+// ---------------------------------------------------------------------------
+function useFirestoreRelay(enabled: boolean) {
+    const isProcessing = useRef(false);
+
+    const { currentModule, isAgentProcessing, activeSessionId } = useStore(
+        useShallow(state => ({
+            currentModule: state.currentModule,
+            isAgentProcessing: state.isAgentProcessing,
+            activeSessionId: state.activeSessionId,
+        }))
+    );
+
+    // Push desktop state to Firestore
+    useEffect(() => {
+        if (!enabled) return;
+
+        const pushState = async () => {
+            try {
+                await remoteRelayService.pushDesktopState({
+                    currentModule: currentModule || 'dashboard',
+                    isAgentProcessing,
+                    activeSessionId: activeSessionId || '',
+                    online: true,
+                });
+            } catch (error) {
+                logger.warn('[RemoteRelay/Firestore] State push failed:', error);
+            }
         };
+
+        pushState();
+        const interval = setInterval(pushState, 5000);
+
+        // Mark offline on unmount
+        return () => {
+            clearInterval(interval);
+            remoteRelayService.pushDesktopState({
+                currentModule: currentModule || 'dashboard',
+                isAgentProcessing: false,
+                activeSessionId: activeSessionId || '',
+                online: false,
+            }).catch(() => { });
+        };
+    }, [enabled, currentModule, isAgentProcessing, activeSessionId]);
+
+    // Listen for commands from phone
+    useEffect(() => {
+        if (!enabled) return;
+
+        const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
+            if (isProcessing.current) return;
+            isProcessing.current = true;
+
+            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing: "${command.text}"`);
+
+            try {
+                // Mark as processing
+                await remoteRelayService.markCommandProcessing(command.id);
+
+                // Send "processing" indicator
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    '⏳ Processing...',
+                    undefined,
+                    true
+                );
+
+                // Run through the FULL agent pipeline
+                await agentService.sendMessage(command.text, undefined, undefined, { source: 'mobile-remote' });
+
+                // Grab the latest agent response
+                const state = useStore.getState();
+                const lastResponse = state.agentHistory
+                    .filter(m => m.role === 'model' && m.text)
+                    .slice(-1)[0];
+
+                if (lastResponse) {
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        lastResponse.text || 'No response',
+                        lastResponse.agentId,
+                        false
+                    );
+                    logger.info(`[RemoteRelay/Firestore] 🖥️→📱 Response sent (${lastResponse.text?.length} chars)`);
+                }
+
+                // Mark command as completed
+                await remoteRelayService.markCommandCompleted(command.id);
+            } catch (error) {
+                logger.error('[RemoteRelay/Firestore] Command failed:', error);
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    `❌ Error: ${error instanceof Error ? error.message : 'Processing failed'}`,
+                    undefined,
+                    false
+                );
+                await remoteRelayService.markCommandCompleted(command.id);
+            } finally {
+                isProcessing.current = false;
+            }
+        });
+
+        return unsubscribe;
+    }, [enabled]);
+
+    // Periodic cleanup of old relay data (every 30 min)
+    useEffect(() => {
+        if (!enabled) return;
+
+        const cleanup = () => remoteRelayService.cleanupOld(24).catch(() => { });
+        cleanup();
+        const interval = setInterval(cleanup, 30 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, [enabled]);
+}
+
+// ---------------------------------------------------------------------------
+// Main Hook — auto-selects Firestore or HTTP based on auth
+// ---------------------------------------------------------------------------
+export function useRemoteCommandListener() {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setIsAuthenticated(!!user);
+        });
+        return unsubscribe;
     }, []);
+
+    // Use Firestore relay when authenticated, HTTP fallback when not
+    useFirestoreRelay(isAuthenticated);
+    useHttpRelayFallback(!isAuthenticated);
 }
