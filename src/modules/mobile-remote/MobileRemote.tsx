@@ -396,7 +396,7 @@ export default function MobileRemote() {
           <div className="flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-blue-400" />
             <h1 className="text-sm font-bold text-white tracking-tight">
-              indiiOS <span className="text-blue-400">Remote</span>
+              indii<span className="text-blue-400">CONTROLLER</span>
             </h1>
           </div>
 
