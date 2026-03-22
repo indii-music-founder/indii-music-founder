@@ -1,23 +1,24 @@
 /**
- * AgentChat — Phone-side chat that relays messages through the Vite server
- * to the desktop's agentService.
+ * AgentChat — Phone-side chat using Firestore Cloud Relay.
  *
- * Architecture:
+ * Architecture (Firestore):
  *   Phone types "Where is my show tonight?"
- *   → POST /api/remote/send { text: "..." }
- *   → Vite server queues the command
- *   → Desktop polls /api/remote/poll, sees the command
- *   → Desktop runs agentService.sendMessage("Where is my show tonight?")
- *   → Desktop's Road Manager agent responds with venue details
- *   → Desktop POSTs response to /api/remote/respond
- *   → Phone polls /api/remote/responses, displays the response
+ *   → remoteRelayService.sendCommand("Where is my show tonight?")
+ *   → Writes to Firestore: users/{uid}/remote-relay/commands/{id}
+ *   → Desktop's onSnapshot fires immediately
+ *   → Desktop runs agentService.sendMessage() with full auth + orchestration
+ *   → Desktop writes response to Firestore: users/{uid}/remote-relay/responses/{id}
+ *   → Phone's onSnapshot fires, displays the response
  *
- * This gives the phone FULL ACCESS to the desktop's agent army:
- * Road Manager, Creative Director, Finance, Legal, Marketing — everything.
+ * Works from ANYWHERE — cellular, different WiFi, different countries.
+ * Falls back to HTTP relay if user is not authenticated.
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Bot, User, Loader2, Wifi, WifiOff } from 'lucide-react';
+import { Send, Bot, User, Loader2, Wifi, WifiOff, LogIn } from 'lucide-react';
+import { remoteRelayService, type RemoteResponse, type DesktopState } from '@/services/agent/RemoteRelayService';
+import { auth } from '@/services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 
 interface ChatMessage {
@@ -35,20 +36,15 @@ interface AgentChatProps {
     isPaired: boolean;
 }
 
-// Resolve the relay URL: same origin as the page
-function getRelayUrl(): string {
-    return window.location.origin;
-}
-
 export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatProps) {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isWaiting, setIsWaiting] = useState(false);
-    const [relayConnected, setRelayConnected] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const lastResponseTime = useRef(0);
-    const pollRef = useRef<ReturnType<typeof setInterval>>();
     const pendingCommandId = useRef<string | null>(null);
+    const responseUnsub = useRef<(() => void) | null>(null);
 
     // Auto-scroll
     useEffect(() => {
@@ -57,105 +53,37 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
         }
     }, [messages.length]);
 
-    // Check relay connectivity on mount
+    // Watch auth state
     useEffect(() => {
-        const checkRelay = async () => {
-            try {
-                const res = await fetch(`${getRelayUrl()}/api/remote/state`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setRelayConnected(!!data.timestamp || res.ok);
-                }
-            } catch {
-                setRelayConnected(false);
-            }
-        };
-        checkRelay();
-        const interval = setInterval(checkRelay, 10000);
-        return () => clearInterval(interval);
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setIsAuthenticated(!!user);
+        });
+        return unsubscribe;
     }, []);
 
-    // Poll for responses from the desktop
+    // Listen for desktop state via Firestore
     useEffect(() => {
-        const pollResponses = async () => {
-            if (!pendingCommandId.current) return;
+        if (!isAuthenticated) return;
 
-            try {
-                const res = await fetch(
-                    `${getRelayUrl()}/api/remote/responses?since=${lastResponseTime.current}`
-                );
-                if (!res.ok) return;
+        const unsubscribe = remoteRelayService.onDesktopState((state) => {
+            setDesktopState(state);
+        });
 
-                const data = await res.json();
-                const responses = data.responses as Array<{
-                    commandId: string;
-                    text: string;
-                    role: string;
-                    timestamp: number;
-                    isStreaming?: boolean;
-                    agentId?: string;
-                }>;
+        return unsubscribe;
+    }, [isAuthenticated]);
 
-                if (!responses || responses.length === 0) return;
-
-                for (const resp of responses) {
-                    if (resp.commandId !== pendingCommandId.current) continue;
-                    lastResponseTime.current = Math.max(lastResponseTime.current, resp.timestamp);
-
-                    if (resp.isStreaming) {
-                        // Update the streaming placeholder
-                        setMessages(prev => {
-                            const existing = prev.find(m => m.commandId === resp.commandId && m.role === 'model');
-                            if (existing) {
-                                return prev.map(m =>
-                                    m.commandId === resp.commandId && m.role === 'model'
-                                        ? { ...m, text: resp.text, isStreaming: true }
-                                        : m
-                                );
-                            }
-                            return [...prev, {
-                                id: `resp-${Date.now()}`,
-                                commandId: resp.commandId,
-                                role: 'model',
-                                text: resp.text,
-                                timestamp: resp.timestamp,
-                                agentId: resp.agentId,
-                                isStreaming: true,
-                            }];
-                        });
-                    } else {
-                        // Final response — replace streaming placeholder
-                        setMessages(prev => {
-                            const filtered = prev.filter(
-                                m => !(m.commandId === resp.commandId && m.role === 'model')
-                            );
-                            return [...filtered, {
-                                id: `resp-${Date.now()}`,
-                                commandId: resp.commandId,
-                                role: 'model',
-                                text: resp.text,
-                                timestamp: resp.timestamp,
-                                agentId: resp.agentId,
-                                isStreaming: false,
-                            }];
-                        });
-                        pendingCommandId.current = null;
-                        setIsWaiting(false);
-                    }
-                }
-            } catch (err) {
-                logger.warn('[AgentChat] Response poll failed:', err);
-            }
-        };
-
-        pollRef.current = setInterval(pollResponses, 1000);
+    // Cleanup response listener on unmount
+    useEffect(() => {
         return () => {
-            if (pollRef.current) clearInterval(pollRef.current);
+            if (responseUnsub.current) {
+                responseUnsub.current();
+                responseUnsub.current = null;
+            }
         };
     }, []);
 
     const handleSend = useCallback(async () => {
-        if (!input.trim() || isWaiting) return;
+        if (!input.trim() || isWaiting || !isAuthenticated) return;
         const userText = input.trim();
         setInput('');
         setIsWaiting(true);
@@ -169,30 +97,80 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
         }]);
 
         try {
-            // Send to the relay → desktop will pick it up
-            const res = await fetch(`${getRelayUrl()}/api/remote/send`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: userText }),
-            });
+            // Send command via Firestore
+            const commandId = await remoteRelayService.sendCommand(userText);
+            if (!commandId) throw new Error('Failed to send command');
 
-            if (!res.ok) throw new Error('Relay unavailable');
+            pendingCommandId.current = commandId;
+            logger.info(`[AgentChat] 📱→☁️ Command sent via Firestore: ${commandId}`);
 
-            const data = await res.json();
-            pendingCommandId.current = data.id;
-            logger.info(`[AgentChat] 📱→🖥️ Command sent: ${data.id}`);
+            // Listen for responses to this specific command
+            if (responseUnsub.current) responseUnsub.current();
+            responseUnsub.current = remoteRelayService.onResponse(
+                commandId,
+                (response: RemoteResponse) => {
+                    if (response.isStreaming) {
+                        // Update streaming placeholder
+                        setMessages(prev => {
+                            const existing = prev.find(
+                                m => m.commandId === response.commandId && m.role === 'model'
+                            );
+                            if (existing) {
+                                return prev.map(m =>
+                                    m.commandId === response.commandId && m.role === 'model'
+                                        ? { ...m, text: response.text, isStreaming: true }
+                                        : m
+                                );
+                            }
+                            return [...prev, {
+                                id: `resp-${Date.now()}`,
+                                commandId: response.commandId,
+                                role: 'model',
+                                text: response.text,
+                                timestamp: Date.now(),
+                                agentId: response.agentId,
+                                isStreaming: true,
+                            }];
+                        });
+                    } else {
+                        // Final response — replace streaming placeholder
+                        setMessages(prev => {
+                            const filtered = prev.filter(
+                                m => !(m.commandId === response.commandId && m.role === 'model')
+                            );
+                            return [...filtered, {
+                                id: `resp-${Date.now()}`,
+                                commandId: response.commandId,
+                                role: 'model',
+                                text: response.text,
+                                timestamp: Date.now(),
+                                agentId: response.agentId,
+                                isStreaming: false,
+                            }];
+                        });
+                        pendingCommandId.current = null;
+                        setIsWaiting(false);
+
+                        // Cleanup this specific listener
+                        if (responseUnsub.current) {
+                            responseUnsub.current();
+                            responseUnsub.current = null;
+                        }
+                    }
+                }
+            );
         } catch (error) {
             logger.error('[AgentChat] Failed to send command:', error);
             setMessages(prev => [...prev, {
                 id: `err-${Date.now()}`,
                 role: 'model',
-                text: '❌ Cannot reach the desktop. Make sure indiiOS is running on your computer.',
+                text: '❌ Cannot reach your agents. Make sure you\'re logged in and the desktop is running.',
                 timestamp: Date.now(),
             }]);
             setIsWaiting(false);
-            setInput(userText); // Restore the input
+            setInput(userText);
         }
-    }, [input, isWaiting]);
+    }, [input, isWaiting, isAuthenticated]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -201,17 +179,34 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
         }
     };
 
+    // If not authenticated, show login prompt
+    if (!isAuthenticated) {
+        return (
+            <div className="flex flex-col h-full items-center justify-center text-center p-6">
+                <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center mb-4">
+                    <LogIn className="w-6 h-6 text-purple-400" />
+                </div>
+                <p className="text-sm text-[#c9d1d9] font-medium mb-2">Sign in to connect</p>
+                <p className="text-xs text-[#484f58] max-w-[260px]">
+                    Log into indiiOS to access your agents remotely. Your desktop and phone use the same account — messages sync through Firestore in real-time.
+                </p>
+            </div>
+        );
+    }
+
+    const isDesktopOnline = desktopState?.online ?? false;
+
     return (
         <div className="flex flex-col h-full">
             {/* Connection status */}
-            <div className={`flex items-center gap-1.5 px-2 py-1 mb-2 rounded-lg text-[10px] ${relayConnected
-                    ? 'text-green-400 bg-green-900/10'
-                    : 'text-red-400 bg-red-900/10'
+            <div className={`flex items-center gap-1.5 px-2 py-1 mb-2 rounded-lg text-[10px] ${isDesktopOnline
+                ? 'text-green-400 bg-green-900/10'
+                : 'text-amber-400 bg-amber-900/10'
                 }`}>
-                {relayConnected ? (
-                    <><Wifi className="w-3 h-3" /> Connected to desktop</>
+                {isDesktopOnline ? (
+                    <><Wifi className="w-3 h-3" /> Desktop online — connected via cloud</>
                 ) : (
-                    <><WifiOff className="w-3 h-3" /> Desktop not reachable</>
+                    <><WifiOff className="w-3 h-3" /> Desktop offline — messages will queue</>
                 )}
             </div>
 
@@ -228,7 +223,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
                         </div>
                         <p className="text-sm text-[#c9d1d9] font-medium">Talk to your agents</p>
                         <p className="text-xs text-[#484f58] mt-1 max-w-[250px]">
-                            Messages go to your desktop's indiiOS — full access to all your agents, projects, and data
+                            Messages sync through Firestore — works from anywhere, any network
                         </p>
                     </div>
                 ) : (
@@ -245,8 +240,8 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
                                     )}
                                 </div>
                                 <div className={`max-w-[80%] px-3 py-2 rounded-xl text-xs leading-relaxed ${isUser
-                                        ? 'bg-blue-600/20 border border-blue-600/20 text-blue-100'
-                                        : 'bg-[#161b22] border border-[#30363d]/40 text-[#c9d1d9]'
+                                    ? 'bg-blue-600/20 border border-blue-600/20 text-blue-100'
+                                    : 'bg-[#161b22] border border-[#30363d]/40 text-[#c9d1d9]'
                                     }`}>
                                     {msg.agentId && msg.agentId !== 'generalist' && (
                                         <span className="text-[9px] text-purple-400 font-semibold uppercase tracking-wide block mb-1">
