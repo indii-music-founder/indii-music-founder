@@ -342,18 +342,20 @@ service cloud.firestore {
     // =========================================================================
     // Remote Relay (Firestore Cloud Relay — phone ↔ desktop)
     // =========================================================================
+    
+    // Desktop state document
     match /users/{userId}/remote-relay/{docId} {
       allow read, write: if isOwner(userId);
-      
-      // Commands subcollection (phone writes, desktop reads)
-      match /commands/{commandId} {
-        allow read, write: if isOwner(userId);
-      }
-      
-      // Responses subcollection (desktop writes, phone reads)
-      match /responses/{responseId} {
-        allow read, write: if isOwner(userId);
-      }
+    }
+    
+    // Commands (phone writes, desktop reads/updates)
+    match /users/{userId}/remote-relay-commands/{commandId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Responses (desktop writes, phone reads)
+    match /users/{userId}/remote-relay-responses/{responseId} {
+      allow read, write: if isOwner(userId);
     }
 
     // =========================================================================
