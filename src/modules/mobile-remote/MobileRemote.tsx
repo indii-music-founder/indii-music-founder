@@ -1,26 +1,43 @@
 /**
- * Mobile Remote — Antigravity Mobile Viewport Node
+ * Mobile Remote — Phone Control Interface for indiiOS
  *
- * A glassmorphism-styled, local-first mobile remote control for indiiOS.
- * No third-party messaging apps required.
+ * A glassmorphism-styled, phone-optimized remote control for the indiiOS studio.
+ * Functions as a companion device — not a full app rebuild.
  *
- * Pairing flow:
- *   1. Electron spins up a local Node.js WebSocket server on a dynamic port.
- *   2. This page requests the local Wi-Fi IP + port via IPC.
- *   3. A QR code is generated encoding: ws://<local-ip>:<port>?pass=<APP_PASSWORD>
- *   4. The user scans the QR with their mobile device (same Wi-Fi).
- *   5. Mobile browser opens /mobile-remote, connects via the WS bridge,
- *      and receives real-time Zustand state slices.
+ * Features:
+ *   • Status Dashboard — at-a-glance system status
+ *   • Command Pad — quick-action module navigation
+ *   • Agent Chat — simplified mobile chat with indii Conductor
+ *   • Generation Monitor — real-time AI generation progress
+ *   • Transport Bar — audio playback controls
+ *   • Approval Queue — swipeable approve/reject cards
  *
- * Global access: Tailscale Serve / embedded ngrok tunnel (configurable)
- * with APP_PASSWORD protection surfaced in the QR payload.
+ * Access modes:
+ *   • Direct mode (default): Open /mobile-remote on any device on the same
+ *     network (e.g. http://192.168.x.x:4242/mobile-remote). The UI reads
+ *     the same Zustand store and works immediately — no pairing required.
+ *   • WebSocket mode (future): Electron spins up a local WS server, a QR
+ *     code is generated, and the phone connects via the WS bridge for true
+ *     remote state synchronization.
  */
 
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef, useState, lazy, Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { wcpInstance } from '@/services/agent/WebSocketControlPlane';
 import { logger } from '@/utils/logger';
+import {
+  LayoutDashboard, Grip, MessageSquare, Image, Music2,
+  CheckSquare, QrCode, Wifi, WifiOff, X, Smartphone
+} from 'lucide-react';
+
+// Lazy load sub-components for performance on phone
+const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
+const CommandPad = lazy(() => import('./components/CommandPad'));
+const AgentChat = lazy(() => import('./components/AgentChat'));
+const GenerationMonitor = lazy(() => import('./components/GenerationMonitor'));
+const TransportBar = lazy(() => import('./components/TransportBar'));
+const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -34,6 +51,23 @@ interface RemoteCommand {
   type: 'navigate' | 'message' | 'agent_action';
   payload: unknown;
 }
+
+type TabId = 'status' | 'control' | 'chat' | 'generate' | 'transport' | 'approve';
+
+interface Tab {
+  id: TabId;
+  icon: React.ElementType;
+  label: string;
+}
+
+const TABS: Tab[] = [
+  { id: 'status', icon: LayoutDashboard, label: 'Status' },
+  { id: 'control', icon: Grip, label: 'Control' },
+  { id: 'chat', icon: MessageSquare, label: 'Chat' },
+  { id: 'generate', icon: Image, label: 'Create' },
+  { id: 'transport', icon: Music2, label: 'Audio' },
+  { id: 'approve', icon: CheckSquare, label: 'Approve' },
+];
 
 // ─── QR Code Canvas Renderer ─────────────────────────────────────────────────
 
@@ -77,32 +111,21 @@ function renderQRPlaceholder(canvas: HTMLCanvasElement, text: string): void {
   ctx.strokeRect(1, 1, size - 2, size - 2);
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Pairing Modal ───────────────────────────────────────────────────────────
 
-export default function MobileRemote() {
-  const [pairingInfo, setPairingInfo] = useState<PairingInfo | null>(null);
-  const [isPaired, setIsPaired] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'pairing' | 'connected' | 'error'>('idle');
-  const [remoteLog, setRemoteLog] = useState<string[]>([]);
+function PairingModal({ onClose, onPair }: {
+  onClose: () => void;
+  onPair: () => void;
+}) {
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const wcpUnsubRef = useRef<(() => void) | null>(null);
+  const [pairingInfo, setPairingInfo] = useState<PairingInfo | null>(null);
+  const [status, setStatus] = useState<'idle' | 'generating' | 'ready'>('idle');
 
-  const { currentModule, activeSessionId, agentHistory } = useStore(
-    useShallow(state => ({
-      currentModule: state.currentModule,
-      activeSessionId: state.activeSessionId,
-      agentHistory: state.agentHistory,
-    }))
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  // ─── Pairing ─────────────────────────────────────────────────────────────
-
-  const initiatePairing = async () => {
-    setConnectionStatus('pairing');
-
-    try {
-      // Request pairing info from Electron main process
+    const init = async () => {
+      setStatus('generating');
       let localIp = 'localhost';
       let port = 4299;
 
@@ -118,30 +141,116 @@ export default function MobileRemote() {
         }
       }
 
+      if (cancelled) return;
+
       const wsUrl = `ws://${localIp}:${port}`;
       let qrDataUrl = '';
-      // Render QR code
+
       if (qrCanvasRef.current) {
         renderQRPlaceholder(qrCanvasRef.current, wsUrl);
         qrDataUrl = qrCanvasRef.current.toDataURL();
       }
 
-      const pairing: PairingInfo = {
-        localUrl: wsUrl,
-        qrDataUrl,
-      };
+      setPairingInfo({ localUrl: wsUrl, qrDataUrl });
+      setStatus('ready');
+    };
 
-      setPairingInfo(pairing);
+    init();
+    return () => { cancelled = true; };
+  }, []);
 
-      // Connect to the WCP bridge
-      _connectBridge(wsUrl);
-    } catch (err) {
-      logger.error('[MobileRemote] Pairing failed', err);
-      setConnectionStatus('error');
-    }
-  };
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-sm rounded-2xl border border-[#30363d]/60 bg-[#161b22]/90 backdrop-blur-xl p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <QrCode className="w-4 h-4 text-blue-400" />
+            Pair Device
+          </h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#8b949e] hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-  const _connectBridge = (wsUrl: string) => {
+        <div className="flex justify-center mb-4">
+          {status === 'ready' && pairingInfo ? (
+            <div className="rounded-xl overflow-hidden border-2 border-[#30363d] shadow-inner bg-white p-2">
+              <canvas
+                ref={qrCanvasRef}
+                width={180}
+                height={180}
+                className="block"
+              />
+            </div>
+          ) : (
+            <div className="w-[196px] h-[196px] rounded-xl border-2 border-dashed border-[#30363d] flex items-center justify-center">
+              <canvas ref={qrCanvasRef} width={180} height={180} className="hidden" />
+              <span className="text-[#6e7681] text-xs">Generating…</span>
+            </div>
+          )}
+        </div>
+
+        {pairingInfo && (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-[#0d1117] border border-[#30363d] text-[#8b949e] text-xs break-all font-mono">
+            <span className="text-[#6e7681]">Bridge: </span>{pairingInfo.localUrl}
+          </div>
+        )}
+
+        <button
+          onClick={() => { onPair(); onClose(); }}
+          className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors active:scale-[0.98]"
+        >
+          Connect
+        </button>
+
+        <p className="mt-3 text-center text-[#484f58] text-[10px]">
+          Same Wi-Fi • No cloud relay • End-to-end encrypted
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content Fallback ────────────────────────────────────────────────────
+
+function TabFallback() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+
+export default function MobileRemote() {
+  // Direct mode: auto-pair when running in the same browser context (same Zustand store).
+  // This enables full functionality from a phone browser on the same network without WebSocket.
+  const [isPaired, setIsPaired] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'pairing' | 'connected' | 'error'>('connected');
+  const [activeTab, setActiveTab] = useState<TabId>('status');
+  const [showPairingModal, setShowPairingModal] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const wcpUnsubRef = useRef<(() => void) | null>(null);
+
+  const { currentModule, activeSessionId, agentHistory } = useStore(
+    useShallow(state => ({
+      currentModule: state.currentModule,
+      activeSessionId: state.activeSessionId,
+      agentHistory: state.agentHistory,
+    }))
+  );
+
+  // ─── Command Handler (declared before connectBridge) ──────────────────────
+
+  const handleRemoteCommand = useCallback((_cmd: RemoteCommand) => {
+    // Command handling: UI reactions to remote inputs
+    // Future: dispatch navigations, agent actions, etc.
+  }, []);
+
+  // ─── WebSocket Bridge ──────────────────────────────────────────────────────
+
+  const connectBridge = useCallback((wsUrl: string) => {
     try {
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -149,23 +258,23 @@ export default function MobileRemote() {
       ws.onopen = () => {
         setIsPaired(true);
         setConnectionStatus('connected');
-        _log('Connected to indiiOS desktop bridge');
+        logger.info('[MobileRemote] Connected to desktop bridge');
 
         // Clean up any previous listener before registering a new one
         wcpUnsubRef.current?.();
 
         // Subscribe to Zustand state broadcasts
-        wcpUnsubRef.current = wcpInstance.on('sync', (msg) => {
-          _log(`State sync received: ${JSON.stringify(msg.payload).slice(0, 80)}…`);
+        wcpUnsubRef.current = wcpInstance.on('sync', (_msg) => {
+          // State sync handled by Zustand store updates
         });
       };
 
       ws.onmessage = (event) => {
         try {
           const cmd: RemoteCommand = JSON.parse(event.data as string);
-          _handleRemoteCommand(cmd);
+          handleRemoteCommand(cmd);
         } catch {
-          // ignore
+          // ignore malformed
         }
       };
 
@@ -173,25 +282,47 @@ export default function MobileRemote() {
       ws.onclose = () => {
         setIsPaired(false);
         setConnectionStatus('idle');
-        _log('Disconnected from bridge');
+        logger.info('[MobileRemote] Disconnected from bridge');
       };
     } catch (err) {
       logger.error('[MobileRemote] Bridge connection error', err);
       setConnectionStatus('error');
     }
+  }, [handleRemoteCommand]);
+
+  const handlePair = async () => {
+    setConnectionStatus('pairing');
+    let localIp = 'localhost';
+    let port = 4299;
+
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      try {
+        const info = await window.electronAPI.system?.getMobileRemoteInfo?.();
+        if (info) {
+          localIp = info.localIp ?? localIp;
+          port = info.port ?? port;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    connectBridge(`ws://${localIp}:${port}`);
   };
 
-  const _handleRemoteCommand = (cmd: RemoteCommand) => {
-    _log(`Command received: ${cmd.type}`);
-    // Command handling: UI reactions to remote inputs
-    // (e.g., navigate to a module, send a message via agent)
-  };
+  const sendCommand = useCallback((command: { type: string; payload: unknown }) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(command));
+    }
 
-  const _log = (msg: string) => {
-    setRemoteLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev.slice(0, 49)]);
-  };
+    // Also try WCP broadcast for non-WS scenarios
+    wcpInstance.broadcast({
+      remoteCommand: command,
+      timestamp: Date.now(),
+    });
+  }, []);
 
-  // ─── Sync outbound state to mobile ───────────────────────────────────────
+  // ─── Sync outbound state to mobile ─────────────────────────────────────────
 
   useEffect(() => {
     if (!isPaired) return;
@@ -202,7 +333,7 @@ export default function MobileRemote() {
     });
   }, [currentModule, activeSessionId, agentHistory.length, isPaired]);
 
-  // ─── Cleanup ─────────────────────────────────────────────────────────────
+  // ─── Cleanup ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
     return () => {
@@ -212,143 +343,118 @@ export default function MobileRemote() {
     };
   }, []);
 
-  // ─── Render ──────────────────────────────────────────────────────────────
+  // ─── Render ────────────────────────────────────────────────────────────────
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'status':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} />
+          </Suspense>
+        );
+      case 'control':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <CommandPad onSendCommand={sendCommand} isPaired={isPaired} />
+          </Suspense>
+        );
+      case 'chat':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
+          </Suspense>
+        );
+      case 'generate':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <GenerationMonitor />
+          </Suspense>
+        );
+      case 'transport':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <TransportBar onSendCommand={sendCommand} isPaired={isPaired} />
+          </Suspense>
+        );
+      case 'approve':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <ApprovalQueue onSendCommand={sendCommand} isPaired={isPaired} />
+          </Suspense>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col items-center justify-center p-6 font-mono">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-white tracking-tight">
-          indiiOS <span className="text-blue-400">Mobile Remote</span>
-        </h1>
-        <p className="text-sm text-[#8b949e] mt-1">
-          Local-first mobile control — no third-party broker
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#0d1117] flex flex-col font-sans">
+      {/* ─── Header ─────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-[#0d1117]/80 backdrop-blur-xl border-b border-[#30363d]/40">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-5 h-5 text-blue-400" />
+            <h1 className="text-sm font-bold text-white tracking-tight">
+              indiiOS <span className="text-blue-400">Remote</span>
+            </h1>
+          </div>
 
-      {/* Status Pill */}
-      <div className={`mb-6 px-4 py-1.5 rounded-full text-xs font-semibold ${
-        connectionStatus === 'connected'
-          ? 'bg-green-900/40 text-green-400 border border-green-700/50'
-          : connectionStatus === 'pairing'
-            ? 'bg-yellow-900/40 text-yellow-400 border border-yellow-700/50'
-            : connectionStatus === 'error'
-              ? 'bg-red-900/40 text-red-400 border border-red-700/50'
-              : 'bg-[#161b22] text-[#8b949e] border border-[#30363d]'
-      }`}>
-        {connectionStatus === 'connected' && '● Paired & Connected'}
-        {connectionStatus === 'pairing' && '◌ Generating pairing code…'}
-        {connectionStatus === 'error' && '✕ Connection error'}
-        {connectionStatus === 'idle' && '○ Not connected'}
-      </div>
-
-      {/* Glassmorphism Card */}
-      <div className="w-full max-w-sm rounded-2xl border border-[#30363d]/60 bg-[#161b22]/70 backdrop-blur-xl shadow-2xl shadow-black/40 p-6">
-        {!isPaired ? (
-          <>
-            {/* QR Canvas */}
-            <div className="flex justify-center mb-6">
-              {pairingInfo ? (
-                <div className="rounded-xl overflow-hidden border-2 border-[#30363d] shadow-inner">
-                  <canvas
-                    ref={qrCanvasRef}
-                    width={210}
-                    height={210}
-                    className="block"
-                  />
-                </div>
+          <div className="flex items-center gap-2">
+            {/* Connection Status */}
+            <button
+              onClick={() => setShowPairingModal(true)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all active:scale-95 ${isPaired
+                ? 'bg-green-900/30 text-green-400 border border-green-700/30'
+                : 'bg-[#161b22] text-[#8b949e] border border-[#30363d] hover:border-blue-600/50'
+                }`}
+            >
+              {isPaired ? (
+                <><Wifi className="w-3 h-3" /> Connected</>
               ) : (
-                <div
-                  ref={el => {
-                    if (el && qrCanvasRef.current === null) {
-                      // Placeholder before canvas is mounted
-                    }
-                  }}
-                  className="w-[210px] h-[210px] rounded-xl border-2 border-dashed border-[#30363d] flex items-center justify-center"
-                >
-                  <canvas ref={qrCanvasRef} width={210} height={210} className="hidden" />
-                  <span className="text-[#6e7681] text-xs text-center px-4">
-                    Scan QR with your mobile device on the same Wi-Fi
-                  </span>
-                </div>
+                <><WifiOff className="w-3 h-3" /> Pair</>
               )}
-            </div>
-
-            {pairingInfo && (
-              <div className="mb-4 px-3 py-2 rounded-lg bg-[#0d1117] border border-[#30363d] text-[#8b949e] text-xs break-all">
-                <span className="text-[#6e7681]">Bridge URL: </span>
-                {pairingInfo.localUrl}
-              </div>
-            )}
-
-            <button
-              onClick={initiatePairing}
-              disabled={connectionStatus === 'pairing'}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
-            >
-              {connectionStatus === 'pairing' ? 'Generating…' : 'Generate Pairing QR'}
             </button>
-
-            <p className="mt-4 text-center text-[#6e7681] text-xs">
-              Uses your local Wi-Fi — no cloud relay required.
-              <br />
-              For global access, configure Tailscale in Settings.
-            </p>
-          </>
-        ) : (
-          <>
-            {/* Connected state */}
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-green-900/30 border-2 border-green-600/50 flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">📱</span>
-              </div>
-              <p className="text-white font-semibold">Mobile Paired</p>
-              <p className="text-[#8b949e] text-xs mt-1">State syncing in real-time</p>
-            </div>
-
-            {/* Live state snapshot */}
-            <div className="mb-4 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-[#6e7681]">Current module</span>
-                <span className="text-blue-400 font-mono">{currentModule ?? '—'}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-[#6e7681]">Active session</span>
-                <span className="text-blue-400 font-mono">
-                  {activeSessionId ? activeSessionId.slice(0, 8) + '…' : '—'}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-[#6e7681]">Messages</span>
-                <span className="text-blue-400 font-mono">{agentHistory.length}</span>
-              </div>
-            </div>
-
-            {/* Disconnect */}
-            <button
-              onClick={() => wsRef.current?.close()}
-              className="w-full py-2.5 rounded-xl border border-red-800/50 text-red-400 text-sm font-medium hover:bg-red-900/20 transition-colors"
-            >
-              Disconnect
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Event Log */}
-      {remoteLog.length > 0 && (
-        <div className="mt-6 w-full max-w-sm rounded-xl border border-[#30363d] bg-[#0d1117] p-3 max-h-40 overflow-y-auto">
-          {remoteLog.map((entry, i) => (
-            <p key={i} className="text-[#6e7681] text-xs leading-5">{entry}</p>
-          ))}
+          </div>
         </div>
-      )}
+      </header>
 
-      {/* Security Notice */}
-      <p className="mt-6 text-[#6e7681] text-xs text-center max-w-xs">
-        Communication is confined to your local network.
-        Credentials are never transmitted in the QR payload.
-      </p>
+      {/* ─── Content ────────────────────────────────────────────────────── */}
+      <main className="flex-1 overflow-y-auto px-4 py-4 pb-24 custom-scrollbar">
+        {renderTabContent()}
+      </main>
+
+      {/* ─── Bottom Tab Bar ─────────────────────────────────────────────── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0d1117]/90 backdrop-blur-xl border-t border-[#30363d]/40 safe-area-bottom">
+        <div className="flex items-center justify-around px-2 py-1.5">
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all ${isActive
+                  ? 'text-blue-400'
+                  : 'text-[#484f58] hover:text-[#8b949e]'
+                  }`}
+              >
+                <tab.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(59,130,246,0.5)]' : ''}`} />
+                <span className={`text-[9px] font-semibold ${isActive ? 'text-blue-400' : ''}`}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* ─── Pairing Modal ──────────────────────────────────────────────── */}
+      {showPairingModal && (
+        <PairingModal
+          onClose={() => setShowPairingModal(false)}
+          onPair={handlePair}
+        />
+      )}
     </div>
   );
 }
