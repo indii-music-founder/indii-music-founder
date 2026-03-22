@@ -2,6 +2,41 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.30.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.29.0...v1.30.0) (2026-03-22)
+
+
+### Features
+
+* **agents:** 17/17 A-grade stress test — prompt hardening + scoring improvements ([ebf8f49](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ebf8f49f66da05ed1ae2d618f747aedab6f3799d))
+* **agents:** rewrite 6 thin prompts to gold standard (avg 29x expansion) ([39b446e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/39b446e84530ec3d9a35836e2dda5c5f5ae2edf8))
+* **agents:** scaffold fine-tuned model registry with feature flag ([730d935](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/730d935bfde0e06ae585dbd575593ef59f982946))
+* **agents:** wire 17 fine-tuned model endpoints from R3 Vertex AI training ([20674c7](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/20674c756847c238d6418ad6717b90ac8c80425f))
+* **agents:** wire final 3 R3 fine-tuned endpoints (devops, screenwriter, curriculum) ([b0cd82a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b0cd82a990ebd61371846b4069a91974405d44ee))
+* Introduce new skill definitions and update existing skill documentation and benchmark results. ([7e9af3d](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7e9af3d273b2a7bff65f81efd0322a501fc68baf))
+* **training:** elite distribution agent — 100 world-class examples ([e79dd03](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e79dd03a16e293cfd23ff932a728e18fa61601fe))
+* **training:** elite finance agent — 100 world-class examples ([c57cee9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c57cee95a5e29d65c2358ac35fbfb52fb8f16bec))
+* **training:** elite legal agent — 100 world-class examples ([7a714b2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7a714b2c3b8f7d0f64db535261c156e8fb6f1a4b))
+* **training:** elite publishing agent — 100 world-class examples ([1028ed5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1028ed5c46b3e82e760f5bb4044801da996f24c9))
+* **training:** expand agent training datasets with new scenarios ([d8f89b0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d8f89b0660886166c65d791268a1b1639c3b9946))
+* **training:** expand Brand dataset 30 → 60 examples ([bd1d6bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/bd1d6bf16911ccdba91e2f9ccf5492321c614fc7))
+* **training:** expand Director 49→60 and Legal 59→60 ([0153418](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0153418b31fb604f8fbebd24249b3a4a99a3813c))
+* **training:** expand Licensing dataset 44 → 60 examples ([8f2670e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8f2670e9c4dade805d392d58869940fce5e9f789))
+* **training:** expand Music dataset 44 → 65 examples ([a8f1e12](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a8f1e124b9ea5c3e5a64efc2da7c4a20764360ad))
+* **training:** expand Producer dataset 47 → 60 examples ([fed1039](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/fed103918f1ad70bdd353a840a42b56ab22070e8))
+* **training:** expand Publicist dataset 48 → 60 examples ([d3d9463](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d3d94633712338959feca98b09ebcb6e37cc3896))
+* **training:** expand Road dataset 46 → 60 examples ([579bbd7](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/579bbd759afd4e0329e5d6ecec9146753ba18f33))
+* **training:** expand Screenwriter dataset 45 → 60 examples ([dfd957a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/dfd957a53731e7d4eaa9aaefbcb95465ff2864f4))
+* **training:** expand Video dataset 44 → 60 examples ([4c1ae55](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4c1ae5518da491d5344288f805f89a82544540fd))
+
+
+### Bug Fixes
+
+* **ci:** resolve lint errors and duplicate scenario_id ([0af7cbe](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0af7cbe7f6187811e8635e458f8418e999a5f699))
+* **datasets:** 2026 readiness audit — backfill fields, normalize categories, update pricing ([0a71684](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0a7168449d6ce8024e7e3abd8a411770f9abefba))
+* **datasets:** deduplicate scenario IDs across merchandise, security, social, publishing datasets ([d2d5ef1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d2d5ef12b97aa574453a836702118dffcc7560ef))
+* **model-policy:** replace banned gemini-2.5-flash with AI_MODELS.TEXT.FAST ([dd9a9ed](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/dd9a9ed735d20288848bf4644200252a503c311a))
+* **onboarding:** resolve THINKING hang with 45s timeout + categorized error recovery ([cd0700a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/cd0700a92ba0e0faef3ebbf3e03f67486bc7aa44))
+
 ## [1.29.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.2...v1.29.0) (2026-03-21)
 
 
