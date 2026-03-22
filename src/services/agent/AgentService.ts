@@ -59,7 +59,12 @@ export class AgentService {
      * @param attachments Optional file attachments (images/PDFs).
      * @param forcedAgentId Optional specific agent to use, bypassing orchestration.
      */
-    async sendMessage(text: string, attachments?: { mimeType: string; base64: string }[], forcedAgentId?: string): Promise<void> {
+    async sendMessage(
+        text: string,
+        attachments?: { mimeType: string; base64: string }[],
+        forcedAgentId?: string,
+        options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api' }
+    ): Promise<void> {
         if (this.isProcessing) return;
         this.isProcessing = true;
 
@@ -84,7 +89,8 @@ export class AgentService {
             role: 'user',
             text: redactedText,
             timestamp: Date.now(),
-            attachments
+            attachments,
+            source: options?.source || 'desktop',
         };
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();

@@ -312,6 +312,14 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                         ))}
                     </div>
                 )}
+
+                {/* Mobile Remote Source Badge */}
+                {msg.source === 'mobile-remote' && (
+                    <div className="mt-2 flex items-center gap-1 text-[10px] text-cyan-400/70 font-medium tracking-wide">
+                        <span>📱</span>
+                        <span>Sent from Mobile Remote</span>
+                    </div>
+                )}
             </div>
         </motion.div>
     );

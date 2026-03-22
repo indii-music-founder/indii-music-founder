@@ -1,6 +1,8 @@
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
 
+export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api';
+
 export interface AgentMessage {
     id: string;
     role: 'user' | 'model' | 'system';
@@ -11,6 +13,10 @@ export interface AgentMessage {
     thoughts?: AgentThought[];
     agentId?: string;
     thoughtSignature?: string;
+    /** Where this message originated from */
+    source?: MessageSource;
+    /** Optional device/context metadata (device name, IP, etc.) */
+    metadata?: Record<string, unknown>;
 }
 
 export interface AgentThought {
@@ -32,6 +38,8 @@ export interface ConversationSession {
     /** Background job namespace, e.g. "cron:album-rollout". Namespaced sessions
      *  are isolated from the main UI thread and managed by the WCP lock system. */
     namespace?: string;
+    /** Where this session originated from (desktop, mobile-remote, etc.) */
+    source?: MessageSource;
 }
 
 export interface AgentSessionSlice {
