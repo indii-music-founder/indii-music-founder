@@ -12,9 +12,9 @@
  *   Phone  → onDesktopState()   → listens to state doc
  *
  * Collection structure:
- *   users/{userId}/remote-relay/state        ← desktop state doc
- *   users/{userId}/remote-relay/commands/    ← phone writes, desktop reads
- *   users/{userId}/remote-relay/responses/   ← desktop writes, phone reads
+ *   users/{userId}/remote-relay/state                     ← desktop state doc
+ *   users/{userId}/remote-relay-commands/{commandId}      ← phone writes, desktop reads
+ *   users/{userId}/remote-relay-responses/{responseId}    ← desktop writes, phone reads
  *
  * Security: isOwner(userId) — only the authenticated user touches their data.
  * Works cross-network: cellular, different WiFi, anywhere with internet.
@@ -85,13 +85,13 @@ function getRelayRef() {
 function getCommandsRef() {
     const uid = getUserId();
     if (!uid) return null;
-    return collection(db, 'users', uid, 'remote-relay', 'commands', 'items');
+    return collection(db, 'users', uid, 'remote-relay-commands');
 }
 
 function getResponsesRef() {
     const uid = getUserId();
     if (!uid) return null;
-    return collection(db, 'users', uid, 'remote-relay', 'responses', 'items');
+    return collection(db, 'users', uid, 'remote-relay-responses');
 }
 
 // ---------------------------------------------------------------------------
@@ -233,9 +233,9 @@ class RemoteRelayService {
      * Mark a command as processing (desktop side).
      */
     async markCommandProcessing(commandId: string): Promise<void> {
-        const ref = getCommandsRef();
-        if (!ref) return;
-        await updateDoc(doc(ref.firestore, ref.path, commandId), {
+        const uid = getUserId();
+        if (!uid) return;
+        await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
             status: 'processing',
         });
     }
@@ -244,9 +244,9 @@ class RemoteRelayService {
      * Mark a command as completed (desktop side).
      */
     async markCommandCompleted(commandId: string): Promise<void> {
-        const ref = getCommandsRef();
-        if (!ref) return;
-        await updateDoc(doc(ref.firestore, ref.path, commandId), {
+        const uid = getUserId();
+        if (!uid) return;
+        await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
             status: 'completed',
         });
     }
@@ -263,13 +263,16 @@ class RemoteRelayService {
         const ref = getResponsesRef();
         if (!ref) return;
 
-        const response: RemoteResponse = {
+        // Firestore rejects undefined values — only include agentId if defined
+        const response: Record<string, unknown> = {
             commandId,
             text,
-            agentId,
             timestamp: serverTimestamp(),
             isStreaming,
         };
+        if (agentId !== undefined) {
+            response.agentId = agentId;
+        }
 
         await addDoc(ref, response);
         logger.info(`[RemoteRelay] 🖥️ Response sent for command ${commandId} (${text.length} chars)`);
