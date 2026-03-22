@@ -240,15 +240,15 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                         const count = filter === 'all'
                                             ? messages.length
                                             : messages.filter(m => filter === 'desktop' ? (!m.source || m.source === 'desktop') : m.source === filter).length;
-                                        const label = filter === 'all' ? 'All' : filter === 'desktop' ? 'Desktop' : 'Remote';
+                                        const label = filter === 'all' ? 'All' : filter === 'desktop' ? 'Desktop' : 'Controller';
                                         const isActive = sourceFilter === filter;
                                         return (
                                             <button
                                                 key={filter}
                                                 onClick={() => setSourceFilter(filter)}
                                                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isActive
-                                                        ? `bg-${activeBrandColor}-500/20 text-${activeBrandColor}-300 border border-${activeBrandColor}-500/30`
-                                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                                                    ? `bg-${activeBrandColor}-500/20 text-${activeBrandColor}-300 border border-${activeBrandColor}-500/30`
+                                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                                                     }`}
                                             >
                                                 {filter === 'mobile-remote' && <Smartphone size={10} />}
