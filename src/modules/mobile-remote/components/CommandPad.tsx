@@ -7,6 +7,7 @@
  */
 
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { logger } from '@/utils/logger';
 import {
@@ -31,11 +32,13 @@ interface QuickAction {
 }
 
 export default function CommandPad({ onSendCommand }: CommandPadProps) {
-    const { setModule, toggleAgentWindow, isAgentOpen } = useStore(state => ({
-        setModule: state.setModule,
-        toggleAgentWindow: state.toggleAgentWindow,
-        isAgentOpen: state.isAgentOpen,
-    }));
+    const { setModule, toggleAgentWindow, isAgentOpen } = useStore(
+        useShallow(state => ({
+            setModule: state.setModule,
+            toggleAgentWindow: state.toggleAgentWindow,
+            isAgentOpen: state.isAgentOpen,
+        }))
+    );
 
     const navigateTo = (moduleId: ModuleId) => {
         setModule(moduleId);

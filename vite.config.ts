@@ -54,6 +54,144 @@ export default defineConfig({
         });
       }
     },
+    // ================================================================
+    // REMOTE RELAY: HTTP endpoints for phone ↔ desktop communication
+    // Phone POSTs messages → server queues them → desktop polls & processes
+    // Desktop POSTs responses → server queues them → phone polls & displays
+    // No auth needed — local network only (same Vite dev server)
+    // ================================================================
+    {
+      name: 'remote-relay',
+      configureServer(server) {
+        // In-memory message queues (cleared on server restart)
+        const commandQueue: Array<{ id: string; text: string; timestamp: number }> = [];
+        const responseQueue: Array<{ id: string; commandId: string; text: string; role: string; timestamp: number; isStreaming?: boolean }> = [];
+        // Desktop state that the phone can read
+        let desktopState: Record<string, unknown> = {};
+
+        // Helper to parse JSON body from IncomingMessage
+        function parseBody(req: import('http').IncomingMessage): Promise<Record<string, unknown>> {
+          return new Promise((resolve, reject) => {
+            let body = '';
+            req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+            req.on('end', () => {
+              try { resolve(body ? JSON.parse(body) : {}); }
+              catch { reject(new Error('Invalid JSON')); }
+            });
+            req.on('error', reject);
+          });
+        }
+
+        server.middlewares.use(async (req, res, next) => {
+          const url = req.url || '';
+
+          // --- Phone → Server: Send a command ---
+          if (url === '/api/remote/send' && req.method === 'POST') {
+            try {
+              const body = await parseBody(req);
+              const msg = {
+                id: `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                text: String(body.text || ''),
+                timestamp: Date.now(),
+              };
+              commandQueue.push(msg);
+              // Cap queue size
+              if (commandQueue.length > 100) commandQueue.splice(0, commandQueue.length - 100);
+              res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+              res.end(JSON.stringify({ ok: true, id: msg.id }));
+            } catch {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Invalid request' }));
+            }
+            return;
+          }
+
+          // --- Desktop → Server: Poll for new commands ---
+          if (url.startsWith('/api/remote/poll') && req.method === 'GET') {
+            const sinceParam = new URL(url, 'http://localhost').searchParams.get('since');
+            const since = sinceParam ? parseInt(sinceParam, 10) : 0;
+            const newCommands = commandQueue.filter(c => c.timestamp > since);
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify({ commands: newCommands }));
+            return;
+          }
+
+          // --- Desktop → Server: Post a response ---
+          if (url === '/api/remote/respond' && req.method === 'POST') {
+            try {
+              const body = await parseBody(req);
+              const resp = {
+                id: `resp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                commandId: String(body.commandId || ''),
+                text: String(body.text || ''),
+                role: String(body.role || 'model'),
+                timestamp: Date.now(),
+                isStreaming: Boolean(body.isStreaming),
+              };
+              // Replace existing response for same commandId if streaming
+              const existingIdx = responseQueue.findIndex(r => r.commandId === resp.commandId);
+              if (existingIdx >= 0) {
+                responseQueue[existingIdx] = resp;
+              } else {
+                responseQueue.push(resp);
+              }
+              if (responseQueue.length > 100) responseQueue.splice(0, responseQueue.length - 100);
+              res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+              res.end(JSON.stringify({ ok: true }));
+            } catch {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Invalid request' }));
+            }
+            return;
+          }
+
+          // --- Phone → Server: Poll for responses ---
+          if (url.startsWith('/api/remote/responses') && req.method === 'GET') {
+            const sinceParam = new URL(url, 'http://localhost').searchParams.get('since');
+            const since = sinceParam ? parseInt(sinceParam, 10) : 0;
+            const newResponses = responseQueue.filter(r => r.timestamp > since);
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify({ responses: newResponses }));
+            return;
+          }
+
+          // --- Desktop → Server: Push current state ---
+          if (url === '/api/remote/state' && req.method === 'POST') {
+            try {
+              desktopState = await parseBody(req);
+              res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+              res.end(JSON.stringify({ ok: true }));
+            } catch {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Invalid request' }));
+            }
+            return;
+          }
+
+          // --- Phone → Server: Read desktop state ---
+          if (url === '/api/remote/state' && req.method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify(desktopState));
+            return;
+          }
+
+          // --- CORS preflight ---
+          if (url.startsWith('/api/remote/') && req.method === 'OPTIONS') {
+            res.writeHead(204, {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type',
+            });
+            res.end();
+            return;
+          }
+
+          next();
+        });
+
+        console.log('\x1b[35m%s\x1b[0m', '  📱 Remote Relay active: /api/remote/*');
+      }
+    },
     // Source Code Obfuscation (HEY Audit Appendix D)
     // process.env.NODE_ENV === 'production' && WebpackObfuscator({
     //   rotateStringArray: true,

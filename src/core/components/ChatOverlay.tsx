@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'motion/react';
-import { X, Minimize2, RefreshCw, Bot, Maximize2 } from 'lucide-react';
+import { X, Minimize2, RefreshCw, Bot, Maximize2, Smartphone } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore } from '@/core/store';
 import type { AgentMessage } from '@/core/store';
@@ -36,6 +36,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
     const [isStealth, setIsStealth] = useState(false);
     const [localSize, setLocalSize] = useState(windowSize);
     const isResizing = useRef(false);
+    const [sourceFilter, setSourceFilter] = useState<'all' | 'desktop' | 'mobile-remote'>('all');
 
     // Virtuoso ref for auto-scrolling
     const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -232,6 +233,37 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                 </div>
                             </div>
 
+                            {/* Source Filter Tabs — only show if remote messages exist */}
+                            {messages.some(m => m.source === 'mobile-remote') && (
+                                <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-white/5 bg-black/20 shrink-0">
+                                    {(['all', 'desktop', 'mobile-remote'] as const).map(filter => {
+                                        const count = filter === 'all'
+                                            ? messages.length
+                                            : messages.filter(m => filter === 'desktop' ? (!m.source || m.source === 'desktop') : m.source === filter).length;
+                                        const label = filter === 'all' ? 'All' : filter === 'desktop' ? 'Desktop' : 'Remote';
+                                        const isActive = sourceFilter === filter;
+                                        return (
+                                            <button
+                                                key={filter}
+                                                onClick={() => setSourceFilter(filter)}
+                                                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isActive
+                                                        ? `bg-${activeBrandColor}-500/20 text-${activeBrandColor}-300 border border-${activeBrandColor}-500/30`
+                                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                                                    }`}
+                                            >
+                                                {filter === 'mobile-remote' && <Smartphone size={10} />}
+                                                {label}
+                                                {count > 0 && (
+                                                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${isActive ? `bg-${activeBrandColor}-500/30` : 'bg-white/5'}`}>
+                                                        {count}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
                             {/* Messages Area */}
                             <div className="flex-1 relative bg-[#0c0c0e] min-h-0">
                                 <div className={`absolute top-1/4 left-1/4 w-64 h-64 bg-${activeBrandColor}-900/10 rounded-full blur-[100px] opacity-50`} />
@@ -248,7 +280,12 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                         <Virtuoso
                                             ref={virtuosoRef}
                                             style={{ height: '100%' }}
-                                            data={messages}
+                                            data={sourceFilter === 'all'
+                                                ? messages
+                                                : messages.filter(m => sourceFilter === 'desktop'
+                                                    ? (!m.source || m.source === 'desktop')
+                                                    : m.source === sourceFilter
+                                                )}
                                             atBottomStateChange={setIsAutoScrolling}
                                             itemContent={itemContent}
                                             components={{

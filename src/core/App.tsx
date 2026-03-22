@@ -23,6 +23,7 @@ import { BiometricGate } from './components/auth/BiometricGate';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
+import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
@@ -455,6 +456,9 @@ export default function App() {
     // URL sync: self-guards on authLoading internally, safe to call unconditionally here
     useURLSync();
     const shortcutsModal = useGlobalShortcutsModal();
+
+    // 📱 Remote Relay: Listen for phone commands and process them through the desktop's agent pipeline
+    useRemoteCommandListener();
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
