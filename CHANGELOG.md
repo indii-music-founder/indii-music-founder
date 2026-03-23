@@ -2,6 +2,31 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.31.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.30.0...v1.31.0) (2026-03-23)
+
+
+### Features
+
+* **controller:** add real agent routing to indiiCONTROLLER relay ([82c9958](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/82c99586615b7f4cc8718b2ff3124bb5c0c3f759))
+* **mobile-remote:** bi-directional phone ↔ desktop relay + remote activity system ([cadf950](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/cadf950c20055924fc6f02dab19d8d4cd118cca8))
+* **mobile-remote:** Firestore Cloud Relay — works from anywhere ([062d1f4](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/062d1f4b12028067b97b237a5e2314f963638bdd))
+* phone auto-routes to indiiCONTROLLER — no studio on mobile ([f9e897e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/f9e897e1130d5924c00eef9a292b3f1547baec24))
+* **training:** elite brand agent — 100 examples (33% expert) ([a73db9c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a73db9c986bef532575d207a7253810573530cb7))
+* **training:** elite licensing agent — 100 world-class examples ([8e420b5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8e420b52e95b2a4233864a9535f1913b1f7f27bb))
+* **training:** elite marketing agent — 100 examples (31% expert) ([294f68a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/294f68a0a5a96414a5430a317e14ca6eb3b2c668))
+* **training:** elite music/producer agent — 100 examples (32% expert) ([1f1a90d](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1f1a90df05216d211cb8a9478adaf207a189bfb2))
+* **training:** elite publicist agent — 100 examples (36% expert) ([94056a3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/94056a3e0d96b8b54878d6e5c1ea3f3d43590e37))
+* **training:** elite road manager agent — 100 examples (31% expert) ([bd8e6fe](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/bd8e6fe31310bd245c4d72e599ee5cfc22d8eb2c))
+* **training:** elite social media agent — 100 examples (35% expert) ([33ec2b6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/33ec2b6b8e77e7a08e1170dcdfcba09dbf594377))
+* **training:** elite video agent — 100 examples (33% expert) ([576ec1e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/576ec1edf8d4d07bdf14e1d30059aa9eb05dc353))
+
+
+### Bug Fixes
+
+* **controller:** add retry loop for streaming response write-back ([60afbbb](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/60afbbb857d193c2fdbadff6d5e0d7c7a324f096))
+* **lint:** move Date.now() to useEffect to satisfy react-compiler purity rule ([d9b8dee](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d9b8dee09f0fa27a3cd214dc48120771d4fb58ed))
+* **remote-relay:** fix Firestore paths, indexes, and undefined agentId ([113a3fd](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/113a3fd077a0f6dab2fcfcaa4681e113d7941502))
+
 ## [1.30.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.29.0...v1.30.0) (2026-03-22)
 
 
