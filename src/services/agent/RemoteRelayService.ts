@@ -213,17 +213,18 @@ class RemoteRelayService {
             return () => { };
         }
 
-        const q = query(
-            ref,
-            where('status', '==', 'pending'),
-            orderBy('timestamp', 'asc')
-        );
+        // Simple query — no compound index needed.
+        // Filter status=='pending' client-side to avoid missing composite index.
+        logger.info('[RemoteRelay] 🖥️ Starting command listener...');
 
-        return onSnapshot(q, (snapshot) => {
+        return onSnapshot(ref, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
+                if (change.type === 'added' || change.type === 'modified') {
                     const data = change.doc.data() as RemoteCommand;
-                    callback({ ...data, id: change.doc.id });
+                    if (data.status === 'pending') {
+                        logger.info(`[RemoteRelay] 📥 Pending command received: ${change.doc.id}`);
+                        callback({ ...data, id: change.doc.id });
+                    }
                 }
             });
         }, (error) => {
