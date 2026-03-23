@@ -314,6 +314,10 @@ function useOnboardingRedirect() {
         // Already on onboarding — no redirect needed
         if (currentModule === 'onboarding') return;
 
+        // Never intercept standalone modules (indiiCONTROLLER, investor, capture, etc.)
+        // Users navigating directly to /mobile-remote should land there, not onboarding
+        if (STANDALONE_MODULES.includes(currentModule as ModuleId)) return;
+
         // Honor env var bypass (dev convenience)
         if (env.skipOnboarding) return;
 
@@ -469,6 +473,13 @@ export default function App() {
     // SSR-safe media query for desktop detection
     const isDesktop = useMediaQuery('(min-width: 768px)');
     const { isAnyPhone } = useMobile();
+
+    // 📱 Phone auto-route: on phones, the app IS indiiCONTROLLER — skip the studio entirely
+    useEffect(() => {
+        if (isAnyPhone && currentModule !== 'mobile-remote') {
+            useStore.getState().setModule('mobile-remote');
+        }
+    }, [isAnyPhone, currentModule]);
 
     // Gate: Block ALL rendering until Firebase onAuthStateChanged has fired at least once.
     // This prevents the app from flashing <LoginForm/> on page reload before the user\'s
