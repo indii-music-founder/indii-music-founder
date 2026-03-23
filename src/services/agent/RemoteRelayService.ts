@@ -47,6 +47,7 @@ export interface RemoteCommand {
     id?: string;
     text: string;
     targetAgentId?: string;
+    metadata?: Record<string, unknown>;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     status: 'pending' | 'processing' | 'completed';
     createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
@@ -57,6 +58,8 @@ export interface RemoteResponse {
     commandId: string;
     text: string;
     agentId?: string;
+    imageUrls?: string[];
+    isFinal?: boolean;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     isStreaming: boolean;
 }
@@ -107,7 +110,7 @@ class RemoteRelayService {
     /**
      * Send a command from the phone. Returns the command document ID.
      */
-    async sendCommand(text: string, targetAgentId?: string): Promise<string | null> {
+    async sendCommand(text: string, targetAgentId?: string, metadata?: Record<string, unknown>): Promise<string | null> {
         const ref = getCommandsRef();
         if (!ref) {
             logger.warn('[RemoteRelay] No auth — cannot send command');
@@ -120,6 +123,7 @@ class RemoteRelayService {
             status: 'pending',
             createdAt: serverTimestamp(),
             ...(targetAgentId ? { targetAgentId } : {}),
+            ...(metadata ? { metadata } : {}),
         };
 
         const docRef = await addDoc(ref, command);
@@ -260,24 +264,29 @@ class RemoteRelayService {
         commandId: string,
         text: string,
         agentId?: string,
-        isStreaming = false
+        isStreaming = false,
+        imageUrls?: string[]
     ): Promise<void> {
         const ref = getResponsesRef();
         if (!ref) return;
 
-        // Firestore rejects undefined values — only include agentId if defined
+        // Firestore rejects undefined values — only include optional fields if defined
         const response: Record<string, unknown> = {
             commandId,
             text,
             timestamp: serverTimestamp(),
             isStreaming,
+            isFinal: !isStreaming,
         };
         if (agentId !== undefined) {
             response.agentId = agentId;
         }
+        if (imageUrls && imageUrls.length > 0) {
+            response.imageUrls = imageUrls;
+        }
 
         await addDoc(ref, response);
-        logger.info(`[RemoteRelay] 🖥️ Response sent for command ${commandId} (${text.length} chars)`);
+        logger.info(`[RemoteRelay] 🖥️ Response sent for command ${commandId} (${text.length} chars, ${imageUrls?.length || 0} images)`);
     }
 
     /**
