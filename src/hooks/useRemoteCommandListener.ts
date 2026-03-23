@@ -165,6 +165,11 @@ function useHttpRelayFallback(enabled: boolean) {
 function useFirestoreRelay(enabled: boolean) {
     const isProcessing = useRef(false);
 
+    // Diagnostic: log every enabled transition
+    useEffect(() => {
+        logger.info(`[RemoteRelay/Firestore] ⚡ Hook enabled state: ${enabled}`);
+    }, [enabled]);
+
     const { currentModule, isAgentProcessing, activeSessionId } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -207,8 +212,13 @@ function useFirestoreRelay(enabled: boolean) {
 
     // Listen for commands from phone
     useEffect(() => {
-        if (!enabled) return;
+        logger.info(`[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=${enabled}`);
+        if (!enabled) {
+            logger.info('[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener');
+            return;
+        }
 
+        logger.info('[RemoteRelay/Firestore] 🚀 Registering command listener NOW...');
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
             if (isProcessing.current) return;
             isProcessing.current = true;
@@ -301,7 +311,9 @@ export function useRemoteCommandListener() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
+        logger.info('[RemoteRelay] 🔐 Setting up auth listener...');
         const unsubscribe = onAuthStateChanged(auth, (user) => {
+            logger.info(`[RemoteRelay] 🔐 Auth state changed: ${user ? 'SIGNED IN (' + user.uid.substring(0, 8) + ')' : 'SIGNED OUT'}`);
             setIsAuthenticated(!!user);
         });
         return unsubscribe;
