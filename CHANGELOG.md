@@ -2,6 +2,22 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.32.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.31.0...v1.32.0) (2026-03-23)
+
+
+### Features
+
+* add edge case scenarios for deceased artist licensing and restrictive 'royalty-free' samples to training data. ([7c9e759](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7c9e759f43ff9536e4f3f1062e49a28c9fda0826))
+* **controller:** add remote image generation from phone ([60ec7dc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/60ec7dc6280a5cffc02cb442eb6e8d9cfc526e84))
+
+
+### Bug Fixes
+
+* **controller:** fix response listener compound query + add Firestore diagnostics ([957d6a2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/957d6a293421badf3fc3b39808f02e076b71bda9))
+* **controller:** fix stale responses, relay routing, listener leaks ([dbd57b6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/dbd57b6ecf6372b9827fa9916a76bdffe6001a32))
+* **controller:** remove compound Firestore query causing silent failure ([6f1b3ad](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6f1b3ada3bd166eec887c0fe85844ec25f3dd052))
+* **relay:** prevent stuck commands from blocking the entire pipeline ([d31e73a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d31e73a2afc882328d34f18adbb45630f3954b09))
+
 ## [1.31.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.30.0...v1.31.0) (2026-03-23)
 
 
