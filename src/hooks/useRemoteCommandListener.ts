@@ -231,11 +231,20 @@ function useFirestoreRelay(enabled: boolean) {
                 // Run through the FULL agent pipeline with targeted agent
                 await agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' });
 
-                // Grab the latest agent response
-                const state = useStore.getState();
-                const lastResponse = state.agentHistory
-                    .filter(m => m.role === 'model' && m.text)
-                    .slice(-1)[0];
+                // Wait for the response to appear in the store (streaming may not be done yet)
+                let lastResponse: { text?: string; agentId?: string } | undefined;
+                for (let attempt = 0; attempt < 20; attempt++) {
+                    const state = useStore.getState();
+                    const candidate = state.agentHistory
+                        .filter(m => m.role === 'model' && m.text && !m.isStreaming)
+                        .slice(-1)[0];
+                    if (candidate && candidate.text && candidate.text.length > 5) {
+                        lastResponse = candidate;
+                        break;
+                    }
+                    logger.debug(`[RemoteRelay/Firestore] Waiting for agent response... attempt ${attempt + 1}/20`);
+                    await new Promise(r => setTimeout(r, 500));
+                }
 
                 if (lastResponse) {
                     await remoteRelayService.sendResponse(
@@ -245,6 +254,14 @@ function useFirestoreRelay(enabled: boolean) {
                         false
                     );
                     logger.info(`[RemoteRelay/Firestore] 🖥️→📱 Response sent (${lastResponse.text?.length} chars)`);
+                } else {
+                    logger.warn('[RemoteRelay/Firestore] No response found in agentHistory after 10s');
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        '⚠️ Agent processed but no response was captured. Please try again.',
+                        undefined,
+                        false
+                    );
                 }
 
                 // Mark command as completed
