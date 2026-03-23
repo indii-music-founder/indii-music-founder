@@ -29,7 +29,16 @@ export function useURLSync() {
         if (authLoading) return; // Wait for auth to fully resolve before processing deep links
 
         const pathSegments = location.pathname.split('/').filter(Boolean);
-        const targetModule = pathSegments[0] || 'dashboard';
+        let targetModule = pathSegments[0] || 'dashboard';
+
+        // Route aliases: friendly URLs that map to module IDs
+        const ROUTE_ALIASES: Record<string, string> = {
+            'controller': 'mobile-remote',
+            'remote': 'mobile-remote',
+        };
+        if (ROUTE_ALIASES[targetModule]) {
+            targetModule = ROUTE_ALIASES[targetModule];
+        }
 
         if (targetModule !== currentModule && isValidModule(targetModule)) {
             setModule(targetModule);
