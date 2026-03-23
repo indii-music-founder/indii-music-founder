@@ -325,14 +325,33 @@ function useFirestoreRelay(enabled: boolean) {
                     undefined,
                     true
                 );
+                writeDiagnostic('chat_processing_sent', { commandId: command.id });
+
+                // Pre-check: is the agent service available?
+                const agentBusy = (agentService as unknown as { isProcessing: boolean }).isProcessing;
+                if (agentBusy) {
+                    writeDiagnostic('agent_busy_reset', { commandId: command.id });
+                    // Force-reset the agent's processing lock — it may be stale from a previous crash
+                    (agentService as unknown as { isProcessing: boolean }).isProcessing = false;
+                }
 
                 // Run through the FULL agent pipeline with targeted agent
                 const historyLengthBefore = useStore.getState().agentHistory.length;
-                await agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' });
+                writeDiagnostic('agent_send_start', { commandId: command.id, historyLengthBefore, agent: targetAgent || 'auto' });
+
+                try {
+                    await agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' });
+                } catch (sendErr) {
+                    writeDiagnostic('agent_send_error', { commandId: command.id, error: String(sendErr) });
+                    throw sendErr;
+                }
+
+                writeDiagnostic('agent_send_complete', { commandId: command.id, historyLengthAfter: useStore.getState().agentHistory.length });
 
                 // Wait for a NEW response to appear (only entries AFTER our send)
+                // Increased to 30 attempts × 1s = 30s max wait
                 let lastResponse: { text?: string; agentId?: string } | undefined;
-                for (let attempt = 0; attempt < 20; attempt++) {
+                for (let attempt = 0; attempt < 30; attempt++) {
                     const state = useStore.getState();
                     const newEntries = state.agentHistory.slice(historyLengthBefore);
                     const candidate = newEntries
@@ -342,8 +361,14 @@ function useFirestoreRelay(enabled: boolean) {
                         lastResponse = candidate;
                         break;
                     }
-                    logger.debug(`[RemoteRelay/Firestore] Waiting for agent response... attempt ${attempt + 1}/20`);
-                    await new Promise(r => setTimeout(r, 500));
+                    if (attempt === 10) {
+                        writeDiagnostic('response_wait_slow', {
+                            commandId: command.id,
+                            newEntriesCount: newEntries.length,
+                            totalHistory: state.agentHistory.length
+                        });
+                    }
+                    await new Promise(r => setTimeout(r, 1000));
                 }
 
                 if (lastResponse) {
