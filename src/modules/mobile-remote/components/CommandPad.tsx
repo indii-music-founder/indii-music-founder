@@ -8,7 +8,7 @@
 
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { agentService } from '@/services/agent/AgentService';
+import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import {
     Palette, Video, Music, BarChart3, Sparkles,
@@ -52,12 +52,12 @@ export default function CommandPad({ onSendCommand }: CommandPadProps) {
             label: 'Generate',
             color: 'from-violet-600/40 to-violet-800/20 border-violet-500/40 text-violet-300',
             action: () => {
-                // Navigate to Creative module + send a prompt request to the agent
+                // Navigate to Creative module + send prompt through relay
                 navigateTo('creative');
-                agentService.sendMessage(
-                    'Open the image generation studio. I want to create something new.',
+                remoteRelayService.sendCommand(
+                    '[GENERATE_IMAGE] Create a stunning visual — cinematic lighting, bold composition',
                     undefined,
-                    'director'
+                    { aspectRatio: '1:1', type: 'generate_image' }
                 ).catch(err => logger.error('[CommandPad] Generate failed:', err));
             },
         },
@@ -67,7 +67,7 @@ export default function CommandPad({ onSendCommand }: CommandPadProps) {
             label: 'Ask indii',
             color: 'from-fuchsia-600/40 to-fuchsia-800/20 border-fuchsia-500/40 text-fuchsia-300',
             action: () => {
-                // Open the agent chat panel on desktop
+                // Open the agent chat panel on desktop via relay
                 if (!isAgentOpen) {
                     toggleAgentWindow();
                 }
@@ -90,11 +90,9 @@ export default function CommandPad({ onSendCommand }: CommandPadProps) {
             label: 'Brainstorm',
             color: 'from-cyan-600/40 to-cyan-800/20 border-cyan-500/40 text-cyan-300',
             action: () => {
-                // Ask indii for a creative brainstorm
-                agentService.sendMessage(
-                    'Let\'s brainstorm. Give me 5 creative ideas for my next project based on my profile and recent work.',
-                    undefined,
-                    undefined
+                // Send brainstorm request through the relay to the desktop agent
+                remoteRelayService.sendCommand(
+                    'Let\'s brainstorm. Give me 5 creative ideas for my next project based on my profile and recent work.'
                 ).catch(err => logger.error('[CommandPad] Brainstorm failed:', err));
                 if (!isAgentOpen) {
                     toggleAgentWindow();

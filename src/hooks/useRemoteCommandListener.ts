@@ -309,13 +309,15 @@ function useFirestoreRelay(enabled: boolean) {
                 );
 
                 // Run through the FULL agent pipeline with targeted agent
+                const historyLengthBefore = useStore.getState().agentHistory.length;
                 await agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' });
 
-                // Wait for the response to appear in the store (streaming may not be done yet)
+                // Wait for a NEW response to appear (only entries AFTER our send)
                 let lastResponse: { text?: string; agentId?: string } | undefined;
                 for (let attempt = 0; attempt < 20; attempt++) {
                     const state = useStore.getState();
-                    const candidate = state.agentHistory
+                    const newEntries = state.agentHistory.slice(historyLengthBefore);
+                    const candidate = newEntries
                         .filter(m => m.role === 'model' && m.text && !m.isStreaming)
                         .slice(-1)[0];
                     if (candidate && candidate.text && candidate.text.length > 5) {
