@@ -237,11 +237,29 @@ function useFirestoreRelay(enabled: boolean) {
             return;
         }
 
+        // Reset processing flag on each mount — prevents stale lock from previous session
+        isProcessing.current = false;
+
         logger.info('[RemoteRelay/Firestore] 🚀 Registering command listener NOW...');
         writeDiagnostic('listener_registering', { enabled: true });
+
+        // Safety timeout ref: auto-reset isProcessing after 2 min if agent hangs
+        let processingTimeout: ReturnType<typeof setTimeout> | null = null;
+
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
-            if (isProcessing.current) return;
+            if (isProcessing.current) {
+                writeDiagnostic('command_skipped_busy', { commandId: command.id });
+                return;
+            }
             isProcessing.current = true;
+
+            // Safety: auto-unlock after 2 minutes so one stuck command can't block the relay forever
+            processingTimeout = setTimeout(() => {
+                if (isProcessing.current) {
+                    isProcessing.current = false;
+                    writeDiagnostic('processing_timeout_reset', { commandId: command.id });
+                }
+            }, 120_000);
 
             const targetAgent = command.targetAgentId || undefined;
             logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing: "${command.text}" → agent: ${targetAgent || 'auto'}`);
@@ -358,11 +376,15 @@ function useFirestoreRelay(enabled: boolean) {
                 );
                 await remoteRelayService.markCommandCompleted(command.id);
             } finally {
+                if (processingTimeout) clearTimeout(processingTimeout);
                 isProcessing.current = false;
             }
         });
 
-        return unsubscribe;
+        return () => {
+            unsubscribe();
+            if (processingTimeout) clearTimeout(processingTimeout);
+        };
     }, [enabled]);
 
     // Periodic cleanup of old relay data (every 30 min)
