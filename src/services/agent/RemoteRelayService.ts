@@ -143,8 +143,7 @@ class RemoteRelayService {
 
         const q = query(
             ref,
-            where('commandId', '==', commandId),
-            orderBy('timestamp', 'asc')
+            where('commandId', '==', commandId)
         );
 
         return onSnapshot(q, (snapshot) => {
