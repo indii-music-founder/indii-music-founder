@@ -250,6 +250,56 @@ function useFirestoreRelay(enabled: boolean) {
                 // Mark as processing
                 await remoteRelayService.markCommandProcessing(command.id);
 
+                // ─── Image Generation Route ──────────────────────────────
+                if (command.text.startsWith('[GENERATE_IMAGE]')) {
+                    const imagePrompt = command.text.replace('[GENERATE_IMAGE]', '').trim();
+                    const aspectRatio = (command.metadata?.aspectRatio as string) || '1:1';
+
+                    logger.info(`[RemoteRelay/Firestore] 🎨 Image generation: "${imagePrompt}" (${aspectRatio})`);
+                    writeDiagnostic('image_generation_started', { prompt: imagePrompt.substring(0, 50), aspectRatio });
+
+                    // Send progress indicator
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        '🎨 Generating image on desktop…',
+                        undefined,
+                        true
+                    );
+
+                    // Call ImageGenerationService directly
+                    const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+                    const results = await ImageGeneration.generateImages({
+                        prompt: imagePrompt,
+                        aspectRatio,
+                        count: 1,
+                        model: 'pro',
+                    });
+
+                    if (results.length > 0) {
+                        const imageUrls = results.map(r => r.url);
+                        await remoteRelayService.sendResponse(
+                            command.id,
+                            `✅ Generated ${results.length} image${results.length > 1 ? 's' : ''}.`,
+                            'creative-director',
+                            false,
+                            imageUrls
+                        );
+                        writeDiagnostic('image_generation_done', { count: results.length });
+                    } else {
+                        await remoteRelayService.sendResponse(
+                            command.id,
+                            'ERROR: Image generation returned no results. Try a different prompt.',
+                            undefined,
+                            false
+                        );
+                    }
+
+                    await remoteRelayService.markCommandCompleted(command.id);
+                    isProcessing.current = false;
+                    return;
+                }
+
+                // ─── Standard Agent Chat Route ───────────────────────────
                 // Send "processing" indicator
                 await remoteRelayService.sendResponse(
                     command.id,
