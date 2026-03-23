@@ -23,9 +23,26 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { remoteRelayService, type RemoteCommand } from '@/services/agent/RemoteRelayService';
-import { auth } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+
+/** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
+async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    try {
+        await setDoc(doc(db, 'users', uid, 'remote-relay', 'diagnostics'), {
+            stage,
+            timestamp: serverTimestamp(),
+            uid: uid.substring(0, 8),
+            ...details,
+        }, { merge: true });
+    } catch {
+        // Silent — diagnostics should never crash the app
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Vite HTTP Relay Fallback (for dev mode without auth)
@@ -168,6 +185,7 @@ function useFirestoreRelay(enabled: boolean) {
     // Diagnostic: log every enabled transition
     useEffect(() => {
         logger.info(`[RemoteRelay/Firestore] ⚡ Hook enabled state: ${enabled}`);
+        writeDiagnostic('hook_enabled_changed', { enabled });
     }, [enabled]);
 
     const { currentModule, isAgentProcessing, activeSessionId } = useStore(
@@ -215,17 +233,19 @@ function useFirestoreRelay(enabled: boolean) {
         logger.info(`[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=${enabled}`);
         if (!enabled) {
             logger.info('[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener');
+            writeDiagnostic('listener_skipped', { reason: 'not_enabled' });
             return;
         }
 
         logger.info('[RemoteRelay/Firestore] 🚀 Registering command listener NOW...');
+        writeDiagnostic('listener_registering', { enabled: true });
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
             if (isProcessing.current) return;
             isProcessing.current = true;
 
             const targetAgent = command.targetAgentId || undefined;
             logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing: "${command.text}" → agent: ${targetAgent || 'auto'}`);
-
+            writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50), agent: targetAgent || 'auto' });
             try {
                 // Mark as processing
                 await remoteRelayService.markCommandProcessing(command.id);
