@@ -213,7 +213,8 @@ function useFirestoreRelay(enabled: boolean) {
             if (isProcessing.current) return;
             isProcessing.current = true;
 
-            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing: "${command.text}"`);
+            const targetAgent = command.targetAgentId || undefined;
+            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing: "${command.text}" → agent: ${targetAgent || 'auto'}`);
 
             try {
                 // Mark as processing
@@ -227,8 +228,8 @@ function useFirestoreRelay(enabled: boolean) {
                     true
                 );
 
-                // Run through the FULL agent pipeline
-                await agentService.sendMessage(command.text, undefined, undefined, { source: 'mobile-remote' });
+                // Run through the FULL agent pipeline with targeted agent
+                await agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' });
 
                 // Grab the latest agent response
                 const state = useStore.getState();

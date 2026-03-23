@@ -46,6 +46,7 @@ import { logger } from '@/utils/logger';
 export interface RemoteCommand {
     id?: string;
     text: string;
+    targetAgentId?: string;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     status: 'pending' | 'processing' | 'completed';
     createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
@@ -106,7 +107,7 @@ class RemoteRelayService {
     /**
      * Send a command from the phone. Returns the command document ID.
      */
-    async sendCommand(text: string): Promise<string | null> {
+    async sendCommand(text: string, targetAgentId?: string): Promise<string | null> {
         const ref = getCommandsRef();
         if (!ref) {
             logger.warn('[RemoteRelay] No auth — cannot send command');
@@ -118,10 +119,11 @@ class RemoteRelayService {
             timestamp: serverTimestamp(),
             status: 'pending',
             createdAt: serverTimestamp(),
+            ...(targetAgentId ? { targetAgentId } : {}),
         };
 
         const docRef = await addDoc(ref, command);
-        logger.info(`[RemoteRelay] 📱 Command sent: ${docRef.id}`);
+        logger.info(`[RemoteRelay] 📱 Command sent: ${docRef.id} → agent: ${targetAgentId || 'auto'}`);
         return docRef.id;
     }
 
