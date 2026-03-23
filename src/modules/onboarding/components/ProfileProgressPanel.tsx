@@ -115,7 +115,7 @@ export function ProfileProgressPanel({
                 </div>
             </div>
 
-            {isReadyForDashboard && (
+            {isReadyForDashboard ? (
                 <div className="pt-6 border-t border-white/10">
                     <button
                         onClick={onComplete}
@@ -124,6 +124,15 @@ export function ProfileProgressPanel({
                         Go to Studio <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                     <p className="text-center text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-widest">You can continue editing later.</p>
+                </div>
+            ) : (
+                <div className="pt-6 border-t border-white/5">
+                    <button
+                        onClick={onComplete}
+                        className="w-full text-gray-400 hover:text-white text-sm py-3 transition-colors flex items-center justify-center gap-2"
+                    >
+                        Skip for now <ArrowRight size={14} />
+                    </button>
                 </div>
             )}
         </div>
