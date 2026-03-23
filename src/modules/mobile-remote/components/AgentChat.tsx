@@ -15,11 +15,28 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Bot, User, Loader2, Wifi, WifiOff, LogIn } from 'lucide-react';
+import { Send, Bot, User, Loader2, Wifi, WifiOff, LogIn, ChevronDown } from 'lucide-react';
 import { remoteRelayService, type RemoteResponse, type DesktopState } from '@/services/agent/RemoteRelayService';
 import { auth } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logger } from '@/utils/logger';
+
+// Available specialist agents for routing
+const CONTROLLER_AGENTS = [
+    { id: 'auto', label: 'indii (Auto)', icon: '🎯' },
+    { id: 'brand', label: 'Brand Manager', icon: '🎨' },
+    { id: 'road-manager', label: 'Road Manager', icon: '🚐' },
+    { id: 'marketing', label: 'Marketing', icon: '📣' },
+    { id: 'social', label: 'Social Media', icon: '📱' },
+    { id: 'finance', label: 'Finance', icon: '💰' },
+    { id: 'legal', label: 'Legal', icon: '⚖️' },
+    { id: 'publishing', label: 'Publishing', icon: '📰' },
+    { id: 'licensing', label: 'Licensing', icon: '📋' },
+    { id: 'publicist', label: 'Publicist', icon: '🎤' },
+    { id: 'music', label: 'Music', icon: '🎵' },
+    { id: 'video', label: 'Video', icon: '🎬' },
+    { id: 'creative-director', label: 'Creative Director', icon: '✨' },
+];
 
 interface ChatMessage {
     id: string;
@@ -42,6 +59,8 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
     const [isWaiting, setIsWaiting] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
+    const [selectedAgent, setSelectedAgent] = useState('auto');
+    const [showAgentPicker, setShowAgentPicker] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const pendingCommandId = useRef<string | null>(null);
     const responseUnsub = useRef<(() => void) | null>(null);
@@ -97,12 +116,13 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
         }]);
 
         try {
-            // Send command via Firestore
-            const commandId = await remoteRelayService.sendCommand(userText);
+            // Send command via Firestore with targeted agent
+            const targetAgentId = selectedAgent === 'auto' ? undefined : selectedAgent;
+            const commandId = await remoteRelayService.sendCommand(userText, targetAgentId);
             if (!commandId) throw new Error('Failed to send command');
 
             pendingCommandId.current = commandId;
-            logger.info(`[AgentChat] 📱→☁️ Command sent via Firestore: ${commandId}`);
+            logger.info(`[AgentChat] 📱→☁️ Command sent via Firestore: ${commandId} → agent: ${targetAgentId || 'auto'}`);
 
             // Listen for responses to this specific command
             if (responseUnsub.current) responseUnsub.current();
@@ -170,7 +190,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
             setIsWaiting(false);
             setInput(userText);
         }
-    }, [input, isWaiting, isAuthenticated]);
+    }, [input, isWaiting, isAuthenticated, selectedAgent]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -274,14 +294,47 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
                 )}
             </div>
 
-            {/* Input */}
+            {/* Agent Picker */}
+            {showAgentPicker && (
+                <div className="absolute bottom-20 left-0 right-0 mx-3 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 max-h-[280px] overflow-y-auto">
+                    {CONTROLLER_AGENTS.map(agent => (
+                        <button
+                            key={agent.id}
+                            onClick={() => {
+                                setSelectedAgent(agent.id);
+                                setShowAgentPicker(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${selectedAgent === agent.id
+                                    ? 'bg-blue-600/20 text-blue-400'
+                                    : 'text-[#c9d1d9] hover:bg-[#21262d]'
+                                }`}
+                        >
+                            <span className="text-base">{agent.icon}</span>
+                            <span>{agent.label}</span>
+                            {selectedAgent === agent.id && (
+                                <span className="ml-auto text-xs text-blue-400">✓</span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Input with agent selector */}
             <div className="mt-3 flex gap-2">
+                <button
+                    onClick={() => setShowAgentPicker(!showAgentPicker)}
+                    className="flex items-center gap-1 px-2 h-10 rounded-xl bg-[#161b22] border border-[#30363d] text-xs text-[#8b949e] hover:border-blue-600/50 transition-colors flex-shrink-0"
+                    title="Select agent"
+                >
+                    <span>{CONTROLLER_AGENTS.find(a => a.id === selectedAgent)?.icon || '🎯'}</span>
+                    <ChevronDown className="w-3 h-3" />
+                </button>
                 <input
                     type="text"
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isWaiting ? 'Waiting for desktop…' : 'Message your agents…'}
+                    placeholder={isWaiting ? 'Waiting for desktop…' : `Message ${CONTROLLER_AGENTS.find(a => a.id === selectedAgent)?.label || 'your agents'}…`}
                     disabled={isWaiting}
                     className="flex-1 bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#484f58] focus:outline-none focus:border-blue-600/50 transition-colors disabled:opacity-50"
                 />
