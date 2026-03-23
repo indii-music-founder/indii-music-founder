@@ -9,7 +9,7 @@
  *    when a generation is running on the desktop.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Image, Loader2, Sparkles, Send, Palette, Wand2, LayoutGrid } from 'lucide-react';
@@ -60,6 +60,7 @@ export default function GenerationMonitor() {
     const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [activeStylePreset, setActiveStylePreset] = useState<string | null>(null);
+    const activeListenerRef = useRef<Unsubscribe | null>(null);
 
     const handleStylePreset = useCallback((preset: typeof STYLE_PRESETS[0]) => {
         if (activeStylePreset === preset.label) {
@@ -94,18 +95,29 @@ export default function GenerationMonitor() {
                 return;
             }
 
-            // Listen for the response
-            let unsubscribe: Unsubscribe | null = null;
-            const timeout = setTimeout(() => {
-                if (unsubscribe) unsubscribe();
-                setIsSending(false);
-                setError('Generation timed out (60s). Check the desktop.');
-            }, 60000);
+            // Clean up previous listener if any
+            if (activeListenerRef.current) {
+                activeListenerRef.current();
+                activeListenerRef.current = null;
+            }
 
-            unsubscribe = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
+            // Listen for the response
+            const timeout = setTimeout(() => {
+                if (activeListenerRef.current) {
+                    activeListenerRef.current();
+                    activeListenerRef.current = null;
+                }
+                setIsSending(false);
+                setError('Generation timed out (90s). Check the desktop.');
+            }, 90000);
+
+            activeListenerRef.current = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
                 if (response.isFinal && response.text) {
                     clearTimeout(timeout);
-                    if (unsubscribe) unsubscribe();
+                    if (activeListenerRef.current) {
+                        activeListenerRef.current();
+                        activeListenerRef.current = null;
+                    }
                     setIsSending(false);
 
                     // Check if response contains image URLs
@@ -131,10 +143,13 @@ export default function GenerationMonitor() {
         }
     }, [inputPrompt, aspectRatio, isSending]);
 
-    // Cleanup response listeners on unmount
+    // Cleanup active response listener on unmount
     useEffect(() => {
         return () => {
-            // Cleanup handled by individual listeners
+            if (activeListenerRef.current) {
+                activeListenerRef.current();
+                activeListenerRef.current = null;
+            }
         };
     }, []);
 
