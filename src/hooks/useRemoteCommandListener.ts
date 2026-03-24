@@ -261,7 +261,10 @@ function useFirestoreRelay(enabled: boolean) {
                 }
             }, 120_000);
 
-            const targetAgent = command.targetAgentId || undefined;
+            // When phone sends "auto" (no targetAgentId), route through the generalist orchestrator
+            // NOT whatever agent the desktop session happened to be using last.
+            // When phone explicitly picks an agent (brand, road-manager, etc.), use that directly.
+            const targetAgent = command.targetAgentId || 'generalist';
             logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing: "${command.text}" → agent: ${targetAgent || 'auto'}`);
             writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50), agent: targetAgent || 'auto' });
             try {
