@@ -320,6 +320,12 @@ jobs:
           echo "Deploying studio app to target: app"
           firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive
 
+      - name: Deploy Cloud Functions
+        run: |
+          echo "Deploying Cloud Functions..."
+          cd functions && npm install && cd ..
+          firebase deploy --only functions --project indiios-v-1-1 --non-interactive
+
       - name: "Lighthouse CI audit (Item 346 - blocking thresholds)"
         run: |
           npm install -g @lhci/cli
