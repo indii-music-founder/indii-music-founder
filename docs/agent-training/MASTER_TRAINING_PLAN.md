@@ -11,10 +11,11 @@
 | Item | Value |
 |------|-------|
 | Started | 2026-03-19 |
-| Last Updated | 2026-03-20 (full QA pass) |
-| Current Phase | ✅ Phase 2 + Phase 3 COMPLETE — All 20 agents trained + guard rails reinforced |
+| Last Updated | 2026-03-23 (Phase 3b: 100 examples per agent) |
+| Current Phase | ✅ Phase 3b COMPLETE — All 20 agents at 100 examples (2,000 total) |
 | Active Agent | — (all done) |
-| Next Agent | — (Phase 4: Vertex AI fine-tuning when 100+ examples per agent) |
+| Next Phase | **Phase 4: R4 Fine-Tuning Batch** — export + tune on 100 examples per agent |
+| Expert Difficulty | 32.2% average (644/2000 examples rated expert) |
 | Plan File | `/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans/effervescent-brewing-patterson.md` |
 
 ---
@@ -29,6 +30,7 @@ We do **two things simultaneously for each agent:**
 **Serial order** — One agent at a time. Agent Zero first because all routing flows through it.
 
 **Guard Rails are mandatory** — Every rewritten prompt must include a `SECURITY PROTOCOL` block to prevent:
+
 - Prompt injection / jailbreaking
 - Persona swapping
 - Domain boundary violations
@@ -253,6 +255,7 @@ If a request spans 2+ domains, apply this priority chain:
 ## Memory Cross-Reference
 
 See `MEMORY.md` for architectural context. Key entries:
+
 - Agent routing: `src/services/agent/AgentService.ts`
 - State types: `src/core/store/slices/agentSlice.ts`
 - Hub: `src/services/agent/specialists/GeneralistAgent.ts`

@@ -124,6 +124,27 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
             pendingCommandId.current = commandId;
             logger.info(`[AgentChat] 📱→☁️ Command sent via Firestore: ${commandId} → agent: ${targetAgentId || 'auto'}`);
 
+            // Safety timeout: if no final response within 60s, reset the UI
+            const safetyTimeout = setTimeout(() => {
+                if (pendingCommandId.current === commandId) {
+                    logger.warn(`[AgentChat] ⏰ Response timeout for command ${commandId}`);
+                    setMessages(prev => [...prev, {
+                        id: `timeout-${Date.now()}`,
+                        commandId,
+                        role: 'model',
+                        text: '⏰ Response timed out. The desktop may still be processing — try sending again.',
+                        timestamp: Date.now(),
+                        isStreaming: false,
+                    }]);
+                    pendingCommandId.current = null;
+                    setIsWaiting(false);
+                    if (responseUnsub.current) {
+                        responseUnsub.current();
+                        responseUnsub.current = null;
+                    }
+                }
+            }, 60_000);
+
             // Listen for responses to this specific command
             if (responseUnsub.current) responseUnsub.current();
             responseUnsub.current = remoteRelayService.onResponse(
@@ -154,6 +175,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
                         });
                     } else {
                         // Final response — replace streaming placeholder
+                        clearTimeout(safetyTimeout);
                         setMessages(prev => {
                             const filtered = prev.filter(
                                 m => !(m.commandId === response.commandId && m.role === 'model')
@@ -305,8 +327,8 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
                                 setShowAgentPicker(false);
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${selectedAgent === agent.id
-                                    ? 'bg-blue-600/20 text-blue-400'
-                                    : 'text-[#c9d1d9] hover:bg-[#21262d]'
+                                ? 'bg-blue-600/20 text-blue-400'
+                                : 'text-[#c9d1d9] hover:bg-[#21262d]'
                                 }`}
                         >
                             <span className="text-base">{agent.icon}</span>
