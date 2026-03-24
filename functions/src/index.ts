@@ -83,6 +83,9 @@ export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } f
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging)
 export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
 
+// Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
+export { processRelayCommand } from './relay/relayCommandProcessor';
+
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
 //   1. Set up reCAPTCHA Enterprise in GCP Console for your project.
