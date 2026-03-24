@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.34.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.34.0...v1.34.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* **ci:** add npm run build to compile functions TypeScript before deploy ([5905e52](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5905e528d0e0cf5363d0d10f3b684e1877fefbc3))
+
 ## [1.34.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.33.1...v1.34.0) (2026-03-24)
 
 
