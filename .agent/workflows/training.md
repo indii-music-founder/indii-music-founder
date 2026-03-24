@@ -8,19 +8,20 @@ description: Agent training data generation, fine-tuning, and deployment workflo
 
 ## Overview
 
-This workflow manages the full lifecycle of agent training data: generation, validation, fine-tuning on Vertex AI, and deployment to production.
+This workflow manages the full lifecycle of agent training data: generation, validation, export to Vertex AI format, fine-tuning submission, and deployment to production.
 
 ## Prerequisites
 
-- Access to Vertex AI (`gcloud auth` configured)
-- Node.js 22+ for export script
+- gcloud CLI authenticated (`gcloud auth login`)
+- Project: `indiios-v-1-1` (Project Number: `223837784072`)
+- GCS bucket: `gs://indiios-training-data/`
 - Training datasets at `docs/agent-training/datasets/*.jsonl`
 
 ---
 
-## Phase 1: Generate Training Data
+## Phase 1: Check Dataset Status
 
-1. Check current dataset status:
+1. Run the fleet audit to see current example counts and expert difficulty:
 
 ```bash
 python3 -c "
@@ -36,96 +37,99 @@ for f in sorted(glob.glob(os.path.join(dir, '*.jsonl'))):
 "
 ```
 
-1. Use the `/training` workflow to generate examples for any agent needing more data.
-
-2. Target: 100+ examples per agent, 50%+ expert difficulty.
+1. Target: 100+ examples per agent, 50%+ expert difficulty.
 
 ---
 
-## Phase 2: Validate & Export
+## Phase 2: Generate Training Examples
 
-1. Validate all datasets (no duplicates, correct agent IDs):
+Write examples to `docs/agent-training/datasets/<agent_id>.jsonl` following the schema in `docs/agent-training/datasets/SCHEMA.md`.
+
+Each example needs: `agent_id`, `scenario_id` (unique), `scenario`, `category`, `quality_tier`, `source`, `difficulty`, `input`, `expected`.
+
+Categories: `routing`, `tool_use`, `refusal`, `edge_case`, `adversarial`, `few_shot`
+
+---
+
+## Phase 3: Export to Vertex AI Format
+
+1. Run the export script (creates 80/20 train/eval split):
 
 ```bash
-python3 -c "
-import json, os, glob
-dir = 'docs/agent-training/datasets'
-errors = []
-for f in sorted(glob.glob(os.path.join(dir, '*.jsonl'))):
-    name = os.path.splitext(os.path.basename(f))[0]
-    with open(f) as fh: lines = [l.strip() for l in fh if l.strip()]
-    ids = set()
-    for l in lines:
-        obj = json.loads(l)
-        sid = obj.get('scenario_id','')
-        if sid in ids: errors.append(f'{name}: DUPLICATE {sid}')
-        ids.add(sid)
-        if obj.get('agent_id') != name: errors.append(f'{name}: wrong agent_id in {sid}')
-    if len(lines) < 100: errors.append(f'{name}: only {len(lines)} examples')
-if errors:
-    for e in errors: print(f'❌ {e}')
-else:
-    print('✅ All 20 datasets valid')
-"
+npx tsx execution/training/export_ft_dataset.ts --agent=all --output=./ft_export_r4 --split
 ```
 
-1. Export to Vertex AI format:
+1. Verify export:
 
 ```bash
-npx ts-node execution/training/export_ft_dataset.ts --all --output=vertex_ai_datasets/
+wc -l ft_export_r4/*.jsonl | tail -5
 ```
 
 ---
 
-## Phase 3: Fine-Tune on Vertex AI
-
-1. Upload exported datasets to GCS:
+## Phase 4: Upload to GCS
 
 ```bash
-gsutil -m cp vertex_ai_datasets/*.jsonl gs://indiios-training-data/r4/
-```
-
-1. Create tuning jobs (per agent):
-
-```bash
-# Use Vertex AI Console or gcloud:
-gcloud ai models create-tuning-job \
-  --region=us-central1 \
-  --base-model=gemini-2.5-flash-lite \
-  --training-data=gs://indiios-training-data/r4/<agent_id>.jsonl \
-  --tuned-model-display-name=<agent_id>-r4
-```
-
-1. Wait for jobs to complete (2-8 hours per job).
-
-2. List completed models:
-
-```bash
-gcloud ai models list --region=us-central1 --filter="displayName~r4"
+gsutil -m cp ft_export_r4/*.jsonl gs://indiios-training-data/r4/
 ```
 
 ---
 
-## Phase 4: Deploy to Production
+## Phase 5: Submit Fine-Tuning Jobs
 
-1. Update `src/services/agent/fine-tuned-models.ts` with new R4 endpoint IDs.
+Submit all 20 agents via Vertex AI REST API:
 
-2. Set feature flag:
+```bash
+# Single agent example:
+curl -s -X POST \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json" \
+  "https://us-central1-aiplatform.googleapis.com/v1/projects/223837784072/locations/us-central1/tuningJobs" \
+  -d '{
+    "baseModel": "gemini-2.5-flash-lite",
+    "supervisedTuningSpec": {
+      "trainingDatasetUri": "gs://indiios-training-data/r4/<agent_id>_train.jsonl",
+      "validationDatasetUri": "gs://indiios-training-data/r4/<agent_id>_eval.jsonl",
+      "hyperParameters": {
+        "epochCount": 3,
+        "learningRateMultiplier": 1.0,
+        "adapterSize": "ADAPTER_SIZE_FOUR"
+      }
+    },
+    "tunedModelDisplayName": "indii-<agent_id>-v1-r4"
+  }'
+```
+
+Batch launcher script: `/tmp/launch_r4_tuning.sh`
+
+---
+
+## Phase 6: Monitor Job Status
+
+```bash
+bash execution/training/check_r4_status.sh
+```
+
+Jobs typically take 2-6 hours. The script shows ✅/🔄/⏳/❌ per agent and prints endpoint IDs for completed jobs.
+
+---
+
+## Phase 7: Deploy New Endpoints
+
+1. When all jobs show ✅, collect the new endpoint IDs from the status script.
+
+2. Update `src/services/agent/fine-tuned-models.ts` — replace R3 endpoint IDs with R4 ones.
+
+3. Ensure `.env` has:
 
 ```
 VITE_USE_FINE_TUNED_AGENTS=true
 ```
 
-1. Build and deploy:
+1. Deploy:
 
 ```bash
 npm run deploy
-```
-
-1. Verify with live stress test:
-
-```bash
-# Use /live_test_creative_director workflow or manual testing
 ```
 
 ---
@@ -138,5 +142,13 @@ npm run deploy
 | `docs/agent-training/datasets/*.jsonl` | 20 training datasets (100 each) |
 | `docs/agent-training/datasets/SCHEMA.md` | Example format specification |
 | `execution/training/export_ft_dataset.ts` | Export conversion script |
+| `execution/training/check_r4_status.sh` | R4 job monitoring script |
 | `src/services/agent/fine-tuned-models.ts` | Live endpoint registry |
 | `docs/agent-training/SCORECARD.md` | Quality rubric |
+
+## Training History
+
+| Round | Date | Examples/Agent | Base Model | Status |
+|-------|------|---------------|------------|--------|
+| R3 | 2026-03-20 | 20-60 | gemini-2.5-flash-lite | ✅ Deployed |
+| R4 | 2026-03-23 | 100 (80 train / 20 eval) | gemini-2.5-flash-lite | 🔄 Training |
