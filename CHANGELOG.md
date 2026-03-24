@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.33.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.32.0...v1.33.0) (2026-03-24)
+
+
+### Features
+
+* Add initial fine-tuning and evaluation datasets for various indiiOS agents to `ft_export_r4`. ([a9f32cd](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a9f32cd09d7e5b7ac9d276e0b5105702f9794839))
+* add new training scenarios to curriculum, director, and merchandise agent datasets. ([4bef10e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4bef10eb54a14c8b2834b5fbce5b7b5333154eea))
+
+
+### Bug Fixes
+
+* **controller:** add 60s safety timeout on phone chat UI ([d5037e3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d5037e3dcb1b499beb7fbe92f9f5692bfdd5d5dc))
+* **routing:** add /controller and /remote URL aliases to mobile-remote ([52d0853](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/52d0853a3b128b1af2101e79173fb608324e9ee5))
+
 ## [1.32.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.31.0...v1.32.0) (2026-03-23)
 
 
