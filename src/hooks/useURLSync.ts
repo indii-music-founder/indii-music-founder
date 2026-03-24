@@ -37,7 +37,7 @@ export function useURLSync() {
             'remote': 'mobile-remote',
         };
         if (ROUTE_ALIASES[targetModule]) {
-            targetModule = ROUTE_ALIASES[targetModule];
+            targetModule = ROUTE_ALIASES[targetModule] ?? targetModule;
         }
 
         if (targetModule !== currentModule && isValidModule(targetModule)) {
