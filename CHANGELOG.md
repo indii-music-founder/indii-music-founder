@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.33.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.33.0...v1.33.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* **relay:** add 45s timeout around agent call to prevent infinite hang ([0b1ad12](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0b1ad12530990a690537fe0ba2a2001eff5c0309))
+* **relay:** route 'Auto' commands through generalist orchestrator ([8cb8364](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8cb83646d4ff14cde3fb1fc232e4d4a867d7d736))
+
 ## [1.33.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.32.0...v1.33.0) (2026-03-24)
 
 
