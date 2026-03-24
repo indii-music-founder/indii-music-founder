@@ -1,8 +1,4 @@
 // indiiOS Cloud Functions - V1.1
-import { setGlobalOptions } from "firebase-functions/v2/options";
-
-// Set default region for all Gen 2 functions (resolves storage bucket region lookup)
-setGlobalOptions({ region: "us-central1" });
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { Inngest } from "inngest";
@@ -49,7 +45,8 @@ export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
 // Distribution Functions (Item 415: DDEX DSP Acknowledgement Processing)
-export { processDDEXAck } from './distribution/processDDEXAck';
+// Temporarily disabled: Firebase CLI fails to resolve storage bucket region for onObjectFinalized triggers
+// export { processDDEXAck } from './distribution/processDDEXAck';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';
