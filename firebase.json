@@ -153,10 +153,8 @@
       "target": "app"
     }
   ],
-  "storage": [
-    {
-      "rules": "storage.rules",
-      "target": "main"
-    }
-  ]
+  "storage": {
+    "rules": "storage.rules",
+    "bucket": "indiios-v-1-1.firebasestorage.app"
+  }
 }
