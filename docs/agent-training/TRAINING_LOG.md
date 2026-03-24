@@ -601,3 +601,48 @@ Total gold examples across all agents: **873** (+84 this session)
 | security | 38 | Adequate |
 
 Total gold examples across all agents: **943** (+70 this phase, +154 this session)
+
+---
+
+### 2026-03-24 `ALL AGENTS` — Volume expansion to 100 examples each + hard review remediation (Phase 5)
+
+**Expansion (by second agent while offline):**
+- All 20 datasets expanded from 38–65 examples to exactly 100 each
+- Total: 2,000 gold records (+1,057 from 943 baseline)
+- Coverage added: tool_use, few_shot, routing, edge_case, adversarial categories
+
+**Hard Review Findings & Fixes:**
+
+*Category 1 — Object-format `tools_called` (11 agents, 78 records):*
+- New records used `[{"name": "tool", "args": {...}}]` dict format instead of `["tool_name"]` strings
+- Fixed: brand(6), curriculum(5), devops(9), distribution(6), finance(8), generalist(20), licensing(2), publicist(4), publishing(1), road(12), video(4)
+
+*Category 2 — Phantom tools (12 agents, 98 records):*
+- New records referenced tool names absent from agent TypeScript definitions
+- Fixed per agent:
+
+| Agent | Phantom → Fix |
+|-------|--------------|
+| security | `scan_codebase`→`scan_content`, `audit_firestore_rules`→`audit_permissions`, `audit_storage_rules`→`audit_permissions`, `read_file`→`browser_tool` |
+| director | `indii_image_gen`→`generate_image`, `generate_video`→`[]`, `set_entity_anchor`→`[]`, `generate_visual_script`→`[]`, `interpolate_sequence`→`[]` |
+| music | `audioIntelligence.analyze`→`analyze_audio` |
+| producer | `essentia_analyze`→`[]` |
+| distribution | `ddex_generate`→`[]` |
+| licensing | `check_license_availability`→`check_availability` |
+| road | `route.calculate`→`get_distance_matrix` |
+| video | `veo.generate`→`generate_video`, `video.render`→`generate_video` |
+| brand | `delegate_task`→`[]` (hub-only tool) |
+| marketing | `document_query`→`[]` (not in MarketingAgent tools) |
+| 15 specialists | `delegate_task`→`[]` across routing records |
+| curriculum/devops/screenwriter | `create_project`→`[]` |
+| merchandise | `create_project`→`[]`, `indii_image_gen`→`[]` |
+
+**Validation result:** 2,000 records — 0 parse errors, 0 object-format, 0 phantom tools ✓
+
+**Final dataset state as of 2026-03-24 (Phase 5):**
+
+| Agent | Examples | Status |
+|-------|----------|--------|
+| All 20 agents | 100 each | Strong |
+
+Total gold examples: **2,000** (exactly 100 per agent across all 20 agents)
