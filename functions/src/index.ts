@@ -38,7 +38,8 @@ admin.initializeApp();
 export { createStripeAccount, createTransfer } from './stripe/connect';
 
 // Stripe Split Escrow (Item 135)
-export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
+// Temporarily disabled: Gen 1 functions with secrets cause 'Cannot set CPU' deployment error
+// export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
 
 
 // Distribution Functions (Item 218: Delivery Status Polling)
@@ -79,7 +80,8 @@ export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
 export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email/tokenManager';
 
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
-export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
+// Temporarily disabled: Gen 1 functions with secrets cause 'Cannot set CPU' deployment error
+// export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging)
 export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
