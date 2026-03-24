@@ -340,10 +340,25 @@ function useFirestoreRelay(enabled: boolean) {
                 writeDiagnostic('agent_send_start', { commandId: command.id, historyLengthBefore, agent: targetAgent || 'auto' });
 
                 try {
-                    await agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' });
+                    // Race the agent call against a 45s timeout
+                    // If Gemini API or warmup hangs, we abort and tell the phone
+                    await Promise.race([
+                        agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' }),
+                        new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('Agent call timed out after 45s')), 45_000)
+                        )
+                    ]);
                 } catch (sendErr) {
                     writeDiagnostic('agent_send_error', { commandId: command.id, error: String(sendErr) });
-                    throw sendErr;
+                    // Send error response to phone so user isn't stuck forever
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        `❌ ${sendErr instanceof Error ? sendErr.message : 'Agent call failed'}. Try again.`,
+                        undefined,
+                        false
+                    );
+                    await remoteRelayService.markCommandCompleted(command.id);
+                    return; // Skip the response polling — we already sent an error
                 }
 
                 writeDiagnostic('agent_send_complete', { commandId: command.id, historyLengthAfter: useStore.getState().agentHistory.length });
