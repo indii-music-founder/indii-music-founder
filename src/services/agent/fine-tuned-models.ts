@@ -26,51 +26,51 @@ export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS 
  */
 export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = {
     // === MANAGER'S OFFICE ===
-    // R3 — gemini-2.5-pro base (40 train / 10 eval)
-    'generalist':       'projects/223837784072/locations/us-central1/endpoints/3273097132063588352',
-    // R3 — gemini-2.5-flash-lite base (24 train / 6 eval)
-    'brand':            'projects/223837784072/locations/us-central1/endpoints/552922957131808768',
-    // R3 — gemini-2.5-flash-lite base (37 train / 9 eval)
-    'road':             'projects/223837784072/locations/us-central1/endpoints/2167463423544131584',
-    // R3 — gemini-2.5-flash-lite base (39 train / 9 eval)
-    'publicist':        'projects/223837784072/locations/us-central1/endpoints/8605359090870255616',
+    // R4 — gemini-2.5-pro base (80 train / 20 eval) — 2026-03-24
+    'generalist':       'projects/223837784072/locations/us-central1/endpoints/1872196172974653440',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'brand':            'projects/223837784072/locations/us-central1/endpoints/1331764217690193920',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'road':             'projects/223837784072/locations/us-central1/endpoints/5032597211481899008',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'publicist':        'projects/223837784072/locations/us-central1/endpoints/3987762097931943936',
 
     // === DEPARTMENTS ===
-    // R3 — gemini-2.5-flash-lite base (40 train / 10 eval)
-    'marketing':        'projects/223837784072/locations/us-central1/endpoints/3714449895545896960',
-    // R3 — gemini-2.5-flash-lite base (40 train / 10 eval)
-    'social':           'projects/223837784072/locations/us-central1/endpoints/1591002671240708096',
-    // R3 — gemini-2.5-flash base (48 train / 11 eval)
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'marketing':        'projects/223837784072/locations/us-central1/endpoints/7487059008398819328',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'social':           'projects/223837784072/locations/us-central1/endpoints/2736887301429788672',
+    // R3 — gemini-2.5-flash base — R4 endpoint pending deployment
     'legal':            'projects/223837784072/locations/us-central1/endpoints/3818032686975418368',
-    // R3 — gemini-2.5-flash-lite base (41 train / 10 eval)
-    'publishing':       'projects/223837784072/locations/us-central1/endpoints/733629892180049920',
-    // R3 — gemini-2.5-flash base (52 train / 13 eval)
-    'finance':          'projects/223837784072/locations/us-central1/endpoints/7038106420545323008',
-    // R3 — gemini-2.5-flash-lite base (36 train / 8 eval)
-    'licensing':        'projects/223837784072/locations/us-central1/endpoints/5887436715752161280',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'publishing':       'projects/223837784072/locations/us-central1/endpoints/398393194917658624',
+    // R4 — gemini-2.5-flash base (80 train / 20 eval) — 2026-03-24
+    'finance':          'projects/223837784072/locations/us-central1/endpoints/4577733649117478912',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'licensing':        'projects/223837784072/locations/us-central1/endpoints/483961587837698048',
 
     // === SPECIALISTS ===
-    // R3 — gemini-2.5-flash base (41 train / 10 eval)
+    // R3 — gemini-2.5-flash base — R4 endpoint pending deployment
     'distribution':     'projects/223837784072/locations/us-central1/endpoints/5397670256275619840',
-    // R3 — gemini-2.5-flash-lite base (36 train / 8 eval)
-    'music':            'projects/223837784072/locations/us-central1/endpoints/8319380514532229120',
-    // R3 — gemini-2.5-flash-lite base (36 train / 8 eval)
-    'video':            'projects/223837784072/locations/us-central1/endpoints/3047917150695063552',
-    // R3 — gemini-2.5-flash-lite base (36 train / 9 eval)
-    'devops':           'projects/223837784072/locations/us-central1/endpoints/1305587044856102912',
-    // R3 — gemini-2.5-flash-lite base (41 train / 10 eval)
-    'security':         'projects/223837784072/locations/us-central1/endpoints/4909592646659342336',
-    // R3 — gemini-2.5-flash-lite base (38 train / 9 eval)
-    'producer':         'projects/223837784072/locations/us-central1/endpoints/4861178950665109504',
-    // R3 — gemini-2.5-flash-lite base (40 train / 9 eval)
-    'director':         'projects/223837784072/locations/us-central1/endpoints/8871071468885114880',
-    // R3 — gemini-2.5-flash-lite base (36 train / 9 eval)
-    'screenwriter':     'projects/223837784072/locations/us-central1/endpoints/22061151055511552',
-    // R3 — gemini-2.5-flash-lite base (40 train / 10 eval)
-    'merchandise':      'projects/223837784072/locations/us-central1/endpoints/329994775576969216',
-    // R3 — gemini-2.5-flash-lite base (36 train / 9 eval)
-    'curriculum':       'projects/223837784072/locations/us-central1/endpoints/2544076942382989312',
-    // Not included in R3 tuning batch
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'music':            'projects/223837784072/locations/us-central1/endpoints/5042730310643482624',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'video':            'projects/223837784072/locations/us-central1/endpoints/6181015116461375488',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'devops':           'projects/223837784072/locations/us-central1/endpoints/5609057963785322496',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'security':         'projects/223837784072/locations/us-central1/endpoints/6084187724472909824',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'producer':         'projects/223837784072/locations/us-central1/endpoints/5086640407010344960',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'director':         'projects/223837784072/locations/us-central1/endpoints/1060422340141121536',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'screenwriter':     'projects/223837784072/locations/us-central1/endpoints/7982454967409573888',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'merchandise':      'projects/223837784072/locations/us-central1/endpoints/286929104140238848',
+    // R4 — gemini-2.5-flash-lite base (80 train / 20 eval) — 2026-03-24
+    'curriculum':       'projects/223837784072/locations/us-central1/endpoints/7527591405045153792',
+    // Not yet fine-tuned
     'keeper':           undefined,
 };
 
