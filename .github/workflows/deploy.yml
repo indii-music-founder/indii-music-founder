@@ -293,7 +293,7 @@ jobs:
           name: build-dist-${{ github.sha }}
 
       - name: Setup Firebase CLI
-        run: npm install -g firebase-tools
+        run: npm install -g firebase-tools@13.29.1
 
       - name: Authenticate with Firebase
         run: |
