@@ -49,8 +49,8 @@ export class EditingService {
     /**
      * Edit a single image using the Dual-View Pipeline (original + binary mask).
      * 
-     * Pro (High Fidelity): Uses gemini-3-pro-image-preview for complex reasoning.
-     * Flash (High Speed): Uses gemini-2.5-flash-image for sub-second inpainting.
+     * Pro (High Fidelity): Uses gemini-2.5-pro with IMAGE responseModality.
+     * Flash (High Speed): Uses gemini-2.5-flash with IMAGE responseModality.
      */
     async editImage(options: {
         image: { mimeType: string; data: string };
