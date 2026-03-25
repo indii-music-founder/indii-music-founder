@@ -6,7 +6,7 @@ import { geminiApiKey, googleMapsApiKey, getGeminiApiKey } from "../config/secre
 
 // Helper for Gemini Calls (similar to generateImageV3 pattern)
 async function generateWithGemini(prompt: string, schema?: any): Promise<any> {
-    const modelId = "gemini-3.1-pro-preview";
+    const modelId = "gemini-2.5-pro";
     // We access the secret value inside the function execution
     const key = getGeminiApiKey();
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${key}`;
