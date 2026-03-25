@@ -84,7 +84,7 @@ function parseDDEXAckXML(xml: string, fileName: string): ParsedDDEXAck | null {
  * Parses the DDEX ACK XML and updates the release delivery status in Firestore.
  */
 export const processDDEXAck = onObjectFinalized({
-    bucket: "indiios-v-1-1.firebasestorage.app",
+    bucket: "indiios-alpha-electron",
     timeoutSeconds: 60,
     memory: '256MiB',
     region: 'us-central1',

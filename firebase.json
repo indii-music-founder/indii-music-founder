@@ -155,6 +155,6 @@
   ],
   "storage": {
     "rules": "storage.rules",
-    "bucket": "indiios-v-1-1.firebasestorage.app"
+    "bucket": "indiios-alpha-electron"
   }
 }
