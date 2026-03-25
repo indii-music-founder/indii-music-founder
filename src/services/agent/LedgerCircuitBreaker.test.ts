@@ -159,9 +159,9 @@ describe('Ledger Circuit Breaker (Integration)', () => {
         // Assertions
 
         // 1. Verify recordSpend was called with correct amount
-        // Input cost for gemini-3.1-pro-preview is $2.50 per 1M.
-        // We used 1M tokens. Cost should be $2.50.
-        expect(MembershipService.recordSpend).toHaveBeenCalledWith('ledger-test-user', 2.5);
+        // Input cost for gemini-2.5-pro is $1.25 per 1M.
+        // We used 1M tokens. Cost should be $1.25.
+        expect(MembershipService.recordSpend).toHaveBeenCalledWith('ledger-test-user', 1.25);
 
         // 2. Verify Budget Check was called twice
         // Once at start (allowed), once at second iteration (denied)
