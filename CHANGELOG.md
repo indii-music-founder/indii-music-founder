@@ -2,6 +2,36 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.35.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.34.1...v1.35.0) (2026-03-25)
+
+
+### Features
+
+* add Telegram Bot adapter — Phase 2 multi-channel relay ([39198eb](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/39198ebae9d6d2a97262c2c4fa57a2748228c1b7))
+* **agents:** wire R4 fine-tuned endpoints for 18/20 agents ([5366061](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5366061429c48633f7042de3aaaf36e2389c59a4))
+* **ci:** enable fine-tuned agents in production build ([9677ea5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9677ea55f3becddbdaa8f61e3b967c2a43163043))
+* **security:** hardcode authorizedTools in all 20 agent definitions ([4271e03](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4271e031fd78a4f0ae42c12766b92c57dcc5cadb))
+* **training:** expand all 20 datasets to 2,000 gold examples + remediate phantoms ([44ef5aa](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/44ef5aaef2e808323721d7de5bf8357cdf8563f2))
+
+
+### Bug Fixes
+
+* **ai:** correct VertexAI backend location + protect fallback from endpoint URLs ([49a9fcd](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/49a9fcd3ac25e7c24a0747d09f78f615f9d8079d))
+* **ai:** preemptive model change follow-ups ([2ee939f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/2ee939ffac10ab1fe7b5fac261ba7e21a0d4f8aa))
+* **ci:** pin firebase-tools@13.29.1 to avoid Gen 1 CPU error ([7a434e6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7a434e6d6078bd78a25618bbf2d45d9ed266bc7e))
+* **ci:** target specific non-storage functions for deploy ([35dd9d0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/35dd9d0950d0c44d8f0b26b538b2737e119168e0))
+* correct all storage bucket references across codebase ([29d02b6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/29d02b613b17161e6ffefefcc428acc84e3184b8))
+* disable processDDEXAck only — CLI bucket region bug ([825cc1c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/825cc1c123946584bdf1e5aa90b390ba14560caf))
+* **functions:** add explicit bucket to processDDEXAck trigger ([51632d1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/51632d198b25f66c707ad1d15a05ec1db91958bf))
+* **functions:** add setGlobalOptions for default region ([d10c98c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d10c98cab4b5ec8fbf1d084859cc463cf007f587))
+* **functions:** disable Gen 1 secret-dependent exports causing CPU error ([6f9dce0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6f9dce005162e4ac567cb70c53e4eab4016fa6e4))
+* **functions:** remove processDDEXAck export and setGlobalOptions ([b515d1c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b515d1c576380387ebb2d425449337948298a9ac))
+* re-enable 8 disabled function exports ([c9cf23e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c9cf23e382457259dca1fe34a5926ca331465565))
+* **test:** update LedgerCircuitBreaker cost assertion for gemini-2.5-pro pricing ([fb2e8d3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/fb2e8d3efe13a0aa5ffa84552a3d0c88ea748c87))
+* **test:** update MemoryTools verify_output model assertion to gemini-2.5-flash ([3b89c3a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/3b89c3a1b4bce375b06b830c68a7b66655d27b2e))
+* **training:** correct GenAiTuningServiceClient import in wire-r5-endpoints.py ([f099cab](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/f099cabbca989973f3465c1585947bbf128a6244))
+* use direct bucket name in firebase.json storage config ([5512845](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5512845e3bdc6863acaaa6757c310b4dbc27f9d4))
+
 ## [1.34.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.34.0...v1.34.1) (2026-03-24)
 
 
