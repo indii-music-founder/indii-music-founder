@@ -646,3 +646,44 @@ Total gold examples across all agents: **943** (+70 this phase, +154 this sessio
 | All 20 agents | 100 each | Strong |
 
 Total gold examples: **2,000** (exactly 100 per agent across all 20 agents)
+
+
+---
+
+## Phase 6: R5 SFT Training Kick-off — 2026-03-24
+
+**Training data:** Clean 2,000-record dataset (Phase 5), uploaded to `gs://indiios-training-data/ft_export/r5/`
+**Base model strings confirmed:** `gemini-2.5-pro` | `gemini-2.5-flash` | `gemini-2.5-flash-lite` (no version suffix)
+
+### R5 Tuning Jobs (all 20 submitted 2026-03-24)
+
+| Agent | Base Model | Job ID |
+|-------|-----------|--------|
+| generalist | gemini-2.5-pro | 7741721414813614080 |
+| finance | gemini-2.5-flash | 4427019312510795776 |
+| legal | gemini-2.5-flash | 3555625561172738048 |
+| distribution | gemini-2.5-flash | 8720128433859854336 |
+| marketing | gemini-2.5-flash-lite | 6014590957717028864 |
+| brand | gemini-2.5-flash-lite | 2276603266999517184 |
+| video | gemini-2.5-flash-lite | 5854713170945376256 |
+| music | gemini-2.5-flash-lite | 7837422906895237120 |
+| social | gemini-2.5-flash-lite | 1730541812180844544 |
+| publicist | gemini-2.5-flash-lite | 8160556180159070208 |
+| licensing | gemini-2.5-flash-lite | 2072815383861002240 |
+| publishing | gemini-2.5-flash-lite | 2667290534673907712 |
+| road | gemini-2.5-flash-lite | 8225858374755942400 |
+| merchandise | gemini-2.5-flash-lite | 4582446276213211136 |
+| director | gemini-2.5-flash-lite | 9194132294640599040 |
+| producer | gemini-2.5-flash-lite | 172296341110652928 |
+| security | gemini-2.5-flash-lite | 8210095776060145664 |
+| devops | gemini-2.5-flash-lite | 5640792188645277696 |
+| screenwriter | gemini-2.5-flash-lite | 6129432748214976512 |
+| curriculum | gemini-2.5-flash-lite | 3037711604025131008 |
+
+**Status:** RUNNING — all 20 jobs queued in us-central1
+
+**Next steps when jobs complete:**
+1. Query endpoint IDs from completed jobs
+2. Update `src/services/agent/fine-tuned-models.ts` with R5 endpoint IDs (replace R4/R3)
+3. Deploy — agents will automatically use R5 models
+4. Run holdout eval set; compare oracle scores vs R4 baseline
