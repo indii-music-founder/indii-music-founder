@@ -153,7 +153,7 @@ export const firebaseConfig = {
     authDomain: firebaseEnv.firebaseAuthDomain || "indiios-studio.web.app",
     databaseURL: firebaseEnv.firebaseDatabaseURL || "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: firebaseEnv.firebaseProjectId || "indiios-v-1-1",
-    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-v-1-1.firebasestorage.app",
+    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-alpha-electron",
     messagingSenderId: "223837784072",
     appId: "1:223837784072:web:3af738739465ea4095e9bd",
     measurementId: "G-T6V8WPE7Z7"

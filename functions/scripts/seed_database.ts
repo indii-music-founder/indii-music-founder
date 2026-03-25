@@ -9,7 +9,7 @@ import { getAuth } from 'firebase-admin/auth';
 if (!admin.apps.length) {
     admin.initializeApp({
         projectId: 'indiios-v-1-1',
-        storageBucket: 'indiios-alpha-electron.firebasestorage.app'
+        storageBucket: 'indiios-alpha-electron'
     });
 }
 

@@ -17,7 +17,7 @@ export const generateThumbnail = onObjectFinalized(
         cpu: 2,
         memory: "1GiB",
         region: "us-west1",
-        bucket: "indiios-v-1-1.firebasestorage.app",
+        bucket: "indiios-alpha-electron",
         timeoutSeconds: 300,
     },
     async (event) => {
