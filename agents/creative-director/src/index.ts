@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 
 import { Agent } from '@mastra/core';
 import { MCPClient } from '@mastra/mcp';

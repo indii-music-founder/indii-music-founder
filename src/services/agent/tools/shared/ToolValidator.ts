@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { ZodType } from 'zod';
 import { toolError } from '../../utils/ToolUtils';
 

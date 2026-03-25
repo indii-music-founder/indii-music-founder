@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { z } from 'zod';
 import { CommonEnvSchema } from '../shared/schemas/env.schema.ts';
 import { Logger } from '@/core/logger/Logger';

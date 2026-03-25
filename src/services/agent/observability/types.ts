@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 export type TraceStatus = 'pending' | 'completed' | 'failed';
 
 export interface UsageMetrics {

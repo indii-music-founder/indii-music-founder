@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { vi } from 'vitest';
 
 // Only import DOM-specific modules when running in jsdom environment

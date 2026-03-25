@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 export function debounce<T extends (...args: any[]) => any>(
     func: T,
     wait: number

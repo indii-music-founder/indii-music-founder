@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 /**
  * Gmail Provider — Uses Google Identity Services (GIS) for OAuth
  * and the Gmail REST API for message operations.

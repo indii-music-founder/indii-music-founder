@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { logger } from '@/utils/logger';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';

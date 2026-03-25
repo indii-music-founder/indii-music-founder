@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 import { db } from '@/services/firebase';
 import { collection, doc, addDoc, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';

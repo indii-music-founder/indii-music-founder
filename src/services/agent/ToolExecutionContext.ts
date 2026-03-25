@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 /**
  * Tool Execution Context - Phase 3: Architectural Improvements
  *

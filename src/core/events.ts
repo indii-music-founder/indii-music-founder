@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 type EventCallback<T = unknown> = (data: T) => void;
 
 export type EventType =

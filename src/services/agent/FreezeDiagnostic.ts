@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 import { logger } from '@/utils/logger';
 /**
  * Diagnostic utility to detect mutations to the shared agent config.
