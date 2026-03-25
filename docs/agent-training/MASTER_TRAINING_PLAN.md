@@ -249,7 +249,7 @@ The roadmap maps every skill domain for every agent to its current coverage leve
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| HIGH — ❌ Missing | 12 | Zero examples at any level (e.g., YouTube Content ID, ISWC collision, community crisis moderation) |
+| HIGH — ❌ Missing | ~~12~~ **0** | ✅ All 12 filled (2026-03-25) — 36 expert examples added across 8 agents |
 | MEDIUM — 🟡 Int-only in critical domains | 23 | Entry/intermediate only in distribution, finance, legal, publishing, marketing |
 | LOW — 🟡 Int-only in lower-priority domains | ~15 | Social, road, publicist, merchandise, etc. |
 
@@ -257,28 +257,32 @@ The roadmap maps every skill domain for every agent to its current coverage leve
 
 For each item in the Master Work Queue (see SKILL_EXPERT_ROADMAP.md):
 
-1. Pick the next HIGH-priority `❌ Missing` item from the queue
+1. Pick the next MEDIUM-priority `🟡 ENTRY/INT` item from the queue (HIGH items are complete)
 2. Write 3–5 expert-difficulty examples for that skill topic in the relevant `.jsonl`
 3. Use the example expert prompt in the roadmap as the seed input
 4. Mark the skill as `✅ Expert` in SKILL_EXPERT_ROADMAP.md
 5. Re-export and re-tune when a meaningful batch accumulates (suggest 50+ new expert examples)
 
-### Highest Priority Gaps
+### Completed HIGH-Priority Gaps (2026-03-25)
 
-| Agent | Skill | Gap |
-|-------|-------|-----|
-| music | YouTube Content ID dispute process | ❌ Missing |
-| music | Vinyl mastering for lacquer cutting | ❌ Missing |
-| publishing | ISWC collision resolution | ❌ Missing |
-| publishing | PRO audit procedures | ❌ Missing |
-| social | Community moderation crisis response | ❌ Missing |
-| social | YouTube channel optimization | ❌ Missing |
-| publicist | Podcast booking & tour PR | ❌ Missing |
-| brand | Brand crisis / IP misuse response | ❌ Missing |
-| distribution | Chain of Title dispute handling | ❌ Missing |
-| finance | Sync licensing advance negotiation | ❌ Missing |
-| legal | DMCA counter-notification | ❌ Missing |
-| legal | Copyright 35-year reversion rights | ❌ Missing |
+| Agent | Skill | Status |
+|-------|-------|--------|
+| music | YouTube Content ID dispute process | ✅ Filled (+3 examples) |
+| music | Vinyl mastering for lacquer cutting | ✅ Filled (+3 examples) |
+| publishing | ISWC collision resolution | ✅ Filled (+3 examples) |
+| publishing | PRO audit procedures | ✅ Filled (+3 examples) |
+| social | Community moderation crisis response | ✅ Filled (+3 examples) |
+| social | YouTube channel optimization | ✅ Filled (+3 examples) |
+| publicist | Podcast booking & tour PR | ✅ Filled (+3 examples) |
+| brand | Brand crisis / IP misuse response | ✅ Filled (+3 examples) |
+| distribution | Chain of Title dispute handling | ✅ Filled (+3 examples) |
+| finance | Sync licensing advance negotiation | ✅ Filled (+3 examples) |
+| legal | DMCA counter-notification | ✅ Filled (+3 examples) |
+| legal | Copyright 35-year reversion rights | ✅ Filled (+3 examples) |
+
+### Next: MEDIUM-Priority Gaps (Active Work Queue)
+
+See `SKILL_EXPERT_ROADMAP.md` Master Work Queue rows 5–27 for the full list.
 
 ---
 

@@ -1,7 +1,7 @@
 # Agent Skill Expert Roadmap
 
-**Last updated:** 2026-03-25
-**Status:** Phase 4b ACTIVE — 36 expert examples added; 12/12 HIGH-priority gaps filled
+**Last updated:** 2026-03-26
+**Status:** Phase 4b COMPLETE — 45 expert examples added; 12/12 HIGH-priority gaps filled. 2,069 total examples, 713 expert (34%).
 **Owner:** indiiOS Training Program
 
 ---
@@ -45,28 +45,29 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 
 ## Expert % by Agent (Current Baseline)
 
-| Agent | Entry | Intermediate | Expert | Total | Expert % | Priority |
-|-------|-------|--------------|--------|-------|----------|----------|
-| distribution | 12 | 70 | 21 | 103 | 20% | 🔴 HIGH |
-| finance | 13 | 68 | 22 | 103 | 21% | 🔴 HIGH |
-| curriculum | 26 | 44 | 27 | 97 | 28% | 🟡 MEDIUM |
-| licensing | 18 | 52 | 30 | 100 | 30% | 🟡 MEDIUM |
-| marketing | 11 | 58 | 31 | 100 | 31% | 🟡 MEDIUM |
-| road | 22 | 47 | 31 | 100 | 31% | 🟡 MEDIUM |
-| music | 29 | 36 | 38 | 106 | 36% | 🟡 MEDIUM |
-| generalist | 35 | 32 | 33 | 100 | 33% | 🟡 MEDIUM |
-| brand | 16 | 51 | 36 | 103 | 35% | 🟡 MEDIUM |
-| publishing | 17 | 51 | 38 | 106 | 36% | 🟡 MEDIUM |
-| video | 21 | 43 | 33 | 97 | 34% | 🟢 LOW |
-| devops | 26 | 37 | 32 | 95 | 34% | 🟢 LOW |
-| merchandise | 23 | 43 | 34 | 100 | 34% | 🟢 LOW |
-| director | 29 | 34 | 34 | 97 | 35% | 🟢 LOW |
-| screenwriter | 22 | 41 | 34 | 97 | 35% | 🟢 LOW |
-| social | 27 | 35 | 41 | 106 | 39% | 🟡 MEDIUM |
-| publicist | 23 | 38 | 39 | 103 | 38% | 🟡 MEDIUM |
-| legal | 8 | 58 | 40 | 106 | 38% | 🟡 MEDIUM |
-| producer | 22 | 32 | 40 | 94 | 43% | 🟢 LOW |
-| security | 12 | 39 | 46 | 97 | 47% | 🟢 LOW |
+| Agent | Total | Expert | Expert % | Status |
+|-------|-------|--------|----------|--------|
+| finance | 106 | 25 | 24% | ✅ HIGH gaps filled |
+| curriculum | 100 | 27 | 27% | 🟡 MEDIUM |
+| licensing | 100 | 30 | 30% | 🟡 MEDIUM |
+| distribution | 118 | 36 | 31% | ✅ HIGH gaps filled |
+| road | 100 | 31 | 31% | 🟡 MEDIUM |
+| devops | 100 | 32 | 32% | 🟢 LOW |
+| generalist | 100 | 33 | 33% | 🟡 MEDIUM |
+| video | 100 | 33 | 33% | 🟢 LOW |
+| marketing | 104 | 35 | 34% | ✅ HIGH gaps filled |
+| director | 100 | 34 | 34% | 🟢 LOW |
+| merchandise | 100 | 34 | 34% | 🟢 LOW |
+| screenwriter | 100 | 34 | 34% | 🟢 LOW |
+| brand | 103 | 36 | 35% | 🟡 MEDIUM |
+| legal | 106 | 40 | 38% | 🟡 MEDIUM |
+| music | 109 | 41 | 38% | 🟡 MEDIUM |
+| publishing | 110 | 42 | 38% | ✅ HIGH gaps filled |
+| social | 106 | 41 | 39% | 🟡 MEDIUM |
+| producer | 100 | 40 | 40% | 🟢 LOW |
+| publicist | 107 | 43 | 40% | ✅ HIGH gaps filled |
+| security | 100 | 46 | 46% | 🟢 LOW |
+| **TOTAL** | **2,069** | **713** | **34%** | ✅ All HIGH gaps resolved |
 
 ---
 
@@ -75,6 +76,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 1. Music Agent — Sonic Director
+
 **Current expert %:** 36% (38/106 examples)
 **Dataset:** `docs/agent-training/datasets/music.jsonl`
 **Definition:** `src/services/agent/definitions/MusicAgent.ts`
@@ -98,6 +100,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 2. Distribution Agent — Distribution Chief
+
 **Current expert %:** 20% (21/103 examples) — LOWEST among all agents
 **Dataset:** `docs/agent-training/datasets/distribution.jsonl`
 **Definition:** `src/services/agent/definitions/DistributionAgent.ts`
@@ -123,6 +126,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 3. Finance Agent — Finance Director
+
 **Current expert %:** 21% (22/103 examples) — 2ND LOWEST
 **Dataset:** `docs/agent-training/datasets/finance.jsonl`
 **Definition:** `src/services/agent/definitions/FinanceAgent.ts`
@@ -147,6 +151,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 4. Legal Agent — Music Industry Legal Specialist
+
 **Current expert %:** 38% (40/106 examples)
 **Dataset:** `docs/agent-training/datasets/legal.jsonl`
 **Definition:** `src/services/agent/definitions/LegalAgent.ts`
@@ -169,6 +174,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 5. Publishing Agent — Publishing Director
+
 **Current expert %:** 36% (38/106 examples)
 **Dataset:** `docs/agent-training/datasets/publishing.jsonl`
 **Definition:** `src/services/agent/definitions/PublishingAgent.ts`
@@ -190,6 +196,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 6. Licensing Agent — Licensing Department
+
 **Current expert %:** 30% (30/100 examples)
 **Dataset:** `docs/agent-training/datasets/licensing.jsonl`
 **Definition:** `src/services/agent/definitions/LicensingAgent.ts`
@@ -209,6 +216,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 7. Marketing Agent — Campaign Manager
+
 **Current expert %:** 31% (31/100 examples)
 **Dataset:** `docs/agent-training/datasets/marketing.jsonl`
 **Definition:** `src/services/agent/definitions/MarketingAgent.ts`
@@ -230,6 +238,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 8. Brand Agent — Brand Manager
+
 **Current expert %:** 35% (36/103 examples)
 **Dataset:** `docs/agent-training/datasets/brand.jsonl`
 **Definition:** `src/services/agent/definitions/BrandAgent.ts`
@@ -250,6 +259,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 9. Social Agent — Social Media Director
+
 **Current expert %:** 39% (41/106 examples)
 **Dataset:** `docs/agent-training/datasets/social.jsonl`
 **Definition:** `src/services/agent/definitions/SocialAgent.ts`
@@ -272,6 +282,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 10. Publicist Agent — PR Director
+
 **Current expert %:** 38% (39/103 examples)
 **Dataset:** `docs/agent-training/datasets/publicist.jsonl`
 **Definition:** `src/services/agent/definitions/PublicistAgent.ts`
@@ -292,6 +303,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 11. Road Manager Agent — Road Manager
+
 **Current expert %:** 31% (31/100 examples)
 **Dataset:** `docs/agent-training/datasets/road.jsonl`
 **Definition:** `src/services/agent/definitions/RoadAgent.ts`
@@ -313,6 +325,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 12. Merchandise Agent — Merchandise Director
+
 **Current expert %:** 34% (34/100 examples)
 **Dataset:** `docs/agent-training/datasets/merchandise.jsonl`
 **Definition:** `src/services/agent/MerchandiseAgent.ts`
@@ -332,6 +345,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 13. Video Agent — Video Director
+
 **Current expert %:** 34% (33/97 examples)
 **Dataset:** `docs/agent-training/datasets/video.jsonl`
 **Definition:** `src/services/agent/definitions/VideoAgent.ts`
@@ -353,6 +367,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 14. Generalist Agent — indii Conductor (Hub)
+
 **Current expert %:** 33% (33/100 examples)
 **Dataset:** `docs/agent-training/datasets/generalist.jsonl`
 **Definition:** `src/services/agent/specialists/GeneralistAgent.ts`
@@ -371,6 +386,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 15. DevOps Agent — SRE Engineer
+
 **Current expert %:** 34% (32/95 examples)
 **Dataset:** `docs/agent-training/datasets/devops.jsonl`
 **Definition:** `src/services/agent/definitions/DevOpsAgent.ts`
@@ -389,6 +405,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 16. Security Agent — Security Guardian
+
 **Current expert %:** 47% (46/97 examples) — HIGHEST among all agents
 **Dataset:** `docs/agent-training/datasets/security.jsonl`
 **Definition:** `src/services/agent/definitions/SecurityAgent.ts`
@@ -410,6 +427,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 17. Director Agent — Creative Director
+
 **Current expert %:** 35% (34/97 examples)
 **Dataset:** `docs/agent-training/datasets/director.jsonl`
 **Tools:** `src/services/agent/tools/DirectorTools.ts`
@@ -428,6 +446,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 18. Producer Agent — Unit Production Manager
+
 **Current expert %:** 43% (40/94 examples) — 2ND HIGHEST
 **Dataset:** `docs/agent-training/datasets/producer.jsonl`
 **Tools:** `src/services/agent/tools/ProducerTools.ts`
@@ -446,6 +465,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 19. Screenwriter Agent — Script Specialist
+
 **Current expert %:** 35% (34/97 examples)
 **Dataset:** `docs/agent-training/datasets/screenwriter.jsonl`
 **Tools:** `src/services/agent/tools/ScreenwriterTools.ts`
@@ -465,6 +485,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 20. Curriculum Agent — Education Specialist
+
 **Current expert %:** 28% (27/97 examples) — 3RD LOWEST
 **Dataset:** `docs/agent-training/datasets/curriculum.jsonl`
 **Definition:** `src/services/agent/specialists/CurriculumAgent.ts`
