@@ -13,7 +13,24 @@ import type { Content, Tool } from 'firebase/ai';
 import { env } from '@/config/env';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { STANDARD_SAFETY_SETTINGS } from '../config/safety-settings';
+import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
+
+/**
+ * Vertex AI endpoint URLs (projects/.../endpoints/...) cannot be resolved by the
+ * Gemini Developer API fallback client. When the primary Firebase AI path is
+ * unavailable, fall back to the base agent model so the call succeeds.
+ */
+function resolveModelForFallback(modelName: string): string {
+    if (modelName.startsWith('projects/') && modelName.includes('/endpoints/')) {
+        logger.warn(
+            '[FallbackClient] Fine-tuned Vertex endpoint cannot be used via Gemini API fallback. ' +
+            `Falling back to base model. Endpoint: ${modelName}`
+        );
+        return AI_MODELS.TEXT.AGENT;
+    }
+    return modelName;
+}
 import { auth } from '@/services/firebase';
 import { TokenUsageService } from '../billing/TokenUsageService';
 import type {
@@ -86,6 +103,7 @@ export async function generateWithFallback(
     handleError?: (error: unknown) => AppException
 ): Promise<GenerateContentResult> {
     try {
+        const resolvedModel = resolveModelForFallback(modelName);
         // Build contents array for the new SDK format
         const contents = typeof prompt === 'string'
             ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
@@ -101,7 +119,7 @@ export async function generateWithFallback(
         // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
         // NOT nested inside config (which maps to generation_config in the API payload).
         const result = await fallbackClient.models.generateContent({
-            model: modelName,
+            model: resolvedModel,
             contents: contents as unknown as Record<string, unknown>[],
             config: {
                 ...cleanConfig,
@@ -143,6 +161,7 @@ export async function streamWithFallback(
     tools?: Tool[],
     options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
 ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
+    const resolvedModel = resolveModelForFallback(modelName);
     const userId = auth.currentUser?.uid;
 
     // Build contents array for the new SDK format
@@ -160,7 +179,7 @@ export async function streamWithFallback(
     // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
     // NOT nested inside config (which maps to generation_config in the API payload).
     const result = await fallbackClient.models.generateContentStream({
-        model: modelName,
+        model: resolvedModel,
         contents: contents as unknown as Record<string, unknown>[],
         config: {
             ...cleanConfig,
