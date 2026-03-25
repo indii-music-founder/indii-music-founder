@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.35.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.35.0...v1.35.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* engineering health hardening — lint cleanup, stub pruning, dependency fixes ([0a327d8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0a327d8c49e9802cf841a95dce8765f2a37f279d))
+
 ## [1.35.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.34.1...v1.35.0) (2026-03-25)
 
 
