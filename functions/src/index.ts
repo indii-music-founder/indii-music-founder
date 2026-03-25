@@ -38,16 +38,14 @@ admin.initializeApp();
 export { createStripeAccount, createTransfer } from './stripe/connect';
 
 // Stripe Split Escrow (Item 135)
-// Temporarily disabled: Gen 1 functions with secrets cause 'Cannot set CPU' deployment error
-// export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
+export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
 
 
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
 // Distribution Functions (Item 415: DDEX DSP Acknowledgement Processing)
-// Temporarily disabled: Firebase CLI fails to resolve storage bucket region for onObjectFinalized triggers
-// export { processDDEXAck } from './distribution/processDDEXAck';
+export { processDDEXAck } from './distribution/processDDEXAck';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';
@@ -80,8 +78,7 @@ export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
 export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email/tokenManager';
 
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
-// Temporarily disabled: Gen 1 functions with secrets cause 'Cannot set CPU' deployment error
-// export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
+export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging)
 export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
