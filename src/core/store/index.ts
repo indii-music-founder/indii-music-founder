@@ -25,6 +25,7 @@ import { MemoryAgentSlice, createMemoryAgentSlice } from './slices/memoryAgentSl
 import { MarketplaceSlice, createMarketplaceSlice } from './slices/marketplaceSlice';
 import { EmailSlice, createEmailSlice } from './slices/emailSlice';
 import { AnalyticsSlice, createAnalyticsSlice } from './slices/analyticsSlice';
+import { AgentFeedbackSlice, createAgentFeedbackSlice } from './slices/agentFeedbackSlice';
 
 
 export type { AgentMessage, AgentThought } from './slices/agent';
@@ -51,7 +52,8 @@ export interface StoreState extends
     MemoryAgentSlice,
     MarketplaceSlice,
     EmailSlice,
-    AnalyticsSlice { }
+    AnalyticsSlice,
+    AgentFeedbackSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -84,6 +86,7 @@ export const useStore = create<StoreState>()(
                 ...createMarketplaceSlice(...a),
                 ...createEmailSlice(...a),
                 ...createAnalyticsSlice(...a),
+                ...createAgentFeedbackSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access

@@ -115,6 +115,9 @@ export interface UserPreferences {
     compactMode?: boolean;
     animationsEnabled?: boolean;
 
+    // Agent Strategy
+    wisdomPoolOptIn?: boolean;
+
     [key: string]: any; // Allow extensibility
 }
 

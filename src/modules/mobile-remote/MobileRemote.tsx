@@ -128,6 +128,7 @@ function PairingModal({ onClose, onPair }: {
       setStatus('generating');
       let localIp = 'localhost';
       let port = 4299;
+      let passcode = '';
 
       if (typeof window !== 'undefined' && window.electronAPI) {
         try {
@@ -135,6 +136,7 @@ function PairingModal({ onClose, onPair }: {
           if (info) {
             localIp = info.localIp ?? localIp;
             port = info.port ?? port;
+            passcode = info.passcode ?? '';
           }
         } catch {
           // Fallback to default for web mode
@@ -143,11 +145,26 @@ function PairingModal({ onClose, onPair }: {
 
       if (cancelled) return;
 
-      const wsUrl = `ws://${localIp}:${port}`;
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${localIp}:${port}`;
+      let appUrl = wsUrl; // fallback
+
+      try {
+        if (typeof window !== 'undefined') {
+          // Ensure we don't accidentally give a 0.0.0.0 or 127.0.0.1 link if possible,
+          // but we rely on localIp from the Electron API which gets the primary LAN IP.
+          const appPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+          // Use /remote alias. Assuming Electron app may be accessed via IP:4242 from phone
+          appUrl = `http://${localIp}:${appPort}/remote?ws=${port}&code=${passcode}`;
+        }
+      } catch {
+        // fallback
+      }
+
       let qrDataUrl = '';
 
       if (qrCanvasRef.current) {
-        renderQRPlaceholder(qrCanvasRef.current, wsUrl);
+        renderQRPlaceholder(qrCanvasRef.current, appUrl);
         qrDataUrl = qrCanvasRef.current.toDataURL();
       }
 
@@ -250,15 +267,22 @@ export default function MobileRemote() {
 
   // ─── WebSocket Bridge ──────────────────────────────────────────────────────
 
-  const connectBridge = useCallback((wsUrl: string) => {
+  const connectBridge = useCallback((wsUrl: string, passcode?: string) => {
     try {
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        setIsPaired(true);
-        setConnectionStatus('connected');
-        logger.info('[MobileRemote] Connected to desktop bridge');
+        if (passcode) {
+          // If we have a passcode (QR scan or direct launch), send auth first.
+          // Wait for auth_ok before marking as connected.
+          ws.send(JSON.stringify({ type: 'auth', passcode }));
+        } else {
+          // Local/dev fallback where auth might not be required
+          setIsPaired(true);
+          setConnectionStatus('connected');
+          logger.info('[MobileRemote] Connected to desktop bridge (no passcode provided)');
+        }
 
         // Clean up any previous listener before registering a new one
         wcpUnsubRef.current?.();
@@ -271,8 +295,14 @@ export default function MobileRemote() {
 
       ws.onmessage = (event) => {
         try {
-          const cmd: RemoteCommand = JSON.parse(event.data as string);
-          handleRemoteCommand(cmd);
+          const cmd = JSON.parse(event.data as string);
+          if (cmd.type === 'auth_ok') {
+            setIsPaired(true);
+            setConnectionStatus('connected');
+            logger.info('[MobileRemote] Authenticated securely with desktop bridge');
+            return;
+          }
+          handleRemoteCommand(cmd as RemoteCommand);
         } catch {
           // ignore malformed
         }
@@ -294,6 +324,7 @@ export default function MobileRemote() {
     setConnectionStatus('pairing');
     let localIp = 'localhost';
     let port = 4299;
+    let passcode = '';
 
     if (typeof window !== 'undefined' && window.electronAPI) {
       try {
@@ -301,14 +332,35 @@ export default function MobileRemote() {
         if (info) {
           localIp = info.localIp ?? localIp;
           port = info.port ?? port;
+          passcode = info.passcode ?? '';
         }
       } catch {
         // Fallback
       }
     }
 
-    connectBridge(`ws://${localIp}:${port}`);
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    connectBridge(`${wsProtocol}//${localIp}:${port}`, passcode);
   };
+
+  // Auto-connect if URL params contain ws payload (scanned from QR code)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Parse URL params for QR code entry
+    const params = new URLSearchParams(window.location.search);
+    const wsPort = params.get('ws');
+    const passcode = params.get('code');
+
+    if (wsPort && passcode) {
+      setConnectionStatus('pairing');
+      const host = window.location.hostname || 'localhost';
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      connectBridge(`${wsProtocol}//${host}:${wsPort}`, passcode);
+
+      // Optionally remove params to clean up URL, but not strictly necessary
+    }
+  }, [connectBridge]);
 
   const sendCommand = useCallback((command: { type: string; payload: unknown }) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
