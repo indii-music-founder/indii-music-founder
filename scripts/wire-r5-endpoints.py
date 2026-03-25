@@ -83,7 +83,7 @@ def query_jobs() -> dict[str, dict]:
         sys.exit(1)
 
     aiplatform.init(project=PROJECT, location=LOCATION)
-    client = aiplatform.gapic.TuningJobServiceClient(
+    client = aiplatform.gapic.GenAiTuningServiceClient(
         client_options={"api_endpoint": f"{LOCATION}-aiplatform.googleapis.com"}
     )
 
@@ -93,32 +93,32 @@ def query_jobs() -> dict[str, dict]:
         job_name = f"projects/{PROJECT}/locations/{LOCATION}/tuningJobs/{job_id}"
         try:
             job = client.get_tuning_job(name=job_name)
-            raw = job._pb if hasattr(job, "_pb") else job
 
-            # Extract state string
-            try:
-                from google.cloud.aiplatform_v1.types import JobState
-                state_val = raw.state if hasattr(raw, "state") else 0
-                state = JobState(state_val).name if state_val else "UNKNOWN"
-            except Exception:
-                state = str(getattr(raw, "state", "UNKNOWN"))
+            # Extract state — works on both proto-plus and raw proto objects
+            state_val = getattr(job, "state", None)
+            if state_val is not None:
+                try:
+                    from google.cloud.aiplatform_v1.types import JobState
+                    state = JobState(int(state_val)).name
+                except Exception:
+                    state = str(state_val)
+            else:
+                state = "UNKNOWN"
 
-            # Extract endpoint (only available after SUCCEEDED)
+            # Extract endpoint (populated only after SUCCEEDED)
             endpoint = None
             try:
-                tuned_model = getattr(raw, "tuned_model", None)
+                tuned_model = getattr(job, "tuned_model", None)
                 if tuned_model:
                     endpoint_name = getattr(tuned_model, "endpoint", None) or \
                                     getattr(tuned_model, "model", None)
                     if endpoint_name:
-                        # Strip full resource path, keep just endpoint ID
-                        # "projects/.../endpoints/1234" → extract 1234
                         m = re.search(r"/endpoints/(\d+)$", str(endpoint_name))
                         if m:
                             endpoint = f"projects/{PROJECT_NUMBER}/locations/{LOCATION}/endpoints/{m.group(1)}"
                         else:
                             endpoint = str(endpoint_name)
-            except Exception as e:
+            except Exception:
                 pass
 
             results[agent_id] = {
@@ -196,8 +196,7 @@ def generate_ts(job_results: dict[str, dict], date_str: str) -> str:
 
             if endpoint and "SUCCEEDED" in state or (endpoint and "ERROR" not in state):
                 pad = " " * (16 - len(agent_id))
-                comment = f"// R5 — {bm} base (100 examples) — {date_str}"
-                lines.append(f"    // {comment[3:]}")
+                lines.append(f"    // R5 — {bm} base (100 examples) — {date_str}")
                 lines.append(f"    '{agent_id}':{pad}'{endpoint}',")
             elif "RUNNING" in state or "PENDING" in state or "QUEUED" in state:
                 lines.append(f"    // R5 — {bm} base — job {info['job_id']} still {state}")
