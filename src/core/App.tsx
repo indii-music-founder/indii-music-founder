@@ -51,6 +51,7 @@ import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
 import { logger } from '@/utils/logger';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { FirstRunTour } from '@/components/shared/FirstRunTour';
+import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 
 cleanupLocalStorage();
 
@@ -597,6 +598,9 @@ export default function App() {
 
                                 {/* Item 290: First-Run Guided Tour */}
                                 <FirstRunTour />
+
+                                {/* Agent Alignment Steering Widget */}
+                                <AgentFeedbackWidget />
                             </GlobalDropZone>
                         </div>
                     </ToastProvider>

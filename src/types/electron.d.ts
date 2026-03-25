@@ -36,7 +36,7 @@ export interface ElectronAPI {
 
     // System Info (Mobile Remote, Device Detection)
     system?: {
-        getMobileRemoteInfo?: () => Promise<{ localIp: string; port: number } | null>;
+        getMobileRemoteInfo?: () => Promise<{ localIp: string; port: number; passcode?: string } | null>;
     };
 
     // Filesystem (Electron IPC)

@@ -22,7 +22,8 @@ import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
-import { SectionHeader, SettingRow } from './SettingsShared';
+import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
+import { BrainCircuit } from 'lucide-react'; // Icon for wisdom pool
 
 const AuditLogDashboard = React.lazy(() =>
     import('@/modules/settings/components/AuditLogDashboard').then(m => ({ default: m.AuditLogDashboard }))
@@ -38,6 +39,7 @@ const SecuritySection: React.FC = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showAuditLog, setShowAuditLog] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const { updatePreferences } = useStore(useShallow((s: StoreState) => ({ updatePreferences: s.updatePreferences })));
 
     const handleLogout = async () => {
         try {
@@ -113,6 +115,13 @@ const SecuritySection: React.FC = () => {
                     >
                         {showAuditLog ? 'Hide' : 'View'} <ChevronRight size={12} className={`transition-transform ${showAuditLog ? 'rotate-90' : ''}`} />
                     </button>
+                </SettingRow>
+
+                <SettingRow icon={BrainCircuit} label="Wisdom Pool (Agent Training)" description="Share anonymized decision rules to improve baseline agent instructions globally">
+                    <Toggle
+                        enabled={userProfile?.preferences?.wisdomPoolOptIn ?? false}
+                        onChange={(enabled) => updatePreferences({ wisdomPoolOptIn: enabled })}
+                    />
                 </SettingRow>
 
                 <SettingRow icon={Globe} label="Data Export" description="Download all your data as JSON">

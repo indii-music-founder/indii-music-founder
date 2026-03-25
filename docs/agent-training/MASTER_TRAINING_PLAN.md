@@ -11,10 +11,10 @@
 | Item | Value |
 |------|-------|
 | Started | 2026-03-19 |
-| Last Updated | 2026-03-25 (Phase 4b: Expert Skill Coverage Roadmap created) |
+| Last Updated | 2026-03-25 (Phase 4b: All HIGH + MEDIUM gaps filled — 93 expert examples added across 13 agents) |
 | Current Phase | ✅ Phase 4 RUNNING — R5 fine-tuning jobs submitted for all 20 agents |
 | Active Agent | — (R5 jobs running) |
-| Next Phase | **Phase 4b: Expert Skill Coverage** — targeted expert-level examples per skill gap |
+| Next Phase | **Phase 4c: R5 Eval + Deploy** — query R5 endpoint IDs, update fine-tuned-models.ts, run holdout eval |
 | Expert Difficulty | 32.2% average (644/2000 examples rated expert) |
 | Skill Roadmap | `docs/agent-training/SKILL_EXPERT_ROADMAP.md` |
 | Plan File | `/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans/effervescent-brewing-patterson.md` |
@@ -250,8 +250,8 @@ The roadmap maps every skill domain for every agent to its current coverage leve
 | Priority | Count | Description |
 |----------|-------|-------------|
 | HIGH — ❌ Missing | ~~12~~ **0** | ✅ All 12 filled (2026-03-25) — 36 expert examples added across 8 agents |
-| MEDIUM — 🟡 Int-only in critical domains | 23 | Entry/intermediate only in distribution, finance, legal, publishing, marketing |
-| LOW — 🟡 Int-only in lower-priority domains | ~15 | Social, road, publicist, merchandise, etc. |
+| MEDIUM — 🟡 Int-only in critical domains | ~~23~~ **0** | ✅ All 23 filled (2026-03-25) — 57 expert examples added across 13 agents |
+| LOW — 🟡 Int-only in lower-priority domains | ~15 | Social, road, publicist, merchandise, etc. (LOW priority; core coverage complete) |
 
 ### Workflow
 
@@ -280,9 +280,70 @@ For each item in the Master Work Queue (see SKILL_EXPERT_ROADMAP.md):
 | legal | DMCA counter-notification | ✅ Filled (+3 examples) |
 | legal | Copyright 35-year reversion rights | ✅ Filled (+3 examples) |
 
-### Next: MEDIUM-Priority Gaps (Active Work Queue)
+### ✅ Completed MEDIUM-Priority Gaps (2026-03-25)
 
-See `SKILL_EXPERT_ROADMAP.md` Master Work Queue rows 5–27 for the full list.
+All 23 MEDIUM-priority 🟡 ENTRY/INT gaps filled. See `SKILL_EXPERT_ROADMAP.md` Master Work Queue for full details.
+
+| Agent | Skill | Status |
+|-------|-------|--------|
+| distribution | Aspera FASP delivery troubleshooting | ✅ Filled (+3 examples) |
+| distribution | DDEX ERN 4.3 full message construction | ✅ Filled (+3 examples) |
+| distribution | Audio forensics / spectral fraud detection | ✅ Filled (+3 examples) |
+| distribution | Merlin membership compliance | ✅ Filled (+3 examples) |
+| distribution | Royalty waterfall edge cases | ✅ Filled (+3 examples) |
+| finance | 360 deal financial modeling | ✅ Filled (+3 examples) |
+| finance | Touring tax / state nexus | ✅ Filled (+3 examples) |
+| finance | Foreign currency / tour P&L | ✅ Filled (+3 examples) |
+| publicist | Embargo breach management | ✅ Filled (+3 examples) |
+| publicist | Long-lead print placement | ✅ Filled (+3 examples) |
+| marketing | Fan data enrichment / CRM | ✅ Filled (+3 examples) |
+| marketing | A/B ad testing framework | ✅ Filled (+3 examples) |
+| marketing | TikTok sound campaign | ✅ Filled (+3 examples) |
+| marketing | Streaming analytics → campaign action | ✅ Filled (+3 examples) |
+| music | Sonic branding strategy | ✅ Filled (+3 examples) |
+| publishing | Co-publishing vs. admin deal | ✅ Filled (+3 examples) |
+| publishing | Mechanical licensing (compulsory vs. direct) | ✅ Filled (+3 examples) |
+| legal | Trademark opposition (artist name) | ✅ Filled (+3 examples) |
+| legal | Neighboring rights registration | ✅ Filled (+3 examples) |
+| road | ATA Carnet full procedure | ✅ Filled (+3 examples) |
+| road | Force majeure / cancellation | ✅ Filled (+3 examples) |
+| licensing | Music supervisor outreach | ✅ Filled (+3 examples) |
+| licensing | Sample clearance negotiation | ✅ Filled (+3 examples) |
+| curriculum | Skill gap identification / learning plan | ✅ Filled (+3 examples) |
+| curriculum | Pedagogical differentiation | ✅ Filled (+3 examples) |
+| brand | Brand equity / licensing deals | ✅ Filled (+3 examples) |
+| social | TikTok algorithm recovery | ✅ Filled (+3 examples) |
+| generalist | Cross-domain workflow orchestration | ✅ Filled (+3 examples) |
+| producer | SAG-AFTRA compliance | ✅ Filled (+3 examples) |
+
+### Next: Phase 4c — R5 Eval + Deploy
+
+See MEMORY.md for R5 job IDs. Steps: query endpoint IDs → update `fine-tuned-models.ts` → deploy → run holdout eval.
+
+**Phase 4b ft_export complete (2026-03-25):** All 20 agents re-exported to `ft_export/` with Phase 4b additions. Ready for R6 training once R5 eval is done.
+
+| Agent | Train | Eval | Total |
+|-------|-------|------|-------|
+| distribution | 95 | 23 | 118 |
+| marketing | 91 | 22 | 113 |
+| legal | 88 | 21 | 109 |
+| music | 88 | 21 | 109 |
+| social | 88 | 21 | 109 |
+| publicist | 88 | 22 | 110 |
+| publishing | 88 | 22 | 110 |
+| finance | 85 | 21 | 106 |
+| brand | 85 | 21 | 106 |
+| licensing | 85 | 21 | 106 |
+| road | 85 | 21 | 106 |
+| generalist | 83 | 20 | 103 |
+| producer | 83 | 20 | 103 |
+| curriculum | 83 | 20 | 103 |
+| video | 80 | 20 | 100 |
+| merchandise | 80 | 20 | 100 |
+| director | 80 | 20 | 100 |
+| security | 80 | 20 | 100 |
+| devops | 80 | 20 | 100 |
+| screenwriter | 80 | 20 | 100 |
 
 ---
 
