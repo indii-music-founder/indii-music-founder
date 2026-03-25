@@ -51,10 +51,10 @@ export function getFirebaseAI(): AI | null {
 
     try {
         _aiInstance = getAI(app, {
-            backend: new VertexAIBackend('global'),
+            backend: new VertexAIBackend('us-central1'),
             useLimitedUseAppCheckTokens: false
         });
-        logger.debug('[Firebase] Firebase AI initialized with Vertex AI backend');
+        logger.debug('[Firebase] Firebase AI initialized with Vertex AI backend (us-central1)');
         return _aiInstance;
     } catch (error) {
         logger.error('[Firebase] Failed to initialize Firebase AI:', error);
