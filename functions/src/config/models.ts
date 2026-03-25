@@ -7,23 +7,23 @@
 
 export const FUNCTION_AI_MODELS = {
     IMAGE: {
-        GENERATION: 'gemini-3.1-pro-image-preview',
-        FAST: 'gemini-3.1-flash-image-preview',
+        GENERATION: 'gemini-2.5-pro',
+        FAST: 'gemini-2.5-flash',
     },
     TEXT: {
-        FAST: 'gemini-3-flash-preview',
-        PRO: 'gemini-3.1-pro-preview',
+        FAST: 'gemini-2.5-flash',
+        PRO: 'gemini-2.5-pro',
     },
     VIDEO: {
-        GENERATION: 'veo-3.1-generate-preview',
-        PRO: 'veo-3.1-generate-preview', // Alias for internal consistency
-        FAST: 'veo-3.1-fast-generate-preview',
+        GENERATION: 'veo-3-generate-preview',
+        PRO: 'veo-3-generate-preview', // Alias for internal consistency
+        FAST: 'veo-3-fast-generate-preview',
     },
     SPEECH: {
         GENERATION: 'gemini-2.5-pro-tts',
     },
     AUDIO: {
-        ANALYSIS: 'gemini-3.1-pro-preview', // Multimodal audio support (Corrected per Model Policy)
+        ANALYSIS: 'gemini-2.5-pro', // Multimodal audio support
     }
 } as const;
 

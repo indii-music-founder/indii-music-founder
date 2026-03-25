@@ -64,7 +64,7 @@ export interface RetrievalOptions {
 // ============================================================================
 
 const API_KEY = import.meta.env.VITE_API_KEY || process.env.VITE_API_KEY;
-const MODEL_NAME = 'gemini-3-flash-preview'; // Use latest model with best retrieval
+const MODEL_NAME = 'gemini-2.5-flash'; // Use latest model with best retrieval
 const FILE_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/files';
 
 // Supported MIME types for upload

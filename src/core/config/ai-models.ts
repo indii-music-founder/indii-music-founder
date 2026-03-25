@@ -10,16 +10,16 @@ import { logger } from '@/utils/logger';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-3.1-pro-preview',
-    TEXT_FAST: 'gemini-3-flash-preview',
-    IMAGE_GEN: 'gemini-3-pro-image-preview',
-    IMAGE_FAST: 'gemini-3.1-flash-image-preview',
-    AUDIO_PRO: 'gemini-3.1-pro-preview',
-    AUDIO_FLASH: 'gemini-3-flash-preview',
+    TEXT_AGENT: 'gemini-2.5-pro',
+    TEXT_FAST: 'gemini-2.5-flash',
+    IMAGE_GEN: 'gemini-2.5-pro',           // Native image gen via responseModalities
+    IMAGE_FAST: 'gemini-2.5-flash',         // Fast image gen via responseModalities
+    AUDIO_PRO: 'gemini-2.5-pro',
+    AUDIO_FLASH: 'gemini-2.5-flash',
     AUDIO_TTS: 'gemini-2.5-pro-preview-tts',
-    VIDEO_PRO: 'veo-3.1-generate-preview',
-    VIDEO_FAST: 'veo-3.1-fast-generate-preview',
-    VIDEO_GEN: 'veo-3.1-generate-preview', // Alias for backward compatibility
+    VIDEO_PRO: 'veo-3-generate-preview',
+    VIDEO_FAST: 'veo-3-fast-generate-preview',
+    VIDEO_GEN: 'veo-3-generate-preview',    // Alias for backward compatibility
     BROWSER_AGENT: 'gemini-2.5-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
@@ -104,16 +104,14 @@ export const AI_CONFIG = {
  * - Flash: $30.00 / 1M Output
  */
 export const MODEL_PRICING = {
-    'gemini-3.1-pro-preview': { input: 2.50, output: 7.50 },
-    'gemini-3-flash-preview': { input: 0.10, output: 0.40 },
-    'gemini-3-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
-    'gemini-3.1-flash-image-preview': { output: 30.00, resolution: "1K", capacity: 8 },
-    'veo-3.1-generate-preview': {
+    'gemini-2.5-pro': { input: 1.25, output: 10.00 },
+    'gemini-2.5-flash': { input: 0.15, output: 0.60 },
+    'veo-3-generate-preview': {
         perSecond: 0.20,     // 720p/1080p Video Only
         perSecond4K: 0.40,   // 4K Video Only
         audioAddOn: 0.20     // Flat add-on for audio (up to 1080p)
     },
-    'veo-3.1-fast-generate-preview': {
+    'veo-3-fast-generate-preview': {
         perSecond: 0.10,     // 720p/1080p Video Only
         perSecond4K: 0.30,   // 4K Video Only
         audioAddOn: 0.05     // Flat add-on for audio
