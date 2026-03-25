@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 export function throttle<T extends (...args: any[]) => any>(
     func: T,
     limit: number

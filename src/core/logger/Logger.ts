@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { Sentry } from '@/lib/sentry';
 import { logger } from '@/utils/logger';
 

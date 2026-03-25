@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { vi, MockInstance } from 'vitest';
 import { BaseAgent } from '../../BaseAgent';
 import { AgentConfig, AgentContext } from '../../types';

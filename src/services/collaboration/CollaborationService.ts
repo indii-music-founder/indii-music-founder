@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { logger } from '@/utils/logger';

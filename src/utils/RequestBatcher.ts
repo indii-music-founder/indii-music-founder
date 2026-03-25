@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 /**
  * Generic request batcher that pools items over a time window or until a size limit is reached.
  */

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { BaseAgent } from './BaseAgent';
 import { z } from 'zod';
 import { FunctionDeclaration } from './types';

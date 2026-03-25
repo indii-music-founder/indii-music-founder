@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 // Lazy-load essentia.js (2.6MB) only when audio analysis is needed
 type EssentiaModule = typeof import('essentia.js');
 // import * as tf from '@tensorflow/tfjs'; // Removed per memory/architecture rules

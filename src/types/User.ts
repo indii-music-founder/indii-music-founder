@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { Timestamp } from 'firebase/firestore';
 import { SocialStats } from '@/services/social/types';
 

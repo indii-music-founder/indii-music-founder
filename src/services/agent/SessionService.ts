@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 
 import { FirestoreService } from '../FirestoreService';
 import type { ConversationSession } from '@/core/store/slices/agent'; // Direct import to avoid circular dep risks? Or from index?

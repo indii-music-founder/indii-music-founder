@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { WhiskState, WhiskItem } from '@/core/store/slices/creative';
 import { ImageGeneration } from './image/ImageGenerationService';
 import { AI_MODELS } from '@/core/config/ai-models';

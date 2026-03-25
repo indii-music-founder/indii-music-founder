@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 /**
  * Outlook Provider — Uses Microsoft Identity Platform (MSAL) for OAuth
  * and Microsoft Graph API for message operations.

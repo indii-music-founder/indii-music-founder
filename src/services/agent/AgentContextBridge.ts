@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 /**
  * Agent Context Bridge
  *

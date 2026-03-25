@@ -11,11 +11,12 @@
 | Item | Value |
 |------|-------|
 | Started | 2026-03-19 |
-| Last Updated | 2026-03-23 (Phase 3b: 100 examples per agent) |
-| Current Phase | ✅ Phase 3b COMPLETE — All 20 agents at 100 examples (2,000 total) |
-| Active Agent | — (all done) |
-| Next Phase | **Phase 4: R4 Fine-Tuning Batch** — export + tune on 100 examples per agent |
+| Last Updated | 2026-03-25 (Phase 4b: Expert Skill Coverage Roadmap created) |
+| Current Phase | ✅ Phase 4 RUNNING — R5 fine-tuning jobs submitted for all 20 agents |
+| Active Agent | — (R5 jobs running) |
+| Next Phase | **Phase 4b: Expert Skill Coverage** — targeted expert-level examples per skill gap |
 | Expert Difficulty | 32.2% average (644/2000 examples rated expert) |
+| Skill Roadmap | `docs/agent-training/SKILL_EXPERT_ROADMAP.md` |
 | Plan File | `/Volumes/X SSD 2025/Users/narrowchannel/.claude/plans/effervescent-brewing-patterson.md` |
 
 ---
@@ -233,6 +234,51 @@ If a request spans 2+ domains, apply this priority chain:
    - Hub + Finance + Legal: `gemini-3-5-pro` (complex reasoning)
 5. Eval: 80/20 split (train/holdout)
 6. Deploy fine-tuned endpoint → update `agentConfig.ts`
+
+---
+
+## Phase 4b: Expert Skill Coverage
+
+**Goal:** Raise all skill domains across all 20 agents to expert-level training coverage.
+
+**Reference document:** [`docs/agent-training/SKILL_EXPERT_ROADMAP.md`](SKILL_EXPERT_ROADMAP.md)
+
+The roadmap maps every skill domain for every agent to its current coverage level (✅ Expert / 🟡 Entry/Intermediate / ❌ Missing), provides expert-level example prompts for every gap, and maintains a prioritized Master Work Queue.
+
+### Current Gaps (as of 2026-03-25)
+
+| Priority | Count | Description |
+|----------|-------|-------------|
+| HIGH — ❌ Missing | 12 | Zero examples at any level (e.g., YouTube Content ID, ISWC collision, community crisis moderation) |
+| MEDIUM — 🟡 Int-only in critical domains | 23 | Entry/intermediate only in distribution, finance, legal, publishing, marketing |
+| LOW — 🟡 Int-only in lower-priority domains | ~15 | Social, road, publicist, merchandise, etc. |
+
+### Workflow
+
+For each item in the Master Work Queue (see SKILL_EXPERT_ROADMAP.md):
+
+1. Pick the next HIGH-priority `❌ Missing` item from the queue
+2. Write 3–5 expert-difficulty examples for that skill topic in the relevant `.jsonl`
+3. Use the example expert prompt in the roadmap as the seed input
+4. Mark the skill as `✅ Expert` in SKILL_EXPERT_ROADMAP.md
+5. Re-export and re-tune when a meaningful batch accumulates (suggest 50+ new expert examples)
+
+### Highest Priority Gaps
+
+| Agent | Skill | Gap |
+|-------|-------|-----|
+| music | YouTube Content ID dispute process | ❌ Missing |
+| music | Vinyl mastering for lacquer cutting | ❌ Missing |
+| publishing | ISWC collision resolution | ❌ Missing |
+| publishing | PRO audit procedures | ❌ Missing |
+| social | Community moderation crisis response | ❌ Missing |
+| social | YouTube channel optimization | ❌ Missing |
+| publicist | Podcast booking & tour PR | ❌ Missing |
+| brand | Brand crisis / IP misuse response | ❌ Missing |
+| distribution | Chain of Title dispute handling | ❌ Missing |
+| finance | Sync licensing advance negotiation | ❌ Missing |
+| legal | DMCA counter-notification | ❌ Missing |
+| legal | Copyright 35-year reversion rights | ❌ Missing |
 
 ---
 

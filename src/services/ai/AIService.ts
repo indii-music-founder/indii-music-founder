@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { GenAI } from './GenAI';
 import { logger } from '@/utils/logger';
 import { GenerateContentOptions, GenerateContentResponse } from '@/shared/types/ai.dto';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import type { WhiskState } from '@/core/store/slices/creative';
 export type { WhiskState };
 
