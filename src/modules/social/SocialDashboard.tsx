@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Calendar, Plus, TrendingUp, Users, MoreHorizontal, UserPlus, Clock, Hash, Zap, BarChart3, Radio } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';

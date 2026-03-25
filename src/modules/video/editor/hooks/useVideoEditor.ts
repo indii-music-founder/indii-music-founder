@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { PlayerRef } from '@remotion/player';

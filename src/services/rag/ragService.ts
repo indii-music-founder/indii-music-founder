@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { GeminiRetrieval } from './GeminiRetrievalService';

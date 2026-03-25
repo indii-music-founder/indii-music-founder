@@ -25,7 +25,7 @@ import { networkInterfaces } from 'os';
 import log from 'electron-log';
 
 // Dynamic import of ws to avoid bundler issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- WebSocketServer is dynamically imported; its constructor type varies
+ 
 let WebSocketServer: any;
 
 interface WebSocketLike {

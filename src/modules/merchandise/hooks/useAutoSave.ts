@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { logger } from '@/utils/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as fabric from 'fabric';

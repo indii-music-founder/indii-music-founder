@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Calendar, Truck, Plus, Trash2, Save, X, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';

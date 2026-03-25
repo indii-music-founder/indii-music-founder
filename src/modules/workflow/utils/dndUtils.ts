@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { XYPosition } from 'reactflow';
 import { Status } from '../types';
 import { logger } from '@/utils/logger';

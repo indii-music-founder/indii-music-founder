@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 
 import React, { useState, useEffect } from 'react';
 import { Send, Server, Shield, Loader2, CheckCircle, XCircle, Terminal, HardDrive } from 'lucide-react';

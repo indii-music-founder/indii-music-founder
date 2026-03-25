@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useEffect } from 'react';
 import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, Scale, TrendingUp, Briefcase, BarChart3 } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';

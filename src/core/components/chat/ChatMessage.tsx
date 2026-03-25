@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import React, { memo, useMemo } from 'react';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';

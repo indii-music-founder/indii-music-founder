@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { Brush, Wand2, Save, Image as ImageIcon, Play, X, Film, Clapperboard, ChevronDown, Share2, Star, Download, Sparkles } from 'lucide-react';
 import { useStore, HistoryItem } from '@/core/store';

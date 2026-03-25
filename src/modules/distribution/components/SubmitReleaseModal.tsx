@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, CheckCircle2, Loader2, XCircle, AlertCircle, ChevronRight } from 'lucide-react';
 import { distributionService } from '@/services/distribution/DistributionService';

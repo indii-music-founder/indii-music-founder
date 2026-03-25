@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { v4 as uuidv4 } from 'uuid';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';

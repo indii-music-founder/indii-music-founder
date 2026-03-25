@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
 import { getAuth } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';

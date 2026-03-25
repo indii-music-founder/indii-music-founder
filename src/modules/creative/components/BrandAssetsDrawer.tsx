@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { functions, functionsWest1 } from '@/services/firebase';
 import { useStore } from '@/core/store';

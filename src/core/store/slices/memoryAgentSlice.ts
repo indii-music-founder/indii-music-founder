@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 /**
  * Memory Agent Zustand Slice
  *

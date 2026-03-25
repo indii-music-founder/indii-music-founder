@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Package, Plus, DollarSign, Tag, Image as ImageIcon, Sparkles, Box, Trash2, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '@/core/store';

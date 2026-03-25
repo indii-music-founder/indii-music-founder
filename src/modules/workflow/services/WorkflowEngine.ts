@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { CustomNode, CustomEdge, DepartmentNodeData, LogicNodeData, InputNodeData, Status, SavedWorkflow } from '../types';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';

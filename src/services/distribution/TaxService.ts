@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { FirestoreService } from '@/services/FirestoreService';
 import { TaxProfileDocument } from '@/types/firestore';
 

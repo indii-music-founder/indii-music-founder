@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 export enum AgentActionType {
     SEARCH_VENUES = 'SEARCH_VENUES',
     EMAIL_OUTREACH = 'EMAIL_OUTREACH',

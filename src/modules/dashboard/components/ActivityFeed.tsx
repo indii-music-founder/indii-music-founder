@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';

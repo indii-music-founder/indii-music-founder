@@ -15,7 +15,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import DirectGenerationTab from './components/DirectGenerationTab';
 import { logger } from '@/utils/logger';
-const ReleaseManager = lazy(() => import('../release/ReleaseManager').then(module => ({ default: module.ReleaseManager })));
+
 
 // Lazy load CreativePanel for mobile controls tab
 const CreativePanel = lazy(() => import('@/core/components/right-panel/CreativePanel'));
@@ -182,7 +182,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'video_production' && <VideoWorkflow />}
                         {viewMode === 'direct' && <DirectGenerationTab />}
                         {viewMode === 'lab' && <AILab />}
-                        {viewMode === 'release' && <Suspense fallback={<div className="text-white p-8">Loading Release Manager...</div>}><ReleaseManager /></Suspense>}
+                        {viewMode === 'release' && <div className="text-white p-8 text-center">Use the Distribution module for release management.</div>}
                         {viewMode === 'editor' && selectedItem && (
                             <CreativeCanvas
                                 item={selectedItem}

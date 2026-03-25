@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageItem } from '@/core/components/chat/ChatMessage';

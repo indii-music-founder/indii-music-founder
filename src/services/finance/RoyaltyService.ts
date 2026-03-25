@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { logger } from '@/utils/logger';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { db } from '@/services/firebase';

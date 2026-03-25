@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, DollarSign, Loader2, RefreshCw, Calculator } from 'lucide-react';

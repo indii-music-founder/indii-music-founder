@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import * as React from 'react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin, Sparkles, Megaphone, Mail, ExternalLink, RefreshCw, Filter, Download } from 'lucide-react';

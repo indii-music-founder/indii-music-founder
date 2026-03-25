@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db, functions } from '@/services/firebase';
 import { MerchProduct, CatalogProductSchema, CatalogProduct, ManufactureRequestSchema, ManufactureRequest, SampleRequestSchema, SampleRequest } from '@/modules/merchandise/types';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { logger } from '@/utils/logger';
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { app } from '@/services/firebase';

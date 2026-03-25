@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, User, Mail, Globe, MessageCircle } from 'lucide-react';

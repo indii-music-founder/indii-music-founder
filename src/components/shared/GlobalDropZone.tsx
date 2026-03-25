@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';

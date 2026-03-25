@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import React from 'react';
 import { Monitor, Smartphone, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';

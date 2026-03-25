@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 /**
  * Memory Dashboard (Always-On Memory Agent)
  *

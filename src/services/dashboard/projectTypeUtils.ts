@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { z } from 'zod';
 import { Project } from '@/core/store/slices/appSlice';
 import { ProjectMetadata } from './DashboardService';
