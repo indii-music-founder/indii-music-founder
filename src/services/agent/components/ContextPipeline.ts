@@ -2,12 +2,15 @@ import { ContextResolver } from './ContextResolver';
 import { AgentContext } from '../types';
 import { HistoryManager } from './HistoryManager';
 import { memoryService } from '../MemoryService';
+import { userMemoryService } from '../UserMemoryService';
+import { MemorySearchResult } from '@/types/UserMemory';
 import { logger } from '@/utils/logger';
 // useStore removed
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
     relevantMemories: string[];
+    userAlignmentRules?: string[];
     memoryContext: string;
     swarmId?: string | null;
     traceId?: string;
@@ -33,10 +36,30 @@ export class ContextPipeline {
         // 3. Retrieve Relevant Memories (Semantic Long-Term Memory)
         // Only retrieve if Knowledge Base toggle is enabled
         const { useStore } = await import('@/core/store');
-        const { isKnowledgeBaseEnabled } = useStore.getState();
+        const { isKnowledgeBaseEnabled, userProfile } = useStore.getState();
         const relevantMemories = isKnowledgeBaseEnabled
             ? await this.retrieveRelevantMemories(stateContext.projectId, chatHistoryString)
             : [];
+
+        // 3.5 Retrieve User Alignment Rules (Feedback)
+        let userAlignmentRules: string[] = [];
+        if (userProfile?.uid) {
+            try {
+                const recentContext = this.extractRecentContext(chatHistoryString);
+                const rules = await userMemoryService.searchMemories({
+                    userId: userProfile.uid,
+                    query: recentContext || stateContext.activeModule || 'task',
+                    categories: ['preference', 'feedback', 'interaction'],
+                    limit: 5
+                });
+                userAlignmentRules = rules.map((r: MemorySearchResult) => r.memory.content);
+                if (userAlignmentRules.length > 0) {
+                    logger.debug(`[ContextPipeline] Retrieved ${userAlignmentRules.length} user alignment rules.`);
+                }
+            } catch (err) {
+                logger.warn('[ContextPipeline] Failed to retrieve user alignment rules:', err);
+            }
+        }
 
         // 4. Format memory context for agent consumption
         const memoryContext = this.formatMemoryContext(relevantMemories);
@@ -46,6 +69,7 @@ export class ContextPipeline {
             ...stateContext,
             chatHistoryString,
             relevantMemories,
+            userAlignmentRules,
             memoryContext
         };
     }

@@ -316,7 +316,7 @@ function useOnboardingRedirect() {
         // Already on onboarding — no redirect needed
         if (currentModule === 'onboarding') return;
 
-        // Never intercept standalone modules (indiiCONTROLLER, investor, capture, etc.)
+        // Never intercept standalone modules (indiiREMOTE, investor, capture, etc.)
         // Users navigating directly to /mobile-remote should land there, not onboarding
         if (STANDALONE_MODULES.includes(currentModule as ModuleId)) return;
 
@@ -476,7 +476,7 @@ export default function App() {
     const isDesktop = useMediaQuery('(min-width: 768px)');
     const { isAnyPhone } = useMobile();
 
-    // 📱 Phone auto-route: on phones, the app IS indiiCONTROLLER — skip the studio entirely
+    // 📱 Phone auto-route: on phones, the app IS indiiREMOTE — skip the studio entirely
     useEffect(() => {
         if (isAnyPhone && currentModule !== 'mobile-remote') {
             useStore.getState().setModule('mobile-remote');

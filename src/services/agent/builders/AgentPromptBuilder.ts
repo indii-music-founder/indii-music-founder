@@ -89,6 +89,10 @@ export class AgentPromptBuilder {
         const whiskContext = context?.whiskState ? `\n${this.buildWhiskContext(context.whiskState)}\n` : '';
         const safeTask = this.sanitizeTask(task);
 
+        const alignmentRules = context?.userAlignmentRules?.length
+            ? `\n<user_specific_alignment>\n${context.userAlignmentRules.map(r => `- ${r}`).join('\n')}\n</user_specific_alignment>\n`
+            : '';
+
         return `
 # MISSION
 ${systemPrompt}
@@ -108,6 +112,7 @@ ${context.brandKit.releaseDetails ? `
 ` : ''}
 
 ${whiskContext}
+${alignmentRules}
 
 # HISTORY
 ${safeHistory}

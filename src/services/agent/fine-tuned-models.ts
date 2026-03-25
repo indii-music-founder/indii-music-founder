@@ -57,8 +57,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'devops':          'projects/223837784072/locations/us-central1/endpoints/953884061456138240',
     // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
     'security':        'projects/223837784072/locations/us-central1/endpoints/7299455936421167104',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — pending endpoint deployment
-    'producer':        undefined,  // job still running — re-run wire-r5-endpoints.py --write
+    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    'producer':        'projects/223837784072/locations/us-central1/endpoints/8499102287161982976',
     // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
     'director':        'projects/223837784072/locations/us-central1/endpoints/7103549352630550528',
     // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25

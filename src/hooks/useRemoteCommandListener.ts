@@ -27,6 +27,7 @@ import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import type { ModuleId } from '@/core/constants';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
@@ -314,6 +315,50 @@ function useFirestoreRelay(enabled: boolean) {
                             false
                         );
                     }
+
+                    await remoteRelayService.markCommandCompleted(command.id);
+                    isProcessing.current = false;
+                    return;
+                }
+
+                // ─── Navigation Route ──────────────────────────────
+                if (command.text.startsWith('[NAVIGATE]')) {
+                    const targetModule = command.text.replace('[NAVIGATE]', '').trim();
+                    logger.info(`[RemoteRelay/Firestore] 🧭 Navigate to: "${targetModule}"`);
+                    writeDiagnostic('navigation_started', { module: targetModule });
+
+                    useStore.getState().setModule(targetModule as import('@/core/constants').ModuleId);
+
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        `🧭 Navigated to ${targetModule}`,
+                        undefined,
+                        false
+                    );
+
+                    await remoteRelayService.markCommandCompleted(command.id);
+                    isProcessing.current = false;
+                    return;
+                }
+
+                // ─── Agent Action Route ──────────────────────────────
+                if (command.text.startsWith('[AGENT_ACTION]')) {
+                    const action = command.text.replace('[AGENT_ACTION]', '').trim();
+                    logger.info(`[RemoteRelay/Firestore] 🤖 Agent Action: "${action}"`);
+                    writeDiagnostic('agent_action_started', { action });
+
+                    if (action === 'open_chat') {
+                        if (!useStore.getState().isAgentOpen) {
+                            useStore.getState().toggleAgentWindow();
+                        }
+                    }
+
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        `⚡ Agent action executed: ${action}`,
+                        undefined,
+                        false
+                    );
 
                     await remoteRelayService.markCommandCompleted(command.id);
                     isProcessing.current = false;

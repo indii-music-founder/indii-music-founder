@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.36.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.35.1...v1.36.0) (2026-03-25)
+
+
+### Features
+
+* **agents:** complete Phase 4b — fill all 12 HIGH-priority expert training gaps ([e5c51c1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e5c51c162f239e59325cfb4dffb64e400a4c860c))
+* **training:** append remaining marketing expert training examples ([96975c4](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/96975c4fff5fec5172c2900417c786203c4f7cc8))
+
 ## [1.35.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.35.0...v1.35.1) (2026-03-25)
 
 
