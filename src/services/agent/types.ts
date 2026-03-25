@@ -169,6 +169,7 @@ export interface AgentContext {
     brandKit?: BrandKit;
     memoryContext?: string;
     relevantMemories?: string[];
+    userAlignmentRules?: string[]; // Injected strategic alignment rules
     ragCorpus?: string;
     activeModule?: string;
     userProfile?: UserProfile;

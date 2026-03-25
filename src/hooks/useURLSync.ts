@@ -59,11 +59,7 @@ export function useURLSync() {
         const currentPathModule = pathSegments[0] || 'dashboard';
 
         if (currentModule !== currentPathModule) {
-            const targetUrl = currentModule === 'dashboard' ? '/' : `/${currentModule}`;
-            navigate({
-                pathname: targetUrl,
-                search: location.search
-            });
+            navigate(currentModule === 'dashboard' ? '/' : `/${currentModule}`);
         }
         // Remove location.pathname to prevent reverting URL during Back navigation
         // eslint-disable-next-line react-hooks/exhaustive-deps
