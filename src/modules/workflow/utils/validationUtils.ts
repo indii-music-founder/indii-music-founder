@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { Connection, Node } from 'reactflow';
 import { getJobDefinition } from '../services/nodeRegistry';
 

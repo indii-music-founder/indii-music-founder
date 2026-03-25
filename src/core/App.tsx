@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { initSentry, setSentryUser, clearSentryUser } from '@/services/observability/SentryService';

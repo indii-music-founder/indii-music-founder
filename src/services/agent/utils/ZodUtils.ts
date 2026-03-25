@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { FunctionDeclaration, ToolParameters, ToolParameterSchema, SchemaType } from '../types';

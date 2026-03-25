@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 
 import { where, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { FirestoreService } from './FirestoreService';

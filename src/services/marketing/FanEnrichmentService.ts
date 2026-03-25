@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { FanRecord, EnrichedFanData, EnrichmentProvider, EnrichmentProgress } from '../../modules/marketing/types';
 import { httpsCallable } from 'firebase/functions';
 import { functionsWest1 } from '../firebase';

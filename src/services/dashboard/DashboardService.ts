@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
+ 
 import { ModuleId } from '@/core/constants';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { Project } from '@/core/store/slices/appSlice';

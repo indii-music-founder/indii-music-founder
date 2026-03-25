@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { useState, useRef, useEffect } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';

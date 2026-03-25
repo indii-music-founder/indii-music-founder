@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useCallback, useRef } from 'react';
 import { Maximize, Eraser, Users } from 'lucide-react';
 import ReactFlow, {

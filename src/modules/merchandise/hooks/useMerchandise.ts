@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';

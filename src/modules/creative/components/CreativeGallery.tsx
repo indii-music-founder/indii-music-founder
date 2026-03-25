@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from 'react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
+ 
 /**
  * EmailService — Unified Email Facade
  *

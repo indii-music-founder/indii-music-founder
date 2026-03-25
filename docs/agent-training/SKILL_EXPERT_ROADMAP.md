@@ -1,7 +1,7 @@
 # Agent Skill Expert Roadmap
 
 **Last updated:** 2026-03-25
-**Status:** Phase 4b planning — Expert skill gap remediation
+**Status:** Phase 4b ACTIVE — 36 expert examples added; 12/12 HIGH-priority gaps filled
 **Owner:** indiiOS Training Program
 
 ---
@@ -47,24 +47,24 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 
 | Agent | Entry | Intermediate | Expert | Total | Expert % | Priority |
 |-------|-------|--------------|--------|-------|----------|----------|
-| distribution | 12 | 70 | 18 | 100 | 18% | 🔴 HIGH |
-| finance | 13 | 68 | 19 | 100 | 19% | 🔴 HIGH |
+| distribution | 12 | 70 | 21 | 103 | 20% | 🔴 HIGH |
+| finance | 13 | 68 | 22 | 103 | 21% | 🔴 HIGH |
 | curriculum | 26 | 44 | 27 | 97 | 28% | 🟡 MEDIUM |
 | licensing | 18 | 52 | 30 | 100 | 30% | 🟡 MEDIUM |
 | marketing | 11 | 58 | 31 | 100 | 31% | 🟡 MEDIUM |
 | road | 22 | 47 | 31 | 100 | 31% | 🟡 MEDIUM |
-| music | 29 | 36 | 32 | 97 | 33% | 🔴 HIGH |
+| music | 29 | 36 | 38 | 106 | 36% | 🟡 MEDIUM |
 | generalist | 35 | 32 | 33 | 100 | 33% | 🟡 MEDIUM |
-| brand | 16 | 51 | 33 | 100 | 33% | 🟡 MEDIUM |
-| publishing | 17 | 51 | 32 | 100 | 32% | 🟡 MEDIUM |
+| brand | 16 | 51 | 36 | 103 | 35% | 🟡 MEDIUM |
+| publishing | 17 | 51 | 38 | 106 | 36% | 🟡 MEDIUM |
 | video | 21 | 43 | 33 | 97 | 34% | 🟢 LOW |
 | devops | 26 | 37 | 32 | 95 | 34% | 🟢 LOW |
 | merchandise | 23 | 43 | 34 | 100 | 34% | 🟢 LOW |
 | director | 29 | 34 | 34 | 97 | 35% | 🟢 LOW |
 | screenwriter | 22 | 41 | 34 | 97 | 35% | 🟢 LOW |
-| social | 27 | 35 | 35 | 97 | 36% | 🟡 MEDIUM |
-| publicist | 23 | 38 | 36 | 97 | 37% | 🟡 MEDIUM |
-| legal | 8 | 58 | 34 | 100 | 34% | 🟡 MEDIUM |
+| social | 27 | 35 | 41 | 106 | 39% | 🟡 MEDIUM |
+| publicist | 23 | 38 | 39 | 103 | 38% | 🟡 MEDIUM |
+| legal | 8 | 58 | 40 | 106 | 38% | 🟡 MEDIUM |
 | producer | 22 | 32 | 40 | 94 | 43% | 🟢 LOW |
 | security | 12 | 39 | 46 | 97 | 47% | 🟢 LOW |
 
@@ -75,7 +75,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 1. Music Agent — Sonic Director
-**Current expert %:** 33% (32/97 examples)
+**Current expert %:** 36% (38/106 examples)
 **Dataset:** `docs/agent-training/datasets/music.jsonl`
 **Definition:** `src/services/agent/definitions/MusicAgent.ts`
 
@@ -89,8 +89,8 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | Sonic branding strategy | 🟡 ENTRY/INT | 🟡 MEDIUM | "I'm 4 albums in with a dark, lo-fi aesthetic but want to pivot to a cleaner pop sound for commercial viability without losing my core fanbase. What are the sonic transition strategies artists like Billie Eilish or Frank Ocean used, and how should I sequence this shift across my next 2 releases?" |
 | Metadata generation (DDEX-compliant tags) | ✅ HAS EXPERT | — | — |
 | Metadata verification (Golden Standard) | ✅ HAS EXPERT | — | — |
-| **YouTube Content ID** | ❌ MISSING | 🔴 HIGH | "My distributor filed a Content ID claim on my original track and a third-party label is monetizing my YouTube streams. Walk me through the exact OAC (Official Artist Channel) dispute process, typical resolution timelines, the specific language I should use in my counter-notification, and how the outcome differs if it's a cover vs. original work vs. a sample-based track." |
-| Mastering for vinyl / physical formats | ❌ MISSING | 🟡 MEDIUM | "I'm pressing my EP on vinyl. My master was optimized for streaming at -14 LUFS. What are the specific LUFS targets, dynamic range requirements, and inner groove distortion considerations I need to apply to the vinyl-specific master, and how do I handle the stereo width in the low frequencies?" |
+| **YouTube Content ID** | ✅ HAS EXPERT | — | "My distributor filed a Content ID claim on my original track and a third-party label is monetizing my YouTube streams. Walk me through the exact OAC (Official Artist Channel) dispute process, typical resolution timelines, the specific language I should use in my counter-notification, and how the outcome differs if it's a cover vs. original work vs. a sample-based track." |
+| Mastering for vinyl / physical formats | ✅ HAS EXPERT | — | "I'm pressing my EP on vinyl. My master was optimized for streaming at -14 LUFS. What are the specific LUFS targets, dynamic range requirements, and inner groove distortion considerations I need to apply to the vinyl-specific master, and how do I handle the stereo width in the low frequencies?" |
 | Instrumentation / sound design direction | 🟡 ENTRY/INT | 🟡 MEDIUM | "My production relies heavily on 808s in the 40–60 Hz range. My Essentia analysis shows a key of F# minor. Walk me through the exact sidechain compression settings, sub frequency tuning, and mono bass treatment I need to ensure the 808s translate on both consumer earbuds and club systems." |
 
 **Top gap:** YouTube Content ID — zero examples at any level. Artists frequently encounter Content ID disputes; the Music Agent should be the definitive expert.
@@ -98,7 +98,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 2. Distribution Agent — Distribution Chief
-**Current expert %:** 18% (18/100 examples) — LOWEST among all agents
+**Current expert %:** 20% (21/103 examples) — LOWEST among all agents
 **Dataset:** `docs/agent-training/datasets/distribution.jsonl`
 **Definition:** `src/services/agent/definitions/DistributionAgent.ts`
 
@@ -109,7 +109,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | Audio forensics / spectral fraud detection | 🟡 ENTRY/INT | 🔴 HIGH | "My QC system flagged a track with a spectral anomaly: the content above 17 kHz is pure noise floor with no harmonic content, while the 16 kHz digital brick wall is perfectly flat. The artist claims it's a genuine 24-bit file. Walk me through the forensic analysis steps — spectral view, frequency histogram, ABX test — to definitively determine if this is an upsampled 44.1kHz-to-96kHz fake hi-res file." |
 | Aspera FASP delivery | 🟡 ENTRY/INT | 🔴 HIGH | "My Aspera transfer to Spotify is failing mid-batch with a FASP timeout on the 3rd file of 12. The session log shows: 'Peer connection reset, ORTP timeout after 45s.' Walk me through diagnosing whether this is a UDP port blocking issue on the ISP side vs. a server-side queue problem, and the exact Aspera ascp CLI flags I should use to force TCP fallback while maintaining the correct credential chain." |
 | W-8BEN / W-9 tax certification | ✅ HAS EXPERT | — | — |
-| Chain of Title disputes | 🟡 ENTRY/INT | 🔴 HIGH | "A major label is claiming a catalog I distributed has a broken Chain of Title because the original producer agreement was a verbal work-for-hire with no written documentation. The streaming revenue is now in escrow at the DSP. Walk me through the exact documentation I need to reconstruct the chain — affidavits, recording session logs, payment proof — and what legal standard (preponderance vs. clear and convincing evidence) applies at each DSP's dispute resolution process." |
+| Chain of Title disputes | ✅ HAS EXPERT | — | "A major label is claiming a catalog I distributed has a broken Chain of Title because the original producer agreement was a verbal work-for-hire with no written documentation. The streaming revenue is now in escrow at the DSP. Walk me through the exact documentation I need to reconstruct the chain — affidavits, recording session logs, payment proof — and what legal standard (preponderance vs. clear and convincing evidence) applies at each DSP's dispute resolution process." |
 | Royalty waterfall / co-pub splits | 🟡 ENTRY/INT | 🔴 HIGH | "I have a 3-party co-publishing agreement: artist owns 50%, co-publisher A owns 30%, and co-publisher B owns 20% — but co-publisher A has a sub-publishing deal in the UK at 75/25 in their favor. Walk me through the complete waterfall calculation for £10,000 of UK streaming mechanical income, showing the exact deduction at each stage and the final net to each party." |
 | Merlin membership / compliance | 🟡 ENTRY/INT | 🟡 MEDIUM | "I want to claim Merlin membership to access premium DSP royalty rates. My catalog has 200 tracks across 3 labels with $80k in annual streaming revenue. Do I qualify? Walk me through the exact membership criteria, the application documentation required, and how the Merlin rate premium is calculated vs. the standard DSP rate for my catalog size." |
 | UPC / barcode assignment | ✅ HAS EXPERT | — | — |
@@ -123,7 +123,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 3. Finance Agent — Finance Director
-**Current expert %:** 19% (19/100 examples) — 2ND LOWEST
+**Current expert %:** 21% (22/103 examples) — 2ND LOWEST
 **Dataset:** `docs/agent-training/datasets/finance.jsonl`
 **Definition:** `src/services/agent/definitions/FinanceAgent.ts`
 
@@ -147,7 +147,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 4. Legal Agent — Music Industry Legal Specialist
-**Current expert %:** 34% (34/100 examples)
+**Current expert %:** 38% (40/106 examples)
 **Dataset:** `docs/agent-training/datasets/legal.jsonl`
 **Definition:** `src/services/agent/definitions/LegalAgent.ts`
 
@@ -169,7 +169,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 5. Publishing Agent — Publishing Director
-**Current expert %:** 32% (32/100 examples)
+**Current expert %:** 36% (38/106 examples)
 **Dataset:** `docs/agent-training/datasets/publishing.jsonl`
 **Definition:** `src/services/agent/definitions/PublishingAgent.ts`
 
@@ -183,8 +183,8 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | Black Box royalty recovery | ✅ HAS EXPERT | — | — |
 | Sub-publishing deal analysis | ✅ HAS EXPERT | — | — |
 | Mechanical licensing (MLC, Harry Fox) | 🟡 ENTRY/INT | 🟡 MEDIUM | "I want to issue a compulsory mechanical license for an artist covering my song without going through the MLC. Walk me through the Section 115 notice requirements — exact timing relative to release, the specific information I must include in the Notice of Intent, the CRB rate calculation for a streaming vs. download license, and how to issue a direct license instead that supersedes the compulsory rate and what terms I can negotiate." |
-| **ISWC collision resolution** | ❌ MISSING | 🔴 HIGH | "My track 'Amber Light' was registered with BMI and received ISWC T-123.456.789-0. I just discovered another songwriter registered a different composition with the same ISWC through SESAC. Both registrations appear in the CISAC database. Walk me through the CISAC collision resolution procedure, the documentation I need to establish my registration priority, the timeframe for correction, and how to ensure the correct ISWC is propagated to all DSPs and collection societies before the next royalty period closes." |
-| PRO catalog audit procedures | 🟡 ENTRY/INT | 🟡 MEDIUM | "I have 180 compositions registered with ASCAP but my annual statement shows only 94 earning royalties. Walk me through the catalog audit process: how to cross-reference my ASCAP Works database against streaming data, what reporting threshold determines whether a work earns vs. goes to the common pool, and how to flag specific underperforming works for manual review with ASCAP's Writer Services team." |
+| **ISWC collision resolution** | ✅ HAS EXPERT | — | "My track 'Amber Light' was registered with BMI and received ISWC T-123.456.789-0. I just discovered another songwriter registered a different composition with the same ISWC through SESAC. Both registrations appear in the CISAC database. Walk me through the CISAC collision resolution procedure, the documentation I need to establish my registration priority, the timeframe for correction, and how to ensure the correct ISWC is propagated to all DSPs and collection societies before the next royalty period closes." |
+| PRO catalog audit procedures | ✅ HAS EXPERT | — | "I have 180 compositions registered with ASCAP but my annual statement shows only 94 earning royalties. Walk me through the catalog audit process: how to cross-reference my ASCAP Works database against streaming data, what reporting threshold determines whether a work earns vs. goes to the common pool, and how to flag specific underperforming works for manual review with ASCAP's Writer Services team." |
 | Co-publishing vs. admin publishing | 🟡 ENTRY/INT | 🟡 MEDIUM | "A publisher is offering me two deal structures: (A) Co-publishing: 50/50 copyright split, 75/25 income split in my favor, 5-year term, 10-year reversion. (B) Admin publishing: I retain 100% copyright, publisher takes 15% of gross collections, 3-year term. At my current income of $40k/year in publishing royalties, walk me through the 5-year financial comparison and the non-financial factors (catalog control, sync connections, creative approvals) that should weigh into my decision." |
 
 ---
@@ -230,7 +230,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 ---
 
 ### 8. Brand Agent — Brand Manager
-**Current expert %:** 33% (33/100 examples)
+**Current expert %:** 35% (36/103 examples)
 **Dataset:** `docs/agent-training/datasets/brand.jsonl`
 **Definition:** `src/services/agent/definitions/BrandAgent.ts`
 
@@ -245,12 +245,12 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | Audio-to-brand analysis | ✅ HAS EXPERT | — | — |
 | Content critique vs. brand guidelines | ✅ HAS EXPERT | — | — |
 | Brand equity valuation / licensing deals | 🟡 ENTRY/INT | 🟡 MEDIUM | "I've been offered a brand partnership by a fashion label that wants to co-produce a limited capsule collection using my visual identity. They're proposing: $40k upfront, 8% royalty on net sales, 2-year term, brand approval rights on our side. Walk me through evaluating whether $40k fairly values my brand equity at my current 2.1M followers, how to negotiate approval rights to include a 'kill switch' if their brand reputation deteriorates, and what precedent Virgil Abloh's Off-White collaborations set for artist brand licensing fee structures." |
-| Brand crisis / identity misuse response | ❌ MISSING | 🟡 MEDIUM | "A counterfeit merchandise operation in China is selling products using my logo and likeness without authorization, generating an estimated $80k/year in revenue. Walk me through the IP enforcement options — WIPO domain dispute, Alibaba IPP portal, DMCA takedown, and C&D letter — ranked by cost, timeline, and effectiveness for an independent artist without a label behind them." |
+| Brand crisis / identity misuse response | ✅ HAS EXPERT | — | "A counterfeit merchandise operation in China is selling products using my logo and likeness without authorization, generating an estimated $80k/year in revenue. Walk me through the IP enforcement options — WIPO domain dispute, Alibaba IPP portal, DMCA takedown, and C&D letter — ranked by cost, timeline, and effectiveness for an independent artist without a label behind them." |
 
 ---
 
 ### 9. Social Agent — Social Media Director
-**Current expert %:** 36% (35/97 examples)
+**Current expert %:** 39% (41/106 examples)
 **Dataset:** `docs/agent-training/datasets/social.jsonl`
 **Definition:** `src/services/agent/definitions/SocialAgent.ts`
 
@@ -265,14 +265,14 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | Discord / Telegram community webhooks | ✅ HAS EXPERT | — | — |
 | UGC strategy | ✅ HAS EXPERT | — | — |
 | TikTok algorithm / FYP optimization | 🟡 ENTRY/INT | 🟡 MEDIUM | "My last 8 TikTok posts averaged 2,400 views despite 89k followers — significantly below my historical average of 15k. Walk me through diagnosing the suppression cause: the difference between shadowbanning (violating community guidelines), organic reach decline (algorithm deprioritization), and audience churn (followers became inactive). For each diagnosis, give me the 3-step recovery playbook with specific post types, posting frequency, and the exact watch-time percentage I need to hit on my next 5 posts to signal recovery to the algorithm." |
-| **Community crisis / moderation response** | ❌ MISSING | 🔴 HIGH | "My comments section is flooded with coordinated harassment targeting my female collaborators after I posted about a political topic. The rate is 200+ comments/hour across TikTok, Instagram, and YouTube. Walk me through: the immediate moderation triage (what to delete vs. hide vs. report), the platform-specific tools for each (Instagram Restrict, TikTok filtered comments, YouTube held-for-review), how to communicate to my audience without amplifying the harassment, and when to involve platform trust-and-safety teams vs. law enforcement for doxxing threats." |
-| **YouTube channel optimization** | ❌ MISSING | 🟡 MEDIUM | "I have 47 music videos on YouTube with 2.3M total channel views but only 8,200 subscribers. My subscriber-to-view conversion rate is 0.36% which is far below the 2–4% benchmark. Walk me through a complete channel audit: optimal thumbnail style (A/B testing framework), end screen CTA placement at the exact timestamp for music videos, YouTube SEO for artist channels (title structure, description keyword density, chapter markers for lyrics), and how to use YouTube Studio's 'Audience' tab to identify and target my best-performing demographic segment." |
+| **Community crisis / moderation response** | ✅ HAS EXPERT | — | "My comments section is flooded with coordinated harassment targeting my female collaborators after I posted about a political topic. The rate is 200+ comments/hour across TikTok, Instagram, and YouTube. Walk me through: the immediate moderation triage (what to delete vs. hide vs. report), the platform-specific tools for each (Instagram Restrict, TikTok filtered comments, YouTube held-for-review), how to communicate to my audience without amplifying the harassment, and when to involve platform trust-and-safety teams vs. law enforcement for doxxing threats." |
+| **YouTube channel optimization** | ✅ HAS EXPERT | — | "I have 47 music videos on YouTube with 2.3M total channel views but only 8,200 subscribers. My subscriber-to-view conversion rate is 0.36% which is far below the 2–4% benchmark. Walk me through a complete channel audit: optimal thumbnail style (A/B testing framework), end screen CTA placement at the exact timestamp for music videos, YouTube SEO for artist channels (title structure, description keyword density, chapter markers for lyrics), and how to use YouTube Studio's 'Audience' tab to identify and target my best-performing demographic segment." |
 | Social asset generation (memes, quote cards) | ✅ HAS EXPERT | — | — |
 
 ---
 
 ### 10. Publicist Agent — PR Director
-**Current expert %:** 37% (36/97 examples)
+**Current expert %:** 38% (39/103 examples)
 **Dataset:** `docs/agent-training/datasets/publicist.jsonl`
 **Definition:** `src/services/agent/definitions/PublicistAgent.ts`
 
@@ -287,7 +287,7 @@ Use this as the input queue for future dataset expansion sessions: pick a HIGH p
 | PDF / press kit generation | ✅ HAS EXPERT | — | — |
 | Embargo management with media | 🟡 ENTRY/INT | 🔴 HIGH | "I'm releasing a collaborative project with a major artist. My PR firm has embargo agreements with 5 publications (Pitchfork, The FADER, Billboard, Rolling Stone, Stereogum) set to lift simultaneously at 9am EST on Friday. At 7:23am, one outlet broke the embargo early and published. Walk me through the exact 90-minute crisis response: what I say to the other 4 outlets to preserve the remaining coverage, whether to officially confirm or stay silent before the embargo lifts, how to handle the broke-embargo outlet's future relationship, and what contractual remedies I have against them." |
 | Long-lead print placement strategy | 🟡 ENTRY/INT | 🟡 MEDIUM | "I want a feature in a major print magazine (Rolling Stone, Vogue, Complex) for my album dropping in 4 months. Walk me through the long-lead timeline (typical 3–4 month lead time for print), how to find the right editor vs. music section contact at each publication, what the pitch needs to include that's different from a digital pitch (hook, exclusivity offer, photo availability), and how to sequence my outreach so my Rolling Stone pitch doesn't cannibalize my Complex pitch on the same release cycle." |
-| Podcast booking strategy | ❌ MISSING | 🟡 MEDIUM | "I want to build a podcast press tour for my album release targeting music-adjacent podcasts (Joe Budden, No Jumper, Million Dollaz Worth of Game, Flagrant, Club Shay Shay). Walk me through: the booking approach for each (direct DM vs. agency vs. publicist-to-publicist), what narrative hook from my story makes me bookable at each show's specific audience angle, ideal booking timing relative to release date (2 weeks before vs. day of vs. post-release), and how to maximize clip virality from long-form podcast appearances." |
+| Podcast booking strategy | ✅ HAS EXPERT | — | "I want to build a podcast press tour for my album release targeting music-adjacent podcasts (Joe Budden, No Jumper, Million Dollaz Worth of Game, Flagrant, Club Shay Shay). Walk me through: the booking approach for each (direct DM vs. agency vs. publicist-to-publicist), what narrative hook from my story makes me bookable at each show's specific audience angle, ideal booking timing relative to release date (2 weeks before vs. day of vs. post-release), and how to maximize clip virality from long-form podcast appearances." |
 
 ---
 
@@ -490,10 +490,10 @@ Sorted by impact tier. Work through HIGH priority first, then MEDIUM.
 
 | # | Agent | Skill | Gap Type | Example Expert Prompt (abbreviated) |
 |---|-------|-------|----------|--------------------------------------|
-| 1 | Music | YouTube Content ID | ❌ MISSING | Dispute process, OAC appeal language, cover vs. original, distributor claim vs. label claim |
-| 2 | Social | Community crisis / coordinated harassment | ❌ MISSING | Platform-specific moderation triage, escalation to trust-and-safety, when to involve law enforcement |
-| 3 | Publishing | ISWC collision resolution | ❌ MISSING | CISAC collision procedure, priority documentation, cross-society propagation fix |
-| 4 | Distribution | Chain of Title disputes | 🟡 ENTRY/INT | Verbal work-for-hire reconstruction, DSP escrow resolution, evidence standards |
+| 1 | Music | YouTube Content ID | ✅ FILLED | Dispute process, OAC appeal language, cover vs. original, distributor claim vs. label claim |
+| 2 | Social | Community crisis / coordinated harassment | ✅ FILLED | Platform-specific moderation triage, escalation to trust-and-safety, when to involve law enforcement |
+| 3 | Publishing | ISWC collision resolution | ✅ FILLED | CISAC collision procedure, priority documentation, cross-society propagation fix |
+| 4 | Distribution | Chain of Title disputes | ✅ FILLED | Verbal work-for-hire reconstruction, DSP escrow resolution, evidence standards |
 | 5 | Distribution | Aspera FASP delivery troubleshooting | 🟡 ENTRY/INT | ORTP timeout diagnosis, TCP fallback flags, credential chain |
 | 6 | Distribution | DDEX ERN 4.3 full message construction | 🟡 ENTRY/INT | Multi-party collaboration XML, error code resolution, UpdateIndicator usage |
 | 7 | Distribution | Audio forensics / spectral fraud detection | 🟡 ENTRY/INT | Upsampled hi-res detection, ABX test, forensic analysis steps |
@@ -508,7 +508,7 @@ Sorted by impact tier. Work through HIGH priority first, then MEDIUM.
 | # | Agent | Skill | Gap Type | Notes |
 |---|-------|-------|----------|-------|
 | 13 | Music | Sonic branding strategy | 🟡 ENTRY/INT | Cross-era transition strategies |
-| 14 | Music | Vinyl mastering specs | ❌ MISSING | LUFS targets, inner groove distortion, stereo width |
+| 14 | Music | Vinyl mastering specs | ✅ FILLED | LUFS targets, inner groove distortion, stereo width |
 | 15 | Publishing | Co-publishing vs. admin deal | 🟡 ENTRY/INT | 5-year financial comparison, control tradeoffs |
 | 16 | Publishing | Mechanical licensing (compulsory vs. direct) | 🟡 ENTRY/INT | Section 115 notice requirements, CRB rate calc |
 | 17 | Legal | Trademark opposition (artist name) | 🟡 ENTRY/INT | USPTO opposition, priority of use, likelihood of confusion |
@@ -524,7 +524,7 @@ Sorted by impact tier. Work through HIGH priority first, then MEDIUM.
 | 27 | Curriculum | Pedagogical differentiation | 🟡 ENTRY/INT | Same concept, 3 different audience levels |
 | 28 | Brand | Brand equity / licensing deals | 🟡 ENTRY/INT | Fee valuation at 2M followers, approval rights negotiation |
 | 29 | Social | TikTok algorithm recovery | 🟡 ENTRY/INT | Shadowban vs. organic decline diagnosis, 5-post recovery playbook |
-| 30 | Social | YouTube channel optimization | ❌ MISSING | Subscriber conversion rate, thumbnail A/B, SEO for artist channels |
+| 30 | Social | YouTube channel optimization | ✅ FILLED | Subscriber conversion rate, thumbnail A/B, SEO for artist channels |
 | 31 | Generalist | Cross-domain workflow orchestration | 🟡 ENTRY/INT | 6-week release critical path, multi-agent sequencing |
 | 32 | Distribution | Merlin membership compliance | 🟡 ENTRY/INT | Qualification criteria, application docs, rate premium calc |
 | 33 | Distribution | Royalty waterfall edge cases | 🟡 ENTRY/INT | Co-pub + sub-publishing waterfall, UK mechanical calculation |

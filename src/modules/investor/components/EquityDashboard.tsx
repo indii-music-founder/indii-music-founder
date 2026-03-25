@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, PieChart, Download, DollarSign, Users, Activity, Radio, UploadCloud, MessageSquare } from 'lucide-react';

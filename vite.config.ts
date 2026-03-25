@@ -192,14 +192,7 @@ export default defineConfig({
         console.log('\x1b[35m%s\x1b[0m', '  📱 Remote Relay active: /api/remote/*');
       }
     },
-    // Source Code Obfuscation (HEY Audit Appendix D)
-    // process.env.NODE_ENV === 'production' && WebpackObfuscator({
-    //   rotateStringArray: true,
-    //   stringArray: true,
-    //   target: 'browser',
-    //   debugProtection: true,
-    //   controlFlowFlattening: true
-    // }, ['node_modules/**']),
+
     // Sentry source map upload (production only, when SENTRY_AUTH_TOKEN is set)
     ...(sentryPlugin ? [sentryPlugin] : []),
     // Item 261: Bundle size analysis (production builds only)

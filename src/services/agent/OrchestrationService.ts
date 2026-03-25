@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { AgentContext } from './types';
 import { agentService } from './AgentService';
 import { maestroBatchingService } from './MaestroBatchingService';

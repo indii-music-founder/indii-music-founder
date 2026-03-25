@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useEffect, useState } from 'react';
 import { SocialPost } from '@/services/social/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';

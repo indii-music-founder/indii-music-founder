@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { MapPin, Navigation, Gauge, Zap, Fuel, Clock, ArrowRight, AlertTriangle, CheckCircle2, Crosshair } from 'lucide-react';

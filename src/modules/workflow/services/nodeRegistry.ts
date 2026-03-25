@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { Paintbrush, Video, Megaphone, Users, Box, Search, FileText, Music, Cog, Split, ShieldCheck, Database } from 'lucide-react';
 

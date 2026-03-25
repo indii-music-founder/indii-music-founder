@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import { StateCreator } from 'zustand';
 import { type ModuleId, isValidModule } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';

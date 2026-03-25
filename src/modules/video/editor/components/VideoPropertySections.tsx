@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { memo, useCallback } from 'react';
 import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { PanelSection, PropertyRow } from '@/components/studio/PropertiesPanel';
