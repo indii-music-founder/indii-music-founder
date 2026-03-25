@@ -16,7 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
-import type { AgentConfig } from '../types';
+import type { AgentConfig, ValidAgentId } from '../types';
 import { SPOKE_AGENT_IDS, HUB_ONLY_TOOLS } from './AgentStressTest.harness';
 
 // ============================================================================
@@ -140,7 +140,7 @@ vi.mock('@/core/events', () => ({
 function makeTestAgent(authorizedTools: string[], extraTools: string[] = []): BaseAgent {
     const allToolNames = ['allowed_tool', ...extraTools];
     const config: AgentConfig = {
-        id: 'test-security-agent',
+        id: 'test-security-agent' as ValidAgentId,
         name: 'Test Security Agent',
         description: 'Minimal agent for authorization tests',
         color: 'bg-gray-500',
@@ -309,7 +309,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
     // --------------------------------------------------------------------------
     it('agent with authorizedTools:[] blocks ALL tool calls', async () => {
         const config: AgentConfig = {
-            id: 'locked-agent',
+            id: 'locked-agent' as ValidAgentId,
             name: 'Locked Agent',
             description: 'No tools allowed',
             color: 'bg-gray-500',
