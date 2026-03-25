@@ -77,6 +77,15 @@ export class AgentBuilder {
     }
 
     /**
+     * Sets the explicit tool authorization allowlist for this agent.
+     * When set, only these tool names can be invoked at runtime — all others are blocked.
+     */
+    withAuthorizedTools(tools: string[]): this {
+        this.config.authorizedTools = tools;
+        return this;
+    }
+
+    /**
      * Adds a tool to the agent's capability set.
      * @param definition The tool definition (schema)
      * @param implementation Optional implementation function. If provided, it will be registered in the functions map.

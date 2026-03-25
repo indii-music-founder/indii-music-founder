@@ -10,6 +10,7 @@ export const LegalAgent: AgentConfig = {
     color: "bg-red-700",
     category: "department",
     systemPrompt,
+    authorizedTools: ['analyze_contract', 'draft_contract', 'generate_nda'],
     tools: [{
         functionDeclarations: [
             {

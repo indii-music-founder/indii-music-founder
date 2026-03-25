@@ -9,6 +9,7 @@ export const ProducerAgent: AgentConfig = {
     color: 'bg-emerald-600',
     category: 'manager',
     systemPrompt,
+    authorizedTools: ['create_call_sheet', 'breakdown_script'],
     tools: [{
         functionDeclarations: [
             {

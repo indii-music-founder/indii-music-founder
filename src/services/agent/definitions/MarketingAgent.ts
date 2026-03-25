@@ -310,6 +310,7 @@ Provide:
         },
         create_artifact_drop: SovereignTools.create_artifact_drop!
     },
+    authorizedTools: ['create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty'],
     tools: [{
         functionDeclarations: [
             {

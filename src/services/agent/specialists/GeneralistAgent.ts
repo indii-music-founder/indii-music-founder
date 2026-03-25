@@ -165,6 +165,12 @@ EXECUTION RULES:
 `;
 
     tools: ToolDefinition[] = [];
+    protected authorizedTools: string[] = [
+        'generate_image', 'generate_video', 'save_memory', 'recall_memories', 'delegate_task',
+        'create_project', 'list_projects', 'search_knowledge', 'request_approval', 'verify_output',
+        'batch_edit_images', 'generate_social_post', 'list_files', 'search_files',
+        'list_organizations', 'switch_organization'
+    ];
 
     constructor() {
         super({

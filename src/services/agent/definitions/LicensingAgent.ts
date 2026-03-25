@@ -153,6 +153,7 @@ export const LicensingAgent: AgentConfig = {
             }
         }
     },
+    authorizedTools: ['check_availability', 'analyze_contract', 'draft_license', 'browser_tool', 'document_query', 'payment_gate'],
     tools: [{
         functionDeclarations: [
             {

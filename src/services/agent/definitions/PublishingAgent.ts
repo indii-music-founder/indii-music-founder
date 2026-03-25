@@ -138,6 +138,7 @@ When a request falls outside your scope:
             return { success: true, data: { status: "Packaged", ...response } };
         }
     },
+    authorizedTools: ['analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate'],
     tools: [{
         functionDeclarations: [
             {

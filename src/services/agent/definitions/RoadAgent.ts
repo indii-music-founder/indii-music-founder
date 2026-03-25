@@ -164,6 +164,7 @@ Provide:
             return { success: true, data: { matrix: response } };
         }
     },
+    authorizedTools: ['plan_tour_route', 'calculate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist'],
     tools: [{
         functionDeclarations: [
             {

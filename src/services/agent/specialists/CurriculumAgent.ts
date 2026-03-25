@@ -128,6 +128,7 @@ When a request falls outside education scope:
 3. State you'll route via indii Conductor
 4. Offer what YOU can contribute from an education perspective
 `,
+            authorizedTools: ['create_learning_path', 'generate_quiz', 'search_knowledge'],
             tools: [
                 {
                     functionDeclarations: [

@@ -156,6 +156,7 @@ If a task is outside Video, say:
             update_keyframe: VideoTools.update_keyframe
         };
     },
+    authorizedTools: ['generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline'],
     tools: [{
         functionDeclarations: [
             {

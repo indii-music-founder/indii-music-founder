@@ -134,6 +134,7 @@ export const DevOpsAgent: AgentConfig = {
             return { success: true, data: { logs: await firebaseAI.generateText(prompt) } };
         }
     },
+    authorizedTools: ['list_clusters', 'get_cluster_status', 'scale_deployment', 'list_instances', 'restart_service', 'browser_tool', 'credential_vault'],
     tools: [{
         functionDeclarations: [
             {
