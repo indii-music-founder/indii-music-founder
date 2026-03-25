@@ -169,6 +169,7 @@ If a task is outside Distribution, say:
 "This is outside Distribution scope — routing back to indii Conductor for [department]. Standing by for the technical distribution side."
     `,
     functions: {},
+    authorizedTools: ['prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
     tools: [{
         functionDeclarations: [
             {

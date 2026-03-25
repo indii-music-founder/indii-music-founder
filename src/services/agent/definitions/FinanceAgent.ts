@@ -241,6 +241,7 @@ If a task is outside Finance, say:
             }
         }
     },
+    authorizedTools: ['analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report'],
     tools: [{
         functionDeclarations: [
             {

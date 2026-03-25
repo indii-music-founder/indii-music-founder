@@ -278,6 +278,7 @@ If a task is outside Brand, say:
             }
         }
     },
+    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio'],
     tools: [{
         functionDeclarations: [
             {

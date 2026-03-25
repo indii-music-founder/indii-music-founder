@@ -233,6 +233,7 @@ If a task is outside Social, say:
             }
         }
     },
+    authorizedTools: ['create_social_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'browser_tool', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook'],
     tools: [{
         functionDeclarations: [
             {

@@ -9,6 +9,7 @@ export const ScreenwriterAgent: AgentConfig = {
     color: 'bg-indigo-500',
     category: 'specialist',
     systemPrompt,
+    authorizedTools: ['format_screenplay', 'analyze_script_structure'],
     tools: [{
         functionDeclarations: [
             {

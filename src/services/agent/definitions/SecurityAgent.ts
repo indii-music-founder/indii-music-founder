@@ -149,6 +149,7 @@ If a task is outside Security, say:
             return { success: true, data: { message: response } };
         }
     },
+    authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'browser_tool', 'credential_vault'],
     tools: [{
         functionDeclarations: [
             {

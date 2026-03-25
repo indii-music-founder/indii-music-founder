@@ -487,6 +487,11 @@ When a request falls outside your scope:
             }
         };
     })
+    .withAuthorizedTools([
+        'create_campaign', 'write_press_release', 'generate_crisis_response',
+        'generate_social_post', 'indii_image_gen', 'browser_tool', 'credential_vault',
+        'generate_pdf', 'generate_live_epk'
+    ])
     .build();
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';

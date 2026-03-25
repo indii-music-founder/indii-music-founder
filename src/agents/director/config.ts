@@ -26,6 +26,7 @@ export const DirectorAgent: AgentConfig = {
             interpolate_sequence: VideoTools.interpolate_sequence,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
+    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence'],
     tools: [{
         functionDeclarations: [
             {

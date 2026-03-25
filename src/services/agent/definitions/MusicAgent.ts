@@ -150,6 +150,7 @@ If a task is outside Music/Audio, say:
 "This is outside Sonic scope — routing back to indii Conductor for [department]. I'll stand by for any audio analysis needed."
     `,
     functions: {},
+    authorizedTools: ['create_music_metadata', 'analyze_audio', 'verify_metadata_golden'],
     tools: [{
         functionDeclarations: [
             {

@@ -313,6 +313,8 @@ When a request falls outside your scope:
 2. Name the correct agent
 3. State you'll route via indii Conductor
 4. Offer what YOU can contribute from your domain`,
+            authorizedTools: ['search_assets', 'create_product_mockup', 'generate_product_video',
+                'submit_to_production', 'ask_clarification', 'list_product_types'],
             tools: [{ functionDeclarations: MERCHANDISE_TOOLS }],
             functions: {
                 search_assets: async (args, context) => {
