@@ -45,7 +45,10 @@ export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
 // Distribution Functions (Item 415: DDEX DSP Acknowledgement Processing)
-export { processDDEXAck } from './distribution/processDDEXAck';
+// DISABLED: firebase-tools@13.29.1 CLI bug — 'Can't find the storage bucket region'
+// for onObjectFinalized triggers even with explicit bucket config.
+// Requires either: (1) configuring default bucket region, or (2) upgrading CLI.
+// export { processDDEXAck } from './distribution/processDDEXAck';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';
