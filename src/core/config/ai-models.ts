@@ -97,11 +97,10 @@ export const AI_CONFIG = {
 } as const;
 
 /**
- * Model Pricing (USD per 1M tokens) 
- * 
- * Data sourced from Nano Banana series specifications:
- * - Pro: $120.00 / 1M Output
- * - Flash: $30.00 / 1M Output
+ * Model Pricing (USD per 1M tokens for text; per second for video)
+ *
+ * gemini-2.5-pro:   $1.25 input / $10.00 output per 1M tokens
+ * gemini-2.5-flash: $0.15 input /  $0.60 output per 1M tokens
  */
 export const MODEL_PRICING = {
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },

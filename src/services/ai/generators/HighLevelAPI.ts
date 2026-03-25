@@ -52,18 +52,10 @@ export async function generateText(
     const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
 
     if (typeof thinkingBudgetOrModel === 'number') {
-        const isGemini3 = modelName.includes('gemini-3');
-        if (isGemini3) {
-            config.thinkingConfig = {
-                thinkingLevel: thinkingBudgetOrModel > 4096 ? 'HIGH' : 'MEDIUM',
-                includeThoughts: true
-            };
-        } else {
-            config.thinkingConfig = {
-                thinkingBudget: thinkingBudgetOrModel,
-                includeThoughts: true
-            };
-        }
+        config.thinkingConfig = {
+            thinkingBudget: thinkingBudgetOrModel,
+            includeThoughts: true
+        };
         systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
     } else if (typeof thinkingBudgetOrModel === 'string') {
         if (typeof systemInstructionOrConfig === 'string') {
@@ -130,18 +122,10 @@ export async function generateStructuredData<T>(
             responseSchema: schema
         };
         if (thinkingBudget) {
-            const isGemini3 = modelName.includes('gemini-3');
-            if (isGemini3) {
-                config.thinkingConfig = {
-                    thinkingLevel: thinkingBudget > 4096 ? 'HIGH' : 'MEDIUM',
-                    includeThoughts: true
-                };
-            } else {
-                config.thinkingConfig = {
-                    thinkingBudget,
-                    includeThoughts: true
-                };
-            }
+            config.thinkingConfig = {
+                thinkingBudget,
+                includeThoughts: true
+            };
         }
     }
 

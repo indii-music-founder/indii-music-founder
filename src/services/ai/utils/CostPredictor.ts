@@ -52,23 +52,43 @@ export class CostPredictor {
     }
 
     /**
-     * Predict cost for image generation
+     * Predict cost for image generation.
+     * Handles both dedicated image models (perGeneration pricing) and text models
+     * used for native image gen via responseModalities (token-based pricing).
      */
     static predictImageCost(count = 1, model = APPROVED_MODELS.IMAGE_GEN): CostEstimate {
         const pricing = this.getPricing(model);
-        if (!pricing || pricing.perGeneration === undefined) {
+        if (!pricing) {
             return this.getUnknownEstimate(model);
         }
 
-        const costUsd = pricing.perGeneration * count;
+        if (pricing.perGeneration !== undefined) {
+            const costUsd = pricing.perGeneration * count;
+            return {
+                model,
+                estimatedCostUsd: costUsd,
+                estimatedCredits: Math.ceil(costUsd * this.CREDIT_MULTIPLIER),
+                unit: 'generation',
+                details: `Calculated for ${count} image generation(s).`
+            };
+        }
 
-        return {
-            model,
-            estimatedCostUsd: costUsd,
-            estimatedCredits: Math.ceil(costUsd * this.CREDIT_MULTIPLIER),
-            unit: 'generation',
-            details: `Calculated for ${count} static image generation(s).`
-        };
+        if (pricing.input !== undefined && pricing.output !== undefined) {
+            // Text model used with responseModalities: ['IMAGE'].
+            // Typical native image gen produces ~2500 output tokens per image.
+            const IMAGE_OUTPUT_TOKENS_EST = 2500;
+            const costPerImage = (IMAGE_OUTPUT_TOKENS_EST * pricing.output) / 1_000_000;
+            const costUsd = parseFloat((costPerImage * count).toFixed(4));
+            return {
+                model,
+                estimatedCostUsd: costUsd,
+                estimatedCredits: Math.ceil(costUsd * this.CREDIT_MULTIPLIER),
+                unit: 'generation',
+                details: `Estimated for ${count} image(s) at ~${IMAGE_OUTPUT_TOKENS_EST} output tokens each.`
+            };
+        }
+
+        return this.getUnknownEstimate(model);
     }
 
     /**

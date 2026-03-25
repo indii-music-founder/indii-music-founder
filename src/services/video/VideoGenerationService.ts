@@ -16,7 +16,7 @@ import { logger } from '@/utils/logger';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
-const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
+const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3-generate-preview'
 
 /** Strip undefined values from an object to prevent Firestore rejection. */
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
