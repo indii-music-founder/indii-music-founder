@@ -647,6 +647,7 @@ Systematic resolution of `possibly undefined` (TS18048, TS2532, TS2322) errors a
 | Test Files | `VenueScoutService.test`, `AnnotationPalette.test`, `CreativeDaisychain12.test` | ~10 |
 
 Key patterns addressed:
+
 - **Array bounds assertions** — Non-null assertions (`!`) for loop-bounded index access where length is pre-validated
 - **Record lookup narrowing** — Explicit type annotations and nullish coalescing for dynamic `Record<string, T>` access
 - **Tuple destructuring** — `as const` and tuple-typed assertions for fixed-length array destructuring
@@ -673,6 +674,13 @@ The `WorkflowEngine` now executes every node type with real service calls:
 - `LegalService.saveAnalysis()` / `getAnalyses()` added — contract analyses are now stored in Firestore under `users/{uid}/contract_analyses`.
 - `LegalDashboard` loads the 20 most recent analyses on mount, so the history panel is populated immediately instead of being blank on every page load.
 - Persistence is fire-and-forget — failures are logged as warnings and never surface to the user.
+
+**Remote Relay Hardening & Telegram Bot Adapter**
+
+- **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `indiios-alpha-electron` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
+- **Multi-Channel Architecture (Phase 2):** Designed and deployed a robust HTTPS webhook adapter for the Telegram Bot API (`telegramWebhook`), bridging external messages directly into the existing Firestore `remote-relay-commands` pipeline.
+- **Account Linking:** Implemented secure, one-time code generation (`generateTelegramLinkCode`) and status checking (`getTelegramLinkStatus`) to link Telegram chats to indiiOS authenticated accounts.
+- **Secret Management:** Integrated `TELEGRAM_BOT_TOKEN` securely via GCP Secret Manager with Cloud Functions IAM bindings, ensuring no secrets are exposed in the codebase.
 
 ---
 
