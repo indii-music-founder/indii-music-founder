@@ -86,6 +86,10 @@ export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
 
+// Telegram Bot Adapter — Phase 2 Multi-Channel (bridges Telegram → Firestore relay)
+export { telegramWebhook } from './relay/telegramWebhook';
+export { generateTelegramLinkCode, getTelegramLinkStatus } from './relay/telegramLink';
+
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
 //   1. Set up reCAPTCHA Enterprise in GCP Console for your project.
