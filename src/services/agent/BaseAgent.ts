@@ -455,7 +455,7 @@ export class BaseAgent implements SpecializedAgent {
                 // Resolve model: fine-tuned endpoint > default base model
                 const resolvedModel = this.modelId || AI_MODELS.TEXT.AGENT;
                 if (iterations === 1 && this.modelId) {
-                    logger.info(`[${this.config.id}] Using fine-tuned endpoint: ${this.modelId}`);
+                    logger.info(`[${this.id}] Using fine-tuned endpoint: ${this.modelId}`);
                 }
 
                 const result = await GenAI.generateContent(
