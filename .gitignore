@@ -78,3 +78,4 @@ identity_store.json
 # Python
 __pycache__/
 *.pyc
+.gstack/
