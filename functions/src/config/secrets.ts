@@ -10,6 +10,7 @@ export const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
 export const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 export const pandaDocApiKey = defineSecret("PANDADOC_API_KEY");
+export const telegramBotToken = defineSecret("TELEGRAM_BOT_TOKEN");
 
 // ---------------------------------------------------------------------------
 // Founders Program
@@ -130,12 +131,12 @@ export function getPandaDocApiKey(): string {
 //   - TIKTOK_CLIENT_SECRET   (TikTok for Developers → App → Client Secret)
 //   - META_APP_ID            (Meta Developer Console → App → App ID)
 //   - META_APP_SECRET        (Meta Developer Console → App → App Secret)
-export const spotifyClientId     = defineSecret("SPOTIFY_CLIENT_ID");
+export const spotifyClientId = defineSecret("SPOTIFY_CLIENT_ID");
 export const spotifyClientSecret = defineSecret("SPOTIFY_CLIENT_SECRET");
-export const tiktokClientKey     = defineSecret("TIKTOK_CLIENT_KEY");
-export const tiktokClientSecret  = defineSecret("TIKTOK_CLIENT_SECRET");
-export const metaAppId           = defineSecret("META_APP_ID");
-export const metaAppSecret       = defineSecret("META_APP_SECRET");
+export const tiktokClientKey = defineSecret("TIKTOK_CLIENT_KEY");
+export const tiktokClientSecret = defineSecret("TIKTOK_CLIENT_SECRET");
+export const metaAppId = defineSecret("META_APP_ID");
+export const metaAppSecret = defineSecret("META_APP_SECRET");
 
 // ---------------------------------------------------------------------------
 // Email OAuth Secrets (Gmail / Outlook)
