@@ -76,7 +76,7 @@ Ensure:
                         JSON.parse(line);
                         valid.push(line);
                         addedInBatch++;
-                    } catch (e) { }
+                    } catch (_e) { /* skip invalid JSON lines */ }
                 }
                 remaining -= addedInBatch;
                 console.log(`Received ${addedInBatch} valid examples in this batch. Total so far: ${valid.length}/${targetCount}`);
