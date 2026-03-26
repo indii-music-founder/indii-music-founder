@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.38.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.37.0...v1.38.0) (2026-03-26)
+
+
+### Features
+
+* **training:** Complete agent curriculum (+21 examples) ([ca65189](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ca65189435178cc67b468b111ec870ada75dd6ba))
+* update agent training datasets with new audio mastering and royalty calculation scenarios, and remove deprecated audio services. ([5545181](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/55451810101465a36a5508c8a463a26506a90d43))
+
 ## [1.37.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.36.0...v1.37.0) (2026-03-26)
 
 
