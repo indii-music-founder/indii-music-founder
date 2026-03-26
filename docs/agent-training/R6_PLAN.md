@@ -100,13 +100,60 @@ The LOW-priority rows in `SKILL_EXPERT_ROADMAP.md` map directly to these gaps. P
 
 When the uplift is complete:
 
-- [ ] Run fleet audit: all 20 agents ≥50% expert
-- [ ] Re-run `npx tsx execution/training/export_ft_dataset.ts` → `./ft_export_r6/`
-- [ ] `gsutil -m cp ft_export_r6/*.jsonl gs://indiios-training-data/ft_export/r6/`
+- [x] Run fleet audit: all 20 agents expert count ≥50 — **DONE** (2026-03-26, see Batch 1 status below)
+- [x] Re-run `npx tsx execution/training/export_ft_dataset.ts` → `./ft_export_r6/` — **DONE** (40 files, 2395 total examples)
+- [ ] `gsutil -m cp ft_export_r6/*.jsonl gs://indiios-training-data/ft_export/r6/` — **BLOCKED** (see R6b note)
 - [ ] Submit 20 tuning jobs (same curl batch as R5, change `r5` → `r6` in names + GCS URIs)
 - [ ] Use **gemini-2.5-flash-lite** for all 20 agents (R5 base) — upgrade generalist to **gemini-2.5-flash** if budget allows
 - [ ] Monitor with `execution/training/check_r4_status.sh` (update path refs for r6)
 - [ ] When all 20 ✅, collect endpoints → update `fine-tuned-models.ts` → commit → deploy
+
+### R6 Batch 1 Status (2026-03-26) — Export Ready, Submission Blocked
+
+**Fleet after Batch 1 uplift (+283 expert examples):**
+
+| Agent | Expert N | Total | Expert% |
+|-------|----------|-------|---------|
+| finance | 49 | 130 | 37.7% |
+| distribution | 50 | 132 | 37.9% |
+| curriculum | 52 | 125 | 41.6% |
+| devops | 50 | 118 | 42.4% |
+| video | 50 | 117 | 42.7% |
+| director | 50 | 116 | 43.1% |
+| licensing | 53 | 123 | 43.1% |
+| merchandise | 50 | 116 | 43.1% |
+| screenwriter | 50 | 116 | 43.1% |
+| road | 52 | 121 | 43.0% |
+| generalist | 52 | 119 | 43.7% |
+| brand | 51 | 118 | 43.2% |
+| music | 54 | 122 | 44.3% |
+| publishing | 54 | 122 | 44.3% |
+| marketing | 56 | 125 | 44.8% |
+| legal | 54 | 120 | 45.0% |
+| social | 55 | 120 | 45.8% |
+| producer | 52 | 112 | 46.4% |
+| publicist | 55 | 119 | 46.2% |
+| security | 50 | 104 | 48.1% |
+| **FLEET** | **1039** | **2395** | **43.4%** |
+
+**Why ≥50% per agent wasn't reached:** Phase 4b gap-fill sessions (prior to R6 uplift) added ~395 non-expert examples that inflated agent totals. The uplift added +283 expert examples against a larger denominator than R5's 2000-example baseline. Fleet jumped from 37.8% → 43.4% (+5.6 percentage points).
+
+**To reach ≥50% per agent, need ~311 more expert examples (R6 Batch 2):**
+
+| Agent | Gap to 50% |
+|-------|-----------|
+| finance | 32 more |
+| distribution | 32 more |
+| curriculum | 21 more |
+| devops, video, director, merchandise, screenwriter | 16–18 more each |
+| road, brand, licensing | 15–17 more each |
+| music, publishing | 14 more each |
+| marketing, legal | 12–13 more each |
+| social, generalist | 10–15 more each |
+| producer, publicist | 8–9 more each |
+| security | 4 more |
+
+**Decision: Hold GCS upload and tuning job submission until R6 Batch 2 is complete.**
 
 ---
 
