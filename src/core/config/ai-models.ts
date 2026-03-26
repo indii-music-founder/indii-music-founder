@@ -14,6 +14,9 @@ export const APPROVED_MODELS = {
     TEXT_FAST: 'gemini-2.5-flash',
     IMAGE_GEN: 'gemini-2.5-pro',           // Native image gen via responseModalities
     IMAGE_FAST: 'gemini-2.5-flash',         // Fast image gen via responseModalities
+    // Direct mode — bleeding-edge preview models for client-side SDK calls
+    DIRECT_PRO: 'gemini-3-pro-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
+    DIRECT_FAST: 'gemini-3.1-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
     AUDIO_PRO: 'gemini-2.5-pro',
     AUDIO_FLASH: 'gemini-2.5-flash',
     AUDIO_TTS: 'gemini-2.5-pro-preview-tts',
@@ -32,6 +35,8 @@ export const AI_MODELS = {
     IMAGE: {
         GENERATION: APPROVED_MODELS.IMAGE_GEN,
         FAST: APPROVED_MODELS.IMAGE_FAST,
+        DIRECT_PRO: APPROVED_MODELS.DIRECT_PRO,
+        DIRECT_FAST: APPROVED_MODELS.DIRECT_FAST,
     },
     AUDIO: {
         PRO: APPROVED_MODELS.AUDIO_PRO,
@@ -116,6 +121,9 @@ export const MODEL_PRICING = {
         audioAddOn: 0.05     // Flat add-on for audio
     },
     'gemini-2.5-pro-preview-tts': { input: 0.60, output: 4.00 },
+    // Direct mode image models (token-based pricing, same tier as text)
+    'gemini-3-pro-image-preview': { input: 1.25, output: 10.00 },
+    'gemini-3.1-flash-image-preview': { input: 0.15, output: 0.60 },
 } as const;
 
 /**
@@ -136,6 +144,7 @@ const FORBIDDEN_PATTERNS: RegExp[] = [
     /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS only)
     /imagen/i,                // Block all Imagen models (replaced by Nano Banana)
     /gemini-2\.5-flash-image/i, // Block legacy Nano Banana OG (use Nano Banana 2 or Pro only)
+    // NOTE: gemini-3-pro-image-preview and gemini-3.1-flash-image-preview are ALLOWED (Direct mode)
 ];
 
 function validateModels(): void {

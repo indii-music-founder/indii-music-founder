@@ -2,11 +2,11 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/core/context/ThemeContext";
 import { cn } from "@/lib/utils";
 
-export function ThemeToggle({ className }: { className?: string }) {
+export function ThemeToggle({ className, isMinimized }: { className?: string, isMinimized?: boolean }) {
     const { theme, setTheme } = useTheme();
 
     return (
-        <div className={cn("flex items-center gap-1 p-1 bg-secondary/50 rounded-full border border-white/10", className)}>
+        <div className={cn(`flex items-center gap-1 p-1 bg-secondary/50 rounded-full border border-white/10 ${isMinimized ? 'flex-col' : ''}`, className)}>
             <button
                 onClick={() => setTheme("light")}
                 className={cn(

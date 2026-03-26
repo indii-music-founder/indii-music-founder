@@ -36,20 +36,26 @@ export default function DirectGenerationTab() {
                 // Synthesize prompt with Whisk (optional, but good for consistency)
                 const finalPrompt = WhiskService.synthesizeWhiskPrompt(localPrompt, whiskState);
 
-                // Direct call to ImageGenerationService (REST fallback internally enabled)
-                const generated = await ImageGeneration.generateImages({
+                // Direct mode: Bypasses Firebase Functions entirely. Calls Gemini 3 Image directly via SDK.
+                const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
+                const { AI_MODELS } = await import('@/core/config/ai-models');
+
+                // Map studio model to Direct models
+                const resolvedModel = studioControls.model === 'pro'
+                    ? AI_MODELS.IMAGE.DIRECT_PRO
+                    : AI_MODELS.IMAGE.DIRECT_FAST;
+
+                const generatedUrls = await generateImageDirectly({
                     prompt: finalPrompt,
-                    count: 1,
                     aspectRatio: studioControls.aspectRatio,
-                    resolution: studioControls.resolution,
-                    model: studioControls.model,
-                    thinking: studioControls.thinking
+                    model: resolvedModel,
+                    numberOfImages: 1
                 });
 
-                if (generated.length > 0) {
-                    const newItems = generated.map(g => ({
-                        id: g.id || crypto.randomUUID(),
-                        url: g.url,
+                if (generatedUrls.length > 0) {
+                    const newItems = generatedUrls.map(url => ({
+                        id: crypto.randomUUID(),
+                        url: url, // Directly returns the data URI
                         type: 'image' as const,
                         prompt: localPrompt,
                         timestamp: Date.now(),
@@ -62,7 +68,7 @@ export default function DirectGenerationTab() {
                     // Open the FIRST generated image in CreativeCanvas for editing
                     setSelectedItem(newItems[0] as HistoryItem);
 
-                    toast.success('Image generated successfully');
+                    toast.success('Image generated directly successfully');
                 }
             } else {
                 // Direct Video Generation

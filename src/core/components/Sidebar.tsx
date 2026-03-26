@@ -279,49 +279,73 @@ export default function Sidebar() {
                     </button>
                 </div>
 
-                {/* Theme Selector */}
-                {isSidebarOpen && (
-                    <div className="mt-4 flex flex-col gap-2 p-2 rounded-lg bg-black/20 border border-white/5">
-                        <div className="flex items-center justify-center">
-                            <ThemeToggle />
-                        </div>
-                        <div className="px-2 pt-2 border-t border-white/5">
-                            <BiometricToggle />
-                        </div>
-                        <div className="px-1 pt-2 border-t border-white/5 flex flex-col gap-2">
-                        </div>
-
-
-                        <div className="flex items-center justify-center gap-3 pt-2 border-t border-white/5">
-                            <button
-                                onClick={() => {
-                                    const isEnabled = userProfile?.preferences?.observabilityEnabled ?? false;
-                                    updatePreferences({ observabilityEnabled: !isEnabled });
-                                    setModule('observability');
-                                }}
-                                className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.observabilityEnabled ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
-                                title="System Observability"
-                                aria-label="System Observability"
-                                data-testid="observability-footer-btn"
-                            >
-                                <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
-                                    <Activity size={14} /> Observability
-                                </span>
-                            </button>
-                            <button
-                                onClick={() => throttledSetModule('settings')}
-                                className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'settings' ? 'text-cyan-400 bg-white/5 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
-                                title="Settings"
-                                aria-label="Settings"
-                                data-testid="settings-footer-btn"
-                            >
-                                <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
-                                    <Settings size={14} /> Settings
-                                </span>
-                            </button>
-                        </div>
+                {/* Theme Selector & Actions */}
+                <div className={`mt-4 flex flex-col gap-2 rounded-lg bg-black/20 ${isSidebarOpen ? 'p-2 border border-white/5' : 'py-2 gap-3'}`}>
+                    <div className="flex items-center justify-center">
+                        <ThemeToggle isMinimized={!isSidebarOpen} />
                     </div>
-                )}
+                    <div className={`pt-2 border-t border-white/5 ${isSidebarOpen ? 'px-2' : 'px-1'}`}>
+                        <BiometricToggle isMinimized={!isSidebarOpen} />
+                    </div>
+
+                    <div className={`pt-2 border-t border-white/5 flex ${isSidebarOpen ? 'items-center justify-center gap-3' : 'flex-col items-center gap-3'}`}>
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => {
+                                            const isEnabled = userProfile?.preferences?.observabilityEnabled ?? false;
+                                            updatePreferences({ observabilityEnabled: !isEnabled });
+                                            setModule('observability');
+                                        }}
+                                        className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.observabilityEnabled ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
+                                        aria-label="System Observability"
+                                        data-testid="observability-footer-btn"
+                                    >
+                                        {isSidebarOpen ? (
+                                            <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
+                                                <Activity size={14} /> Observability
+                                            </span>
+                                        ) : (
+                                            <Activity size={16} />
+                                        )}
+                                    </button>
+                                </TooltipTrigger>
+                                {!isSidebarOpen && (
+                                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 font-medium">
+                                        System Observability
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => throttledSetModule('settings')}
+                                        className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'settings' ? 'text-cyan-400 bg-white/5 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
+                                        aria-label="Settings"
+                                        data-testid="settings-footer-btn"
+                                    >
+                                        {isSidebarOpen ? (
+                                            <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
+                                                <Settings size={14} /> Settings
+                                            </span>
+                                        ) : (
+                                            <Settings size={16} />
+                                        )}
+                                    </button>
+                                </TooltipTrigger>
+                                {!isSidebarOpen && (
+                                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 font-medium">
+                                        Settings
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                </div>
 
                 {isSidebarOpen && (
                     <p className="mt-4 text-[10px] text-gray-600 text-center italic">
