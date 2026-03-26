@@ -1,6 +1,6 @@
 import os
-import subprocess
 import urllib.request
+import urllib.error
 import json
 import logging
 
@@ -27,8 +27,7 @@ def submit_job():
     token = get_token()
     
     for agent in agents:
-        model_short = base_models.get(agent, "gemini-2.5-flash-lite")
-        base_model = f"projects/223837784072/locations/us-central1/publishers/google/models/{model_short}"
+        base_model = base_models.get(agent, "gemini-2.5-flash-lite")
         display_name = f"{agent}-r6"
         
         payload = {
