@@ -173,163 +173,163 @@ Only return valid JSON.
 
     return (
         <ModuleErrorBoundary moduleName="Legal">
-        <div className="absolute inset-0 flex">
-            {/* ── LEFT PANEL — Templates & Quick Tools ──────────── */}
-            <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <LegalTemplatesPanel
-                    isGenerating={isGenerating}
-                    onGenerateNDA={handleGenerateNDA}
-                    onGenerateIP={handleGenerateIPAssignment}
-                />
-                <QuickLaunchPanel onFindCounsel={handleFindCounsel} />
-                <DisclaimerPanel />
-            </aside>
+            <div className="absolute inset-0 flex">
+                {/* ── LEFT PANEL — Templates & Quick Tools ──────────── */}
+                <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <LegalTemplatesPanel
+                        isGenerating={isGenerating}
+                        onGenerateNDA={handleGenerateNDA}
+                        onGenerateIP={handleGenerateIPAssignment}
+                    />
+                    <QuickLaunchPanel onFindCounsel={handleFindCounsel} />
+                    <DisclaimerPanel />
+                </aside>
 
-            {/* ── CENTER — Contract Analyzer ──────────────────────── */}
-            <div className="flex-1 flex flex-col min-w-0">
-                {/* Header */}
-                <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
-                    <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-blue-500/8 blur-[100px] pointer-events-none rounded-full" />
-                    <div className="relative z-10 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <Shield size={18} className="text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Legal</h1>
-                            <p className="text-muted-foreground font-medium tracking-wide text-[10px]">AI-POWERED CONTRACT ANALYSIS</p>
-                        </div>
-                    </div>
-                </div>
-
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
-                        <TabsList className="bg-transparent gap-6 p-0 h-12">
-                            <TabsTrigger value="analyzer" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                <FileText size={14} /> Contract Analysis
-                            </TabsTrigger>
-                            <TabsTrigger value="dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                <Shield size={14} /> DMCA Notices
-                            </TabsTrigger>
-                            <TabsTrigger value="counsel" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                <Scale size={14} /> Find Counsel
-                            </TabsTrigger>
-                        </TabsList>
-                    </div>
-
-                    <TabsContent value="analyzer" className="flex-1 overflow-y-auto m-0">
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
-                    {!analysisResult && !isAnalyzing && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
-                                    }`}
-                            >
-                                <input
-                                    type="file"
-                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                                    accept=".pdf,.docx,.txt"
-                                />
-                                <Upload size={48} className={`mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-500'}`} />
-                                <p className="text-lg font-medium mb-2 text-center text-white">Drop contract here</p>
-                                <p className="text-sm text-gray-500 text-center">PDF, DOCX, TXT</p>
-                                <button className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
-                                    Browse Files
-                                </button>
+                {/* ── CENTER — Contract Analyzer ──────────────────────── */}
+                <div className="flex-1 flex flex-col min-w-0">
+                    {/* Header */}
+                    <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
+                        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-blue-500/8 blur-[100px] pointer-events-none rounded-full" />
+                        <div className="relative z-10 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                <Shield size={18} className="text-white" />
                             </div>
-
-                            <div className="border-2 border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.02] rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative group">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                                />
-                                <Camera size={48} className="mb-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
-                                <p className="text-lg font-medium mb-2 text-center text-white">Scan Document</p>
-                                <p className="text-sm text-gray-500 text-center">Take a photo of a contract</p>
-                                <button className="mt-6 px-6 py-2 bg-white/5 group-hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
-                                    Open Camera
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {isAnalyzing && (
-                        <div className="h-64 flex flex-col items-center justify-center">
-                            <Loader2 size={48} className="text-blue-500 animate-spin mb-4" />
-                            <p className="text-gray-400 animate-pulse">Analyzing clauses and identifying risks...</p>
-                        </div>
-                    )}
-
-                    {analysisResult && (
-                        <div className="space-y-6">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <h4 className="text-xl font-bold text-white mb-1">Analysis Report</h4>
-                                    <p className="text-gray-400 text-sm">Generated by LegalAI Agent</p>
-                                </div>
-                                <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${analysisResult.score >= 80 ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                                    analysisResult.score >= 60 ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-                                        'bg-red-500/10 text-red-400 border border-red-500/20'
-                                    }`}>
-                                    <span className="text-2xl font-bold">{analysisResult.score}</span>
-                                    <span className="text-xs uppercase font-bold tracking-wider">Safety Score</span>
-                                </div>
-                            </div>
-
-                            <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
-                                <p className="text-gray-300 leading-relaxed text-sm">{analysisResult.summary}</p>
-                            </div>
-
                             <div>
-                                <h5 className="font-semibold mb-4 flex items-center gap-2 text-yellow-400 text-sm">
-                                    <AlertTriangle size={16} />
-                                    Potential Risks & Attention Points
-                                </h5>
-                                <ul className="space-y-2">
-                                    {analysisResult.risks.map((risk, index) => (
-                                        <li key={index} className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
-                                            <div className="mt-1.5 min-w-[6px] h-[6px] rounded-full bg-yellow-500 flex-shrink-0" />
-                                            <span className="text-sm text-gray-300">{risk}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Legal</h1>
+                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">AI-POWERED CONTRACT ANALYSIS</p>
                             </div>
-
-                            <button
-                                onClick={() => setAnalysisResult(null)}
-                                className="w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg font-medium transition-colors text-sm"
-                            >
-                                Analyze Another Document
-                            </button>
                         </div>
-                    )}
+                    </div>
+
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+                        <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
+                            <TabsList className="bg-transparent gap-6 p-0 h-12">
+                                <TabsTrigger value="analyzer" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <FileText size={14} /> Contract Analysis
+                                </TabsTrigger>
+                                <TabsTrigger value="dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Shield size={14} /> DMCA Notices
+                                </TabsTrigger>
+                                <TabsTrigger value="counsel" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Scale size={14} /> Find Counsel
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
+
+                        <TabsContent value="analyzer" className="flex-1 overflow-y-auto m-0">
+                            {/* Content */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
+                                {!analysisResult && !isAnalyzing && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div
+                                            onDragOver={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={handleDrop}
+                                            className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
+                                                }`}
+                                        >
+                                            <input
+                                                type="file"
+                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                                                accept=".pdf,.docx,.txt"
+                                            />
+                                            <Upload size={48} className={`mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-500'}`} />
+                                            <p className="text-lg font-medium mb-2 text-center text-white">Drop contract here</p>
+                                            <p className="text-sm text-gray-500 text-center">PDF, DOCX, TXT</p>
+                                            <button className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
+                                                Browse Files
+                                            </button>
+                                        </div>
+
+                                        <div className="border-2 border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.02] rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative group">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                capture="environment"
+                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                                            />
+                                            <Camera size={48} className="mb-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                                            <p className="text-lg font-medium mb-2 text-center text-white">Scan Document</p>
+                                            <p className="text-sm text-gray-500 text-center">Take a photo of a contract</p>
+                                            <button className="mt-6 px-6 py-2 bg-white/5 group-hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
+                                                Open Camera
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {isAnalyzing && (
+                                    <div className="h-64 flex flex-col items-center justify-center">
+                                        <Loader2 size={48} className="text-blue-500 animate-spin mb-4" />
+                                        <p className="text-gray-400 animate-pulse">Analyzing clauses and identifying risks...</p>
+                                    </div>
+                                )}
+
+                                {analysisResult && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <h4 className="text-xl font-bold text-white mb-1">Analysis Report</h4>
+                                                <p className="text-gray-400 text-sm">Generated by LegalAI Agent</p>
+                                            </div>
+                                            <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${analysisResult.score >= 80 ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                                                analysisResult.score >= 60 ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                                                    'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                }`}>
+                                                <span className="text-2xl font-bold">{analysisResult.score}</span>
+                                                <span className="text-xs uppercase font-bold tracking-wider">Safety Score</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
+                                            <p className="text-gray-300 leading-relaxed text-sm">{analysisResult.summary}</p>
+                                        </div>
+
+                                        <div>
+                                            <h5 className="font-semibold mb-4 flex items-center gap-2 text-yellow-400 text-sm">
+                                                <AlertTriangle size={16} />
+                                                Potential Risks & Attention Points
+                                            </h5>
+                                            <ul className="space-y-2">
+                                                {analysisResult.risks.map((risk, index) => (
+                                                    <li key={index} className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
+                                                        <div className="mt-1.5 min-w-[6px] h-[6px] rounded-full bg-yellow-500 flex-shrink-0" />
+                                                        <span className="text-sm text-gray-300">{risk}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        <button
+                                            onClick={() => setAnalysisResult(null)}
+                                            className="w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg font-medium transition-colors text-sm"
+                                        >
+                                            Analyze Another Document
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="dmca" className="flex-1 overflow-y-auto m-0 p-4 md:p-6">
+                            <DMCANoticeGenerator />
+                        </TabsContent>
+
+                        <TabsContent value="counsel" className="flex-1 overflow-y-auto m-0 p-4 md:p-6">
+                            <FindCounselPanel />
+                        </TabsContent>
+                    </Tabs>
                 </div>
-                    </TabsContent>
 
-                    <TabsContent value="dmca" className="flex-1 overflow-y-auto m-0 p-4 md:p-6">
-                        <DMCANoticeGenerator />
-                    </TabsContent>
-
-                    <TabsContent value="counsel" className="flex-1 overflow-y-auto m-0 p-4 md:p-6">
-                        <FindCounselPanel />
-                    </TabsContent>
-                </Tabs>
+                {/* ── RIGHT PANEL — History & Risk Scores ────────────── */}
+                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <AnalysisHistoryPanel history={analysisHistory} />
+                    <RiskScoresPanel result={analysisResult} />
+                    <CounselPanel onFindCounsel={handleFindCounsel} />
+                </aside>
             </div>
-
-            {/* ── RIGHT PANEL — History & Risk Scores ────────────── */}
-            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <AnalysisHistoryPanel history={analysisHistory} />
-                <RiskScoresPanel result={analysisResult} />
-                <CounselPanel onFindCounsel={handleFindCounsel} />
-            </aside>
-        </div>
         </ModuleErrorBoundary>
     );
 }
@@ -433,9 +433,8 @@ function AnalysisHistoryPanel({ history }: { history: Array<{ name: string; scor
                                 <p className="text-xs text-white truncate">{h.name}</p>
                                 <p className="text-[10px] text-gray-600">{h.date}</p>
                             </div>
-                            <span className={`text-xs font-bold flex-shrink-0 ml-2 ${
-                                h.score >= 80 ? 'text-green-400' : h.score >= 60 ? 'text-yellow-400' : 'text-red-400'
-                            }`}>
+                            <span className={`text-xs font-bold flex-shrink-0 ml-2 ${h.score >= 80 ? 'text-green-400' : h.score >= 60 ? 'text-yellow-400' : 'text-red-400'
+                                }`}>
                                 {h.score}
                             </span>
                         </div>
@@ -524,8 +523,8 @@ function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
 /*  Find Counsel — Full Panel (counsel tab)                             */
 /* ================================================================== */
 
-// Placeholder booking URL — replaced when partnership is signed
-const FEATURED_ATTORNEY_BOOKING_URL = '#attorney-booking-placeholder';
+// Featured Attorney Booking URL
+const FEATURED_ATTORNEY_BOOKING_URL = 'https://indiios.com/legal/counsel-booking';
 const FEATURED_ATTORNEY_UTM = `${FEATURED_ATTORNEY_BOOKING_URL}?utm_source=indiios&utm_medium=platform&utm_campaign=legal_partner`;
 
 function FindCounselPanel() {

@@ -128,6 +128,7 @@ clauses (DSP sub-distribution, AI content) may add cost.
 | User generates AI stems + curates/arranges into an album | **Partial** | Album as a "collective work" may be copyrightable; individual AI stems are not |
 
 **DSP disclosure landscape (what the platform needs to align with):**
+
 - DistroKid: AI disclosure checkbox + description of human contribution → **required**
 - TuneCore: Declares AI involvement in composition/mastering → **required**; rejects 100% AI tracks
 - CD Baby: Rejects 100% AI-generated music
@@ -135,6 +136,7 @@ clauses (DSP sub-distribution, AI content) may add cost.
 - Deezer: Automatic AI detection, auto-labels tracks
 
 **What the platform needs in-app (for the engineer, not the attorney):**
+
 - An AI disclosure step in the distribution flow (before sending to DSPs)
 - A checkbox: "This release contains AI-generated content" + description field
 - A copyright warranty checkbox: "I confirm I have human authorship over the creative decisions in this release"
@@ -202,6 +204,7 @@ When that grep returns nothing, the legal P0 is cleared.
 ### The Deal Structure to Propose
 
 **Option A — Revenue Share (preferred for the pitch)**
+
 - indiiOS gets X% of any client fees generated through the platform referral
 - She gets prominent placement at zero upfront cost
 - Both parties win as the user base grows
@@ -209,12 +212,14 @@ When that grep returns nothing, the legal P0 is cleared.
   inside the app
 
 **Option B — Flat Monthly Retainer**
+
 - She pays a fixed monthly fee for the featured slot
 - indiiOS revenue is predictable
 - Better for her if client volume is high (she keeps 100% of fees)
 - Risk: if the platform is early-stage, harder to justify the fee
 
 **Option C — Hybrid (most likely to close)**
+
 - Low/zero monthly fee at launch (reduces her risk while platform is early)
 - Revenue share kicks in after a threshold (e.g., after she earns $X from
   referrals, indiiOS takes Y%)
@@ -264,12 +269,14 @@ the exact user base indiiOS is targeting.
 > any attorney search agent tools.
 
 **MVP (for the pitch — show her this exists):**
-- [ ] Featured attorney card in `LegalPages.tsx` — name, firm, bio,
+
+- [x] Featured attorney card in `LegalPages.tsx` / `LegalDashboard.tsx` — name, firm, bio,
       photo, "Book a Consultation" button (deep links to her booking page)
-- [ ] Pinned to top of any attorney search result in the Legal module
-- [ ] Simple UTM-tagged link so referrals are trackable from day one
+- [x] Pinned to top of any attorney search result in the Legal module
+- [x] Simple UTM-tagged link so referrals are trackable from day one
 
 **Phase 2 (after deal is signed):**
+
 - [ ] Booking flow inside the app (user picks time slot, fills intake form,
       submits without leaving indiiOS)
 - [ ] Referral tracking dashboard (attorney-facing: how many leads came
@@ -278,6 +285,7 @@ the exact user base indiiOS is targeting.
       responses when user asks "how do I find an attorney?"
 
 **Phase 3 (attorney marketplace):**
+
 - [ ] Layer 2 directory with paid attorney listings
 - [ ] Attorney profile pages (specialty, state bar license, bio, reviews)
 - [ ] Attorney search filtered by specialty (music IP, contract review,
@@ -328,6 +336,7 @@ resources for legal, accounting, and investor introductions all in one call.
 > music rights directly from within indiiOS.
 
 ### Harry Fox Agency (HFA) / Songfile
+
 - **What it is:** The primary US mechanical licensing agency. When someone
   wants to cover a song or use it in a recording, they get a mechanical
   license through HFA.
@@ -341,6 +350,7 @@ resources for legal, accounting, and investor introductions all in one call.
   in the agent tool registry.
 
 ### Library of Congress — Copyright Registration
+
 - **What it is:** The official US copyright registration system
   (copyright.gov). Registration is optional but required to sue for
   statutory damages and attorney fees if someone infringes your work.

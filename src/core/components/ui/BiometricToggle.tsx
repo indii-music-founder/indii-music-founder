@@ -11,7 +11,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-export function BiometricToggle() {
+export function BiometricToggle({ isMinimized }: { isMinimized?: boolean }) {
     const { userProfile, updatePreferences } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
         updatePreferences: state.updatePreferences
@@ -61,16 +61,63 @@ export function BiometricToggle() {
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="flex items-center gap-2 p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed">
+                        <div className={`flex items-center ${isMinimized ? 'justify-center p-2' : 'gap-2 p-2'} rounded-md bg-white/5 opacity-50 cursor-not-allowed`}>
                             <Fingerprint size={16} className="text-gray-500" />
-                            <span className="text-xs text-gray-500 font-medium">Biometrics Unavailable</span>
+                            {!isMinimized && <span className="text-xs text-gray-500 font-medium">Biometrics Unavailable</span>}
                         </div>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent side={isMinimized ? "right" : "bottom"}>
                         <p>Your device does not support biometric authentication.</p>
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
+        );
+    }
+
+    if (isMinimized) {
+        return (
+            <div className="flex flex-col gap-2 items-center w-full">
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={handleToggle}
+                                disabled={isLoading}
+                                className={`
+                                    relative flex items-center justify-center p-2 rounded-lg border
+                                    transition-all duration-200 w-full
+                                    ${isEnabled
+                                        ? 'bg-dept-security/10 border-dept-security/30 hover:bg-dept-security/20'
+                                        : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                    }
+                                    ${error ? 'border-red-500/50' : ''}
+                                `}
+                            >
+                                {isLoading ? (
+                                    <Loader2 size={16} className="text-dept-security animate-spin" />
+                                ) : (
+                                    <Fingerprint size={16} className={isEnabled ? 'text-dept-security' : 'text-gray-400'} />
+                                )}
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            <p>{isEnabled ? "Disable Biometric Gate" : "Enable Biometric Gate"}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                {error && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <AlertCircle size={14} className="text-red-400" />
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                                <p>{error}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+            </div>
         );
     }
 
