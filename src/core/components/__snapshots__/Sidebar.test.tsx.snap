@@ -411,6 +411,85 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         />
       </button>
     </div>
+    <div
+      class="mt-4 flex flex-col gap-2 rounded-lg bg-black/20 py-2 gap-3"
+    >
+      <div
+        class="flex items-center justify-center"
+      >
+        <div
+          class="flex items-center gap-1 p-1 bg-secondary/50 rounded-full border border-white/10 flex-col"
+        >
+          <button
+            class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
+            title="Light Mode"
+          >
+            <svg
+              class="w-4 h-4"
+              data-testid="icon-Sun"
+            />
+          </button>
+          <button
+            class="p-1.5 rounded-full transition-all duration-200 bg-white text-purple-600 shadow-sm"
+            title="System Preference"
+          >
+            <svg
+              class="w-4 h-4"
+              data-testid="icon-Monitor"
+            />
+          </button>
+          <button
+            class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
+            title="Dark Mode"
+          >
+            <svg
+              class="w-4 h-4"
+              data-testid="icon-Moon"
+            />
+          </button>
+        </div>
+      </div>
+      <div
+        class="pt-2 border-t border-white/5 px-1"
+      >
+        <div
+          class="flex items-center justify-center p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
+          data-state="closed"
+        >
+          <svg
+            class="text-gray-500"
+            data-testid="icon-Fingerprint"
+            size="16"
+          />
+        </div>
+      </div>
+      <div
+        class="pt-2 border-t border-white/5 flex flex-col items-center gap-3"
+      >
+        <button
+          aria-label="System Observability"
+          class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
+          data-state="closed"
+          data-testid="observability-footer-btn"
+        >
+          <svg
+            data-testid="icon-Activity"
+            size="16"
+          />
+        </button>
+        <button
+          aria-label="Settings"
+          class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
+          data-state="closed"
+          data-testid="settings-footer-btn"
+        >
+          <svg
+            data-testid="icon-Settings"
+            size="16"
+          />
+        </button>
+      </div>
+    </div>
   </div>
 </nav>
 `;
@@ -965,7 +1044,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
       </button>
     </div>
     <div
-      class="mt-4 flex flex-col gap-2 p-2 rounded-lg bg-black/20 border border-white/5"
+      class="mt-4 flex flex-col gap-2 rounded-lg bg-black/20 p-2 border border-white/5"
     >
       <div
         class="flex items-center justify-center"
@@ -1003,7 +1082,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         </div>
       </div>
       <div
-        class="px-2 pt-2 border-t border-white/5"
+        class="pt-2 border-t border-white/5 px-2"
       >
         <div
           class="flex items-center gap-2 p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
@@ -1022,16 +1101,13 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         </div>
       </div>
       <div
-        class="px-1 pt-2 border-t border-white/5 flex flex-col gap-2"
-      />
-      <div
-        class="flex items-center justify-center gap-3 pt-2 border-t border-white/5"
+        class="pt-2 border-t border-white/5 flex items-center justify-center gap-3"
       >
         <button
           aria-label="System Observability"
           class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
+          data-state="closed"
           data-testid="observability-footer-btn"
-          title="System Observability"
         >
           <span
             class="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider"
@@ -1046,8 +1122,8 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         <button
           aria-label="Settings"
           class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
+          data-state="closed"
           data-testid="settings-footer-btn"
-          title="Settings"
         >
           <span
             class="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider"
