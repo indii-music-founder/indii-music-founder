@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { FirestoreService } from '@/services/FirestoreService';
 import { TaxProfileDocument } from '@/types/firestore';
 
@@ -24,9 +23,9 @@ class TaxService extends FirestoreService<TaxProfileDocument> {
      * Update or create tax profile
      */
     async saveProfile(userId: string, data: Omit<TaxProfileDocument, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
-        // We cast to any here because set expects full T, but updatedAt is handled by set().
-        // FirestoreService.set handles merging and updatedAt.
-        await this.set(userId, data as any);
+        // Safe cast: FirestoreService.set uses { merge: true }, so missing id/createdAt/updatedAt
+        // fields are not overwritten. The Omit type guarantees we only pass data fields.
+        await this.set(userId, data as unknown as TaxProfileDocument);
     }
 }
 
