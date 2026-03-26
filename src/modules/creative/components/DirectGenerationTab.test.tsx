@@ -18,10 +18,20 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => mockToast
 }));
 
-const mockGenerateImages = vi.fn();
-vi.mock('@/services/image/ImageGenerationService', () => ({
-    ImageGeneration: {
-        generateImages: (...args: any[]) => mockGenerateImages(...args)
+// The component dynamically imports DirectImageGenerator — mock it so the
+// dynamic import resolves to our spy.
+const mockGenerateImageDirectly = vi.fn();
+vi.mock('@/services/ai/generators/DirectImageGenerator', () => ({
+    generateImageDirectly: (...args: any[]) => mockGenerateImageDirectly(...args)
+}));
+
+// Mock the AI_MODELS config that the component also imports dynamically.
+vi.mock('@/core/config/ai-models', () => ({
+    AI_MODELS: {
+        IMAGE: {
+            DIRECT_PRO: 'gemini-3-pro-image-preview',
+            DIRECT_FAST: 'gemini-3-flash-preview'
+        }
     }
 }));
 
@@ -77,7 +87,8 @@ describe('DirectGenerationTab', () => {
             resolveGeneration = resolve;
         });
 
-        mockGenerateImages.mockReturnValue(generationPromise);
+        // generateImageDirectly returns an array of URL strings (data URIs in production)
+        mockGenerateImageDirectly.mockReturnValue(generationPromise);
 
         render(<DirectGenerationTab />);
 
@@ -93,14 +104,9 @@ describe('DirectGenerationTab', () => {
         expect(screen.getByTestId('loader')).toBeInTheDocument();
         expect(sendButton).toBeDisabled();
 
-        // Resolve generation
+        // Resolve generation — component expects an array of URL strings
         await act(async () => {
-            resolveGeneration!([{
-                id: 'img-1',
-                url: 'https://example.com/cat.jpg',
-                prompt: 'A cute cat',
-                timestamp: Date.now()
-            }]);
+            resolveGeneration!(['https://example.com/cat.jpg']);
         });
 
         // Assert success state
@@ -109,11 +115,11 @@ describe('DirectGenerationTab', () => {
         });
 
         expect(screen.getByAltText('A cute cat')).toBeInTheDocument();
-        expect(mockToast.success).toHaveBeenCalledWith('Image generated successfully');
+        expect(mockToast.success).toHaveBeenCalledWith('Image generated directly successfully');
     });
 
     it('handles generation error correctly', async () => {
-        mockGenerateImages.mockRejectedValue(new Error('API Error'));
+        mockGenerateImageDirectly.mockRejectedValue(new Error('API Error'));
 
         render(<DirectGenerationTab />);
 
