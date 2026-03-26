@@ -104,4 +104,88 @@ ${semanticRecall}
 ${formattedRecent}
 `.trim();
     }
+
+    /**
+     * Persist the current session transcript to Firestore for durable storage.
+     * Allows cross-session transcript search via the Squeezer.
+     *
+     * Storage: `users/{userId}/session_transcripts/{sessionId}`
+     */
+    async persistTranscript(userId: string, sessionId: string): Promise<void> {
+        if (!userId || !sessionId) return;
+
+        try {
+            const history = await this.getRecentHistory();
+            if (history.length === 0) return;
+
+            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db } = await import('@/services/firebase');
+
+            const transcript = this.formatHistory(history);
+            const docRef = doc(db, `users/${userId}/session_transcripts/${sessionId}`);
+
+            await setDoc(docRef, {
+                sessionId,
+                userId,
+                transcript,
+                turnCount: history.length,
+                firstTurn: history[0]?.text?.substring(0, 100) || '',
+                lastTurn: history[history.length - 1]?.text?.substring(0, 100) || '',
+                savedAt: serverTimestamp(),
+            }, { merge: true });
+
+            Logger.info('HistoryManager', `Persisted transcript (${history.length} turns) for session ${sessionId}`);
+        } catch (error) {
+            Logger.warn('HistoryManager', 'Failed to persist transcript (non-blocking):', error);
+        }
+    }
+
+    /**
+     * Search past session transcripts by keyword.
+     * Returns matching transcript snippets with session metadata.
+     */
+    async searchTranscripts(
+        userId: string,
+        query: string,
+        limit: number = 5
+    ): Promise<Array<{ sessionId: string; snippet: string; turnCount: number }>> {
+        if (!userId || !query) return [];
+
+        try {
+            const { collection, getDocs, orderBy, query: firestoreQuery, limit: firestoreLimit } = await import('firebase/firestore');
+            const { db } = await import('@/services/firebase');
+
+            // Firestore doesn't support full-text search, so we fetch recent transcripts
+            // and filter client-side. For production, this would be backed by a search index.
+            const collRef = collection(db, `users/${userId}/session_transcripts`);
+            const q = firestoreQuery(collRef, orderBy('savedAt', 'desc'), firestoreLimit(20));
+            const snap = await getDocs(q);
+
+            const results: Array<{ sessionId: string; snippet: string; turnCount: number }> = [];
+            const queryLower = query.toLowerCase();
+
+            snap.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                const transcript = (data.transcript || '') as string;
+                if (transcript.toLowerCase().includes(queryLower)) {
+                    // Extract a snippet around the match
+                    const idx = transcript.toLowerCase().indexOf(queryLower);
+                    const start = Math.max(0, idx - 100);
+                    const end = Math.min(transcript.length, idx + query.length + 100);
+                    const snippet = transcript.substring(start, end);
+
+                    results.push({
+                        sessionId: data.sessionId as string,
+                        snippet: `...${snippet}...`,
+                        turnCount: data.turnCount as number || 0,
+                    });
+                }
+            });
+
+            return results.slice(0, limit);
+        } catch (error) {
+            Logger.warn('HistoryManager', 'Failed to search transcripts:', error);
+            return [];
+        }
+    }
 }

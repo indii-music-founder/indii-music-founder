@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
 import { AgentFeedbackEvent, AgentActionContext, FeedbackRating } from '@/types/agent-feedback';
 import { Timestamp } from 'firebase/firestore';
+import { userMemoryService } from '@/services/agent/UserMemoryService';
 
 export interface AgentFeedbackSlice {
     // Data
@@ -44,7 +45,29 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
         }
 
         try {
-            // In a full implementation, this calls AgentFeedbackService to persist to Firestore
+            let memoryId: string | undefined;
+
+            // Persist the feedback as a strategic rule in UserMemory
+            const ruleText = comment
+                ? `Rule for ${currentFeedbackContext.actionType}: ${comment}`
+                : `User ${rating === 'positive' ? 'approved' : 'rejected'} action: ${currentFeedbackContext.actionType}`;
+
+            try {
+                memoryId = await userMemoryService.saveMemory(
+                    userId,
+                    ruleText,
+                    'feedback',
+                    'high',
+                    {
+                        tags: ['agent-feedback', currentFeedbackContext.agentId],
+                        sourceSessionId: currentFeedbackContext.promptId
+                    }
+                );
+                logger.info(`[AgentFeedbackSlice] Successfully saved strategic rule to UserMemory for user ${userId}`);
+            } catch (memoryError) {
+                logger.error('[AgentFeedbackSlice] Failed to save rule to UserMemory (non-blocking):', memoryError);
+            }
+
             const newEvent: AgentFeedbackEvent = {
                 id: crypto.randomUUID(),
                 userId,
@@ -52,7 +75,8 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
                 actionContext: currentFeedbackContext,
                 rating,
                 comment,
-                isProcessed: false,
+                isProcessed: true,
+                resultingMemoryId: memoryId,
                 sharedGlobally,
             };
 
@@ -63,8 +87,6 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
             }));
 
             logger.info(`[AgentFeedbackSlice] Feedback submitted for action: ${currentFeedbackContext.actionType}`);
-
-            // TODO: Hook into MemoryAgent to parse this event into a UserMemory rule.
         } catch (error) {
             logger.error('[AgentFeedbackSlice] Failed to submit feedback:', error);
         }

@@ -382,7 +382,9 @@ export class BaseAgent implements SpecializedAgent {
             safeHistory,
             SUPERPOWER_PROMPT,
             memorySection,
-            distributorSection
+            distributorSection,
+            // Layer 5: Big Brain auto-recall block (XML from all 4 memory layers)
+            (context as Record<string, unknown> | undefined)?.autoRecallBlock as string | undefined
         );
 
         // Tool gathering logic

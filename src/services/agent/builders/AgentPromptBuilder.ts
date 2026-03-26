@@ -84,7 +84,8 @@ export class AgentPromptBuilder {
         safeHistory: string,
         superpowerPrompt: string,
         memorySection: string,
-        distributorSection: string
+        distributorSection: string,
+        autoRecallBlock?: string
     ): string {
         const whiskContext = context?.whiskState ? `\n${this.buildWhiskContext(context.whiskState)}\n` : '';
         const safeTask = this.sanitizeTask(task);
@@ -92,6 +93,8 @@ export class AgentPromptBuilder {
         const alignmentRules = context?.userAlignmentRules?.length
             ? `\n<user_specific_alignment>\n${context.userAlignmentRules.map(r => `- ${r}`).join('\n')}\n</user_specific_alignment>\n`
             : '';
+
+        const autoRecall = autoRecallBlock || '';
 
         return `
 # MISSION
@@ -113,6 +116,7 @@ ${context.brandKit.releaseDetails ? `
 
 ${whiskContext}
 ${alignmentRules}
+${autoRecall}
 
 # HISTORY
 ${safeHistory}
