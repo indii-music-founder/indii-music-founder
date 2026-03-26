@@ -35,6 +35,10 @@ import { CommerceTools } from './tools/CommerceTools';
 import { BigQueryTools } from './tools/BigQueryTools';
 import { BrowserTools } from './tools/BrowserTools';
 import { Web3Tools } from './tools/Web3Tools';
+import { CoreVaultTools } from './tools/CoreVaultTools';
+import { CaptainsLogTools } from './tools/CaptainsLogTools';
+import { SqueezerTools } from './tools/SqueezerTools';
+import { HiveTools } from './tools/HiveTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -75,6 +79,12 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...BigQueryTools,
     ...BrowserTools,
     ...Web3Tools,
+    // Memory Architecture Layer 3 & 4
+    ...CoreVaultTools,
+    ...CaptainsLogTools,
+    // Memory Architecture Layer 1 & 2
+    ...SqueezerTools,
+    ...HiveTools,
 };
 
 

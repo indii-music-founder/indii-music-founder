@@ -340,6 +340,65 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Memory Architecture — 5-Layer System (user-scoped subcollections)
+    // =========================================================================
+
+    // Layer 3: CORE Vault — Authoritative fact store (supersede-never-delete)
+    match /users/{userId}/vault/{category} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      // Facts are superseded, never deleted — enforced at app layer
+      allow delete: if false;
+    }
+
+    // Layer 4: Captain's Logs — Daily append-only operational timeline
+    match /users/{userId}/captains_logs/{dateKey} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      // Entries can only be appended (arrayUnion), never removed
+      allow update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // Layer 1: Session Transcripts — Durable session history for Squeezer search
+    match /users/{userId}/session_transcripts/{sessionId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Layer 2: Deep Hive — Episodic memory store
+    match /users/{userId}/memories/{memoryId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Layer 2: Deep Hive — Consolidated insights
+    match /users/{userId}/insights/{insightId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // AlwaysOnMemoryEngine — Always-on memory ingestion & consolidation
+    match /users/{userId}/alwaysOnMemories/{memoryId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/consolidationInsights/{insightId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/ingestionEvents/{eventId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // =========================================================================
     // Remote Relay (Firestore Cloud Relay — phone ↔ desktop)
     // =========================================================================
     
