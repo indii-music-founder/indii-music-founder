@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.37.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.36.0...v1.37.0) (2026-03-26)
+
+
+### Features
+
+* introduce agent feedback widget and update numerous agent training and evaluation datasets. ([4c26304](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4c263045e76cb4ecc7a699cd28f302eda46dbdab))
+* **memory:** implement 5-layer memory architecture with BigBrain auto-recall ([b0ac6f8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b0ac6f882b6ea66f0698cd6bafbabbfb94dabdac))
+* **wo-1,5,10:** gate shell modules, fix Math.random IDs, refocus MusicAgent ([1143b6a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1143b6a887ba16ba2d4077a0196b7ac72add5443))
+
+
+### Bug Fixes
+
+* **training:** rename duplicate scenario_id in publishing.jsonl ([a60af67](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a60af675639e165de10902d8aa58c199312e6124))
+
 ## [1.36.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.35.1...v1.36.0) (2026-03-25)
 
 
