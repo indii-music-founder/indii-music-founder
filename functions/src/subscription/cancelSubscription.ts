@@ -13,6 +13,7 @@ export const cancelSubscription = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 30,
   memory: '128MiB',
+  enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
 }, async (request) => {
   const { userId } = request.data;
 

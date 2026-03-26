@@ -3,7 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { Subscription, SubscriptionTier } from '../shared/subscription/types';
 import * as crypto from 'crypto';
 
-export const getSubscription = onCall({ cors: true }, async (request) => {
+export const getSubscription = onCall({ cors: true, enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true' }, async (request) => {
   const { userId } = request.data;
 
   if (!userId) {

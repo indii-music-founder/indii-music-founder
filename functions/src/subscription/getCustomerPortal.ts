@@ -13,6 +13,7 @@ export const getCustomerPortal = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 30,
   memory: '128MiB',
+  enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
 }, async (request) => {
   const { userId, returnUrl } = request.data;
 

@@ -16,6 +16,7 @@ export const createCheckoutSession = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 60,
   memory: '256MiB',
+  enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
 }, async (request) => {
   const { userId, tier, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;
 

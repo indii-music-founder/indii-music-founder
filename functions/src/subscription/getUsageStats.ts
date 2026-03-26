@@ -9,7 +9,7 @@ import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 import { UsageStats, SubscriptionTier } from '../shared/subscription/types';
 import { TIER_CONFIGS } from '../shared/subscription/SubscriptionTier';
 
-export const getUsageStats = onCall(async (request) => {
+export const getUsageStats = onCall({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true' }, async (request) => {
   const { userId } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {
