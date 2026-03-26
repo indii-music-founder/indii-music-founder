@@ -157,12 +157,13 @@ function injectFounderEntry(
     // public git record (it stays in Firestore only).
     const entry = `  {\n    seat: ${record.seat},\n    name: ${JSON.stringify(record.name)},\n    joinedAt: ${JSON.stringify(record.joinedAt)},\n    covenantHash: ${JSON.stringify(record.covenantHash)},\n  },`;
 
-  // Replace the placeholder comment line with the new entry + placeholder preserved
-  const placeholder = "  // ── Founder entries are appended here automatically ──";
-  if (!fileContent.includes(placeholder)) {
-    throw new Error('Placeholder not found in founders.ts');
-  }
-  return fileContent.replace(placeholder, `${entry}\n${placeholder}`);}
+    // Replace the placeholder comment line with the new entry + placeholder preserved
+    const placeholder = "  // ── Founder entries are appended here automatically ──";
+    if (!fileContent.includes(placeholder)) {
+        throw new Error('Placeholder not found in founders.ts');
+    }
+    return fileContent.replace(placeholder, `${entry}\n${placeholder}`);
+}
 
 /**
  * Commit the updated founders.ts to main via the GitHub Contents API.
@@ -206,6 +207,7 @@ export const activateFounderPass = onCall({
     secrets: [stripeSecretKey, githubTokenFounders],
     timeoutSeconds: 120,
     memory: '256MiB',
+    enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
 }, async (request): Promise<ActivateFounderPassResult> => {
     const { userId, paymentIntentId, displayName } = request.data as ActivateFounderPassParams;
 
