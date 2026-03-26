@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { z } from 'zod';
 import { Project } from '@/core/store/slices/appSlice';
 import { ProjectMetadata } from './DashboardService';
@@ -52,7 +51,7 @@ export function projectToMetadata(
     const metadata: ProjectMetadata = {
         id: validatedProject.id,
         name: validatedProject.name,
-        type: validatedProject.type as any, // Cast to ModuleId (handled by interface)
+        type: validatedProject.type as ProjectMetadata['type'],
         lastModified: validatedProject.date, // KEY CONVERSION: date → lastModified
         assetCount,
         thumbnail,

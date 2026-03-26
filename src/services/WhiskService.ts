@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { WhiskState, WhiskItem } from '@/core/store/slices/creative';
 import { ImageGeneration } from './image/ImageGenerationService';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -164,11 +163,11 @@ export class WhiskService {
         // Check styles for video parameters
         const activeStyles = whiskState.styles.filter(i => i.checked);
         for (const style of activeStyles) {
-            const matchingPreset = STYLE_PRESETS.find((p: any) => p.prompt === style.content);
+            const matchingPreset = STYLE_PRESETS.find(p => p.prompt === style.content);
             if (matchingPreset) {
                 if (matchingPreset.aspectRatio) params.aspectRatio = matchingPreset.aspectRatio;
-                if ((matchingPreset as any).duration) params.duration = (matchingPreset as any).duration;
-                if ((matchingPreset as any).motionIntensity) params.motionIntensity = (matchingPreset as any).motionIntensity;
+                if (matchingPreset.duration) params.duration = matchingPreset.duration;
+                if (matchingPreset.motionIntensity) params.motionIntensity = matchingPreset.motionIntensity;
             }
         }
 
