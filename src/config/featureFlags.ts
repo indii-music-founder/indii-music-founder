@@ -41,6 +41,11 @@ export const FEATURE_FLAG_NAMES = {
     MARKETPLACE: 'enable_marketplace',
     SOCIAL_POSTING: 'enable_social_posting',
     AVATAR_GENERATION: 'enable_avatar_generation',
+
+    // ---- Dev-only modules ----
+    // Shell modules that are not ready for user-facing production.
+    // Enabled in dev mode or via VITE_SHOW_DEV_MODULES=true.
+    DEV_MODULES: 'enable_dev_modules',
 } as const;
 
 export type FeatureFlagName = typeof FEATURE_FLAG_NAMES[keyof typeof FEATURE_FLAG_NAMES];
@@ -67,6 +72,9 @@ const DEFAULTS: Record<string, boolean> = {
     [FEATURE_FLAG_NAMES.MARKETPLACE]: false,
     [FEATURE_FLAG_NAMES.SOCIAL_POSTING]: false,
     [FEATURE_FLAG_NAMES.AVATAR_GENERATION]: false,
+
+    // Dev-only modules — enabled in dev or via VITE_SHOW_DEV_MODULES=true
+    [FEATURE_FLAG_NAMES.DEV_MODULES]: import.meta.env.DEV || import.meta.env.VITE_SHOW_DEV_MODULES === 'true',
 };
 
 // ============================================================================
@@ -83,6 +91,9 @@ export const GATED_MODULES: Record<string, ModuleId[]> = {
     // Web3 services are only consumed internally by agent tools.
     [FEATURE_FLAG_NAMES.MERCH_STORE]: ['merch'],
     [FEATURE_FLAG_NAMES.MARKETPLACE]: ['marketplace'],
+
+    // Dev-only shell modules — hidden in production, visible in dev mode
+    [FEATURE_FLAG_NAMES.DEV_MODULES]: ['debug', 'files', 'history'],
 };
 
 /**

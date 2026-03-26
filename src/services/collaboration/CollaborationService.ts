@@ -58,9 +58,10 @@ export class CollaborationService {
             // Set up Awareness (cursors, presence)
             const awareness = this.provider.awareness;
 
-            // Assign a random distinct color for the user's cursor
+            // Assign a deterministic cursor color based on userId — same user always gets same color
             const colors = ['#f87171', '#fb923c', '#fbbf24', '#4ade80', '#2dd4bf', '#38bdf8', '#818cf8', '#c084fc', '#f472b6'];
-            const userColor = colors[Math.floor(Math.random() * colors.length)];
+            const hashCode = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const userColor = colors[hashCode % colors.length];
 
             awareness.setLocalStateField('user', {
                 id: userId,

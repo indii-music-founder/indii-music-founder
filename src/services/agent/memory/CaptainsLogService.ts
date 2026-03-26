@@ -83,7 +83,7 @@ function getTodayKey(): string {
  * Generate a unique entry ID.
  */
 function generateEntryId(type: LogEntryType): string {
-    return `log_${type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    return `log_${type}_${Date.now()}_${crypto.randomUUID().substring(0, 6)}`;
 }
 
 // ============================================================================

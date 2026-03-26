@@ -59,16 +59,14 @@ export class SocialPostingService {
             const formattedTags = request.hashtags?.map(tag => tag.startsWith('#') ? tag : `#${tag}`).join(' ') || '';
             const finalCaption = `${request.caption}\n\n${formattedTags}`.trim();
 
-            // Mock API network delay (e.g. video processing/upload time)
-            await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
+            // Mock API network delay (simulates upload/processing time)
+            await new Promise(resolve => setTimeout(resolve, 2000));
 
             // In a production environment, this is where we would use the respective Graph APIs
             // e.g., TikTok Content Posting API, YouTube Data API v3 (videos.insert), IG Graph API
 
-            // Simulate random occasional API rejection (like a rate limit or bad token)
-            if (Math.random() < 0.1) {
-                throw new Error(`${platform} API rejected the upload token.`);
-            }
+            // NOTE: Simulated random failure removed (was Math.random() < 0.1).
+            // When real APIs are wired, genuine errors will surface naturally.
 
             const mockedPostId = `${platform.toLowerCase().replace(' ', '_')}_${secureRandomAlphanumeric(7)}`;
 
