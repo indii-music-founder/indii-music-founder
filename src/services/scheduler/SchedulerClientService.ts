@@ -12,6 +12,10 @@ import type {
  * SchedulerService. Manages tasks, subscribes to tick events, and provides
  * a hook-ready API.
  *
+ * All methods lazily read `window.electronAPI.scheduler` so they work
+ * correctly even when the window object is populated after module load
+ * (e.g. in unit tests or SSR environments).
+ *
  * Usage:
  *   import { SchedulerClientService } from '@/services/scheduler/SchedulerClientService';
  *
@@ -22,11 +26,17 @@ import type {
  *   useEffect(() => SchedulerClientService.onNeuralSync(() => setOnline(true)), []);
  */
 
-const isElectron = typeof window !== 'undefined' && !!window.electronAPI?.scheduler;
+/** Lazily checks if we're in Electron with scheduler available. */
+function isElectron(): boolean {
+    return typeof window !== 'undefined' && !!window.electronAPI?.scheduler;
+}
 
-/** Narrows `window.electronAPI.scheduler` to non-null after asserting availability. */
+/**
+ * Lazily narrows `window.electronAPI.scheduler` to a non-null value.
+ * Throws a descriptive error if called outside an Electron context.
+ */
 function api() {
-    if (!isElectron) {
+    if (!isElectron()) {
         throw new Error('[SchedulerClientService] Only available in Electron context');
     }
     return window.electronAPI!.scheduler!;
@@ -74,7 +84,7 @@ export const SchedulerClientService = {
      *   useEffect(() => SchedulerClientService.onTick((e) => console.log(e)), []);
      */
     onTick(callback: (event: SchedulerTickEvent) => void): () => void {
-        if (!isElectron) return () => void 0;
+        if (!isElectron()) return () => void 0;
         return api().onTick(callback as (e: unknown) => void);
     },
 
@@ -88,13 +98,13 @@ export const SchedulerClientService = {
      *   }), []);
      */
     onNeuralSync(callback: (payload: { taskId: string; firedAt: string }) => void): () => void {
-        if (!isElectron) return () => void 0;
+        if (!isElectron()) return () => void 0;
         return api().onNeuralSync(callback as (e: unknown) => void);
     },
 
     /** True if running inside Electron (scheduler is available). */
     get isAvailable(): boolean {
-        return isElectron;
+        return isElectron();
     },
 };
 
