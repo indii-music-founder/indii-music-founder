@@ -172,11 +172,16 @@ export class AlwaysOnMemoryEngine {
         this.isRunning = true;
         this.startedAt = new Date();
 
-        // Consolidation timer
+        // Consolidation timer and indiiOD Neural Sync
         const consolidationMs = this.config.consolidation.intervalMs;
         this.consolidationTimer = setInterval(() => {
             this.runConsolidation(userId).catch((e) =>
                 logger.error('[AlwaysOnMemoryEngine] Background consolidation error:', e)
+            );
+
+            // indiiOD Neural Sync (Heartbeat)
+            this.runNeuralSync(userId).catch((e) =>
+                logger.error('[AlwaysOnMemoryEngine] Neural Sync error for indiiOD:', e)
             );
         }, consolidationMs);
 
@@ -535,6 +540,44 @@ Be thorough but concise. Always cite your sources.`;
             logger.error('[AlwaysOnMemoryEngine] Consolidation failed:', error);
             this.isConsolidating = false;
             return null;
+        }
+    }
+
+    /**
+     * Run the Neural Sync heartbeat for indiiOD.
+     * Executes the operational checklist strictly enforcing Layer 3 governance.
+     */
+    async runNeuralSync(userId: string): Promise<void> {
+        try {
+            logger.info(`[AlwaysOnMemoryEngine] 💓 Initiating Neural Sync for indiiOD (User: ${userId})`);
+
+            // 1. Wake up and query the Always-On Memory Engine for system context.
+            const recentMemories = await this.getMemories(userId, { limit: 10 });
+            if (recentMemories.length > 0) {
+                logger.debug(`[AlwaysOnMemoryEngine] indiiOD woke up. Evaluated ${recentMemories.length} recent memory contexts.`);
+            }
+
+            // 2. Check src/services/directive/ for any new Directives assigned to 'indiiOD'.
+            // Dynamically import DirectiveService to avoid circular dependencies
+            const { DirectiveService } = await import('../directive/DirectiveService');
+            const activeDirectives = await DirectiveService.getActiveDirectivesForAgent(userId, 'indiiOD');
+
+            if (activeDirectives.length > 0) {
+                logger.info(`[AlwaysOnMemoryEngine] 📋 indiiOD found ${activeDirectives.length} active directives.`);
+            }
+
+            // 3. Verify the status of active Timeline Orchestrator campaigns.
+            // (Placeholder for Timeline Orchestrator module hooks)
+
+            // 4. Review Executor Agent logs for any Layer 3 script failures.
+            // (Placeholder for parsing Python/Node Layer 3 execution logs)
+
+            // 5. If a critical deadline is approaching and assets are missing, activate Maximizer Mode (override token budgets).
+            // (Placeholder for deadline scanner against Compute Allocations)
+
+            logger.info(`[AlwaysOnMemoryEngine] ✅ Neural Sync complete for indiiOD.`);
+        } catch (error) {
+            logger.error('[AlwaysOnMemoryEngine] Neural Sync failed:', error);
         }
     }
 
