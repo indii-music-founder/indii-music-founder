@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { Timestamp } from 'firebase/firestore';
+import type { Node, Edge } from 'reactflow';
 import { SocialStats } from '@/services/social/types';
 
 // --- Shared Core Types (Moved from workflow/types.ts to avoid circular deps) ---
@@ -76,8 +76,9 @@ export interface SavedWorkflow {
     id: string;
     name: string;
     description: string;
-    nodes: any[]; // Using any[] to avoid importing detailed Node types here
-    edges: any[];
+    /** ReactFlow node objects — typed to avoid circular dep with workflow/types.ts */
+    nodes: Node[];
+    edges: Edge[];
     viewport: { x: number; y: number; zoom: number };
     createdAt: string;
     updatedAt: string;
@@ -118,7 +119,8 @@ export interface UserPreferences {
     // Agent Strategy
     wisdomPoolOptIn?: boolean;
 
-    [key: string]: any; // Allow extensibility
+    /** Allow extensibility — callers must narrow before use */
+    [key: string]: unknown;
 }
 
 export interface ShippingAddress {
