@@ -131,6 +131,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
+
+    // Built-in Task Scheduler
+    scheduler: {
+        register: (request: unknown) => ipcRenderer.invoke('scheduler:register', request),
+        cancel: (taskId: string) => ipcRenderer.invoke('scheduler:cancel', taskId),
+        setEnabled: (taskId: string, enabled: boolean) => ipcRenderer.invoke('scheduler:set-enabled', taskId, enabled),
+        status: () => ipcRenderer.invoke('scheduler:status'),
+        get: (taskId: string) => ipcRenderer.invoke('scheduler:get', taskId),
+        /** Subscribe to scheduler tick events (all tasks). Returns an unsubscribe fn. */
+        onTick: (callback: (event: unknown) => void) => {
+            const handler = (_e: unknown, event: unknown) => callback(event);
+            ipcRenderer.on('scheduler:tick', handler);
+            return () => ipcRenderer.removeListener('scheduler:tick', handler);
+        },
+        /** Subscribe to Neural Sync pulses specifically. Returns an unsubscribe fn. */
+        onNeuralSync: (callback: (payload: unknown) => void) => {
+            const handler = (_e: unknown, payload: unknown) => callback(payload);
+            ipcRenderer.on('scheduler:neural-sync', handler);
+            return () => ipcRenderer.removeListener('scheduler:neural-sync', handler);
+        },
+    },
+
     on: (channel: string, callback: (...args: any[]) => void) => {
         const subscription = (_event: any, ...args: any[]) => callback(...args);
         ipcRenderer.on(channel, subscription);
