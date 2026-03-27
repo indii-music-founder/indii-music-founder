@@ -14,7 +14,7 @@ class AudioFidelityAuditor(Tool):
     Analyzes an audio file for mastering quality, LUFS targets, and mixing imbalances.
     """
 
-    async def execute(self, file_path: str, target_platform: str = "Spotify", genre: str = "Pop") -> Response:
+    async def execute(self, file_path: str, target_platform: str = "Spotify", genre: str = "Pop", **kwargs) -> Response:
         self.set_progress(f"Auditing audio fidelity for {os.path.basename(file_path) if file_path else 'Unknown'}")
         
         try:
@@ -83,9 +83,30 @@ class AudioFidelityAuditor(Tool):
             
                 result = {"raw_text": response.text, "error": "Failed to parse JSON"}
             
+            # --- Markdown Report Export ---
+            md_lines = [f"# Audio Fidelity Audit — {os.path.basename(file_path)}\n"]
+            md_lines.append(f"**Platform:** {target_platform} | **Genre:** {genre}\n")
+            md_lines.append(f"| Metric | Value |")
+            md_lines.append(f"|---|---|")
+            md_lines.append(f"| Est. LUFS | {result.get('estimated_lufs','N/A')} |")
+            md_lines.append(f"| True Peak | {result.get('true_peak_db','N/A')} dBTP |")
+            md_lines.append(f"| Mix Balance | {result.get('mix_balance_score','N/A')}/10 |")
+            md_lines.append(f"\n**Low-Mids:** {result.get('low_mids_analysis','')}")
+            md_lines.append(f"**Highs:** {result.get('highs_analysis','')}\n")
+            recs = result.get('recommendations', [])
+            if recs:
+                md_lines.append("## Recommendations\n")
+                for r in recs:
+                    md_lines.append(f"- {r}")
+            report_md = "\n".join(md_lines)
+            export_path = kwargs.get("export_path")
+            if export_path:
+                with open(export_path, "w") as f:
+                    f.write(report_md)
+
             return Response(
                 message=f"Audio Fidelity Audit Complete for {os.path.basename(file_path)}",
-                additional={"audit_report": result}
+                additional={"audit_report": result, "report_md": report_md, "export_path": export_path}
             )
 
         except Exception as e:

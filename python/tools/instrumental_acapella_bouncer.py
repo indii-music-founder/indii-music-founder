@@ -8,7 +8,7 @@ class InstrumentalAcapellaBouncer(Tool):
     Verify that a delivery folder contains full mix, instrumental, acapella, TV track, and clean versions.
     """
 
-    async def execute(self, delivered_files: list) -> Response:
+    async def execute(self, delivered_files: list, **kwargs) -> Response:
         self.set_progress("Bouncing delivery folder to ensure all required Master deliverables exist")
         
         try:
@@ -42,9 +42,26 @@ class InstrumentalAcapellaBouncer(Tool):
                 "note": "A supervisor pitch requires the whole stem package. Cannot submit." if missing else "Ready for pitch."
             }
             
+            # --- Markdown Report Export ---
+            import os
+            md = ["# Delivery Verification Report\n", f"**Status:** {'✅ APPROVED' if not missing else '❌ REJECTED'}\n"]
+            md.append("## Found Deliverables")
+            for f in found:
+                md.append(f"- ✅ {f}")
+            if missing:
+                md.append("\n## Missing Deliverables")
+                for m in missing:
+                    md.append(f"- ❌ {m}")
+            md.append(f"\n---\n{report.get('note', '')}")
+            report_md = "\n".join(md)
+            export_path = kwargs.get("export_path")
+            if export_path:
+                with open(export_path, "w") as f:
+                    f.write(report_md)
+
             return Response(
                 message=f"Deliverable Verification Complete. Status: {status}",
-                additional={"delivery_report": report}
+                additional={"delivery_report": report, "report_md": report_md, "export_path": export_path}
             )
 
         except Exception as e:
