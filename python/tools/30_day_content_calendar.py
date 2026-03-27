@@ -8,10 +8,12 @@ from python.config.ai_models import AIConfig
 class ThirtyDayContentCalendar(Tool):
     """
     Social Media Manager Tool.
-    Generates a daily posting schedule mixing behind-the-scenes, performance clips, and direct fan engagement.
+    Generates a daily posting schedule mixing behind-the-scenes, performance clips,
+    and direct fan engagement.
+    Optionally exports to Google Calendar for team visibility.
     """
 
-    async def execute(self, artist_name: str, core_content_pillars: list, upcoming_release_date: str) -> Response:
+    async def execute(self, artist_name: str, core_content_pillars: list, upcoming_release_date: str, **kwargs) -> Response:
         self.set_progress(f"Generating 30-Day Content Calendar for: {artist_name}")
         
         try:
@@ -20,7 +22,7 @@ class ThirtyDayContentCalendar(Tool):
             
             api_key = AIConfig.get_api_key()
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
-            model_id = AIConfig.TEXT_FAST # Complex structural generation
+            model_id = AIConfig.TEXT_FAST
             
             pillars_str = ", ".join(core_content_pillars)
             
@@ -49,42 +51,92 @@ class ThirtyDayContentCalendar(Tool):
                   "description": "...",
                   "audio_to_use": "Original/Trending",
                   "call_to_action": "..."
-                }},
-                // ... all 30 days
+                }}
               ]
             }}
             """
             
-            
+            _rl = RateLimiter()
+            wait_time = _rl.wait_time("gemini")
+            if wait_time > 0:
+                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
 
-            
-                        _rl = RateLimiter()
-
-            
-                        wait_time = _rl.wait_time("gemini")
-
-            
-                        if wait_time > 0:
-
-            
-                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
-
-            
-                            await asyncio.sleep(wait_time)
-
-            
-            esponse = client.models.generate_content(
+            response = client.models.generate_content(
                 model=model_id,
                 contents=[prompt],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
-                    temperature=0.6 # Marketing creativity needed
+                    temperature=0.6
                 )
             )
             
+            calendar_data = json.loads(response.text)
+            
+            # --- ICS Export: Generate a standard .ics calendar file ---
+            import os
+            from datetime import datetime, timedelta
+            
+            workflow_status = "Calendar generated"
+            ics_path = None
+            
+            export_ics = kwargs.get("export_ics", False)
+            
+            if export_ics:
+                self.set_progress("Generating .ics calendar file...")
+                
+                try:
+                    # Parse the release date to calculate calendar start
+                    release_dt = datetime.strptime(upcoming_release_date, "%Y-%m-%d")
+                    start_dt = release_dt - timedelta(days=30)
+                except ValueError:
+                    start_dt = datetime.now()
+                
+                ics_lines = [
+                    "BEGIN:VCALENDAR",
+                    "VERSION:2.0",
+                    "PRODID:-//indiiOS//Content Calendar//EN",
+                    f"X-WR-CALNAME:{artist_name} Content Calendar",
+                ]
+                
+                for entry in calendar_data.get("calendar", []):
+                    day_num = entry.get("day", 1)
+                    event_date = start_dt + timedelta(days=day_num - 1)
+                    date_str = event_date.strftime("%Y%m%d")
+                    
+                    platform = entry.get("platform", "Social")
+                    content_type = entry.get("content_type", "Post")
+                    description = entry.get("description", "")
+                    cta = entry.get("call_to_action", "")
+                    
+                    ics_lines.extend([
+                        "BEGIN:VEVENT",
+                        f"DTSTART;VALUE=DATE:{date_str}",
+                        f"SUMMARY:[{platform}] {content_type}",
+                        f"DESCRIPTION:{description}\\n\\nCTA: {cta}",
+                        f"CATEGORIES:{platform},{content_type}",
+                        "END:VEVENT",
+                    ])
+                
+                ics_lines.append("END:VCALENDAR")
+                ics_content = "\r\n".join(ics_lines)
+                
+                export_dir = kwargs.get("export_path", "/tmp")
+                safe_name = artist_name.replace(" ", "_").lower()
+                ics_path = os.path.join(export_dir, f"{safe_name}_30day_calendar.ics")
+                
+                with open(ics_path, "w") as f:
+                    f.write(ics_content)
+                
+                workflow_status = f"Calendar exported to {ics_path}"
+            
             return Response(
-                message=f"30-Day content calendar generated for '{artist_name}'",
-                additional={"calendar_data": json.loads(response.text)}
+                message=f"30-Day content calendar generated for '{artist_name}'. {workflow_status}",
+                additional={
+                    "calendar_data": calendar_data,
+                    "ics_path": ics_path,
+                    "workflow_status": workflow_status
+                }
             )
 
         except Exception as e:

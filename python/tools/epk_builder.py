@@ -9,9 +9,10 @@ class EpkBuilder(Tool):
     """
     Brand Manager Tool.
     Compiles artist bio, press photos, and links into a sleek hosted EPK structure.
+    Optionally exports to PandaDoc as a shareable PDF.
     """
 
-    async def execute(self, artist_name: str, genre: str, bio_summary: str, key_achievements: list, contact_email: str) -> Response:
+    async def execute(self, artist_name: str, genre: str, bio_summary: str, key_achievements: list, contact_email: str, **kwargs) -> Response:
         self.set_progress(f"Building Electronic Press Kit (EPK) for: {artist_name}")
         
         try:
@@ -20,7 +21,7 @@ class EpkBuilder(Tool):
             
             api_key = AIConfig.get_api_key()
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
-            model_id = AIConfig.TEXT_FAST # Text/JSON generation
+            model_id = AIConfig.TEXT_FAST
             
             achievements_str = ", ".join(key_achievements)
             
@@ -52,36 +53,88 @@ class EpkBuilder(Tool):
             }}
             """
             
-            
+            _rl = RateLimiter()
+            wait_time = _rl.wait_time("gemini")
+            if wait_time > 0:
+                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
 
-            
-                        _rl = RateLimiter()
-
-            
-                        wait_time = _rl.wait_time("gemini")
-
-            
-                        if wait_time > 0:
-
-            
-                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
-
-            
-                            await asyncio.sleep(wait_time)
-
-            
-            esponse = client.models.generate_content(
+            response = client.models.generate_content(
                 model=model_id,
                 contents=[prompt],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
-                    temperature=0.4 # Need professional branding tone
+                    temperature=0.4
                 )
             )
             
+            epk_data = json.loads(response.text)
+            
+            # --- PandaDoc Integration: Create a shareable EPK PDF ---
+            import requests
+            import os
+            from dotenv import load_dotenv
+            load_dotenv()
+            
+            pandadoc_key = os.getenv("PANDADOC_API_KEY")
+            workflow_status = "EPK generated (local only)"
+            pandadoc_doc_id = None
+            
+            create_pdf = kwargs.get("create_pandadoc", False)
+            
+            if create_pdf and pandadoc_key:
+                self.set_progress("Creating PandaDoc EPK document...")
+                
+                achievements_text = "\n".join([f"• {a}" for a in epk_data.get("achievements", [])])
+                
+                doc_payload = {
+                    "name": f"EPK - {artist_name} ({genre})",
+                    "recipients": [
+                        {"email": kwargs.get("recipient_email", contact_email), "role": "Recipient"}
+                    ],
+                    "content_placeholders": [
+                        {"block_id": "artist_name", "value": artist_name},
+                        {"block_id": "elevator_pitch", "value": epk_data.get("elevator_pitch", "")},
+                        {"block_id": "bio", "value": epk_data.get("short_bio", "")},
+                        {"block_id": "achievements", "value": achievements_text},
+                        {"block_id": "contact", "value": contact_email},
+                    ],
+                    "tags": ["epk", "press-kit", "auto-generated"]
+                }
+                
+                template_id = os.getenv("PANDADOC_EPK_TEMPLATE_ID")
+                if template_id:
+                    doc_payload["template_uuid"] = template_id
+                
+                headers = {
+                    "Authorization": f"API-Key {pandadoc_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                try:
+                    pd_res = requests.post(
+                        "https://api.pandadoc.com/public/v1/documents",
+                        json=doc_payload,
+                        headers=headers,
+                        timeout=15
+                    )
+                    if pd_res.ok:
+                        pandadoc_doc_id = pd_res.json().get("id")
+                        workflow_status = f"PandaDoc EPK {pandadoc_doc_id} created"
+                    else:
+                        workflow_status = f"PandaDoc API Error: {pd_res.status_code}"
+                except Exception as pd_e:
+                    workflow_status = f"PandaDoc unreachable: {str(pd_e)}"
+            elif create_pdf:
+                workflow_status = "PandaDoc requested but PANDADOC_API_KEY missing in .env"
+            
             return Response(
-                message=f"EPK generated for '{artist_name}'",
-                additional={"epk_data": json.loads(response.text)}
+                message=f"EPK generated for '{artist_name}'. {workflow_status}",
+                additional={
+                    "epk_data": epk_data,
+                    "workflow_status": workflow_status,
+                    "pandadoc_doc_id": pandadoc_doc_id
+                }
             )
 
         except Exception as e:

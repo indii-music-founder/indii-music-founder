@@ -12,7 +12,7 @@ class SocialCaptionGenerator(Tool):
     and target platform (e.g. TikTok, Instagram).
     """
 
-    async def execute(self, platform: str, target_audience: str, key_message: str, asset_path: str = None) -> Response:
+    async def execute(self, platform: str, target_audience: str, key_message: str, asset_path: str = None, **kwargs) -> Response:
         self.set_progress(f"Generating Social Captions for {platform}")
         
         try:
@@ -66,24 +66,13 @@ class SocialCaptionGenerator(Tool):
             contents.append(prompt)
             
             
+            _rl = RateLimiter()
+            wait_time = _rl.wait_time("gemini")
+            if wait_time > 0:
+                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
 
-            
-                        _rl = RateLimiter()
-
-            
-                        wait_time = _rl.wait_time("gemini")
-
-            
-                        if wait_time > 0:
-
-            
-                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
-
-            
-                            await asyncio.sleep(wait_time)
-
-            
-            esponse = client.models.generate_content(
+            response = client.models.generate_content(
                 model=model_id,
                 contents=contents,
                 config=types.GenerateContentConfig(
@@ -92,9 +81,58 @@ class SocialCaptionGenerator(Tool):
                 )
             )
             
+            payload = json.loads(response.text)
+            options = payload.get("options", [])
+            
+            # Auto-publish integration
+            import requests
+            from dotenv import load_dotenv
+            load_dotenv()
+            import os
+            
+            buffer_token = os.getenv("BUFFER_ACCESS_TOKEN")
+            buffer_profile_id = os.getenv("BUFFER_PROFILE_ID")
+            
+            published_status = "Generated only"
+            publish_url = None
+            
+            auto_publish = kwargs.get("auto_publish", False) if "kwargs" in locals() else False
+            
+            if auto_publish and buffer_token and buffer_profile_id and options:
+                self.set_progress(f"Connecting to Buffer API to schedule post for {platform}...")
+                best_option = options[0]
+                caption_text = f"{best_option.get("caption", "")} " + " ".join(best_option.get("hashtags", []))
+                
+                buffer_url = "https://api.bufferapp.com/1/updates/create.json"
+                data = {
+                    "access_token": buffer_token,
+                    "profile_ids[]": buffer_profile_id,
+                    "text": caption_text,
+                    "now": False
+                }
+                
+                try:
+                    buffer_res = requests.post(buffer_url, data=data, timeout=10)
+                    if buffer_res.ok:
+                        published_status = "Scheduled to Buffer Queue"
+                        publish_url = "https://publish.buffer.com"
+                    else:
+                        published_status = f"Buffer Error: {buffer_res.status_code}"
+                except Exception as buffer_e:
+                    published_status = f"Buffer API unreachable: {str(buffer_e)}"
+            elif auto_publish:
+                published_status = "Auto-publish requested but BUFFER credentials missing in .env"
+                
+            response_payload = {
+                "captions": payload,
+                "workflow_status": published_status
+            }
+            if publish_url:
+                response_payload["dashboard_url"] = publish_url
+            
             return Response(
-                message=f"Social Captions Generated for {platform}.",
-                additional={"captions": json.loads(response.text)}
+                message=f"Social Captions processed for {platform}. Status: {published_status}",
+                additional=response_payload
             )
 
         except Exception as e:

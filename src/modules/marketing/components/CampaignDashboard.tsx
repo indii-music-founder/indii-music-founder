@@ -176,9 +176,10 @@ const CampaignDashboard: React.FC = () => {
                     ) : activeTab === 'momentum' ? (
                         <MomentumTracker />
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                            <p className="text-lg">This module is under development.</p>
-                            <p className="text-sm opacity-60">Check back later for {activeTab} features.</p>
+                        <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
+                            <Sparkles size={24} className="text-gray-600" />
+                            <p className="text-sm font-medium text-gray-400">This feature is launching soon</p>
+                            <p className="text-xs text-gray-600 max-w-xs text-center">We're putting the finishing touches on this experience. In the meantime, explore your active campaigns.</p>
                         </div>
                     )}
                 </div>

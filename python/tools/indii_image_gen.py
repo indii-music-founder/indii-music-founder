@@ -38,7 +38,7 @@ class IndiiImageGen(Tool):
                 self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
                 await asyncio.sleep(wait_time)
 
-            # 4. Call Nano Banana via generateContent API
+# 4. Call Nano Banana via generateContent API
             response = client.models.generate_content(
                 model=model_id,
                 contents=[enriched_prompt],

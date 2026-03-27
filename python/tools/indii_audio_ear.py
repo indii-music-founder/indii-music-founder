@@ -45,22 +45,13 @@ class IndiiAudioEar(Tool):
             
  
             
-                        _rl = RateLimiter()
- 
-            
-                        wait_time = _rl.wait_time("gemini")
- 
-            
-                        if wait_time > 0:
- 
-            
-                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
- 
-            
-                            await asyncio.sleep(wait_time)
- 
-            
-            esponse = client.models.generate_content(
+            _rl = RateLimiter()
+            wait_time = _rl.wait_time("gemini")
+            if wait_time > 0:
+                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
+
+            response = client.models.generate_content(
                 model=model_id,
                 contents=[
                     uploaded_file,
