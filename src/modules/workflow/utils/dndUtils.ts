@@ -14,7 +14,7 @@ export const createNodeFromDrop = (
     if (nodeType === 'departmentNode') {
         const departmentName = event.dataTransfer.getData('application/departmentName');
         const newNode = {
-            id: `${departmentName.replace(/\s+/g, '')}-${+new Date()}`,
+            id: `${departmentName.replace(/\s+/g, '')}-${crypto.randomUUID().slice(0, 8)}`,
             type: 'departmentNode',
             position,
             data: {
@@ -31,7 +31,7 @@ export const createNodeFromDrop = (
         const departmentName = event.dataTransfer.getData('application/departmentName'); // 'Logic'
         const jobId = event.dataTransfer.getData('application/jobId');
         const newNode = {
-            id: `logic-${jobId}-${+new Date()}`,
+            id: `logic-${jobId}-${crypto.randomUUID().slice(0, 8)}`,
             type: 'logicNode',
             position,
             data: {
@@ -49,7 +49,7 @@ export const createNodeFromDrop = (
 
     if (nodeType === 'inputNode') {
         const newNode = {
-            id: `input-${+new Date()}`,
+            id: `input-${crypto.randomUUID().slice(0, 8)}`,
             type: 'inputNode',
             position,
             data: {
@@ -64,7 +64,7 @@ export const createNodeFromDrop = (
 
     if (nodeType === 'outputNode') {
         const newNode = {
-            id: `output-${+new Date()}`,
+            id: `output-${crypto.randomUUID().slice(0, 8)}`,
             type: 'outputNode',
             position,
             data: {
@@ -90,7 +90,7 @@ export const createNodeFromDrop = (
         }
 
         const newNode = {
-            id: `audio-segment-${+new Date()}`,
+            id: `audio-segment-${crypto.randomUUID().slice(0, 8)}`,
             type: 'audioSegmentNode',
             position,
             data: {
