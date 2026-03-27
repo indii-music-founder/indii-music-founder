@@ -204,9 +204,9 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         console.log(`[VideoGenDirect] Operation complete for ${jobId}`);
 
         // ── Step 7: Extract video from response ────────────────────────────
-        const response = operation.response as any;
+        const response = operation.response as unknown as { generatedVideos?: Array<Record<string, any>> };
         if (!response) {
-            const opAny = operation as any;
+            const opAny = operation as unknown as { error?: { message?: string } };
             if (opAny.error) {
                 console.error(`[VideoGenDirect] Vertex AI Operation Error details:`, JSON.stringify(opAny.error, null, 2));
                 throw new Error(`Vertex AI API Error: ${opAny.error.message || JSON.stringify(opAny.error)}`);
@@ -243,7 +243,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             const bucket = admin.storage().bucket(targetBucketName);
             const filePath = `videos/${userId}/${jobId}.mp4`;
             const file = bucket.file(filePath);
-            
+
             // Depending on SDK version, videoBytes might be a string (base64) or Uint8Array. 
             // Buffer.from works well with string ('base64' encoding) or raw byte arrays.
             let buffer: Buffer;
@@ -300,7 +300,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
                 if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`);
                 const arrayBuf = await res.arrayBuffer();
                 const buffer = Buffer.from(arrayBuf);
-                
+
                 const bucket = admin.storage().bucket();
                 const filePath = `videos/${userId}/${jobId}.mp4`;
                 const file = bucket.file(filePath);

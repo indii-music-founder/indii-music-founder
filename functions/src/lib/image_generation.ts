@@ -83,7 +83,7 @@ class GeminiImageService {
                         candidateCount: data.count || 1,
                         responseModalities: ["IMAGE"],
                         ...(data.useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
-                    } as any
+                    } as unknown as Record<string, unknown>
                 });
 
                 if (!result.candidates || result.candidates.length === 0) {
@@ -238,7 +238,7 @@ class GeminiImageService {
                 contents: [{ role: "user", parts }],
                 config: {
                     responseModalities: ["IMAGE"],
-                } as any
+                } as unknown as Record<string, unknown>
             });
 
             if (!result.candidates || result.candidates.length === 0) {
@@ -285,11 +285,12 @@ const service = new GeminiImageService();
 
 export const generateImageV3Fn = () => functions
     .region("us-west1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({
+        enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "512MB"
-     })
+    })
     .https.onCall(async (data: unknown, context) => {
         // 1. Authenticate
         if (!context.auth) {
@@ -314,11 +315,12 @@ export const generateImageV3Fn = () => functions
 
 export const editImageFn = () => functions
     .region("us-west1")
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({
+        enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "512MB"
-     })
+    })
     .https.onCall(async (data: unknown, context) => {
         // 1. Authenticate
         if (!context.auth) {

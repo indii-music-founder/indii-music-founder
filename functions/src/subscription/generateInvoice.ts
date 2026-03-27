@@ -95,20 +95,20 @@ export const generateInvoice = onCall({
             status: invoice.status || 'unknown',
             created: invoice.created * 1000,
             dueDate: invoice.due_date ? invoice.due_date * 1000 : null,
-            periodStart: (invoice as any).period_start * 1000,
-            periodEnd: (invoice as any).period_end * 1000,
+            periodStart: (invoice as unknown as { period_start?: number }).period_start ? (invoice as unknown as { period_start: number }).period_start * 1000 : 0,
+            periodEnd: (invoice as unknown as { period_end?: number }).period_end ? (invoice as unknown as { period_end: number }).period_end * 1000 : 0,
             customerName,
             customerEmail,
             lines: invoice.lines.data.map((line) => ({
                 description: line.description || '',
                 quantity: line.quantity || 1,
-                unitAmount: (line as any).unit_amount_excluding_tax
-                    ? parseInt((line as any).unit_amount_excluding_tax)
+                unitAmount: (line as unknown as { unit_amount_excluding_tax?: string }).unit_amount_excluding_tax
+                    ? parseInt((line as unknown as { unit_amount_excluding_tax: string }).unit_amount_excluding_tax)
                     : (line.amount || 0),
                 amount: line.amount || 0,
             })),
             subtotal: invoice.subtotal || 0,
-            tax: (invoice as any).tax || 0,
+            tax: (invoice as unknown as { tax?: number }).tax || 0,
             total: invoice.total || 0,
             currency: invoice.currency || 'usd',
             pdfUrl: invoice.invoice_pdf || null,
