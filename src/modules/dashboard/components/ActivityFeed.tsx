@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
@@ -6,8 +5,15 @@ import { useStore } from '@/core/store';
 import {
     MessageSquare, Bot, Sparkles, Zap, Clock, CheckCircle, Package, AlertCircle
 } from 'lucide-react';
-import { events, EventType } from '@/core/events';
+import { events, EventType, AgentActionEvent, SystemAlertEvent } from '@/core/events';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
+
+/** Union of all payloads ActivityFeed handles. */
+type ActivityEventPayload =
+    | AgentActionEvent
+    | SystemAlertEvent
+    | { title?: string }        // TASK_COMPLETED
+    | { name?: string };        // ASSET_FINALIZED
 
 interface FeedItem {
     id: string;
@@ -29,7 +35,7 @@ export default function ActivityFeed() {
     const [customEvents, setCustomEvents] = React.useState<FeedItem[]>([]);
 
     React.useEffect(() => {
-        const handleEvent = (type: EventType, data: any) => {
+        const handleEvent = (type: EventType, data: ActivityEventPayload) => {
             const id = `event-${Date.now()}-${secureRandomAlphanumeric(9)}`;
             let item: FeedItem | null = null;
 
@@ -38,7 +44,7 @@ export default function ActivityFeed() {
                     item = {
                         id,
                         icon: <CheckCircle size={12} className="text-green-400" />,
-                        text: `Task completed: ${data.title || 'Process finished'}`,
+                        text: `Task completed: ${'title' in data && data.title ? data.title : 'Process finished'}`,
                         time: formatTime(Date.now()),
                         color: 'border-l-green-500/40',
                         timestamp: Date.now()
@@ -48,32 +54,36 @@ export default function ActivityFeed() {
                     item = {
                         id,
                         icon: <Package size={12} className="text-blue-400" />,
-                        text: `Asset finalized: ${data.name || 'New media created'}`,
+                        text: `Asset finalized: ${'name' in data && data.name ? data.name : 'New media created'}`,
                         time: formatTime(Date.now()),
                         color: 'border-l-blue-500/40',
                         timestamp: Date.now()
                     };
                     break;
-                case 'SYSTEM_ALERT':
+                case 'SYSTEM_ALERT': {
+                    const alert = data as SystemAlertEvent;
                     item = {
                         id,
-                        icon: <AlertCircle size={12} className={data.level === 'error' ? 'text-red-400' : 'text-amber-400'} />,
-                        text: data.message,
+                        icon: <AlertCircle size={12} className={alert.level === 'error' ? 'text-red-400' : 'text-amber-400'} />,
+                        text: alert.message,
                         time: formatTime(Date.now()),
-                        color: data.level === 'error' ? 'border-l-red-500/40' : 'border-l-amber-500/40',
+                        color: alert.level === 'error' ? 'border-l-red-500/40' : 'border-l-amber-500/40',
                         timestamp: Date.now()
                     };
                     break;
-                case 'AGENT_ACTION':
+                }
+                case 'AGENT_ACTION': {
+                    const action = data as AgentActionEvent;
                     item = {
                         id,
                         icon: <Zap size={12} className="text-purple-400" />,
-                        text: `${data.action}: ${data.details}`,
+                        text: `${action.action}: ${action.details}`,
                         time: formatTime(Date.now()),
                         color: 'border-l-purple-500/40',
                         timestamp: Date.now()
                     };
                     break;
+                }
             }
 
             if (item) {
@@ -82,11 +92,12 @@ export default function ActivityFeed() {
         };
 
         const types: EventType[] = ['TASK_COMPLETED', 'ASSET_FINALIZED', 'SYSTEM_ALERT', 'AGENT_ACTION'];
-        types.forEach(t => events.on(t, (data) => handleEvent(t, data)));
+        types.forEach(t => events.on<ActivityEventPayload>(t, (data) => handleEvent(t, data)));
 
         return () => {
-            types.forEach(t => events.off(t, (data) => handleEvent(t, data)));
+            types.forEach(t => events.off<ActivityEventPayload>(t, (data) => handleEvent(t, data)));
         };
+
     }, []);
 
     const feedItems = useMemo<FeedItem[]>(() => {

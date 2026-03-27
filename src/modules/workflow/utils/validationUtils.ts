@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { Connection, Node } from 'reactflow';
+import type { PortDefinition } from '../services/nodeRegistry';
 import { getJobDefinition } from '../services/nodeRegistry';
 
 export const getHandleType = (node: Node, handleId: string | null, isSource: boolean): string => {
@@ -23,10 +23,10 @@ export const getHandleType = (node: Node, handleId: string | null, isSource: boo
     if (!job) return 'ANY';
 
     if (isSource) {
-        const output = job.outputs.find((o: any) => o.id === handleId);
+        const output = job.outputs.find((o: PortDefinition) => o.id === handleId);
         return output ? output.type : 'ANY';
     } else {
-        const input = job.inputs.find((i: any) => i.id === handleId);
+        const input = job.inputs.find((i: PortDefinition) => i.id === handleId);
         return input ? input.type : 'ANY';
     }
 };
