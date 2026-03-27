@@ -2,7 +2,7 @@
 
 *“Our MVP is someone else’s Beta test.”*
 
-If you are reading this, you are joining the engineering team behind **indiiOS**, the Operating System for Creators. This document is your Day 1 guide to taking ownership of a 191,000+ line codebase spanning advanced React, Firebase Cloud Functions, Electron, and a fleet of 20 highly specialized, fine-tuned AI Agents.
+If you are reading this, you are joining the engineering team behind **indiiOS**, the Operating System for Creators. This document is your Day 1 guide to taking ownership of a 190,000+ line codebase spanning advanced React, Firebase Cloud Functions, Electron, and a fleet of 20 highly specialized, fine-tuned AI Agents.
 
 ---
 
@@ -53,8 +53,8 @@ Before touching any code, please review `ARCHITECTURE_BLUEPRINT.md` in the root 
 
 Here is where everything lives:
 
-* `src/modules/*`: The 34 isolated feature modules (lazy-loaded).
-* `src/services/*`: The 53 business logic domains.
+* `src/modules/*`: The 36 isolated feature modules (lazy-loaded).
+* `src/services/*`: The 40+ business logic service domains.
 * `agents/*`: The 20 specialized AI Agent definitions and their fine-tuned model mappings.
 * `python/tools/*`: The 90 deterministic execution scripts the AI uses to do work.
 * `functions/src/*`: The Firebase Cloud backend handling secure logic (payments, webhooks, DB syncing).
@@ -66,9 +66,9 @@ Here is where everything lives:
 
 ### 🛡️ The "Anti-Brittle" Guardrails
 
-This codebase relies on **Strict TypeScript**. The use of `any` or `as any` is strictly forbidden except in isolated test files.
+This codebase relies on **Strict TypeScript**. The use of `any` or `as any` is strictly **forbidden** — even in production service files. Every type must be explicit. Zero-tolerance policy, enforced at the compiler level.
 
-When you run `git push`, a local `.git/hooks/pre-push` script will automatically intercept your push, run `npm run typecheck`, and run `npm run lint`. **If your code does not compile cleanly, your push will be rejected.** Do not attempt to bypass this.
+When you run `git push`, a `.git/hooks/pre-push` script automatically intercepts the push, runs `npm run typecheck`, and runs `npm run lint`. **If your code does not compile cleanly, your push is rejected.** There is no bypass. Fix it, or the branch stays local.
 
 ### 🧪 "Trust the Tests"
 
