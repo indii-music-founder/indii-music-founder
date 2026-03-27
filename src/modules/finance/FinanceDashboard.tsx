@@ -432,6 +432,9 @@ function TaxSummaryPanel({ earningsSummary, expenses, loading }: TaxSummaryPanel
                         <Calendar size={10} />
                         <span>Due {dueDateStr} ({daysUntilDue} days)</span>
                     </div>
+                    <p className="text-[9px] text-gray-700 mt-2 border-t border-white/5 pt-2">
+                        US estimate only (~27% SE + income tax). Consult a tax advisor for accuracy.
+                    </p>
                 </div>
             )}
         </div>

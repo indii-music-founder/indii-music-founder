@@ -139,10 +139,13 @@ export const EarningsDashboard: React.FC = () => {
             </div>
             <h3 className="text-xl font-bold text-white mb-2">No Reports Found</h3>
             <p className="text-gray-500 max-w-sm text-center px-6">
-                Your royalty reports haven't arrived yet. Once your distributor processes your streams, they'll appear here automatically.
+                Your royalty reports haven&apos;t arrived yet. Once your distributor processes your streams, they&apos;ll appear here automatically.
             </p>
             <div className="mt-8 flex gap-4">
-                <button className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-gray-300 transition-all uppercase tracking-widest">
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-gray-300 transition-all uppercase tracking-widest"
+                >
                     Refresh
                 </button>
             </div>
@@ -160,7 +163,12 @@ export const EarningsDashboard: React.FC = () => {
                     {/* Header Removed to avoid duplication with parent layout */}
                     <div className="flex items-center gap-2">
                         <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400">
-                            Fiscal Year 2024
+                            {(() => {
+                                const year = earningsSummary?.period?.endDate
+                                    ? new Date(earningsSummary.period.endDate).getFullYear()
+                                    : new Date().getFullYear();
+                                return `Fiscal Year ${year}`;
+                            })()}
                         </span>
                         <span className="px-3 py-1 rounded-full bg-dept-royalties/10 border border-dept-royalties/20 text-xs text-dept-royalties">
                             Active
@@ -168,9 +176,15 @@ export const EarningsDashboard: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    {/* Date picker placeholder */}
                     <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-colors">
-                        January 2024
+                        {(() => {
+                            if (!earningsSummary?.period?.endDate) {
+                                const m = new Date().toLocaleString('default', { month: 'long' });
+                                return `${m} ${new Date().getFullYear()}`;
+                            }
+                            const d = new Date(earningsSummary.period.endDate);
+                            return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                        })()}
                     </button>
                     <button className="px-4 py-2 bg-dept-creative hover:bg-dept-creative/90 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-dept-creative/20">
                         Download Report
