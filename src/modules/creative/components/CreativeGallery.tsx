@@ -27,7 +27,7 @@ interface GalleryItemProps {
     generationMode: string;
     onDelete: (id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => void;
     setPrompt: (prompt: string) => void;
-    setViewMode: (mode: any) => void;
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release') => void;
     playTrack: (track: HistoryItem) => void;
     pauseTrack: () => void;
     resumeTrack: () => void;
