@@ -232,7 +232,7 @@ export default function WorkflowLab() {
 
     const handleOpenLoadModal = async () => {
         if (!currentUser) {
-            alert("Please wait for login...");
+            toastError('Please wait for sign-in to complete before loading.');
             return;
         }
         setShowLoadModal(true);
