@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 /**
  * SocialAnalyticsDashboard
  *
@@ -103,7 +102,7 @@ export default function SocialAnalyticsDashboard() {
                 if (meta.platform === 'spotify') {
                     // Spotify: sync artist stats (uses stored artistId from profile)
                     const { useStore } = await import('@/core/store');
-                    const artistId = (useStore.getState().userProfile as any)?.spotifyArtistId as string || '';
+                    const artistId = (useStore.getState().userProfile as unknown as Record<string, unknown>)?.spotifyArtistId as string || '';
                     if (!artistId) return { platform: 'spotify', stats: undefined, connected: false };
                     const stats = await syncSpotifyStats(uid, artistId);
                     return { platform: 'spotify', stats, connected: stats.followers !== undefined };
@@ -113,9 +112,9 @@ export default function SocialAnalyticsDashboard() {
                 let liveStats: PlatformStats | undefined;
                 switch (meta.platform) {
                     case 'instagram': liveStats = await syncInstagramStats(uid); break;
-                    case 'tiktok':    liveStats = await syncTikTokStats(uid);    break;
-                    case 'twitter':   liveStats = await syncTwitterStats(uid);   break;
-                    case 'youtube':   liveStats = await syncYouTubeStats(uid);   break;
+                    case 'tiktok': liveStats = await syncTikTokStats(uid); break;
+                    case 'twitter': liveStats = await syncTwitterStats(uid); break;
+                    case 'youtube': liveStats = await syncYouTubeStats(uid); break;
                 }
 
                 const connected = liveStats?.followers !== undefined || liveStats?.plays !== undefined;
@@ -163,7 +162,7 @@ export default function SocialAnalyticsDashboard() {
 
     useEffect(() => {
         syncAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uid]);
 
     const totalFollowers = cards.reduce((sum, c) => sum + (c.stats?.followers || 0), 0);

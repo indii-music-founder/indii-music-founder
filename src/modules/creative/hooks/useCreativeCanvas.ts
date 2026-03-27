@@ -391,7 +391,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     projectId: currentProjectId
                 };
                 useStore.getState().addToHistory(targetAsset);
-                setEndFrameItem(targetAsset as any);
+                setEndFrameItem(targetAsset as { id: string; url: string; prompt: string; type: 'image' | 'video' });
                 toast.success("Climax frame created!");
             }
         } catch (error: unknown) {

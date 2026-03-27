@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import * as React from 'react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin, Sparkles, Megaphone, Mail, ExternalLink, RefreshCw, Filter, Download } from 'lucide-react';
@@ -145,7 +144,7 @@ const AgentDashboard: React.FC = () => {
         if (isAnyPhone && (activeTab === 'scout' || activeTab === 'browser')) {
             setActiveTab('chat');
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAnyPhone]);
 
     const handleAddToRoster = async (venue: Venue) => {
@@ -212,11 +211,10 @@ const AgentDashboard: React.FC = () => {
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`px-4 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                                        activeTab === tab
+                                    className={`px-4 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${activeTab === tab
                                             ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                                             : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                                    }`}
+                                        }`}
                                 >
                                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
                                 </button>
@@ -225,23 +223,23 @@ const AgentDashboard: React.FC = () => {
                     )}
                     {/* Top Toolbar — hide on mobile (tab strip replaces it) */}
                     {!isAnyPhone && (
-                    <AgentToolbar
-                        left={
-                            <div className="flex items-center gap-3">
-                                <h2 className="font-bold text-lg text-white tracking-tight">Booking Agent</h2>
-                                <span className="text-slate-600">/</span>
-                                <span className="flex items-center gap-2 text-cyan-400 text-sm font-medium bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
-                                    <Sparkles size={12} />
-                                    {activeTab === 'scout' ? 'The Scout' : activeTab === 'browser' ? 'Browser Agent' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-                                </span>
-                            </div>
-                        }
-                        right={
-                            <div className="text-xs text-slate-500 font-mono">
-                                v2.4.0-alpha
-                            </div>
-                        }
-                    />
+                        <AgentToolbar
+                            left={
+                                <div className="flex items-center gap-3">
+                                    <h2 className="font-bold text-lg text-white tracking-tight">Booking Agent</h2>
+                                    <span className="text-slate-600">/</span>
+                                    <span className="flex items-center gap-2 text-cyan-400 text-sm font-medium bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                                        <Sparkles size={12} />
+                                        {activeTab === 'scout' ? 'The Scout' : activeTab === 'browser' ? 'Browser Agent' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                                    </span>
+                                </div>
+                            }
+                            right={
+                                <div className="text-xs text-slate-500 font-mono">
+                                    v2.4.0-alpha
+                                </div>
+                            }
+                        />
                     )}
 
                     {/* Workspace Content */}
@@ -336,7 +334,7 @@ const AgentDashboard: React.FC = () => {
                                         <button
                                             onClick={() => {
                                                 const lines = agentMessages.map(m =>
-                                                    `[${new Date(m.timestamp ?? Date.now()).toISOString()}] ${m.role === 'user' ? 'You' : 'Agent'}: ${(m as any).content ?? m.text ?? ''}`
+                                                    `[${new Date(m.timestamp ?? Date.now()).toISOString()}] ${m.role === 'user' ? 'You' : 'Agent'}: ${(m as { content?: string, text?: string }).content ?? m.text ?? ''}`
                                                 );
                                                 const blob = new Blob([lines.join('\n\n')], { type: 'text/plain' });
                                                 const url = URL.createObjectURL(blob);

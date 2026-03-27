@@ -6,10 +6,11 @@ import { useToast } from '@/core/context/ToastContext';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
+import type { BrandAsset } from '@/types/User';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
-    onSelect?: (asset: Record<string, unknown>) => void; // Optional prop for selection mode
+    onSelect?: (asset: BrandAsset) => void; // Optional prop for selection mode
 }
 
 export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDrawerProps) {
@@ -52,7 +53,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         setIsGenerating(true);
         try {
             const newAssets = [];
-            const newUploadedImages: any[] = [];
+            const newUploadedImages: { id: string, type: 'image', url: string, prompt: string, timestamp: number, projectId: string }[] = [];
             const timestamp = Date.now();
 
             for (const file of files) {
@@ -67,7 +68,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                     url: downloadUrl,
                     prompt: file.name,
                     timestamp,
-                    projectId: currentProjectId
+                    projectId: currentProjectId || 'unassigned'
                 });
             }
 

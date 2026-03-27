@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, CheckCircle2, Loader2, XCircle, AlertCircle, ChevronRight } from 'lucide-react';
 import { distributionService } from '@/services/distribution/DistributionService';
@@ -13,10 +12,10 @@ interface PipelineStep {
 }
 
 const INITIAL_STEPS: PipelineStep[] = [
-    { id: 'qc',   label: 'QC Validation',    status: 'idle' },
-    { id: 'isrc', label: 'ISRC Assignment',  status: 'idle' },
-    { id: 'ddex', label: 'DDEX XML Build',   status: 'idle' },
-    { id: 'sftp', label: 'DSP Delivery',     status: 'idle' },
+    { id: 'qc', label: 'QC Validation', status: 'idle' },
+    { id: 'isrc', label: 'ISRC Assignment', status: 'idle' },
+    { id: 'ddex', label: 'DDEX XML Build', status: 'idle' },
+    { id: 'sftp', label: 'DSP Delivery', status: 'idle' },
 ];
 
 interface Props {
@@ -28,17 +27,17 @@ interface Props {
 export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted }) => {
     const { success: toastSuccess, error: toastError } = useToast();
 
-    const [title, setTitle]       = useState('');
-    const [artist, setArtist]     = useState('');
-    const [label, setLabel]       = useState('Indii Records');
+    const [title, setTitle] = useState('');
+    const [artist, setArtist] = useState('');
+    const [label, setLabel] = useState('Indii Records');
     const [releaseDate, setRelDate] = useState('');
     const [artworkUrl, setArtwork] = useState('');
     const [trackTitle, setTrkTitle] = useState('');
-    const [isrc, setIsrc]         = useState('');
+    const [isrc, setIsrc] = useState('');
 
     const [submitting, setSubmitting] = useState(false);
-    const [done, setDone]             = useState(false);
-    const [steps, setSteps]           = useState<PipelineStep[]>(INITIAL_STEPS);
+    const [done, setDone] = useState(false);
+    const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
     const [overallProgress, setOverallProgress] = useState(0);
 
     const formValid = title.trim() && artist.trim() && trackTitle.trim();
@@ -80,7 +79,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                 isrc: isrc.trim() || undefined,
                 artist: artist.trim(),
             }],
-        } as any;
+        } as unknown as DDEXMetadata;
 
         try {
             await distributionService.submitRelease(releaseData, (evt) => {
@@ -238,12 +237,11 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-xs font-bold uppercase tracking-widest ${
-                                                step.status === 'idle'    ? 'text-gray-600' :
-                                                step.status === 'running' ? 'text-white' :
-                                                step.status === 'done'    ? 'text-dept-publishing' :
-                                                'text-dept-marketing'
-                                            }`}>
+                                            <span className={`text-xs font-bold uppercase tracking-widest ${step.status === 'idle' ? 'text-gray-600' :
+                                                    step.status === 'running' ? 'text-white' :
+                                                        step.status === 'done' ? 'text-dept-publishing' :
+                                                            'text-dept-marketing'
+                                                }`}>
                                                 {step.label}
                                             </span>
                                             {i < steps.length - 1 && step.status === 'idle' && (
@@ -251,9 +249,8 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                             )}
                                         </div>
                                         {step.detail && (
-                                            <p className={`text-[10px] mt-0.5 font-medium truncate ${
-                                                step.status === 'error' ? 'text-dept-marketing/70' : 'text-gray-500'
-                                            }`}>
+                                            <p className={`text-[10px] mt-0.5 font-medium truncate ${step.status === 'error' ? 'text-dept-marketing/70' : 'text-gray-500'
+                                                }`}>
                                                 {step.detail}
                                             </p>
                                         )}

@@ -26,7 +26,7 @@ describe('DirectiveService', () => {
             title: 'Test Directive',
             status: 'OPEN',
             assignedAgent: 'indiiOD',
-            goalAncestry: 'indii asked to test',
+            goalAncestry: [{ id: 'goal_1', type: 'task', description: 'indii asked to test' }],
             computeAllocation: {
                 maxTokens: 1000,
                 tokensUsed: 0,
