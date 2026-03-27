@@ -70,7 +70,7 @@ export class AudioFidelityFeature {
         scriptName,
         [filePath, targetStandard],
         undefined, // onProgress
-        { PYTHON_PATH: pythonPath } as any // env
+        { PYTHON_PATH: pythonPath } as Record<string, string> // env
       );
 
       if (result.error) {

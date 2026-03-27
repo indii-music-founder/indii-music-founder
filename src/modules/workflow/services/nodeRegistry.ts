@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { Paintbrush, Video, Megaphone, Users, Box, Search, FileText, Music, Cog, Split, ShieldCheck, Database } from 'lucide-react';
 
@@ -48,9 +47,8 @@ const departmentConfigs = [
 // Helper to map existing templates to jobs with assumed types
 const mapTemplatesToJobs = (deptName: string, defaultOutputType: DataType = 'TEXT'): NodeJob[] => {
     const config = departmentConfigs.find(d => d.name === deptName);
-    const templates = (config as any)?.templates || [];
-
-    const jobs: NodeJob[] = templates.map((t: any, i: number) => ({
+    const templates = config?.templates || [];
+    const jobs: NodeJob[] = templates.map((t: { title: string; description: string; prompt: string }, i: number) => ({
         id: `${deptName.toLowerCase().replace(/\s/g, '-')}-job-${i}`,
         label: t.title,
         description: t.description,

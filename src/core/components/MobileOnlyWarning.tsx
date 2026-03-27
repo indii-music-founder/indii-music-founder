@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import React from 'react';
 import { Monitor, Smartphone, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import type { ModuleId } from '@/core/constants';
 interface MobileOnlyWarningProps {
     featureName: string;
     reason?: string;
-    suggestedModule?: ModuleId | string;
+    suggestedModule?: ModuleId;
 }
 
 export const MobileOnlyWarning: React.FC<MobileOnlyWarningProps> = ({
@@ -38,7 +37,7 @@ export const MobileOnlyWarning: React.FC<MobileOnlyWarningProps> = ({
 
             <div className="flex flex-col gap-3 w-full max-w-xs">
                 <Button
-                    onClick={() => setModule(suggestedModule as any)}
+                    onClick={() => setModule(suggestedModule as ModuleId)}
                     className="w-full bg-gradient-to-r from-neon-blue to-neon-purple hover:opacity-90"
                 >
                     <ArrowRight size={16} className="mr-2" />

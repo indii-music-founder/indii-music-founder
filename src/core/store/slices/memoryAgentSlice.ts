@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 /**
  * Memory Agent Zustand Slice
  *
@@ -17,6 +16,7 @@ import type {
     ConsolidationInsight,
     IngestionEvent,
     MemoryTier,
+    MemorySource,
 } from '@/types/AlwaysOnMemory';
 
 // ============================================================================
@@ -48,7 +48,7 @@ export interface MemoryAgentSlice {
     refreshAlwaysOnEngineStatus: (userId: string) => Promise<void>;
     startMemoryEngine: (userId: string) => void;
     stopMemoryEngine: () => void;
-    ingestMemoryText: (userId: string, text: string, source?: string) => Promise<string>;
+    ingestMemoryText: (userId: string, text: string, source?: MemorySource) => Promise<string>;
     triggerMemoryConsolidation: (userId: string) => Promise<void>;
     deleteAlwaysOnMemory: (userId: string, memoryId: string) => Promise<void>;
     queryAlwaysOnMemory: (userId: string, question: string) => Promise<string>;
@@ -149,9 +149,9 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
     },
 
     // Operations
-    ingestMemoryText: async (userId: string, text: string, source?: string) => {
+    ingestMemoryText: async (userId: string, text: string, source?: MemorySource) => {
         try {
-            const memoryId = await alwaysOnMemoryEngine.ingestText(userId, text, (source as any) || 'user_input');
+            const memoryId = await alwaysOnMemoryEngine.ingestText(userId, text, source || 'user_input');
             // Refresh memories list + status
             const [memories, status] = await Promise.all([
                 alwaysOnMemoryEngine.getMemories(userId, { limit: 100 }),

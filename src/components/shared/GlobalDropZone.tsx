@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
@@ -121,7 +120,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                     }
 
                     const queueId = crypto.randomUUID();
-                    const itemType = isDocument ? 'document' : (isAudio ? 'music' : (isVideo ? 'video' : 'image'));
+                    const itemType = (isDocument ? 'document' : (isAudio ? 'music' : (isVideo ? 'video' : 'image'))) as 'document' | 'music' | 'video' | 'image';
 
                     addUploadItems([{
                         id: queueId,
@@ -129,7 +128,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                         fileSize: file.size,
                         progress: 0,
                         status: 'pending',
-                        type: itemType as any
+                        type: itemType
                     }]);
 
                     // Simulate upload delay and progress
@@ -155,7 +154,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                                     if (isAudio || isImage || isVideo) {
                                         const newItem = {
                                             id: crypto.randomUUID(),
-                                            type: itemType as any,
+                                            type: (isAudio ? 'music' : isVideo ? 'video' : 'image') as 'music' | 'video' | 'image',
                                             url: result,
                                             prompt: file.name,
                                             timestamp: Date.now(),

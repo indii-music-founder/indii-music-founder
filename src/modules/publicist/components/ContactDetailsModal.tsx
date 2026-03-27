@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, User, Mail, Globe, MessageCircle } from 'lucide-react';
@@ -118,7 +117,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
                                     {['Strong', 'Neutral', 'Weak'].map((r) => (
                                         <button
                                             key={r}
-                                            onClick={() => handleRelationshipChange(r as any)}
+                                            onClick={() => handleRelationshipChange(r as Contact['relationshipStrength'])}
                                             className={`py-2 text-xs font-bold rounded-lg border transition-all ${relationship === r
                                                 ? 'bg-white text-black border-white'
                                                 : 'bg-transparent border-white/10 text-slate-500 hover:border-white/30'
