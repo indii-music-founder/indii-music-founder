@@ -181,7 +181,7 @@ export function CookieConsentBanner() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 100 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 z-[200] p-4 md:p-6"
+                className="fixed bottom-20 left-0 right-0 z-[200] p-4 md:p-6"
             >
                 <div className="max-w-2xl mx-auto bg-gray-900/95 backdrop-blur-xl border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
                     {/* Header */}
@@ -190,10 +190,18 @@ export function CookieConsentBanner() {
                             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-500/10">
                                 <Cookie className="w-5 h-5 text-purple-400" />
                             </div>
-                            <div>
+                            <div className="flex-1">
                                 <h3 className="text-base font-semibold text-white">Cookie Preferences</h3>
                                 <p className="text-xs text-gray-400">We respect your privacy</p>
                             </div>
+                            {/* Quick-dismiss: saves minimal (essential-only) consent */}
+                            <button
+                                onClick={handleRejectNonEssential}
+                                aria-label="Dismiss cookie banner"
+                                className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
                         </div>
                         <p className="text-sm text-gray-400 leading-relaxed">
                             We use cookies and similar technologies to improve your experience,
