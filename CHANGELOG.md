@@ -2,6 +2,34 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.39.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.38.0...v1.39.0) (2026-03-27)
+
+
+### Features
+
+* **agents:** complete R6 endpoint wiring — all 20/20 agents live ([272d4fb](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/272d4fb3e9cc1e694213d647be0004b320a2f7df))
+* **agents:** wire 11 R6 fine-tuned endpoints into registry ([ea2bcf0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ea2bcf021954a9571bb43c842e977c47bf84231c))
+* **agents:** wire R6 endpoints for curriculum + security (18/20) ([90e3192](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/90e319203bcd1d2f340a53fb5f668ee588af13b2))
+* **agents:** wire R6 endpoints for merchandise + publicist (13/20) ([715778d](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/715778d4b1ca1774cccad2f90ad23f844b639732))
+* **agents:** wire R6 endpoints for video, screenwriter, marketing (16/20) ([62f35ee](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/62f35ee04596a1eb89905ce8120442dc8c2510d4))
+* Implement direct image generation, update UI components, AI model configurations, documentation, and various fine-tuning datasets. ([649d1eb](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/649d1eb5aff191b0b0d0a9f994bf2207d8001f30))
+* **python:** enhance audio/brand tools with kwargs, markdown export, Firestore ([cffc039](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/cffc039e6c853741b31e6b0644e8cd1c5a7b6e77))
+* **security:** enforce App Check across all Cloud Functions runWith configuration ([5216e09](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5216e09e7413c0ea9e6a064f2cb666b934c23464))
+* update agent training and evaluation datasets and add a GCS upload script. ([c7a3b05](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c7a3b059e3a55325c931c9bbf35d909e550b5c2c))
+* Update and enhance numerous Python tools, add a new newsletter test, and modify fine-tuned AI model configurations. ([f3797ab](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/f3797abc8733c2d959c58f96e7340fcb8664fad8))
+* **wo-6:** implement DSP Compliance Coaching Integration ([1677249](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/16772498f35b24d2e46b12f48b531bcdc112ff5f))
+* **wo-7:** wire payment_gate.py to Stripe SDK ([a7589e9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a7589e919af6787cbe5d99cf9817e4bbbb57b678))
+
+
+### Bug Fixes
+
+* **firestore:** suppress permission-denied errors in dev mode ([7729736](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/772973632db68c574f9e48790bf5f8f22ff903c8))
+* **lint:** resolve no-empty ESLint error in generate_expert_bulk.ts ([daf480f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/daf480fa6c78ed0eea6cf1ee195c0e46848f07fe))
+* **tests:** align DirectGenerationTab tests with DirectImageGenerator refactor ([2e63938](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/2e639383bfee774ce85477eee0d6c628cfc4bb1f))
+* **tests:** update Sidebar snapshots for Tailwind v4 class ordering ([c98cfec](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c98cfec69ab3a6c3a3bd6c55dd1f922b11cc4a9b))
+* **training:** resolve 14 duplicate scenario_ids failing DatasetQuality test ([5ae0a79](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5ae0a79dda7130af8a365f066a939c2cac0ef6d4))
+* **types:** remove 6 'as any' casts + fix 4 arg-count bugs in agent MemoryDashboard ([e6dcfce](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e6dcfce453a24f6aee628b210c242f6a3b4ffa65))
+
 ## [1.38.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.37.0...v1.38.0) (2026-03-26)
 
 
