@@ -126,13 +126,12 @@ export function buildCreativeHistoryState(
                                 const isPermissionError = (error as Error)?.message?.includes('Missing or insufficient permissions');
                                 const MAX_RETRIES = 3;
 
-                                if (isPermissionError && retryCount < MAX_RETRIES) {
-                                    const backoffMs = Math.pow(2, retryCount + 1) * 1000; // 2s, 4s, 8s
-                                    logger.warn(`[CreativeSlice] Permission error on history subscription, retrying in ${backoffMs / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-                                    setTimeout(() => {
-                                        attemptSubscribe(retryCount + 1).then(resolve);
-                                    }, backoffMs);
-                                } else {
+                                if (isPermissionError) {
+                                    // Don't retry on permission errors — permissions won't change mid-session.
+                                    // Just resolve to unblock UI; this is expected in dev.
+                                    logger.debug(`[CreativeSlice] History subscription — insufficient permissions (expected in dev). Resolving.`);
+                                    resolve();
+                                } else if (retryCount < MAX_RETRIES) {
                                     // Resolve anyway to unblock UI; non-recoverable errors logged at warn level only
                                     if (!isPermissionError) {
                                         logger.error('[CreativeSlice] History subscription error:', error);

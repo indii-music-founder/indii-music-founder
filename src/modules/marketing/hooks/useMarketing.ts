@@ -30,8 +30,10 @@ export function useMarketing() {
 
     // Initial Data Fetch & Realtime Listeners
     useEffect(() => {
-        // Validation: If no profile, skip listeners
-        if (!userProfile?.id) {
+        // Validation: If no authenticated user OR no real profile, skip listeners
+        // The default profile has id='pending' which is truthy but not a real UID
+        const currentUser = auth.currentUser;
+        if (!currentUser || !userProfile?.id || userProfile.id === 'pending') {
             const timer = setTimeout(() => setIsLoading(false), 0);
             return () => clearTimeout(timer);
         }
@@ -54,8 +56,12 @@ export function useMarketing() {
                     setStats({ totalReach: 0, engagementRate: 0, activeCampaigns: 0 });
                 }
             }, (err) => {
-                logger.error("Error listening to marketing stats:", err);
-                // Sentry.captureException(err); // Optional: Silence expected permission errors
+                // Suppress permission-denied — expected in dev without matching Firestore rules
+                if ((err as { code?: string })?.code === 'permission-denied') {
+                    logger.debug('[Marketing] Stats listener — insufficient permissions (expected in dev).');
+                } else {
+                    logger.error("Error listening to marketing stats:", err);
+                }
                 setError(err);
             });
 
@@ -95,12 +101,16 @@ export function useMarketing() {
                 setCampaigns(campaignsData);
                 setIsLoading(false);
             }, (err) => {
-                logger.error("Error listening to campaigns:", err);
-                // Sentry.captureException(err);
+                // Suppress permission-denied — expected in dev without matching Firestore rules
+                if ((err as { code?: string })?.code === 'permission-denied') {
+                    logger.debug('[Marketing] Campaigns listener — insufficient permissions (expected in dev).');
+                } else {
+                    logger.error("Error listening to campaigns:", err);
+                }
                 setError(err);
                 setIsLoading(false);
-                // Don't toast on initial load failure if it's just permissions
-                if (err.code !== 'permission-denied') {
+                // Don't toast on permission errors
+                if ((err as { code?: string })?.code !== 'permission-denied') {
                     toast.error("Failed to sync campaigns.");
                 }
             });

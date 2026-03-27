@@ -80,7 +80,13 @@ export const TouringService = {
                 }
             }
             return null;
-        } catch (error) {
+        } catch (error: unknown) {
+            // Suppress permission-denied — expected in dev without matching Firestore rules
+            const code = (error as { code?: string })?.code;
+            if (code === 'permission-denied') {
+                logger.debug('[Touring] Vehicle stats unavailable — insufficient permissions (expected in dev).');
+                return null;
+            }
             logger.error('Error fetching vehicle stats:', error);
             throw error;
         }

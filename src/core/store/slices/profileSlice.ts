@@ -102,7 +102,11 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     loadUserProfile: async (uid: string) => {
         logger.info('[Profile] Loading user profile for:', uid);
 
-        // localStorage.getItem('currentOrgId') removed - handled in organization sync below
+        // Guard: If uid is the default 'pending' placeholder, skip Firestore calls
+        if (!uid || uid === 'pending') {
+            logger.debug('[Profile] Skipping load — no real UID yet.');
+            return;
+        }
 
         try {
             // Try to get from Firestore first (via Service/Repo) 
@@ -149,8 +153,14 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         }
                     }
                 }
-            } catch (orgErr) {
-                logger.error('[Profile] Failed to load organizations:', orgErr);
+            } catch (orgErr: unknown) {
+                // Suppress permission-denied — expected when Firestore rules restrict org access
+                const code = (orgErr as { code?: string })?.code;
+                if (code === 'permission-denied') {
+                    logger.debug('[Profile] Organizations unavailable — insufficient permissions (expected in dev).');
+                } else {
+                    logger.error('[Profile] Failed to load organizations:', orgErr);
+                }
             }
             // -----------------------------------------------------
 

@@ -33,10 +33,14 @@ class AssetObserver {
             }, (error) => {
                 const isPermissionError = error?.message?.includes('Missing or insufficient permissions');
 
-                if (isPermissionError && this.retryCount < this.MAX_RETRIES) {
+                if (isPermissionError) {
+                    // Don't retry on permission errors — permissions won't change mid-session.
+                    Logger.debug('AssetObserver', 'Permission denied — stopping observer (expected in dev).');
+                    this.stop();
+                } else if (this.retryCount < this.MAX_RETRIES) {
                     this.retryCount++;
                     const backoffMs = Math.pow(2, this.retryCount) * 1000; // 2s, 4s, 8s
-                    Logger.warn('AssetObserver', `Permission error, retrying in ${backoffMs / 1000}s (attempt ${this.retryCount}/${this.MAX_RETRIES})`);
+                    Logger.warn('AssetObserver', `Subscription error, retrying in ${backoffMs / 1000}s (attempt ${this.retryCount}/${this.MAX_RETRIES})`);
 
                     // Clean up existing subscription and retry after backoff
                     if (this.unsubscribe) {

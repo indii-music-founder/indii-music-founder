@@ -33,7 +33,8 @@ export const useTouring = () => {
     }
 
     useEffect(() => {
-        if (!userProfile?.id) return;
+        // Guard: skip Firestore listeners if no authenticated user or pending profile
+        if (!userProfile?.id || userProfile.id === 'pending') return;
 
         const defaultStats: VehicleStats = {
             userId: userProfile.id,
