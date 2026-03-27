@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useCallback, useRef } from 'react';
+
 import { Maximize, Eraser, Users } from 'lucide-react';
 import ReactFlow, {
     ReactFlowProvider,
@@ -13,8 +13,12 @@ import ReactFlow, {
     applyEdgeChanges,
     Connection,
     Edge,
-    Node
+    Node,
+    NodeChange,
+    EdgeChange,
+    ReactFlowInstance,
 } from 'reactflow';
+
 import 'reactflow/dist/style.css';
 import { useStore } from '@/core/store';
 import { validateConnection } from '../utils/validationUtils';
@@ -40,17 +44,18 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
     const collaborators = 1;
 
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
-    const [reactFlowInstance, setReactFlowInstance] = React.useState<any>(null);
+    const [reactFlowInstance, setReactFlowInstance] = React.useState<ReactFlowInstance | null>(null);
 
-    const onNodesChange = useCallback((changes: any) => {
+    const onNodesChange = useCallback((changes: NodeChange[]) => {
         if (readOnly) return;
         setNodes(applyNodeChanges(changes, nodes));
     }, [nodes, setNodes, readOnly]);
 
-    const onEdgesChange = useCallback((changes: any) => {
+    const onEdgesChange = useCallback((changes: EdgeChange[]) => {
         if (readOnly) return;
         setEdges(applyEdgeChanges(changes, edges));
     }, [edges, setEdges, readOnly]);
+
 
     // --- STRICT CONNECTION VALIDATION ---
     const isValidConnection = useCallback((connection: Connection) => {
