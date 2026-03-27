@@ -521,7 +521,7 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                         }
                     }
                 });
-                const job = (jobResult as any)[0];
+                const job = (jobResult as Record<string, unknown>[])[0];
                 return job.name;
             });
 
