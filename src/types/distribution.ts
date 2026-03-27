@@ -126,11 +126,35 @@ export interface DDEXMetadata {
     release_date?: string; // YYYY-MM-DD
 }
 
+/** Typed details from Python audio_fidelity_auditor.py / scan_audio_dna.py */
+export interface ForensicsDetails {
+    /** Integrated loudness in LUFS (e.g. "-14 LUFS") */
+    estimated_lufs?: string;
+    /** True peak level in dBTP (e.g. "-1.0") */
+    true_peak_db?: string;
+    /** Mix balance score 1-10 */
+    mix_balance_score?: number;
+    /** Low-mid frequency analysis narrative */
+    low_mids_analysis?: string;
+    /** High frequency analysis narrative */
+    highs_analysis?: string;
+    /** Mastering/mixing recommendations */
+    recommendations?: string[];
+    /** Audio file format (wav, flac, aiff, mp3, etc.) */
+    format?: string;
+    /** Sample rate in Hz (e.g. 44100, 48000) */
+    sample_rate?: number;
+    /** Bit depth (16, 24, 32) */
+    bit_depth?: number;
+    /** Channel count (1 = mono, 2 = stereo) */
+    channels?: number;
+}
+
 export interface ForensicsReport {
     status: 'PASS' | 'FAIL' | 'WARNING';
     score: number;
     issues?: string[];
-    details?: Record<string, unknown>;
+    details?: ForensicsDetails;
 }
 
 export interface ValidationReport {
