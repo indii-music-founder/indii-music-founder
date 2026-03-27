@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 /**
  * Memory Dashboard (Always-On Memory Agent)
  *
@@ -205,9 +204,9 @@ export default function MemoryDashboard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
 
-    const formatDate = (timestamp: any) => {
+    const formatDate = (timestamp: number | { toMillis: () => number } | null | undefined) => {
         if (!timestamp) return '—';
-        const ms = typeof timestamp.toMillis === 'function' ? timestamp.toMillis() : timestamp;
+        const ms = typeof timestamp === 'object' && 'toMillis' in timestamp ? timestamp.toMillis() : timestamp;
         return new Date(ms).toLocaleString(undefined, {
             month: 'short',
             day: 'numeric',
@@ -340,7 +339,7 @@ export default function MemoryDashboard() {
 
 // ─── Sub-Components ─────────────────────────────────────────────
 
-function StatBadge({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
+function StatBadge({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number }) {
     return (
         <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <Icon size={12} />
@@ -379,7 +378,7 @@ function FeedPanel({
     onDelete: (id: string) => void;
     onConsolidate: () => void;
     isConsolidating: boolean;
-    formatDate: (t: any) => string;
+    formatDate: (t: number | { toMillis: () => number } | null | undefined) => string;
 }) {
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -408,7 +407,7 @@ function FeedPanel({
                 <div className="flex gap-2">
                     <select
                         value={filterCategory}
-                        onChange={(e) => onFilterCategory(e.target.value as any)}
+                        onChange={(e) => onFilterCategory(e.target.value as AlwaysOnMemoryCategory | 'all')}
                         className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-purple-500/50"
                     >
                         {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -417,7 +416,7 @@ function FeedPanel({
                     </select>
                     <select
                         value={filterTier}
-                        onChange={(e) => onFilterTier(e.target.value as any)}
+                        onChange={(e) => onFilterTier(e.target.value as MemoryTier | 'all')}
                         className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-purple-500/50"
                     >
                         <option value="all">All Tiers</option>
@@ -650,7 +649,7 @@ function MemoryDetail({
     onClose,
 }: {
     memory: AlwaysOnMemory;
-    formatDate: (t: any) => string;
+    formatDate: (t: number | { toMillis: () => number } | null | undefined) => string;
     onClose: () => void;
 }) {
     return (
@@ -771,8 +770,8 @@ function InsightsPanel({
     insights,
     formatDate,
 }: {
-    insights: any[];
-    formatDate: (t: any) => string;
+    insights: Array<{ id?: string; insight?: string; summary?: string; confidence?: number; createdAt?: number | { toMillis: () => number } }>;
+    formatDate: (t: number | { toMillis: () => number } | null | undefined) => string;
 }) {
     return (
         <div className="p-4">

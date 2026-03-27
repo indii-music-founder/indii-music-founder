@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -121,7 +120,7 @@ export default function PublicistDashboard() {
                         />
                         <NavButton
                             isActive={(activeTab as string) === 'superfans'}
-                            onClick={() => setActiveTab('superfans' as any)}
+                            onClick={() => setActiveTab('superfans')}
                             icon={Crown}
                             label="Superfan CRM"
                         />
@@ -170,7 +169,7 @@ export default function PublicistDashboard() {
                     <header className="h-14 md:h-20 shrink-0 px-4 md:px-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
                         <div className="flex items-center gap-2 md:gap-4 min-w-0">
                             <h2 className="text-base md:text-2xl font-bold text-white tracking-tight truncate">
-                                {activeTab === 'campaigns' ? 'Campaigns' : (activeTab as string) === 'superfans' ? 'Superfan CRM' : 'Media Network'}
+                                {activeTab === 'campaigns' ? 'Campaigns' : activeTab === 'superfans' ? 'Superfan CRM' : 'Media Network'}
                             </h2>
                             <div className="hidden md:block h-6 w-px bg-white/10 mx-2" />
 
@@ -207,7 +206,7 @@ export default function PublicistDashboard() {
                                     </div>
                                     <select
                                         value={filterType}
-                                        onChange={(e) => setFilterType(e.target.value as any)}
+                                        onChange={(e) => setFilterType(e.target.value as 'all' | 'Live' | 'Draft' | 'Scheduled')}
                                         className="bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-slate-300 focus:outline-none hover:border-white/20 transition-colors"
                                     >
                                         <option value="all" className="bg-slate-900">All Status</option>
@@ -326,7 +325,7 @@ export default function PublicistDashboard() {
                                         )}
                                     </div>
                                 </motion.div>
-                            ) : (activeTab as string) === 'superfans' ? (
+                            ) : activeTab === 'superfans' ? (
                                 <motion.div
                                     key="superfans-view"
                                     initial={{ opacity: 0, x: 20 }}
@@ -387,7 +386,7 @@ export default function PublicistDashboard() {
 }
 
 // Sub-component for Sidebar Navigation Buttons
-function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActive: boolean; onClick: () => void; icon: any; label: string; disabled?: boolean }) {
+function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActive: boolean; onClick: () => void; icon: React.ElementType; label: string; disabled?: boolean }) {
     return (
         <button
             onClick={onClick}

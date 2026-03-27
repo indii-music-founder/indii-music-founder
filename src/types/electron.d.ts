@@ -86,6 +86,11 @@ export interface ElectronAPI {
     };
 
 
+    // AI Sidecar (Docker container management)
+    sidecar?: {
+        restart: () => void;
+    };
+
     // Video (Local Asset Management)
     video: {
         saveAsset: (url: string, filename: string) => Promise<string>;
