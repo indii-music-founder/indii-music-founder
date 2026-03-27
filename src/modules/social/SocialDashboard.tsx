@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Calendar, Plus, TrendingUp, Users, MoreHorizontal, UserPlus, Clock, Hash, Zap, BarChart3, Radio } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -6,6 +5,7 @@ import CreatePostModal from './components/CreatePostModal';
 import AccountCreationWizard from './components/AccountCreationWizard';
 import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost } from '@/services/social/types';
+import type { ScheduledPost as ModalPost } from './types';
 import { useStore } from '@/core/store';
 import { useSocial } from './hooks/useSocial';
 import SocialFeed from './components/SocialFeed';
@@ -40,11 +40,13 @@ export default function SocialDashboard() {
         actions.refreshDashboard();
     }, [actions]);
 
-    const handleCreatePost = async (post: any) => {
+    const handleCreatePost = async (post: ModalPost) => {
         try {
             const scheduledTimeNum = post.scheduledTime instanceof Date
                 ? post.scheduledTime.getTime()
-                : new Date(post.scheduledTime).getTime();
+                : post.scheduledTime
+                    ? new Date(post.scheduledTime as unknown as string).getTime()
+                    : Date.now();
 
             const success = await actions.schedulePost({
                 platform: post.platform,

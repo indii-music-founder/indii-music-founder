@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { useStore } from '@/core/store';
 import { Box, Play, Sparkles, MessageSquare, Music, Video, Image as ImageIcon, GitBranch, ShieldAlert, GripHorizontal } from 'lucide-react';
@@ -7,15 +6,16 @@ import { motion, useDragControls } from 'motion/react';
 export default function NodePanel() {
     const controls = useDragControls();
 
-    const onDragStart = (event: React.DragEvent, nodeType: string, data?: any) => {
+    const onDragStart = (event: React.DragEvent, nodeType: string, data?: Record<string, string>) => {
         event.dataTransfer.setData('application/reactflow', nodeType);
         event.dataTransfer.effectAllowed = 'move';
 
         if (data) {
-            Object.keys(data).forEach(key => {
-                event.dataTransfer.setData(`application/${key}`, data[key]);
+            Object.entries(data).forEach(([key, value]) => {
+                event.dataTransfer.setData(`application/${key}`, value);
             });
         }
+
     };
 
     return (
