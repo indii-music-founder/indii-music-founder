@@ -160,6 +160,13 @@ interface CanvasState {
 // --- User Profile ---
 
 export async function saveProfileToStorage(profile: UserProfile): Promise<void> {
+    // IDB guard: PROFILE_STORE uses keyPath 'id' — bail early if id is missing
+    // to prevent DataError from IDB when the profile hasn't fully hydrated yet.
+    if (!profile?.id) {
+        logger.warn('[Repository] saveProfileToStorage skipped — profile has no id');
+        return;
+    }
+
     const dbLocal = await initDB();
 
     // 1. Save locally
@@ -199,7 +206,10 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
             const docRef = doc(db, 'users', user.uid);
             const snap = await getDoc(docRef);
             if (snap.exists()) {
-                const cloudProfile = snap.data() as UserProfile;
+                // Firestore snap.data() does NOT include the document ID in the
+                // returned object, but PROFILE_STORE has keyPath: 'id'.
+                // Merge snap.id so IDB never throws DataError.
+                const cloudProfile: UserProfile = { ...(snap.data() as UserProfile), id: snap.id };
                 logger.info('[Repository] Fetched fresh profile from Cloud');
 
                 // Update Local Cache
