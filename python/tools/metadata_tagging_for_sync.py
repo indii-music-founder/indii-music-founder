@@ -8,11 +8,12 @@ from python.config.ai_models import AIConfig
 class MetadataTaggingForSync(Tool):
     """
     Licensing Executive Tool.
-    Auto-generate granular mood, instrumentation, and lyric theme tags for a catalog database.
+    Tags tracks with sync-specific metadata for music library submission.
+    Exports tagged data as CSV for library ingestion.
     """
 
-    async def execute(self, track_lyrics: str, track_sonic_profile: str) -> Response:
-        self.set_progress("Generating granular Sync metadata tags for DISCO/Disco.ac upload")
+    async def execute(self, track_title: str, audio_characteristics: str = "", **kwargs) -> Response:
+        self.set_progress(f"Tagging '{track_title}' for sync library submission")
         
         try:
             from google import genai
@@ -23,50 +24,64 @@ class MetadataTaggingForSync(Tool):
             model_id = AIConfig.TEXT_FAST
             
             prompt = f"""
-            You are the indiiOS Licensing Executive handling metatagging.
-            Analyze the following lyrics and sonic profile to generate granular tags for a sync catalog.
+            You are the indiiOS Sync Tagging Specialist.
+            Generate comprehensive sync-friendly metadata tags for a track.
             
-            Sonic Profile: {track_sonic_profile}
-            Lyrics: {track_lyrics}
+            Track: {track_title}
+            Audio Characteristics: {audio_characteristics}
             
-            Rules:
-            1. Generate exactly 5 'Mood' tags (e.g. Uplifting, Cinematic, Dark).
-            2. Generate exactly 5 'Instrumentation' tags (e.g. Distorted Bass, Arp Synth).
-            3. Generate 3 'Lyrical Themes' (e.g. Overcoming Adversity, Summer Love).
-            4. Provide a 'Similar Artists' array (up to 3).
-            
-            Return ONLY a JSON object:
+            Sync libraries require extensive tagging. Return ONLY a JSON object:
             {{
-              "moods": [],
-              "instrumentation": [],
-              "lyrical_themes": [],
-              "similar_artists": []
+              "track_title": "{track_title}",
+              "primary_mood": "...",
+              "secondary_moods": ["..."],
+              "genres": ["..."],
+              "sub_genres": ["..."],
+              "tempo_descriptor": "Slow/Medium/Upbeat/Driving",
+              "energy": "Low/Medium/High",
+              "instrumentation": ["..."],
+              "vocal_type": "Male/Female/Instrumental/Choir",
+              "use_cases": ["Commercial", "Film Trailer", "TV Drama"],
+              "similar_tracks": ["..."],
+              "keywords": ["..."]
             }}
             """
-            
-            
-
             
             _rl = RateLimiter()
             wait_time = _rl.wait_time("gemini")
             if wait_time > 0:
-                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
                 await asyncio.sleep(wait_time)
 
             response = client.models.generate_content(
-                model=model_id,
-                contents=[prompt],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.2
-                )
+                model=model_id, contents=[prompt],
+                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.2)
             )
+            tags = json.loads(response.text)
+            
+            # --- CSV Export for library ingestion ---
+            import os
+            csv_rows = ["Field,Value"]
+            csv_rows.append(f"Track,{tags.get('track_title','')}")
+            csv_rows.append(f"Primary Mood,{tags.get('primary_mood','')}")
+            csv_rows.append(f"Secondary Moods,{'; '.join(tags.get('secondary_moods',[]))}")
+            csv_rows.append(f"Genres,{'; '.join(tags.get('genres',[]))}")
+            csv_rows.append(f"Tempo,{tags.get('tempo_descriptor','')}")
+            csv_rows.append(f"Energy,{tags.get('energy','')}")
+            csv_rows.append(f"Instrumentation,{'; '.join(tags.get('instrumentation',[]))}")
+            csv_rows.append(f"Vocal Type,{tags.get('vocal_type','')}")
+            csv_rows.append(f"Use Cases,{'; '.join(tags.get('use_cases',[]))}")
+            csv_rows.append(f"Keywords,{'; '.join(tags.get('keywords',[]))}")
+            csv_payload = "\n".join(csv_rows)
+            
+            export_path = kwargs.get("export_path")
+            if export_path:
+                with open(export_path, "w") as f:
+                    f.write(csv_payload)
             
             return Response(
-                message=f"Granular sync metadata generated.",
-                additional={"sync_metadata": json.loads(response.text)}
+                message=f"Sync tags generated for '{track_title}'.",
+                additional={"tags": tags, "csv_payload": csv_payload, "export_path": export_path}
             )
-
         except Exception as e:
             import traceback
-            return Response(message=f"Metadata Tagging For Sync Failed: {str(e)}\n{traceback.format_exc()}", break_loop=False)
+            return Response(message=f"Metadata Tagging for Sync Failed: {str(e)}\n{traceback.format_exc()}", break_loop=False)
