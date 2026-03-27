@@ -16,13 +16,19 @@ export interface ConversationMessage {
     timestamp: Timestamp;
 }
 
+export interface GoalAncestry {
+    type: 'intent' | 'strategy' | 'task' | 'subtask';
+    description: string;
+    id: string;
+}
+
 export interface Directive {
     id: string;
     userId: string;
     title: string;
     status: DirectiveStatus;
     assignedAgent: AgentRole;
-    goalAncestry: string;
+    goalAncestry: GoalAncestry[];
     computeAllocation: ComputeAllocation;
     contextFiles: string[];
     conversationThread: ConversationMessage[];

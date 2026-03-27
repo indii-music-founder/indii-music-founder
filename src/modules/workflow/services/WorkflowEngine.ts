@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { CustomNode, CustomEdge, DepartmentNodeData, LogicNodeData, InputNodeData, Status, SavedWorkflow } from '../types';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
@@ -362,7 +361,7 @@ export class WorkflowEngine {
         this.setNodes((currentNodes) => {
             const updated = currentNodes.map(n =>
                 n.id === nodeId
-                    ? { ...n, data: { ...n.data, status, result: result !== undefined ? result : (n.data as any).result } }
+                    ? { ...n, data: { ...n.data, status, result: (result !== undefined ? result : (n.data as unknown as Record<string, unknown>).result) } as typeof n.data }
                     : n
             );
             this.nodes = updated;

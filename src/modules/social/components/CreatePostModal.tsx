@@ -156,18 +156,18 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                             placeholder="What's on your mind?"
                             aria-describedby={characterCountId}
                             className={`w-full h-32 bg-bg-dark border rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none transition-colors resize-none ${isOverLimit
-                                    ? 'border-red-500 focus:border-red-500'
-                                    : 'border-gray-700 focus:border-blue-500'
+                                ? 'border-red-500 focus:border-red-500'
+                                : 'border-gray-700 focus:border-blue-500'
                                 }`}
                         />
                         <div className="flex justify-end">
                             <span
                                 id={characterCountId}
                                 className={`text-xs font-medium transition-colors ${isOverLimit
-                                        ? 'text-red-500'
-                                        : isApproachingLimit
-                                            ? 'text-yellow-500'
-                                            : 'text-gray-500'
+                                    ? 'text-red-500'
+                                    : isApproachingLimit
+                                        ? 'text-yellow-500'
+                                        : 'text-gray-500'
                                     }`}
                                 aria-live="polite"
                             >
@@ -262,7 +262,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                         // Adapt the asset to ImageAsset type if needed, assuming compatibility for now
                         setSelectedImage({
                             assetType: 'image',
-                            title: asset.name || 'Untitled',
+                            title: asset.description || 'Untitled',
                             imageUrl: asset.url,
                             caption: ''
                         });

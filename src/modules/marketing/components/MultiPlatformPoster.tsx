@@ -1,16 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import {
     Play, Pause, Clock, CheckCircle2, XCircle,
     Plus, Trash2, Upload, Video, Calendar, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { socialAutoPosterService } from '@/services/marketing/SocialAutoPosterService';
+import { socialAutoPosterService, type SocialPlatform } from '@/services/marketing/SocialAutoPosterService';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
 interface Platform {
-    id: string;
+    id: SocialPlatform;
     name: string;
     color: string;
     maxDuration: number; // seconds
@@ -20,7 +19,7 @@ interface Platform {
 interface ScheduledPost {
     id: string;
     title: string;
-    platforms: string[];
+    platforms: SocialPlatform[];
     scheduledAt: Date;
     status: 'queued' | 'posting' | 'posted' | 'failed';
     caption: string;
@@ -28,8 +27,8 @@ interface ScheduledPost {
 
 const PLATFORMS: Platform[] = [
     { id: 'tiktok', name: 'TikTok', color: 'bg-pink-500', maxDuration: 60, ratio: '9:16' },
-    { id: 'yt-shorts', name: 'YouTube Shorts', color: 'bg-red-500', maxDuration: 60, ratio: '9:16' },
-    { id: 'ig-reels', name: 'IG Reels', color: 'bg-purple-500', maxDuration: 90, ratio: '9:16' },
+    { id: 'youtube_shorts', name: 'YouTube Shorts', color: 'bg-red-500', maxDuration: 60, ratio: '9:16' },
+    { id: 'meta_reels', name: 'IG Reels', color: 'bg-purple-500', maxDuration: 90, ratio: '9:16' },
 ];
 
 const INITIAL_POSTS: ScheduledPost[] = [];
@@ -64,12 +63,12 @@ export default function MultiPlatformPoster() {
     const [showNewPost, setShowNewPost] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newCaption, setNewCaption] = useState('');
-    const [newPlatforms, setNewPlatforms] = useState<string[]>(['tiktok']);
+    const [newPlatforms, setNewPlatforms] = useState<SocialPlatform[]>(['tiktok']);
     const [isPosting, setIsPosting] = useState<string | null>(null);
     const toast = useToast();
     const store = useStore();
 
-    const togglePlatform = (id: string) => {
+    const togglePlatform = (id: SocialPlatform) => {
         setNewPlatforms(prev =>
             prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
         );
@@ -104,7 +103,7 @@ export default function MultiPlatformPoster() {
                 mediaUrl: `gs://assets/videos/${post.id}.mp4`,
                 caption: post.caption,
                 hashtags: [],
-                platform: post.platforms[0] as any // Simplified for demo
+                platform: post.platforms[0] as SocialPlatform
             });
 
             toast.success(`Post dispatched to ${post.platforms.join(', ')}`);

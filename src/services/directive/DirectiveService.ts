@@ -73,4 +73,12 @@ export class DirectiveService {
             (d.status === 'OPEN' || d.status === 'IN_PROGRESS')
         );
     }
+
+    /**
+     * Fetches all directives for the dashboard UI.
+     */
+    static async getAllDirectives(userId: string): Promise<Directive[]> {
+        const service = this.getService(userId);
+        return service.list() as Promise<Directive[]>;
+    }
 }

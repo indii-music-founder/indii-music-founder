@@ -6,8 +6,6 @@ import { motion } from 'motion/react';
 import { EmptyState } from '@/components/shared/EmptyState';
 
 // Fix for React 19 type mismatch - using components directly
-// const PlusIcon = Plus as any;
-// const SparklesIcon = Sparkles as any;
 
 interface CampaignListProps {
     campaigns: CampaignAsset[];

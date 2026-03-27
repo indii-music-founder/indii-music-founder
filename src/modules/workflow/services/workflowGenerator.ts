@@ -26,8 +26,8 @@ const getRegistryContext = (): RegistryContextItem[] => {
         jobs: def.jobs.map((j) => ({
             id: j.id,
             description: j.description,
-            inputs: j.inputs,
-            outputs: j.outputs
+            inputs: j.inputs.map(p => p.id),
+            outputs: j.outputs.map(p => p.id)
         }))
     }));
 };
@@ -147,7 +147,7 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
 
     const generated = await AI.generateStructuredData<GeneratedWorkflow>(
         `User Request: "${userPrompt}"\n\nGenerate the workflow JSON.`,
-        schema as import('@google/genai').Schema,
+        schema as Record<string, unknown>,
         undefined,
         systemInstruction
     );

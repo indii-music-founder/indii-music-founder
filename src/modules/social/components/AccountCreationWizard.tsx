@@ -315,7 +315,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                     onSelect={(asset) => {
                         const imageAsset: ImageAsset = {
                             assetType: 'image',
-                            title: asset.name || 'Untitled',
+                            title: asset.description || 'Untitled',
                             imageUrl: asset.url,
                             caption: ''
                         };

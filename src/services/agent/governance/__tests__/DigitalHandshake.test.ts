@@ -34,7 +34,7 @@ describe('DigitalHandshake', () => {
         title: 'Test',
         status: 'IN_PROGRESS',
         assignedAgent: 'indiiOD',
-        goalAncestry: 'xyz',
+        goalAncestry: [{ id: 'goal_1', type: 'task', description: 'xyz' }],
         computeAllocation: {
             maxTokens: 1000,
             tokensUsed: 500,

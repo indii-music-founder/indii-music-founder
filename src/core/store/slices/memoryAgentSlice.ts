@@ -18,6 +18,8 @@ import type {
     MemoryTier,
     MemorySource,
 } from '@/types/AlwaysOnMemory';
+import type { Directive } from '@/services/directive/DirectiveTypes';
+import { DirectiveService } from '@/services/directive/DirectiveService';
 
 // ============================================================================
 // STATE
@@ -29,6 +31,7 @@ export interface MemoryAgentSlice {
     alwaysOnInsights: ConsolidationInsight[];
     alwaysOnIngestionEvents: IngestionEvent[];
     alwaysOnEngineStatus: AlwaysOnEngineStatus;
+    activeDirectives: Directive[];
 
     // UI State
     isMemoryDashboardOpen: boolean;
@@ -45,6 +48,7 @@ export interface MemoryAgentSlice {
     setSelectedMemoryId: (id: string | null) => void;
     loadAlwaysOnMemories: (userId: string) => Promise<void>;
     loadAlwaysOnInsights: (userId: string) => Promise<void>;
+    loadDirectives: (userId: string) => Promise<void>;
     refreshAlwaysOnEngineStatus: (userId: string) => Promise<void>;
     startMemoryEngine: (userId: string) => void;
     stopMemoryEngine: () => void;
@@ -80,6 +84,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
     alwaysOnInsights: [],
     alwaysOnIngestionEvents: [],
     alwaysOnEngineStatus: defaultEngineStatus,
+    activeDirectives: [],
 
     isMemoryDashboardOpen: false,
     memorySearchQuery: '',
@@ -136,6 +141,15 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
             set({ alwaysOnInsights: insights });
         } catch (error) {
             logger.error('[MemoryAgentSlice] Failed to load insights:', error);
+        }
+    },
+
+    loadDirectives: async (userId: string) => {
+        try {
+            const directives = await DirectiveService.getAllDirectives(userId);
+            set({ activeDirectives: directives });
+        } catch (error) {
+            logger.error('[MemoryAgentSlice] Failed to load directives:', error);
         }
     },
 

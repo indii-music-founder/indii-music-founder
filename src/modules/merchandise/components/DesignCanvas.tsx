@@ -558,9 +558,11 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
                     left: position.left,
                     top: position.top,
                     fill: '#FFE135',
-                    name: `Star ${generateId()}`,
-                    ...options
                 });
+                (shapeObj as FabricObjectWithMeta).name = `Star ${generateId()}`;
+                if (options) {
+                    shapeObj.set(options as Record<string, unknown>);
+                }
                 break;
             case 'circle':
                 shapeObj = new fabric.Circle({
@@ -568,9 +570,11 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
                     top: position.top,
                     radius: 75,
                     fill: '#FFE135',
-                    name: `Circle ${generateId()}`,
-                    ...options
                 });
+                (shapeObj as FabricObjectWithMeta).name = `Circle ${generateId()}`;
+                if (options) {
+                    shapeObj.set(options as Record<string, unknown>);
+                }
                 break;
             case 'square':
                 shapeObj = new fabric.Rect({
@@ -579,9 +583,11 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
                     width: 150,
                     height: 150,
                     fill: '#FFE135',
-                    name: `Square ${generateId()}`,
-                    ...options
                 });
+                (shapeObj as FabricObjectWithMeta).name = `Square ${generateId()}`;
+                if (options) {
+                    shapeObj.set(options as Record<string, unknown>);
+                }
                 break;
         }
 
