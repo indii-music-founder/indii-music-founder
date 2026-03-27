@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -230,7 +229,7 @@ const MemoryCard: React.FC<{
     );
 };
 
-const InsightCard: React.FC<{ insight: any }> = ({ insight }) => (
+const InsightCard: React.FC<{ insight: { id?: string; insight?: string; summary?: string } }> = ({ insight }) => (
     <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -321,7 +320,7 @@ export const MemoryDashboard: React.FC = () => {
         triggerMemoryConsolidation,
         deleteAlwaysOnMemory,
         queryAlwaysOnMemory,
-    } = useStore(useShallow((s: any) => ({
+    } = useStore(useShallow((s) => ({
         alwaysOnMemories: s.alwaysOnMemories || [],
         alwaysOnInsights: s.alwaysOnInsights || [],
         alwaysOnEngineStatus: s.alwaysOnEngineStatus || {},
@@ -376,7 +375,7 @@ export const MemoryDashboard: React.FC = () => {
                 (m.content || '').toLowerCase().includes(q) ||
                 (m.summary || '').toLowerCase().includes(q) ||
                 (m.topics || []).some((t: string) => t.toLowerCase().includes(q)) ||
-                (m.entities || []).some((e: any) => e.name.toLowerCase().includes(q))
+                (m.entities || []).some((e: { name: string }) => e.name.toLowerCase().includes(q))
             );
         }
 
@@ -393,16 +392,18 @@ export const MemoryDashboard: React.FC = () => {
 
     // Handlers
     const handleIngest = useCallback(async () => {
-        if (!ingestInput.trim() || !ingestMemoryText) return;
-        await ingestMemoryText(ingestInput.trim());
+        const userId = auth.currentUser?.uid;
+        if (!ingestInput.trim() || !ingestMemoryText || !userId) return;
+        await ingestMemoryText(userId, ingestInput.trim());
         setIngestInput('');
     }, [ingestInput, ingestMemoryText]);
 
     const handleQuery = useCallback(async () => {
-        if (!queryInput.trim() || !queryAlwaysOnMemory) return;
+        const userId = auth.currentUser?.uid;
+        if (!queryInput.trim() || !queryAlwaysOnMemory || !userId) return;
         setIsQuerying(true);
         try {
-            const result = await queryAlwaysOnMemory(queryInput.trim());
+            const result = await queryAlwaysOnMemory(userId, queryInput.trim());
             setQueryResult(result);
         } finally {
             setIsQuerying(false);
@@ -410,10 +411,11 @@ export const MemoryDashboard: React.FC = () => {
     }, [queryInput, queryAlwaysOnMemory]);
 
     const handleConsolidate = useCallback(async () => {
-        if (!triggerMemoryConsolidation) return;
+        const userId = auth.currentUser?.uid;
+        if (!triggerMemoryConsolidation || !userId) return;
         setIsConsolidating(true);
         try {
-            await triggerMemoryConsolidation();
+            await triggerMemoryConsolidation(userId);
         } finally {
             setIsConsolidating(false);
         }
@@ -688,7 +690,7 @@ export const MemoryDashboard: React.FC = () => {
                                     {/* Category filter */}
                                     <select
                                         value={memoryFilterCategory}
-                                        onChange={(e) => setMemoryFilterCategory?.(e.target.value as any)}
+                                        onChange={(e) => setMemoryFilterCategory?.(e.target.value as AlwaysOnMemoryCategory | 'all')}
                                         style={{
                                             background: 'rgba(255,255,255,0.06)',
                                             border: '1px solid rgba(255,255,255,0.1)',
@@ -708,7 +710,7 @@ export const MemoryDashboard: React.FC = () => {
                                     {/* Tier filter */}
                                     <select
                                         value={memoryFilterTier}
-                                        onChange={(e) => setMemoryFilterTier?.(e.target.value as any)}
+                                        onChange={(e) => setMemoryFilterTier?.(e.target.value as MemoryTier | 'all')}
                                         style={{
                                             background: 'rgba(255,255,255,0.06)',
                                             border: '1px solid rgba(255,255,255,0.1)',
@@ -812,7 +814,7 @@ export const MemoryDashboard: React.FC = () => {
                                                 onSelect={() => setSelectedMemoryId?.(
                                                     selectedMemoryId === memory.id ? null : memory.id
                                                 )}
-                                                onDelete={() => deleteAlwaysOnMemory?.(memory.id)}
+                                                onDelete={() => { const uid = auth.currentUser?.uid; if (uid) deleteAlwaysOnMemory?.(uid, memory.id); }}
                                             />
                                         ))
                                     )}
@@ -836,7 +838,7 @@ export const MemoryDashboard: React.FC = () => {
                                         </p>
                                     </div>
                                 ) : (
-                                    (insights || []).map((insight: any, i: number) => (
+                                    (insights || []).map((insight: { id?: string; insight?: string; summary?: string }, i: number) => (
                                         <InsightCard key={insight.id || i} insight={insight} />
                                     ))
                                 )}
