@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.40.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.39.0...v1.40.0) (2026-03-27)
+
+
+### Features
+
+* **types:** eliminate remaining 'any' casts from backend services ([dd8766c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/dd8766cadc4b1fb94f91ea8e36de10dd86cddb68))
+* **types:** eliminate remaining 'any' casts from backend services ([6d599f6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6d599f6cf9a32573237545857db31be4f0674261))
+
+
+### Bug Fixes
+
+* **types:** enforce strict type for setViewMode in CreativeGallery ([00b036b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/00b036bfd9044551bf287a97d3b4f7bab138ca13))
+* **types:** systematically eliminate remaining 'as any' casts across core modules and enforce strict type safety (Production Hardening) ([5f3be82](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5f3be8260a345d45d3aa099de5d2f043b04e021a))
+
 ## [1.39.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.38.0...v1.39.0) (2026-03-27)
 
 
