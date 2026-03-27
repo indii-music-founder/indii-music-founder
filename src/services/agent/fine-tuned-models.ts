@@ -57,8 +57,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'devops':          'projects/223837784072/locations/us-central1/endpoints/2179760361589178368',
     // R6 — gemini-2.5-flash-lite base (~87 examples, ≥50% expert) — 2026-03-27
     'security':        'projects/223837784072/locations/us-central1/endpoints/4620711359623987200',
-    // R6 — gemini-2.5-flash-lite base (~97 examples, ≥50% expert) — TODO: job still running
-    'producer':        'projects/223837784072/locations/us-central1/endpoints/8499102287161982976',
+    // R6 — gemini-2.5-flash-lite base (~97 examples, ≥50% expert) — 2026-03-27
+    'producer':        'projects/223837784072/locations/us-central1/endpoints/2163997762893381632',
     // R6 — gemini-2.5-flash-lite base (~106 examples, ≥50% expert) — 2026-03-26
     'director':        'projects/223837784072/locations/us-central1/endpoints/5461705813477294080',
     // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — 2026-03-27
