@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { z } from 'zod';
 import { CommonEnvSchema } from '../shared/schemas/env.schema.ts';
 import { Logger } from '@/core/logger/Logger';
@@ -32,6 +31,10 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     VITE_A0_AUTH_LOGIN: z.string().optional(),
     VITE_A0_AUTH_PASSWORD: z.string().optional(),
 
+    // Dev/Debug flags
+    VITE_USE_FUNCTIONS_EMULATOR: z.string().optional(),
+    VITE_EXPOSE_INTERNALS: z.string().optional(),
+
     skipOnboarding: z.boolean().default(false),
 });
 
@@ -43,17 +46,17 @@ const isTest =
         process.env.VITEST_WORKER_ID !== undefined
     );
 
-const getEnv = (metaValue: any, processValue: any): string | undefined => {
+const getEnv = (metaValue: string | boolean | undefined, processValue: string | undefined): string | undefined => {
     // In test environment, prioritize process.env (processValue) for easier mocking
-    if (isTest) return processValue || metaValue || undefined;
+    if (isTest) return processValue || (typeof metaValue === 'string' ? metaValue : undefined) || undefined;
 
-    const val = metaValue || processValue;
+    const val = (typeof metaValue === 'string' ? metaValue : undefined) || processValue;
     return val || undefined;
 };
 
-const getSafeMetaEnv = (key: string): any => {
+const getSafeMetaEnv = (key: string): string | boolean | undefined => {
     try {
-        return (import.meta as any).env?.[key];
+        return (import.meta as unknown as { env?: Record<string, string | boolean | undefined> }).env?.[key];
     } catch {
         return undefined;
     }
@@ -82,6 +85,7 @@ const processEnv = {
 
     skipOnboarding: toBoolean(getSafeMetaEnv('VITE_SKIP_ONBOARDING') || process.env.VITE_SKIP_ONBOARDING),
     VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), process.env.VITE_EXPOSE_INTERNALS),
+    VITE_USE_FUNCTIONS_EMULATOR: getEnv(getSafeMetaEnv('VITE_USE_FUNCTIONS_EMULATOR'), process.env.VITE_USE_FUNCTIONS_EMULATOR),
 
     // AI Sidecar
     VITE_A0_BASE_URL: getEnv(getSafeMetaEnv('VITE_A0_BASE_URL'), process.env.VITE_A0_BASE_URL),
@@ -117,7 +121,7 @@ if (!parsed.success && !isTest) {
     }
 }
 
-const runtimeEnv = parsed.success ? parsed.data : (processEnv as any);
+const runtimeEnv = parsed.success ? parsed.data : (processEnv as z.infer<typeof FrontendEnvSchema>);
 
 export const env = {
     ...runtimeEnv,

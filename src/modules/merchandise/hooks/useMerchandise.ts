@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
@@ -146,18 +145,18 @@ export const useMerchandise = () => {
                 const revenueStats = await Promise.race([
                     revenueService.getUserRevenueStats(userProfile.id, '30d'),
                     timeoutPromise
-                ]) as any; // Cast as we know the shape if it wins
+                ]) as Record<string, unknown>; // Cast as we know the shape if it wins
 
                 if (revenueStats) {
                     setStats({
-                        totalRevenue: revenueStats.sources.merch || 0,
-                        unitsSold: revenueStats.unitsSold || 0,
+                        totalRevenue: Number((revenueStats.sources as Record<string, number>)?.merch) || 0,
+                        unitsSold: Number(revenueStats.unitsSold) || 0,
                         conversionRate: null,
-                        revenueChange: revenueStats.revenueChange || 0,
-                        unitsChange: revenueStats.unitsChange || 0,
-                        trendScore: revenueStats.trendScore || 0,
-                        productionVelocity: revenueStats.productionVelocity || 0,
-                        funnelData: revenueStats.funnelData || {
+                        revenueChange: Number(revenueStats.revenueChange) || 0,
+                        unitsChange: Number(revenueStats.unitsChange) || 0,
+                        trendScore: Number(revenueStats.trendScore) || 0,
+                        productionVelocity: Number(revenueStats.productionVelocity) || 0,
+                        funnelData: (revenueStats.funnelData as { pageViews: number; addToCart: number; checkout: number; }) || {
                             pageViews: 0,
                             addToCart: 0,
                             checkout: 0
@@ -167,8 +166,8 @@ export const useMerchandise = () => {
                     const topSellers = products
                         .map(product => ({
                             ...product,
-                            revenue: revenueStats.revenueByProduct[product.id] || 0,
-                            units: revenueStats.salesByProduct[product.id] || 0
+                            revenue: Number((revenueStats.revenueByProduct as Record<string, number>)?.[product.id]) || 0,
+                            units: Number((revenueStats.salesByProduct as Record<string, number>)?.[product.id]) || 0
                         }))
                         .filter(p => p.revenue > 0)
                         .sort((a, b) => b.revenue - a.revenue)

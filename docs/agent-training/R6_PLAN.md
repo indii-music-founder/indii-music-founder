@@ -1,6 +1,6 @@
 # R6 Training Plan
 
-**Status:** Queued — waiting on expert uplift pass
+**Status:** ✅ COMPLETE — 2026-03-27 (commit `272d4fb3`) — all 20/20 endpoints live, CI green
 **Prerequisite:** Raise all 20 agents to ≥50% expert difficulty
 **Reference:** `SKILL_EXPERT_ROADMAP.md` (LOW-priority rows + agent skill maps)
 

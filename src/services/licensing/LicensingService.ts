@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { logger } from '@/utils/logger';
@@ -285,7 +284,7 @@ export class LicensingService {
 Use these upcoming deadlines: ${deadlines.join(', ')}.
 Vary the types (TV, Film, Ad, Game, Trailer), budgets ($5K–$100K+), moods and BPM ranges.
 Make each brief feel authentic with real-sounding network names and project titles.`,
-                schema as any,
+                schema as Record<string, unknown>,
                 undefined,
                 'You are a sync licensing coordinator generating a daily brief digest for indie artists.'
             );

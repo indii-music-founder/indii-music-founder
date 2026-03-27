@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { db } from '@/services/firebase';
 import {
     collection,
@@ -55,10 +54,10 @@ export class MarketingService {
             }
         );
 
-        const parsed = firebaseAI.parseJSON(response.response.text()) as any;
+        const parsed = firebaseAI.parseJSON(response.response.text()) as { score?: number, label?: string, trendingTopics?: string[], summary?: string };
         return {
             score: typeof parsed.score === 'number' ? parsed.score : 0,
-            label: ['positive', 'neutral', 'negative'].includes(parsed.label) ? parsed.label : 'neutral',
+            label: parsed.label && ['positive', 'neutral', 'negative'].includes(parsed.label) ? parsed.label as 'positive' | 'neutral' | 'negative' : 'neutral',
             trendingTopics: Array.isArray(parsed.trendingTopics) ? parsed.trendingTopics : [],
             summary: typeof parsed.summary === 'string' ? parsed.summary : 'Summary unavailable'
         };

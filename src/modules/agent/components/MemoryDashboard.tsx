@@ -28,11 +28,15 @@ import {
     Activity,
     Database,
     Lightbulb,
+    Target,
+    Server,
+    Shield,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { auth } from '@/services/firebase';
 import type { AlwaysOnMemory, AlwaysOnMemoryCategory, MemoryTier } from '@/types/AlwaysOnMemory';
+import type { Directive } from '@/services/directive/DirectiveTypes';
 
 // ============================================================================
 // CONSTANTS
@@ -292,6 +296,61 @@ const StatCard: React.FC<{
     </div>
 );
 
+const DirectiveCard: React.FC<{ directive: Directive }> = ({ directive }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                marginBottom: 8,
+            }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <Target size={14} color="#3b82f6" />
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    Directive
+                </span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>
+                    ID: {directive.id}
+                </span>
+            </div>
+
+            <p style={{ fontSize: 14, color: 'white', margin: '0 0 8px 0', fontWeight: 500 }}>
+                {directive.goalAncestry?.find(g => g.type === 'task')?.description || 'No specific task goal provided.'}
+            </p>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(59,130,246,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                    <Server size={12} color="#3b82f6" />
+                    <span style={{ fontSize: 10, color: '#3b82f6', fontWeight: 600 }}>{directive.status}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(168,85,247,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                    <Sparkles size={12} color="#a855f7" />
+                    <span style={{ fontSize: 10, color: '#a855f7', fontWeight: 600 }}>{directive.assignedAgent}</span>
+                </div>
+                {directive.computeAllocation && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(251,191,36,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                        <Zap size={12} color="#fbbf24" />
+                        <span style={{ fontSize: 10, color: '#fbbf24', fontWeight: 600 }}>
+                            {directive.computeAllocation.tokensUsed} / {directive.computeAllocation.maxTokens}
+                        </span>
+                    </div>
+                )}
+                {directive.requiresDigitalHandshake && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(239,68,68,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                        <Shield size={12} color="#ef4444" />
+                        <span style={{ fontSize: 10, color: '#ef4444', fontWeight: 600 }}>Governed</span>
+                    </div>
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -300,6 +359,7 @@ export const MemoryDashboard: React.FC = () => {
     const {
         alwaysOnMemories: memories,
         alwaysOnInsights: insights,
+        activeDirectives: directives,
         alwaysOnEngineStatus: status,
         isMemoryDashboardOpen,
         memorySearchQuery,
@@ -313,6 +373,7 @@ export const MemoryDashboard: React.FC = () => {
         setSelectedMemoryId,
         loadAlwaysOnMemories,
         loadAlwaysOnInsights,
+        loadDirectives,
         refreshAlwaysOnEngineStatus,
         startMemoryEngine,
         stopMemoryEngine,
@@ -323,6 +384,7 @@ export const MemoryDashboard: React.FC = () => {
     } = useStore(useShallow((s) => ({
         alwaysOnMemories: s.alwaysOnMemories || [],
         alwaysOnInsights: s.alwaysOnInsights || [],
+        activeDirectives: s.activeDirectives || [],
         alwaysOnEngineStatus: s.alwaysOnEngineStatus || {},
         isMemoryDashboardOpen: s.isMemoryDashboardOpen || false,
         memorySearchQuery: s.memorySearchQuery || '',
@@ -336,6 +398,7 @@ export const MemoryDashboard: React.FC = () => {
         setSelectedMemoryId: s.setSelectedMemoryId,
         loadAlwaysOnMemories: s.loadAlwaysOnMemories,
         loadAlwaysOnInsights: s.loadAlwaysOnInsights,
+        loadDirectives: s.loadDirectives,
         refreshAlwaysOnEngineStatus: s.refreshAlwaysOnEngineStatus,
         startMemoryEngine: s.startMemoryEngine,
         stopMemoryEngine: s.stopMemoryEngine,
@@ -351,7 +414,7 @@ export const MemoryDashboard: React.FC = () => {
     const [isQuerying, setIsQuerying] = useState(false);
     const [isConsolidating, setIsConsolidating] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
-    const [activeTab, setActiveTab] = useState<'memories' | 'insights' | 'query'>('memories');
+    const [activeTab, setActiveTab] = useState<'memories' | 'insights' | 'directives' | 'query'>('memories');
     const ingestRef = useRef<HTMLTextAreaElement>(null);
 
     // Load data on mount
@@ -360,6 +423,7 @@ export const MemoryDashboard: React.FC = () => {
         if (userId && isMemoryDashboardOpen) {
             loadAlwaysOnMemories?.(userId);
             loadAlwaysOnInsights?.(userId);
+            loadDirectives?.(userId);
             refreshAlwaysOnEngineStatus?.(userId);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -607,7 +671,7 @@ export const MemoryDashboard: React.FC = () => {
                     gap: 2,
                     borderBottom: '1px solid rgba(255,255,255,0.04)',
                 }}>
-                    {(['memories', 'insights', 'query'] as const).map(tab => (
+                    {(['memories', 'insights', 'directives', 'query'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -843,6 +907,35 @@ export const MemoryDashboard: React.FC = () => {
                                     ))
                                 )}
                             </>
+                        )}
+
+                        {/* ---- DIRECTIVES TAB ---- */}
+                        {activeTab === 'directives' && (
+                            <div style={{ padding: '12px 24px', opacity: 0, animation: 'fadeIn 0.3s forwards' }}>
+                                <style dangerouslySetInnerHTML={{
+                                    __html: `
+                                    @keyframes fadeIn {
+                                        from { opacity: 0; transform: translateY(10px); }
+                                        to { opacity: 1; transform: translateY(0); }
+                                    }
+                                `}} />
+                                {(directives || []).length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '48px 24px',
+                                        color: 'rgba(255,255,255,0.3)',
+                                    }}>
+                                        <Target size={32} style={{ marginBottom: 12, opacity: 0.3 }} />
+                                        <p style={{ fontSize: 14, margin: 0 }}>
+                                            No active directives. The Operations Director will create tasks here.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    (directives || []).map((directive: Directive) => (
+                                        <DirectiveCard key={directive.id} directive={directive} />
+                                    ))
+                                )}
+                            </div>
                         )}
 
                         {/* ---- QUERY TAB ---- */}

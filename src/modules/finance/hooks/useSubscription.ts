@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { useCallback, useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
-import type { Subscription, UsageStats } from '@/services/subscription/types';
+import type { Subscription, UsageStats, SubscriptionTier } from '@/services/subscription/types';
 import { logger } from '@/utils/logger';
 
 export function useSubscription() {
@@ -42,13 +41,13 @@ export function useSubscription() {
         fetchSubscriptionData();
     }, [fetchSubscriptionData]);
 
-    const createCheckoutSession = useCallback(async (tier: string) => {
+    const createCheckoutSession = useCallback(async (tier: SubscriptionTier) => {
         if (!userProfile?.id) return;
 
         try {
             const result = await subscriptionService.createCheckoutSession({
                 userId: userProfile.id,
-                tier: tier as any,
+                tier: tier,
                 successUrl: window.location.origin + '/finance?session_id={CHECKOUT_SESSION_ID}',
                 cancelUrl: window.location.origin + '/finance'
             });

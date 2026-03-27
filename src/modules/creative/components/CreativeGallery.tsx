@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from 'react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
@@ -24,11 +23,11 @@ interface GalleryItemProps {
     setVideoInput: (key: 'firstFrame' | 'lastFrame', value: HistoryItem) => void;
     addCharacterReference: (ref: { image: HistoryItem; referenceType: "subject" | "style" | "reference" }) => void;
     setSelectedItem: (item: HistoryItem | null) => void;
-    toast: any;
+    toast: ReturnType<typeof useToast>;
     generationMode: string;
     onDelete: (id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => void;
     setPrompt: (prompt: string) => void;
-    setViewMode: (mode: any) => void;
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release') => void;
     playTrack: (track: HistoryItem) => void;
     pauseTrack: () => void;
     resumeTrack: () => void;
@@ -188,7 +187,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <Download size={14} />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.type, item.origin as any); }}
+                            onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.type, item.origin as 'generated' | 'uploaded'); }}
                             data-testid="delete-asset-btn"
                             className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
                             title="Delete"

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
@@ -119,7 +118,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         setIsSelectingEndFrame={setIsSelectingEndFrame}
                         generatedHistory={generatedHistory}
                         onEndFrameSelect={(histItem) => {
-                            setEndFrameItem(histItem as any);
+                            setEndFrameItem(histItem as { id: string; url: string; prompt: string; type: 'image' | 'video' });
                             setIsSelectingEndFrame(false);
                         }}
                     />

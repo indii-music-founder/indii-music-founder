@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Loader2, Megaphone, Mic2, Disc, MapPin, DollarSign } from 'lucide-react';
@@ -138,7 +137,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                                         <button
                                             key={t}
                                             type="button"
-                                            onClick={() => setType(t as any)}
+                                            onClick={() => setType(t as 'Album' | 'Single' | 'Tour')}
                                             className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${type === t
                                                 ? 'bg-sonic-purple/20 border-sonic-purple text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
                                                 : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
