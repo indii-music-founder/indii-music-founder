@@ -31,16 +31,37 @@ class ScanAudioDNA(Tool):
             except Exception as e:
                 return Response(message=f"Error scanning audio with ffprobe: {str(e)}\nEnsure ffprobe is installed.", break_loop=False)
 
-            # 2. Simulate BPM/Key scan if Essentia is missing (for the prototype)
+            # 2. Extract LUFS and True Peak via FFmpeg
+            integrated_lufs = -14.0
+            true_peak = -1.0
+            try:
+                ffmpeg_cmd = [
+                    "ffmpeg", "-nostats", "-i", file_path, "-af", "volumedetect,ebur128=peak=true", "-f", "null", "-"
+                ]
+                ffmpeg_res = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+                output = ffmpeg_res.stderr
+                
+                import re
+                lufs_match = re.search(r"I:\s+([-0-9.]+)\s+LUFS", output)
+                if lufs_match:
+                    integrated_lufs = float(lufs_match.group(1))
+
+                tp_match = re.search(r"True peak:\s+([-0-9.]+)\s+dBTP", output) or re.search(r"True peak:\s+([-0-9.]+)\s+dBFS", output)
+                if tp_match:
+                    true_peak = float(tp_match.group(1))
+            except Exception as e:
+                pass # Use fallbacks if FFmpeg processing fails
+
+            # 3. Simulate BPM/Key scan if Essentia is missing (for the prototype)
             # In production, this would call the Essentia C++ extractor
-            # Per spec, we need bpm, key, loudness.
             audio_dna = {
                 "filename": os.path.basename(file_path),
                 "duration_seconds": duration,
                 "duration_ms": int(duration * 1000),
                 "bpm": 120, # Simulated
                 "key": "C Major", # Simulated
-                "loudness": -14.0, # Simulated
+                "integrated_lufs": integrated_lufs,
+                "true_peak": true_peak,
                 "technical_metadata": {
                     "sample_rate": 44100, # In real implementation, parse from ffprobe
                     "channels": 2
