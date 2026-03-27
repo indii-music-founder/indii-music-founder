@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useMemo } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -13,29 +12,34 @@ interface StreamGrowthChartProps {
     showForecast?: boolean;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface ChartPayloadEntry { name: string; value: number; color?: string; payload?: { isForecast?: boolean } }
+interface CustomTooltipProps { active?: boolean; payload?: ChartPayloadEntry[]; label?: string }
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (!active || !payload?.length) return null;
     const isForecast = payload[0]?.payload?.isForecast;
     return (
         <div className="bg-slate-900/95 backdrop-blur border border-white/10 rounded-xl p-3 shadow-2xl text-sm">
             <p className="text-slate-400 text-xs mb-1">{label} {isForecast ? '· Forecast' : ''}</p>
-            {payload.map((entry: any) => (
+            {payload.map((entry) => (
                 entry.name !== 'lower' && entry.name !== 'upper' && (
                     <p key={entry.name} className="font-semibold" style={{ color: entry.color }}>
                         {Number(entry.value).toLocaleString()} streams
                     </p>
                 )
             ))}
-            {isForecast && payload.find((e: any) => e.name === 'lower') && (
+            {isForecast && payload.find((e) => e.name === 'lower') && (
                 <p className="text-xs text-slate-500 mt-0.5">
-                    Range: {Number(payload.find((e: any) => e.name === 'lower')?.value ?? 0).toLocaleString()}
+                    Range: {Number(payload.find((e) => e.name === 'lower')?.value ?? 0).toLocaleString()}
                     {' – '}
-                    {Number(payload.find((e: any) => e.name === 'upper')?.value ?? 0).toLocaleString()}
+                    {Number(payload.find((e) => e.name === 'upper')?.value ?? 0).toLocaleString()}
                 </p>
             )}
         </div>
     );
 };
+
+
 
 export const StreamGrowthChart: React.FC<StreamGrowthChartProps> = ({
     history,
@@ -78,11 +82,11 @@ export const StreamGrowthChart: React.FC<StreamGrowthChartProps> = ({
                 <AreaChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                     <defs>
                         <linearGradient id="streamGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.4} />
+                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
                             <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
                         </linearGradient>
                         <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%"  stopColor="#f59e0b" stopOpacity={0.3} />
+                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
                             <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
                         </linearGradient>
                     </defs>

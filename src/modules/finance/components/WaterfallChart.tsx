@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useMemo } from 'react';
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import { motion } from 'motion/react';
@@ -9,37 +9,37 @@ import { motion } from 'motion/react';
 // Amuse Free 0% vs Boost flat fee). This map uses the "most common" tier rate.
 // When the user's actual tier is known, override via the distributorId prop.
 const DISTRIBUTOR_FEE_RATES: Record<string, number> = {
-    distrokid:      0.00, // Annual flat fee, 0% commission
-    tunecore:       0.00, // Annual flat fee per release
-    cdbaby:         0.09, // 9% of streaming revenue
-    unitedmasters:  0.10, // 10% (Select tier) / 0% (Pro flat tier)
-    onerpm:         0.15, // 15%
-    believe:        0.15, // 15%
-    amuse:          0.00, // Free tier 0%, Boost tier flat fee
-    soundrop:       0.15, // 15%
-    ingrooves:      0.15, // ~15%
+    distrokid: 0.00, // Annual flat fee, 0% commission
+    tunecore: 0.00, // Annual flat fee per release
+    cdbaby: 0.09, // 9% of streaming revenue
+    unitedmasters: 0.10, // 10% (Select tier) / 0% (Pro flat tier)
+    onerpm: 0.15, // 15%
+    believe: 0.15, // 15%
+    amuse: 0.00, // Free tier 0%, Boost tier flat fee
+    soundrop: 0.15, // 15%
+    ingrooves: 0.15, // ~15%
     // Direct DSPs (indiiOS delivers as first-party distributor)
-    spotify:        0.00,
-    apple_music:    0.00,
-    youtube_music:  0.00,
-    amazon_music:   0.00,
+    spotify: 0.00,
+    apple_music: 0.00,
+    youtube_music: 0.00,
+    amazon_music: 0.00,
 };
 
 // Proper display names for known distributors
 const DISTRIBUTOR_DISPLAY_NAMES: Record<string, string> = {
-    distrokid:     'DistroKid',
-    tunecore:      'TuneCore',
-    cdbaby:        'CD Baby',
+    distrokid: 'DistroKid',
+    tunecore: 'TuneCore',
+    cdbaby: 'CD Baby',
     unitedmasters: 'UnitedMasters',
-    onerpm:        'ONErpm',
-    believe:       'Believe',
-    amuse:         'Amuse',
-    soundrop:      'Soundrop',
-    ingrooves:     'Ingrooves',
-    spotify:       'Spotify',
-    apple_music:   'Apple Music',
+    onerpm: 'ONErpm',
+    believe: 'Believe',
+    amuse: 'Amuse',
+    soundrop: 'Soundrop',
+    ingrooves: 'Ingrooves',
+    spotify: 'Spotify',
+    apple_music: 'Apple Music',
     youtube_music: 'YouTube Music',
-    amazon_music:  'Amazon Music',
+    amazon_music: 'Amazon Music',
 };
 
 // Effective US income + self-employment tax rate for independent music creators
@@ -54,20 +54,27 @@ interface WaterfallChartProps {
     splitsFraction?: number;
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface WaterfallPayloadData { name: string; value: number }
+interface WaterfallTooltipEntry { payload?: WaterfallPayloadData }
+interface WaterfallTooltipProps { active?: boolean; payload?: WaterfallTooltipEntry[] }
+
+const CustomTooltip = ({ active, payload }: WaterfallTooltipProps) => {
     if (active && payload && payload.length) {
-        const data = payload[0].payload;
+        const data = payload[0]?.payload;
+        if (!data) return null;
         return (
             <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-xl">
-                <p className="text-sm font-semibold text-white mb-1">{data.name}</p>
-                <p className={`text-sm font-bold ${data.value >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {data.value > 0 ? '+' : ''}{formatCurrency(data.value)}
+                <p className="text-sm font-semibold text-white mb-1">{data?.name}</p>
+                <p className={`text-sm font-bold ${(data?.value ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {(data?.value ?? 0) > 0 ? '+' : ''}{formatCurrency(data?.value ?? 0)}
+
                 </p>
             </div>
         );
     }
     return null;
 };
+
 
 export const WaterfallChart: React.FC<WaterfallChartProps> = ({
     grossRevenue,
@@ -100,8 +107,8 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
             : `Distributor (${Math.round(distRate * 100)}%)`;
 
         const bars = [
-            { name: 'Gross Revenue',            range: [0, gross],                                             value: gross,           color: '#a855f7', isTotal: true  },
-            { name: distLabel,                   range: [gross - distributorFee, gross],                        value: -distributorFee, color: '#ef4444', isTotal: false },
+            { name: 'Gross Revenue', range: [0, gross], value: gross, color: '#a855f7', isTotal: true },
+            { name: distLabel, range: [gross - distributorFee, gross], value: -distributorFee, color: '#ef4444', isTotal: false },
             { name: `Taxes (~${Math.round(DEFAULT_TAX_RATE * 100)}%)`, range: [gross - distributorFee - taxes, gross - distributorFee], value: -taxes, color: '#f97316', isTotal: false },
         ];
 

@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
+
 import { motion } from 'motion/react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { PlatformData } from '@/services/analytics/types';
@@ -9,14 +9,17 @@ interface PlatformBreakdownProps {
 }
 
 const PLATFORM_META: Record<string, { label: string; color: string }> = {
-    spotify:          { label: 'Spotify',    color: '#1DB954' },
-    apple_music:      { label: 'Apple Music',color: '#fc3c44' },
-    tiktok:           { label: 'TikTok',     color: '#69C9D0' },
-    youtube_shorts:   { label: 'YT Shorts',  color: '#FF0000' },
-    instagram_reels:  { label: 'Reels',      color: '#E1306C' },
+    spotify: { label: 'Spotify', color: '#1DB954' },
+    apple_music: { label: 'Apple Music', color: '#fc3c44' },
+    tiktok: { label: 'TikTok', color: '#69C9D0' },
+    youtube_shorts: { label: 'YT Shorts', color: '#FF0000' },
+    instagram_reels: { label: 'Reels', color: '#E1306C' },
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface PlatformTooltipPayloadEntry { value: number; payload?: { completionRate?: number; creatorCount?: number } }
+interface PlatformTooltipProps { active?: boolean; payload?: PlatformTooltipPayloadEntry[]; label?: string }
+
+const CustomTooltip = ({ active, payload, label }: PlatformTooltipProps) => {
     if (!active || !payload?.length) return null;
     return (
         <div className="bg-slate-900/95 border border-white/10 rounded-xl p-3 shadow-2xl text-sm">
@@ -27,14 +30,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                     Completion: {(payload[0].payload.completionRate * 100).toFixed(0)}%
                 </p>
             )}
-            {payload[0]?.payload?.creatorCount > 0 && (
+            {(payload[0]?.payload?.creatorCount ?? 0) > 0 && (
                 <p className="text-slate-500 text-xs">
-                    Creators: {payload[0].payload.creatorCount.toLocaleString()}
+                    Creators: {payload[0]?.payload?.creatorCount?.toLocaleString()}
                 </p>
             )}
         </div>
     );
 };
+
 
 export const PlatformBreakdown: React.FC<PlatformBreakdownProps> = ({ platforms }) => {
     const data = platforms.map(p => ({
