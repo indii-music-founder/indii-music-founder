@@ -1,12 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { Radio, PlusCircle } from 'lucide-react';
 import { ReleaseStatusCard } from './ReleaseStatusCard';
 import { SubmitReleaseModal } from './SubmitReleaseModal';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
+import type { DashboardRelease } from '@/services/distribution/types/distributor';
+
 
 interface ReleasesContentProps {
-    releases: any[];
+    releases: DashboardRelease[];
+
     loading: boolean;
     error: string | null;
     onRetry: () => void;

@@ -1,11 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { motion } from 'motion/react';
 import { Gauge } from 'lucide-react';
+import type { DashboardRelease } from '@/services/distribution/types/distributor';
 
-export function DeliveryHealthPanel({ releases }: { releases: any[] }) {
+export function DeliveryHealthPanel({ releases }: { releases: DashboardRelease[] }) {
     const total = releases.length || 1;
-    const live = releases.filter((r: any) => r.status === 'live' || r.deployments?.some((d: any) => d.status === 'live')).length;
+    const live = releases.filter((r) => Object.values(r.deployments ?? {}).some((d) => d.status === 'live')).length;
+
+
     const rate = total > 0 ? Math.round((live / total) * 100) : 0;
 
     return (
