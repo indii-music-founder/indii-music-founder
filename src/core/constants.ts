@@ -34,13 +34,14 @@ export const MODULE_IDS = [
     'memory',
     'settings',
     'mobile-remote',
-    'analytics'
+    'analytics',
+    'desktop'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
 
 // Modules that hide the sidebar and command bar
-export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding', 'investor', 'capture', 'mobile-remote'];
+export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding', 'investor', 'capture', 'mobile-remote', 'desktop'];
 
 // ============================================================================
 // Type Guard

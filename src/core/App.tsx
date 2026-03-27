@@ -79,7 +79,7 @@ const OnboardingPage = lazy(() => import('../modules/onboarding/pages/Onboarding
 const AgentDashboard = lazy(() => import('../modules/agent/components/AgentDashboard'));
 const DistributionDashboard = lazy(() => import('../modules/distribution/DistributionDashboard'));
 
-const FilePreview = lazy(() => import('../modules/files/FilePreview'));
+const FileDashboard = lazy(() => import('../modules/files/FileDashboard'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 const ObserverabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
@@ -93,6 +93,7 @@ const SelectOrg = lazy(() => import('../modules/select-org/SelectOrg'));
 const SettingsPanel = lazy(() => import('../modules/settings/SettingsPanel'));
 const MobileRemote = lazy(() => import('../modules/mobile-remote/MobileRemote'));
 const GrowthIntelligenceDashboard = lazy(() => import('../modules/analytics/GrowthIntelligenceDashboard'));
+const DesktopDashboard = lazy(() => import('../modules/desktop/DesktopDashboard'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -118,7 +119,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     // 'showroom': Showroom, // Removed
     'onboarding': OnboardingPage,
     'agent': AgentDashboard,
-    'files': FilePreview,
+    'files': FileDashboard,
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'marketplace': MarketplaceModule,
@@ -133,6 +134,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'settings': SettingsPanel,
     'mobile-remote': MobileRemote,
     'analytics': GrowthIntelligenceDashboard,
+    'desktop': DesktopDashboard,
 };
 
 // ============================================================================

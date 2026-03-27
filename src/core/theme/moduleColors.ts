@@ -408,6 +408,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-violet-500/5',
         cssVar: '--color-dept-default',
     },
+    desktop: {
+        // Desktop/System Config
+        text: 'text-gray-300',
+        bg: 'bg-gray-800/10',
+        border: 'border-gray-700',
+        ring: 'focus-within:ring-gray-600/50',
+        hoverText: 'hover:text-white',
+        hoverBg: 'hover:bg-gray-800/20',
+        cssVar: '--color-dept-default',
+    },
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {

@@ -1,6 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, X, ScanLine, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useStore } from '@/core/store';
+import { StorageService } from '@/services/StorageService';
+import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 // --- TACTILE "SOVEREIGN" STYLES ---
 // Toned down "Claymorphism" to align with the main app's sleek, dark 'Glass' theme.
@@ -8,14 +12,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 const clayButtonStyles = "relative overflow-hidden bg-card/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:bg-card/80 active:scale-95 shadow-lg shadow-black/50 hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]";
 
 export default function GhostCapture() {
+    const { currentProjectId, userProfile, createFileNode, setModule } = useStore();
+    const toast = useToast();
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [scanComplete, setScanComplete] = useState(false);
+    const [capturedFile, setCapturedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setCapturedFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result as string);
@@ -38,13 +46,56 @@ export default function GhostCapture() {
         setTimeout(() => {
             setIsScanning(false);
             setScanComplete(true);
-        }, 3000);
+        }, 2000);
     };
 
     const resetCapture = () => {
         setImagePreview(null);
+        setCapturedFile(null);
         setIsScanning(false);
         setScanComplete(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const transmitToStudio = async () => {
+        if (!capturedFile || !currentProjectId || !userProfile) {
+            toast.error("Please log in and select a project first.");
+            setModule('dashboard');
+            return;
+        }
+
+        const toastId = toast.loading("Transmitting to studio vault...");
+
+        try {
+            const timestamp = Date.now();
+            const sanitizedName = capturedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const storagePath = `projects/${currentProjectId}/${userProfile.id}/capture_${timestamp}_${sanitizedName}`;
+
+            const downloadUrl = await StorageService.uploadFile(capturedFile, storagePath);
+
+            await createFileNode(
+                capturedFile.name,
+                null,
+                currentProjectId,
+                userProfile.id,
+                'image',
+                {
+                    url: downloadUrl,
+                    storagePath,
+                    size: capturedFile.size,
+                    mimeType: capturedFile.type
+                }
+            );
+
+            toast.success("Capture transmitted successfully!");
+            setModule('files');
+        } catch (err) {
+            logger.error("Capture upload failed:", err);
+            toast.error("Failed to transmit capture.");
+            resetCapture();
+        } finally {
+            toast.dismiss(toastId);
+        }
     };
 
     return (
@@ -53,14 +104,12 @@ export default function GhostCapture() {
             {/* Header */}
             <header className="px-6 py-4 flex justify-between items-center z-10">
                 <div className="flex flex-col">
-                    <span className="text-xs text-teal-500 font-mono tracking-widest uppercase">Mobile Link</span>
-                    <h1 className="text-xl font-bold tracking-tight">Ghost Capture</h1>
+                    <span className="text-xs text-teal-500 font-mono tracking-widest uppercase">Quick Asset Setup</span>
+                    <h1 className="text-xl font-bold tracking-tight">Rapid Capture</h1>
                 </div>
-                {imagePreview && !isScanning && (
-                    <button onClick={resetCapture} className="p-2 bg-gray-800/50 rounded-full hover:bg-gray-700 transition">
-                        <X size={20} />
-                    </button>
-                )}
+                <button onClick={() => setModule('dashboard')} className="p-2 bg-gray-800/50 rounded-full hover:bg-gray-700 transition">
+                    <X size={20} />
+                </button>
             </header>
 
             {/* Main View Area */}
@@ -168,7 +217,7 @@ export default function GhostCapture() {
                                     className="absolute bottom-8 left-0 right-0 flex justify-center px-6"
                                 >
                                     <button
-                                        onClick={resetCapture}
+                                        onClick={transmitToStudio}
                                         className="w-full max-w-sm bg-gradient-to-r from-teal-500 to-indigo-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 active:scale-95 transition-transform"
                                     >
                                         Transmit to Studio <ArrowRight size={20} />
