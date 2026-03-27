@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from 'react';
 
-import { Maximize, Eraser, Users } from 'lucide-react';
+import { Maximize, Eraser } from 'lucide-react';
 import ReactFlow, {
     ReactFlowProvider,
     addEdge,
@@ -40,8 +40,7 @@ interface WorkflowEditorProps {
 
 const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false }) => {
     const { nodes, edges, setNodes, setEdges, addNode } = useStore();
-    // Presence count — current user only until CRDT/Yjs (item 110) is implemented
-    const collaborators = 1;
+
 
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const [reactFlowInstance, setReactFlowInstance] = React.useState<ReactFlowInstance | null>(null);
@@ -131,13 +130,6 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
                 />
 
                 <Panel position="top-right" className="flex gap-2">
-                    {!readOnly && (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-900/30 border border-indigo-500/30 rounded-lg text-indigo-300 backdrop-blur shadow-lg mr-2" title="Local presence — CRDT/Yjs not yet implemented">
-                            <Users size={16} />
-                            <span className="text-xs font-medium">{collaborators} Active</span>
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1" />
-                        </div>
-                    )}
                     <button
                         className="p-2 bg-gray-800/80 backdrop-blur border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors shadow-lg"
                         onClick={() => reactFlowInstance?.fitView()}

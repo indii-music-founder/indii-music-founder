@@ -5,6 +5,7 @@ import WorkflowGeneratorModal from './components/WorkflowGeneratorModal';
 import WorkflowTemplateModal from './components/WorkflowTemplateModal';
 import WorkflowLoadModal from './components/WorkflowLoadModal';
 import { useStore } from '../../core/store';
+import type { ModuleId } from '@/core/constants';
 import {
     Play, Loader2, GitBranch, Sparkles, LayoutTemplate, Save, FolderOpen,
     Cpu, Zap, Clock, Music, Image, Mail, Filter, Webhook,
@@ -19,6 +20,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { useMobile } from '@/hooks/useMobile';
 import { logger } from '@/utils/logger';
+import { useToast } from '@/core/context/ToastContext';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 
@@ -36,6 +38,7 @@ import 'driver.js/dist/driver.css';
 export default function WorkflowLab() {
     // Hooks must be called unconditionally before early returns
     const { nodes, edges, setNodes, setEdges, user } = useStore();
+    const { success: toastSuccess, error: toastError } = useToast();
     const [isRunning, setIsRunning] = useState(false);
     const [workflowName, setWorkflowName] = useState('My Workflow');
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | undefined>(undefined);
@@ -164,7 +167,7 @@ export default function WorkflowLab() {
             setGeneratorPrompt('');
         } catch (error) {
             logger.error("Failed to generate workflow:", error);
-            alert("Failed to generate workflow. Please try again.");
+            toastError('Failed to generate workflow. Please try again.');
         } finally {
             setIsGenerating(false);
         }
@@ -173,18 +176,30 @@ export default function WorkflowLab() {
     const handleLoadTemplate = (templateId: string) => {
         const template = WORKFLOW_TEMPLATES.find(t => t.id === templateId);
         if (template) {
-            const newNodes = template.nodes.map(n => ({ ...n, id: n.id === 'start' || n.id === 'end' ? n.id : uuidv4() }));
-            setNodes(template.nodes.map(n => ({ ...n, data: { ...n.data, status: Status.PENDING } })));
-            setEdges(template.edges);
+            // Remap IDs to fresh UUIDs so multiple template loads don't collide
+            const idMap = new Map<string, string>();
+            const newNodes = template.nodes.map(n => {
+                const newId = n.id === 'start' || n.id === 'end' ? n.id : uuidv4();
+                idMap.set(n.id, newId);
+                return { ...n, id: newId, data: { ...n.data, status: Status.PENDING } };
+            });
+            const newEdges = template.edges.map(e => ({
+                ...e,
+                id: uuidv4(),
+                source: idMap.get(e.source) ?? e.source,
+                target: idMap.get(e.target) ?? e.target,
+            }));
+            setNodes(newNodes);
+            setEdges(newEdges);
             setWorkflowName(template.name);
-            setCurrentWorkflowId(undefined); // Reset ID as this is a new instance from template
+            setCurrentWorkflowId(undefined); // Fresh instance from template
             setShowTemplates(false);
         }
     };
 
     const handleSaveWorkflow = async () => {
         if (!currentUser) {
-            alert("Please wait for login...");
+            toastError('Please wait for sign-in to complete before saving.');
             return;
         }
         setIsSaving(true);
@@ -201,9 +216,10 @@ export default function WorkflowLab() {
                 viewport
             );
             setCurrentWorkflowId(id);
+            toastSuccess('Workflow saved.');
         } catch (error) {
             logger.error("Failed to save workflow:", error);
-            alert(`Failed to save workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            toastError(`Failed to save workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsSaving(false);
             setSaveStatus('saved');
@@ -411,28 +427,38 @@ function SavedWorkflowsWidget({
 /* ================================================================== */
 
 function NodeLibraryPanel() {
-    const nodeTypes = [
-        { name: 'AI Generate', icon: Sparkles, category: 'AI', color: 'text-purple-400' },
-        { name: 'Process Audio', icon: Music, category: 'Audio', color: 'text-blue-400' },
-        { name: 'Generate Image', icon: Image, category: 'AI', color: 'text-pink-400' },
-        { name: 'Send Email', icon: Mail, category: 'Action', color: 'text-green-400' },
-        { name: 'Filter', icon: Filter, category: 'Logic', color: 'text-yellow-400' },
-        { name: 'Webhook', icon: Webhook, category: 'Integration', color: 'text-orange-400' },
-        { name: 'Delay', icon: Clock, category: 'Flow', color: 'text-cyan-400' },
-        { name: 'Transform', icon: Cpu, category: 'Data', color: 'text-emerald-400' },
+    const nodeDefs = [
+        { name: 'AI Generate', nodeType: 'departmentNode', data: { departmentName: 'AI Department' }, icon: Sparkles, category: 'AI', color: 'text-purple-400' },
+        { name: 'Process Audio', nodeType: 'audioSegmentNode', data: {}, icon: Music, category: 'Audio', color: 'text-blue-400' },
+        { name: 'Generate Image', nodeType: 'departmentNode', data: { departmentName: 'Art Department' }, icon: Image, category: 'AI', color: 'text-pink-400' },
+        { name: 'Send Email', nodeType: 'outputNode', data: {}, icon: Mail, category: 'Action', color: 'text-green-400' },
+        { name: 'Filter', nodeType: 'logicNode', data: { departmentName: 'Logic', jobId: 'gatekeeper' }, icon: Filter, category: 'Logic', color: 'text-yellow-400' },
+        { name: 'Webhook', nodeType: 'inputNode', data: {}, icon: Webhook, category: 'Integration', color: 'text-orange-400' },
+        { name: 'Delay', nodeType: 'logicNode', data: { departmentName: 'Logic', jobId: 'router' }, icon: Clock, category: 'Flow', color: 'text-cyan-400' },
+        { name: 'Transform', nodeType: 'departmentNode', data: { departmentName: 'Music Department' }, icon: Cpu, category: 'Data', color: 'text-emerald-400' },
     ];
+
+    const onDragStart = (event: React.DragEvent, nodeType: string, data: Record<string, string>) => {
+        event.dataTransfer.setData('application/reactflow', nodeType);
+        event.dataTransfer.effectAllowed = 'move';
+        Object.entries(data).forEach(([key, value]) => {
+            event.dataTransfer.setData(`application/${key}`, value);
+        });
+    };
 
     return (
         <div id="tour-workflow-library" className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
                 <Zap size={10} /> Node Library
             </h3>
+            <p className="text-[10px] text-gray-700 px-1 mb-2">Drag onto the canvas ↙</p>
             <div className="space-y-1">
-                {nodeTypes.map((n) => (
+                {nodeDefs.map((n) => (
                     <div
                         key={n.name}
-                        className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-grab"
+                        className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-grab active:cursor-grabbing"
                         draggable
+                        onDragStart={(e) => onDragStart(e, n.nodeType, n.data as Record<string, string>)}
                     >
                         <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
                             <n.icon size={12} className={n.color} />
@@ -448,8 +474,10 @@ function NodeLibraryPanel() {
     );
 }
 
-function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; data?: { label?: string; status?: string }; type?: string }> }) {
-    const selectedCount = nodes.length;
+function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; selected?: boolean; data?: { label?: string; status?: string; departmentName?: string }; type?: string }> }) {
+    const selectedNodes = nodes.filter((n) => n.selected);
+    const totalCount = nodes.length;
+    const selectedCount = selectedNodes.length;
 
     return (
         <div id="tour-workflow-inspector" className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
@@ -459,22 +487,28 @@ function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; data?: { lab
             <div className="space-y-2">
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
                     <span className="text-[11px] text-gray-400">Total Nodes</span>
-                    <span className="text-xs font-bold text-purple-400">{selectedCount}</span>
+                    <span className="text-xs font-bold text-purple-400">{totalCount}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
-                    <span className="text-[11px] text-gray-400">Status</span>
+                    <span className="text-[11px] text-gray-400">Selected</span>
                     <span className="text-xs font-bold text-green-400">
-                        {selectedCount > 0 ? 'Ready' : 'Empty'}
+                        {selectedCount > 0 ? `${selectedCount} node${selectedCount > 1 ? 's' : ''}` : 'None'}
                     </span>
                 </div>
-                {nodes.slice(0, 4).map((n) => (
-                    <div key={n.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.01]">
-                        <Cpu size={10} className="text-gray-600 flex-shrink-0" />
-                        <span className="text-[11px] text-gray-400 truncate">{n.data?.label || n.type || n.id}</span>
-                    </div>
-                ))}
-                {nodes.length > 4 && (
-                    <p className="text-[10px] text-gray-600 px-2">+{nodes.length - 4} more nodes</p>
+                {selectedCount > 0 ? (
+                    selectedNodes.slice(0, 4).map((n) => (
+                        <div key={n.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-purple-500/5 border border-purple-500/10">
+                            <Cpu size={10} className="text-purple-400 flex-shrink-0" />
+                            <span className="text-[11px] text-gray-300 truncate">
+                                {n.data?.departmentName || n.data?.label || n.type || n.id}
+                            </span>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-[10px] text-gray-700 px-2 py-1">Click a node to inspect it</p>
+                )}
+                {selectedCount > 4 && (
+                    <p className="text-[10px] text-gray-600 px-2">+{selectedCount - 4} more selected</p>
                 )}
             </div>
         </div>
@@ -482,10 +516,12 @@ function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; data?: { lab
 }
 
 function HelpDocsPanel() {
+    const { setModule } = useStore();
+    const goToKnowledge = () => setModule('knowledge' as ModuleId);
     const links = [
-        { label: 'Getting Started', icon: BookOpen, desc: 'Learn the basics' },
-        { label: 'Node Reference', icon: HelpCircle, desc: 'All node types' },
-        { label: 'Community', icon: MessageSquare, desc: 'Ask questions' },
+        { label: 'Getting Started', icon: BookOpen, desc: 'Learn the basics', onClick: goToKnowledge },
+        { label: 'Node Reference', icon: HelpCircle, desc: 'All node types', onClick: goToKnowledge },
+        { label: 'Community', icon: MessageSquare, desc: 'Ask questions', onClick: goToKnowledge },
     ];
 
     return (
@@ -495,13 +531,17 @@ function HelpDocsPanel() {
             </h3>
             <div className="space-y-1">
                 {links.map((l) => (
-                    <div key={l.label} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                    <button
+                        key={l.label}
+                        onClick={l.onClick}
+                        className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors text-left"
+                    >
                         <l.icon size={12} className="text-purple-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                             <p className="text-xs text-gray-300">{l.label}</p>
                             <p className="text-[10px] text-gray-600">{l.desc}</p>
                         </div>
-                    </div>
+                    </button>
                 ))}
             </div>
         </div>
