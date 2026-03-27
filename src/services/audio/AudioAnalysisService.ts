@@ -1,4 +1,4 @@
- 
+
 // Lazy-load essentia.js (2.6MB) only when audio analysis is needed
 type EssentiaModule = typeof import('essentia.js');
 // import * as tf from '@tensorflow/tfjs'; // Removed per memory/architecture rules
@@ -43,12 +43,16 @@ declare global {
     }
 }
 
+import { DSPComplianceValidator, type DSPComplianceReport } from './DSPComplianceValidator';
+
 export interface TechnicalAudit {
     peakLevel: number;
+    truePeakDb: number;
     integratedLoudness: number;
     sampleRate: number;
     isStereo: boolean;
     rejectionRisks: string[];
+    compliance?: DSPComplianceReport;
 }
 
 export interface AudioFeatures {
@@ -302,15 +306,24 @@ export class AudioAnalysisService {
             if (audioBuffer.sampleRate < 44100) rejectionRisks.push('Sample rate below industry standard (44.1kHz)');
 
             const loudnessLUFS = -20 + (energyValue * 100); // Approximation
+            const truePeakDb = 20 * Math.log10(maxPeak || 0.00001);
+
+            const compliance = DSPComplianceValidator.validateAudio(loudnessLUFS, truePeakDb, audioBuffer.sampleRate, 16);
+            if (compliance.flags.length > 0) {
+                rejectionRisks.push(...compliance.flags);
+            }
+
             if (loudnessLUFS > -10) rejectionRisks.push('Integrated loudness too high (risk of DSP normalization)');
             if (loudnessLUFS < -18) rejectionRisks.push('Integrated loudness too low');
 
             const audit: TechnicalAudit = {
                 peakLevel: 20 * Math.log10(maxPeak || 0.00001),
+                truePeakDb,
                 integratedLoudness: loudnessLUFS,
                 sampleRate: audioBuffer.sampleRate,
                 isStereo: audioBuffer.numberOfChannels > 1,
-                rejectionRisks
+                rejectionRisks,
+                compliance
             };
 
             // BASIC SEGMENTATION (Viral DNA)
