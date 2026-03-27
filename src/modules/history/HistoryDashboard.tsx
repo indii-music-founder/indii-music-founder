@@ -18,7 +18,15 @@ export default function HistoryDashboard() {
 
     // Combine sessions and files into a single unified timeline
     const timelineItems = useMemo(() => {
-        const items: Array<{ type: 'agent' | 'file'; id: string; title: string; timestamp: number; data: unknown }> = [];
+        interface TimelineItem {
+            type: 'agent' | 'file';
+            id: string;
+            title: string;
+            timestamp: number;
+            fileType?: string;
+            messageCount?: number;
+        }
+        const items: TimelineItem[] = [];
 
         if (filterType === 'all' || filterType === 'agent') {
             Object.values(sessions).forEach(session => {
@@ -27,7 +35,7 @@ export default function HistoryDashboard() {
                     id: session.id,
                     title: session.title || 'Temporal Stream',
                     timestamp: session.updatedAt,
-                    data: session
+                    messageCount: session.messages?.length || 0,
                 });
             });
         }
@@ -40,7 +48,7 @@ export default function HistoryDashboard() {
                     id: file.id,
                     title: file.name,
                     timestamp: file.createdAt || file._mockTimestamp || parseInt(file.id, 36) % 10000000000 + 1700000000000,
-                    data: file
+                    fileType: (file as { fileType?: string }).fileType,
                 });
             });
         }
@@ -147,7 +155,7 @@ export default function HistoryDashboard() {
                                                 <div className="bg-surface/30 border border-white/5 rounded-xl p-4 hover:bg-surface/50 transition-colors flex items-center justify-between group-hover:border-white/10">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center flex-shrink-0">
-                                                            {item.type === 'agent' ? <Bot size={20} className="text-purple-400" /> : getFileIcon(item.data.fileType)}
+                                                            {item.type === 'agent' ? <Bot size={20} className="text-purple-400" /> : getFileIcon(item.fileType || 'file')}
                                                         </div>
                                                         <div>
                                                             <h3 className="font-bold text-gray-200">{item.title}</h3>
@@ -158,7 +166,7 @@ export default function HistoryDashboard() {
                                                                 {item.type === 'agent' && (
                                                                     <>
                                                                         <span className="w-1 h-1 rounded-full bg-white/20" />
-                                                                        <span className="flex items-center gap-1"><MessageSquare size={10} /> {item.data.messages?.length || 0} msgs</span>
+                                                                        <span className="flex items-center gap-1"><MessageSquare size={10} /> {item.messageCount || 0} msgs</span>
                                                                     </>
                                                                 )}
                                                             </div>

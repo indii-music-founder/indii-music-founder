@@ -6,7 +6,7 @@ import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const usePublicist = () => {
     const { userProfile } = useStore();
-    const [activeTab, setActiveTab] = useState<'campaigns' | 'contacts'>('campaigns');
+    const [activeTab, setActiveTab] = useState<'campaigns' | 'contacts' | 'superfans'>('campaigns');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'Live' | 'Draft' | 'Scheduled'>('all');
 

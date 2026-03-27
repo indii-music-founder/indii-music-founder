@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
 
@@ -16,9 +15,8 @@ export const createSidecarSlice: StateCreator<SidecarSlice> = (set) => ({
     setSidecarStatus: (status) => set({ sidecarStatus: status }),
     triggerSidecarRestart: () => {
         set({ sidecarStatus: 'checking' });
-        if ((window.electronAPI as any)?.sidecar?.restart) {
-            (window.electronAPI as any).sidecar.restart();
-
+        if (window.electronAPI?.sidecar?.restart) {
+            window.electronAPI.sidecar.restart();
         } else {
             logger.warn('[SidecarSlice] Sidecar restart IPC not available');
         }
