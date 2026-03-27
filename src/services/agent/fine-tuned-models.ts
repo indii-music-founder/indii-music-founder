@@ -33,8 +33,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'legal':           'projects/223837784072/locations/us-central1/endpoints/2912668424385593344',
     // R6 — gemini-2.5-flash base (~131 examples, ≥50% expert) — 2026-03-26
     'distribution':    'projects/223837784072/locations/us-central1/endpoints/3941740939239751680',
-    // R6 — gemini-2.5-flash base (~110 examples, ≥50% expert) — TODO: job still running
-    'marketing':       'projects/223837784072/locations/us-central1/endpoints/4428411173972475904',
+    // R6 — gemini-2.5-flash base (~110 examples, ≥50% expert) — 2026-03-27
+    'marketing':       'projects/223837784072/locations/us-central1/endpoints/5746611266466611200',
     // R6 — gemini-2.5-flash-lite base (~104 examples, ≥50% expert) — 2026-03-26
     'social':          'projects/223837784072/locations/us-central1/endpoints/6535251374651736064',
     // R6 — gemini-2.5-flash base (~109 examples, ≥50% expert) — 2026-03-26
@@ -51,8 +51,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'publicist':       'projects/223837784072/locations/us-central1/endpoints/8078297196979552256',
     // R6 — gemini-2.5-flash base (~110 examples, ≥50% expert) — 2026-03-26
     'music':           'projects/223837784072/locations/us-central1/endpoints/4597014685022158848',
-    // R6 — gemini-2.5-flash-lite base (~134 examples, ≥50% expert) — TODO: job still running
-    'video':           'projects/223837784072/locations/us-central1/endpoints/7846080341193261056',
+    // R6 — gemini-2.5-flash-lite base (~134 examples, ≥50% expert) — 2026-03-27
+    'video':           'projects/223837784072/locations/us-central1/endpoints/6602242419108872192',
     // R6 — gemini-2.5-flash-lite base (~111 examples, ≥50% expert) — TODO: job still running
     'devops':          'projects/223837784072/locations/us-central1/endpoints/953884061456138240',
     // R6 — gemini-2.5-flash-lite base (~87 examples, ≥50% expert) — TODO: job still running
@@ -61,8 +61,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'producer':        'projects/223837784072/locations/us-central1/endpoints/8499102287161982976',
     // R6 — gemini-2.5-flash-lite base (~106 examples, ≥50% expert) — 2026-03-26
     'director':        'projects/223837784072/locations/us-central1/endpoints/5461705813477294080',
-    // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — TODO: job still running
-    'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/1505012065855602688',
+    // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — 2026-03-27
+    'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/6323072018770034688',
     // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — 2026-03-27
     'merchandise':     'projects/223837784072/locations/us-central1/endpoints/5343486323258818560',
     // R6 — gemini-2.5-flash-lite base (~120 examples, ≥50% expert) — TODO: job still running
