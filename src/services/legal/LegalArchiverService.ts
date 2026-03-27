@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { Timestamp, FieldValue, getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { app } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
@@ -8,7 +7,7 @@ export interface LegalAgreement {
     type: 'terms' | 'privacy' | 'refund' | 'eula';
     versionId: string; // semver
     contentHash: string;
-    publishedAt: any;
+    publishedAt: Timestamp | FieldValue;
     status: 'draft' | 'published' | 'archived';
     publicUrl: string;
 }

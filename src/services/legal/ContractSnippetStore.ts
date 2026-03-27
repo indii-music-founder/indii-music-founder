@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { Timestamp, getFirestore, collection, addDoc, getDocs, query, where, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { app } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
@@ -10,7 +9,7 @@ export interface ContractSnippet {
     category: 'talent' | 'licensing' | 'distribution' | 'marketing' | 'performance';
     status: 'draft' | 'active' | 'archived';
     tags: string[];
-    updatedAt: any;
+    updatedAt: Date | Timestamp;
 }
 
 export class ContractSnippetStore {

@@ -53,12 +53,13 @@ export class MetricsService {
                 metrics.totalCost += trace.totalUsage.estimatedCost || 0;
             }
 
-            // Aggregate latency
-            if (trace.startTime && trace.endTime) {
+            // Aggregate latency — narrow FieldValue union to Timestamp before calling toMillis()
+            if (trace.startTime instanceof Timestamp && trace.endTime instanceof Timestamp) {
                 const start = trace.startTime.toMillis();
                 const end = trace.endTime.toMillis();
                 totalLatency += (end - start);
             }
+
 
             // Aggregate errors
             if (trace.status === 'failed') {

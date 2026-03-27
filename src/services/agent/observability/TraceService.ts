@@ -48,7 +48,8 @@ export class TraceService {
                 agentId,
                 input,
                 status: 'pending',
-                startTime: serverTimestamp(),
+                startTime: serverTimestamp() as unknown as import('firebase/firestore').Timestamp,
+
                 steps: [],
                 swarmId: metadata?.swarmId || (parentTraceId ? null : traceId),
                 metadata: {

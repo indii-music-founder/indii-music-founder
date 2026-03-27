@@ -2,18 +2,21 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { TraceViewer } from './TraceViewer';
 import { AgentTrace } from '@/services/agent/observability/types';
+import type { Timestamp } from 'firebase/firestore';
+
 
 // Mock data
 const mockTrace: AgentTrace = {
     id: 'trace-123',
     userId: 'user-1',
     agentId: 'agent-007',
-    startTime: { seconds: 1600000000, nanoseconds: 0 },
+    startTime: { seconds: 1600000000, nanoseconds: 0, toDate: () => new Date(), toMillis: () => 1600000000000, isEqual: () => false, valueOf: () => '' } as unknown as Timestamp,
     status: 'completed',
     input: 'test input',
     steps: [],
-    endTime: { seconds: 1600000010, nanoseconds: 0 },
+    endTime: { seconds: 1600000010, nanoseconds: 0, toDate: () => new Date(), toMillis: () => 1600000010000, isEqual: () => false, valueOf: () => '' } as unknown as Timestamp,
 };
+
 
 // Mock dependencies
 const mockOnSnapshot = vi.fn((query, callback) => {
@@ -30,7 +33,7 @@ const mockOnSnapshot = vi.fn((query, callback) => {
 });
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     collection: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
@@ -53,12 +56,12 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('./SwarmGraph', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     SwarmGraph: () => <div data-testid="swarm-graph-mock">Swarm Graph</div>
 }));
 
 vi.mock('./XRayPanel', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     XRayPanel: ({ trace }: { trace?: AgentTrace | null }) => (
         <div data-testid="xray-panel-mock">
             {trace ? `X-Ray Trace: ${trace.id}` : 'X-Ray Panel'}
@@ -104,14 +107,14 @@ describe('TraceViewer Accessibility (⌨️ Keyboard)', () => {
     });
 
     it('verifies visual focus indication', async () => {
-         render(<TraceViewer />);
-         await screen.findByText('test input');
+        render(<TraceViewer />);
+        await screen.findByText('test input');
 
-         const buttons = screen.getAllByRole('button');
-         const traceButton = buttons.find(
+        const buttons = screen.getAllByRole('button');
+        const traceButton = buttons.find(
             b => b.textContent?.includes('agent-007')
-         );
+        );
 
-         expect(traceButton).toHaveClass('focus-visible:ring-2');
+        expect(traceButton).toHaveClass('focus-visible:ring-2');
     });
 });

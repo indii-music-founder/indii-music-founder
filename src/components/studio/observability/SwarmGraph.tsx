@@ -83,7 +83,7 @@ export function SwarmGraph({ swarmId, onNodeClick }: SwarmGraphProps) {
             .filter(t => t.metadata?.parentTraceId)
             .map(t => ({
                 id: `e-${t.metadata?.parentTraceId}-${t.id}`,
-                source: t.metadata?.parentTraceId,
+                source: String(t.metadata?.parentTraceId),
                 target: t.id,
                 animated: t.status === 'pending',
                 style: { stroke: '#666' },
@@ -92,6 +92,7 @@ export function SwarmGraph({ swarmId, onNodeClick }: SwarmGraphProps) {
                     color: '#666',
                 },
             }));
+
 
         // Simple horizontal centering if no better layout is available
         // We can improve this with d3-hierarchy or dagre later

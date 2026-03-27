@@ -36,7 +36,8 @@ export function useTimelineDrag() {
     }, [setSelectedClipId]);
 
     useEffect(() => {
-        const handleMouseMove = throttle((e: MouseEvent) => {
+        const _moveCb = (e: MouseEvent) => {
+
             if (!dragStateRef.current) return;
 
             const currentDragState = dragStateRef.current;
@@ -50,7 +51,10 @@ export function useTimelineDrag() {
                 const newDuration = Math.max(1, currentDragState.originalDuration + deltaFrames);
                 updateClipRef.current(currentDragState.clipId, { durationInFrames: newDuration });
             }
-        }, 16);
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- throttle HoF requires any[] constraint
+        const handleMouseMove = throttle(_moveCb as (...a: any[]) => any, 16);
+
 
         const handleMouseUp = () => {
             setDragState(null);
