@@ -37,11 +37,11 @@ Return ONLY a JSON object that adheres to the following schema:
  */
 export const analyzeAudioFn = () => functions
     .region("us-west1")
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "512MB"
-    })
+     })
     .https.onCall(async (data: unknown, context) => {
         // 1. Auth Check
         if (!context.auth) {

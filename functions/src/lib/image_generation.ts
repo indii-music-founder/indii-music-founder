@@ -285,11 +285,11 @@ const service = new GeminiImageService();
 
 export const generateImageV3Fn = () => functions
     .region("us-west1")
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "512MB"
-    })
+     })
     .https.onCall(async (data: unknown, context) => {
         // 1. Authenticate
         if (!context.auth) {
@@ -314,11 +314,11 @@ export const generateImageV3Fn = () => functions
 
 export const editImageFn = () => functions
     .region("us-west1")
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "512MB"
-    })
+     })
     .https.onCall(async (data: unknown, context) => {
         // 1. Authenticate
         if (!context.auth) {

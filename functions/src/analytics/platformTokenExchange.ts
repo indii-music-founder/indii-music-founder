@@ -51,7 +51,7 @@ function assertAuth(context: functions.https.CallableContext): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsExchangeToken = functions
-    .runWith({ secrets: ALL_SECRETS, timeoutSeconds: 30 })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: ALL_SECRETS, timeoutSeconds: 30  })
     .https.onCall(async (data: unknown, context) => {
         const uid = assertAuth(context);
         const { platform, code, redirectUri, codeVerifier } = data as {
@@ -111,7 +111,7 @@ export const analyticsExchangeToken = functions
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsRefreshToken = functions
-    .runWith({ secrets: ALL_SECRETS, timeoutSeconds: 30 })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: ALL_SECRETS, timeoutSeconds: 30  })
     .https.onCall(async (data: unknown, context) => {
         const uid = assertAuth(context);
         const { platform } = data as { platform: string };
@@ -174,7 +174,7 @@ export const analyticsRefreshToken = functions
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsRevokeToken = functions
-    .runWith({ secrets: ALL_SECRETS, timeoutSeconds: 15 })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: ALL_SECRETS, timeoutSeconds: 15  })
     .https.onCall(async (data: unknown, context) => {
         const uid = assertAuth(context);
         const { platform } = data as { platform: string };

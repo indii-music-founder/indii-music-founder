@@ -26,7 +26,7 @@ export type CampaignExecutionRequest = z.infer<typeof CampaignExecutionRequestSc
  * Currently simulates scheduling success.
  */
 export const executeCampaign = functions
-    .runWith({ secrets: [geminiApiKey], timeoutSeconds: 60 })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  secrets: [geminiApiKey], timeoutSeconds: 60  })
     .https.onCall(async (data, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Auth required");
@@ -64,7 +64,7 @@ export const executeCampaign = functions
  */
 export const dispatchSocialPost = functions
     .region("us-west1")
-    .runWith({ timeoutSeconds: 120, memory: "512MB" })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 120, memory: "512MB"  })
     .https.onCall(async (data: any, context: any) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
@@ -87,7 +87,7 @@ export const dispatchSocialPost = functions
  */
 export const createInfluencerBounty = functions
     .region("us-west1")
-    .runWith({ timeoutSeconds: 60, memory: "256MB" })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 60, memory: "256MB"  })
     .https.onCall(async (data: any, context: any) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
