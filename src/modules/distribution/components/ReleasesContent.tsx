@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Radio, PlusCircle } from 'lucide-react';
+import { Radio, PlusCircle, AlertTriangle } from 'lucide-react';
 import { ReleaseStatusCard } from './ReleaseStatusCard';
 import { SubmitReleaseModal } from './SubmitReleaseModal';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
@@ -29,17 +29,22 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
 
     if (error) {
         return (
-            <div className="p-8 border border-red-900/50 rounded-xl bg-red-900/10 text-center">
-                <p className="text-red-400 text-sm">{error}</p>
+            <div className="p-6 border border-red-900/30 rounded-xl bg-red-900/[0.06] text-center flex flex-col items-center gap-3">
+                <AlertTriangle size={20} className="text-red-400/70" />
+                <div>
+                    <p className="text-red-400 text-sm font-semibold">Failed to load releases</p>
+                    <p className="text-red-400/60 text-xs mt-0.5">{error}</p>
+                </div>
                 <button
                     onClick={onRetry}
-                    className="mt-4 px-4 py-2 bg-red-900/20 hover:bg-red-900/30 text-red-400 rounded-lg transition-colors text-xs font-bold"
+                    className="px-4 py-1.5 bg-red-900/20 hover:bg-red-900/30 text-red-400 rounded-lg transition-colors text-xs font-bold border border-red-900/30"
                 >
                     Retry
                 </button>
             </div>
         );
     }
+
 
     return (
         <>
