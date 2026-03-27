@@ -49,8 +49,15 @@ export class HandoffService {
 
                 await setDoc(doc(db, 'users', user.uid, 'settings', 'handoff'), payload, { merge: true });
                 logger.debug('[HandoffService] Synced active state to cloud.');
-            } catch (error) {
-                logger.error('[HandoffService] Failed to sync handoff state', error);
+            } catch (error: unknown) {
+                // Suppress permission-denied — expected when Firestore rules
+                // don't allow the current auth state (e.g., anonymous user in dev)
+                const code = (error as { code?: string })?.code;
+                if (code === 'permission-denied') {
+                    logger.debug('[HandoffService] Skipping sync — insufficient permissions (expected in dev).');
+                } else {
+                    logger.error('[HandoffService] Failed to sync handoff state', error);
+                }
             }
         }, 1500); // Debounce 1.5s
     }
@@ -62,7 +69,7 @@ export class HandoffService {
     public listenForRemoteHandoff(callback: (state: HandoffState) => void): () => void {
         const auth = getAuth(app);
         const user = auth.currentUser;
-        if (!user) return () => {};
+        if (!user) return () => { };
 
         return onSnapshot(doc(db, 'users', user.uid, 'settings', 'handoff'), (snapshot) => {
             if (snapshot.exists()) {
