@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { Timestamp } from 'firebase/firestore';
+
 
 export interface ItineraryStop {
     date: string;
@@ -14,6 +14,9 @@ export interface ItineraryStop {
         lat: number;
         lng: number;
     };
+    // Day sheet data (set via DaySheetModal)
+    schedule?: Array<{ time: string; event: string }>;
+    contacts?: Array<{ role: string; name: string; phone: string }>;
 }
 
 export interface Itinerary {
@@ -52,5 +55,29 @@ export interface MapMarker {
     position: { lat: number; lng: number };
     title: string;
     type: 'venue' | 'gas' | 'hotel' | 'current' | 'waypoint';
-    meta?: any;
+    meta?: Record<string, unknown>;
+
 }
+
+// Fuel logistics returned by the fuel calculation AI
+export interface FuelLogistics {
+    currentRangeMiles: number;
+    fullTankRangeMiles?: number;
+    costToFill: number | string;
+    status: 'GOOD' | 'OK' | 'LOW' | 'CRITICAL';
+    recommendedStops?: string[];
+}
+
+
+// Google Places nearby result
+export interface NearbyPlace {
+    name: string;
+    vicinity: string;
+    isOpen: boolean;
+    place_id?: string;
+    geometry: {
+        location: { lat: number; lng: number };
+    };
+}
+
+

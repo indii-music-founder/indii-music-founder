@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { X, Clock, User, Phone, Save, Plus, Trash2, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import type { ItineraryStop } from '../types';
+
 
 interface ScheduleItem {
     time: string;
@@ -16,10 +17,11 @@ interface Contact {
 
 interface DaySheetModalProps {
     isOpen: boolean;
-    stop: any;
+    stop: ItineraryStop;
     onClose: () => void;
-    onSave: (updatedStop: any) => void;
+    onSave: (updatedStop: ItineraryStop) => void;
 }
+
 
 export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onClose, onSave }) => {
     // Hooks must be unconditional
