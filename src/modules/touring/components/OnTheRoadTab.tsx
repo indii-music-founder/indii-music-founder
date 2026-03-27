@@ -1,10 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect } from 'react';
+
 import { motion } from 'motion/react';
 import { MapPin, Navigation, Gauge, Zap, Fuel, Clock, ArrowRight, AlertTriangle, CheckCircle2, Crosshair } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Itinerary, ItineraryStop } from '../types';
+import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
+
 import { TourMap } from './TourMap';
 import { logger } from '@/utils/logger';
 
@@ -22,12 +23,13 @@ interface OnTheRoadTabProps {
     setCurrentLocation: (loc: string) => void;
     handleFindGasStations: () => void;
     isFindingPlaces: boolean;
-    nearbyPlaces: any[];
+    nearbyPlaces: NearbyPlace[];
     fuelStats: FuelStats;
     setFuelStats: (stats: FuelStats) => void;
     handleCalculateFuel: () => void;
     isCalculatingFuel: boolean;
-    fuelLogistics: any;
+    fuelLogistics: FuelLogistics | null;
+
     itinerary: Itinerary | null;
 }
 
