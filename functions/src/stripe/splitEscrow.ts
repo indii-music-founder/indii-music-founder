@@ -30,7 +30,7 @@ interface SplitEscrowResponse {
  * and records the pending signatures in Firestore.
  */
 export const initiateSplitEscrow = functions
-    .runWith({ timeoutSeconds: 60, memory: '256MB' })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 60, memory: '256MB'  })
     .https.onCall(async (data: SplitEscrowRequest, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
@@ -127,7 +127,7 @@ export const initiateSplitEscrow = functions
  * When all parties have signed, status transitions to RELEASED.
  */
 export const signEscrow = functions
-    .runWith({ timeoutSeconds: 60, memory: '256MB' })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 60, memory: '256MB'  })
     .https.onCall(async (data: { escrowDocId: string }, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');

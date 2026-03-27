@@ -42,10 +42,10 @@ interface PandaDocWebhookEvent {
  */
 export const pandadocWebhook = functions
     .region(REGION)
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         timeoutSeconds: 60,
         memory: "256MB",
-    })
+     })
     .https.onRequest(async (req, res) => {
         // Only accept POST
         if (req.method !== "POST") {

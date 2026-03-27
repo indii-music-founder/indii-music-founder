@@ -64,11 +64,11 @@ const MAX_TELEGRAM_MESSAGE_LENGTH = 4096;
 // Cloud Function: HTTPS Webhook
 // ---------------------------------------------------------------------------
 export const telegramWebhook = functions
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [telegramBotToken],
         timeoutSeconds: 120,
         memory: "256MB",
-    })
+     })
     .https.onRequest(async (req, res) => {
         // Only accept POST
         if (req.method !== "POST") {

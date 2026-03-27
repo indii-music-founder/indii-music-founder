@@ -14,7 +14,7 @@ import * as crypto from "crypto";
 const LINK_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export const generateTelegramLinkCode = functions
-    .runWith({ timeoutSeconds: 30, memory: "128MB" })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 30, memory: "128MB"  })
     .https.onCall(async (_data, context) => {
         // Require authentication
         if (!context.auth) {
@@ -53,7 +53,7 @@ export const generateTelegramLinkCode = functions
  * Called from the frontend to show the linking status in Settings.
  */
 export const getTelegramLinkStatus = functions
-    .runWith({ timeoutSeconds: 15, memory: "128MB" })
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',  timeoutSeconds: 15, memory: "128MB"  })
     .https.onCall(async (_data, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(

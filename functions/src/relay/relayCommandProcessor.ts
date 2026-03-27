@@ -37,11 +37,11 @@ const PROCESSING_INDICATOR = "⏳ Processing your request...";
 // Cloud Function: Firestore onCreate Trigger
 // ---------------------------------------------------------------------------
 export const processRelayCommand = functions
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [geminiApiKey],
         timeoutSeconds: 540,
         memory: "2GB",
-    })
+     })
     .firestore.document("users/{userId}/remote-relay-commands/{commandId}")
     .onCreate(async (snapshot, context) => {
         const { userId, commandId } = context.params;

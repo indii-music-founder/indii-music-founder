@@ -42,10 +42,10 @@ function getRedirectUri(provider: string): string {
 // ---------------------------------------------------------------------------
 
 export const emailExchangeToken = functions
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
         timeoutSeconds: 30,
-    })
+     })
     .https.onCall(async (data: any, context: functions.https.CallableContext) => {
         // 1. Authentication required
         if (!context.auth) {
@@ -111,10 +111,10 @@ export const emailExchangeToken = functions
 // ---------------------------------------------------------------------------
 
 export const emailRefreshToken = functions
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
         timeoutSeconds: 15,
-    })
+     })
     .https.onCall(async (data: any, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
@@ -189,10 +189,10 @@ export const emailRefreshToken = functions
 // ---------------------------------------------------------------------------
 
 export const emailRevokeToken = functions
-    .runWith({
+    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
         secrets: [googleOAuthClientId, googleOAuthClientSecret],
         timeoutSeconds: 15,
-    })
+     })
     .https.onCall(async (data: any, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
