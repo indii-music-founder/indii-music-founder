@@ -47,8 +47,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'brand':           'projects/223837784072/locations/us-central1/endpoints/628217513401909248',
     // R6 — gemini-2.5-flash-lite base (~124 examples, ≥50% expert) — 2026-03-26
     'road':            'projects/223837784072/locations/us-central1/endpoints/1199611716124540928',
-    // R6 — gemini-2.5-flash-lite base (~102 examples, ≥50% expert) — TODO: job still running
-    'publicist':       'projects/223837784072/locations/us-central1/endpoints/3759626629307957248',
+    // R6 — gemini-2.5-flash-lite base (~102 examples, ≥50% expert) — 2026-03-27
+    'publicist':       'projects/223837784072/locations/us-central1/endpoints/8078297196979552256',
     // R6 — gemini-2.5-flash base (~110 examples, ≥50% expert) — 2026-03-26
     'music':           'projects/223837784072/locations/us-central1/endpoints/4597014685022158848',
     // R6 — gemini-2.5-flash-lite base (~134 examples, ≥50% expert) — TODO: job still running
@@ -63,8 +63,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'director':        'projects/223837784072/locations/us-central1/endpoints/5461705813477294080',
     // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — TODO: job still running
     'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/1505012065855602688',
-    // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — TODO: job still running
-    'merchandise':     'projects/223837784072/locations/us-central1/endpoints/2194625758796709888',
+    // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — 2026-03-27
+    'merchandise':     'projects/223837784072/locations/us-central1/endpoints/5343486323258818560',
     // R6 — gemini-2.5-flash-lite base (~120 examples, ≥50% expert) — TODO: job still running
     'curriculum':      'projects/223837784072/locations/us-central1/endpoints/482694950442500096',
 
