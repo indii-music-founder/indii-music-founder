@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { logger } from '@/utils/logger';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
@@ -111,7 +110,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             });
 
             // Enable object controls
-            const TargetObj = fabric.FabricObject || (fabric as any).Object;
+            const TargetObj = fabric.FabricObject || (fabric as unknown as { Object?: typeof fabric.FabricObject }).Object;
             if (TargetObj && TargetObj.prototype) {
                 Object.assign(TargetObj.prototype, {
                     transparentCorners: false,
@@ -543,7 +542,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
         canvas.renderAll();
     }, [canvas, getSmartPosition]);
 
-    const addShape = useCallback((type: 'star' | 'circle' | 'square', options?: any) => {
+    const addShape = useCallback((type: 'star' | 'circle' | 'square', options?: Record<string, unknown>) => {
         if (!canvas) return;
         const position = getSmartPosition(150, 150);
 
@@ -655,7 +654,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             });
 
             // Restore zoom and dimensions for the interactive UI
-            canvas.setViewportTransform(currentVpt as any);
+            canvas.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
             canvas.setZoom(currentZoom);
             canvas.setDimensions({
                 width: currentWidth || (800 * currentZoom),

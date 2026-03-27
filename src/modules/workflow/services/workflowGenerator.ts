@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { v4 as uuidv4 } from 'uuid';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';
@@ -22,9 +21,9 @@ interface RegistryContextItem {
 // Helper to flatten registry for the AI context
 const getRegistryContext = (): RegistryContextItem[] => {
     const allDefs = { ...NODE_REGISTRY, ...LOGIC_REGISTRY };
-    return Object.values(allDefs).map((def: { departmentName: string; jobs: any[] }) => ({
+    return Object.values(allDefs).map((def) => ({
         department: def.departmentName,
-        jobs: def.jobs.map((j: { id: string; description: string; inputs: string[]; outputs: string[] }) => ({
+        jobs: def.jobs.map((j) => ({
             id: j.id,
             description: j.description,
             inputs: j.inputs,
@@ -148,7 +147,7 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
 
     const generated = await AI.generateStructuredData<GeneratedWorkflow>(
         `User Request: "${userPrompt}"\n\nGenerate the workflow JSON.`,
-        schema as any,
+        schema as import('@google/genai').Schema,
         undefined,
         systemInstruction
     );

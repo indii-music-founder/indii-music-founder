@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { functions, functionsWest1 } from '@/services/firebase';
 import { useStore } from '@/core/store';
@@ -10,7 +9,7 @@ import { logger } from '@/utils/logger';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
-    onSelect?: (asset: any) => void; // Optional prop for selection mode
+    onSelect?: (asset: Record<string, unknown>) => void; // Optional prop for selection mode
 }
 
 export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDrawerProps) {
@@ -53,7 +52,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         setIsGenerating(true);
         try {
             const newAssets = [];
-            const newUploadedImages = [];
+            const newUploadedImages: any[] = [];
             const timestamp = Date.now();
 
             for (const file of files) {
@@ -76,7 +75,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 updateBrandKit({
                     brandAssets: [...(userProfile?.brandKit?.brandAssets || []), ...newAssets]
                 });
-                newUploadedImages.forEach(img => addUploadedImage(img as any));
+                newUploadedImages.forEach(img => addUploadedImage(img));
                 toast.success(`${files.length} asset(s) uploaded`);
             }
         } catch (error) {

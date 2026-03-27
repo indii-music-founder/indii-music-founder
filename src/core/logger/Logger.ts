@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { Sentry } from '@/lib/sentry';
 import { logger } from '@/utils/logger';
 
@@ -54,7 +53,7 @@ class LoggerService {
                 category: module,
                 message: message,
                 level: 'info',
-                data: data as Record<string, any>
+                data: data as Record<string, unknown>
             });
         } catch {
             // Fail silently if Sentry not initialized
@@ -75,7 +74,7 @@ class LoggerService {
                 category: module,
                 message: message,
                 level: 'warning',
-                data: data as Record<string, any>
+                data: data as Record<string, unknown>
             });
         } catch {
             // Fail silently
@@ -97,7 +96,7 @@ class LoggerService {
                 tags: { module },
                 extra: {
                     contextMessage: message,
-                    rawError: error as any
+                    rawError: error instanceof Error ? error.message : String(error)
                 }
             });
         } catch {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import React, { useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePowerState } from '@/core/hooks/usePowerState';
@@ -98,11 +97,11 @@ export default function Sidebar() {
 
     // Navigation throttle to prevent rapid-fire module switching (Firestore b815 crash fix)
     const lastNavTimeRef = useRef(0);
-    const throttledSetModule = useCallback((moduleId: ModuleId | 'dashboard' | 'observability' | 'settings') => {
+    const throttledSetModule = useCallback((moduleId: ModuleId) => {
         const now = Date.now();
         if (now - lastNavTimeRef.current < NAV_DEBOUNCE_MS) return;
         lastNavTimeRef.current = now;
-        setModule(moduleId as any);
+        setModule(moduleId);
     }, [setModule]);
 
     // Grouped navigation items based on the screenshot

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import { StateCreator } from 'zustand';
 import { type ModuleId, isValidModule } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
@@ -47,6 +46,8 @@ export interface AppSlice {
     setCommandMenuOpen: (open: boolean) => void;
     hasUnsavedChanges: boolean;
     setHasUnsavedChanges: (hasUnsaved: boolean) => void;
+    /** @internal Debounce tracker for toggleRightPanel */
+    _lastRightPanelToggle?: number;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
@@ -140,11 +141,11 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         // The AnimatePresence mode="wait" in RightPanel can get stuck
         // if toggled faster than the spring animation duration (~200ms).
         const now = Date.now();
-        const state = get() as AppSlice & { _lastRightPanelToggle?: number };
+        const state = get();
         if (state._lastRightPanelToggle && now - state._lastRightPanelToggle < 200) {
             return; // Ignore rapid-fire toggles
         }
-        set({ isRightPanelOpen: !state.isRightPanelOpen, _lastRightPanelToggle: now } as any);
+        set({ isRightPanelOpen: !state.isRightPanelOpen, _lastRightPanelToggle: now });
     },
     isCommandMenuOpen: false,
     setCommandMenuOpen: (open) => set({ isCommandMenuOpen: open }),

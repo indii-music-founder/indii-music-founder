@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Save, Trash2, Calendar, Activity, BarChart2 } from 'lucide-react';
@@ -49,7 +48,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
         const isActive = status === s;
         return (
             <button
-                onClick={() => setStatus(s as any)}
+                onClick={() => setStatus(s as Campaign['status'])}
                 className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${isActive
                     ? 'bg-sonic-purple/20 border-sonic-purple text-sonic-purple shadow-[0_0_10px_rgba(168,85,247,0.3)]'
                     : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'

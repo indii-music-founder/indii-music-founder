@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, DollarSign, Loader2, RefreshCw, Calculator } from 'lucide-react';
@@ -78,7 +77,7 @@ export const RevenueProjections = () => {
                                 <label className="text-xs font-medium text-gray-400 mb-1.5 block">Platform Trend</label>
                                 <select
                                     value={platform}
-                                    onChange={(e) => setPlatform(e.target.value as any)}
+                                    onChange={(e) => setPlatform(e.target.value as 'Spotify' | 'Apple Music' | 'Other')}
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-dept-royalties/50 transition-colors"
                                 >
                                     <option value="Spotify">Spotify (Growth)</option>
