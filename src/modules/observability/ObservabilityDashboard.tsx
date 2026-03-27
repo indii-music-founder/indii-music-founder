@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { TraceViewer } from '@/components/studio/observability/TraceViewer';
+import { SchedulerStatusPanel } from './components/SchedulerStatusPanel';
 import { MetricsService, SystemMetrics } from '@/services/agent/observability/MetricsService';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -280,6 +281,9 @@ export default function ObservabilityDashboard() {
                                     </CardContent>
                                 </Card>
                             )}
+
+                            {/* Scheduler Status */}
+                            <SchedulerStatusPanel />
 
                             {/* Loading skeleton */}
                             {loading && !metrics && (
