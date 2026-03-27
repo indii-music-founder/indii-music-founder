@@ -25,5 +25,14 @@
 | 5.2 | Logging Hygiene (11 files migrated) | [x] | implementation_plan |
 | 5.3 | i18n Shell Integration (Sidebar `t()`) | [x] | implementation_plan |
 
+## Sprint 6 — Scheduler & Observability (COMPLETE)
+
+| ID | Task | Status | Source |
+| :--- | :--- | :--- | :--- |
+| 6.1 | Built-in Task Scheduler (Neural Sync, 5 tasks) | [x] | Session |
+| 6.2 | SchedulerService unit tests (25 tests) | [x] | Session |
+| 6.3 | SchedulerClientService unit tests (18 tests) | [x] | Session |
+| 6.4 | SchedulerStatusPanel in Observability Dashboard | [x] | Session |
+
 ---
 *Self-managed task list for Antigravity.*
