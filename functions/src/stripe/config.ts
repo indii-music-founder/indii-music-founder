@@ -24,18 +24,18 @@ function getStripe(): Stripe {
 // Re-export as a getter proxy for backward compatibility
 export const stripe = new Proxy({} as Stripe, {
   get(_target, prop) {
-    return (getStripe() as any)[prop];
+    return (getStripe() as unknown as Record<string, unknown>)[prop as string];
   },
 });
 
 // Placeholder sentinel values used in development only.
 // Real test-mode price IDs are set below as defaults so local emulation works.
 const PLACEHOLDER_PRICE_IDS: Record<string, string> = {
-  STRIPE_PRICE_PRO_MONTHLY:    'price_1TC4ceECGAoF2ZTQOjOAzJMR',
-  STRIPE_PRICE_PRO_YEARLY:     'price_1TC4cfECGAoF2ZTQgaNAFI1Q',
+  STRIPE_PRICE_PRO_MONTHLY: 'price_1TC4ceECGAoF2ZTQOjOAzJMR',
+  STRIPE_PRICE_PRO_YEARLY: 'price_1TC4cfECGAoF2ZTQgaNAFI1Q',
   STRIPE_PRICE_STUDIO_MONTHLY: 'price_1TC4cqECGAoF2ZTQdZiAsoXo',
-  STRIPE_PRICE_STUDIO_YEARLY:  'price_1TC4cqECGAoF2ZTQdZiAsoXo', // no yearly yet — same as monthly
-  STRIPE_PRICE_FOUNDER_PASS:   'price_1TC4crECGAoF2ZTQ0rlpPs9q',
+  STRIPE_PRICE_STUDIO_YEARLY: 'price_1TC4cqECGAoF2ZTQdZiAsoXo', // no yearly yet — same as monthly
+  STRIPE_PRICE_FOUNDER_PASS: 'price_1TC4crECGAoF2ZTQ0rlpPs9q',
 };
 
 /**
@@ -69,15 +69,15 @@ export const STRIPE_PRICES: Record<SubscriptionTier, {
   [SubscriptionTier.FREE]: {},
   [SubscriptionTier.PRO_MONTHLY]: {
     monthly: resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'),
-    yearly:  resolvePriceId('STRIPE_PRICE_PRO_YEARLY'),
+    yearly: resolvePriceId('STRIPE_PRICE_PRO_YEARLY'),
   },
   [SubscriptionTier.PRO_YEARLY]: {
     monthly: resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'),
-    yearly:  resolvePriceId('STRIPE_PRICE_PRO_YEARLY'),
+    yearly: resolvePriceId('STRIPE_PRICE_PRO_YEARLY'),
   },
   [SubscriptionTier.STUDIO]: {
     monthly: resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'),
-    yearly:  resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'),
+    yearly: resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'),
   },
   [SubscriptionTier.FOUNDER]: {
     oneTime: resolvePriceId('STRIPE_PRICE_FOUNDER_PASS'),
@@ -148,7 +148,7 @@ export function mapStripeTierToSubscriptionTier(
   if (process.env.STRIPE_PRODUCT_FOUNDER && productId === process.env.STRIPE_PRODUCT_FOUNDER) return SubscriptionTier.FOUNDER;
 
   // Studio (interval doesn't distinguish tiers here — Studio is Studio)
-  if (process.env.STRIPE_PRODUCT_STUDIO  && productId === process.env.STRIPE_PRODUCT_STUDIO)  return SubscriptionTier.STUDIO;
+  if (process.env.STRIPE_PRODUCT_STUDIO && productId === process.env.STRIPE_PRODUCT_STUDIO) return SubscriptionTier.STUDIO;
 
   // Pro — use billing interval to distinguish monthly vs yearly
   if (process.env.STRIPE_PRODUCT_PRO && productId === process.env.STRIPE_PRODUCT_PRO) {

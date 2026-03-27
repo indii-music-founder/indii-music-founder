@@ -87,10 +87,10 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   // Update or create subscription
   const subscriptionData: Partial<LocalSubscription> = {
     tier,
-    status: mapStripeStatus((subscription as any).status),
-    currentPeriodStart: (subscription as any).current_period_start * 1000,
-    currentPeriodEnd: (subscription as any).current_period_end * 1000,
-    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
+    status: mapStripeStatus((subscription as unknown as { status: Stripe.Subscription.Status }).status),
+    currentPeriodStart: (subscription as unknown as { current_period_start: number }).current_period_start * 1000,
+    currentPeriodEnd: (subscription as unknown as { current_period_end: number }).current_period_end * 1000,
+    cancelAtPeriodEnd: (subscription as unknown as { cancel_at_period_end: boolean }).cancel_at_period_end,
     stripeCustomerId,
     stripeSubscriptionId: subscription.id,
     updatedAt: now
@@ -145,10 +145,10 @@ async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
 
   await updateSubscriptionByCustomer(subscription.customer as string, 'handleSubscriptionCreated', {
     tier,
-    status: mapStripeStatus((subscription as any).status),
-    currentPeriodStart: (subscription as any).current_period_start * 1000,
-    currentPeriodEnd: (subscription as any).current_period_end * 1000,
-    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
+    status: mapStripeStatus((subscription as unknown as { status: Stripe.Subscription.Status }).status),
+    currentPeriodStart: (subscription as unknown as { current_period_start: number }).current_period_start * 1000,
+    currentPeriodEnd: (subscription as unknown as { current_period_end: number }).current_period_end * 1000,
+    cancelAtPeriodEnd: (subscription as unknown as { cancel_at_period_end: boolean }).cancel_at_period_end,
     stripeSubscriptionId: subscription.id
   });
 }
@@ -171,10 +171,10 @@ async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
 
   await updateSubscriptionByCustomer(subscription.customer as string, 'handleSubscriptionUpdated', {
     tier,
-    status: mapStripeStatus((subscription as any).status),
-    currentPeriodStart: (subscription as any).current_period_start * 1000,
-    currentPeriodEnd: (subscription as any).current_period_end * 1000,
-    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end
+    status: mapStripeStatus((subscription as unknown as { status: Stripe.Subscription.Status }).status),
+    currentPeriodStart: (subscription as unknown as { current_period_start: number }).current_period_start * 1000,
+    currentPeriodEnd: (subscription as unknown as { current_period_end: number }).current_period_end * 1000,
+    cancelAtPeriodEnd: (subscription as unknown as { cancel_at_period_end: boolean }).cancel_at_period_end
   });
 }
 
@@ -190,7 +190,7 @@ async function handleSubscriptionDeleted(event: Stripe.Event): Promise<void> {
     currentPeriodStart: Date.now(),
     currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
     cancelAtPeriodEnd: false,
-    stripeSubscriptionId: FieldValue.delete() as any
+    stripeSubscriptionId: FieldValue.delete() as unknown as string
   });
 }
 
@@ -204,9 +204,9 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   if (!invoice.customer) return;
 
   let currentPeriodEnd = undefined;
-  if ((invoice as any).subscription) {
-    const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
-    currentPeriodEnd = (subscription as any).current_period_end * 1000;
+  if ((invoice as unknown as { subscription?: string }).subscription) {
+    const subscription = await stripe.subscriptions.retrieve((invoice as unknown as { subscription: string }).subscription);
+    currentPeriodEnd = (subscription as unknown as { current_period_end: number }).current_period_end * 1000;
   }
 
   const updateData: Partial<LocalSubscription> = { status: 'active' };
@@ -232,8 +232,8 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
       amount: invoice.total,
       currency: invoice.currency || 'usd',
       status: 'paid',
-      periodStart: (invoice as any).period_start ? (invoice as any).period_start * 1000 : null,
-      periodEnd: (invoice as any).period_end ? (invoice as any).period_end * 1000 : null,
+      periodStart: (invoice as unknown as { period_start?: number }).period_start ? (invoice as unknown as { period_start: number }).period_start * 1000 : null,
+      periodEnd: (invoice as unknown as { period_end?: number }).period_end ? (invoice as unknown as { period_end: number }).period_end * 1000 : null,
       pdfUrl: invoice.invoice_pdf || null,
       createdAt: FieldValue.serverTimestamp(),
     });
@@ -272,9 +272,9 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
       invoiceId: invoice.id,
       amount: invoice.total,
       currency: invoice.currency || 'usd',
-      attemptCount: (invoice as any).attempt_count || 1,
-      nextPaymentAttempt: (invoice as any).next_payment_attempt
-        ? (invoice as any).next_payment_attempt * 1000
+      attemptCount: (invoice as unknown as { attempt_count?: number }).attempt_count || 1,
+      nextPaymentAttempt: (invoice as unknown as { next_payment_attempt?: number }).next_payment_attempt
+        ? (invoice as unknown as { next_payment_attempt: number }).next_payment_attempt * 1000
         : null,
       customerEmail: invoice.customer_email || null,
       status: 'pending',
