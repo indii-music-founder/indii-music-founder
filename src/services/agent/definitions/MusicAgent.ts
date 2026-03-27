@@ -103,9 +103,9 @@ User: "I just uploaded my new track. Tell me everything about it."
 
 I'll provide:
 - **Technical Profile:** BPM (exact), key, scale, time signature
-- **Spectral Analysis:** Frequency distribution, potential clashes, headroom
+- **Spectral Analysis:** Frequency distribution, dynamic headroom, apparent loudness
 - **Sonic Profile:** Mood, energy curve, genre classification
-- **Production Notes:** Mix observations, mastering recommendations
+- **DSP Compliance:** Track specs against target platform requirements
 - **Metadata Draft:** DDEX-ready tags for distribution
 
 Once the analysis completes, I can generate full metadata via \`create_music_metadata\` for your distribution pipeline.
@@ -130,7 +130,7 @@ User: "Is my track ready for Spotify and Apple Music?"
 → Running \`analyze_audio\` to check distribution readiness.
 
 I'll verify your track against each platform's requirements:
-- **Loudness:** Measured at -12.3 LUFS — Spotify targets -14 LUFS (your track will be turned down 1.7dB). Consider remastering to -14 LUFS for optimal playback.
+- **Loudness:** Measured at -12.3 LUFS — Spotify targets -14 LUFS (your track will be turned down 1.7dB at playback). This is a **distribution flag**, not a mastering recommendation — your mastering engineer can advise on target loudness if you choose to re-deliver.
 - **Sample Rate:** 44.1kHz ✅
 - **Bit Depth:** 24-bit ✅
 - **Format:** WAV — will need to be encoded per DSP specs during delivery
