@@ -1,11 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Calendar, Truck, Plus, Trash2, Save, X, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Itinerary } from '../types';
+import { Itinerary, ItineraryStop } from '../types';
 import { TourMap } from './TourMap';
+
+
+interface LogisticsReport { isFeasible: boolean; issues?: string[]; summary?: string }
 
 interface PlanningTabProps {
     startDate: string;
@@ -22,9 +24,10 @@ interface PlanningTabProps {
     itinerary: Itinerary | null;
     handleCheckLogistics: () => void;
     isCheckingLogistics: boolean;
-    logisticsReport: any;
-    onUpdateStop: (stop: any) => void;
+    logisticsReport: LogisticsReport | null;
+    onUpdateStop: (stop: ItineraryStop) => void;
 }
+
 
 export const PlanningTab: React.FC<PlanningTabProps> = ({
     startDate,
@@ -44,7 +47,8 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
     logisticsReport,
     onUpdateStop
 }) => {
-    const [selectedStop, setSelectedStop] = useState<any | null>(null);
+    const [selectedStop, setSelectedStop] = useState<ItineraryStop | null>(null);
+
 
     const hasLogisticsIssue = logisticsReport && !logisticsReport.isFeasible;
 
@@ -171,7 +175,8 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             position: { lat: 0, lng: 0 }, // Placeholder for geocoding fallback in legacy mode
                             title: `${idx + 1}. ${stop.venue || stop.city}`,
                             type: 'venue' as const,
-                            meta: stop
+                            meta: stop as unknown as Record<string, unknown>
+
                         })) : []}
                         locations={selectedStop ? [selectedStop.city] : (itinerary ? [] : locations)}
                         center={selectedStop ? undefined : undefined} // Map will handle fitBounds

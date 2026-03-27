@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
+
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
@@ -7,7 +7,8 @@ import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { useTouring } from './hooks/useTouring';
-import { Itinerary } from './types';
+import { Itinerary, NearbyPlace, FuelLogistics } from './types';
+
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
@@ -26,24 +27,7 @@ interface LogisticsReport {
     suggestions: string[];
 }
 
-interface NearbyPlace {
-    name: string;
-    vicinity: string;
-    place_id: string;
-    geometry: {
-        location: {
-            lat: number;
-            lng: number;
-        };
-    };
-}
 
-interface FuelLogistics {
-    currentRangeMiles: number;
-    fullTankRangeMiles: number;
-    costToFill: number;
-    status: 'CRITICAL' | 'LOW' | 'OK';
-}
 
 const RoadManager: React.FC = () => {
     // Hooks must be called unconditionally before early returns
@@ -354,7 +338,10 @@ function ItinerarySummaryPanel({ itinerary }: { itinerary: Itinerary | null }) {
     );
 }
 
-function VehicleStatusPanel({ vehicleStats, fuelLogistics }: { vehicleStats: any; fuelLogistics: any }) {
+interface VehicleStatsShape { fuelLevelPercent?: number; milesDriven?: number; mpg?: number }
+
+function VehicleStatusPanel({ vehicleStats, fuelLogistics }: { vehicleStats: VehicleStatsShape | null; fuelLogistics: FuelLogistics | null }) {
+
     const fuelPct = vehicleStats?.fuelLevelPercent ?? 50;
     const fuelColor = fuelPct > 50 ? 'text-green-400' : fuelPct > 20 ? 'text-yellow-400' : 'text-red-400';
 
