@@ -19,6 +19,8 @@ import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
+import { registerSchedulerHandlers } from './handlers/scheduler';
+import { SchedulerService } from './services/SchedulerService';
 import { configureSecurity, auditSessionCookies } from './security';
 import { applyCSP } from './security/csp';
 import { SidecarService } from './services/SidecarService';
@@ -337,10 +339,10 @@ if (!gotTheLock) {
 
     app.on('ready', () => {
         log.info('App Ready (Primary Instance)');
-        
+
         // Apply Content Security Policy headers
         applyCSP();
-        
+
         registerSystemHandlers();
         // registerAuthHandlers(); // Removed
         registerAudioHandlers();
@@ -394,6 +396,7 @@ if (!gotTheLock) {
             'video:render', 'video:open-folder', 'video:save-asset',
             'sidecar:restart', 'power:get-state', 'mobile-remote:stop',
             'updater:check', 'updater:install',
+            'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',
             'test:browser-agent', 'show-notification',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
@@ -406,6 +409,11 @@ if (!gotTheLock) {
             log.error(`[Main] Initial Docker startup failed: ${err.message}`);
         });
         registerMobileRemoteHandlers();
+
+        // Built-in Task Scheduler
+        registerSchedulerHandlers();
+        SchedulerService.start();
+        SchedulerService.registerBuiltInTasks();
 
         createWindow();
         createTray();
@@ -465,6 +473,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', async () => {
+    SchedulerService.stop();
     isQuitting = true;
     // Item 377: Close open SFTP/SSH connections before quit
     if (sftpService.isConnected()) {
