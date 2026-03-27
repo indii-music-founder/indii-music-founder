@@ -36,9 +36,12 @@ const nodeTypes = {
 
 interface WorkflowEditorProps {
     readOnly?: boolean;
+    /** Called with the ReactFlowInstance once the canvas is ready.
+     *  Use instance.getViewport() to capture the live viewport at save time. */
+    onInit?: (instance: ReactFlowInstance) => void;
 }
 
-const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false }) => {
+const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false, onInit }) => {
     const { nodes, edges, setNodes, setEdges, addNode } = useStore();
 
 
@@ -101,7 +104,10 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
-                onInit={setReactFlowInstance}
+                onInit={(instance) => {
+                    setReactFlowInstance(instance);
+                    onInit?.(instance);
+                }}
                 onDrop={onDrop}
                 onDragOver={onDragOver}
                 nodeTypes={nodeTypes}

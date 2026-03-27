@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import WorkflowEditor from './components/WorkflowEditor';
 import NodePanel from './components/NodePanel';
 import WorkflowGeneratorModal from './components/WorkflowGeneratorModal';
@@ -55,6 +55,10 @@ export default function WorkflowLab() {
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
 
+    // Stable reference to ReactFlowInstance — populated via WorkflowEditor's onInit callback.
+    // Used to capture real viewport (pan/zoom) at save time instead of a hardcoded {0,0,1}.
+    const rfInstanceRef = useRef<import('reactflow').ReactFlowInstance | null>(null);
+
     // Auto-save logic (must be called before early return)
     useEffect(() => {
         if (!currentWorkflowId || !currentUser || nodes.length === 0) return;
@@ -65,8 +69,8 @@ export default function WorkflowLab() {
             setSaveStatus('saving');
             try {
                 const engine = new WorkflowEngine(nodes, edges, setNodes);
-                // Mock viewport for now, ideally get from ReactFlow instance
-                const viewport = { x: 0, y: 0, zoom: 1 };
+                // Capture real viewport so save/restore preserves the user's canvas position.
+                const viewport = rfInstanceRef.current?.getViewport() ?? { x: 0, y: 0, zoom: 1 };
                 await engine.saveWorkflow(currentWorkflowId, workflowName, 'Auto-saved workflow', viewport);
 
                 setSaveStatus('saved');
@@ -206,8 +210,8 @@ export default function WorkflowLab() {
         try {
             const engine = new WorkflowEngine(nodes, edges, setNodes);
             const id = currentWorkflowId || uuidv4();
-            // Mock viewport for now
-            const viewport = { x: 0, y: 0, zoom: 1 };
+            // Capture real viewport (pan + zoom) from the live ReactFlow instance.
+            const viewport = rfInstanceRef.current?.getViewport() ?? { x: 0, y: 0, zoom: 1 };
 
             await engine.saveWorkflow(
                 id,
@@ -342,7 +346,7 @@ export default function WorkflowLab() {
 
                 {/* ── CENTER — Node Editor Canvas ────────────────────── */}
                 <div id="tour-workflow-canvas" className="flex-1 relative min-w-0">
-                    <WorkflowEditor />
+                    <WorkflowEditor onInit={(instance) => { rfInstanceRef.current = instance; }} />
                     <NodePanel />
                 </div>
 
