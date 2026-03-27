@@ -170,11 +170,20 @@ export function AnomalyDetector() {
 
             {/* Chart */}
             <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
-                {chartData.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-[200px] text-center">
-                        <TrendingUp size={24} className="text-gray-600 mb-2" />
-                        <p className="text-xs font-bold text-gray-400">No Streaming Data</p>
-                        <p className="text-[10px] text-gray-500 mt-1 max-w-[200px]">Connect your DSP accounts to monitor daily streams for anomalies.</p>
+                {STREAM_DATA.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-[200px] text-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                            <AlertTriangle size={20} className="text-amber-400" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-gray-300">DSP Streaming Data Not Connected</p>
+                            <p className="text-[11px] text-gray-500 mt-1 max-w-[260px] mx-auto">
+                                Connect your distributor accounts in the Distribution module to start monitoring daily stream anomalies.
+                            </p>
+                        </div>
+                        <span className="text-[10px] text-amber-400/60 bg-amber-500/5 border border-amber-500/10 px-3 py-1 rounded-full">
+                            Not yet connected
+                        </span>
                     </div>
                 ) : (
                     <>
