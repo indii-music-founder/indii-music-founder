@@ -18,7 +18,7 @@ export default function HistoryDashboard() {
 
     // Combine sessions and files into a single unified timeline
     const timelineItems = useMemo(() => {
-        const items: any[] = [];
+        const items: Array<{ type: 'agent' | 'file'; id: string; title: string; timestamp: number; data: unknown }> = [];
 
         if (filterType === 'all' || filterType === 'agent') {
             Object.values(sessions).forEach(session => {
@@ -33,7 +33,7 @@ export default function HistoryDashboard() {
         }
 
         if (filterType === 'all' || filterType === 'file') {
-            fileNodes.forEach((file: any) => {
+            fileNodes.forEach((file: { id: string; name: string; createdAt?: number; _mockTimestamp?: number }) => {
                 // Approximate timestamp if missing, ideally files have createdAt
                 items.push({
                     type: 'file',
