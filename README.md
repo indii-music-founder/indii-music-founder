@@ -634,6 +634,28 @@ For deep-dives into specific subsystems:
 
 ## 🔄 Recent Updates
 
+### Production Hardening — TypeScript Strict Mode (March 2026)
+
+The codebase now enforces a zero-tolerance `any` ban across all production files.
+
+**28 type casts eliminated** from the Road Manager module, introducing clean typed interfaces:
+
+| Interface | Purpose |
+|-----------|---------|
+| `FuelLogistics` | Fuel cost and stop estimation for tour legs |
+| `NearbyPlace` | Venue discovery result from Google Maps |
+| `LogisticsReport` | Tour logistics summary object |
+
+Chart tooltip handlers in `PlatformBreakdown` and `WaterfallChart` are now strictly typed — no silent `unknown` payloads in the render layer.
+
+A `pre-push` git hook gates every push behind `npm run typecheck` + `npm run lint`. Broken code stays local.
+
+**Memory Inbox** — approve or reject digital handshakes from the Dashboard without leaving your current module.
+
+**Stripe Webhooks** — 10/10 test coverage now exists for all webhook event types (subscription lifecycle, payment events, trial expiry, checkout completion).
+
+---
+
 ### v0.1.0-beta.2 — March 2026
 
 **TypeScript Type Safety Sweep**
