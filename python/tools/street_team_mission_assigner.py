@@ -9,9 +9,10 @@ class StreetTeamMissionAssigner(Tool):
     """
     Marketing Executive Tool.
     Creates localized guerrilla marketing tasks with clear directives.
+    Exports missions as a printable markdown checklist.
     """
 
-    async def execute(self, city: str, budget: float, campaign_goal: str) -> Response:
+    async def execute(self, city: str, budget: float, campaign_goal: str, **kwargs) -> Response:
         self.set_progress(f"Generating Street Team missions for {city} (Budget: ${budget})")
         
         try:
@@ -23,55 +24,65 @@ class StreetTeamMissionAssigner(Tool):
             model_id = AIConfig.TEXT_FAST
             
             prompt = f"""
-            You are the indiiOS Marketing Executive.
-            Design 3 specific guerrilla marketing "Missions" for a street team of fans in {city}.
+            You are the indiiOS Marketing Executive and Guerrilla Marketing Strategist.
+            Create 5-8 hyper-local street team missions for an indie music campaign.
             
+            City: {city}
+            Budget: ${budget}
             Campaign Goal: {campaign_goal}
-            Budget for Materials/Rewards: ${budget}
             
             Rules:
-            1. Missions must be legal but edgy/attention-grabbing.
-            2. Suggest specific neighborhoods or types of locations in {city} if known, or general archetypes (e.g., college campuses, record stores).
-            3. Allocate the ${budget} across the 3 missions.
+            1. Each mission must be specific, actionable, and measurable.
+            2. Include cost estimates per mission.
+            3. Include specific locations or venue types.
             
             Return ONLY a JSON object:
             {{
               "city": "{city}",
+              "total_budget": {budget},
               "missions": [
                 {{
+                  "id": 1,
                   "title": "...",
-                  "action_plan": "...",
-                  "target_locations": "...",
-                  "budget_allocated": 50,
-                  "fan_reward": "..."
+                  "location_type": "Coffee shops near campus",
+                  "action": "Distribute QR code stickers linking to pre-save",
+                  "cost_estimate": 25,
+                  "kpi": "500 stickers placed"
                 }}
               ]
             }}
             """
             
-            
-
-            
             _rl = RateLimiter()
             wait_time = _rl.wait_time("gemini")
             if wait_time > 0:
-                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
                 await asyncio.sleep(wait_time)
 
             response = client.models.generate_content(
-                model=model_id,
-                contents=[prompt],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.5
-                )
+                model=model_id, contents=[prompt],
+                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.6)
             )
+            missions_data = json.loads(response.text)
+            
+            # --- Markdown Checklist Export ---
+            import os
+            checklist_lines = [f"# Street Team Missions — {city}", f"**Budget:** ${budget} | **Goal:** {campaign_goal}\n"]
+            for m in missions_data.get("missions", []):
+                checklist_lines.append(f"- [ ] **Mission {m.get('id', '?')}: {m.get('title', '')}**")
+                checklist_lines.append(f"  - Location: {m.get('location_type', '')}")
+                checklist_lines.append(f"  - Action: {m.get('action', '')}")
+                checklist_lines.append(f"  - Cost: ${m.get('cost_estimate', 0)} | KPI: {m.get('kpi', '')}\n")
+            
+            checklist_md = "\n".join(checklist_lines)
+            export_path = kwargs.get("export_path")
+            if export_path:
+                with open(export_path, "w") as f:
+                    f.write(checklist_md)
             
             return Response(
-                message=f"Street Team missions generated for {city}.",
-                additional={"street_team_plan": json.loads(response.text)}
+                message=f"Street team missions for {city} generated ({len(missions_data.get('missions', []))} missions).",
+                additional={"missions_data": missions_data, "checklist_md": checklist_md, "export_path": export_path}
             )
-
         except Exception as e:
             import traceback
             return Response(message=f"Street Team Mission Assigner Failed: {str(e)}\n{traceback.format_exc()}", break_loop=False)

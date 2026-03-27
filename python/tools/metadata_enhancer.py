@@ -7,13 +7,13 @@ from python.config.ai_models import AIConfig
 
 class MetadataEnhancer(Tool):
     """
-    Database/Metadata Manager Tool.
-    Takes basic track info and generates rich, SEO-optimized metadata including 
-    keywords, moods, similar artists, and a short descriptive blurb.
+    Distribution Agent Tool.
+    AI-enriches track metadata with genre tags, mood descriptors, and DSP-optimized descriptions.
+    Saves enhanced metadata to Firestore for distribution pipeline consumption.
     """
 
-    async def execute(self, track_title: str, artist_name: str, genre: str, basic_description: str) -> Response:
-        self.set_progress(f"Enhancing Metadata for {track_title}")
+    async def execute(self, track_title: str, artist_name: str, raw_genre: str = "", **kwargs) -> Response:
+        self.set_progress(f"Enhancing metadata for '{track_title}'")
         
         try:
             from google import genai
@@ -21,53 +21,62 @@ class MetadataEnhancer(Tool):
             
             api_key = AIConfig.get_api_key()
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
-            model_id = AIConfig.TEXT_FAST # Text processing
+            model_id = AIConfig.TEXT_FAST
             
             prompt = f"""
-            You are the indiiOS Database and Metadata Manager.
-            Your job is to enrich basic track information into comprehensive metadata 
-            suitable for DSPs (Spotify/Apple), Sync Libraries, and SEO.
+            You are the indiiOS Metadata Specialist.
+            Enhance the metadata for optimal DSP discoverability and algorithmic placement.
             
-            Basic Info:
-            Artist: {artist_name}
             Track: {track_title}
-            Genre: {genre}
-            Provided Description: {basic_description}
+            Artist: {artist_name}
+            Raw Genre: {raw_genre}
             
-            Required JSON Output:
+            Return ONLY a JSON object:
             {{
-              "primary_moods": ["Mood 1", "Mood 2", "Mood 3"],
-              "secondary_genres": ["Subgenre 1", "Subgenre 2"],
-              "search_keywords": ["keyword1", "keyword2", "keyword3", "... up to 15"],
-              "similar_artists_for_algorithm": ["Artist 1", "Artist 2", "Artist 3"],
-              "short_blurb_dsp": "A 1-2 sentence compelling description for Spotify/Apple Music pitch.",
-              "sync_themes": ["Theme 1", "Theme 2"]
+              "primary_genre": "...",
+              "secondary_genre": "...",
+              "mood_tags": ["..."],
+              "energy_level": "Low/Medium/High",
+              "bpm_estimate": 0,
+              "dsp_description": "2-sentence description optimized for search",
+              "similar_artists": ["..."],
+              "recommended_playlists": ["..."],
+              "isrc_validation": "Valid/Missing/Invalid"
             }}
             """
-            
-            
-
             
             _rl = RateLimiter()
             wait_time = _rl.wait_time("gemini")
             if wait_time > 0:
-                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
                 await asyncio.sleep(wait_time)
 
             response = client.models.generate_content(
-                model=model_id,
-                contents=[prompt],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.3 # Focused and relevant keywords
-                )
+                model=model_id, contents=[prompt],
+                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.2)
             )
+            enhanced = json.loads(response.text)
+            
+            # --- Firestore persistence ---
+            workflow_status = "Metadata enhanced (local only)"
+            if kwargs.get("save_to_release") and kwargs.get("release_id") and kwargs.get("user_id"):
+                try:
+                    import firebase_admin
+                    from firebase_admin import firestore as admin_firestore
+                    if not firebase_admin._apps:
+                        firebase_admin.initialize_app()
+                    db = admin_firestore.client()
+                    db.collection("users").document(kwargs["user_id"]).collection("releases").document(kwargs["release_id"]).update({
+                        "enhancedMetadata": enhanced,
+                        "metadataEnhancedAt": admin_firestore.SERVER_TIMESTAMP
+                    })
+                    workflow_status = "Metadata saved to release record"
+                except Exception as fs_e:
+                    workflow_status = f"Firestore save failed: {fs_e}"
             
             return Response(
-                message=f"Metadata enriched for {track_title}.",
-                additional={"enriched_metadata": json.loads(response.text)}
+                message=f"Metadata enhanced for '{track_title}'. {workflow_status}",
+                additional={"enhanced_metadata": enhanced, "workflow_status": workflow_status}
             )
-
         except Exception as e:
             import traceback
             return Response(message=f"Metadata Enhancer Failed: {str(e)}\n{traceback.format_exc()}", break_loop=False)

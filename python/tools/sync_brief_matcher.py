@@ -8,11 +8,12 @@ from python.config.ai_models import AIConfig
 class SyncBriefMatcher(Tool):
     """
     Licensing Executive Tool.
-    Ingest a movie supervisor's brief and score the artist's catalog for the best match.
+    Matches tracks from the artist's catalog against incoming sync briefs.
+    Exports match report as CSV for the licensing team.
     """
 
-    async def execute(self, supervisor_brief: str, catalog_json_str: str) -> Response:
-        self.set_progress("Scoring catalog tracks against Music Supervisor Sync Brief")
+    async def execute(self, brief_description: str, catalog_tracks: list, **kwargs) -> Response:
+        self.set_progress(f"Matching catalog against sync brief")
         
         try:
             from google import genai
@@ -22,49 +23,52 @@ class SyncBriefMatcher(Tool):
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
             model_id = AIConfig.TEXT_FAST
             
+            catalog_str = json.dumps(catalog_tracks[:20])
+            
             prompt = f"""
-            You are the indiiOS Licensing Executive (Sync).
-            A music supervisor just requested a track. Score the provided catalog to find the top 2 best matches.
+            You are the indiiOS Licensing Executive.
+            Match tracks from the catalog against a sync placement brief.
             
-            Supervisor Brief: "{supervisor_brief}"
-            Catalog Data: {catalog_json_str}
+            Brief: {brief_description}
+            Catalog: {catalog_str}
             
-            Rules:
-            1. Provide a match score (0-100) for the top 2 tracks.
-            2. Generate a 2-sentence pitch for the #1 track explaining WHY it perfectly fits the brief.
-            
-            Return ONLY a JSON object:
+            Score each track 0-100 for brief fit. Return ONLY a JSON object:
             {{
-              "top_matches": [
-                {{"track_id": "...", "score": 95, "reasoning": "..."}}
+              "brief_summary": "...",
+              "matches": [
+                {{"track_title": "...", "score": 85, "rationale": "Why it fits the brief"}}
               ],
-              "email_pitch_body": "..."
+              "no_match_suggestion": "If nothing fits, suggest the type of track to create"
             }}
             """
-            
-            
-
             
             _rl = RateLimiter()
             wait_time = _rl.wait_time("gemini")
             if wait_time > 0:
-                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
                 await asyncio.sleep(wait_time)
 
             response = client.models.generate_content(
-                model=model_id,
-                contents=[prompt],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.3
-                )
+                model=model_id, contents=[prompt],
+                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.1)
             )
+            match_data = json.loads(response.text)
+            
+            # --- CSV Export ---
+            import os
+            csv_rows = ["Track,Score,Rationale"]
+            for m in match_data.get("matches", []):
+                rationale = m.get("rationale", "").replace(",", ";")
+                csv_rows.append(f"{m.get('track_title','')},{m.get('score',0)},{rationale}")
+            csv_payload = "\n".join(csv_rows)
+            export_path = kwargs.get("export_path")
+            if export_path:
+                with open(export_path, "w") as f:
+                    f.write(csv_payload)
             
             return Response(
-                message=f"Sync brief matched against catalog.",
-                additional={"sync_pitch": json.loads(response.text)}
+                message=f"Sync brief matched: {len(match_data.get('matches',[]))} tracks scored.",
+                additional={"match_data": match_data, "csv_payload": csv_payload, "export_path": export_path}
             )
-
         except Exception as e:
             import traceback
             return Response(message=f"Sync Brief Matcher Failed: {str(e)}\n{traceback.format_exc()}", break_loop=False)

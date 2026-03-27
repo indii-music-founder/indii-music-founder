@@ -7,12 +7,13 @@ from python.config.ai_models import AIConfig
 
 class YoutubeThumbnailAbTester(Tool):
     """
-    Director Agent Tool.
-    Generates 5 distinct high-contrast YouTube thumbnail concepts based on a music video theme.
+    Brand Manager / Social Tool.
+    Generates A/B test concepts for YouTube thumbnails with scoring criteria.
+    Exports comparison brief as markdown.
     """
 
-    async def execute(self, track_title: str, video_theme: str, target_vibe: str = "Cinematic") -> Response:
-        self.set_progress(f"Generating A/B Thumbnail Concepts for: {track_title}")
+    async def execute(self, video_title: str, target_audience: str, **kwargs) -> Response:
+        self.set_progress(f"Generating thumbnail A/B test for '{video_title}'")
         
         try:
             from google import genai
@@ -20,61 +21,72 @@ class YoutubeThumbnailAbTester(Tool):
             
             api_key = AIConfig.get_api_key()
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
-            model_id = AIConfig.TEXT_FAST # Text/Concept generation
+            model_id = AIConfig.TEXT_FAST
             
             prompt = f"""
-            You are the indiiOS Visual Director.
-            Generate 5 highly distinct YouTube thumbnail concepts for a music video to use in A/B testing.
+            You are the indiiOS YouTube Thumbnail Strategist.
+            Generate 3 A/B test thumbnail concepts for maximum CTR.
             
-            Track Title: {track_title}
-            Video Theme: {video_theme}
-            Target Vibe: {target_vibe}
+            Video: {video_title}
+            Target Audience: {target_audience}
             
-            Rules for YT Thumbnails:
-            1. High contrast, highly clickable.
-            2. The 5 concepts must test different marketing angles (e.g., Concept 1: Emotional Close-up, Concept 2: Wide Action Shot, Concept 3: Typography heavy).
-            3. Provide specific layout instructions (foreground, background, text overlay).
-            4. Keep text overlay under 4 words.
+            YouTube thumbnail best practices:
+            - 1280x720 resolution (16:9)
+            - Faces with emotion get 30% higher CTR
+            - High contrast, bold text (3-4 words max)
+            - Avoid clutter
             
             Return ONLY a JSON object:
             {{
-              "track": "{track_title}",
-              "thumbnail_concepts": [
+              "variants": [
                 {{
-                  "variant": "A",
-                  "angle": "Emotional Face",
-                  "visual_description": "...",
-                  "text_overlay": "...",
-                  "imagen_prompt": "..."
-                }},
-                // ... 5 distinct concepts total
-              ]
+                  "variant_id": "A",
+                  "concept": "Close-up face with surprised expression + bold title text",
+                  "text_overlay": "3-4 word text",
+                  "color_scheme": "Dark background, yellow text",
+                  "emotion_trigger": "Curiosity",
+                  "predicted_ctr_range": "4-7%"
+                }}
+              ],
+              "test_duration_days": 7,
+              "minimum_impressions": 1000,
+              "winner_criteria": "Select variant with highest CTR after minimum impressions reached"
             }}
             """
-            
-            
-
             
             _rl = RateLimiter()
             wait_time = _rl.wait_time("gemini")
             if wait_time > 0:
-                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
                 await asyncio.sleep(wait_time)
 
             response = client.models.generate_content(
-                model=model_id,
-                contents=[prompt],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.8 # High creativity needed for distinct visual concepts
-                )
+                model=model_id, contents=[prompt],
+                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.5)
             )
+            ab_data = json.loads(response.text)
+            
+            # --- Markdown Brief ---
+            import os
+            md = [f"# YouTube Thumbnail A/B Test — {video_title}\n", f"**Duration:** {ab_data.get('test_duration_days',7)} days | **Min Impressions:** {ab_data.get('minimum_impressions',1000)}\n"]
+            for v in ab_data.get("variants", []):
+                md.append(f"## Variant {v.get('variant_id','')}")
+                md.append(f"- **Concept:** {v.get('concept','')}")
+                md.append(f"- **Text:** {v.get('text_overlay','')}")
+                md.append(f"- **Colors:** {v.get('color_scheme','')}")
+                md.append(f"- **Trigger:** {v.get('emotion_trigger','')}")
+                md.append(f"- **Predicted CTR:** {v.get('predicted_ctr_range','')}\n")
+            md.append(f"**Winner Criteria:** {ab_data.get('winner_criteria','')}")
+            
+            brief_md = "\n".join(md)
+            export_path = kwargs.get("export_path")
+            if export_path:
+                with open(export_path, "w") as f:
+                    f.write(brief_md)
             
             return Response(
-                message=f"5 A/B test thumbnail concepts generated.",
-                additional={"thumbnail_strategy": json.loads(response.text)}
+                message=f"Thumbnail A/B test: {len(ab_data.get('variants',[]))} variants generated.",
+                additional={"ab_data": ab_data, "brief_md": brief_md, "export_path": export_path}
             )
-
         except Exception as e:
             import traceback
-            return Response(message=f"YouTube Thumbnail AB Tester Failed: {str(e)}\n{traceback.format_exc()}", break_loop=False)
+            return Response(message=f"YouTube Thumbnail A/B Tester Failed: {str(e)}\n{traceback.format_exc()}", break_loop=False)

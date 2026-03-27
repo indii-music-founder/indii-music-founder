@@ -1,52 +1,87 @@
+
+from python.helpers.rate_limiter import RateLimiter
+import asyncio
 import json
-import argparse
-from typing import Dict, Any, List
+from python.helpers.tool import Tool, Response
+from python.config.ai_models import AIConfig
 
-def tag_music_library(audio_path: str, context: str) -> Dict[str, Any]:
+class MusicLibraryTagger(Tool):
     """
-    Mock implementation of a music library tagger for the Licensing Agent.
-    In reality, this would use Essentia.js or a Python audio ML library to 
-    extract BPM, key, mood, genre, and instrumentation tags for sync pitching.
+    Publishing Administrator Tool.
+    Bulk-tags tracks for sync library submission with standardized descriptor sets.
+    Exports complete tag set as CSV.
     """
-    try:
-        # Simulated tagging logic based on keywords in the context
-        moods = ["Energetic", "Uplifting"]
-        instruments = ["Synth", "Drum Machine"]
-        genres = ["Electronic", "Pop"]
-        bpm = 120
-        key = "C Minor"
+
+    async def execute(self, tracks: list, library_format: str = "standard", **kwargs) -> Response:
+        self.set_progress(f"Bulk-tagging {len(tracks)} tracks for {library_format} library")
         
-        context_lower = context.lower()
-        if "sad" in context_lower or "melancholy" in context_lower:
-            moods = ["Sad", "Reflective", "Cinematic"]
-            instruments = ["Piano", "Strings"]
-            bpm = 75
-        elif "aggressive" in context_lower or "hype" in context_lower:
-            moods = ["Aggressive", "Tense", "Dark"]
-            instruments = ["Distorted Bass", "Heavy Drums"]
-            genres = ["Hip Hop", "Trap"]
-            bpm = 140
+        try:
+            from google import genai
+            from google.genai import types
             
-        result = {
-            "status": "success",
-            "audio_file": audio_path,
-            "primary_genre": genres[0],
-            "bpm": bpm,
-            "key_signature": key,
-            "mood_tags": moods,
-            "instrument_tags": instruments,
-            "sync_placements_suited_for": ["Action Trailer", "Sports Promo"] if bpm > 110 else ["Drama", "Documentary"]
-        }
-        return result
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+            api_key = AIConfig.get_api_key()
+            client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
+            model_id = AIConfig.TEXT_FAST
+            
+            tracks_str = json.dumps(tracks[:20])
+            
+            prompt = f"""
+            You are the indiiOS Music Library Tagger.
+            Bulk-tag tracks for a {library_format} music library using standardized descriptors.
+            
+            Tracks: {tracks_str}
+            
+            For each track, provide:
+            1. Primary/Secondary genre
+            2. Mood (1-3 tags from standardized set)
+            3. Tempo (BPM range + descriptor)
+            4. Instrumentation highlights
+            5. Vocal type
+            6. Best-fit placements
+            
+            Return ONLY a JSON object:
+            {{
+              "tagged_tracks": [
+                {{
+                  "title": "...",
+                  "genres": ["..."],
+                  "moods": ["..."],
+                  "tempo": "120 BPM - Upbeat",
+                  "instrumentation": ["..."],
+                  "vocal_type": "Male",
+                  "placements": ["TV Drama", "Commercial"]
+                }}
+              ]
+            }}
+            """
+            
+            _rl = RateLimiter()
+            wait_time = _rl.wait_time("gemini")
+            if wait_time > 0:
+                await asyncio.sleep(wait_time)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Music Library Tagger")
-    parser.add_argument("--audio", type=str, required=True, help="Path to the audio file")
-    parser.add_argument("--context", type=str, default="", help="Optional context or description of the track")
-    
-    args = parser.parse_args()
-    
-    result = tag_music_library(args.audio, args.context)
-    print(json.dumps(result, indent=2))
+            response = client.models.generate_content(
+                model=model_id, contents=[prompt],
+                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.2)
+            )
+            tagged = json.loads(response.text)
+            
+            # --- CSV Export ---
+            import os
+            csv_rows = ["Title,Genres,Moods,Tempo,Instrumentation,Vocal,Placements"]
+            for t in tagged.get("tagged_tracks", []):
+                csv_rows.append(f"{t.get('title','')},{'; '.join(t.get('genres',[]))},{'; '.join(t.get('moods',[]))},{t.get('tempo','')},{'; '.join(t.get('instrumentation',[]))},{t.get('vocal_type','')},{'; '.join(t.get('placements',[]))}")
+            csv_payload = "\n".join(csv_rows)
+            
+            export_path = kwargs.get("export_path")
+            if export_path:
+                with open(export_path, "w") as f:
+                    f.write(csv_payload)
+            
+            return Response(
+                message=f"Bulk tagged {len(tagged.get('tagged_tracks',[]))} tracks.",
+                additional={"tagged": tagged, "csv_payload": csv_payload, "export_path": export_path}
+            )
+        except Exception as e:
+            import traceback
+            return Response(message=f"Music Library Tagger Failed: {str(e)}\n{traceback.format_exc()}", break_loop=False)
