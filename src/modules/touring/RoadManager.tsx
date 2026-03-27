@@ -293,7 +293,7 @@ const RoadManager: React.FC = () => {
                 <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <ItinerarySummaryPanel itinerary={itinerary} />
                     <VehicleStatusPanel vehicleStats={vehicleStats} fuelLogistics={fuelLogistics} />
-                    <RiderQuickPanel />
+                    <RiderQuickPanel onNavigate={() => setActiveTab('rider')} />
                     <EmergencyContactsPanel />
                 </aside>
             </div>
@@ -342,32 +342,42 @@ interface VehicleStatsShape { fuelLevelPercent?: number; milesDriven?: number; m
 
 function VehicleStatusPanel({ vehicleStats, fuelLogistics }: { vehicleStats: VehicleStatsShape | null; fuelLogistics: FuelLogistics | null }) {
 
-    const fuelPct = vehicleStats?.fuelLevelPercent ?? 50;
+    const isConfigured = vehicleStats !== null;
+    const fuelPct = vehicleStats?.fuelLevelPercent ?? 0;
     const fuelColor = fuelPct > 50 ? 'text-green-400' : fuelPct > 20 ? 'text-yellow-400' : 'text-red-400';
 
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Vehicle Status</h3>
             <div className="space-y-2">
-                <div className="p-3 rounded-lg bg-white/[0.02]">
-                    <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-gray-500 font-bold">Fuel Level</span>
-                        <span className={`text-[10px] font-bold ${fuelColor}`}>{fuelPct}%</span>
+                {!isConfigured ? (
+                    <div className="p-3 rounded-lg bg-white/[0.02] text-center">
+                        <p className="text-[10px] text-gray-600">Not configured</p>
+                        <p className="text-[10px] text-gray-700 mt-0.5">Set up vehicle stats in On The Road</p>
                     </div>
-                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div
-                            className={`h-full rounded-full transition-all ${fuelPct > 50 ? 'bg-green-500' : fuelPct > 20 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                            style={{ width: `${fuelPct}%` }}
-                        />
-                    </div>
-                </div>
-                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02]">
-                    <Fuel size={14} className="text-gray-400 flex-shrink-0" />
-                    <div>
-                        <p className="text-xs text-white">{vehicleStats?.milesDriven?.toLocaleString() || '0'} mi driven</p>
-                        <p className="text-[10px] text-gray-500">{vehicleStats?.mpg || 0} MPG</p>
-                    </div>
-                </div>
+                ) : (
+                    <>
+                        <div className="p-3 rounded-lg bg-white/[0.02]">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[10px] text-gray-500 font-bold">Fuel Level</span>
+                                <span className={`text-[10px] font-bold ${fuelColor}`}>{fuelPct}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all ${fuelPct > 50 ? 'bg-green-500' : fuelPct > 20 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                    style={{ width: `${fuelPct}%` }}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02]">
+                            <Fuel size={14} className="text-gray-400 flex-shrink-0" />
+                            <div>
+                                <p className="text-xs text-white">{vehicleStats?.milesDriven?.toLocaleString() || '0'} mi driven</p>
+                                <p className="text-[10px] text-gray-500">{vehicleStats?.mpg || 0} MPG</p>
+                            </div>
+                        </div>
+                    </>
+                )}
                 {fuelLogistics && (
                     <div className={`p-2.5 rounded-lg text-xs flex items-start gap-2 ${fuelLogistics.status === 'CRITICAL' ? 'bg-red-500/10 border border-red-500/20 text-red-300' :
                         fuelLogistics.status === 'LOW' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300' :
@@ -382,29 +392,36 @@ function VehicleStatusPanel({ vehicleStats, fuelLogistics }: { vehicleStats: Veh
     );
 }
 
-function RiderQuickPanel() {
-    // Rider checklist items should come from the Rider Checklist module
+function RiderQuickPanel({ onNavigate }: { onNavigate?: () => void }) {
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Rider Checklist</h3>
             <div className="flex flex-col items-center justify-center py-3 text-center">
                 <CheckSquare size={14} className="text-gray-600 mb-1.5" />
                 <p className="text-[10px] text-gray-600">No active rider</p>
-                <p className="text-[10px] text-gray-700 mt-0.5">Create a rider in the Rider tab</p>
+                {onNavigate ? (
+                    <button
+                        onClick={onNavigate}
+                        className="text-[10px] text-yellow-500/70 hover:text-yellow-400 mt-1 transition-colors underline underline-offset-2"
+                    >
+                        Create one in Rider tab →
+                    </button>
+                ) : (
+                    <p className="text-[10px] text-gray-700 mt-0.5">Create a rider in the Rider tab</p>
+                )}
             </div>
         </div>
     );
 }
 
 function EmergencyContactsPanel() {
-    // Emergency contacts should be entered by the user for each tour
     return (
         <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-3">
             <h3 className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-3 px-1">Emergency</h3>
             <div className="flex flex-col items-center justify-center py-3 text-center">
                 <Phone size={14} className="text-red-400/50 mb-1.5" />
                 <p className="text-[10px] text-gray-600">No contacts saved</p>
-                <p className="text-[10px] text-gray-700 mt-0.5">Add emergency numbers in tour settings</p>
+                <p className="text-[10px] text-gray-700 mt-0.5">Add numbers in tour settings</p>
             </div>
         </div>
     );

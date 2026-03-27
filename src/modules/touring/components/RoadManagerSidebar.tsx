@@ -28,7 +28,7 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
                     Road Mgr
                 </h1>
                 <p className="text-[10px] text-gray-500 font-mono mt-1 uppercase tracking-[0.2em]">
-                    Logistics V2.1
+                    Road Manager
                 </p>
             </div>
 
