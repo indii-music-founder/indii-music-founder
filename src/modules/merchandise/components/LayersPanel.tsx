@@ -41,20 +41,17 @@ const LayerProperties: React.FC<{
         (layer.fabricObject.globalCompositeOperation as GlobalCompositeOperation) || 'source-over'
     );
 
-    // Debounced updaters
-    const debouncedOpacityUpdate = useMemo(
-        () => debounce((l: CanvasObject, value: number) => {
-            onUpdateProperty?.(l, 'opacity', value / 100);
-        }, 150),
-        [onUpdateProperty]
-    );
+    // Typed callbacks satisfy debounce<T extends (...args: any[]) => any> constraint
+    const _opacityCb = (l: CanvasObject, value: number) => { onUpdateProperty?.(l, 'opacity', value / 100); };
 
-    const debouncedFontSizeUpdate = useMemo(
-        () => debounce((l: CanvasObject, value: number) => {
-            onUpdateProperty?.(l, 'fontSize', value);
-        }, 150),
-        [onUpdateProperty]
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const debouncedOpacityUpdate = useMemo(() => debounce(_opacityCb as (...a: any[]) => any, 150), [onUpdateProperty]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const _fontSizeCb = (l: CanvasObject, value: number) => { onUpdateProperty?.(l, 'fontSize', value); };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const debouncedFontSizeUpdate = useMemo(() => debounce(_fontSizeCb as (...a: any[]) => any, 150), [onUpdateProperty]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
     return (
         <MerchCard className="p-4">

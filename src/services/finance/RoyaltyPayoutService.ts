@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { logger } from '@/utils/logger';
-import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
+import { Timestamp, FieldValue, getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { app } from '@/services/firebase';
 
 export interface RoyaltyPayout {
@@ -12,7 +11,7 @@ export interface RoyaltyPayout {
     period: string; // "2026-Q1"
     status: 'pending' | 'processed' | 'failed';
     method: 'stripe' | 'wire' | 'manual';
-    processedAt?: any;
+    processedAt?: Date | Timestamp | FieldValue;
 }
 
 export class RoyaltyPayoutService {

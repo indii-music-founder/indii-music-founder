@@ -1,17 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { logger } from '@/utils/logger';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { db } from '@/services/firebase';
-import {
-    collection,
-    doc,
-    runTransaction,
-    addDoc,
-    serverTimestamp,
-    getDocs,
-    query,
-    where
-} from 'firebase/firestore';
+import { Timestamp, FieldValue, collection, doc, runTransaction, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 
 export interface RevenueReportItem {
     transactionId: string;
@@ -30,14 +20,14 @@ export interface PayoutRecord {
     role: string;
     status: 'pending' | 'paid';
     reportId?: string;
-    createdAt?: any;
+    createdAt?: Timestamp | FieldValue;
 }
 
 export interface RecoupmentBalance {
     releaseId: string; // releaseId or trackIsrc
     balance: number; // Remaining amount to recoup
     totalExpense: number;
-    updatedAt: any;
+    updatedAt: Timestamp | FieldValue;
 }
 
 export class RoyaltyService {

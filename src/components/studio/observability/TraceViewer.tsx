@@ -96,7 +96,10 @@ export function TraceViewer() {
                                                         {trace.agentId}
                                                     </Badge>
                                                     <span className="text-[10px] text-muted-foreground">
-                                                        {trace.startTime?.seconds ? formatDistanceToNow(new Date(trace.startTime.seconds * 1000), { addSuffix: true }) : 'Now'}
+                                                        {trace.startTime instanceof Object && 'seconds' in trace.startTime && (trace.startTime as { seconds: number }).seconds
+                                                            ? formatDistanceToNow(new Date((trace.startTime as { seconds: number }).seconds * 1000), { addSuffix: true })
+                                                            : 'Now'}
+
                                                     </span>
                                                 </div>
                                                 <div className="text-xs line-clamp-1 text-muted-foreground font-mono">

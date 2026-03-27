@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 import { db } from '@/services/firebase';
-import { collection, doc, addDoc, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
+import { Timestamp, FieldValue, collection, doc, addDoc, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
 export interface TraceStep {
     type: 'thought' | 'tool_call' | 'tool_result' | 'routing' | 'error';
-    content: any;
+    content: unknown;
     timestamp: number;
     model?: string;
     usage?: {
@@ -20,14 +19,14 @@ export interface TraceData {
     userId: string;
     agentId: string;
     input: string;
-    output?: any;
+    output?: unknown;
     status: 'pending' | 'completed' | 'failed';
     steps: TraceStep[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     parentTraceId?: string;
     swarmId?: string;
-    createdAt: any;
-    updatedAt: any;
+    createdAt: Timestamp | FieldValue;
+    updatedAt: Timestamp | FieldValue;
 }
 
 export class TraceService {
@@ -40,7 +39,7 @@ export class TraceService {
         userId: string,
         agentId: string,
         input: string,
-        metadata?: any,
+        metadata?: Record<string, unknown>,
         parentTraceId?: string
     ): Promise<string> {
         try {
@@ -66,7 +65,7 @@ export class TraceService {
     /**
      * Add a granular step to an existing trace.
      */
-    static async addStep(traceId: string, type: TraceStep['type'], content: any): Promise<void> {
+    static async addStep(traceId: string, type: TraceStep['type'], content: unknown): Promise<void> {
         if (traceId.startsWith('local_')) return;
 
         try {
@@ -90,7 +89,7 @@ export class TraceService {
     static async addStepWithUsage(
         traceId: string,
         type: TraceStep['type'],
-        content: any,
+        content: unknown,
         model: string,
         usage: TraceStep['usage']
     ): Promise<void> {
@@ -116,7 +115,7 @@ export class TraceService {
     /**
      * Mark a trace as successfully completed.
      */
-    static async completeTrace(traceId: string, output: any): Promise<void> {
+    static async completeTrace(traceId: string, output: unknown): Promise<void> {
         if (traceId.startsWith('local_')) return;
 
         try {
