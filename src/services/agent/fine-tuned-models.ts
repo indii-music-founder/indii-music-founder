@@ -23,49 +23,49 @@ export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS 
  */
 export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = {
     // === MANAGER'S OFFICE ===
-    // R5 — gemini-2.5-pro base (100 examples) — 2026-03-25
-    'generalist':      'projects/223837784072/locations/us-central1/endpoints/6477549004426051584',
+    // R6 — gemini-2.5-pro base (~132 examples, ≥50% expert) — 2026-03-26
+    'generalist':      'projects/223837784072/locations/us-central1/endpoints/723919005483532288',
 
     // === DEPARTMENTS ===
-    // R5 — gemini-2.5-flash base (100 examples) — 2026-03-25
-    'finance':         'projects/223837784072/locations/us-central1/endpoints/969646660151934976',
-    // R5 — gemini-2.5-flash base (100 examples) — 2026-03-25
-    'legal':           'projects/223837784072/locations/us-central1/endpoints/5559518367884247040',
-    // R5 — gemini-2.5-flash base (100 examples) — 2026-03-25
-    'distribution':    'projects/223837784072/locations/us-central1/endpoints/4660346554782056448',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash base (~130 examples, ≥50% expert) — 2026-03-26
+    'finance':         'projects/223837784072/locations/us-central1/endpoints/3831402748369174528',
+    // R6 — gemini-2.5-flash base (~106 examples, ≥50% expert) — 2026-03-26
+    'legal':           'projects/223837784072/locations/us-central1/endpoints/2912668424385593344',
+    // R6 — gemini-2.5-flash base (~131 examples, ≥50% expert) — 2026-03-26
+    'distribution':    'projects/223837784072/locations/us-central1/endpoints/3941740939239751680',
+    // R6 — gemini-2.5-flash base (~110 examples, ≥50% expert) — TODO: job still running
     'marketing':       'projects/223837784072/locations/us-central1/endpoints/4428411173972475904',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
-    'social':          'projects/223837784072/locations/us-central1/endpoints/2635978522279018496',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
-    'publishing':      'projects/223837784072/locations/us-central1/endpoints/649891086608629760',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
-    'licensing':       'projects/223837784072/locations/us-central1/endpoints/3386953760143048704',
+    // R6 — gemini-2.5-flash-lite base (~104 examples, ≥50% expert) — 2026-03-26
+    'social':          'projects/223837784072/locations/us-central1/endpoints/6535251374651736064',
+    // R6 — gemini-2.5-flash base (~109 examples, ≥50% expert) — 2026-03-26
+    'publishing':      'projects/223837784072/locations/us-central1/endpoints/1989430500774641664',
+    // R6 — gemini-2.5-flash base (~139 examples, ≥50% expert) — 2026-03-26
+    'licensing':       'projects/223837784072/locations/us-central1/endpoints/6299375344168206336',
 
     // === SPECIALISTS ===
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
-    'brand':           'projects/223837784072/locations/us-central1/endpoints/8196798162174738432',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
-    'road':            'projects/223837784072/locations/us-central1/endpoints/5522222933470085120',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash-lite base (~120 examples, ≥50% expert) — 2026-03-26
+    'brand':           'projects/223837784072/locations/us-central1/endpoints/628217513401909248',
+    // R6 — gemini-2.5-flash-lite base (~124 examples, ≥50% expert) — 2026-03-26
+    'road':            'projects/223837784072/locations/us-central1/endpoints/1199611716124540928',
+    // R6 — gemini-2.5-flash-lite base (~102 examples, ≥50% expert) — TODO: job still running
     'publicist':       'projects/223837784072/locations/us-central1/endpoints/3759626629307957248',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
-    'music':           'projects/223837784072/locations/us-central1/endpoints/1381726026056335360',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash base (~110 examples, ≥50% expert) — 2026-03-26
+    'music':           'projects/223837784072/locations/us-central1/endpoints/4597014685022158848',
+    // R6 — gemini-2.5-flash-lite base (~134 examples, ≥50% expert) — TODO: job still running
     'video':           'projects/223837784072/locations/us-central1/endpoints/7846080341193261056',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash-lite base (~111 examples, ≥50% expert) — TODO: job still running
     'devops':          'projects/223837784072/locations/us-central1/endpoints/953884061456138240',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash-lite base (~87 examples, ≥50% expert) — TODO: job still running
     'security':        'projects/223837784072/locations/us-central1/endpoints/7299455936421167104',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash-lite base (~97 examples, ≥50% expert) — TODO: job still running
     'producer':        'projects/223837784072/locations/us-central1/endpoints/8499102287161982976',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
-    'director':        'projects/223837784072/locations/us-central1/endpoints/7103549352630550528',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash-lite base (~106 examples, ≥50% expert) — 2026-03-26
+    'director':        'projects/223837784072/locations/us-central1/endpoints/5461705813477294080',
+    // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — TODO: job still running
     'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/1505012065855602688',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — TODO: job still running
     'merchandise':     'projects/223837784072/locations/us-central1/endpoints/2194625758796709888',
-    // R5 — gemini-2.5-flash-lite base (100 examples) — 2026-03-25
+    // R6 — gemini-2.5-flash-lite base (~120 examples, ≥50% expert) — TODO: job still running
     'curriculum':      'projects/223837784072/locations/us-central1/endpoints/482694950442500096',
 
     // Not yet fine-tuned
