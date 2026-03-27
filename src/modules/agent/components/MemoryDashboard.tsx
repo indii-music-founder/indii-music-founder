@@ -37,6 +37,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { auth } from '@/services/firebase';
 import type { AlwaysOnMemory, AlwaysOnMemoryCategory, MemoryTier } from '@/types/AlwaysOnMemory';
 import type { Directive } from '@/services/directive/DirectiveTypes';
+import type { MemoryInboxItem } from '@/core/store/slices/memoryAgentSlice';
 
 // ============================================================================
 // CONSTANTS
@@ -301,6 +302,8 @@ const DirectiveCard: React.FC<{ directive: Directive }> = ({ directive }) => {
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.01, boxShadow: '0 8px 30px rgba(59, 130, 246, 0.1)' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             style={{
                 padding: '14px 16px',
                 borderRadius: 12,
@@ -351,6 +354,112 @@ const DirectiveCard: React.FC<{ directive: Directive }> = ({ directive }) => {
     );
 };
 
+const HandshakeApprovalCard: React.FC<{
+    item: MemoryInboxItem;
+    onApprove: () => void;
+    onReject: () => void;
+}> = ({ item, onApprove, onReject }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.01, boxShadow: '0 8px 30px rgba(239, 68, 68, 0.1)' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            style={{
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                marginBottom: 8,
+            }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <Shield size={14} color="#ef4444" />
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    Digital Handshake Required
+                </span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>
+                    Directive: {item.directiveId}
+                </span>
+            </div>
+
+            <p style={{ fontSize: 14, color: 'white', margin: '0 0 12px 0', fontWeight: 500 }}>
+                {item.actionDescription}
+            </p>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                {item.computeExceeded && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(251,191,36,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                        <Zap size={12} color="#fbbf24" />
+                        <span style={{ fontSize: 10, color: '#fbbf24', fontWeight: 600 }}>Compute Exceeded</span>
+                    </div>
+                )}
+                {item.isDestructive && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(239,68,68,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                        <AlertCircle size={12} color="#ef4444" />
+                        <span style={{ fontSize: 10, color: '#ef4444', fontWeight: 600 }}>Destructive Action</span>
+                    </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
+                    <Clock size={12} color="#a1a1aa" />
+                    <span style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600 }}>{item.status}</span>
+                </div>
+            </div>
+
+            {item.status === 'PENDING' && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                        onClick={onApprove}
+                        style={{
+                            flex: 1,
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            color: '#10b981',
+                            padding: '8px 0',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)' }}
+                    >
+                        <CheckCircle size={14} /> Approve
+                    </button>
+                    <button
+                        onClick={onReject}
+                        style={{
+                            flex: 1,
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            color: '#ef4444',
+                            padding: '8px 0',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
+                    >
+                        <X size={14} /> Reject
+                    </button>
+                </div>
+            )}
+        </motion.div>
+    );
+};
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -361,6 +470,7 @@ export const MemoryDashboard: React.FC = () => {
         alwaysOnInsights: insights,
         activeDirectives: directives,
         alwaysOnEngineStatus: status,
+        memoryInboxItems: approvals,
         isMemoryDashboardOpen,
         memorySearchQuery,
         memoryFilterCategory,
@@ -374,6 +484,8 @@ export const MemoryDashboard: React.FC = () => {
         loadAlwaysOnMemories,
         loadAlwaysOnInsights,
         loadDirectives,
+        loadMemoryInbox,
+        updateMemoryInboxItemStatus,
         refreshAlwaysOnEngineStatus,
         startMemoryEngine,
         stopMemoryEngine,
@@ -385,6 +497,7 @@ export const MemoryDashboard: React.FC = () => {
         alwaysOnMemories: s.alwaysOnMemories || [],
         alwaysOnInsights: s.alwaysOnInsights || [],
         activeDirectives: s.activeDirectives || [],
+        memoryInboxItems: s.memoryInboxItems || [],
         alwaysOnEngineStatus: s.alwaysOnEngineStatus || {},
         isMemoryDashboardOpen: s.isMemoryDashboardOpen || false,
         memorySearchQuery: s.memorySearchQuery || '',
@@ -399,6 +512,8 @@ export const MemoryDashboard: React.FC = () => {
         loadAlwaysOnMemories: s.loadAlwaysOnMemories,
         loadAlwaysOnInsights: s.loadAlwaysOnInsights,
         loadDirectives: s.loadDirectives,
+        loadMemoryInbox: s.loadMemoryInbox,
+        updateMemoryInboxItemStatus: s.updateMemoryInboxItemStatus,
         refreshAlwaysOnEngineStatus: s.refreshAlwaysOnEngineStatus,
         startMemoryEngine: s.startMemoryEngine,
         stopMemoryEngine: s.stopMemoryEngine,
@@ -414,7 +529,7 @@ export const MemoryDashboard: React.FC = () => {
     const [isQuerying, setIsQuerying] = useState(false);
     const [isConsolidating, setIsConsolidating] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
-    const [activeTab, setActiveTab] = useState<'memories' | 'insights' | 'directives' | 'query'>('memories');
+    const [activeTab, setActiveTab] = useState<'memories' | 'insights' | 'directives' | 'approvals' | 'query'>('memories');
     const ingestRef = useRef<HTMLTextAreaElement>(null);
 
     // Load data on mount
@@ -424,6 +539,7 @@ export const MemoryDashboard: React.FC = () => {
             loadAlwaysOnMemories?.(userId);
             loadAlwaysOnInsights?.(userId);
             loadDirectives?.(userId);
+            loadMemoryInbox?.(userId);
             refreshAlwaysOnEngineStatus?.(userId);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -671,7 +787,7 @@ export const MemoryDashboard: React.FC = () => {
                     gap: 2,
                     borderBottom: '1px solid rgba(255,255,255,0.04)',
                 }}>
-                    {(['memories', 'insights', 'directives', 'query'] as const).map(tab => (
+                    {(['memories', 'insights', 'directives', 'approvals', 'query'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -933,6 +1049,43 @@ export const MemoryDashboard: React.FC = () => {
                                 ) : (
                                     (directives || []).map((directive: Directive) => (
                                         <DirectiveCard key={directive.id} directive={directive} />
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                        {/* ---- APPROVALS TAB ---- */}
+                        {activeTab === 'approvals' && (
+                            <div style={{ padding: '12px 24px', opacity: 0, animation: 'fadeIn 0.3s forwards' }}>
+                                {(approvals || []).length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '48px 24px',
+                                        color: 'rgba(255,255,255,0.3)',
+                                    }}>
+                                        <Shield size={32} style={{ marginBottom: 12, opacity: 0.3 }} />
+                                        <p style={{ fontSize: 14, margin: 0 }}>
+                                            No Digital Handshake requests currently pending.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    (approvals || []).map((item: MemoryInboxItem) => (
+                                        <HandshakeApprovalCard
+                                            key={item.id}
+                                            item={item}
+                                            onApprove={() => {
+                                                const userId = auth.currentUser?.uid;
+                                                if (userId && updateMemoryInboxItemStatus) {
+                                                    updateMemoryInboxItemStatus(userId, item.id, 'APPROVED');
+                                                }
+                                            }}
+                                            onReject={() => {
+                                                const userId = auth.currentUser?.uid;
+                                                if (userId && updateMemoryInboxItemStatus) {
+                                                    updateMemoryInboxItemStatus(userId, item.id, 'REJECTED');
+                                                }
+                                            }}
+                                        />
                                     ))
                                 )}
                             </div>
