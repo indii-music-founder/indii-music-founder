@@ -148,6 +148,17 @@ export interface ElectronAPI {
     brand?: {
         analyzeConsistency: (assetPath: string, brandKit: Record<string, unknown>) => Promise<{ success: boolean; report?: unknown; issues?: unknown[]; error?: string }>;
     };
+
+    // Built-in Task Scheduler (Neural Sync + background jobs)
+    scheduler?: {
+        register: (request: unknown) => Promise<{ success: boolean; task?: unknown; error?: string }>;
+        cancel: (taskId: string) => Promise<{ success: boolean; error?: string }>;
+        setEnabled: (taskId: string, enabled: boolean) => Promise<{ success: boolean; error?: string }>;
+        status: () => Promise<{ success: boolean; status?: unknown; error?: string }>;
+        get: (taskId: string) => Promise<{ success: boolean; task?: unknown; error?: string }>;
+        onTick: (callback: (event: unknown) => void) => () => void;
+        onNeuralSync: (callback: (payload: unknown) => void) => () => void;
+    };
 }
 
 declare global {
