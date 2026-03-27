@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
-import { XYPosition } from 'reactflow';
+import { XYPosition, Node } from 'reactflow';
 import { Status } from '../types';
 import { logger } from '@/utils/logger';
+
 
 export const createNodeFromDrop = (
     event: React.DragEvent,
     position: XYPosition,
-    addNode: (node: any) => void
+    addNode: (node: Node) => void
+
 ) => {
     const nodeType = event.dataTransfer.getData('application/reactflow');
 
