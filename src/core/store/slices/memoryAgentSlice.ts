@@ -20,6 +20,16 @@ import type {
 } from '@/types/AlwaysOnMemory';
 import type { Directive } from '@/services/directive/DirectiveTypes';
 import { DirectiveService } from '@/services/directive/DirectiveService';
+import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/services/firebase';
+import type { HandshakeRequest } from '@/services/agent/governance/DigitalHandshake';
+
+export interface MemoryInboxItem extends HandshakeRequest {
+    id: string;
+    type: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    createdAt: Timestamp;
+}
 
 // ============================================================================
 // STATE
@@ -32,6 +42,7 @@ export interface MemoryAgentSlice {
     alwaysOnIngestionEvents: IngestionEvent[];
     alwaysOnEngineStatus: AlwaysOnEngineStatus;
     activeDirectives: Directive[];
+    memoryInboxItems: MemoryInboxItem[];
 
     // UI State
     isMemoryDashboardOpen: boolean;
@@ -49,6 +60,8 @@ export interface MemoryAgentSlice {
     loadAlwaysOnMemories: (userId: string) => Promise<void>;
     loadAlwaysOnInsights: (userId: string) => Promise<void>;
     loadDirectives: (userId: string) => Promise<void>;
+    loadMemoryInbox: (userId: string) => Promise<void>;
+    updateMemoryInboxItemStatus: (userId: string, itemId: string, status: 'APPROVED' | 'REJECTED') => Promise<void>;
     refreshAlwaysOnEngineStatus: (userId: string) => Promise<void>;
     startMemoryEngine: (userId: string) => void;
     stopMemoryEngine: () => void;
@@ -85,6 +98,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
     alwaysOnIngestionEvents: [],
     alwaysOnEngineStatus: defaultEngineStatus,
     activeDirectives: [],
+    memoryInboxItems: [],
 
     isMemoryDashboardOpen: false,
     memorySearchQuery: '',
@@ -150,6 +164,35 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
             set({ activeDirectives: directives });
         } catch (error) {
             logger.error('[MemoryAgentSlice] Failed to load directives:', error);
+        }
+    },
+
+    loadMemoryInbox: async (userId: string) => {
+        try {
+            const inboxRef = collection(db, `users/${userId}/memoryInbox`);
+            const snapshot = await getDocs(inboxRef);
+            const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MemoryInboxItem));
+            // Sort by pending first, then by date descending
+            items.sort((a, b) => {
+                if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
+                if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
+                return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+            });
+            set({ memoryInboxItems: items });
+        } catch (error) {
+            logger.error('[MemoryAgentSlice] Failed to load memory inbox:', error);
+        }
+    },
+
+    updateMemoryInboxItemStatus: async (userId: string, itemId: string, status: 'APPROVED' | 'REJECTED') => {
+        try {
+            const itemRef = doc(db, `users/${userId}/memoryInbox`, itemId);
+            await updateDoc(itemRef, { status });
+
+            // Reload the inbox
+            await get().loadMemoryInbox(userId);
+        } catch (error) {
+            logger.error('[MemoryAgentSlice] Failed to update memory inbox item:', error);
         }
     },
 
