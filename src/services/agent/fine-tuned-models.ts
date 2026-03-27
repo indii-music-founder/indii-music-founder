@@ -55,8 +55,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'video':           'projects/223837784072/locations/us-central1/endpoints/6602242419108872192',
     // R6 — gemini-2.5-flash-lite base (~111 examples, ≥50% expert) — TODO: job still running
     'devops':          'projects/223837784072/locations/us-central1/endpoints/953884061456138240',
-    // R6 — gemini-2.5-flash-lite base (~87 examples, ≥50% expert) — TODO: job still running
-    'security':        'projects/223837784072/locations/us-central1/endpoints/7299455936421167104',
+    // R6 — gemini-2.5-flash-lite base (~87 examples, ≥50% expert) — 2026-03-27
+    'security':        'projects/223837784072/locations/us-central1/endpoints/4620711359623987200',
     // R6 — gemini-2.5-flash-lite base (~97 examples, ≥50% expert) — TODO: job still running
     'producer':        'projects/223837784072/locations/us-central1/endpoints/8499102287161982976',
     // R6 — gemini-2.5-flash-lite base (~106 examples, ≥50% expert) — 2026-03-26
@@ -65,8 +65,8 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     'screenwriter':    'projects/223837784072/locations/us-central1/endpoints/6323072018770034688',
     // R6 — gemini-2.5-flash-lite base (~118 examples, ≥50% expert) — 2026-03-27
     'merchandise':     'projects/223837784072/locations/us-central1/endpoints/5343486323258818560',
-    // R6 — gemini-2.5-flash-lite base (~120 examples, ≥50% expert) — TODO: job still running
-    'curriculum':      'projects/223837784072/locations/us-central1/endpoints/482694950442500096',
+    // R6 — gemini-2.5-flash-lite base (~120 examples, ≥50% expert) — 2026-03-27
+    'curriculum':      'projects/223837784072/locations/us-central1/endpoints/6899532771073458176',
 
     // Not yet fine-tuned
     'keeper':           undefined,
