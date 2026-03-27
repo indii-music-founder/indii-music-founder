@@ -36,8 +36,28 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                             <h3 className="font-medium text-gray-300">{widget.title}</h3>
                             <GripHorizontal className="text-gray-600 group-hover:text-gray-400 transition-colors" size={16} />
                         </div>
-                        <div className="flex-1 min-h-[120px] flex items-center justify-center bg-black/20 rounded border border-gray-800/50 border-dashed">
-                            <span className="text-xs text-gray-600 font-mono uppercase tracking-widest">{widget.type} widget placeholder</span>
+                        <div className="flex-1 min-h-[120px] flex flex-col items-center justify-center bg-black/20 rounded border border-gray-800/50 border-dashed gap-2">
+                            {widget.type === 'chart' && (
+                                <div className="flex items-end gap-1 h-10">
+                                    {[40, 65, 50, 80, 55, 70, 90].map((h, i) => (
+                                        <div key={i} className="w-3 bg-teal-500/30 rounded-t" style={{ height: `${h}%` }} />
+                                    ))}
+                                </div>
+                            )}
+                            {widget.type === 'metric' && (
+                                <span className="text-2xl font-bold text-teal-400/60 font-mono">—</span>
+                            )}
+                            {widget.type === 'donut' && (
+                                <div className="w-10 h-10 rounded-full border-4 border-teal-500/20 border-t-teal-500/60" />
+                            )}
+                            {widget.type === 'list' && (
+                                <div className="space-y-1.5 w-3/4">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="h-2 bg-gray-800 rounded-full" style={{ width: `${100 - i * 15}%` }} />
+                                    ))}
+                                </div>
+                            )}
+                            <span className="text-[10px] text-gray-700 font-mono uppercase tracking-widest">Connect data source</span>
                         </div>
                     </div>
                 ))}

@@ -9,9 +9,10 @@ class CeaseAndDesistAutoDrafter(Tool):
     """
     Legal Counsel Tool.
     Generates a formatted C&D letter for unauthorized use of a master recording.
+    Optionally creates a PandaDoc document for digital delivery/signing.
     """
 
-    async def execute(self, infringing_url: str, artist_name: str, copyright_owner: str) -> Response:
+    async def execute(self, infringing_url: str, artist_name: str, copyright_owner: str, **kwargs) -> Response:
         self.set_progress(f"Drafting Cease and Desist for {infringing_url}")
         
         try:
@@ -43,25 +44,13 @@ class CeaseAndDesistAutoDrafter(Tool):
             }}
             """
             
-            
+            _rl = RateLimiter()
+            wait_time = _rl.wait_time("gemini")
+            if wait_time > 0:
+                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
 
-            
-                        _rl = RateLimiter()
-
-            
-                        wait_time = _rl.wait_time("gemini")
-
-            
-                        if wait_time > 0:
-
-            
-                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
-
-            
-                            await asyncio.sleep(wait_time)
-
-            
-            esponse = client.models.generate_content(
+            response = client.models.generate_content(
                 model=model_id,
                 contents=[prompt],
                 config=types.GenerateContentConfig(
@@ -70,9 +59,70 @@ class CeaseAndDesistAutoDrafter(Tool):
                 )
             )
             
+            legal_doc = json.loads(response.text)
+            
+            # --- PandaDoc Integration: Create a C&D PDF ---
+            import requests
+            import os
+            from dotenv import load_dotenv
+            load_dotenv()
+            
+            pandadoc_key = os.getenv("PANDADOC_API_KEY")
+            workflow_status = "C&D drafted (local only)"
+            pandadoc_doc_id = None
+            
+            create_pdf = kwargs.get("create_pandadoc", False)
+            
+            if create_pdf and pandadoc_key:
+                self.set_progress("Creating PandaDoc C&D document for delivery...")
+                
+                doc_payload = {
+                    "name": f"Cease & Desist - {artist_name} v. {infringing_url[:40]}",
+                    "recipients": [
+                        {"email": kwargs.get("recipient_email", "legal@indiios.com"), "role": "Recipient"}
+                    ],
+                    "content_placeholders": [
+                        {"block_id": "subject_line", "value": legal_doc.get("subject_line", "")},
+                        {"block_id": "letter_body", "value": legal_doc.get("letter_body", "")},
+                        {"block_id": "infringing_url", "value": infringing_url},
+                        {"block_id": "copyright_owner", "value": copyright_owner},
+                    ],
+                    "tags": ["cease-and-desist", "auto-generated", "dmca"]
+                }
+                
+                template_id = os.getenv("PANDADOC_CD_TEMPLATE_ID")
+                if template_id:
+                    doc_payload["template_uuid"] = template_id
+                
+                headers = {
+                    "Authorization": f"API-Key {pandadoc_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                try:
+                    pd_res = requests.post(
+                        "https://api.pandadoc.com/public/v1/documents",
+                        json=doc_payload,
+                        headers=headers,
+                        timeout=15
+                    )
+                    if pd_res.ok:
+                        pandadoc_doc_id = pd_res.json().get("id")
+                        workflow_status = f"PandaDoc C&D document {pandadoc_doc_id} created"
+                    else:
+                        workflow_status = f"PandaDoc API Error: {pd_res.status_code}"
+                except Exception as pd_e:
+                    workflow_status = f"PandaDoc unreachable: {str(pd_e)}"
+            elif create_pdf:
+                workflow_status = "PandaDoc requested but PANDADOC_API_KEY missing in .env"
+            
             return Response(
-                message=f"Cease & Desist drafted.",
-                additional={"legal_doc": json.loads(response.text)}
+                message=f"Cease & Desist drafted. {workflow_status}",
+                additional={
+                    "legal_doc": legal_doc,
+                    "workflow_status": workflow_status,
+                    "pandadoc_doc_id": pandadoc_doc_id
+                }
             )
 
         except Exception as e:

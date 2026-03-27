@@ -8,11 +8,12 @@ from python.config.ai_models import AIConfig
 class TaxDeductionCategorizer(Tool):
     """
     Finance Manager Tool.
-    Automatically parses CSV bank statement data (provided as a JSON array of transactions)
-    and tags music-related write-offs (equipment, travel, meals).
+    Parses CSV bank statement data (as JSON array of transactions) and tags
+    music-related write-offs (equipment, travel, meals).
+    Optionally exports to a Google Sheet or returns a CSV-ready payload.
     """
 
-    async def execute(self, transactions_json_string: str) -> Response:
+    async def execute(self, transactions_json_string: str, **kwargs) -> Response:
         self.set_progress("Categorizing transactions for tax write-offs")
         
         try:
@@ -50,25 +51,13 @@ class TaxDeductionCategorizer(Tool):
             }}
             """
             
-            
+            _rl = RateLimiter()
+            wait_time = _rl.wait_time("gemini")
+            if wait_time > 0:
+                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
 
-            
-                        _rl = RateLimiter()
-
-            
-                        wait_time = _rl.wait_time("gemini")
-
-            
-                        if wait_time > 0:
-
-            
-                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
-
-            
-                            await asyncio.sleep(wait_time)
-
-            
-            esponse = client.models.generate_content(
+            response = client.models.generate_content(
                 model=model_id,
                 contents=[prompt],
                 config=types.GenerateContentConfig(
@@ -77,9 +66,39 @@ class TaxDeductionCategorizer(Tool):
                 )
             )
             
+            tax_data = json.loads(response.text)
+            
+            # --- CSV Export: Generate a downloadable CSV payload ---
+            csv_rows = []
+            csv_rows.append("Date,Merchant,Amount,Category,Confidence,Deductible")
+            
+            for exp in tax_data.get("deductible_expenses", []):
+                csv_rows.append(
+                    f"{exp.get('date', '')},{exp.get('merchant', '')},{exp.get('amount', 0)},{exp.get('category', '')},{exp.get('confidence', '')},Yes"
+                )
+            
+            for nd in tax_data.get("non_deductible", []):
+                csv_rows.append(f",,,,{nd},No")
+            
+            csv_rows.append(f"\nTotal Estimated Deductions,,,${tax_data.get('total_estimated_deductions_usd', 0)}")
+            
+            csv_payload = "\n".join(csv_rows)
+            
+            # --- Optional: Save CSV to disk ---
+            import os
+            export_path = kwargs.get("export_path")
+            if export_path:
+                self.set_progress(f"Exporting tax report to {export_path}")
+                with open(export_path, "w") as f:
+                    f.write(csv_payload)
+            
             return Response(
-                message=f"Tax deduction categorization complete.",
-                additional={"tax_data": json.loads(response.text)}
+                message=f"Tax deduction categorization complete. Found ${tax_data.get('total_estimated_deductions_usd', 0)} in potential deductions.",
+                additional={
+                    "tax_data": tax_data,
+                    "csv_payload": csv_payload,
+                    "export_path": export_path
+                }
             )
 
         except Exception as e:

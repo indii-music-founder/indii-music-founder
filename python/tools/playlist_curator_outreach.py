@@ -9,9 +9,10 @@ class PlaylistCuratorOutreach(Tool):
     """
     Marketing Executive Tool.
     Generates personalized cold emails to independent Spotify playlist curators.
+    Optionally sends the email directly via SendGrid API.
     """
 
-    async def execute(self, curator_name: str, playlist_name: str, artist_track: str, sonic_vibe: str) -> Response:
+    async def execute(self, curator_name: str, playlist_name: str, artist_track: str, sonic_vibe: str, **kwargs) -> Response:
         self.set_progress(f"Drafting curator outreach for playlist: '{playlist_name}'")
         
         try:
@@ -43,25 +44,13 @@ class PlaylistCuratorOutreach(Tool):
             }}
             """
             
-            
+            _rl = RateLimiter()
+            wait_time = _rl.wait_time("gemini")
+            if wait_time > 0:
+                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
 
-            
-                        _rl = RateLimiter()
-
-            
-                        wait_time = _rl.wait_time("gemini")
-
-            
-                        if wait_time > 0:
-
-            
-                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
-
-            
-                            await asyncio.sleep(wait_time)
-
-            
-            esponse = client.models.generate_content(
+            response = client.models.generate_content(
                 model=model_id,
                 contents=[prompt],
                 config=types.GenerateContentConfig(
@@ -70,9 +59,76 @@ class PlaylistCuratorOutreach(Tool):
                 )
             )
             
+            curator_pitch = json.loads(response.text)
+            
+            # --- SendGrid Integration: Send the email directly ---
+            import requests
+            import os
+            from dotenv import load_dotenv
+            load_dotenv()
+            
+            sendgrid_key = os.getenv("SENDGRID_API_KEY")
+            from_email = os.getenv("SENDGRID_FROM_EMAIL", "outreach@indiios.com")
+            
+            workflow_status = "Pitch generated (not sent)"
+            send_result = None
+            
+            auto_send = kwargs.get("auto_send", False)
+            curator_email = kwargs.get("curator_email")
+            
+            if auto_send and sendgrid_key and curator_email:
+                self.set_progress(f"Sending pitch email to {curator_email} via SendGrid...")
+                
+                sg_payload = {
+                    "personalizations": [{
+                        "to": [{"email": curator_email, "name": curator_name}],
+                        "subject": curator_pitch.get("subject_line", f"New track for {playlist_name}")
+                    }],
+                    "from": {"email": from_email, "name": "indiiOS Outreach"},
+                    "content": [{
+                        "type": "text/plain",
+                        "value": curator_pitch.get("email_body", "")
+                    }],
+                    "tracking_settings": {
+                        "open_tracking": {"enable": True},
+                        "click_tracking": {"enable": True}
+                    },
+                    "categories": ["curator-outreach", "auto-generated"]
+                }
+                
+                headers = {
+                    "Authorization": f"Bearer {sendgrid_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                try:
+                    sg_res = requests.post(
+                        "https://api.sendgrid.com/v3/mail/send",
+                        json=sg_payload,
+                        headers=headers,
+                        timeout=10
+                    )
+                    if sg_res.status_code in (200, 202):
+                        workflow_status = f"Email sent to {curator_email}"
+                        send_result = "delivered"
+                    else:
+                        workflow_status = f"SendGrid Error: {sg_res.status_code}"
+                        send_result = "failed"
+                except Exception as sg_e:
+                    workflow_status = f"SendGrid unreachable: {str(sg_e)}"
+                    send_result = "error"
+            elif auto_send and not curator_email:
+                workflow_status = "Auto-send requested but curator_email not provided"
+            elif auto_send:
+                workflow_status = "Auto-send requested but SENDGRID_API_KEY missing in .env"
+            
             return Response(
-                message=f"Playlist curator pitch generated.",
-                additional={"curator_pitch": json.loads(response.text)}
+                message=f"Playlist curator pitch ready. {workflow_status}",
+                additional={
+                    "curator_pitch": curator_pitch,
+                    "workflow_status": workflow_status,
+                    "send_result": send_result
+                }
             )
 
         except Exception as e:
