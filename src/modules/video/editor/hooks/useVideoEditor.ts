@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { PlayerRef } from '@remotion/player';
@@ -9,6 +8,7 @@ import { HistoryItem } from '@/core/store/slices/creative';
 import { useToast } from '@/core/context/ToastContext';
 import { PIXELS_PER_FRAME } from '../constants';
 import { logger } from '@/utils/logger';
+
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -102,15 +102,19 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     }, [project.fps]);
 
     const handleAddSampleClip = useCallback((trackId: string, type: 'text' | 'video' | 'image' | 'audio' = 'text') => {
-        const clipData: any = {
-            type, startFrame: 0, durationInFrames: 90, trackId: trackId, name: `New ${type} Clip`
+        const base: Omit<VideoClip, 'id'> = {
+            type, startFrame: 0, durationInFrames: 90, trackId, name: `New ${type} Clip`,
         };
-        if (type === 'text') clipData.text = 'New Text';
-        else if (type === 'video') clipData.src = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-        else if (type === 'image') clipData.src = 'https://picsum.photos/800/450';
-        else if (type === 'audio') { clipData.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; clipData.name = 'Audio Track'; }
+        const clipData: Omit<VideoClip, 'id'> = type === 'text'
+            ? { ...base, text: 'New Text' }
+            : type === 'video'
+                ? { ...base, src: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' }
+                : type === 'image'
+                    ? { ...base, src: 'https://picsum.photos/800/450' }
+                    : { ...base, src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', name: 'Audio Track' };
         addClip(clipData);
     }, [addClip]);
+
 
     const handleExport = async () => {
         setIsExporting(true);
