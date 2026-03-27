@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { useToast } from '@/core/context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -241,7 +240,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                                 TableHead: React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>((props, ref) => <thead {...props} ref={ref} className="bg-[#0A0A0A] border-b border-gray-800 z-10" />),
                                 TableBody: React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>((props, ref) => <tbody {...props} ref={ref} className="divide-y divide-gray-800/50" />),
                                 TableRow: (props) => {
-                                    const release = (props as any)['data-item'] as ClientReleaseRecord;
+                                    const release = (props as unknown as Record<string, unknown>)['data-item'] as ClientReleaseRecord;
                                     return (
                                         <tr
                                             {...props}

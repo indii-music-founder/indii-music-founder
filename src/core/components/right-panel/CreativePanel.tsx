@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import { useState } from 'react';
 import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
@@ -388,7 +387,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                 </div>
                                 <select
                                     value={studioControls.mediaResolution || 'medium'}
-                                    onChange={(e) => setStudioControls({ mediaResolution: e.target.value as any })}
+                                    onChange={(e) => setStudioControls({ mediaResolution: e.target.value as 'low' | 'medium' | 'high' })}
                                     className="w-full h-9 bg-black/60 text-white text-[10px] pl-9 pr-8 rounded-xl border border-white/5 outline-none appearance-none cursor-pointer hover:bg-black/80 hover:border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all font-medium"
                                     data-testid="media-resolution-dropdown"
                                 >

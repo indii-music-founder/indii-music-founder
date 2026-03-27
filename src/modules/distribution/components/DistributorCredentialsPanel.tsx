@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 /**
  * DistributorCredentialsPanel
  *
@@ -132,7 +131,7 @@ export default function DistributorCredentialsPanel() {
                 apiKey: form.apiKey || undefined,
             };
 
-            await DistributorService.connect(dist.id as any, credentials);
+            await DistributorService.connect(dist.id as Parameters<typeof DistributorService.connect>[0], credentials);
             setSaved(prev => new Set([...prev, dist.id]));
             logger.info(`[DistributorCredentialsPanel] Saved credentials for ${dist.name}`);
         } catch (err) {

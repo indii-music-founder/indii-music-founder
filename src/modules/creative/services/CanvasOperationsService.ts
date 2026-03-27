@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import * as fabric from 'fabric';
 import { hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
@@ -362,7 +361,7 @@ export class CanvasOperationsService {
                 colorPaths.forEach(obj => {
                     obj.visible = true;
                     // Store original properties to restore later
-                    (obj as any)._originalStroke = obj.stroke;
+                    (obj as fabric.Object & { _originalStroke?: typeof obj.stroke })._originalStroke = obj.stroke;
                     obj.set({ stroke: '#ffffff', fill: '' });
                 });
 
@@ -380,7 +379,7 @@ export class CanvasOperationsService {
 
                 // Restore original stroke for these paths
                 colorPaths.forEach(obj => {
-                    obj.set({ stroke: (obj as any)._originalStroke });
+                    obj.set({ stroke: (obj as fabric.Object & { _originalStroke?: typeof obj.stroke })._originalStroke });
                 });
             }
         }

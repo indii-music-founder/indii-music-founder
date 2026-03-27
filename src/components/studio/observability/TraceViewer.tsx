@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 import React, { useEffect, useState } from 'react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
@@ -34,7 +33,7 @@ export function TraceViewer() {
         return () => unsubscribe();
     }, []);
 
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: string): "default" | "destructive" | "secondary" | "outline" => {
         switch (status) {
             case 'completed': return 'default'; // managed by badge variant usually, defaulting to primary
             case 'failed': return 'destructive';
@@ -92,7 +91,7 @@ export function TraceViewer() {
                                                     }`}
                                             >
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <Badge variant={getStatusColor(trace.status) as any} className="text-[10px] py-0 px-1.5 h-4">
+                                                    <Badge variant={getStatusColor(trace.status)} className="text-[10px] py-0 px-1.5 h-4">
                                                         <span className="sr-only">Status: {trace.status}</span>
                                                         {trace.agentId}
                                                     </Badge>

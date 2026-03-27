@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { vi, MockInstance } from 'vitest';
 import { BaseAgent } from '../../BaseAgent';
 import { AgentConfig, AgentContext } from '../../types';
@@ -69,16 +68,14 @@ export class AgentTestHarness {
                 usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }
             }
         };
-
-        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as any);
-
+        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
         if (GenAI.generateContentStream) {
             (GenAI.generateContentStream as unknown as MockInstance).mockResolvedValue({
                 stream: (async function* () {
                     yield { text: () => text };
                 })(),
-                response: Promise.resolve(mockResult)
-            } as any);
+                response: Promise.resolve(mockResult as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>)
+            } as unknown as Awaited<ReturnType<typeof GenAI.generateContentStream>>);
         }
     }
 
@@ -86,7 +83,7 @@ export class AgentTestHarness {
      * Mocks an GenAI response that triggers tool calls.
      * @param toolCalls Array of tool calls (name + args)
      */
-    public mockGenAIToolCall(toolCalls: { name: string, args: Record<string, any> }[]) {
+    public mockGenAIToolCall(toolCalls: { name: string, args: Record<string, unknown> }[]) {
         const mockResult = {
             response: {
                 text: () => '',
@@ -98,8 +95,7 @@ export class AgentTestHarness {
                 usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }
             }
         };
-
-        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as any);
+        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
     }
 
     /**

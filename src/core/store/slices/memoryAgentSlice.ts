@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 /**
  * Memory Agent Zustand Slice
  *
@@ -17,7 +16,10 @@ import type {
     ConsolidationInsight,
     IngestionEvent,
     MemoryTier,
+    MemorySource,
 } from '@/types/AlwaysOnMemory';
+import type { Directive } from '@/services/directive/DirectiveTypes';
+import { DirectiveService } from '@/services/directive/DirectiveService';
 
 // ============================================================================
 // STATE
@@ -29,6 +31,7 @@ export interface MemoryAgentSlice {
     alwaysOnInsights: ConsolidationInsight[];
     alwaysOnIngestionEvents: IngestionEvent[];
     alwaysOnEngineStatus: AlwaysOnEngineStatus;
+    activeDirectives: Directive[];
 
     // UI State
     isMemoryDashboardOpen: boolean;
@@ -45,10 +48,11 @@ export interface MemoryAgentSlice {
     setSelectedMemoryId: (id: string | null) => void;
     loadAlwaysOnMemories: (userId: string) => Promise<void>;
     loadAlwaysOnInsights: (userId: string) => Promise<void>;
+    loadDirectives: (userId: string) => Promise<void>;
     refreshAlwaysOnEngineStatus: (userId: string) => Promise<void>;
     startMemoryEngine: (userId: string) => void;
     stopMemoryEngine: () => void;
-    ingestMemoryText: (userId: string, text: string, source?: string) => Promise<string>;
+    ingestMemoryText: (userId: string, text: string, source?: MemorySource) => Promise<string>;
     triggerMemoryConsolidation: (userId: string) => Promise<void>;
     deleteAlwaysOnMemory: (userId: string, memoryId: string) => Promise<void>;
     queryAlwaysOnMemory: (userId: string, question: string) => Promise<string>;
@@ -80,6 +84,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
     alwaysOnInsights: [],
     alwaysOnIngestionEvents: [],
     alwaysOnEngineStatus: defaultEngineStatus,
+    activeDirectives: [],
 
     isMemoryDashboardOpen: false,
     memorySearchQuery: '',
@@ -139,6 +144,15 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
         }
     },
 
+    loadDirectives: async (userId: string) => {
+        try {
+            const directives = await DirectiveService.getAllDirectives(userId);
+            set({ activeDirectives: directives });
+        } catch (error) {
+            logger.error('[MemoryAgentSlice] Failed to load directives:', error);
+        }
+    },
+
     refreshAlwaysOnEngineStatus: async (userId: string) => {
         try {
             const status = await alwaysOnMemoryEngine.getStatus(userId);
@@ -149,9 +163,9 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
     },
 
     // Operations
-    ingestMemoryText: async (userId: string, text: string, source?: string) => {
+    ingestMemoryText: async (userId: string, text: string, source?: MemorySource) => {
         try {
-            const memoryId = await alwaysOnMemoryEngine.ingestText(userId, text, (source as any) || 'user_input');
+            const memoryId = await alwaysOnMemoryEngine.ingestText(userId, text, source || 'user_input');
             // Refresh memories list + status
             const [memories, status] = await Promise.all([
                 alwaysOnMemoryEngine.getMemories(userId, { limit: 100 }),

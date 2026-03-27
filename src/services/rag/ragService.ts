@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { GeminiRetrieval } from './GeminiRetrievalService';
@@ -123,7 +122,7 @@ export async function processForKnowledgeBase(
         try {
             const metadata = await AI.generateStructuredData<{ title: string; summary: string }>(
                 `Summarize this content and extract a title:\n${content}`,
-                schema as any
+                schema as Record<string, unknown>
             );
             displayTitle = metadata.title || fileName;
         } catch (error) {

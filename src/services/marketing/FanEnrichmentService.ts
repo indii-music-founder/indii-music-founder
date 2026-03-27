@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { FanRecord, EnrichedFanData, EnrichmentProvider, EnrichmentProgress } from '../../modules/marketing/types';
 import { httpsCallable } from 'firebase/functions';
 import { functionsWest1 } from '../firebase';
@@ -40,9 +39,9 @@ export class FanEnrichmentService {
                         const values = lines[i]!.split(',').map(v => v.trim().replace(/['"]+/g, ''));
                         if (values.length < headers.length) continue;
 
-                        const record: any = {};
+                        const record: Record<string, string> = {};
                         headers.forEach((header, index) => {
-                            record[header] = values[index];
+                            record[header] = values[index] || '';
                         });
 
                         // Attempt to map common fields
@@ -106,7 +105,7 @@ export class FanEnrichmentService {
                     orgId
                 });
 
-                const enrichedBatch = (response.data as any).results as EnrichedFanData[];
+                const enrichedBatch = (response.data as { results: EnrichedFanData[] }).results;
                 results.push(...enrichedBatch);
             } catch (error: unknown) {
                 logger.error(`[FanEnrichment] Batch ${i} failed:`, error);

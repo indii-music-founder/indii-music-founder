@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
 import { functions, functionsWest1 } from '@/services/firebase';
 import { useStore } from '@/core/store';
@@ -7,10 +6,11 @@ import { useToast } from '@/core/context/ToastContext';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
+import type { BrandAsset } from '@/types/User';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
-    onSelect?: (asset: any) => void; // Optional prop for selection mode
+    onSelect?: (asset: BrandAsset) => void; // Optional prop for selection mode
 }
 
 export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDrawerProps) {
@@ -53,7 +53,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         setIsGenerating(true);
         try {
             const newAssets = [];
-            const newUploadedImages = [];
+            const newUploadedImages: { id: string, type: 'image', url: string, prompt: string, timestamp: number, projectId: string }[] = [];
             const timestamp = Date.now();
 
             for (const file of files) {
@@ -68,7 +68,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                     url: downloadUrl,
                     prompt: file.name,
                     timestamp,
-                    projectId: currentProjectId
+                    projectId: currentProjectId || 'unassigned'
                 });
             }
 
@@ -76,7 +76,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 updateBrandKit({
                     brandAssets: [...(userProfile?.brandKit?.brandAssets || []), ...newAssets]
                 });
-                newUploadedImages.forEach(img => addUploadedImage(img as any));
+                newUploadedImages.forEach(img => addUploadedImage(img));
                 toast.success(`${files.length} asset(s) uploaded`);
             }
         } catch (error) {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useEffect, useState } from 'react';
 import { SocialPost } from '@/services/social/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
@@ -170,7 +169,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                     >
                                         <ImageIcon size={20} />
                                     </button>
-                                    {((userProfile as any)?.accountType === 'artist' || (userProfile as any)?.accountType === 'label') && (
+                                    {((userProfile as unknown as Record<string, unknown>)?.accountType === 'artist' || (userProfile as unknown as Record<string, unknown>)?.accountType === 'label') && (
                                         <button
                                             onClick={() => setShowProductPicker(!showProductPicker)}
                                             className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none

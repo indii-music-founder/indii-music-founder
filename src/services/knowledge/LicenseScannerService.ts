@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
@@ -66,8 +64,7 @@ export class LicenseScannerService {
                 },
                 required: ['licenseType', 'requiresAttribution', 'canMonetize', 'termsSummary']
             } satisfies JSONSchemaObject;
-
-            const analysis = await GenAI.generateStructuredData<LicenseAnalysis>(prompt, schema as any);
+            const analysis = await GenAI.generateStructuredData<LicenseAnalysis>(prompt, schema as Record<string, unknown>);
             return analysis;
 
         } catch (error) {
