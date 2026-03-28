@@ -36,7 +36,7 @@ export default function VideoNavbar() {
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-gray-400">
                         <Clapperboard size={16} className="text-blue-500" />
-                        <h1 className="text-sm font-bold text-gray-200 tracking-tight">Video Producer</h1>
+                        <h1 className="text-sm font-bold text-gray-200 tracking-tight" data-testid="module-header">Video Producer</h1>
                     </div>
                     {/* Divider */}
                     <div className="h-4 w-px bg-white/10 mx-1"></div>

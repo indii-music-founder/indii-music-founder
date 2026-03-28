@@ -182,7 +182,17 @@ export default function DirectGenerationTab() {
                                 disabled={isGenerating || !localPrompt.trim()}
                                 className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span className="sr-only">Generating...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={16} />
+                                        <span className="sr-only">Generate</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

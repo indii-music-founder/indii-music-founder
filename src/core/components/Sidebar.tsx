@@ -163,6 +163,7 @@ export default function Sidebar() {
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Book, label: 'Publishing Department' },
         { id: 'finance', icon: DollarSign, label: 'Finance Department' },
+        { id: 'distribution', icon: Music, label: 'Distribution Department' },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
     ];
 

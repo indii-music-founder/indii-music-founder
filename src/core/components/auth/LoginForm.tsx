@@ -420,6 +420,7 @@ export default function LoginForm() {
                                             type="button"
                                             onClick={loginAsGuest}
                                             disabled={authLoading}
+                                            data-testid="guest-login-btn"
                                             className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 text-purple-200 rounded-2xl font-semibold hover:bg-purple-500/10 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                                         >
                                             <User className="w-5 h-5" />

@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { driver, type Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 
+import { env } from '@/config/env';
+
 /**
  * Item 290: Contextual First-Run Tour
  *
@@ -28,8 +30,8 @@ export function FirstRunTour() {
     useEffect(() => {
         // Don't show if already completed or explicitly skipped
         if (localStorage.getItem(TOUR_KEY) === 'true') return;
-        // Don't show during onboarding flow
-        if (window.location.hash.includes('onboarding')) return;
+        // Don't show during onboarding flow or if onboarding is bypassed via env
+        if (env.skipOnboarding || window.location.hash.includes('onboarding')) return;
 
         const timeout = setTimeout(() => {
             const d = driver({

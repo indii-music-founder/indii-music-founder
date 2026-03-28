@@ -127,13 +127,21 @@ export function CookieConsentBanner() {
     const [preferences, setPreferences] = useState<ConsentPreferences>({ ...DEFAULT_PREFERENCES });
 
     useEffect(() => {
-        // Only show if no consent has been recorded
-        const existing = getConsentPreferences();
-        if (!existing) {
-            // Small delay so it doesn't flash on initial load
-            const timer = setTimeout(() => setVisible(true), 800);
-            return () => clearTimeout(timer);
-        }
+        // Honor env var bypass (dev convenience/E2E tests)
+        import('@/config/env').then(({ env }) => {
+            if (env.skipOnboarding) {
+                setVisible(false);
+                return;
+            }
+
+            // Only show if no consent has been recorded
+            const existing = getConsentPreferences();
+            if (!existing) {
+                // Small delay so it doesn't flash on initial load
+                const timer = setTimeout(() => setVisible(true), 800);
+                return () => clearTimeout(timer);
+            }
+        });
     }, []);
 
     const handleAcceptAll = useCallback(() => {
