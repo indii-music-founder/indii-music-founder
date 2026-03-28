@@ -142,6 +142,7 @@ export interface ElectronAPI {
     security?: {
         rotateCredentials: (options: { serviceName: string }) => Promise<{ success: boolean; error?: string }>;
         scanVulnerabilities: (options: { scope: string }) => Promise<{ success: boolean; scan?: { scope: string; vulnerabilities: unknown[]; score: number }; error?: string }>;
+        applyWatermark?: (options: { fileId: string; text: string; invisible?: boolean }) => Promise<{ success: boolean; watermarkedFileId?: string; error?: string }>;
     };
 
     // Brand analysis IPC bridge (Electron-only)

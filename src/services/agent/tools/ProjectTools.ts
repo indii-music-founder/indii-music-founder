@@ -80,5 +80,93 @@ export const ProjectTools = {
             projectName: project.name,
             projectType: project.type
         }, `Opened project: ${project.name}`);
+    }),
+
+    create_task: wrapTool('create_task', async (args: { title: string; projectId: string; dueDate?: string; priority?: 'low' | 'medium' | 'high' }) => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError("User must be authenticated to create a task.");
+            }
+
+            const docRef = await addDoc(collection(db, 'users', uid, 'tasks'), {
+                ...args,
+                status: 'todo',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                priority: args.priority || 'medium'
+            });
+
+            return toolSuccess({
+                taskId: docRef.id,
+                ...args
+            }, `Successfully created task "${args.title}" for project ${args.projectId}.`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to create task: ${error.message}`);
+        }
+    }),
+
+    list_tasks: wrapTool('list_tasks', async (args: { projectId?: string; status?: string }) => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError("User must be authenticated to list tasks.");
+            }
+
+            let tasksQuery = query(collection(db, 'users', uid, 'tasks'), orderBy('createdAt', 'desc'));
+            if (args.projectId) {
+                tasksQuery = query(tasksQuery, where('projectId', '==', args.projectId));
+            }
+            if (args.status) {
+                tasksQuery = query(tasksQuery, where('status', '==', args.status));
+            }
+
+            const snapshot = await getDocs(tasksQuery);
+            const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            return toolSuccess({ tasks }, `Found ${tasks.length} tasks.`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to list tasks: ${error.message}`);
+        }
+    }),
+
+    update_task_status: wrapTool('update_task_status', async (args: { taskId: string; status: 'todo' | 'in_progress' | 'done' }) => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError("User must be authenticated to update tasks.");
+            }
+
+            const taskRef = doc(db, 'users', uid, 'tasks', args.taskId);
+            await updateDoc(taskRef, {
+                status: args.status,
+                updatedAt: serverTimestamp()
+            });
+
+            return toolSuccess({ taskId: args.taskId, status: args.status }, `Task status updated to ${args.status}.`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to update task: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
+
+export const {
+    create_project,
+    list_projects,
+    open_project,
+    create_task,
+    list_tasks,
+    update_task_status
+} = ProjectTools;

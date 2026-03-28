@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { wrapTool } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
 /** Typed Electron IPC bridge for brand tools */
@@ -168,5 +168,68 @@ export const BrandTools = {
                 ? "All assets are compliant."
                 : `Flagged ${validated.flagged_assets.length} non-compliant assets.`
         };
+    }),
+
+    save_brand_kit: wrapTool('save_brand_kit', async (args: { name: string; values: string[]; colors?: string[]; typography?: string[] }) => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                throw new Error("User must be authenticated to save a brand kit.");
+            }
+
+            const brandKitRef = doc(db, 'users', uid, 'brandKit', 'current');
+
+            await setDoc(brandKitRef, {
+                ...args,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            return toolSuccess({
+                config: args
+            }, `Successfully saved the brand kit for "${args.name}" to Firestore.`);
+        } catch (e) {
+            const error = e as Error;
+            logger.error('[BrandTools] Save brand kit failed:', error);
+            return toolError(`Failed to save brand kit: ${error.message}`);
+        }
+    }),
+
+    load_brand_kit: wrapTool('load_brand_kit', async () => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { doc, getDoc } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                throw new Error("User must be authenticated to load a brand kit.");
+            }
+
+            const snap = await getDoc(doc(db, 'users', uid, 'brandKit', 'current'));
+            if (!snap.exists()) {
+                return toolSuccess({ exists: false }, `No brand kit found for the current user. Please create one.`);
+            }
+
+            return toolSuccess({
+                exists: true,
+                config: snap.data()
+            }, `Successfully loaded the current brand kit.`);
+        } catch (e) {
+            const error = e as Error;
+            logger.error('[BrandTools] Load brand kit failed:', error);
+            return toolError(`Failed to load brand kit: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
+
+// Aliases
+export const {
+    verify_output,
+    analyze_brand_consistency,
+    generate_brand_guidelines,
+    audit_visual_assets,
+    save_brand_kit,
+    load_brand_kit
+} = BrandTools;

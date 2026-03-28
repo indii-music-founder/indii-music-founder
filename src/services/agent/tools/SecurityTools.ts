@@ -259,6 +259,63 @@ export const SecurityTools = {
             holdReleaseStatus: args.requiredHoldRelease ? 'Authorized' : 'N/A',
             biometricPassed: true
         }, `Biometric authentication (TouchID/FaceID) successfully enforced for high-security action: "${args.action}".`);
+    }),
+
+    log_audit_event: wrapTool('log_audit_event', async (args: { action: string; resourceId: string; severity: 'low' | 'medium' | 'high' | 'critical'; details?: string }) => {
+        try {
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+
+            // Writing to a global or org-level audit_logs collection
+            // In a real app this might use a secure backend function to prevent client tampering
+            const docRef = await addDoc(collection(db, 'audit_logs'), {
+                ...args,
+                timestamp: serverTimestamp(),
+                source: 'Agent_SecurityTools'
+            });
+
+            return toolSuccess({
+                logId: docRef.id,
+                ...args
+            }, `Secure audit log event recorded. Action: "${args.action}" on resource: "${args.resourceId}".`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            logger.error('[SecurityTools] Failed to log audit event:', error);
+            return toolError(`Failed to log audit event: ${error.message}`);
+        }
+    }),
+
+    apply_watermark: wrapTool('apply_watermark', async (args: { fileId: string; watermarkText: string; invisible?: boolean }) => {
+        try {
+            // Simulated watermarking via IPC
+            if (!window.electronAPI?.security?.applyWatermark) {
+                return toolSuccess({
+                    fileId: args.fileId,
+                    watermarkText: args.watermarkText,
+                    invisible: args.invisible || false,
+                    status: 'SIMULATED'
+                }, `Watermark "${args.watermarkText}" simulated on file ${args.fileId}. IPC bridge unavailable.`);
+            }
+
+            const result = await window.electronAPI!.security!.applyWatermark({
+                fileId: args.fileId,
+                text: args.watermarkText,
+                invisible: args.invisible
+            });
+
+            if (!result.success) {
+                return toolError(result.error || "Watermarking failed", "WATERMARK_FAILED");
+            }
+
+            return toolSuccess({
+                fileId: args.fileId,
+                watermarkText: args.watermarkText,
+                status: 'APPLIED',
+                watermarkedFileId: result.watermarkedFileId
+            }, `Watermark successfully applied to file ${args.fileId}.`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to apply watermark: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -273,5 +330,7 @@ export const {
     audit_permissions,
     scan_for_vulnerabilities,
     generate_security_report,
-    require_biometric_auth
+    require_biometric_auth,
+    log_audit_event,
+    apply_watermark
 } = SecurityTools;

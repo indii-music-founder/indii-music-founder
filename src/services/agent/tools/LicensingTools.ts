@@ -106,10 +106,46 @@ export const LicensingTools = {
             status: 'Draft Generated',
             content: result?.data?.content
         }, `${args.leaseType} beat-leasing contract generated for "${args.beatTitle}" priced at $${args.price}. Contract ID: ${contractId}`);
+    }),
+
+    create_licensing_deal: wrapTool('create_licensing_deal', async (args: {
+        dealName: string;
+        trackTitle: string;
+        dealType: 'Sync' | 'Beat Lease' | 'Sample Clearance' | 'Custom';
+        buyerName: string;
+        price: number;
+        terms: string;
+    }) => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError("User must be authenticated to create a licensing deal.");
+            }
+
+            const docRef = await addDoc(collection(db, 'users', uid, 'licensingDeals'), {
+                ...args,
+                status: 'Draft',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+
+            return toolSuccess({
+                dealId: docRef.id,
+                ...args
+            }, `Successfully created licensing deal "${args.dealName}" in Firestore (ID: ${docRef.id}).`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            logger.error('[LicensingTools] Deal creation failed:', error);
+            return toolError(`Failed to create licensing deal: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
 export const {
     match_sync_licensing_brief,
-    generate_beat_lease_contract
+    generate_beat_lease_contract,
+    create_licensing_deal
 } = LicensingTools;

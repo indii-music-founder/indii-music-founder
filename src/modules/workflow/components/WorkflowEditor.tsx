@@ -50,13 +50,13 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
 
     const onNodesChange = useCallback((changes: NodeChange[]) => {
         if (readOnly) return;
-        setNodes(applyNodeChanges(changes, nodes));
-    }, [nodes, setNodes, readOnly]);
+        setNodes((nds) => applyNodeChanges(changes, nds));
+    }, [setNodes, readOnly]);
 
     const onEdgesChange = useCallback((changes: EdgeChange[]) => {
         if (readOnly) return;
-        setEdges(applyEdgeChanges(changes, edges));
-    }, [edges, setEdges, readOnly]);
+        setEdges((eds) => applyEdgeChanges(changes, eds));
+    }, [setEdges, readOnly]);
 
 
     // --- STRICT CONNECTION VALIDATION ---
@@ -72,9 +72,9 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
     const onConnect = useCallback((params: Connection | Edge) => {
         if (readOnly) return;
         if (isValidConnection(params as Connection)) {
-            setEdges(addEdge(params, edges));
+            setEdges((eds) => addEdge(params, eds));
         }
-    }, [edges, setEdges, isValidConnection, readOnly]);
+    }, [setEdges, isValidConnection, readOnly]);
 
     const onDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
@@ -84,12 +84,11 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
     const onDrop = useCallback((event: React.DragEvent) => {
         event.preventDefault();
         if (readOnly) return;
-        if (!reactFlowWrapper.current || !reactFlowInstance) return;
+        if (!reactFlowInstance) return;
 
-        const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-        const position = reactFlowInstance.project({
-            x: event.clientX - reactFlowBounds.left,
-            y: event.clientY - reactFlowBounds.top,
+        const position = reactFlowInstance.screenToFlowPosition({
+            x: event.clientX,
+            y: event.clientY,
         });
 
         createNodeFromDrop(event, position, addNode);

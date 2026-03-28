@@ -56,29 +56,41 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
         const unsubscribe = onSnapshot(
             q,
             (snapshot) => {
-                if (snapshot.empty) {
-                    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-                    const placeholderData: TimeSeriesDataPoint[] = [];
-                    for (let i = 0; i <= days; i++) {
-                        const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
-                        placeholderData.push({
-                            date: date.toISOString().split('T')[0]!,
-                            streams: 0,
-                            revenue: 0
-                        });
-                    }
-                    setData(placeholderData);
-                } else {
-                    const analyticsData: TimeSeriesDataPoint[] = snapshot.docs.map(doc => {
-                        const docData = doc.data();
-                        return {
-                            date: docData.date?.toDate?.()?.toISOString().split('T')[0] || doc.id,
-                            streams: docData.streams || 0,
-                            revenue: docData.revenue || 0
-                        };
+                const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                const contiguousData: TimeSeriesDataPoint[] = [];
+                const dataMap = new Map<string, { streams: number, revenue: number }>();
+
+                snapshot.forEach(doc => {
+                    const docData = doc.data();
+                    // Fallback to doc.id if date is missing
+                    const dateStr = docData.date?.toDate?.()?.toISOString().split('T')[0] || doc.id;
+                    dataMap.set(dateStr, {
+                        streams: docData.streams || 0,
+                        revenue: docData.revenue || 0
                     });
-                    setData(analyticsData);
+                });
+
+                let hasAnyData = false;
+
+                for (let i = 0; i <= days; i++) {
+                    const dateObj = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+                    const dateStr = dateObj.toISOString().split('T')[0]!;
+                    const existing = dataMap.get(dateStr);
+
+                    if (existing && (existing.streams > 0 || existing.revenue > 0)) {
+                        hasAnyData = true;
+                    }
+
+                    contiguousData.push({
+                        date: dateStr,
+                        streams: existing?.streams || 0,
+                        revenue: existing?.revenue || 0
+                    });
                 }
+
+                setData(contiguousData);
+                // Attach a custom property or we can calculate it in the component
+                // Actually it's better to just return the data and let the component check
                 setLoading(false);
             },
             (err) => {

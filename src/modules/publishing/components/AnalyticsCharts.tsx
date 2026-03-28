@@ -104,7 +104,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 backdrop-blur-[2px] rounded-xl z-10">
                         <Loader2 size={32} className="text-gray-700 animate-spin" />
                     </div>
-                ) : data.length === 0 ? (
+                ) : !data.some(d => (d.revenue || 0) > 0 || (d.streams || 0) > 0) ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center opacity-40">
                         <TrendingUp size={48} className="text-gray-800 mb-4" />
                         <p className="text-sm font-bold uppercase tracking-widest text-gray-600">No data available for this range</p>

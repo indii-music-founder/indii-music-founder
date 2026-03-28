@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { useTranslation } from 'react-i18next';
 import {
     OnboardingTools,
     runOnboardingConversation,
@@ -20,6 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 
 export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+    const { t } = useTranslation();
     const { userProfile, setUserProfile } = useStore(
         useShallow(state => ({
             userProfile: state.userProfile,
@@ -192,7 +193,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-[#111]">
                         <div className="flex items-center gap-2">
                             <Sparkles className="text-white" size={20} />
-                            <h2 className="font-bold text-white">Brand Kit Builder</h2>
+                            <h2 className="font-bold text-white">{t('onboarding.title')}</h2>
                         </div>
                         <button
                             onClick={onClose}
@@ -280,7 +281,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                placeholder="Type your answer..."
+                                placeholder={t('onboarding.placeholder')}
                                 className="flex-1 bg-black border border-[#333] rounded-lg px-4 py-2 text-base text-white focus:border-white outline-none"
                                 autoFocus
                             />
@@ -298,12 +299,12 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
 
                 {/* Right Panel: Status */}
                 <div className="hidden md:block w-80 bg-[#111] p-6 overflow-y-auto">
-                    <h3 className="text-white font-bold mb-6">Profile Status</h3>
+                    <h3 className="text-white font-bold mb-6">{t('onboarding.profileStatus')}</h3>
 
                     {/* Identity Progress */}
                     <div className="mb-8">
                         <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-400">Artist Identity</span>
+                            <span className="text-gray-400">{t('onboarding.artistIdentity')}</span>
                             <span className="text-white font-bold flex items-center">
                                 <AnimatedNumber value={coreProgress} />%
                             </span>
@@ -336,7 +337,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     {/* Release Progress */}
                     <div>
                         <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-400">Current Release</span>
+                            <span className="text-gray-400">{t('onboarding.currentRelease')}</span>
                             <span className="text-gray-400 font-bold flex items-center">
                                 <AnimatedNumber value={releaseProgress} />%
                             </span>
@@ -368,16 +369,16 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
 
                     {/* Preview of Captured Data */}
                     <div className="mt-8 pt-8 border-t border-gray-800">
-                        <h4 className="text-gray-400 text-xs font-bold uppercase mb-4">Live Preview</h4>
+                        <h4 className="text-gray-400 text-xs font-bold uppercase mb-4">{t('onboarding.livePreview')}</h4>
                         {userProfile.bio && (
                             <div className="mb-4">
-                                <p className="text-xs text-gray-500 mb-1">Bio</p>
+                                <p className="text-xs text-gray-500 mb-1">{t('onboarding.bio')}</p>
                                 <p className="text-sm text-gray-300 line-clamp-3">{userProfile.bio}</p>
                             </div>
                         )}
                         {userProfile.brandKit?.releaseDetails?.title && (
                             <div>
-                                <p className="text-xs text-gray-500 mb-1">Active Release</p>
+                                <p className="text-xs text-gray-500 mb-1">{t('onboarding.activeRelease')}</p>
                                 <p className="text-sm text-gray-300">
                                     {userProfile.brandKit?.releaseDetails?.title}
                                     <span className="text-gray-500 ml-1">({userProfile.brandKit?.releaseDetails?.type})</span>
