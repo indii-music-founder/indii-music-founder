@@ -2,13 +2,21 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import SalesAnalytics from './SalesAnalytics';
 import { DashboardService } from '@/services/dashboard/DashboardService';
+import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 import { vi } from 'vitest';
 import { SalesAnalyticsData } from '@/services/dashboard/schema';
 
 // Mock DashboardService
 vi.mock('@/services/dashboard/DashboardService', () => ({
     DashboardService: {
-        getSalesAnalytics: vi.fn()
+        getCurrentUserId: vi.fn().mockReturnValue('test-user')
+    }
+}));
+
+// Mock AnalyticsService
+vi.mock('@/services/dashboard/AnalyticsService', () => ({
+    AnalyticsService: {
+        subscribeToSalesAnalytics: vi.fn()
     }
 }));
 
@@ -27,14 +35,19 @@ describe('SalesAnalytics', () => {
     });
 
     it('renders loading state initially', () => {
-        (DashboardService.getSalesAnalytics as any).mockReturnValue(new Promise(() => {})); // Never resolves
+        // Subscription never calls back — loading state persists
+        (AnalyticsService.subscribeToSalesAnalytics as any).mockImplementation(() => vi.fn());
         const { container } = render(<SalesAnalytics />);
-        // Component now uses Skeleton loading UI instead of text
         expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
     });
 
     it('renders data after fetch', async () => {
-        (DashboardService.getSalesAnalytics as any).mockResolvedValue(mockData);
+        (AnalyticsService.subscribeToSalesAnalytics as any).mockImplementation(
+            (_userId: string, onData: (data: SalesAnalyticsData) => void) => {
+                onData(mockData);
+                return vi.fn();
+            }
+        );
         const { container } = render(<SalesAnalytics />);
 
         await waitFor(() => {
@@ -48,23 +61,37 @@ describe('SalesAnalytics', () => {
     });
 
     it('renders error state on failure', async () => {
-        (DashboardService.getSalesAnalytics as any).mockRejectedValue(new Error('Fetch failed'));
+        (AnalyticsService.subscribeToSalesAnalytics as any).mockImplementation(
+            (_userId: string, _onData: unknown, onError: (err: Error) => void) => {
+                onError(new Error('Fetch failed'));
+                return vi.fn();
+            }
+        );
         render(<SalesAnalytics />);
 
         await waitFor(() => {
-            expect(screen.getByText('Failed to load sales analytics.')).toBeInTheDocument();
+            expect(screen.getByText('Failed to sync sales analytics.')).toBeInTheDocument();
         });
     });
 
     it('refetches on retry click', async () => {
-        (DashboardService.getSalesAnalytics as any)
-            .mockRejectedValueOnce(new Error('Fetch failed'))
-            .mockResolvedValueOnce(mockData);
+        let callCount = 0;
+        (AnalyticsService.subscribeToSalesAnalytics as any).mockImplementation(
+            (_userId: string, onData: (data: SalesAnalyticsData) => void, onError: (err: Error) => void) => {
+                callCount++;
+                if (callCount === 1) {
+                    onError(new Error('Fetch failed'));
+                } else {
+                    onData(mockData);
+                }
+                return vi.fn();
+            }
+        );
 
         render(<SalesAnalytics />);
 
         await waitFor(() => {
-            expect(screen.getByText('Failed to load sales analytics.')).toBeInTheDocument();
+            expect(screen.getByText('Failed to sync sales analytics.')).toBeInTheDocument();
         });
 
         fireEvent.click(screen.getByText('Retry'));
