@@ -1,5 +1,6 @@
 import React, { useMemo, memo } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { formatSmartDate, cn } from '@/lib/utils';
 import { MessageSquare, Calendar, Trash2, X, Edit2, Check } from 'lucide-react';
 import { motion } from 'motion/react';
