@@ -286,8 +286,9 @@ export const SecurityTools = {
 
     apply_watermark: wrapTool('apply_watermark', async (args: { fileId: string; watermarkText: string; invisible?: boolean }) => {
         try {
-            // Simulated watermarking via IPC
-            if (!window.electronAPI?.security?.applyWatermark) {
+            const securityApi = window.electronAPI?.security as import('@/types/electron').ElectronAPI['security'];
+
+            if (!securityApi?.applyWatermark) {
                 return toolSuccess({
                     fileId: args.fileId,
                     watermarkText: args.watermarkText,
@@ -296,7 +297,7 @@ export const SecurityTools = {
                 }, `Watermark "${args.watermarkText}" simulated on file ${args.fileId}. IPC bridge unavailable.`);
             }
 
-            const result = await window.electronAPI!.security!.applyWatermark({
+            const result = await securityApi.applyWatermark({
                 fileId: args.fileId,
                 text: args.watermarkText,
                 invisible: args.invisible

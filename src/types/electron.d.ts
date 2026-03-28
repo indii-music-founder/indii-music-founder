@@ -168,8 +168,6 @@ declare global {
         MSStream?: unknown; // Legacy iOS detection
 
         // Vendor-prefixed Web APIs
-        webkitSpeechRecognition?: new () => any;
-        SpeechRecognition?: new () => any;
         webkitAudioContext?: typeof AudioContext;
 
         // Google Maps auth failure callback
@@ -191,7 +189,6 @@ declare global {
         wakeLock?: {
             request: (type: 'screen') => Promise<unknown>;
         };
-        getBattery?: () => Promise<unknown>;
     }
 }
 

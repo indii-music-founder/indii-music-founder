@@ -23,6 +23,7 @@ import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
 import { SkeletonList, SkeletonStat } from '@/components/shared/SkeletonLoader';
 import { useStore } from '@/core/store';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 /* ================================================================== */
 /*  Campaign Dashboard — Three-Panel Layout                             */
@@ -119,94 +120,96 @@ const CampaignDashboard: React.FC = () => {
 
 
     return (
-        <div className="absolute inset-0 flex bg-background text-foreground font-sans selection:bg-dept-marketing/30">
-            {/* ── LEFT PANEL — Marketing Sidebar (existing) ────── */}
-            <MarketingSidebar
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-            />
-
-            {/* ── CENTER — Campaign Workspace ────────────────────── */}
-            <div className="flex-1 flex flex-col min-w-0 bg-background">
-                <MarketingToolbar
-                    onAction={handleCreateNew}
-                    actionLabel="New Campaign"
+        <ModuleErrorBoundary moduleName="Marketing Dashboard">
+            <div className="absolute inset-0 flex bg-background text-foreground font-sans selection:bg-dept-marketing/30">
+                {/* ── LEFT PANEL — Marketing Sidebar (existing) ────── */}
+                <MarketingSidebar
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
                 />
 
-                <div className="flex-1 overflow-hidden relative">
-                    <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-dept-marketing/10 to-transparent pointer-events-none" />
+                {/* ── CENTER — Campaign Workspace ────────────────────── */}
+                <div className="flex-1 flex flex-col min-w-0 bg-background">
+                    <MarketingToolbar
+                        onAction={handleCreateNew}
+                        actionLabel="New Campaign"
+                    />
 
-                    {activeTab === 'campaigns' || activeTab === 'overview' ? (
-                        isLoading ? (
-                            <div className="p-4 space-y-4" data-testid="marketing-dashboard-loader" aria-busy="true" aria-label="Loading campaigns">
-                                <div className="grid grid-cols-3 gap-3">
-                                    <SkeletonStat /><SkeletonStat /><SkeletonStat />
+                    <div className="flex-1 overflow-hidden relative">
+                        <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-dept-marketing/10 to-transparent pointer-events-none" />
+
+                        {activeTab === 'campaigns' || activeTab === 'overview' ? (
+                            isLoading ? (
+                                <div className="p-4 space-y-4" data-testid="marketing-dashboard-loader" aria-busy="true" aria-label="Loading campaigns">
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <SkeletonStat /><SkeletonStat /><SkeletonStat />
+                                    </div>
+                                    <SkeletonList rows={5} />
                                 </div>
-                                <SkeletonList rows={5} />
-                            </div>
+                            ) : (
+                                <CampaignManager
+                                    campaigns={campaigns}
+                                    selectedCampaign={selectedCampaign}
+                                    onSelectCampaign={setSelectedCampaign}
+                                    onUpdateCampaign={handleUpdateCampaign}
+                                    onCreateNew={handleCreateNew}
+                                    onAIGenerate={handleAIGenerate}
+                                />
+                            )
+                        ) : activeTab === 'asset-generator' ? (
+                            <MarketingAssetGeneratorUI />
+                        ) : activeTab === 'ad-buying' ? (
+                            <AdBuyingPanel />
+                        ) : activeTab === 'email' ? (
+                            <EmailMarketingPanel />
+                        ) : activeTab === 'pre-save' ? (
+                            <PreSaveCampaignBuilder />
+                        ) : activeTab === 'sms' ? (
+                            <SMSMarketingPanel />
+                        ) : activeTab === 'fan-data' ? (
+                            <FanDataEnrichment />
+                        ) : activeTab === 'epk' ? (
+                            <EPKGenerator />
+                        ) : activeTab === 'community' ? (
+                            <CommunityWebhookPanel />
+                        ) : activeTab === 'influencers' ? (
+                            <InfluencerBountyBoard />
+                        ) : activeTab === 'auto-poster' ? (
+                            <MultiPlatformPoster />
+                        ) : activeTab === 'momentum' ? (
+                            <MomentumTracker />
                         ) : (
-                            <CampaignManager
-                                campaigns={campaigns}
-                                selectedCampaign={selectedCampaign}
-                                onSelectCampaign={setSelectedCampaign}
-                                onUpdateCampaign={handleUpdateCampaign}
-                                onCreateNew={handleCreateNew}
-                                onAIGenerate={handleAIGenerate}
-                            />
-                        )
-                    ) : activeTab === 'asset-generator' ? (
-                        <MarketingAssetGeneratorUI />
-                    ) : activeTab === 'ad-buying' ? (
-                        <AdBuyingPanel />
-                    ) : activeTab === 'email' ? (
-                        <EmailMarketingPanel />
-                    ) : activeTab === 'pre-save' ? (
-                        <PreSaveCampaignBuilder />
-                    ) : activeTab === 'sms' ? (
-                        <SMSMarketingPanel />
-                    ) : activeTab === 'fan-data' ? (
-                        <FanDataEnrichment />
-                    ) : activeTab === 'epk' ? (
-                        <EPKGenerator />
-                    ) : activeTab === 'community' ? (
-                        <CommunityWebhookPanel />
-                    ) : activeTab === 'influencers' ? (
-                        <InfluencerBountyBoard />
-                    ) : activeTab === 'auto-poster' ? (
-                        <MultiPlatformPoster />
-                    ) : activeTab === 'momentum' ? (
-                        <MomentumTracker />
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
-                            <Sparkles size={24} className="text-gray-600" />
-                            <p className="text-sm font-medium text-gray-400">This feature is launching soon</p>
-                            <p className="text-xs text-gray-600 max-w-xs text-center">We're putting the finishing touches on this experience. In the meantime, explore your active campaigns.</p>
-                        </div>
-                    )}
+                            <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
+                                <Sparkles size={24} className="text-gray-600" />
+                                <p className="text-sm font-medium text-gray-400">This feature is launching soon</p>
+                                <p className="text-xs text-gray-600 max-w-xs text-center">We're putting the finishing touches on this experience. In the meantime, explore your active campaigns.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
+
+                {/* ── RIGHT PANEL — Performance & Assets ─────────────── */}
+                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <PerformanceSnapshotPanel campaigns={campaigns} />
+                    <AssetLibraryPanel />
+                    <AISuggestionsPanel />
+                </aside>
+
+                {isCreateModalOpen && (
+                    <CreateCampaignModal
+                        onClose={() => setIsCreateModalOpen(false)}
+                        onSave={handleCreateSave}
+                    />
+                )}
+
+                {isAIModalOpen && (
+                    <AIGenerateCampaignModal
+                        onClose={() => setIsAIModalOpen(false)}
+                        onSave={handleAISave}
+                    />
+                )}
             </div>
-
-            {/* ── RIGHT PANEL — Performance & Assets ─────────────── */}
-            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <PerformanceSnapshotPanel campaigns={campaigns} />
-                <AssetLibraryPanel />
-                <AISuggestionsPanel />
-            </aside>
-
-            {isCreateModalOpen && (
-                <CreateCampaignModal
-                    onClose={() => setIsCreateModalOpen(false)}
-                    onSave={handleCreateSave}
-                />
-            )}
-
-            {isAIModalOpen && (
-                <AIGenerateCampaignModal
-                    onClose={() => setIsAIModalOpen(false)}
-                    onSave={handleAISave}
-                />
-            )}
-        </div>
+        </ModuleErrorBoundary>
     );
 };
 
