@@ -87,7 +87,7 @@ export class DashboardService {
     static getCurrentUserId(): string | null {
         try {
             // Use the global store's state if possible
-            const store = (globalThis as any).indiiStore;
+            const store = (globalThis as { indiiStore?: { getState: () => { userProfile?: { id?: string } } } }).indiiStore;
             if (store && typeof store.getState === 'function') {
                 return store.getState().userProfile?.id || null;
             }
