@@ -139,12 +139,16 @@ const HistoryItem = memo(({
 });
 
 export const ConversationHistoryList = ({ className, onClose }: { className?: string; onClose?: () => void }) => {
-    const sessions = useStore(state => state.sessions);
-    const activeSessionId = useStore(state => state.activeSessionId);
-    const setActiveSession = useStore(state => state.setActiveSession);
-    const deleteSession = useStore(state => state.deleteSession);
-    const updateSessionTitle = useStore(state => state.updateSessionTitle);
-    const setRightPanelView = useStore(state => state.setRightPanelView);
+    const { sessions, activeSessionId, setActiveSession, deleteSession, updateSessionTitle, setRightPanelView } = useStore(
+        useShallow(state => ({
+            sessions: state.sessions,
+            activeSessionId: state.activeSessionId,
+            setActiveSession: state.setActiveSession,
+            deleteSession: state.deleteSession,
+            updateSessionTitle: state.updateSessionTitle,
+            setRightPanelView: state.setRightPanelView,
+        }))
+    );
 
     const handleSelect = (id: string) => {
         setActiveSession(id);
