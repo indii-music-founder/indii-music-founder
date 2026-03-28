@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Product, StemFile } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ShoppingBag, Loader2, Check, Music } from 'lucide-react';
 import { logger } from '@/utils/logger';
 
@@ -37,7 +38,7 @@ interface ProductCardProps {
 const ProductCard = React.memo(({ product, variant = 'default', source, sourceId }: ProductCardProps) => {
     const [purchasing, setPurchasing] = useState(false);
     const [purchased, setPurchased] = useState(false);
-    const currentUser = useStore((state) => state.userProfile);
+    const currentUser = useStore(useShallow((state) => state.userProfile));
 
     const handlePurchase = async () => {
         if (!currentUser) return;

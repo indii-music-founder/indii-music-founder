@@ -8,13 +8,16 @@ import { ActionPanel } from './ActionPanel';
 import { ReleaseGateBanner } from './ReleaseGateBanner';
 import { RegistrationChecklistProps } from '../types';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 export const RegistrationChecklist: React.FC<RegistrationChecklistProps> = ({
     profile,
     onProSelect,
     isReleaseGate = false
 }) => {
-    const setModule = useStore(state => state.setModule);
+    const { setModule } = useStore(useShallow(state => ({
+        setModule: state.setModule
+    })));
     // Determine which section should be open initially
     // Default to PRO Registration if it's not complete, otherwise none
     const [expandedSection, setExpandedSection] = useState<'pro' | 'soundexchange' | 'mlc' | 'copyright' | null>(

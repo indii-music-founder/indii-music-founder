@@ -1,17 +1,29 @@
 import React, { useMemo, useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { formatSmartDate, cn } from '@/lib/utils';
 import { MessageSquare, Calendar, Trash2, X, Edit2, Check, Clock, Search, Filter, Activity, FileText, Image as ImageIcon, Music, Video as VideoIcon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationSession } from '@/core/store/slices/agent';
 
 export default function HistoryDashboard() {
-    const sessions = useStore(state => state.sessions);
-    const activeSessionId = useStore(state => state.activeSessionId);
-    const setActiveSession = useStore(state => state.setActiveSession);
-    const deleteSession = useStore(state => state.deleteSession);
-    const updateSessionTitle = useStore(state => state.updateSessionTitle);
-    const fileNodes = useStore(state => state.fileNodes);
+    const {
+        sessions,
+        activeSessionId,
+        setActiveSession,
+        deleteSession,
+        updateSessionTitle,
+        fileNodes
+    } = useStore(
+        useShallow(state => ({
+            sessions: state.sessions,
+            activeSessionId: state.activeSessionId,
+            setActiveSession: state.setActiveSession,
+            deleteSession: state.deleteSession,
+            updateSessionTitle: state.updateSessionTitle,
+            fileNodes: state.fileNodes,
+        }))
+    );
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'agent' | 'file'>('all');

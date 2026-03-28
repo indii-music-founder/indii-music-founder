@@ -9,6 +9,8 @@ import { WorkspaceCanvas } from './WorkspaceCanvas';
 /* ── Logic ── */
 import { useAgentWorkspace } from '../hooks/useAgentWorkspace';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import type { StoreState } from '@/core/store';
 import { useMobile } from '@/hooks/useMobile';
 
 /* ================================================================== */
@@ -31,8 +33,10 @@ export default function AgentWorkspace() {
         submitCommand,
     } = useAgentWorkspace();
 
-    const canvasItems = useStore((s) => s.canvasItems);
-    const removeCanvasItem = useStore((s) => s.removeCanvasItem);
+    const { canvasItems, removeCanvasItem } = useStore(useShallow((s: StoreState) => ({
+        canvasItems: s.canvasItems,
+        removeCanvasItem: s.removeCanvasItem
+    })));
     const { isAnyPhone } = useMobile();
 
     return (

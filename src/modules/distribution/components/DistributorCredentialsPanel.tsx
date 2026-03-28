@@ -169,6 +169,7 @@ export default function DistributorCredentialsPanel() {
                     >
                         {/* Header row */}
                         <button
+                            data-testid={`distro-cred-expand-${dist.id}`}
                             onClick={() => setExpanded(isExpanded ? null : dist.id)}
                             className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors"
                         >
@@ -226,6 +227,7 @@ export default function DistributorCredentialsPanel() {
                                     <div>
                                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1 block mb-1">Port</label>
                                         <input
+                                            data-testid={`distro-cred-port-${dist.id}`}
                                             type="text"
                                             value={form.sftpPort}
                                             onChange={e => updateForm(dist.id, 'sftpPort', e.target.value)}
@@ -237,6 +239,7 @@ export default function DistributorCredentialsPanel() {
                                 <div>
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1 block mb-1">Username</label>
                                     <input
+                                        data-testid={`distro-cred-user-${dist.id}`}
                                         type="text"
                                         value={form.sftpUsername}
                                         onChange={e => updateForm(dist.id, 'sftpUsername', e.target.value)}
@@ -251,6 +254,7 @@ export default function DistributorCredentialsPanel() {
                                         Password / Private Key
                                     </label>
                                     <input
+                                        data-testid={`distro-cred-pass-${dist.id}`}
                                         type="password"
                                         value={form.sftpPassword}
                                         onChange={e => updateForm(dist.id, 'sftpPassword', e.target.value)}
@@ -266,6 +270,7 @@ export default function DistributorCredentialsPanel() {
                                             API Key
                                         </label>
                                         <input
+                                            data-testid={`distro-cred-api-${dist.id}`}
                                             type="password"
                                             value={form.apiKey}
                                             onChange={e => updateForm(dist.id, 'apiKey', e.target.value)}
@@ -283,6 +288,7 @@ export default function DistributorCredentialsPanel() {
                                 )}
 
                                 <button
+                                    data-testid={`distro-cred-save-${dist.id}`}
                                     onClick={() => handleSave(dist)}
                                     disabled={isSaving}
                                     className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-[11px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"

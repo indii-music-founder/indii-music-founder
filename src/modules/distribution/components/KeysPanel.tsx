@@ -132,6 +132,7 @@ export const KeysPanel: React.FC = () => {
                                     : 'Loading catalog...'}
                             </p>
                             <button
+                                data-testid="keys-run-compliance-audit"
                                 onClick={handleCheckMerlin}
                                 disabled={loading || !dataLoaded || catalog.length === 0}
                                 className="px-4 py-2 bg-dept-creative hover:bg-dept-creative/80 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto disabled:cursor-not-allowed"
@@ -143,8 +144,10 @@ export const KeysPanel: React.FC = () => {
                     ) : (
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className={`text-sm font-bold ${statusReport.status === 'READY' ? 'text-dept-licensing' : 'text-dept-royalties'
-                                    }`}>
+                                <span
+                                    data-testid="keys-compliance-status"
+                                    className={`text-sm font-bold ${statusReport.status === 'READY' ? 'text-dept-licensing' : 'text-dept-royalties'
+                                        }`}>
                                     Status: {statusReport.status}
                                 </span>
                                 <span className="text-xs text-gray-500 font-mono">
@@ -177,6 +180,7 @@ export const KeysPanel: React.FC = () => {
                             </div>
 
                             <button
+                                data-testid="keys-run-check-again"
                                 onClick={() => setStatusReport(null)}
                                 className="w-full mt-4 px-4 py-2 border border-white/10 hover:bg-white/5 text-gray-300 rounded-lg text-sm transition-colors"
                             >
@@ -211,6 +215,7 @@ export const KeysPanel: React.FC = () => {
                                         CSV Generated ({bwarmCsv.length} bytes)
                                     </div>
                                     <button
+                                        data-testid="keys-download-bwarm-csv"
                                         onClick={downloadCSV}
                                         className="w-full px-3 py-2 bg-dept-licensing hover:bg-dept-licensing/80 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >
@@ -218,6 +223,7 @@ export const KeysPanel: React.FC = () => {
                                         Download CSV
                                     </button>
                                     <button
+                                        data-testid="keys-clear-bwarm-csv"
                                         onClick={() => setBwarmCsv(null)}
                                         className="w-full px-3 py-2 text-gray-400 hover:text-white text-xs transition-colors"
                                     >
@@ -226,6 +232,7 @@ export const KeysPanel: React.FC = () => {
                                 </div>
                             ) : (
                                 <button
+                                    data-testid="keys-generate-bwarm-csv"
                                     onClick={handleGenerateBWARM}
                                     disabled={loading}
                                     className="w-full px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium border border-white/10 transition-colors flex items-center justify-center gap-2"

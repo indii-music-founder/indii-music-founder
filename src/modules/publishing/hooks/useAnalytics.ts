@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { getFirestore, collection, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
@@ -24,7 +25,9 @@ export interface PayoutRecord {
  * Collection: users/{userId}/analytics/daily/{date}
  */
 export function useAnalytics(dateRange: { start: string; end: string }) {
-    const userProfile = useStore(state => state.userProfile);
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const [data, setData] = useState<TimeSeriesDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -118,7 +121,9 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
  * Collection: users/{userId}/payouts
  */
 export function usePayouts() {
-    const userProfile = useStore(state => state.userProfile);
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

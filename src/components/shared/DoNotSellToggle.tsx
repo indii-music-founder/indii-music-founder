@@ -3,6 +3,7 @@ import { ShieldOff, Shield, ExternalLink } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 
@@ -17,7 +18,9 @@ import { logger } from '@/utils/logger';
  */
 
 export function DoNotSellToggle() {
-    const user = useStore(state => state.user);
+    const { user } = useStore(useShallow(state => ({
+        user: state.user
+    })));
     const [doNotSell, setDoNotSell] = useState(false);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);

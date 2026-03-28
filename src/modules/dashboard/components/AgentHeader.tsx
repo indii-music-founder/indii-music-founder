@@ -2,6 +2,8 @@ import React from 'react';
 import { StatusPill } from './StatusPill';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import type { StoreState } from '@/core/store';
 
 interface AgentHeaderProps {
     uptime: string;
@@ -9,7 +11,7 @@ interface AgentHeaderProps {
 }
 
 export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
-    const isOffline = useStore((state) => state.isOffline);
+    const isOffline = useStore(useShallow((state: StoreState) => state.isOffline));
     const hasApiKey = !!import.meta.env.VITE_API_KEY;
 
     return (

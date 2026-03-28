@@ -130,6 +130,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                     </div>
                                 </div>
                                 <button
+                                    data-testid="distro-modal-close"
                                     onClick={onClose}
                                     className="w-10 h-10 rounded-full border border-white/5 bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all"
                                 >
@@ -140,6 +141,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                             {/* Tabs */}
                             <div className="flex p-1 bg-white/5 rounded-2xl mb-4 border border-white/5">
                                 <button
+                                    data-testid="distro-config-tab-identity"
                                     onClick={() => setActiveTab('identity')}
                                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'identity' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-gray-300'
                                         }`}
@@ -148,6 +150,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                     Identity
                                 </button>
                                 <button
+                                    data-testid="distro-config-tab-technical"
                                     onClick={() => setActiveTab('technical')}
                                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'technical' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-gray-300'
                                         }`}
@@ -174,6 +177,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Account Identifier (Username/Email)</label>
                                                 <div className="relative group">
                                                     <input
+                                                        data-testid="distro-auth-username"
                                                         type="text"
                                                         value={auth.username}
                                                         onChange={e => setAuth({ ...auth, username: e.target.value })}
@@ -189,6 +193,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Access Token / Password</label>
                                                 <div className="relative group">
                                                     <input
+                                                        data-testid="distro-auth-password"
                                                         type="password"
                                                         value={auth.password}
                                                         onChange={e => setAuth({ ...auth, password: e.target.value })}
@@ -226,6 +231,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                                 <div className="col-span-2 space-y-2">
                                                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">SFTP Host</label>
                                                     <input
+                                                        data-testid="distro-sftp-host"
                                                         type="text"
                                                         value={sftp.host}
                                                         onChange={e => setSftp({ ...sftp, host: e.target.value })}
@@ -236,6 +242,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Port</label>
                                                     <input
+                                                        data-testid="distro-sftp-port"
                                                         type="text"
                                                         value={sftp.port}
                                                         onChange={e => setSftp({ ...sftp, port: e.target.value })}
@@ -248,6 +255,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">SFTP Username (If different)</label>
                                                 <input
+                                                    data-testid="distro-sftp-username"
                                                     type="text"
                                                     value={sftp.username}
                                                     onChange={e => setSftp({ ...sftp, username: e.target.value })}
@@ -260,6 +268,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">SFTP Password</label>
                                                 <div className="relative group">
                                                     <input
+                                                        data-testid="distro-sftp-password"
                                                         type="password"
                                                         value={sftp.password}
                                                         onChange={e => setSftp({ ...sftp, password: e.target.value })}
@@ -275,6 +284,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Private Key (OpenSSH Format)</label>
                                                 <textarea
+                                                    data-testid="distro-sftp-private-key"
                                                     value={sftp.privateKey}
                                                     onChange={e => setSftp({ ...sftp, privateKey: e.target.value })}
                                                     placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
@@ -288,6 +298,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
 
                                 {error && (
                                     <motion.div
+                                        data-testid="distro-connect-error"
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-4"
@@ -307,6 +318,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                         {/* Footer Action */}
                         <div className="p-8 pt-4 border-t border-white/5 bg-white/[0.02]">
                             <button
+                                data-testid="distro-finalize-connection"
                                 form="connect-form"
                                 type="submit"
                                 disabled={isLoading}

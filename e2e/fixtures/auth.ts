@@ -26,9 +26,21 @@ export const test = base.extend<AuthFixtures>({
     authedPage: async ({ page }, use) => {
         // Intercept Firestore reads to return empty collections — prevents tests
         // from depending on real user data while still letting writes through.
+        // Also intercept listener/channel long-poll connections that cause zombie hangs.
         await page.route('**/firestore.googleapis.com/**', async route => {
             const url = route.request().url();
-            if (route.request().method() === 'GET' && url.includes('/users/')) {
+            const method = route.request().method();
+
+            // ── Zombie Prevention: kill Firestore long-poll listeners ──
+            // These are the primary cause of Playwright tests hanging for hours.
+            // Firestore's real-time listeners use long-polling (Listen RPC or
+            // channel?database= pattern) that Playwright can't cleanly close.
+            if (url.includes('/Listen/') || url.includes('/Listen?') || url.includes('channel?database=')) {
+                await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+                return;
+            }
+
+            if (method === 'GET' && url.includes('/users/')) {
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',

@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useDragControls } from 'motion/react';
 import { X, Minimize2, RefreshCw, Bot, Maximize2, Smartphone } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import type { AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
@@ -19,14 +20,27 @@ interface ChatOverlayProps {
 }
 
 const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) => {
-    const messages = useStore(state => state.agentHistory);
-    const isProcessing = useStore(state => state.isAgentProcessing);
-    const chatChannel = useStore(state => state.chatChannel);
-    const isCommandBarDetached = useStore(state => state.isCommandBarDetached);
-    const setCommandBarDetached = useStore(state => state.setCommandBarDetached);
-    const windowSize = useStore(state => state.agentWindowSize);
-    const setAgentWindowSize = useStore(state => state.setAgentWindowSize);
-    const userProfile = useStore(state => state.userProfile);
+    const {
+        messages,
+        isProcessing,
+        chatChannel,
+        isCommandBarDetached,
+        setCommandBarDetached,
+        windowSize,
+        setAgentWindowSize,
+        userProfile
+    } = useStore(
+        useShallow(state => ({
+            messages: state.agentHistory,
+            isProcessing: state.isAgentProcessing,
+            chatChannel: state.chatChannel,
+            isCommandBarDetached: state.isCommandBarDetached,
+            setCommandBarDetached: state.setCommandBarDetached,
+            windowSize: state.agentWindowSize,
+            setAgentWindowSize: state.setAgentWindowSize,
+            userProfile: state.userProfile,
+        }))
+    );
 
     const dragControls = useDragControls();
     const isDesktop = useMediaQuery('(min-width: 768px)');
