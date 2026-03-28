@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.42.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.41.0...v1.42.0) (2026-03-28)
+
+
+### Features
+
+* **dashboard:** complete real-time migration for all 13 dashboard widgets ([a0133b8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a0133b858e7f11594be9fbfae95080961702701a))
+
 ## [1.41.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.40.0...v1.41.0) (2026-03-28)
 
 
