@@ -2,6 +2,54 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.41.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.40.0...v1.41.0) (2026-03-28)
+
+
+### Features
+
+* **agent:** wire up persistent Firestore backends for operational agent tools ([e71b8fe](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e71b8fe5fcbb1ed7f46fe9e5e74b125e94ed055d))
+* **dashboard:** migrate AudienceGrowth, TopTrack, NextRelease & AgentActivity to real-time subscriptions ([5eceed6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5eceed633b3266331fb3d9d1f5c8b45e4d149b29))
+* **dashboard:** migrate revenue and streams to real-time firestore subscriptions ([8a93ffc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8a93ffcadd4a860feb8006acb7062a61c1a23191))
+* **distribution:** wire DistributorQuickView + KeysStatusPanel to live store ([5d8c933](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5d8c9330bcf3e786202eb1fd8dadcf305d552590))
+* **distribution:** wire QCVisualizer to real audio forensics pipeline ([9b58ea3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9b58ea31524555d161721dd4b6652712aecbc835))
+* **observability:** add live Scheduler Status panel to Observability Dashboard ([4f5a56a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4f5a56aff9656094bc4d8eb17bd876ade7aec924))
+* **orchestration:** implement memory inbox and digital handshake approval UI in dashboard ([89b2ba5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/89b2ba50b9acf44f4d11e7b4db54b07b46e77633))
+* **scheduler:** add built-in task scheduler with Neural Sync heartbeat ([d019d16](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d019d1699d8a05142ec7ab22d8fe31125a50b900))
+* **scheduler:** add built-in task scheduler with Neural Sync heartbeat ([79fb3b1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/79fb3b1ce34b002bfa1064cb775d98f6550a2ad2))
+* **training:** add finance R7 expert uplift — 41 examples, 60.1% expert density ([c6130bd](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c6130bdebd451a7a52ccc1728e6f66737f309069))
+* **training:** R7 expert uplift — 20 jobs submitted, ≥60% expert density all agents ([cd5ff34](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/cd5ff340f3ab39be43c115d469dcb294259aa0df))
+* **wo-18:** complete live analytics integration for marketing momentum tracker ([d72bf99](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d72bf999acc2c6042161fab63ac2d6c71c46d584))
+* **wo8/wo10:** add stripe webhook tests (10/10) + fix MusicAgent production coaching scope violations ([66d6d08](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/66d6d0811daacc26f7cd45778d9ffc809b186442))
+* **workflow:** replace mock viewport with real ReactFlowInstance capture ([e7bb9ec](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e7bb9ecd078dc75fed5d5913d3fa8f5ca853d62d))
+
+
+### Bug Fixes
+
+* add missing useShallow import to ConversationHistoryList ([959199c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/959199cc0772331b124a35dd121c9709c9a61182))
+* address all CodeRabbit and Sentry review comments on PR [#1357](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/issues/1357) ([97a8980](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/97a89806960e6cb1d1dfa90f15e3460de0a4292e))
+* **distribution:** design review polish — health panel, quick actions, error state ([576f669](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/576f669d0d6ac039b3e91ce97b133326c2bbc946))
+* **distribution:** wire right-panel widgets to real store data ([08ef931](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/08ef93120ae5acff89f95396d55251657d816d02))
+* eliminate any cast in DashboardService.getCurrentUserId ([d5a4646](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d5a4646de3b495a729e8b4a5b668393846111ba6))
+* **finance:** design review polish — dynamic dates, dead refresh btn, DSP empty state, tax disclaimer ([c53a739](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c53a739731329c2318a7ed123c23c511293668a4))
+* **Publishing:** resolve strict type errors and UI regression test failures ([4c5c81f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4c5c81ffa14d4f49d63208ce2f5926717a96be14))
+* Resolve CI deployment failures with strict type safety ([bb40897](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/bb40897e2538f6e8a3097623fe805bcb3bdcc03b))
+* resolve SalesAnalytics lint error and stale test mock ([eaa3b10](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/eaa3b106bfea4105d5aae65c28980528ecb4a1ac))
+* **scheduler:** remove duplicate zombie body from SchedulerClientService ([277b80b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/277b80bb7040ba1e31ba7b90d470761c80d4a50a))
+* **scheduler:** remove duplicate zombie body from SchedulerClientService ([d204bb5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d204bb5ff3e293285d759fc073ef2d1833d5aea0))
+* **storage:** prevent IDB DataError when profile id is missing ([2d01f06](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/2d01f0680c02c90b261de8a082a381af6444c248))
+* **touring:** design review polish — cookie banner, date pickers, empty states, vehicle status ([008ba10](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/008ba10b0fafc48721cc55940cbe379e6b8b1486))
+* **touring:** design review polish — cookie banner, date pickers, empty states, vehicle status ([42d6024](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/42d602416535caf6d6ea3e747d8316d1014f9b66))
+* **types:** achieve zero tsc errors across distribution, observability, merchandise, video modules ([e88816c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e88816c39230262d2114d26c86181bf13594177a))
+* update SchedulerService tests and harden creative E2E spec ([1e298ba](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1e298ba14a8818a7088600398de21a7a5380408e))
+* **workflow:** design review polish — dead interactions, false presence badge, alert→toast ([e5c8b23](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e5c8b239815467a7c338620e5bf0c62a9c0df3da))
+* **workflow:** real viewport save + collision-free node IDs ([8c2056a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8c2056a7e6723506983d6757f758d40be3e3a98d))
+
+
+### Performance Improvements
+
+* **store:** apply useShallow to ConversationHistoryList; reformat E2E route mock ([399773d](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/399773d97d3cdfa1cde8469a06c4140c122e41c0))
+* **store:** migrate all useStore calls to useShallow across 40+ modules ([256f45a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/256f45a8f77bab4eae939a985f4c0ea9a1e67deb))
+
 ## [1.40.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.39.0...v1.40.0) (2026-03-27)
 
 ### Features
