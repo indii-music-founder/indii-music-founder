@@ -5,6 +5,7 @@ import {
     DollarSign, Globe, Network, Briefcase, FileText, Users,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import type { ModuleId } from '@/core/constants';
 import {
@@ -26,22 +27,24 @@ interface QuickAction {
  * Expanded to cover all key departments with department colors
  */
 const ACTIONS: QuickAction[] = [
-    { id: 'creative',     name: 'Creative',     icon: Sparkles,   hint: 'AI image generation studio' },
-    { id: 'video',        name: 'Video',        icon: Film,       hint: 'AI video production' },
-    { id: 'marketing',    name: 'Marketing',    icon: Megaphone,  hint: 'Campaigns & brand copy' },
-    { id: 'distribution', name: 'Distribution', icon: Globe,      hint: 'Release management' },
-    { id: 'finance',      name: 'Finance',      icon: DollarSign, hint: 'Revenue & royalties' },
-    { id: 'legal',        name: 'Legal',        icon: Scale,      hint: 'Contracts & rights' },
-    { id: 'publishing',   name: 'Publishing',   icon: Book,       hint: 'Catalog & metadata' },
-    { id: 'social',       name: 'Social',       icon: Network,    hint: 'Social media manager' },
-    { id: 'workflow',     name: 'Workflow',      icon: GitBranch,  hint: 'Automation builder' },
-    { id: 'brand',        name: 'Brand',        icon: Briefcase,  hint: 'Brand identity kit' },
-    { id: 'licensing',    name: 'Licensing',    icon: FileText,   hint: 'Sync deals & licensing' },
-    { id: 'road',         name: 'Road',         icon: Users,      hint: 'Tour management' },
+    { id: 'creative', name: 'Creative', icon: Sparkles, hint: 'AI image generation studio' },
+    { id: 'video', name: 'Video', icon: Film, hint: 'AI video production' },
+    { id: 'marketing', name: 'Marketing', icon: Megaphone, hint: 'Campaigns & brand copy' },
+    { id: 'distribution', name: 'Distribution', icon: Globe, hint: 'Release management' },
+    { id: 'finance', name: 'Finance', icon: DollarSign, hint: 'Revenue & royalties' },
+    { id: 'legal', name: 'Legal', icon: Scale, hint: 'Contracts & rights' },
+    { id: 'publishing', name: 'Publishing', icon: Book, hint: 'Catalog & metadata' },
+    { id: 'social', name: 'Social', icon: Network, hint: 'Social media manager' },
+    { id: 'workflow', name: 'Workflow', icon: GitBranch, hint: 'Automation builder' },
+    { id: 'brand', name: 'Brand', icon: Briefcase, hint: 'Brand identity kit' },
+    { id: 'licensing', name: 'Licensing', icon: FileText, hint: 'Sync deals & licensing' },
+    { id: 'road', name: 'Road', icon: Users, hint: 'Tour management' },
 ];
 
 export default function QuickActions() {
-    const setModule = useStore((state) => state.setModule);
+    const { setModule } = useStore(useShallow(state => ({
+        setModule: state.setModule
+    })));
 
     return (
         <TooltipProvider delayDuration={200}>

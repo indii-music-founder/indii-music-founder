@@ -136,6 +136,7 @@ export function RegistrationChecklistPanel() {
         <div className="rounded-xl border border-white/5 bg-black/40 backdrop-blur-md overflow-hidden flex flex-col">
             {/* Header / Summary */}
             <div
+                data-testid="checklist-toggle"
                 className="p-3 border-b border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors"
                 onClick={() => setExpanded(!expanded)}
             >
@@ -144,11 +145,17 @@ export function RegistrationChecklistPanel() {
                 </div>
                 <div className="flex items-center gap-2">
                     {isReadyForDistribution ? (
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-[10px] font-bold text-green-400 uppercase tracking-wider">
+                        <div
+                            data-testid="checklist-status-ready"
+                            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-[10px] font-bold text-green-400 uppercase tracking-wider"
+                        >
                             <Radio size={10} className="animate-pulse" /> Ready
                         </div>
                     ) : (
-                        <span className="text-xs font-bold text-white">
+                        <span
+                            data-testid="checklist-progress-percent"
+                            className="text-xs font-bold text-white"
+                        >
                             {progress}%
                         </span>
                     )}
@@ -179,15 +186,15 @@ export function RegistrationChecklistPanel() {
                             {items.map((item) => (
                                 <div
                                     key={item.id}
-                                    className={`flex items-start gap-3 p-2 rounded-lg transition-colors ${
-                                        item.status === 'complete'
-                                            ? 'bg-white/[0.02]'
-                                            : item.status === 'warning'
-                                                ? 'bg-yellow-500/5 hover:bg-yellow-500/10'
-                                                : item.status === 'checking'
-                                                    ? 'bg-white/[0.02] opacity-70'
-                                                    : 'bg-dept-publishing/5 hover:bg-dept-publishing/10'
-                                    }`}
+                                    data-testid={`checklist-item-${item.id}`}
+                                    className={`flex items-start gap-3 p-2 rounded-lg transition-colors ${item.status === 'complete'
+                                        ? 'bg-white/[0.02]'
+                                        : item.status === 'warning'
+                                            ? 'bg-yellow-500/5 hover:bg-yellow-500/10'
+                                            : item.status === 'checking'
+                                                ? 'bg-white/[0.02] opacity-70'
+                                                : 'bg-dept-publishing/5 hover:bg-dept-publishing/10'
+                                        }`}
                                 >
                                     <div className="mt-0.5 flex-shrink-0">
                                         {item.status === 'complete' ? (
@@ -209,12 +216,12 @@ export function RegistrationChecklistPanel() {
                                         </div>
                                         {item.actionText && item.status !== 'complete' && item.status !== 'checking' && (
                                             <button
+                                                data-testid={`checklist-action-${item.id}`}
                                                 onClick={() => handleAction(item.id)}
-                                                className={`mt-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded transition-colors ${
-                                                    item.status === 'warning'
-                                                        ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.2)]'
-                                                        : 'bg-dept-publishing/20 text-dept-publishing hover:bg-dept-publishing/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
-                                                }`}
+                                                className={`mt-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded transition-colors ${item.status === 'warning'
+                                                    ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.2)]'
+                                                    : 'bg-dept-publishing/20 text-dept-publishing hover:bg-dept-publishing/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
+                                                    }`}
                                             >
                                                 {item.actionText}
                                             </button>
@@ -228,7 +235,7 @@ export function RegistrationChecklistPanel() {
                         {!isReadyForDistribution && (
                             <div className="p-3 bg-red-500/5 border-t border-red-500/10 flex items-start gap-2 text-xs text-red-400 font-medium">
                                 <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
-                                <p>Release cannot be deployed to DSPs until all required items are complete.</p>
+                                <p data-testid="checklist-warning-text">Release cannot be deployed to DSPs until all required items are complete.</p>
                             </div>
                         )}
                     </motion.div>

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Music,
     Plus,
@@ -65,9 +65,9 @@ import { logger } from '@/utils/logger';
 /* ================================================================== */
 
 export default function PublishingDashboard() {
-    const setModule = useStore(state => state.setModule);
-    const { finance, distribution, fetchDistributors, fetchEarnings, currentOrganizationId } = useStore(
+    const { setModule, finance, distribution, fetchDistributors, fetchEarnings, currentOrganizationId } = useStore(
         useShallow(state => ({
+            setModule: state.setModule,
             finance: state.finance,
             distribution: state.distribution,
             fetchDistributors: state.fetchDistributors,
@@ -149,7 +149,7 @@ export default function PublishingDashboard() {
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
                                     <Book size={18} className="text-white" />
                                 </div>
-                                <div>
+                                <div onClick={() => setModule('dashboard')} className="cursor-pointer">
                                     <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Publishing</h1>
                                     <p className="text-muted-foreground font-medium tracking-wide text-[10px]">RIGHTS · DISTRIBUTION · ROYALTIES</p>
                                 </div>

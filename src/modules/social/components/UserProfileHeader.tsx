@@ -3,6 +3,8 @@ import { UserProfile } from '@/types/User';
 import { UserService } from '@/services/UserService';
 import { SocialService } from '@/services/social/SocialService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import type { StoreState } from '@/core/store';
 import { Users, UserPlus, UserCheck, Edit, MapPin, Link as LinkIcon } from 'lucide-react';
 import { logger } from '@/utils/logger';
 
@@ -11,7 +13,7 @@ interface UserProfileHeaderProps {
 }
 
 export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
-    const currentUser = useStore((state) => state.userProfile);
+    const currentUser = useStore(useShallow((state: StoreState) => state.userProfile));
     const targetId = userId || currentUser?.id;
 
     const [profile, setProfile] = useState<UserProfile | null>(null);

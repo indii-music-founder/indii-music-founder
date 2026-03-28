@@ -89,6 +89,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                 </div>
 
                 <button
+                    data-testid="territory-toggle"
                     onClick={() => onChange({ ...config, enabled: !config.enabled })}
                     className={`relative w-11 h-6 rounded-full transition-colors ${config.enabled ? 'bg-purple-500' : 'bg-white/10'}`}
                     aria-label="Toggle territory splits"
@@ -138,6 +139,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                     </div>
                                 </button>
                                 <button
+                                    data-testid={`territory-remove-split-${index}`}
                                     onClick={() => removeSplit(index)}
                                     className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-2"
                                     aria-label="Remove split"
@@ -152,6 +154,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                     <div>
                                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 block mb-1">Rights Holder</label>
                                         <input
+                                            data-testid={`territory-input-holder-${index}`}
                                             type="text"
                                             value={split.rightsHolder}
                                             onChange={e => updateSplit(index, { rightsHolder: e.target.value })}
@@ -164,6 +167,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                         <div>
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 block mb-1">Rights Type</label>
                                             <select
+                                                data-testid={`territory-input-type-${index}`}
                                                 value={split.rightsType}
                                                 onChange={e => updateSplit(index, { rightsType: e.target.value as TerritoryRightsSplit['rightsType'] })}
                                                 className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
@@ -179,6 +183,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 block mb-1">Percentage</label>
                                             <div className="flex items-center gap-2">
                                                 <input
+                                                    data-testid={`territory-input-percent-${index}`}
                                                     type="number"
                                                     min={1}
                                                     max={100}
@@ -234,6 +239,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                             Stripe Connect Account (Optional)
                                         </label>
                                         <input
+                                            data-testid={`territory-input-account-${index}`}
                                             type="text"
                                             value={split.accountId || ''}
                                             onChange={e => updateSplit(index, { accountId: e.target.value })}
@@ -247,6 +253,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                     ))}
 
                     <button
+                        data-testid="territory-add-split"
                         onClick={addSplit}
                         className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-white/10 text-gray-500 hover:text-white hover:border-white/20 text-[11px] font-bold uppercase tracking-widest transition-all"
                     >

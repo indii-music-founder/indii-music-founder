@@ -119,19 +119,19 @@ export const AuthorityPanel: React.FC = () => {
                 </p>
             </div>
 
-            {/* Release Selector */}
             <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
                     Select Active Release
                 </label>
                 <select
+                    data-testid="authority-release-selector"
                     value={selectedReleaseId}
                     onChange={(e) => setSelectedReleaseId(e.target.value)}
                     className="w-full bg-black/40 border border-white/10 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-dept-royalties/50"
                 >
                     <option value="">-- Select Release for DDEX Generation --</option>
                     {releases.map((release) => (
-                        <option key={release.id} value={release.id}>
+                        <option key={release.id} value={release.id} data-testid={`authority-release-option-${release.id}`}>
                             {release.title} ({release.artist})
                         </option>
                     ))}
@@ -148,6 +148,7 @@ export const AuthorityPanel: React.FC = () => {
                     <p className="text-xs text-gray-500">International Standard Recording Code. Unique identity for each sound recording.</p>
 
                     <button
+                        data-testid="authority-generate-isrc"
                         onClick={handleGenerateISRC}
                         disabled={loading === 'isrc'}
                         className="w-full bg-dept-creative hover:bg-dept-creative/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
@@ -158,7 +159,7 @@ export const AuthorityPanel: React.FC = () => {
 
                     {isrc && (
                         <div className="p-3 bg-dept-creative/10 border border-dept-creative/20 rounded-lg text-center">
-                            <span className="font-mono text-dept-creative text-lg">{isrc}</span>
+                            <span data-testid="authority-isrc-display" className="font-mono text-dept-creative text-lg">{isrc}</span>
                         </div>
                     )}
                 </div>
@@ -172,6 +173,7 @@ export const AuthorityPanel: React.FC = () => {
                     <p className="text-xs text-gray-500">Universal Product Code. Required for album/single retail distribution.</p>
 
                     <button
+                        data-testid="authority-generate-upc"
                         onClick={handleGenerateUPC}
                         disabled={loading === 'upc'}
                         className="w-full bg-dept-distribution hover:bg-dept-distribution/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
@@ -182,7 +184,7 @@ export const AuthorityPanel: React.FC = () => {
 
                     {upc && (
                         <div className="p-3 bg-dept-distribution/10 border border-dept-distribution/20 rounded-lg text-center">
-                            <span className="font-mono text-dept-distribution text-lg">{upc}</span>
+                            <span data-testid="authority-upc-display" className="font-mono text-dept-distribution text-lg">{upc}</span>
                         </div>
                     )}
                 </div>
@@ -196,6 +198,7 @@ export const AuthorityPanel: React.FC = () => {
                     <p className="text-xs text-gray-500">Generate ERN 4.3 XML for direct ingestion by Apple, Spotify, and Amazon.</p>
 
                     <button
+                        data-testid="authority-generate-ddex"
                         onClick={handleGenerateDDEX}
                         disabled={loading === 'ddex'}
                         className="w-full bg-dept-royalties hover:bg-dept-royalties/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
@@ -212,13 +215,17 @@ export const AuthorityPanel: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-dept-royalties uppercase tracking-widest">DDEX ERN 4.3 Output</span>
                         <button
+                            data-testid="authority-copy-ddex"
                             onClick={() => navigator.clipboard.writeText(ddexXml)}
                             className="text-xs text-gray-500 hover:text-white transition-colors"
                         >
                             Copy to Clipboard
                         </button>
                     </div>
-                    <pre className="p-4 bg-black/40 rounded-lg overflow-x-auto text-xs text-dept-licensing font-mono max-h-64 overflow-y-auto custom-scrollbar">
+                    <pre
+                        data-testid="authority-ddex-output"
+                        className="p-4 bg-black/40 rounded-lg overflow-x-auto text-xs text-dept-licensing font-mono max-h-64 overflow-y-auto custom-scrollbar"
+                    >
                         {ddexXml}
                     </pre>
                 </div>

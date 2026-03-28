@@ -143,6 +143,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                     <input
                                         value={title}
                                         onChange={e => setTitle(e.target.value)}
+                                        data-testid="release-title-input"
                                         placeholder="Album or single title"
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-distribution/50 transition-colors"
                                     />
@@ -152,6 +153,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                     <input
                                         value={artist}
                                         onChange={e => setArtist(e.target.value)}
+                                        data-testid="release-artist-input"
                                         placeholder="Artist name"
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-distribution/50 transition-colors"
                                     />
@@ -164,6 +166,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                     <input
                                         value={trackTitle}
                                         onChange={e => setTrkTitle(e.target.value)}
+                                        data-testid="release-track-title-input"
                                         placeholder="Track name"
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-distribution/50 transition-colors"
                                     />
@@ -185,6 +188,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Label</label>
                                     <input
+                                        data-testid="release-label-input"
                                         value={label}
                                         onChange={e => setLabel(e.target.value)}
                                         placeholder="Label name"
@@ -194,6 +198,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Release Date</label>
                                     <input
+                                        data-testid="release-date-input"
                                         type="date"
                                         value={releaseDate}
                                         onChange={e => setRelDate(e.target.value)}
@@ -205,6 +210,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                             <div>
                                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Artwork URL</label>
                                 <input
+                                    data-testid="release-artwork-input"
                                     value={artworkUrl}
                                     onChange={e => setArtwork(e.target.value)}
                                     placeholder="https://..."
@@ -238,9 +244,9 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <span className={`text-xs font-bold uppercase tracking-widest ${step.status === 'idle' ? 'text-gray-600' :
-                                                    step.status === 'running' ? 'text-white' :
-                                                        step.status === 'done' ? 'text-dept-publishing' :
-                                                            'text-dept-marketing'
+                                                step.status === 'running' ? 'text-white' :
+                                                    step.status === 'done' ? 'text-dept-publishing' :
+                                                        'text-dept-marketing'
                                                 }`}>
                                                 {step.label}
                                             </span>
@@ -295,6 +301,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                         {done ? (
                             <button
                                 onClick={handleClose}
+                                data-testid="release-done-button"
                                 className="px-5 py-2 bg-dept-publishing text-white font-black text-xs uppercase tracking-widest rounded-lg hover:bg-dept-publishing/80 transition-colors"
                             >
                                 Done
@@ -311,6 +318,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                 <button
                                     onClick={handleSubmit}
                                     disabled={!formValid || submitting}
+                                    data-testid="release-submit-button"
                                     className="px-5 py-2 bg-white text-black font-black text-xs uppercase tracking-widest rounded-lg hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
                                     {submitting ? (

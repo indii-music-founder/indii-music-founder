@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Product } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import ProductCard from './ProductCard';
 import CreateProductModal from './CreateProductModal';
 import { Plus, Store } from 'lucide-react';
@@ -12,7 +13,7 @@ interface MarketplaceStorefrontProps {
 }
 
 export default function MarketplaceStorefront({ artistId }: MarketplaceStorefrontProps) {
-    const currentUser = useStore((state) => state.userProfile);
+    const currentUser = useStore(useShallow((state) => state.userProfile));
     // For profile usage, artistId should be passed.
     const targetId = artistId || currentUser?.id;
 

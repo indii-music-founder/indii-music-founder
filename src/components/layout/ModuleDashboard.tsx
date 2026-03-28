@@ -1,5 +1,7 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import type { StoreState } from '@/core/store';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import type { ModuleId } from '@/core/constants';
 
@@ -39,7 +41,7 @@ export function ModuleDashboard({
     moduleId: propModuleId
 }: ModuleDashboardProps) {
     // Get current module from store if not provided
-    const currentModule = useStore((state) => state.currentModule);
+    const currentModule = useStore(useShallow((state: StoreState) => state.currentModule));
     const moduleId = propModuleId || currentModule;
     const colors = getColorForModule(moduleId);
 
@@ -77,11 +79,10 @@ export function ModuleDashboard({
                                     <button
                                         key={tab.value}
                                         onClick={() => onTabChange?.(tab.value)}
-                                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors bolt-interactive ${
-                                            activeTab === tab.value
-                                                ? `${colors.bg} ${colors.text} shadow-sm`
-                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                        }`}
+                                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors bolt-interactive ${activeTab === tab.value
+                                            ? `${colors.bg} ${colors.text} shadow-sm`
+                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                            }`}
                                     >
                                         {tab.label}
                                     </button>

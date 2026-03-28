@@ -116,12 +116,14 @@ export const TransferPanel: React.FC = () => {
                         <div className="flex items-center bg-black/40 p-1 rounded-lg border border-white/5 backdrop-blur-sm">
                             <button
                                 onClick={() => setProtocol('SFTP')}
+                                data-testid="distro-subtab-sftp"
                                 className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${protocol === 'SFTP' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
                             >
                                 SFTP
                             </button>
                             <button
                                 onClick={() => setProtocol('ASPERA')}
+                                data-testid="distro-subtab-aspera"
                                 className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${protocol === 'ASPERA' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
                             >
                                 Aspera
@@ -134,6 +136,7 @@ export const TransferPanel: React.FC = () => {
                             <div className="col-span-2 text-left">
                                 <label className={labelClasses}>Hostname / IP</label>
                                 <input
+                                    data-testid="transfer-input-host"
                                     type="text"
                                     className={inputClasses}
                                     placeholder="sftp.gateway.com"
@@ -144,6 +147,7 @@ export const TransferPanel: React.FC = () => {
                             <div className="text-left">
                                 <label className={labelClasses}>Port</label>
                                 <input
+                                    data-testid="transfer-input-port"
                                     type="number"
                                     className={inputClasses}
                                     placeholder="22"
@@ -157,6 +161,7 @@ export const TransferPanel: React.FC = () => {
                             <div className="text-left">
                                 <label className={labelClasses}>Username</label>
                                 <input
+                                    data-testid="transfer-input-username"
                                     type="text"
                                     className={inputClasses}
                                     placeholder="gateway_user"
@@ -176,6 +181,7 @@ export const TransferPanel: React.FC = () => {
                                 </div>
                                 {authMode === 'PASSWORD' ? (
                                     <input
+                                        data-testid="transfer-input-password"
                                         type="password"
                                         className={inputClasses}
                                         placeholder="Secret Key/Password"
@@ -208,6 +214,7 @@ export const TransferPanel: React.FC = () => {
                                 <label className={labelClasses}>Local Source Path</label>
                                 <div className="relative">
                                     <input
+                                        data-testid="transfer-input-local-path"
                                         type="text"
                                         className={`${inputClasses} pl-10`}
                                         placeholder="/path/to/release.itmsp"
@@ -215,6 +222,7 @@ export const TransferPanel: React.FC = () => {
                                         onChange={e => setConfig({ ...config, localPath: e.target.value })}
                                     />
                                     <button
+                                        data-testid="transfer-select-local-path"
                                         onClick={selectLocalPath}
                                         className="absolute left-3 top-2.5 text-gray-500 hover:text-white transition-colors"
                                     >
@@ -227,6 +235,7 @@ export const TransferPanel: React.FC = () => {
                                 <label className={labelClasses}>Remote Destination</label>
                                 <div className="relative">
                                     <input
+                                        data-testid="transfer-input-remote-path"
                                         type="text"
                                         className={`${inputClasses} pl-10`}
                                         placeholder="/dropbox/inbound/"
@@ -240,6 +249,7 @@ export const TransferPanel: React.FC = () => {
 
 
                         <button
+                            data-testid="transfer-launch-button"
                             onClick={handleTransmit}
                             disabled={loading}
                             className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 font-black uppercase tracking-[0.2em] transition-all

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import type { ModuleId } from '@/core/constants';
 
@@ -40,7 +41,9 @@ export function DeptLoader({
     fullPage = false,
     showPulse = true
 }: DeptLoaderProps) {
-    const currentModule = useStore((state) => state.currentModule);
+    const { currentModule } = useStore(useShallow(state => ({
+        currentModule: state.currentModule
+    })));
     const moduleId = propModuleId || currentModule;
     const colors = getColorForModule(moduleId);
 
@@ -113,7 +116,9 @@ export function DeptSkeleton({
     moduleId: propModuleId,
     className = ''
 }: DeptSkeletonProps) {
-    const currentModule = useStore((state) => state.currentModule);
+    const { currentModule } = useStore(useShallow(state => ({
+        currentModule: state.currentModule
+    })));
     const moduleId = propModuleId || currentModule;
     const colors = getColorForModule(moduleId);
 

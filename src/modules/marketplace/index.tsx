@@ -1,14 +1,19 @@
 import React, { Suspense } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ShoppingCart, Store, X, Trash2 } from 'lucide-react';
 import MarketplaceStorefront from './components/MarketplaceStorefront';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const CartSidebar: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const cart = useStore((s) => s.cart);
-    const removeFromCart = useStore((s) => s.removeFromCart);
-    const clearCart = useStore((s) => s.clearCart);
-    const cartTotal = useStore((s) => s.cartTotal);
+    const { cart, removeFromCart, clearCart, cartTotal } = useStore(
+        useShallow((s) => ({
+            cart: s.cart,
+            removeFromCart: s.removeFromCart,
+            clearCart: s.clearCart,
+            cartTotal: s.cartTotal,
+        }))
+    );
 
     const [checkingOut, setCheckingOut] = React.useState(false);
     const [checkoutError, setCheckoutError] = React.useState<string | null>(null);
@@ -105,7 +110,7 @@ const CartSidebar: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
 const MarketplaceModule: React.FC = () => {
     const [cartOpen, setCartOpen] = React.useState(false);
-    const cartCount = useStore((s) => s.cart.length);
+    const cartCount = useStore(useShallow((s) => s.cart.length));
 
     return (
         <div className="flex h-full bg-[--background]">

@@ -4,6 +4,8 @@ import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
 import ProductCard from '@/modules/marketplace/components/ProductCard';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import type { StoreState } from '@/core/store';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag, Ghost } from 'lucide-react';
 import { useSocial } from '../hooks/useSocial';
 import { areFeedItemPropsEqual } from './SocialFeed.utils';
@@ -41,7 +43,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [showProductPicker, setShowProductPicker] = useState(false);
 
-    const userProfile = useStore((state) => state.userProfile);
+    const userProfile = useStore(useShallow((state: StoreState) => state.userProfile));
 
     const loadArtistProducts = async () => {
         if (!userProfile?.id) return;

@@ -63,7 +63,10 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
     const overallStatus = deploymentList.length > 0 ? deploymentList[0]!.status : 'draft';
 
     return (
-        <Card className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-dept-distribution/30 transition-all duration-300 hover:shadow-2xl hover:shadow-dept-distribution/10 backdrop-blur-sm">
+        <Card
+            data-testid="release-card"
+            className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-dept-distribution/30 transition-all duration-300 hover:shadow-2xl hover:shadow-dept-distribution/10 backdrop-blur-sm"
+        >
             <div className="flex flex-col">
                 {/* Header with Cover Art */}
                 <div className="relative aspect-square overflow-hidden bg-gray-900">

@@ -19,7 +19,7 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
 
     if (loading && releases.length === 0) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="releases-loading">
                 {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="h-48 rounded-xl bg-white/[0.02] animate-pulse border border-white/5" />
                 ))}
@@ -51,6 +51,7 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
             {/* Submit button row */}
             <div className="flex justify-end mb-4">
                 <button
+                    data-testid="releases-submit-button"
                     onClick={() => setSubmitOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-white text-black font-black text-xs uppercase tracking-widest rounded-lg hover:bg-gray-200 active:scale-[0.98] transition-all"
                 >
@@ -71,7 +72,7 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
                     }}
                 />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="releases-list">
                     {releases.map((release) => (
                         <ReleaseStatusCard
                             key={release.id}

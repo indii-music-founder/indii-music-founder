@@ -97,12 +97,14 @@ export const BankPanel: React.FC = () => {
                 <div className="flex p-1 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                     <button
                         onClick={() => setActiveTab('TAX')}
+                        data-testid="distro-subtab-tax"
                         className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'TAX' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         Tax Engine
                     </button>
                     <button
                         onClick={() => setActiveTab('WATERFALL')}
+                        data-testid="distro-subtab-waterfall"
                         className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'WATERFALL' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         Waterfall
@@ -125,6 +127,7 @@ export const BankPanel: React.FC = () => {
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-dept-licensing">$</span>
                                     <input
+                                        data-testid="bank-simulation-amount"
                                         type="number"
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
@@ -145,6 +148,7 @@ export const BankPanel: React.FC = () => {
                             <div>
                                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Beneficiary ID</label>
                                 <input
+                                    data-testid="bank-tax-beneficiary-id"
                                     type="text"
                                     value={userId}
                                     onChange={(e) => setUserId(e.target.value)}
@@ -153,6 +157,7 @@ export const BankPanel: React.FC = () => {
                             </div>
 
                             <button
+                                data-testid="bank-verify-tax-compliance"
                                 onClick={handleCalculateTax}
                                 disabled={loading}
                                 className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-50"
@@ -180,6 +185,7 @@ export const BankPanel: React.FC = () => {
                                 {splits.map((split, idx) => (
                                     <div key={idx} className="flex items-center gap-3">
                                         <input
+                                            data-testid={`bank-split-user-${idx}`}
                                             type="text"
                                             placeholder="User ID"
                                             value={split.userId}
@@ -188,6 +194,7 @@ export const BankPanel: React.FC = () => {
                                         />
                                         <div className="w-24 relative">
                                             <input
+                                                data-testid={`bank-split-percent-${idx}`}
                                                 type="number"
                                                 value={split.percentage * 100}
                                                 onChange={(e) => updateSplit(idx, 'percentage', e.target.value)}
@@ -211,6 +218,7 @@ export const BankPanel: React.FC = () => {
                             </div>
 
                             <button
+                                data-testid="bank-launch-waterfall"
                                 onClick={handleExecuteWaterfall}
                                 disabled={loading || Math.abs(totalPercentage - 1.0) > 0.001}
                                 className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-50"
@@ -249,7 +257,7 @@ export const BankPanel: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 group hover:border-dept-distribution/50 transition-all">
                                         <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Withholding</span>
-                                        <span className="text-2xl font-black text-white italic">{(taxReport.withholding_rate * 100).toFixed(1)}%</span>
+                                        <span data-testid="bank-tax-withholding-rate" className="text-2xl font-black text-white italic">{(taxReport.withholding_rate * 100).toFixed(1)}%</span>
                                     </div>
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 group hover:border-dept-licensing/50 transition-all">
                                         <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Payout Node</span>
@@ -268,7 +276,7 @@ export const BankPanel: React.FC = () => {
                                     </div>
                                     <div className="border-t border-gray-900 pt-4 flex justify-between items-end">
                                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Net Disbursable</span>
-                                        <span className="text-3xl font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
+                                        <span data-testid="bank-tax-net-disbursable" className="text-3xl font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
                                             ${(parseFloat(amount) * (1 - taxReport.withholding_rate)).toLocaleString()}
                                         </span>
                                     </div>
