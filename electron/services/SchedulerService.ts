@@ -64,9 +64,10 @@ function computeNextRunAt(schedule: ScheduleInterval, fromNow: Date = new Date()
 
         case 'weekly': {
             const next = new Date(now);
-            const daysUntil = (schedule.dayOfWeek - now.getDay() + 7) % 7 || 7;
+            const daysUntil = (schedule.dayOfWeek - now.getDay() + 7) % 7;
             next.setDate(next.getDate() + daysUntil);
             next.setHours(schedule.hour, schedule.minute, 0, 0);
+            if (next <= now) next.setDate(next.getDate() + 7);
             return next;
         }
 
@@ -94,8 +95,30 @@ export const SchedulerService = {
     /**
      * Register a new task (or update an existing one by id).
      * Persists to disk and schedules it immediately if enabled.
+     * Validates schedule values and action channel names before persisting.
      */
     register(request: CreateTaskRequest, existingId?: string): ScheduledTask {
+        // Validate action channel — must follow safe namespace:action pattern
+        if (!/^[a-z0-9_-]+:[a-z0-9_-]+$/.test(request.action)) {
+            throw new Error(`[Scheduler] Invalid action channel: "${request.action}"`);
+        }
+
+        // Validate schedule values
+        const s = request.schedule;
+        if (s.type === 'interval') {
+            if (s.ms <= 0 || s.ms > 30 * 24 * 60 * 60 * 1000) {
+                throw new Error(`[Scheduler] interval.ms must be between 1ms and 30 days, got ${s.ms}`);
+            }
+        } else if (s.type === 'daily' || s.type === 'weekly') {
+            if (s.hour < 0 || s.hour > 23 || s.minute < 0 || s.minute > 59) {
+                throw new Error(`[Scheduler] Invalid time: hour=${(s as { hour: number }).hour}, minute=${s.minute}`);
+            }
+        } else if (s.type === 'hourly') {
+            if (s.minute < 0 || s.minute > 59) {
+                throw new Error(`[Scheduler] Invalid minute: ${s.minute}`);
+            }
+        }
+
         const id = existingId ?? generateId();
         const nextRunAt = computeNextRunAt(request.schedule);
 

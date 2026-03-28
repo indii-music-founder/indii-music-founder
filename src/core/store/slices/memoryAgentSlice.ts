@@ -171,7 +171,16 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
         try {
             const inboxRef = collection(db, `users/${userId}/memoryInbox`);
             const snapshot = await getDocs(inboxRef);
-            const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MemoryInboxItem));
+            const items = snapshot.docs
+                .map(docSnap => {
+                    const data = docSnap.data();
+                    if (!data['directiveId'] || !data['actionDescription'] || !data['status']) {
+                        logger.warn('[MemoryAgentSlice] Malformed inbox item, skipping:', docSnap.id);
+                        return null;
+                    }
+                    return { id: docSnap.id, ...data } as MemoryInboxItem;
+                })
+                .filter((item): item is MemoryInboxItem => item !== null);
             // Sort by pending first, then by date descending
             items.sort((a, b) => {
                 if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;

@@ -80,4 +80,11 @@ export interface NearbyPlace {
     };
 }
 
+// Logistics feasibility report returned by the AI logistics check
+export interface LogisticsReport {
+    isFeasible: boolean;
+    issues: string[];
+    suggestions: string[];
+    summary?: string;
+}
 

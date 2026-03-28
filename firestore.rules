@@ -45,17 +45,28 @@ service cloud.firestore {
     match /users/{userId} {
       // Users can read their own profile
       allow read: if isOwner(userId);
-      
+
       // Users can create their own profile
       allow create: if isOwner(userId);
-      
+
       // Users can update their own profile with validation
       allow update: if isOwner(userId) &&
         // Prevent changing uid
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid']));
-      
+
       // Users cannot delete their profile (admin action only)
       allow delete: if false;
+
+      // ── Memory Inbox (agent handshake requests) ──────────────────────────
+      match /memoryInbox/{itemId} {
+        // Only the owning user can read their inbox items
+        allow read: if isOwner(userId);
+        // Agent backend writes new handshake requests; user can update status only
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+        allow delete: if false;
+      }
     }
 
     // =========================================================================
