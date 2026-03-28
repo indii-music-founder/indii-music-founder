@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PublishingDashboard from './PublishingDashboard';
@@ -156,7 +156,7 @@ describe('PublishingDashboard', () => {
         expect(screen.getByRole('button', { name: /Create Release/i })).toBeInTheDocument();
     });
 
-    it.skip('renders release cards and handles bulk selection', async () => {
+    it('renders release cards and handles bulk selection', async () => {
         const mockReleases = [
             {
                 id: '1',
@@ -204,7 +204,7 @@ describe('PublishingDashboard', () => {
         expect(screen.getByRole('button', { name: /Archive/i })).toBeInTheDocument();
     });
 
-    it.skip('handles search and filtering correctly', () => {
+    it('handles search and filtering correctly', () => {
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Apple', artistName: 'A', releaseType: 'Single' }, status: 'live', assets: {} },
             { id: '2', metadata: { trackTitle: 'Berry', artistName: 'B', releaseType: 'Single' }, status: 'draft', assets: {} }
@@ -235,7 +235,7 @@ describe('PublishingDashboard', () => {
         expect(screen.queryByText('Berry')).not.toBeInTheDocument();
     });
 
-    it.skip('executes bulk delete with toast promise', async () => {
+    it('executes bulk delete with toast promise', async () => {
         // Mock global confirm
         global.confirm = vi.fn(() => true);
 
@@ -261,15 +261,16 @@ describe('PublishingDashboard', () => {
         fireEvent.click(checkboxes[1]!);
 
         // Find delete button in floating bar
-        const deleteBtn = screen.getByRole('button', { name: /Delete/i });
-        fireEvent.click(deleteBtn);
+        await act(async () => {
+            fireEvent.click(deleteBtn);
+        });
 
         expect(global.confirm).toHaveBeenCalled();
         expect(mockToastPromise).toHaveBeenCalled();
         expect(mockDeleteRelease).toHaveBeenCalledWith('1');
     });
 
-    it.skip('executes bulk archive with toast promise', async () => {
+    it('executes bulk archive with toast promise', async () => {
         // Mock global confirm
         global.confirm = vi.fn(() => true);
 
@@ -295,9 +296,9 @@ describe('PublishingDashboard', () => {
         fireEvent.click(checkboxes[1]!);
 
         // Find archive button
-        const archiveBtn = screen.getByRole('button', { name: /Archive/i });
-
-        fireEvent.click(archiveBtn);
+        await act(async () => {
+            fireEvent.click(archiveBtn);
+        });
 
         expect(global.confirm).toHaveBeenCalled();
         expect(mockToastPromise).toHaveBeenCalled();
