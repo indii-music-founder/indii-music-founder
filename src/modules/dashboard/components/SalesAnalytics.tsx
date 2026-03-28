@@ -67,23 +67,19 @@ const MetricCard = ({
 );
 
 export default function SalesAnalytics() {
+    const userId = DashboardService.getCurrentUserId();
     const [data, setData] = useState<SalesAnalyticsData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(!!userId);
+    const [error, setError] = useState<string | null>(
+        userId ? null : 'Please log in to view analytics.'
+    );
     const [period, setPeriod] = useState('30d');
     const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
+        if (!userId) return;
+
         let isMounted = true;
-        const userId = DashboardService.getCurrentUserId();
-
-        if (!userId) {
-            setLoading(false);
-            setError('Please log in to view analytics.');
-            return;
-        }
-
-        setLoading(true);
 
         const unsubscribe = AnalyticsService.subscribeToSalesAnalytics(
             userId,
@@ -107,7 +103,7 @@ export default function SalesAnalytics() {
             isMounted = false;
             unsubscribe();
         };
-    }, [retryCount]);
+    }, [userId, retryCount]);
 
     if (loading) {
         return (
@@ -126,7 +122,7 @@ export default function SalesAnalytics() {
                 <AlertCircle className="w-8 h-8 text-red-500" />
                 <span className="text-red-400 text-sm">{error}</span>
                 <button
-                    onClick={() => setRetryCount(c => c + 1)}
+                    onClick={() => { setError(null); setLoading(true); setRetryCount(c => c + 1); }}
                     className="px-4 py-2 bg-red-900/30 text-red-200 text-xs rounded hover:bg-red-900/50 transition-colors"
                 >
                     Retry
