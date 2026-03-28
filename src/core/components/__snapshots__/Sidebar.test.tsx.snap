@@ -3,7 +3,7 @@
 exports[`Sidebar > matches snapshot in collapsed state 1`] = `
 <nav
   aria-label="Main navigation"
-  class="hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar z-sidebar"
+  class="hidden md:flex h-full flex-col flex-shrink-0 relative z-20 bg-[#0d1117]/60 backdrop-blur-2xl border-r border-white/5 transition-colors duration-500 overflow-y-auto custom-scrollbar shadow-2xl"
 >
   <div
     class="p-4 border-b border-white/5 flex items-center justify-center"
@@ -44,128 +44,121 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
       >
         <button
           aria-label="Brand Manager"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-brand"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Briefcase"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Road Manager"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-road"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Users"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Campaign Manager"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-campaign"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Megaphone"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Booking Agent"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-agent"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Network"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Publicist"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publicist"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Mic"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Creative Director"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-creative"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Palette"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Video Producer"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-video"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Film"
-            size="16"
+            size="18"
           />
         </button>
       </div>
@@ -176,110 +169,121 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
       >
         <button
           aria-label="Marketing Department"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-marketing"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Megaphone"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Social Media Department"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-social"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Network"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Legal Department"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-legal"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Scale"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Publishing Department"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publishing"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Book"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Finance Department"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-finance"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-DollarSign"
-            size="16"
+            size="18"
+          />
+        </button>
+        <button
+          aria-label="Distribution Department"
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-distribution"
+          style="--dept-color: var(--color-test);"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-Music"
+            size="18"
           />
         </button>
         <button
           aria-label="Licensing Department"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-licensing"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-FileText"
-            size="16"
+            size="18"
           />
         </button>
       </div>
@@ -289,93 +293,105 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         class="space-y-0.5"
       >
         <button
+          aria-label="Merch Tool"
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-merch"
+          style="--dept-color: var(--color-test);"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-ShoppingBag"
+            size="18"
+          />
+        </button>
+        <button
           aria-label="Audio Analyzer"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-audio-analyzer"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Radio"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Workflow Builder"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-workflow"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Network"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Knowledge Base"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-knowledge"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Book"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="Memory Agent"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-memory"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-AudioLines"
-            size="16"
+            size="18"
           />
         </button>
         <button
           aria-label="History"
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            justify-center px-2
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-history"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Clock"
-            size="16"
+            size="18"
           />
         </button>
       </div>
@@ -497,7 +513,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
 exports[`Sidebar > matches snapshot in expanded state 1`] = `
 <nav
   aria-label="Main navigation"
-  class="hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar z-sidebar"
+  class="hidden md:flex h-full flex-col flex-shrink-0 relative z-20 bg-[#0d1117]/60 backdrop-blur-2xl border-r border-white/5 transition-colors duration-500 overflow-y-auto custom-scrollbar shadow-2xl"
 >
   <div
     class="p-4 border-b border-white/5 flex items-center justify-between"
@@ -581,155 +597,148 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         class="space-y-0.5"
       >
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-brand"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Briefcase"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Brand Manager
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-road"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Users"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Road Manager
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-campaign"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Megaphone"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Campaign Manager
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-agent"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Network"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Booking Agent
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publicist"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Mic"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Publicist
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-creative"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Palette"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Creative Director
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-video"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Film"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Video Producer
           </span>
@@ -746,133 +755,148 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         class="space-y-0.5"
       >
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-marketing"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Megaphone"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Marketing Department
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-social"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Network"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Social Media Department
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-legal"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Scale"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Legal Department
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publishing"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Book"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Publishing Department
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-finance"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-DollarSign"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Finance Department
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-distribution"
+          style="--dept-color: var(--color-test);"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-Music"
+            size="18"
+          />
+          <span
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
+          >
+            Distribution Department
+          </span>
+        </button>
+        <button
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-licensing"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-FileText"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Licensing Department
           </span>
@@ -889,111 +913,127 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         class="space-y-0.5"
       >
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-merch"
+          style="--dept-color: var(--color-test);"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-ShoppingBag"
+            size="18"
+          />
+          <span
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
+          >
+            Merch Tool
+          </span>
+        </button>
+        <button
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-audio-analyzer"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Radio"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Audio Analyzer
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-workflow"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Network"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Workflow Builder
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-knowledge"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Book"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Knowledge Base
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-memory"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-AudioLines"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Memory Agent
           </span>
         </button>
         <button
-          class="
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            text-gray-400 hover:text-test hover:bg-test border-l-2 border-l-transparent
-                            
-                        "
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-history"
           style="--dept-color: var(--color-test);"
         >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
           <svg
-            class=""
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Clock"
-            size="16"
+            size="18"
           />
           <span
-            class="truncate"
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             History
           </span>

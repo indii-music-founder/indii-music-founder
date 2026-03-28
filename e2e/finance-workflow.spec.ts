@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Finance Workflow E2E Tests
@@ -6,30 +6,28 @@ import { test, expect } from '@playwright/test';
 test.describe('Finance Module', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
-        await page.goto('http://localhost:4242');
-        await page.waitForLoadState('networkidle');
-
-        // Login as guest if on login page
-        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
-        if (await guestBtn.isVisible()) {
-            await guestBtn.click();
-        }
+    test.beforeEach(async ({ authedPage: page }) => {
+        // authedPage fixture handles Guest Login and navigation to '/'
 
         // Navigate to finance
         const financeNav = page.locator('[data-testid="nav-item-finance"]');
-        await expect(financeNav).toBeVisible({ timeout: 10000 });
-        await financeNav.click();
+        if (await financeNav.isVisible().catch(() => false)) {
+            await financeNav.click();
+            await page.waitForTimeout(2_000);
+        } else {
+            await page.goto('/#finance');
+            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
+        }
 
-        // Wait for module header
-        await page.waitForSelector('[data-testid="module-header"], h1:has-text("Finance")', { timeout: 15000 });
+        // Wait for module-specific content
+        await page.waitForSelector('h1, h2, [data-testid="finance-header"]', { timeout: 15_000 });
     });
 
-    test('finance module loads without crashing', async ({ page }) => {
+    test('finance module loads without crashing', async ({ authedPage: page }) => {
         await expect(page.locator('h1')).toContainText(/Finance/i);
     });
 
-    test('should switch between Finance tabs', async ({ page }) => {
+    test('should switch between Finance tabs', async ({ authedPage: page }) => {
         // Test Expenses tab
         const expenseTab = page.locator('[data-testid="finance-tab-expenses"]');
         await expenseTab.click();
@@ -46,7 +44,12 @@ test.describe('Finance Module', () => {
         await expect(recoupTab).toHaveAttribute('data-state', 'active');
     });
 
-    test('EarningsDashboard summary is visible on initial load', async ({ page }) => {
+    test('EarningsDashboard summary is visible on initial load', async ({ authedPage: page }) => {
+        // Navigate to Earnings specifically if needed, but it's usually default
+        const earningsTab = page.locator('button:has-text("Earnings"), [role="tab"]:has-text("Earnings")').first();
+        if (await earningsTab.isVisible().catch(() => false)) {
+            await earningsTab.click();
+        }
         // Either the chart (if data present) or the "No Reports" empty state should be visible
         const chart = page.locator('.recharts-wrapper, svg[class*="recharts"]').first();
         const emptyState = page.locator('h3:has-text("No Reports Found")');

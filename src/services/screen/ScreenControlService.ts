@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { logger } from '@/utils/logger';
 
 // Type definitions for Window Management API
 interface ScreenDetails {
     screens: ScreenDetailed[];
     currentScreen: ScreenDetailed;
-    oncurrentscreenchange: ((this: ScreenDetails, ev: Event) => any) | null;
-    onscreenschange: ((this: ScreenDetails, ev: Event) => any) | null;
+    oncurrentscreenchange: ((this: ScreenDetails, ev: Event) => void) | null;
+    onscreenschange: ((this: ScreenDetails, ev: Event) => void) | null;
 }
 
 interface ScreenDetailed extends Screen {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 /**
  * CanvasBatchService.ts
  * 
@@ -31,7 +30,7 @@ export class CanvasBatchService {
      * @param canvas - The Fabric.js canvas instance (provided as 'any' to avoid fabric import circularity in service layer)
      * @param selectedIds - List of dimension IDs to export.
      */
-    async exportBatch(canvas: any, selectedIds: string[]): Promise<Map<string, string>> {
+    async exportBatch(canvas: unknown, selectedIds: string[]): Promise<Map<string, string>> {
         const store = useStore.getState();
         const jobId = `batch_${Date.now()}`;
         const exportedMap = new Map<string, string>();
@@ -83,7 +82,7 @@ export class CanvasBatchService {
     /**
      * Logic for 'Intelligent Reframing' - automatically repositions elements to stay in center of new aspect ratio.
      */
-    async autoReframe(canvas: any, targetWidth: number, targetHeight: number) {
+    async autoReframe(canvas: unknown, targetWidth: number, targetHeight: number) {
         logger.info(`[CanvasBatch] Applying intelligent reframing for ${targetWidth}x${targetHeight}`);
         // Logic to scan canvas objects and adjust their 'left' and 'top' properties
     }

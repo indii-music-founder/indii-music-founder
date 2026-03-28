@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { AgentContext } from '../types';
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
@@ -42,7 +41,7 @@ export class HybridOrchestrator {
         let currentTurn = 0;
         let isTaskComplete = false;
         let lastAgentResponse = "";
-        const history: any[] = [];
+        const history: Record<string, unknown>[] = [];
 
         // Helper to prune tool/agent results to stay within context window
         const pruneResult = (input: unknown, maxLen: number = 3000): string => {

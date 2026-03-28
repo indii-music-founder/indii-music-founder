@@ -59,7 +59,7 @@ vi.mock('@/core/config/ai-models', () => ({
 describe('LegalDashboard', () => {
     it('renders the dashboard title', () => {
         render(<LegalDashboard />);
-        expect(screen.getByText('Legal')).toBeInTheDocument();
+        expect(screen.getByText('legal.title')).toBeInTheDocument();
     });
 
     it('renders upload options', () => {

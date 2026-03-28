@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { GenAI } from './GenAI';
 import { logger } from '@/utils/logger';
-import { GenerateContentOptions, GenerateContentResponse } from '@/shared/types/ai.dto';
+import { GenerateContentOptions } from '@/shared/types/ai.dto';
+import type { ChatMessage } from './types';
 
 /**
  * @deprecated Use GenAI instead. 
@@ -33,8 +33,8 @@ export class AIService {
     }
 
     /** @deprecated Use GenAI.chat */
-    async chat(history: any[], newMessage: string, systemInstruction?: string): Promise<string> {
-        return GenAI.chat(history, newMessage, systemInstruction);
+    async chat(history: ChatMessage[], newMessage: string, systemInstruction?: string): Promise<string> {
+        return GenAI.chat(history as ChatMessage[], newMessage, systemInstruction);
     }
 }
 
