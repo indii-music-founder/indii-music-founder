@@ -115,3 +115,92 @@ export const DashboardAgentActivitySchema = z.object({
 
 export type AgentTask = z.infer<typeof AgentTaskSchema>;
 export type DashboardAgentActivity = z.infer<typeof DashboardAgentActivitySchema>;
+
+// ── Active Campaigns Widget ───────────────────────────────────────────────────
+
+export const DashboardActiveCampaignsSchema = z.object({
+    activeCount: z.number().default(0),
+    totalBudget: MetricSchema,
+    topCampaign: z.object({
+        name: z.string(),
+        platform: z.string(),
+        spend: z.number(),
+    }).optional(),
+    lastUpdated: z.number().optional(),
+});
+
+export type DashboardActiveCampaigns = z.infer<typeof DashboardActiveCampaignsSchema>;
+
+// ── Pending Tasks Widget ──────────────────────────────────────────────────────
+
+export const DashboardPendingTaskSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    module: z.string(),           // e.g. 'distribution', 'marketing', 'legal'
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+    createdAt: z.number(),
+});
+
+export const DashboardPendingTasksSchema = z.object({
+    tasks: z.array(DashboardPendingTaskSchema),
+    totalCount: z.number().default(0),
+    lastUpdated: z.number().optional(),
+});
+
+export type DashboardPendingTask = z.infer<typeof DashboardPendingTaskSchema>;
+export type DashboardPendingTasks = z.infer<typeof DashboardPendingTasksSchema>;
+
+// ── Social Engagement Widget ──────────────────────────────────────────────────
+
+export const DashboardSocialEngagementSchema = z.object({
+    engagementRate: MetricSchema,
+    weeklyEngagement: z.array(z.number()), // [Mon..Sun]
+    totalInteractions: MetricSchema,
+    lastUpdated: z.number().optional(),
+});
+
+export type DashboardSocialEngagement = z.infer<typeof DashboardSocialEngagementSchema>;
+
+// ── Brand Identity Widget ─────────────────────────────────────────────────────
+
+export const DashboardBrandIdentitySchema = z.object({
+    complianceScore: MetricSchema,          // 0–100%
+    assetsStatus: z.enum(['synced', 'outdated', 'missing']).default('synced'),
+    lastAudit: z.number().optional(),       // timestamp of last brand audit
+    issues: z.number().default(0),          // outstanding brand issues
+    lastUpdated: z.number().optional(),
+});
+
+export type DashboardBrandIdentity = z.infer<typeof DashboardBrandIdentitySchema>;
+
+// ── Merch Sales Widget ────────────────────────────────────────────────────────
+
+export const DashboardMerchSalesSchema = z.object({
+    weeklyRevenue: MetricSchema,
+    totalOrders: MetricSchema,
+    topProduct: z.object({
+        name: z.string(),
+        unitsSold: z.number(),
+    }).optional(),
+    lowStockAlerts: z.number().default(0),
+    lastUpdated: z.number().optional(),
+});
+
+export type DashboardMerchSales = z.infer<typeof DashboardMerchSalesSchema>;
+
+// ── Tour Status Widget ────────────────────────────────────────────────────────
+
+export const DashboardTourStatusSchema = z.object({
+    upcomingShows: z.number().default(0),
+    nextShow: z.object({
+        venue: z.string(),
+        city: z.string(),
+        date: z.number(),        // timestamp
+        ticketsSold: z.number(),
+        capacity: z.number(),
+    }).optional(),
+    totalTicketRevenue: MetricSchema,
+    lastUpdated: z.number().optional(),
+});
+
+export type DashboardTourStatus = z.infer<typeof DashboardTourStatusSchema>;

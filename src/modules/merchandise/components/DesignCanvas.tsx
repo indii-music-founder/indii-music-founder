@@ -1,8 +1,7 @@
 import { logger } from '@/utils/logger';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
-import { Loader2 } from 'lucide-react';
-import { useStore } from '@/core/store';
+import { LoaderCircle } from 'lucide-react';
 import type {
     FabricObjectWithMeta,
     FabricCanvasWithClipboard,
@@ -407,7 +406,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
         >
             {!isInitialized && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-[#FFE135] animate-spin" />
+                    <LoaderCircle className="w-8 h-8 text-[#FFE135] animate-spin" />
                 </div>
             )}
             {snapToGrid && (

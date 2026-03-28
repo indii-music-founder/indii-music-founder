@@ -31,6 +31,12 @@ import type {
     DashboardTopTrack,
     DashboardNextRelease,
     DashboardAgentActivity,
+    DashboardActiveCampaigns,
+    DashboardPendingTasks,
+    DashboardSocialEngagement,
+    DashboardBrandIdentity,
+    DashboardMerchSales,
+    DashboardTourStatus,
 } from '@/services/dashboard/schema';
 
 /* ================================================================== */
@@ -441,6 +447,20 @@ function AudienceGrowthWidget() {
 }
 
 function ActiveCampaignsWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [data, setData] = useState<DashboardActiveCampaigns | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToActiveCampaigns(
+            userId,
+            (d) => { setData(d); setIsLoading(false); },
+            () => { setData(AnalyticsService.getActiveCampaignsZeroState()); setIsLoading(false); },
+        );
+        return () => unsub();
+    }, [userId]);
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -450,17 +470,47 @@ function ActiveCampaignsWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Active Campaigns</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">0</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {data?.activeCount ?? 0}
+                </p>
                 <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Campaigns running now</p>
             </div>
             <div className="mt-3">
-                <p className="text-[10px] text-white/30">Launch a campaign to track performance</p>
+                {data?.topCampaign ? (
+                    <div className="p-2 rounded-lg bg-teal-500/5 border border-teal-500/10">
+                        <p className="text-[10px] text-teal-400/80 truncate">{data.topCampaign.name}</p>
+                        <p className="text-[9px] text-white/20">{data.topCampaign.platform} · {data.totalBudget.formatted} budget</p>
+                    </div>
+                ) : (
+                    <p className="text-[10px] text-white/30">Launch a campaign to track performance</p>
+                )}
             </div>
         </div>
     );
 }
 
 function PendingTasksWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [data, setData] = useState<DashboardPendingTasks | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToPendingTasks(
+            userId,
+            (d) => { setData(d); setIsLoading(false); },
+            () => { setData(AnalyticsService.getPendingTasksZeroState()); setIsLoading(false); },
+        );
+        return () => unsub();
+    }, [userId]);
+
+    const priorityColors: Record<string, string> = {
+        urgent: 'bg-red-500/10 text-red-400',
+        high: 'bg-orange-500/10 text-orange-400',
+        medium: 'bg-yellow-500/10 text-yellow-400',
+        low: 'bg-gray-500/10 text-gray-400',
+    };
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -470,17 +520,47 @@ function PendingTasksWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Pending Tasks</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">0</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {data?.totalCount ?? 0}
+                </p>
                 <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Tasks require your attention</p>
             </div>
-            <div className="mt-3">
-                <p className="text-[10px] text-white/30">All caught up!</p>
+            <div className="mt-3 space-y-1">
+                {data && data.tasks.length > 0 ? (
+                    data.tasks.slice(0, 3).map((task) => (
+                        <div key={task.id} className="flex items-center gap-2">
+                            <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${priorityColors[task.priority] || 'bg-white/5 text-white/30'}`}>
+                                {(task.priority?.[0] ?? 'M').toUpperCase()}
+                            </span>
+                            <p className="text-[10px] text-white/50 truncate">{task.title}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-[10px] text-white/30">All caught up!</p>
+                )}
             </div>
         </div>
     );
 }
 
 function SocialEngagementWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [data, setData] = useState<DashboardSocialEngagement | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToSocialEngagement(
+            userId,
+            (d) => { setData(d); setIsLoading(false); },
+            () => { setData(AnalyticsService.getSocialEngagementZeroState()); setIsLoading(false); },
+        );
+        return () => unsub();
+    }, [userId]);
+
+    const weeklyEngagement = data?.weeklyEngagement || [0, 0, 0, 0, 0, 0, 0];
+    const maxVal = Math.max(...weeklyEngagement, 1);
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -490,12 +570,18 @@ function SocialEngagementWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Social Engagement</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">--</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {data?.engagementRate.formatted || '--'}
+                </p>
                 <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Avg. engagement rate</p>
             </div>
             <div className="mt-3 flex items-end gap-1 h-8">
-                {[0, 0, 0, 0, 0, 0, 0].map((_, i) => (
-                    <div key={i} className="flex-1 rounded-sm bg-cyan-500/10" style={{ height: '20%' }} />
+                {weeklyEngagement.map((val, i) => (
+                    <div
+                        key={i}
+                        className="flex-1 rounded-sm bg-cyan-500/10 hover:bg-cyan-500/20 transition-colors"
+                        style={{ height: `${Math.max(5, (val / maxVal) * 100)}%` }}
+                    />
                 ))}
             </div>
         </div>
@@ -503,6 +589,29 @@ function SocialEngagementWidget() {
 }
 
 function BrandIdentityWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [data, setData] = useState<DashboardBrandIdentity | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToBrandIdentity(
+            userId,
+            (d) => { setData(d); setIsLoading(false); },
+            () => { setData(AnalyticsService.getBrandIdentityZeroState()); setIsLoading(false); },
+        );
+        return () => unsub();
+    }, [userId]);
+
+    const statusLabel: Record<string, { text: string; color: string }> = {
+        synced: { text: 'Fully synced', color: 'text-green-400' },
+        outdated: { text: 'Needs update', color: 'text-yellow-400' },
+        missing: { text: 'Not configured', color: 'text-white/30' },
+    };
+    const defaultStatus = { text: 'Not configured', color: 'text-white/30' };
+    const statusText = (statusLabel[data?.assetsStatus || 'missing'] ?? defaultStatus).text;
+    const statusColor = (statusLabel[data?.assetsStatus || 'missing'] ?? defaultStatus).color;
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -512,17 +621,37 @@ function BrandIdentityWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Brand Integrity</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">98%</p>
-                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Brand assets are fully synced</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {data?.complianceScore.formatted || '--'}
+                </p>
+                <p className={`text-[10px] mt-1 font-medium ${statusColor}`}>{statusText}</p>
             </div>
             <div className="mt-3">
-                <p className="text-[10px] text-white/30">Ready for automated marketing</p>
+                {data && data.issues > 0 ? (
+                    <p className="text-[10px] text-yellow-400/60">{data.issues} issue{data.issues !== 1 ? 's' : ''} to resolve</p>
+                ) : (
+                    <p className="text-[10px] text-white/30">Ready for automated marketing</p>
+                )}
             </div>
         </div>
     );
 }
 
 function MerchSalesWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [data, setData] = useState<DashboardMerchSales | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToMerchSales(
+            userId,
+            (d) => { setData(d); setIsLoading(false); },
+            () => { setData(AnalyticsService.getMerchSalesZeroState()); setIsLoading(false); },
+        );
+        return () => unsub();
+    }, [userId]);
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -532,17 +661,42 @@ function MerchSalesWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Merchandise</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">$0</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {data?.weeklyRevenue.formatted || '$0'}
+                </p>
                 <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Sales this week</p>
             </div>
             <div className="mt-3">
-                <p className="text-[10px] text-white/30">Connect Shopify or set up print-on-demand</p>
+                {data?.topProduct ? (
+                    <div className="p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                        <p className="text-[10px] text-emerald-400/80 truncate">{data.topProduct.name}</p>
+                        <p className="text-[9px] text-white/20">{data.topProduct.unitsSold} units sold</p>
+                    </div>
+                ) : data?.lowStockAlerts && data.lowStockAlerts > 0 ? (
+                    <p className="text-[10px] text-yellow-400/60">{data.lowStockAlerts} low stock alert{data.lowStockAlerts !== 1 ? 's' : ''}</p>
+                ) : (
+                    <p className="text-[10px] text-white/30">Connect Shopify or set up print-on-demand</p>
+                )}
             </div>
         </div>
     );
 }
 
 function TourStatusWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [data, setData] = useState<DashboardTourStatus | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToTourStatus(
+            userId,
+            (d) => { setData(d); setIsLoading(false); },
+            () => { setData(AnalyticsService.getTourStatusZeroState()); setIsLoading(false); },
+        );
+        return () => unsub();
+    }, [userId]);
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -552,11 +706,20 @@ function TourStatusWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Tour & Shows</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">0</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {data?.upcomingShows ?? 0}
+                </p>
                 <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Upcoming shows</p>
             </div>
             <div className="mt-3">
-                <p className="text-[10px] text-white/30">Route a new tour to start tracking</p>
+                {data?.nextShow ? (
+                    <div className="p-2 rounded-lg bg-rose-500/5 border border-rose-500/10">
+                        <p className="text-[10px] text-rose-400/80 truncate">{data.nextShow.venue}</p>
+                        <p className="text-[9px] text-white/20">{data.nextShow.city} · {data.nextShow.ticketsSold}/{data.nextShow.capacity} tickets</p>
+                    </div>
+                ) : (
+                    <p className="text-[10px] text-white/30">Route a new tour to start tracking</p>
+                )}
             </div>
         </div>
     );
