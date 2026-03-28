@@ -1,5 +1,5 @@
 import React from 'react';
-import { useStore, HistoryItem } from '@/core/store';
+import { HistoryItem } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { CanvasHeader } from './CanvasHeader';
 import { CanvasToolbar } from './CanvasToolbar';

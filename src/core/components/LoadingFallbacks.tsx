@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { type ModuleId } from '@/core/constants';
 import { cn } from '@/lib/utils';
 
@@ -130,7 +131,9 @@ const GenericSkeleton = () => (
 );
 
 export function LoadingFallback() {
-    const currentModule = useStore(state => state.currentModule);
+    const { currentModule } = useStore(useShallow(state => ({
+        currentModule: state.currentModule
+    })));
     const [show, setShow] = useState(false);
 
     useEffect(() => {

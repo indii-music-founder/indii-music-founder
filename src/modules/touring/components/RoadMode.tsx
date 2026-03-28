@@ -23,6 +23,7 @@ import {
 import { useVoice } from '@/core/context/VoiceContext';
 import { useTouring } from '../hooks/useTouring';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { searchNearbyPlaces, navigateToPlace, type NearbyPlace, type NearbySearchResult } from '@/services/places/NearbyPlacesService';
 import { logger } from '@/utils/logger';
@@ -157,11 +158,10 @@ const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, 
                             className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 transition-all text-left active:scale-[0.98]"
                         >
                             {/* Rank badge */}
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                                idx === 0
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${idx === 0
                                     ? 'bg-amber-500/20 text-amber-400'
                                     : 'bg-white/5 text-slate-500'
-                            }`}>
+                                }`}>
                                 {idx + 1}
                             </div>
 
@@ -186,9 +186,8 @@ const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, 
                                     )}
                                     {/* Open/Closed */}
                                     {place.isOpen !== null && (
-                                        <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                                            place.isOpen ? 'text-green-400' : 'text-red-400'
-                                        }`}>
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider ${place.isOpen ? 'text-green-400' : 'text-red-400'
+                                            }`}>
                                             {place.isOpen ? 'Open' : 'Closed'}
                                         </span>
                                     )}
@@ -223,8 +222,12 @@ const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, 
 export const RoadMode: React.FC = () => {
     const { isListening, toggleListening, transcript } = useVoice();
     const { currentItinerary: itinerary } = useTouring();
-    const isAgentOpen = useStore((s) => s.isAgentOpen);
-    const toggleAgentWindow = useStore((s) => s.toggleAgentWindow);
+    const { isAgentOpen, toggleAgentWindow } = useStore(
+        useShallow(s => ({
+            isAgentOpen: s.isAgentOpen,
+            toggleAgentWindow: s.toggleAgentWindow,
+        }))
+    );
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lastAction, setLastAction] = useState<string | null>(null);
@@ -443,11 +446,10 @@ export const RoadMode: React.FC = () => {
                                     whileTap={{ scale: 0.92 }}
                                     onClick={() => handleQuickAction(action)}
                                     disabled={isSubmitting && lastAction === action.id}
-                                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all active:shadow-lg ${action.bgColor} ${
-                                        isSubmitting && lastAction === action.id
+                                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all active:shadow-lg ${action.bgColor} ${isSubmitting && lastAction === action.id
                                             ? 'opacity-50'
                                             : ''
-                                    }`}
+                                        }`}
                                 >
                                     {isSubmitting && lastAction === action.id ? (
                                         <Loader2 size={24} className={`${action.color} animate-spin`} />
@@ -547,11 +549,10 @@ export const RoadMode: React.FC = () => {
                     <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={toggleListening}
-                        className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm transition-all ${
-                            isListening
+                        className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm transition-all ${isListening
                                 ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
                                 : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
-                        }`}
+                            }`}
                     >
                         {isListening ? (
                             <>

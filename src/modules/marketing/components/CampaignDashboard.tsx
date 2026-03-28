@@ -23,6 +23,7 @@ import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
 import { SkeletonList, SkeletonStat } from '@/components/shared/SkeletonLoader';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 /* ================================================================== */
@@ -246,7 +247,9 @@ function PerformanceSnapshotPanel({ campaigns }: { campaigns: CampaignAsset[] })
 }
 
 function AssetLibraryPanel() {
-    const userProfile = useStore(state => state.userProfile);
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const brandAssets = userProfile?.brandKit?.brandAssets || [];
     const referenceImages = userProfile?.brandKit?.referenceImages || [];
 

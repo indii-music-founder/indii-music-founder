@@ -1,16 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Check, Search, UserPlus, X, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
-    const activeSessionId = useStore(state => state.activeSessionId);
-    const sessions = useStore(state => state.sessions);
-    const addParticipant = useStore(state => state.addParticipant);
-    const availableAgents = useStore(state => state.availableAgents);
-    const isLoadingAgents = useStore(state => state.isLoadingAgents);
-    const agentsError = useStore(state => state.agentsError);
-    const loadAgents = useStore(state => state.loadAgents);
+    const {
+        activeSessionId,
+        sessions,
+        addParticipant,
+        availableAgents,
+        isLoadingAgents,
+        agentsError,
+        loadAgents
+    } = useStore(
+        useShallow(state => ({
+            activeSessionId: state.activeSessionId,
+            sessions: state.sessions,
+            addParticipant: state.addParticipant,
+            availableAgents: state.availableAgents,
+            isLoadingAgents: state.isLoadingAgents,
+            agentsError: state.agentsError,
+            loadAgents: state.loadAgents,
+        }))
+    );
 
     useEffect(() => {
         loadAgents();

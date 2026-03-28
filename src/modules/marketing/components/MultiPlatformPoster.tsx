@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { socialAutoPosterService, type SocialPlatform } from '@/services/marketing/SocialAutoPosterService';
-import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
 interface Platform {

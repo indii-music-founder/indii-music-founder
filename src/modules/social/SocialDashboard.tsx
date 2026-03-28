@@ -6,7 +6,6 @@ import AccountCreationWizard from './components/AccountCreationWizard';
 import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost } from '@/services/social/types';
 import type { ScheduledPost as ModalPost } from './types';
-import { useStore } from '@/core/store';
 import { useSocial } from './hooks/useSocial';
 import SocialFeed from './components/SocialFeed';
 import { logger } from '@/utils/logger';

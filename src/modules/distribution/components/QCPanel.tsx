@@ -92,6 +92,7 @@ export const QCPanel: React.FC = () => {
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ISRC (Optional)</label>
                             <input
+                                data-testid="qc-input-isrc"
                                 type="text"
                                 value={metadata.isrc}
                                 onChange={(e) => setMetadata(prev => ({ ...prev, isrc: e.target.value }))}
@@ -103,6 +104,7 @@ export const QCPanel: React.FC = () => {
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Track/Release Title</label>
                             <input
+                                data-testid="qc-input-title"
                                 type="text"
                                 value={metadata.title}
                                 onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
@@ -114,6 +116,7 @@ export const QCPanel: React.FC = () => {
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Primary Artist</label>
                             <input
+                                data-testid="qc-input-artist"
                                 type="text"
                                 value={metadata.artist}
                                 onChange={(e) => setMetadata(prev => ({ ...prev, artist: e.target.value }))}
@@ -125,6 +128,7 @@ export const QCPanel: React.FC = () => {
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Artwork URL</label>
                             <input
+                                data-testid="qc-input-artwork"
                                 type="text"
                                 value={metadata.artwork_url}
                                 onChange={(e) => setMetadata(prev => ({ ...prev, artwork_url: e.target.value }))}
@@ -135,6 +139,7 @@ export const QCPanel: React.FC = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button
+                                data-testid="qc-run-validation"
                                 onClick={handleValidate}
                                 disabled={loading === 'qc'}
                                 className="bg-dept-distribution hover:bg-dept-distribution/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
@@ -143,6 +148,7 @@ export const QCPanel: React.FC = () => {
                                 Run QC
                             </button>
                             <button
+                                data-testid="qc-generate-cid"
                                 onClick={handleGenerateCID}
                                 disabled={loading === 'cid'}
                                 className="bg-dept-marketing hover:bg-dept-marketing/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
@@ -168,8 +174,10 @@ export const QCPanel: React.FC = () => {
                             {qcResult && (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${qcResult.valid ? 'bg-dept-licensing/10 text-dept-licensing border border-dept-licensing/20' : 'bg-dept-marketing/10 text-dept-marketing border border-dept-marketing/20'
-                                            }`}>
+                                        <span
+                                            data-testid="qc-status-badge"
+                                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${qcResult.valid ? 'bg-dept-licensing/10 text-dept-licensing border border-dept-licensing/20' : 'bg-dept-marketing/10 text-dept-marketing border border-dept-marketing/20'
+                                                }`}>
                                             {qcResult.valid ? 'PASSED' : 'FAILED'}
                                         </span>
                                         <span className="text-xs text-gray-500">{qcResult.summary}</span>
@@ -206,13 +214,17 @@ export const QCPanel: React.FC = () => {
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-dept-marketing uppercase tracking-widest">YouTube Content ID CSV</span>
                                         <button
+                                            data-testid="qc-copy-cid"
                                             onClick={() => navigator.clipboard.writeText(csvOutput)}
                                             className="text-xs text-gray-500 hover:text-white transition-colors"
                                         >
                                             Copy
                                         </button>
                                     </div>
-                                    <pre className="p-4 bg-black/40 rounded-lg overflow-x-auto text-xs text-dept-licensing font-mono max-h-48 overflow-y-auto custom-scrollbar">
+                                    <pre
+                                        data-testid="qc-cid-output"
+                                        className="p-4 bg-black/40 rounded-lg overflow-x-auto text-xs text-dept-licensing font-mono max-h-48 overflow-y-auto custom-scrollbar"
+                                    >
                                         {csvOutput}
                                     </pre>
                                 </div>

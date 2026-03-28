@@ -2,10 +2,13 @@ import React from 'react';
 import { useDistributorConnections } from '../hooks/useDistributorConnections';
 import { Globe, Loader2, AlertCircle, ExternalLink, Plus } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 export const DistributorConnectionsPanel: React.FC = () => {
     const { connections, loading, refresh, disconnect } = useDistributorConnections();
-    const setModule = useStore(state => state.setModule);
+    const { setModule } = useStore(useShallow(state => ({
+        setModule: state.setModule
+    })));
 
     return (
         <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col h-full">

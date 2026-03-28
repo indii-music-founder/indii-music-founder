@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { Image, Film, Music, FileText } from 'lucide-react';
 import { Virtuoso } from 'react-virtuoso';
@@ -17,7 +18,9 @@ const EmptyState = () => (
 );
 
 export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragStart }) => {
-    const history = useStore((state) => state.generatedHistory);
+    const { history } = useStore(useShallow((state) => ({
+        history: state.generatedHistory
+    })));
 
     // Filter for supported types
     const assets = history.filter((item: HistoryItem) =>
