@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import {
     TrendingUp, Zap, DollarSign, BarChart2,
-    Calendar, Activity, Flame
+    Calendar, Activity, Flame, Loader2
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer, ReferenceLine
 } from 'recharts';
+import { useAnalytics } from '@/modules/publishing/hooks/useAnalytics';
 
 type DateRange = '7d' | '30d' | '90d';
 
@@ -26,18 +27,6 @@ interface DataPoint {
 const MILESTONE_EVENTS: MilestoneEvent[] = [
     // Populated dynamically from real release analytics — empty by default
 ];
-
-function generateData(days: number): DataPoint[] {
-    // Returns empty data — real data would come from analytics API
-    return Array.from({ length: days }, (_, i) => ({
-        day: i + 1,
-        label: `Day ${i + 1}`,
-        streams: 0,
-        adSpend: 0,
-    }));
-}
-
-const ALL_DATA = generateData(90);
 
 const RANGE_DAYS: Record<DateRange, number> = { '7d': 7, '30d': 30, '90d': 90 };
 
@@ -67,9 +56,31 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 export default function MomentumTracker() {
     const [dateRange, setDateRange] = useState<DateRange>('30d');
 
+    // Fetch 90 days max to cover all options
+    const [now] = useState(() => Date.now());
+    const maxDateRange = useMemo(() => {
+        const endDate = new Date(now).toISOString().split('T')[0]!;
+        const startDate = new Date(now - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
+        return { start: startDate, end: endDate };
+    }, [now]);
+
+    const { data: rawAnalyticsData, loading: analyticsLoading } = useAnalytics(maxDateRange);
+
+    const ALL_DATA: DataPoint[] = useMemo(() => {
+        if (!rawAnalyticsData || rawAnalyticsData.length === 0) {
+            return [];
+        }
+        return rawAnalyticsData.map((d, index) => ({
+            day: index + 1,
+            label: `Day ${index + 1} (${new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})`,
+            streams: d.streams || 0,
+            adSpend: 0 // Mocked for now until Google Ads API / FB Ads API is integrated
+        }));
+    }, [rawAnalyticsData]);
+
     const chartData = useMemo(() => {
-        return ALL_DATA.slice(0, RANGE_DAYS[dateRange]);
-    }, [dateRange]);
+        return ALL_DATA.slice(-RANGE_DAYS[dateRange]); // Get the most recent N days
+    }, [ALL_DATA, dateRange]);
 
     const relevantMilestones = useMemo(
         () => MILESTONE_EVENTS.filter(m => m.day <= RANGE_DAYS[dateRange]),
@@ -78,8 +89,14 @@ export default function MomentumTracker() {
 
     const totalStreams = useMemo(() => chartData.reduce((sum, d) => sum + d.streams, 0), [chartData]);
     const totalAdSpend = useMemo(() => chartData.reduce((sum, d) => sum + d.adSpend, 0), [chartData]);
-    const week1Streams = useMemo(() => ALL_DATA.slice(0, 7).reduce((sum, d) => sum + d.streams, 0), []);
+    // Use the most recent 7 days for week1Streams for momentum context relative to the time window
+    const week1Streams = useMemo(() => {
+        const recent7 = ALL_DATA.slice(-7);
+        return recent7.reduce((sum, d) => sum + d.streams, 0);
+    }, [ALL_DATA]);
+
     const organicRatio = useMemo(() => {
+        if (totalStreams === 0) return 0;
         const organic = totalStreams - totalAdSpend * 18;
         return Math.max(0, Math.min(100, Math.round((organic / totalStreams) * 100)));
     }, [totalStreams, totalAdSpend]);
@@ -117,7 +134,12 @@ export default function MomentumTracker() {
                 </div>
             </div>
 
-            {totalStreams === 0 ? (
+            {analyticsLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+                    <Loader2 size={24} className="text-dept-marketing animate-spin" />
+                    <p className="text-sm font-bold text-gray-500">Syncing Momentum Data...</p>
+                </div>
+            ) : totalStreams === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-3 rounded-xl bg-white/[0.02] border border-white/5 border-dashed">
                     <div className="w-12 h-12 rounded-xl bg-dept-marketing/10 flex items-center justify-center">
                         <Flame size={20} className="text-dept-marketing/60" />
