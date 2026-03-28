@@ -24,7 +24,14 @@ import {
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
-import type { DashboardRevenueStats, DashboardStreamsStats } from '@/services/dashboard/schema';
+import type {
+    DashboardRevenueStats,
+    DashboardStreamsStats,
+    DashboardAudienceStats,
+    DashboardTopTrack,
+    DashboardNextRelease,
+    DashboardAgentActivity,
+} from '@/services/dashboard/schema';
 
 /* ================================================================== */
 /*  Item 159 — Customizable Dashboard                                  */
@@ -186,6 +193,43 @@ function RevenueMTDWidget() {
 }
 
 function NextReleaseWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [release, setRelease] = useState<DashboardNextRelease | null | undefined>(undefined);
+    const [now, setNow] = useState<number>(() => Date.now());
+
+    // Tick every minute to keep the countdown live
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 60_000);
+        return () => clearInterval(id);
+    }, []);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToNextRelease(
+            userId,
+            (d) => setRelease(d),
+        );
+        return () => unsub();
+    }, [userId]);
+
+    const isLoading = release === undefined;
+
+    const countdown = (() => {
+        if (!release) return null;
+        const ms = release.releaseDate - now;
+        if (ms <= 0) return 'Today';
+        const days = Math.floor(ms / 86_400_000);
+        const hours = Math.floor((ms % 86_400_000) / 3_600_000);
+        return days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+    })();
+
+    const statusColors: Record<string, string> = {
+        draft: 'bg-gray-500/10 text-gray-400',
+        submitted: 'bg-blue-500/10 text-blue-400',
+        approved: 'bg-indigo-500/10 text-indigo-400',
+        live: 'bg-green-500/10 text-green-400',
+    };
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -194,19 +238,47 @@ function NextReleaseWidget() {
                 </div>
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Next Release</span>
             </div>
-            <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">--</p>
-                <p className="text-xs font-bold text-gray-500 mt-1">No upcoming releases</p>
-                <p className="text-[10px] text-white/30">Schedule a release to see countdown</p>
-            </div>
-            <div className="mt-3 p-2 rounded-lg bg-blue-500/5 border border-blue-500/10">
-                <p className="text-[10px] text-blue-400/60">No distribution submissions pending</p>
-            </div>
+            {isLoading ? (
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
+                </div>
+            ) : release === null ? (
+                <div>
+                    <p className="text-4xl font-semibold text-white tracking-tight">--</p>
+                    <p className="text-xs font-bold text-gray-500 mt-1">No upcoming releases</p>
+                    <p className="text-[10px] text-white/30 mt-1">Schedule a release to see countdown</p>
+                </div>
+            ) : (
+                <div>
+                    <p className="text-4xl font-semibold text-white tracking-tight">{countdown}</p>
+                    <p className="text-xs font-bold text-white/60 mt-1 truncate" title={release.title}>{release.title}</p>
+                    <div className="flex items-center gap-1.5 mt-2">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${statusColors[release.status] || 'bg-white/5 text-white/30'}`}>
+                            {release.status}
+                        </span>
+                        <span className="text-[9px] text-white/20">{release.distributors.length} DSP{release.distributors.length !== 1 ? 's' : ''}</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
 function TopTrackWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [track, setTrack] = useState<DashboardTopTrack | null | undefined>(undefined);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToTopTrack(
+            userId,
+            (d) => setTrack(d),
+        );
+        return () => unsub();
+    }, [userId]);
+
+    const isLoading = track === undefined;
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -215,48 +287,128 @@ function TopTrackWidget() {
                 </div>
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Top Track</span>
             </div>
-            <div>
-                <p className="text-sm font-semibold text-white/50 tracking-wide">No tracks yet</p>
-                <p className="text-[10px] text-gray-600 mb-2">Upload your first release</p>
-                <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-white/40">Streams</span>
-                        <span className="text-[10px] font-semibold text-white/70">--</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-white/40">Revenue</span>
-                        <span className="text-[10px] font-semibold text-white/70">--</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-white/40">Save Rate</span>
-                        <span className="text-[10px] font-semibold text-white/70">--</span>
+            {isLoading ? (
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full border-2 border-amber-500/30 border-t-amber-400 animate-spin" />
+                </div>
+            ) : track === null ? (
+                <div>
+                    <p className="text-sm font-semibold text-white/30 tracking-wide">No tracks yet</p>
+                    <p className="text-[10px] text-gray-600 mt-1">Upload your first release</p>
+                </div>
+            ) : (
+                <div>
+                    <p className="text-sm font-bold text-white truncate" title={track.title}>{track.title}</p>
+                    <div className="space-y-1.5 mt-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-white/40">Streams</span>
+                            <span className="text-[10px] font-semibold text-white/70">{track.streams.formatted || track.streams.value.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-white/40">Revenue</span>
+                            <span className="text-[10px] font-semibold text-white/70">{track.revenue.formatted || `$${track.revenue.value.toFixed(2)}`}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-white/40">Save Rate</span>
+                            <span className="text-[10px] font-semibold text-white/70">{track.saveRate.formatted || `${track.saveRate.value}%`}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
+            {track && (
+                <div className="mt-2">
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${track.trend === 'rising' ? 'bg-green-500/10 text-green-400' :
+                        track.trend === 'falling' ? 'bg-red-500/10 text-red-400' :
+                            'bg-white/5 text-white/30'
+                        }`}>{track.trend}</span>
+                </div>
+            )}
         </div>
     );
 }
 
 function AgentActivityWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [activity, setActivity] = useState<DashboardAgentActivity | null>(null);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToAgentActivity(
+            userId,
+            (d) => setActivity(d),
+        );
+        return () => unsub();
+    }, [userId]);
+
+    const statusDot: Record<string, string> = {
+        running: 'bg-indigo-400 animate-pulse',
+        completed: 'bg-green-400',
+        failed: 'bg-red-400',
+        pending: 'bg-yellow-400',
+    };
+
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                    <Bot size={12} className="text-indigo-400" />
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <Bot size={12} className="text-indigo-400" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Agent Activity</span>
                 </div>
-                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Agent Activity</span>
+                {activity && activity.runningCount > 0 && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 animate-pulse">
+                        {activity.runningCount} running
+                    </span>
+                )}
             </div>
-            <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                    <Bot size={24} className="text-gray-700 mx-auto mb-2" />
-                    <p className="text-[10px] text-white/30">No recent agent activity</p>
-                </div>
+            <div className="flex-1 space-y-1.5 overflow-hidden">
+                {!activity || activity.recentTasks.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                            <Bot size={24} className="text-gray-700 mx-auto mb-2" />
+                            <p className="text-[10px] text-white/30">No recent agent activity</p>
+                        </div>
+                    </div>
+                ) : (
+                    activity.recentTasks.slice(0, 4).map((task) => (
+                        <div key={task.id} className="flex items-center gap-2 p-1.5 rounded-lg bg-white/[0.02]">
+                            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusDot[task.status] || 'bg-white/20'}`} />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[10px] text-white/70 truncate">{task.taskLabel}</p>
+                                <p className="text-[9px] text-white/30">{task.agentName}</p>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
+            {activity && activity.completedToday > 0 && (
+                <p className="text-[9px] text-white/20 mt-2">{activity.completedToday} task{activity.completedToday !== 1 ? 's' : ''} completed today</p>
+            )}
         </div>
     );
 }
 
 function AudienceGrowthWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [data, setData] = useState<DashboardAudienceStats | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        const unsub = AnalyticsService.subscribeToAudienceGrowth(
+            userId,
+            (d) => { setData(d); setIsLoading(false); },
+            () => { setData(AnalyticsService.getAudienceZeroState()); setIsLoading(false); },
+        );
+        return () => unsub();
+    }, [userId]);
+
+    const weeklyGrowth = data?.weeklyGrowth || [0, 0, 0, 0, 0, 0, 0];
+    const maxVal = Math.max(...weeklyGrowth, 1);
+    const newListeners = data?.newListenersThisWeek.formatted || '--';
+    const trend = data?.newListenersThisWeek.trend;
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -266,11 +418,23 @@ function AudienceGrowthWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Audience Growth</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">+0</p>
-                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">New listeners this week</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {newListeners}
+                </p>
+                <div className="flex items-center gap-1.5 mt-1">
+                    <p className="text-[10px] text-indigo-200/50 font-medium">New listeners this week</p>
+                    {trend === 'up' && <span className="text-[9px] font-bold text-green-400">▲</span>}
+                    {trend === 'down' && <span className="text-[9px] font-bold text-red-400">▼</span>}
+                </div>
             </div>
-            <div className="mt-3">
-                <p className="text-[10px] text-white/30">Connect social accounts to see data</p>
+            <div className="mt-3 flex items-end gap-1 h-8">
+                {weeklyGrowth.map((val, i) => (
+                    <div
+                        key={i}
+                        className="flex-1 rounded-sm bg-pink-500/10 hover:bg-pink-500/20 transition-colors"
+                        style={{ height: `${Math.max(5, (val / maxVal) * 100)}%` }}
+                    />
+                ))}
             </div>
         </div>
     );
