@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { MerchCard } from './MerchCard';
 import { Layers, Eye, EyeOff, Lock, Unlock, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Square } from 'lucide-react';
 import type { CanvasObject } from './DesignCanvas';
@@ -41,16 +41,11 @@ const LayerProperties: React.FC<{
         (layer.fabricObject.globalCompositeOperation as GlobalCompositeOperation) || 'source-over'
     );
 
-    // Typed callbacks satisfy debounce<T extends (...args: any[]) => any> constraint
-    const _opacityCb = (l: CanvasObject, value: number) => { onUpdateProperty?.(l, 'opacity', value / 100); };
+    const _opacityCb = useCallback((l: CanvasObject, value: number) => { onUpdateProperty?.(l, 'opacity', value / 100); }, [onUpdateProperty]);
+    const debouncedOpacityUpdate = useMemo(() => debounce(_opacityCb, 150), [_opacityCb]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const debouncedOpacityUpdate = useMemo(() => debounce(_opacityCb as (...a: any[]) => any, 150), [onUpdateProperty]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const _fontSizeCb = (l: CanvasObject, value: number) => { onUpdateProperty?.(l, 'fontSize', value); };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const debouncedFontSizeUpdate = useMemo(() => debounce(_fontSizeCb as (...a: any[]) => any, 150), [onUpdateProperty]); // eslint-disable-line react-hooks/exhaustive-deps
+    const _fontSizeCb = useCallback((l: CanvasObject, value: number) => { onUpdateProperty?.(l, 'fontSize', value); }, [onUpdateProperty]);
+    const debouncedFontSizeUpdate = useMemo(() => debounce(_fontSizeCb, 150), [_fontSizeCb]);
 
 
     return (

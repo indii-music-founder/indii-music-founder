@@ -22,6 +22,7 @@ import { BarChart3, TrendingUp, MousePointerClick, Image, Sparkles, Radio } from
 import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
 import { SkeletonList, SkeletonStat } from '@/components/shared/SkeletonLoader';
+import { useStore } from '@/core/store';
 
 /* ================================================================== */
 /*  Campaign Dashboard — Three-Panel Layout                             */
@@ -242,21 +243,43 @@ function PerformanceSnapshotPanel({ campaigns }: { campaigns: CampaignAsset[] })
 }
 
 function AssetLibraryPanel() {
-    // Brand assets should be loaded from the user's uploaded assets in Firebase Storage
+    const userProfile = useStore(state => state.userProfile);
+    const brandAssets = userProfile?.brandKit?.brandAssets || [];
+    const referenceImages = userProfile?.brandKit?.referenceImages || [];
+
+    const totalAssets = brandAssets.length + referenceImages.length;
+
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Asset Library</h3>
-            <div className="flex flex-col items-center justify-center py-4 text-center">
-                <Image size={16} className="text-gray-600 mb-2" />
-                <p className="text-[11px] text-gray-600">No brand assets uploaded</p>
-                <p className="text-[10px] text-gray-700 mt-0.5">Upload logos, photos, and templates to build your library</p>
-            </div>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1 flex items-center justify-between">
+                <span>Asset Library</span>
+                <span className="text-gray-600">{totalAssets} stored</span>
+            </h3>
+            {totalAssets === 0 ? (
+                <div className="flex flex-col items-center justify-center py-4 text-center">
+                    <Image size={16} className="text-gray-600 mb-2" />
+                    <p className="text-[11px] text-gray-600">No brand assets uploaded</p>
+                    <p className="text-[10px] text-gray-700 mt-0.5">Upload logos, photos, and templates</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 gap-2">
+                    {brandAssets.slice(0, 4).map((asset, i) => (
+                        <div key={asset.id || i} className="aspect-square rounded-lg bg-black/40 border border-white/5 overflow-hidden">
+                            <img src={asset.url} alt={asset.description} className="w-full h-full object-cover opacity-70 hover:opacity-100 transition-opacity" />
+                        </div>
+                    ))}
+                    {totalAssets > 4 && (
+                        <div className="col-span-2 text-center pt-2">
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest cursor-pointer hover:text-white">+ {totalAssets - 4} more assets</p>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
 
 function AISuggestionsPanel() {
-    // AI suggestions should be generated from actual campaign analytics data
     return (
         <div className="rounded-xl bg-dept-marketing/5 border border-dept-marketing/10 p-3">
             <h3 className="text-[10px] font-bold text-dept-marketing uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
@@ -264,8 +287,8 @@ function AISuggestionsPanel() {
             </h3>
             <div className="flex flex-col items-center justify-center py-4 text-center">
                 <Sparkles size={16} className="text-gray-600 mb-2" />
-                <p className="text-[11px] text-gray-600">No insights yet</p>
-                <p className="text-[10px] text-gray-700 mt-0.5">AI suggestions will appear once you have active campaign data</p>
+                <p className="text-[11px] text-gray-600">Collecting analytics...</p>
+                <p className="text-[10px] text-gray-700 mt-0.5 max-w-[180px]">Need a live campaign generating real-world impressions to formulate predictive growth advice.</p>
             </div>
         </div>
     );

@@ -4,6 +4,7 @@ import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-thre
 import { Mesh } from 'three'; // Item 357: Named import enables Three.js tree-shaking
 import { Download, Trash2, BoxSelect, MonitorPlay } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { useToast } from '@/core/context/ToastContext';
 
 /**
  * Advanced 3D Scene Builder component implementing requirement 105.
@@ -60,8 +61,10 @@ const Model = ({ url, position, scale }: { url: string; position: [number, numbe
 };
 
 const DroppableArea = ({ onDrop }: { onDrop: (url: string) => void }) => {
+    const { error: toastError } = useToast();
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
     };
 
     const handleDrop = (e: React.DragEvent) => {
@@ -74,7 +77,7 @@ const DroppableArea = ({ onDrop }: { onDrop: (url: string) => void }) => {
                 const url = URL.createObjectURL(file);
                 onDrop(url);
             } else {
-                alert('Please drop a valid .glb or .gltf 3D model file.');
+                toastError('Please drop a valid .glb or .gltf 3D model file.');
             }
         }
     };

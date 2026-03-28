@@ -11,6 +11,15 @@ export function KeysStatusPanel() {
         }))
     );
 
+    // Build key status from real connections — authExpiresAt drives expiry warning
+    const [now, setNow] = React.useState<number | null>(null);
+
+    React.useEffect(() => {
+        setNow(Date.now());
+    }, []);
+
+    if (!now) return null;
+
     if (loading && connections.length === 0) {
         return (
             <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
@@ -22,8 +31,6 @@ export function KeysStatusPanel() {
         );
     }
 
-    // Build key status from real connections — authExpiresAt drives expiry warning
-    const now = Date.now();
     const WARN_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
     const keys = connections
