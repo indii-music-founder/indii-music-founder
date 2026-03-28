@@ -4,20 +4,21 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.40.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.39.0...v1.40.0) (2026-03-27)
 
-
 ### Features
 
+* **analytics:** complete live analytics integration for marketing momentum tracker
+* **types:** complete strict type adoption across UI and backend surfaces, removing 'any' usages
 * **types:** eliminate remaining 'any' casts from backend services ([dd8766c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/dd8766cadc4b1fb94f91ea8e36de10dd86cddb68))
 * **types:** eliminate remaining 'any' casts from backend services ([6d599f6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6d599f6cf9a32573237545857db31be4f0674261))
 
-
 ### Bug Fixes
 
+* **tests:** resolve UI regression test failures in PublishingDashboard without wrapping DOM manipulations in act()
+* **ui:** finalize sweeping removal of placeholder text strings with appropriate context-aware copies
 * **types:** enforce strict type for setViewMode in CreativeGallery ([00b036b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/00b036bfd9044551bf287a97d3b4f7bab138ca13))
 * **types:** systematically eliminate remaining 'as any' casts across core modules and enforce strict type safety (Production Hardening) ([5f3be82](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5f3be8260a345d45d3aa099de5d2f043b04e021a))
 
 ## [1.39.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.38.0...v1.39.0) (2026-03-27)
-
 
 ### Features
 
@@ -34,7 +35,6 @@ All notable changes to indiiOS are documented in this file.
 * **wo-6:** implement DSP Compliance Coaching Integration ([1677249](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/16772498f35b24d2e46b12f48b531bcdc112ff5f))
 * **wo-7:** wire payment_gate.py to Stripe SDK ([a7589e9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a7589e919af6787cbe5d99cf9817e4bbbb57b678))
 
-
 ### Bug Fixes
 
 * **firestore:** suppress permission-denied errors in dev mode ([7729736](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/772973632db68c574f9e48790bf5f8f22ff903c8))
@@ -46,7 +46,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.38.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.37.0...v1.38.0) (2026-03-26)
 
-
 ### Features
 
 * **training:** Complete agent curriculum (+21 examples) ([ca65189](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ca65189435178cc67b468b111ec870ada75dd6ba))
@@ -54,20 +53,17 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.37.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.36.0...v1.37.0) (2026-03-26)
 
-
 ### Features
 
 * introduce agent feedback widget and update numerous agent training and evaluation datasets. ([4c26304](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4c263045e76cb4ecc7a699cd28f302eda46dbdab))
 * **memory:** implement 5-layer memory architecture with BigBrain auto-recall ([b0ac6f8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b0ac6f882b6ea66f0698cd6bafbabbfb94dabdac))
 * **wo-1,5,10:** gate shell modules, fix Math.random IDs, refocus MusicAgent ([1143b6a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1143b6a887ba16ba2d4077a0196b7ac72add5443))
 
-
 ### Bug Fixes
 
 * **training:** rename duplicate scenario_id in publishing.jsonl ([a60af67](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a60af675639e165de10902d8aa58c199312e6124))
 
 ## [1.36.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.35.1...v1.36.0) (2026-03-25)
-
 
 ### Features
 
@@ -76,13 +72,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.35.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.35.0...v1.35.1) (2026-03-25)
 
-
 ### Bug Fixes
 
 * engineering health hardening — lint cleanup, stub pruning, dependency fixes ([0a327d8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0a327d8c49e9802cf841a95dce8765f2a37f279d))
 
 ## [1.35.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.34.1...v1.35.0) (2026-03-25)
-
 
 ### Features
 
@@ -91,7 +85,6 @@ All notable changes to indiiOS are documented in this file.
 * **ci:** enable fine-tuned agents in production build ([9677ea5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9677ea55f3becddbdaa8f61e3b967c2a43163043))
 * **security:** hardcode authorizedTools in all 20 agent definitions ([4271e03](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4271e031fd78a4f0ae42c12766b92c57dcc5cadb))
 * **training:** expand all 20 datasets to 2,000 gold examples + remediate phantoms ([44ef5aa](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/44ef5aaef2e808323721d7de5bf8357cdf8563f2))
-
 
 ### Bug Fixes
 
@@ -113,25 +106,21 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.34.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.34.0...v1.34.1) (2026-03-24)
 
-
 ### Bug Fixes
 
 * **ci:** add npm run build to compile functions TypeScript before deploy ([5905e52](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5905e528d0e0cf5363d0d10f3b684e1877fefbc3))
 
 ## [1.34.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.33.1...v1.34.0) (2026-03-24)
 
-
 ### Features
 
 * **relay:** add server-side agent relay Cloud Function ([b43141d](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b43141df81ff7bf41aa4f4f57fd3b766d5558001))
-
 
 ### Bug Fixes
 
 * **ci:** resolve typecheck error and add Cloud Functions to deploy pipeline ([87fa2e8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/87fa2e88d75a06ecd6558cb638f476a5799ae277))
 
 ## [1.33.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.33.0...v1.33.1) (2026-03-24)
-
 
 ### Bug Fixes
 
@@ -140,12 +129,10 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.33.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.32.0...v1.33.0) (2026-03-24)
 
-
 ### Features
 
 * Add initial fine-tuning and evaluation datasets for various indiiOS agents to `ft_export_r4`. ([a9f32cd](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a9f32cd09d7e5b7ac9d276e0b5105702f9794839))
 * add new training scenarios to curriculum, director, and merchandise agent datasets. ([4bef10e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4bef10eb54a14c8b2834b5fbce5b7b5333154eea))
-
 
 ### Bug Fixes
 
@@ -154,12 +141,10 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.32.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.31.0...v1.32.0) (2026-03-23)
 
-
 ### Features
 
 * add edge case scenarios for deceased artist licensing and restrictive 'royalty-free' samples to training data. ([7c9e759](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7c9e759f43ff9536e4f3f1062e49a28c9fda0826))
 * **controller:** add remote image generation from phone ([60ec7dc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/60ec7dc6280a5cffc02cb442eb6e8d9cfc526e84))
-
 
 ### Bug Fixes
 
@@ -169,7 +154,6 @@ All notable changes to indiiOS are documented in this file.
 * **relay:** prevent stuck commands from blocking the entire pipeline ([d31e73a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d31e73a2afc882328d34f18adbb45630f3954b09))
 
 ## [1.31.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.30.0...v1.31.0) (2026-03-23)
-
 
 ### Features
 
@@ -186,7 +170,6 @@ All notable changes to indiiOS are documented in this file.
 * **training:** elite social media agent — 100 examples (35% expert) ([33ec2b6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/33ec2b6b8e77e7a08e1170dcdfcba09dbf594377))
 * **training:** elite video agent — 100 examples (33% expert) ([576ec1e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/576ec1edf8d4d07bdf14e1d30059aa9eb05dc353))
 
-
 ### Bug Fixes
 
 * **controller:** add retry loop for streaming response write-back ([60afbbb](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/60afbbb857d193c2fdbadff6d5e0d7c7a324f096))
@@ -194,7 +177,6 @@ All notable changes to indiiOS are documented in this file.
 * **remote-relay:** fix Firestore paths, indexes, and undefined agentId ([113a3fd](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/113a3fd077a0f6dab2fcfcaa4681e113d7941502))
 
 ## [1.30.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.29.0...v1.30.0) (2026-03-22)
-
 
 ### Features
 
@@ -219,7 +201,6 @@ All notable changes to indiiOS are documented in this file.
 * **training:** expand Screenwriter dataset 45 → 60 examples ([dfd957a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/dfd957a53731e7d4eaa9aaefbcb95465ff2864f4))
 * **training:** expand Video dataset 44 → 60 examples ([4c1ae55](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/4c1ae5518da491d5344288f805f89a82544540fd))
 
-
 ### Bug Fixes
 
 * **ci:** resolve lint errors and duplicate scenario_id ([0af7cbe](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0af7cbe7f6187811e8635e458f8418e999a5f699))
@@ -229,7 +210,6 @@ All notable changes to indiiOS are documented in this file.
 * **onboarding:** resolve THINKING hang with 45s timeout + categorized error recovery ([cd0700a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/cd0700a92ba0e0faef3ebbf3e03f67486bc7aa44))
 
 ## [1.29.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.2...v1.29.0) (2026-03-21)
-
 
 ### Features
 
@@ -244,7 +224,6 @@ All notable changes to indiiOS are documented in this file.
 * **training:** add YouTube + free-form input modes to /training workflow ([b1d4217](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b1d421740d4a3aac8e54593555392966f996afc6))
 * **training:** complete agent training infrastructure with security hardening ([59ca98a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/59ca98a7ab2e969dbc2a06944b8bcaf121e23c1f))
 * **training:** volume expansion — 923 gold examples across 20 agents ([67a56e3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/67a56e3cef05650e4ea7671f43526dce074b3edf))
-
 
 ### Bug Fixes
 
@@ -261,14 +240,12 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.28.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.1...v1.28.2) (2026-03-18)
 
-
 ### Bug Fixes
 
 * 8 CodeRabbit findings — Stripe tier mapping, Founders security, CI config ([a107c49](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a107c49f71be78c9f1765822aa33695720ed25c6))
 * **ci:** remove duplicate deploy-staging/e2e/production job blocks causing YAML syntax error ([c365ed8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c365ed87735dfb636829ad056becc207c5dbf5e5))
 
 ## [1.28.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.28.0...v1.28.1) (2026-03-17)
-
 
 ### Bug Fixes
 
@@ -277,13 +254,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.28.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.27.1...v1.28.0) (2026-03-17)
 
-
 ### Features
 
 * staging-gated CI/CD pipeline + re-enable ISWC Mapper V2 ([7a0929f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7a0929fc754b448fa48fdc4ec95ec9c32be8a335))
 
 ## [1.27.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.27.0...v1.27.1) (2026-03-17)
-
 
 ### Bug Fixes
 
@@ -298,7 +273,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.27.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.26.1...v1.27.0) (2026-03-17)
 
-
 ### Features
 
 * **analytics,commerce,social:** replace stubs with real API integrations ([189f3b9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/189f3b9f2450dc7b7dbfff34f7d40de944d928a1))
@@ -306,7 +280,6 @@ All notable changes to indiiOS are documented in this file.
 * close Items 287, 298, 306, 307, 312 — skeletons, privacy, recoupment, CF tuning ([1f8b76f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1f8b76f32c126fd95d78a7ae4537446217d7f850))
 * **production:** close 8 production gaps across infra, CI, and app code ([381d03f](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/381d03ff41e725b7636503898685a9a39fa81bb2))
 * **production:** close gaps 263, 269/275, 281, 315; mark 271/292/294/299/300 done ([db37db7](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/db37db70cecbf9dd0be6000f9614590114f756df))
-
 
 ### Bug Fixes
 
@@ -317,13 +290,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.26.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.26.0...v1.26.1) (2026-03-17)
 
-
 ### Bug Fixes
 
 * **lint:** resolve react-hooks/set-state-in-effect blocking CI ([80b4a51](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/80b4a513f9a712b442d2a3f350bc4f47e13e3672))
 
 ## [1.26.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.25.0...v1.26.0) (2026-03-16)
-
 
 ### Features
 
@@ -331,19 +302,16 @@ All notable changes to indiiOS are documented in this file.
 * **storage:** wire quota into dashboard + pre-upload gate ([8bd9c1a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8bd9c1a436d33b338fad796310222eb5536cfef9))
 * **video:** long-term storage hardening ([1b68302](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1b683026dffca89e5b02d2a239b4b3b5a1f377bc))
 
-
 ### Bug Fixes
 
 * **video:** persist videos to Storage & fix lastFrame API format ([a5b7114](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a5b7114e70a97ccc3009ce7b0725d677fd8881dd))
 
 ## [1.25.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.3...v1.25.0) (2026-03-16)
 
-
 ### Features
 
 * **agent:** register 12 missing tool modules in TOOL_REGISTRY ([cfd8c32](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/cfd8c32de5ac45a7b141e8496c909a551309d623))
 * **touring:** seed TourRouteOptimizer with 45 real US touring markets ([ebd431c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ebd431c4e4f242396beddfd4e0a7480e4e534a4d))
-
 
 ### Bug Fixes
 
@@ -351,20 +319,17 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.24.3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.2...v1.24.3) (2026-03-16)
 
-
 ### Bug Fixes
 
 * resolve corrupted merge from PR [#1308](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/issues/1308) — clean up ReleasesContent and WorkflowEngine ([9110dd8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9110dd8a14d673d23f266402ecec999d5cd616b9))
 
 ## [1.24.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.1...v1.24.2) (2026-03-16)
 
-
 ### Bug Fixes
 
 * **video:** resolve playback error — fetch blob URL from Gemini API ([d6638ba](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d6638ba9d0c5a05ad6c3d7c9ae77aa728e2ccc54))
 
 ## [1.24.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.24.0...v1.24.1) (2026-03-16)
-
 
 ### Bug Fixes
 
@@ -373,20 +338,17 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.24.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.23.1...v1.24.0) (2026-03-16)
 
-
 ### Features
 
 * wire distribution pipeline and replace Docker with bundled Python sidecar ([c8a8ffa](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c8a8ffacc18f234e2e595eb1433da845d89c7849))
 
 ## [1.23.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.23.0...v1.23.1) (2026-03-15)
 
-
 ### Bug Fixes
 
 * resolve all lint errors and test failures (Gauntlet pass) ([e1fe7f4](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/e1fe7f49bc9358f1e079539db54a748e8b88e13d))
 
 ## [1.23.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.22.1...v1.23.0) (2026-03-15)
-
 
 ### Features
 
@@ -397,7 +359,6 @@ All notable changes to indiiOS are documented in this file.
 * Improve Stripe initialization and error handling, refine Firestore rules for video jobs and settings, and update dependencies. ([2ef8bfc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/2ef8bfc19e8ee51124665d7af0097f50b647f836))
 * Music Growth Intelligence Engine — viral scoring, pattern detection, forecasts ([fbf279c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/fbf279c0946d2fa03ff2dab878200954138f77b9))
 
-
 ### Bug Fixes
 
 * **analytics:** resolve TS2339 on AppleMusicService.searchCatalog return type ([128d086](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/128d08613b6b6cd2e727522de05b6a70395b5048))
@@ -407,20 +368,17 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.22.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.22.0...v1.22.1) (2026-03-15)
 
-
 ### Bug Fixes
 
 * **video:** regenerate functions lockfile + fix Veo 3.1 duration ([3d9ad04](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/3d9ad0436f76492bdd48f33541f5b45b929da5d1))
 
 ## [1.22.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.21.0...v1.22.0) (2026-03-14)
 
-
 ### Features
 
 * Enhance distribution pipeline with Spotify packaging, Apple delivery, XSD validation, and E2E tests, and improve UI stability with mounted component guards. ([d246ca8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d246ca8240489b337e3aec5fedf8883a73522205))
 * full-stack email integration — Gmail/Outlook OAuth, Cloud Functions, Zustand slice, InboxTab UI ([93423b6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/93423b6503cfa5dbf90c1181b30e2370606fa258))
 * Implement mounted guards and navigation debouncing to fix Firestore b815 crashes, and enhance the distribution pipeline with Spotify/Apple packaging, XSD validation, and new E2E tests. ([91e30dc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/91e30dca3fe30467047eafb6f3d6941db5a60790))
-
 
 ### Bug Fixes
 
@@ -430,11 +388,9 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.21.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.20.0...v1.21.0) (2026-03-12)
 
-
 ### Features
 
 * add drag-and-drop file upload to onboarding chat ([8e91f5b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8e91f5b87393bda2b0ba651f950a91d30a90385a))
-
 
 ### Bug Fixes
 
@@ -443,13 +399,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.20.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.19.1...v1.20.0) (2026-03-12)
 
-
 ### Features
 
 * Implement dynamic greeting selection in BrandInterview based on user profile completeness using `useMemo` and `zustand` store. ([090783a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/090783a95d5f53d5954bc790d8cf2a9d0d2e25f4))
 
 ## [1.19.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.19.0...v1.19.1) (2026-03-12)
-
 
 ### Bug Fixes
 
@@ -457,11 +411,9 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.19.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.2...v1.19.0) (2026-03-12)
 
-
 ### Features
 
 * **agent:** enable Knowledge Base by default + wire KB into Direct Chat ([8780a3a](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/8780a3a1d09e65ba0639e0ebf2d72d2a5af6f0da))
-
 
 ### Bug Fixes
 
@@ -470,13 +422,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.18.2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.1...v1.18.2) (2026-03-11)
 
-
 ### Bug Fixes
 
 * **agent-mobile:** resolve 5 critical mobile UX issues ([03c40ac](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/03c40ace51f3a60b841f1b3122966f29c0db0f99))
 
 ## [1.18.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.18.0...v1.18.1) (2026-03-11)
-
 
 ### Bug Fixes
 
@@ -486,13 +436,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.18.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.17.0...v1.18.0) (2026-03-11)
 
-
 ### Features
 
 * GIF versions of all 5 banner animations ([5e0af75](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5e0af7551357be79439fdfaf7fd5d25a161cc239))
 
 ## [1.17.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.16.0...v1.17.0) (2026-03-11)
-
 
 ### Features
 
@@ -500,7 +448,6 @@ All notable changes to indiiOS are documented in this file.
 * BannerOrbit v2 — bigger screenshots, 3D depth, glow trails ([f2c8b2b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/f2c8b2b06a40545fb5fa7de343be0ccb5758090b))
 * **hunter:** add vendor chunk conflicts and impure render scans ([25c5324](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/25c5324da1b1037457008e33fe557fe3b86e79a6))
 * Remotion animated logo reveal — 3 format variants ([152bcdc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/152bcdc869cb065f406c4be39c117afc12494685))
-
 
 ### Bug Fixes
 
@@ -516,11 +463,9 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.16.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.15.0...v1.16.0) (2026-03-11)
 
-
 ### Features
 
 * **hunter:** add Loading State Traps scan (1.3) to workflow & SKILL ([f58b061](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/f58b0617df442fefd69d172a1df66f3d34104b53))
-
 
 ### Bug Fixes
 
@@ -532,13 +477,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.15.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.14.1...v1.15.0) (2026-03-11)
 
-
 ### Features
 
 * Timeline Orchestrator + Inngest autonomous milestone execution ([b724d86](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b724d86eeb56fd290a1ebdb795f0f24ae1f908ec))
 
 ## [1.14.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.14.0...v1.14.1) (2026-03-11)
-
 
 ### Bug Fixes
 
@@ -547,11 +490,9 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.14.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.13.0...v1.14.0) (2026-03-11)
 
-
 ### Features
 
 * add WorkspaceCanvas — rich media output panel for agent artifacts ([5dd6772](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5dd6772837f4120b93a713ce5695fdad6d40ba69))
-
 
 ### Bug Fixes
 
@@ -560,7 +501,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.13.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.12.0...v1.13.0) (2026-03-10)
 
-
 ### Features
 
 * wire 9 remaining TODO stubs to real services ([55c23b2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/55c23b20ed83422ac5451dbdb2c7d720abe9bccf))
@@ -568,13 +508,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.12.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.11.1...v1.12.0) (2026-03-10)
 
-
 ### Features
 
 * wire 30+ agent tools to backend services ([0ea3533](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0ea3533d08e050a0dafe01d86f1b3fd6a9d61e8f))
 
 ## [1.11.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.11.0...v1.11.1) (2026-03-10)
-
 
 ### Bug Fixes
 
@@ -583,13 +521,11 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.11.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.10.0...v1.11.0) (2026-03-10)
 
-
 ### Features
 
 * security hardening, legal Find Counsel tab, Firestore rules tests, Three.js memory fixes ([b20aad5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b20aad51e11790552256a08dbaa46d9a0a08880a))
 
 ## [1.10.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.9.0...v1.10.0) (2026-03-09)
-
 
 ### Features
 
@@ -731,7 +667,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 * **web3:** implement Blockchain/Web3 section (items 236-240) ([773e4d9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/773e4d9bfb279531fbee5cba5096db68da2c780d))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -853,7 +788,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** Resolve all failing video generation tests and parsing errors ([085b2b3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/085b2b30cac987dea6ed570a884d499ba990594c))
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
-
 
 ### Performance Improvements
 
@@ -863,7 +797,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.9.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.8.0...v1.9.0) (2026-03-09)
 
-
 ### Features
 
 * add AI-powered tools for audio fidelity auditing, copyright preparation, sample clearance, and storyboard generation. ([a201781](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a201781a6479c6e472bf30daae451dae44039cc3))
@@ -1004,7 +937,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 * **web3:** implement Blockchain/Web3 section (items 236-240) ([773e4d9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/773e4d9bfb279531fbee5cba5096db68da2c780d))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -1128,7 +1060,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
 
-
 ### Performance Improvements
 
 * **audio:** bump thinking level to HIGH for deep semantic extraction ([1ee9aa8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1ee9aa8335cf9fef23be654db4e5b4622f4a8a52))
@@ -1137,7 +1068,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.8.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.7.0...v1.8.0) (2026-03-09)
 
-
 ### Features
 
 * add AI-powered tools for audio fidelity auditing, copyright preparation, sample clearance, and storyboard generation. ([a201781](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a201781a6479c6e472bf30daae451dae44039cc3))
@@ -1277,7 +1207,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 * **web3:** implement Blockchain/Web3 section (items 236-240) ([773e4d9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/773e4d9bfb279531fbee5cba5096db68da2c780d))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -1401,7 +1330,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** Resolve all failing video generation tests and parsing errors ([085b2b3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/085b2b30cac987dea6ed570a884d499ba990594c))
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
-
 
 ### Performance Improvements
 
@@ -1411,7 +1339,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.7.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.6.0...v1.7.0) (2026-03-09)
 
-
 ### Features
 
 * add AI-powered tools for audio fidelity auditing, copyright preparation, sample clearance, and storyboard generation. ([a201781](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a201781a6479c6e472bf30daae451dae44039cc3))
@@ -1551,7 +1478,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 * **web3:** implement Blockchain/Web3 section (items 236-240) ([773e4d9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/773e4d9bfb279531fbee5cba5096db68da2c780d))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -1675,7 +1601,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** Resolve all failing video generation tests and parsing errors ([085b2b3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/085b2b30cac987dea6ed570a884d499ba990594c))
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
-
 
 ### Performance Improvements
 
@@ -1685,7 +1610,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.7.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.6.0...v1.7.0) (2026-03-09)
 
-
 ### Features
 
 * add AI-powered tools for audio fidelity auditing, copyright preparation, sample clearance, and storyboard generation. ([a201781](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a201781a6479c6e472bf30daae451dae44039cc3))
@@ -1825,7 +1749,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 * **web3:** implement Blockchain/Web3 section (items 236-240) ([773e4d9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/773e4d9bfb279531fbee5cba5096db68da2c780d))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -1949,7 +1872,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** Resolve all failing video generation tests and parsing errors ([085b2b3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/085b2b30cac987dea6ed570a884d499ba990594c))
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
-
 
 ### Performance Improvements
 
@@ -1959,7 +1881,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.6.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.5.0...v1.6.0) (2026-03-09)
 
-
 ### Features
 
 * add AI-powered tools for audio fidelity auditing, copyright preparation, sample clearance, and storyboard generation. ([a201781](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a201781a6479c6e472bf30daae451dae44039cc3))
@@ -2099,7 +2020,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 * **web3:** implement Blockchain/Web3 section (items 236-240) ([773e4d9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/773e4d9bfb279531fbee5cba5096db68da2c780d))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -2224,7 +2144,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** Resolve all failing video generation tests and parsing errors ([085b2b3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/085b2b30cac987dea6ed570a884d499ba990594c))
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
-
 
 ### Performance Improvements
 
@@ -2234,7 +2153,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.5.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.4.0...v1.5.0) (2026-03-09)
 
-
 ### Features
 
 * add AI-powered tools for audio fidelity auditing, copyright preparation, sample clearance, and storyboard generation. ([a201781](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a201781a6479c6e472bf30daae451dae44039cc3))
@@ -2373,7 +2291,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 * **web3:** implement Blockchain/Web3 section (items 236-240) ([773e4d9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/773e4d9bfb279531fbee5cba5096db68da2c780d))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -2500,7 +2417,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** Resolve all failing video generation tests and parsing errors ([085b2b3](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/085b2b30cac987dea6ed570a884d499ba990594c))
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
-
 
 ### Performance Improvements
 
@@ -2510,7 +2426,6 @@ All notable changes to indiiOS are documented in this file.
 
 ## [1.4.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.3.0...v1.4.0) (2026-03-09)
 
-
 ### Features
 
 * add AI-powered tools for audio fidelity auditing, copyright preparation, sample clearance, and storyboard generation. ([a201781](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a201781a6479c6e472bf30daae451dae44039cc3))
@@ -2649,7 +2564,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 * **web3:** implement Blockchain/Web3 section (items 236-240) ([773e4d9](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/773e4d9bfb279531fbee5cba5096db68da2c780d))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -2777,7 +2691,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
 
-
 ### Performance Improvements
 
 * **audio:** bump thinking level to HIGH for deep semantic extraction ([1ee9aa8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1ee9aa8335cf9fef23be654db4e5b4622f4a8a52))
@@ -2785,7 +2698,6 @@ All notable changes to indiiOS are documented in this file.
 * complete item 14 of PRODUCTION_100.md (Video Editor timeline scrubbing optimizations) ([6f14b16](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6f14b168310f24c32d570d8acfbe828373ade234))
 
 ## [1.3.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.2.0...v1.3.0) (2026-03-08)
-
 
 ### Features
 
@@ -2919,7 +2831,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** final bug fixes and Veo python tool bypass support ([de2d55c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/de2d55c730bcd9421d73777cccdb3db54802ad94))
 * **video:** impl secure render handler; chore: update Sentry config ([02b7627](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/02b7627f0e80124bca857fdf67392e4266972be8))
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
-
 
 ### Bug Fixes
 
@@ -3049,7 +2960,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
 
-
 ### Performance Improvements
 
 * **audio:** bump thinking level to HIGH for deep semantic extraction ([1ee9aa8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1ee9aa8335cf9fef23be654db4e5b4622f4a8a52))
@@ -3057,7 +2967,6 @@ All notable changes to indiiOS are documented in this file.
 * complete item 14 of PRODUCTION_100.md (Video Editor timeline scrubbing optimizations) ([6f14b16](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6f14b168310f24c32d570d8acfbe828373ade234))
 
 ## [1.2.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.1.0...v1.2.0) (2026-03-08)
-
 
 ### Features
 
@@ -3186,7 +3095,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** final bug fixes and Veo python tool bypass support ([de2d55c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/de2d55c730bcd9421d73777cccdb3db54802ad94))
 * **video:** impl secure render handler; chore: update Sentry config ([02b7627](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/02b7627f0e80124bca857fdf67392e4266972be8))
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
-
 
 ### Bug Fixes
 
@@ -3315,7 +3223,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
 
-
 ### Performance Improvements
 
 * **audio:** bump thinking level to HIGH for deep semantic extraction ([1ee9aa8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1ee9aa8335cf9fef23be654db4e5b4622f4a8a52))
@@ -3323,7 +3230,6 @@ All notable changes to indiiOS are documented in this file.
 * complete item 14 of PRODUCTION_100.md (Video Editor timeline scrubbing optimizations) ([6f14b16](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6f14b168310f24c32d570d8acfbe828373ade234))
 
 ## [1.1.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.0.0...v1.1.0) (2026-03-08)
-
 
 ### Features
 
@@ -3452,7 +3358,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** final bug fixes and Veo python tool bypass support ([de2d55c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/de2d55c730bcd9421d73777cccdb3db54802ad94))
 * **video:** impl secure render handler; chore: update Sentry config ([02b7627](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/02b7627f0e80124bca857fdf67392e4266972be8))
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
-
 
 ### Bug Fixes
 
@@ -3582,7 +3487,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
 
-
 ### Performance Improvements
 
 * **audio:** bump thinking level to HIGH for deep semantic extraction ([1ee9aa8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1ee9aa8335cf9fef23be654db4e5b4622f4a8a52))
@@ -3590,7 +3494,6 @@ All notable changes to indiiOS are documented in this file.
 * complete item 14 of PRODUCTION_100.md (Video Editor timeline scrubbing optimizations) ([6f14b16](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6f14b168310f24c32d570d8acfbe828373ade234))
 
 ## 1.0.0 (2026-03-08)
-
 
 ### Features
 
@@ -3720,7 +3623,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** impl secure render handler; chore: update Sentry config ([02b7627](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/02b7627f0e80124bca857fdf67392e4266972be8))
 * **video:** implement tiered Veo 3.1 generation, cost transparency and 4K support ([ff9a99e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff9a99eba6d04d1feaaba93c8aa0d31197917a46))
 
-
 ### Bug Fixes
 
 * **a11y:** remove duplicate mic button and add focus styles in PromptArea ([ad0759b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ad0759b148e7faf850b1e6fcdd07ab351a12c10a))
@@ -3849,7 +3751,6 @@ All notable changes to indiiOS are documented in this file.
 * **video:** resolve TypeScript type errors in video generation tests ([ff05ba2](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/ff05ba2258de259199d4d4e86aecb91138d9d699))
 * **workflow:** fix typescript errors in VideoWorkflow and stabilize core component tests ([46273bf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/46273bf1b85e0c47c5a8c36f8195ccb0b0a8f704))
 
-
 ### Performance Improvements
 
 * **audio:** bump thinking level to HIGH for deep semantic extraction ([1ee9aa8](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/1ee9aa8335cf9fef23be654db4e5b4622f4a8a52))
@@ -3862,94 +3763,94 @@ All notable changes to indiiOS are documented in this file.
 
 #### Production Readiness & Security Audit
 
-- **Critical Lint Remediation**: Resolved all blocking ESLint errors including `setState` in `useEffect` loops and render-cycle component creation bugs.
-- **Security Hardening**:
-  - Scrubbed hardcoded Firebase API keys and test credentials from scripts and application code.
-  - Enforced strict environment variable usage in `src/config/env.ts` with runtime validation.
-  - Verified Firebase Storage security rules via `the-auditor.ts` (confirmed referrer restrictions are active).
-  - Manual audit of Electron security primitives (Node integration, Context isolation, Sandbox, CSP) confirmed compliance.
-- **Stability Improvements**:
-  - Refactored `MerchTable` to use `useCallback` for stable function references.
-  - Implemented component caching in `AnimatedNumber` to prevent re-creation during render.
-  - Fixed `@ts-expect-error` compliance in test scripts.
+* **Critical Lint Remediation**: Resolved all blocking ESLint errors including `setState` in `useEffect` loops and render-cycle component creation bugs.
+* **Security Hardening**:
+  * Scrubbed hardcoded Firebase API keys and test credentials from scripts and application code.
+  * Enforced strict environment variable usage in `src/config/env.ts` with runtime validation.
+  * Verified Firebase Storage security rules via `the-auditor.ts` (confirmed referrer restrictions are active).
+  * Manual audit of Electron security primitives (Node integration, Context isolation, Sandbox, CSP) confirmed compliance.
+* **Stability Improvements**:
+  * Refactored `MerchTable` to use `useCallback` for stable function references.
+  * Implemented component caching in `AnimatedNumber` to prevent re-creation during render.
+  * Fixed `@ts-expect-error` compliance in test scripts.
 
 ### Added (Previous)
 
 #### Membership Tier System
 
-- **MembershipService** (`src/services/MembershipService.ts`): Centralized tier management with limits for free, pro, and enterprise users
-  - Video duration limits: 8 min (free), 60 min (pro), 4 hours (enterprise)
-  - Daily image generation limits: 10/50/unlimited
-  - Storage quotas: 100MB/5GB/100GB
-  - Project limits: 3/25/unlimited
-- **Video Editor Integration**: `videoEditorStore.ts` now enforces duration limits based on membership tier
+* **MembershipService** (`src/services/MembershipService.ts`): Centralized tier management with limits for free, pro, and enterprise users
+  * Video duration limits: 8 min (free), 60 min (pro), 4 hours (enterprise)
+  * Daily image generation limits: 10/50/unlimited
+  * Storage quotas: 100MB/5GB/100GB
+  * Project limits: 3/25/unlimited
+* **Video Editor Integration**: `videoEditorStore.ts` now enforces duration limits based on membership tier
 
 #### Database Vacuum / Garbage Collection
 
-- **CleanupService** (`src/services/CleanupService.ts`): Identifies and removes orphaned Firestore records
-  - Dry-run scan mode to preview deletions before executing
-  - Detects orphaned history items (referencing deleted projects)
-  - Detects orphaned projects (referencing deleted organizations)
-  - Optional Firebase Storage cleanup for orphaned files
-  - Progress callbacks for UI integration
-- **Dashboard Integration**: "Cleanup" button with confirmation modal showing scan results before deletion
+* **CleanupService** (`src/services/CleanupService.ts`): Identifies and removes orphaned Firestore records
+  * Dry-run scan mode to preview deletions before executing
+  * Detects orphaned history items (referencing deleted projects)
+  * Detects orphaned projects (referencing deleted organizations)
+  * Optional Firebase Storage cleanup for orphaned files
+  * Progress callbacks for UI integration
+* **Dashboard Integration**: "Cleanup" button with confirmation modal showing scan results before deletion
 
 #### Semantic Memory for Agents
 
-- **ContextPipeline Enhancement** (`src/services/agent/components/ContextPipeline.ts`):
-  - Auto-retrieves relevant memories from `MemoryService` based on conversation context
-  - Extracts recent context (last 5 exchanges) for semantic similarity search
-  - Formats memories into structured prompt section
-- **AgentExecutor Update** (`src/services/agent/components/AgentExecutor.ts`):
-  - Passes `memoryContext` and `relevantMemories` to agent execution
-  - Logs when semantic memories are injected
-- **BaseAgent Memory Injection** (`src/services/agent/BaseAgent.ts`):
-  - Adds "RELEVANT MEMORIES" section to agent prompts when memories are available
-  - Enables agents to maintain continuity across sessions
+* **ContextPipeline Enhancement** (`src/services/agent/components/ContextPipeline.ts`):
+  * Auto-retrieves relevant memories from `MemoryService` based on conversation context
+  * Extracts recent context (last 5 exchanges) for semantic similarity search
+  * Formats memories into structured prompt section
+* **AgentExecutor Update** (`src/services/agent/components/AgentExecutor.ts`):
+  * Passes `memoryContext` and `relevantMemories` to agent execution
+  * Logs when semantic memories are injected
+* **BaseAgent Memory Injection** (`src/services/agent/BaseAgent.ts`):
+  * Adds "RELEVANT MEMORIES" section to agent prompts when memories are available
+  * Enables agents to maintain continuity across sessions
 
 #### Project Export
 
-- **ExportService** (`src/services/ExportService.ts`): Full project backup to ZIP format
-  - Exports project metadata, history, and assets
-  - Progress tracking integrated with Toast system
-  - Automatic download trigger
+* **ExportService** (`src/services/ExportService.ts`): Full project backup to ZIP format
+  * Exports project metadata, history, and assets
+  * Progress tracking integrated with Toast system
+  * Automatic download trigger
 
 #### Voice Control
 
-- **VoiceService** (`src/services/ai/VoiceService.ts`): Web Speech API integration
-  - Speech-to-text via `startListening(onResult, onError)`
-  - Text-to-speech via `speak(text)`
-  - Browser compatibility detection via `isSupported()`
-- **CommandBar Integration**: Mic button for voice input
-  - Visual feedback when listening (red pulse animation)
-  - Transcribed text appends to input field
-- **ChatOverlay Integration**: Auto-speak agent responses (when unmuted)
-  - Mute/unmute toggle in chat overlay
+* **VoiceService** (`src/services/ai/VoiceService.ts`): Web Speech API integration
+  * Speech-to-text via `startListening(onResult, onError)`
+  * Text-to-speech via `speak(text)`
+  * Browser compatibility detection via `isSupported()`
+* **CommandBar Integration**: Mic button for voice input
+  * Visual feedback when listening (red pulse animation)
+  * Transcribed text appends to input field
+* **ChatOverlay Integration**: Auto-speak agent responses (when unmuted)
+  * Mute/unmute toggle in chat overlay
 
 #### Stress Testing
 
-- **E2E Tests** (`e2e/stress-test.spec.ts`): Performance validation suite
-  - Rendering performance test: Validates 30+ fps during rapid scroll
-  - Asset loading performance test: Measures time-to-interactive
-  - FPS metrics tracking with frame drop detection
+* **E2E Tests** (`e2e/stress-test.spec.ts`): Performance validation suite
+  * Rendering performance test: Validates 30+ fps during rapid scroll
+  * Asset loading performance test: Measures time-to-interactive
+  * FPS metrics tracking with frame drop detection
 
 ### Changed
 
 #### Cloud Architecture
 
-- **Firebase Persistence** (`src/services/firebase.ts`): Updated to modern persistence API
-  - Uses `persistentLocalCache` with `persistentMultipleTabManager`
-  - Enables automatic offline support and multi-tab synchronization
-  - Removed need for custom IndexedDB schema
+* **Firebase Persistence** (`src/services/firebase.ts`): Updated to modern persistence API
+  * Uses `persistentLocalCache` with `persistentMultipleTabManager`
+  * Enables automatic offline support and multi-tab synchronization
+  * Removed need for custom IndexedDB schema
 
 #### Dashboard
 
-- Added Export button on project cards for ZIP backup
-- Added Cleanup button in header for database maintenance
+* Added Export button on project cards for ZIP backup
+* Added Cleanup button in header for database maintenance
 
 ### Removed
 
-- **SCHEMA_UPGRADE_NOTES.md**: Obsolete IndexedDB migration planning document (cloud-first architecture)
+* **SCHEMA_UPGRADE_NOTES.md**: Obsolete IndexedDB migration planning document (cloud-first architecture)
 
 ---
 
@@ -3957,33 +3858,33 @@ All notable changes to indiiOS are documented in this file.
 
 ### Toast Notification System
 
-- Implemented success, error, info, warning, and loading toast types
-- Added progress bar support for loading toasts
-- Promise-based API for async operation feedback
-- Integrated across Creative Studio, Showroom, and other modules
+* Implemented success, error, info, warning, and loading toast types
+* Added progress bar support for loading toasts
+* Promise-based API for async operation feedback
+* Integrated across Creative Studio, Showroom, and other modules
 
 ### Multi-Agent Architecture
 
-- Hub-and-Spoke model with AgentZero as orchestrator
-- Specialist agents: Road Manager, Brand Manager, Legal Advisor
-- Tool validation with strict JSON schema
-- Agent delegation and handover protocols
+* Hub-and-Spoke model with AgentZero as orchestrator
+* Specialist agents: Road Manager, Brand Manager, Legal Advisor
+* Tool validation with strict JSON schema
+* Agent delegation and handover protocols
 
 ### Creative Studio
 
-- Infinite canvas with pan/zoom
-- Image generation with Gemini 3 Pro
-- Product Showroom with placement and scene presets
-- Brand assets drawer
+* Infinite canvas with pan/zoom
+* Image generation with Gemini 3 Pro
+* Product Showroom with placement and scene presets
+* Brand assets drawer
 
 ### Video Studio
 
-- AI-powered video production workflow
-- Director's Cut QA system
-- Remotion integration for timeline editing
+* AI-powered video production workflow
+* Director's Cut QA system
+* Remotion integration for timeline editing
 
 ### Multi-Tenancy
 
-- Organization/Project hierarchy
-- Firestore security rules for data isolation
-- Context switching between workspaces
+* Organization/Project hierarchy
+* Firestore security rules for data isolation
+* Context switching between workspaces
