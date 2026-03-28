@@ -78,18 +78,18 @@ def get_job(token, job_id):
 
 
 def extract_endpoint_id(job_data):
-    """Extract endpoint ID from tunedModel.endpoints[0] or tunedModel.name."""
+    """Extract endpoint ID from tunedModel.endpoint (the final deployed endpoint)."""
     tuned = job_data.get("tunedModel", {})
-    endpoints = tuned.get("endpoints", [])
-    if endpoints:
-        # endpoints[0] is typically "projects/.../endpoints/{id}"
-        ep = endpoints[0].get("endpoint", "")
+    # Primary: tunedModel.endpoint is the final deployed endpoint string
+    ep = tuned.get("endpoint", "")
+    if ep:
+        return ep.split("/")[-1]
+    # Fallback: last checkpoint endpoint
+    checkpoints = tuned.get("checkpoints", [])
+    if checkpoints:
+        ep = checkpoints[-1].get("endpoint", "")
         if ep:
             return ep.split("/")[-1]
-    # Fallback: sometimes it's under tunedModel.model
-    model = tuned.get("model", "")
-    if "/endpoints/" in model:
-        return model.split("/endpoints/")[-1].split("/")[0]
     return None
 
 
