@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 /**
  * DDEXParser
  * XML↔JSON conversion for DDEX messages
@@ -210,49 +209,49 @@ class DDEXParserImpl {
     };
   }
 
-  private parseReleaseList(releaseList: Record<string, unknown>) {
+  private parseReleaseList(releaseList: Record<string, unknown>): ERNMessage['releaseList'] {
     const releases = releaseList?.Release;
     if (!releases) return [];
 
     const releaseArray = Array.isArray(releases) ? releases : [releases];
-    return releaseArray.map((r: Record<string, unknown>) => ({
-      releaseId: {
-        icpn: String((r?.ReleaseId as Record<string, unknown>)?.ICPN || ''),
-        isrc: String((r?.ReleaseId as Record<string, unknown>)?.ISRC || ''),
-        catalogNumber: String((r?.ReleaseId as Record<string, unknown>)?.CatalogNumber || ''),
-      },
-      releaseReference: String(r?.ReleaseReference || ''),
-      releaseType: String(r?.ReleaseType || 'Single') as ERNMessage['releaseList'][0]['releaseType'],
-      releaseTitle: {
-        titleText: String(
-          // Try Title object
-          ((r?.ReleaseDetailsByTerritory as Record<string, any>)?.Title?.TitleText) ||
-          // Try Title array (sometimes XML parser makes it an array if multiple titles exist)
-          ((r?.ReleaseDetailsByTerritory as Record<string, any>)?.Title?.[0]?.TitleText) ||
-          // Try direct Text (if textNodeName is #text and parser options allow)
-          ((r?.ReleaseDetailsByTerritory as Record<string, any>)?.Title?.['#text']) ||
-          // Finally, simple direct access if parser flattened it
-          ((r?.ReleaseDetailsByTerritory as Record<string, any>)?.Title) ||
-          ''
-        ),
-      },
-      displayArtistName: String((r?.ReleaseDetailsByTerritory as Record<string, unknown>)?.DisplayArtistName || ''),
-      contributors: [],
-      labelName: String((r?.ReleaseDetailsByTerritory as Record<string, unknown>)?.LabelName || ''),
-      genre: { genre: String(((r?.ReleaseDetailsByTerritory as Record<string, unknown>)?.Genre as Record<string, unknown>)?.GenreText || '') },
-      parentalWarningType: 'NoAdviceAvailable' as const,
-      releaseResourceReferenceList: [],
-      aiGenerationInfo: r?.AIGenerationInfo ? {
-        isFullyAIGenerated: (r.AIGenerationInfo as Record<string, any>).IsFullyAIGenerated === true || (r.AIGenerationInfo as Record<string, any>).IsFullyAIGenerated === 'true',
-        isPartiallyAIGenerated: (r.AIGenerationInfo as Record<string, any>).IsPartiallyAIGenerated === true || (r.AIGenerationInfo as Record<string, any>).IsPartiallyAIGenerated === 'true',
-        aiToolsUsed: (r.AIGenerationInfo as Record<string, any>).AIToolsUsed?.AIToolUsed
-          ? Array.isArray((r.AIGenerationInfo as Record<string, any>).AIToolsUsed.AIToolUsed)
-            ? (r.AIGenerationInfo as Record<string, any>).AIToolsUsed.AIToolUsed
-            : [(r.AIGenerationInfo as Record<string, any>).AIToolsUsed.AIToolUsed]
-          : [],
-        humanContributionDescription: (r.AIGenerationInfo as Record<string, any>).HumanContributionDescription
-      } : undefined
-    }));
+    return releaseArray.map((r: Record<string, unknown>) => {
+      const detailsByTerritory = (r?.ReleaseDetailsByTerritory as Record<string, unknown>[] | Record<string, unknown> | undefined);
+      const firstTerritory = Array.isArray(detailsByTerritory) ? detailsByTerritory[0] : detailsByTerritory;
+
+      const titleObj = (firstTerritory?.Title as Record<string, unknown>);
+
+      const aiInfo = (r?.AIGenerationInfo as Record<string, unknown> | undefined);
+      const aiTools = (aiInfo?.AIToolsUsed as Record<string, unknown> | undefined);
+
+      return {
+        releaseId: {
+          icpn: String((r?.ReleaseId as Record<string, unknown>)?.ICPN || ''),
+          isrc: String((r?.ReleaseId as Record<string, unknown>)?.ISRC || ''),
+          catalogNumber: String((r?.ReleaseId as Record<string, unknown>)?.CatalogNumber || ''),
+        },
+        releaseReference: String(r?.ReleaseReference || ''),
+        releaseType: String(r?.ReleaseType || 'Single') as ERNMessage['releaseList'][0]['releaseType'],
+        releaseTitle: {
+          titleText: String(titleObj?.TitleText || ''),
+        },
+        displayArtistName: String(firstTerritory?.DisplayArtistName || ''),
+        contributors: [],
+        labelName: String(firstTerritory?.LabelName || ''),
+        genre: { genre: String((firstTerritory?.Genre as Record<string, unknown>)?.GenreText || '') },
+        parentalWarningType: 'NoAdviceAvailable' as const,
+        releaseResourceReferenceList: [],
+        aiGenerationInfo: aiInfo ? {
+          isFullyAIGenerated: aiInfo.IsFullyAIGenerated === true || aiInfo.IsFullyAIGenerated === 'true',
+          isPartiallyAIGenerated: aiInfo.IsPartiallyAIGenerated === true || aiInfo.IsPartiallyAIGenerated === 'true',
+          aiToolsUsed: aiTools?.AIToolUsed
+            ? Array.isArray(aiTools.AIToolUsed)
+              ? aiTools.AIToolUsed.map(String)
+              : [String(aiTools.AIToolUsed)]
+            : [],
+          humanContributionDescription: String(aiInfo.HumanContributionDescription || '')
+        } : undefined
+      };
+    });
   }
 
   private buildReleaseList(releases: ERNMessage['releaseList']) {
@@ -295,10 +294,10 @@ class DDEXParserImpl {
     };
   }
 
-  private parseResourceList(resourceList: Record<string, unknown>) {
+  private parseResourceList(resourceList: Record<string, unknown>): ERNMessage['resourceList'] {
     if (!resourceList) return [];
 
-    const resources: Record<string, any>[] = [];
+    const resources: ERNMessage['resourceList'] = [];
 
     // Parse SoundRecordings
     if (resourceList.SoundRecording) {
@@ -306,26 +305,33 @@ class DDEXParserImpl {
         ? resourceList.SoundRecording
         : [resourceList.SoundRecording];
 
-      recordings.forEach((r: Record<string, any>) => {
-        const details = r.SoundRecordingDetailsByTerritory as Record<string, any>;
+      recordings.forEach((r: unknown) => {
+        const rec = r as Record<string, unknown>;
+        const detailsByTerritory = (rec.SoundRecordingDetailsByTerritory as Record<string, unknown>[] | Record<string, unknown> | undefined);
+        const details = Array.isArray(detailsByTerritory) ? detailsByTerritory[0] : detailsByTerritory;
+
+        const lyrics = (details?.Lyrics as Record<string, unknown> | undefined);
+        const lyricsText = lyrics?.LyricsText;
+
         resources.push({
-          resourceReference: r['@_ResourceReference'],
+          resourceReference: String(rec['@_ResourceReference'] || ''),
           resourceType: 'SoundRecording',
           resourceId: {
-            isrc: r.ResourceId?.ISRC
+            isrc: String((rec.ResourceId as Record<string, unknown>)?.ISRC || '')
           },
           resourceTitle: {
-            titleText: r.ReferenceTitle?.TitleText
+            titleText: String((rec.ReferenceTitle as Record<string, unknown>)?.TitleText || '')
           },
-          duration: r.Duration,
-          displayArtistName: details?.DisplayArtistName,
+          duration: String(rec.Duration || ''),
+          displayArtistName: String(details?.DisplayArtistName || ''),
+          contributors: [],
           soundRecordingDetails: {
             soundRecordingType: 'MusicalWorkSoundRecording',
-            isInstrumental: false, // Default
-            languageOfPerformance: details?.LanguageOfPerformance,
-            lyrics: details?.Lyrics ? {
-              lyricsText: typeof details.Lyrics.LyricsText === 'object' ? details.Lyrics.LyricsText['#text'] : details.Lyrics.LyricsText,
-              isExplicit: details.Lyrics.IsExplicit === true
+            isInstrumental: false,
+            languageOfPerformance: details?.LanguageOfPerformance ? String(details.LanguageOfPerformance) : undefined,
+            lyrics: lyrics ? {
+              lyricsText: typeof lyricsText === 'object' && lyricsText !== null ? String((lyricsText as Record<string, unknown>)['#text'] || '') : String(lyricsText || ''),
+              isExplicit: lyrics.IsExplicit === true
             } : undefined
           }
         });
@@ -338,21 +344,30 @@ class DDEXParserImpl {
         ? resourceList.Image
         : [resourceList.Image];
 
-      images.forEach((r: Record<string, any>) => {
+      images.forEach((r: unknown) => {
+        const img = r as Record<string, unknown>;
+        const resId = (img.ResourceId as Record<string, unknown> | undefined);
+        const propId = (resId?.ProprietaryId as Record<string, unknown> | undefined);
+
         resources.push({
-          resourceReference: r['@_ResourceReference'],
+          resourceReference: String(img['@_ResourceReference'] || ''),
           resourceType: 'Image',
           resourceId: {
-            proprietaryId: { id: r.ResourceId?.ProprietaryId?.Id }
+            proprietaryId: {
+              proprietaryIdType: 'LabelInternal',
+              id: String(propId?.Id || '')
+            }
           },
           resourceTitle: {
             titleText: 'Front Cover Image'
-          }
+          },
+          displayArtistName: '',
+          contributors: []
         });
       });
     }
 
-    return resources as ERNMessage['resourceList'];
+    return resources;
   }
 
   private buildResourceList(resources: ERNMessage['resourceList']) {

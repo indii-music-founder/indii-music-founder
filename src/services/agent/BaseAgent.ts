@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { logger } from '@/utils/logger';
 import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -53,7 +52,7 @@ export class BaseAgent implements SpecializedAgent {
 
     // CRITICAL: Execution lock to prevent concurrent agent execution for same user/project
     // Prevents race conditions that cause agents to "dismantle" each other
-    private static executionLocks: Map<string, Promise<any>> = new Map();
+    private static executionLocks: Map<string, Promise<AgentResponse>> = new Map();
 
     // Phase 2: Advanced loop detection to prevent stuck agents
     private loopDetector: LoopDetector = new LoopDetector();

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { logger } from '@/utils/logger';
 import { db, auth } from '@/services/firebase';
 import {
@@ -46,7 +45,7 @@ export class ProactiveService {
         ];
 
         allEvents.forEach(eventType => {
-            const handler = async (data: any) => {
+            const handler = async (data: Record<string, unknown>) => {
                 await this.handleSystemEvent(eventType, data);
             };
             events.on(eventType, handler);
@@ -67,7 +66,7 @@ export class ProactiveService {
         }, 30000); // Check every 30 seconds
     }
 
-    private async handleSystemEvent(eventType: string, data: any) {
+    private async handleSystemEvent(eventType: string, data: Record<string, unknown>) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
 
@@ -107,7 +106,7 @@ export class ProactiveService {
         }
     }
 
-    private async executeProactiveTask(task: ProactiveTask, eventData?: any) {
+    private async executeProactiveTask(task: ProactiveTask, eventData?: Record<string, unknown>) {
         try {
             // Update status to executing to prevent double-triggering
             await updateDoc(doc(db, 'proactive_tasks', task.id), {

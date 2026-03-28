@@ -11,19 +11,22 @@ import { test, expect } from './fixtures/auth';
 
 test.describe('Sidebar Navigation', () => {
     test.beforeEach(async ({ authedPage: page }) => {
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        // authedPage already handles navigation and guest login
+        await page.waitForLoadState('domcontentloaded');
     });
 
     test('app shell renders with sidebar and main content area', async ({ authedPage: page }) => {
-        // App container is present
-        const appContainer = page.locator('[data-testid="app-container"], #root');
-        await expect(appContainer).toBeVisible();
+        // App container is present (wait for it to handle loading state)
+        const appContainer = page.locator('[data-testid="app-container"], #root').first();
+        await expect(appContainer).toBeVisible({ timeout: 15_000 });
 
-        // Either a sidebar nav or mobile nav is present
-        const nav = page.locator('nav, [role="navigation"]');
-        await expect(nav.first()).toBeVisible();
+        // Either a sidebar nav or the mobile nav toggle is present
+        const nav = page.getByRole('navigation', { name: /navigation/i }).or(page.locator('nav')).first();
+        await expect(nav).toBeVisible();
+
+        // Check for core "Detroit" branding or HQ title to confirm full load
+        const detroit = page.getByText(/Detroit/i).first();
+        await expect(detroit).toBeVisible();
     });
 
     test('sidebar toggle collapses and expands the sidebar', async ({ authedPage: page }) => {
@@ -109,9 +112,8 @@ test.describe('Sidebar Navigation', () => {
 
 test.describe('CommandBar', () => {
     test.beforeEach(async ({ authedPage: page }) => {
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        // authedPage fixture handles Guest Login and navigation to '/'
+        await page.waitForLoadState('domcontentloaded');
     });
 
     test('prompt input is visible and accepts text', async ({ authedPage: page }) => {

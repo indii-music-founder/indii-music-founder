@@ -43,9 +43,9 @@ describe('FeatureFlagService', () => {
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.ADVANCED_AUDIO_ANALYSIS)).toBe(true);
         });
 
-        it('loads pre-launch gates as disabled by default', () => {
+        it('loads pre-launch gates with correct defaults', () => {
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.WEB3)).toBe(false);
-            expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.MERCH_STORE)).toBe(false);
+            expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.MERCH_STORE)).toBe(true); // enabled by default
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.MARKETPLACE)).toBe(false);
         });
 
@@ -105,7 +105,7 @@ describe('FeatureFlagService', () => {
     describe('getGatedModuleIds', () => {
         it('returns gated modules when flags are disabled (default state)', () => {
             const gated = getGatedModuleIds();
-            expect(gated.has('merch')).toBe(true);
+            expect(gated.has('merch')).toBe(false); // MERCH_STORE is enabled by default, so merch is not gated
             expect(gated.has('marketplace')).toBe(true);
         });
 
@@ -162,18 +162,18 @@ describe('FeatureFlagService', () => {
     describe('useFeatureFlag hook', () => {
         it('returns the current flag value', () => {
             const { result } = renderHook(() => useFeatureFlag(FEATURE_FLAG_NAMES.MERCH_STORE));
-            expect(result.current).toBe(false);
+            expect(result.current).toBe(true); // MERCH_STORE enabled by default
         });
 
         it('re-renders when the flag value changes via override', () => {
             const { result } = renderHook(() => useFeatureFlag(FEATURE_FLAG_NAMES.MERCH_STORE));
-            expect(result.current).toBe(false);
+            expect(result.current).toBe(true); // MERCH_STORE enabled by default
 
             act(() => {
-                featureFlags.override(FEATURE_FLAG_NAMES.MERCH_STORE, true);
+                featureFlags.override(FEATURE_FLAG_NAMES.MERCH_STORE, false);
             });
 
-            expect(result.current).toBe(true);
+            expect(result.current).toBe(false);
         });
 
         it('returns true for enabled platform flags', () => {
@@ -185,19 +185,19 @@ describe('FeatureFlagService', () => {
     describe('useGatedModules hook', () => {
         it('returns the set of gated module IDs', () => {
             const { result } = renderHook(() => useGatedModules());
-            expect(result.current.has('merch')).toBe(true);
+            expect(result.current.has('merch')).toBe(false); // MERCH_STORE enabled by default, not gated
             expect(result.current.has('marketplace')).toBe(true);
         });
 
         it('updates when a gate flag is toggled', () => {
             const { result } = renderHook(() => useGatedModules());
-            expect(result.current.has('merch')).toBe(true);
+            expect(result.current.has('merch')).toBe(false); // MERCH_STORE enabled by default
 
             act(() => {
-                featureFlags.override(FEATURE_FLAG_NAMES.MERCH_STORE, true);
+                featureFlags.override(FEATURE_FLAG_NAMES.MERCH_STORE, false);
             });
 
-            expect(result.current.has('merch')).toBe(false);
+            expect(result.current.has('merch')).toBe(true); // now gated
             expect(result.current.has('marketplace')).toBe(true);
         });
 

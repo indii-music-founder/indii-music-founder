@@ -1,4 +1,4 @@
- 
+
 import { ModuleId } from '@/core/constants';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { Project } from '@/core/store/slices/appSlice';
@@ -83,6 +83,19 @@ export class DashboardService {
     private static CACHE_TTL = 5 * 60 * 1000; // 5 minutes
     private static analyticsCache: CachedAnalytics | null = null;
     private static storageCache: CachedStorageStats | null = null;
+
+    static getCurrentUserId(): string | null {
+        try {
+            // Use the global store's state if possible
+            const store = (globalThis as any).indiiStore;
+            if (store && typeof store.getState === 'function') {
+                return store.getState().userProfile?.id || null;
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    }
 
     static async getProjects(): Promise<ProjectMetadata[]> {
         try {
@@ -433,8 +446,7 @@ export class DashboardService {
 
                 // 2. Weekly Activity
                 // Using (item.timestamp || now) to handle missing timestamp safely
-                // eslint-disable-next-line prefer-const
-                let daysAgo = Math.floor((now - (item.timestamp || now)) / dayMs);
+                const daysAgo = Math.floor((now - (item.timestamp || now)) / dayMs);
                 if (daysAgo >= 0 && daysAgo < 7) {
                     weeklyActivity[6 - daysAgo]++;
                 }

@@ -82,6 +82,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
                     memory: 'memory_',
                     publicist: 'publicist_',
                     distribution: 'distribution_',
+                    merch: 'merch_',
                 };
                 const prefix = prefixes[currentModule];
                 if (prefix) {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Activity, TrendingUp, Users, MousePointerClick, AlertCircle, Loader2 } from 'lucide-react';
 import { SkeletonStat, SkeletonTable } from '@/components/ui/Skeleton';
 import { DashboardService } from '@/services/dashboard/DashboardService';
+import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 import { SalesAnalyticsData } from '@/services/dashboard/schema';
 import { logger } from '@/utils/logger';
 
@@ -59,9 +60,9 @@ const MetricCard = ({
                 {change > 0 ? '+' : ''}{change}%
             </span>
         )}
-         {change === undefined && (
-             <span className="text-xs text-gray-500 ml-2">--</span>
-         )}
+        {change === undefined && (
+            <span className="text-xs text-gray-500 ml-2">--</span>
+        )}
     </div>
 );
 
@@ -74,33 +75,39 @@ export default function SalesAnalytics() {
 
     useEffect(() => {
         let isMounted = true;
+        const userId = DashboardService.getCurrentUserId();
 
-        async function fetchData() {
-            setLoading(true);
-            try {
-                const analytics = await DashboardService.getSalesAnalytics(period);
+        if (!userId) {
+            setLoading(false);
+            setError('Please log in to view analytics.');
+            return;
+        }
+
+        setLoading(true);
+
+        const unsubscribe = AnalyticsService.subscribeToSalesAnalytics(
+            userId,
+            (newData) => {
                 if (isMounted) {
-                    setData(analytics);
+                    setData(newData);
                     setError(null);
+                    setLoading(false);
                 }
-            } catch (err) {
+            },
+            (err) => {
                 if (isMounted) {
-                    setError('Failed to load sales analytics.');
-                    logger.error("Operation failed:", err);
-                }
-            } finally {
-                if (isMounted) {
+                    setError('Failed to sync sales analytics.');
+                    logger.error("Real-time sync failed:", err);
                     setLoading(false);
                 }
             }
-        }
-
-        fetchData();
+        );
 
         return () => {
             isMounted = false;
+            unsubscribe();
         };
-    }, [period, retryCount]);
+    }, [retryCount]);
 
     if (loading) {
         return (

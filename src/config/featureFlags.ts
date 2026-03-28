@@ -68,7 +68,7 @@ const DEFAULTS: Record<string, boolean> = {
 
     // Pre-launch gates (disabled by default — require external API keys)
     [FEATURE_FLAG_NAMES.WEB3]: false,
-    [FEATURE_FLAG_NAMES.MERCH_STORE]: false,
+    [FEATURE_FLAG_NAMES.MERCH_STORE]: true,
     [FEATURE_FLAG_NAMES.MARKETPLACE]: false,
     [FEATURE_FLAG_NAMES.SOCIAL_POSTING]: false,
     [FEATURE_FLAG_NAMES.AVATAR_GENERATION]: false,

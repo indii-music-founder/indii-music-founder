@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Agent Flows E2E Tests
@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Agent Dashboard', () => {
     test.use({ viewport: { width: 1280, height: 800 } }); // Desktop only — mobile shows warning
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Mock Firestore agent_traces collection
         await page.route('**/firestore.googleapis.com/**/agent_traces**', async route => {
             await route.fulfill({
@@ -23,20 +23,28 @@ test.describe('Agent Dashboard', () => {
             });
         });
 
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        // Handle Guest Login for gated module
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible().catch(() => false)) {
+            await guestBtn.click();
+        }
+
+        // Wait for app container
+        await page.waitForSelector('[data-testid="app-container"], #root', { timeout: 15_000 });
 
         // Navigate to agent module
         const agentNav = page.locator('[data-testid="nav-item-agent"]');
         const isVisible = await agentNav.isVisible().catch(() => false);
         if (isVisible) {
             await agentNav.click();
-            await page.waitForTimeout(1_500);
+            await page.waitForTimeout(2_000);
+        } else {
+            await page.goto('/#agent');
+            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
         }
     });
 
-    test('agent module loads without crashing on desktop viewport', async ({ page }) => {
+    test('agent module loads without crashing on desktop viewport', async ({ authedPage: page }) => {
         await expect(page.locator('#root')).toBeVisible();
         // Should NOT show mobile warning on desktop
         const mobileWarning = page.locator('text=mobile only, text=desktop required').first();
@@ -44,7 +52,7 @@ test.describe('Agent Dashboard', () => {
         expect(warningVisible).toBe(false);
     });
 
-    test('agent dashboard tab navigation works', async ({ page }) => {
+    test('agent dashboard tab navigation works', async ({ authedPage: page }) => {
         // Try clicking available tabs
         const tabs = ['scout', 'browser', 'campaigns', 'inbox', 'chat'];
 
@@ -61,7 +69,7 @@ test.describe('Agent Dashboard', () => {
         }
     });
 
-    test('scout tab shows map or venue interface', async ({ page }) => {
+    test('scout tab shows map or venue interface', async ({ authedPage: page }) => {
         const scoutTab = page.locator('[role="tab"]:has-text("Scout"), button:has-text("Scout")').first();
         const scoutVisible = await scoutTab.isVisible().catch(() => false);
 
@@ -78,7 +86,7 @@ test.describe('Agent Dashboard', () => {
         }
     });
 
-    test('campaigns and inbox tabs show stub or content (regression guard)', async ({ page }) => {
+    test('campaigns and inbox tabs show stub or content (regression guard)', async ({ authedPage: page }) => {
         for (const tabName of ['Campaigns', 'Inbox']) {
             const tab = page.locator(`button:has-text("${tabName}"), [role="tab"]:has-text("${tabName}")`).first();
             const tabVisible = await tab.isVisible().catch(() => false);
@@ -96,10 +104,14 @@ test.describe('Agent Dashboard', () => {
 test.describe('Agent Mobile Warning', () => {
     test.use({ viewport: { width: 375, height: 812 } }); // iPhone SE
 
-    test('agent module shows mobile warning on small viewports', async ({ page }) => {
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+    test('agent module shows mobile warning on small viewports', async ({ authedPage: page }) => {
+        // Handle Guest Login
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible().catch(() => false)) {
+            await guestBtn.click();
+        }
+
+        await page.waitForSelector('[data-testid="app-container"], #root', { timeout: 15_000 });
 
         const agentNav = page.locator('[data-testid="nav-item-agent"]');
         const isVisible = await agentNav.isVisible().catch(() => false);

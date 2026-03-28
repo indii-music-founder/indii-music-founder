@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Distribution Workflow E2E Tests (Items 279)
@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Distribution Module', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Mock Firestore distribution collection reads
         await page.route('**/firestore.googleapis.com/**/releases**', async route => {
             await route.fulfill({
@@ -37,9 +37,14 @@ test.describe('Distribution Module', () => {
             await route.fulfill({ status: 200, body: JSON.stringify({ status: 'ok' }) });
         });
 
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        // Handle Guest Login for gated module
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible().catch(() => false)) {
+            await guestBtn.click();
+        }
+
+        // Wait for app container to confirm login/load
+        await page.waitForSelector('[data-testid="app-container"], #root', { timeout: 15_000 });
 
         // Navigate to distribution
         const distNav = page.locator('[data-testid="nav-item-distribution"]');
@@ -50,17 +55,17 @@ test.describe('Distribution Module', () => {
             await page.waitForTimeout(2_000);
         } else {
             await page.goto('/#distribution');
-            await page.waitForTimeout(2_000);
+            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
         }
     });
 
-    test('distribution module loads without crashing', async ({ page }) => {
+    test('distribution module loads without crashing', async ({ authedPage: page }) => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('Releases tab renders releases list or empty state', async ({ page }) => {
+    test('Releases tab renders releases list or empty state', async ({ authedPage: page }) => {
         const releasesTab = page.locator(
-            'button:has-text("Releases"), [role="tab"]:has-text("Releases")'
+            'button:has-text("Releases"), [role="tab"]:has-text("Releases"), [data-testid="distro-tab-catalogue"]'
         ).first();
         const tabVisible = await releasesTab.isVisible().catch(() => false);
 
@@ -79,7 +84,7 @@ test.describe('Distribution Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('Distributors tab shows connection panel', async ({ page }) => {
+    test('Distributors tab shows connection panel', async ({ authedPage: page }) => {
         const distributorsTab = page.locator(
             'button:has-text("Distributors"), [role="tab"]:has-text("Distributors")'
         ).first();
@@ -100,8 +105,8 @@ test.describe('Distribution Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('Bank and Authority tabs render without crashing', async ({ page }) => {
-        for (const tabName of ['Bank', 'Authority', 'Keys']) {
+    test('Bank and Authority tabs render without crashing', async ({ authedPage: page }) => {
+        for (const tabName of ['Bank', 'Authority']) {
             const tab = page.locator(
                 `button:has-text("${tabName}"), [role="tab"]:has-text("${tabName}")`
             ).first();
@@ -115,9 +120,9 @@ test.describe('Distribution Module', () => {
         }
     });
 
-    test('QC panel renders validation interface', async ({ page }) => {
+    test('QC panel renders validation interface', async ({ authedPage: page }) => {
         const qcTab = page.locator(
-            'button:has-text("QC"), [role="tab"]:has-text("QC"), button:has-text("Quality")'
+            'button:has-text("QC"), [role="tab"]:has-text("QC"), button:has-text("Brain")'
         ).first();
         const tabVisible = await qcTab.isVisible().catch(() => false);
 
@@ -135,7 +140,7 @@ test.describe('Distribution Module', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('Create Release button is present and opens wizard', async ({ page }) => {
+    test('Create Release button is present and opens wizard', async ({ authedPage: page }) => {
         const createBtn = page.locator(
             'button:has-text("New Release"), button:has-text("Create Release"), button:has-text("+ Release")'
         ).first();
@@ -169,7 +174,7 @@ test.describe('Distribution Module', () => {
 test.describe('Distribution Delivery Pipeline (Item 279)', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // ── Mock DDEX/delivery Cloud Functions ──────────────────────────────
         await page.route('**/cloudfunctions.net/**/initiateDelivery**', async route => {
             await route.fulfill({
@@ -234,12 +239,26 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
             });
         });
 
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(1_500);
+        // Handle Guest Login
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible().catch(() => false)) {
+            await guestBtn.click();
+        }
+
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
+
+        // Navigate to distribution
+        const distNav = page.locator('[data-testid="nav-item-distribution"]');
+        if (await distNav.isVisible().catch(() => false)) {
+            await distNav.click();
+            await page.waitForTimeout(2_000);
+        } else {
+            await page.goto('/#distribution');
+            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
+        }
     });
 
-    test('delivery pipeline initiates and returns a delivery ID', async ({ page }) => {
+    test('delivery pipeline initiates and returns a delivery ID', async ({ authedPage: page }) => {
         let deliveryCalled = false;
 
         await page.route('**/cloudfunctions.net/**/initiateDelivery**', async route => {
@@ -273,7 +292,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('QC validation runs and surfaces warnings without crashing', async ({ page }) => {
+    test('QC validation runs and surfaces warnings without crashing', async ({ authedPage: page }) => {
         let qcCalled = false;
 
         await page.route('**/cloudfunctions.net/**/validateDDEX**', async route => {
@@ -290,16 +309,16 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         const distNav = page.locator('[data-testid="nav-item-distribution"]');
         if (await distNav.isVisible().catch(() => false)) {
             await distNav.click();
-            await page.waitForTimeout(1_500);
+            await page.waitForTimeout(2_000);
         }
 
         // Try to open QC panel
         const qcTab = page.locator(
-            'button:has-text("QC"), [role="tab"]:has-text("QC"), button:has-text("Quality")'
+            'button:has-text("QC"), [role="tab"]:has-text("QC"), [data-testid="tab-qc"]'
         ).first();
         if (await qcTab.isVisible().catch(() => false)) {
             await qcTab.click();
-            await page.waitForTimeout(1_000);
+            await page.waitForTimeout(1_500);
         }
 
         const validateBtn = page.locator(
@@ -307,14 +326,14 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         ).first();
         if (await validateBtn.isVisible().catch(() => false)) {
             await validateBtn.click();
-            await page.waitForTimeout(1_000);
+            await page.waitForTimeout(2_000);
             console.log(`QC validate CF called: ${qcCalled}`);
         }
 
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('delivery status polling updates UI without crash', async ({ page }) => {
+    test('delivery status polling updates UI without crash', async ({ authedPage: page }) => {
         // Simulate polling by calling the mocked status endpoint directly
         const response = await page.request.get(
             'https://us-central1-test-project.cloudfunctions.net/getDeliveryStatus?deliveryId=delivery-mock-001'

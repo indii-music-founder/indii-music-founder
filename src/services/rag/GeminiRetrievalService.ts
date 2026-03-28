@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { env } from '../../config/env.ts';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
@@ -209,7 +208,7 @@ export class GeminiRetrievalService {
         try {
             const listRes = await this.fetch('fileSearchStores');
             if (listRes.fileSearchStores && listRes.fileSearchStores.length > 0) {
-                const match = listRes.fileSearchStores.find((s: any) => s.displayName === displayName);
+                const match = listRes.fileSearchStores.find((s: Record<string, unknown>) => s.displayName === displayName);
                 if (match) {
                     this.storeCache.set(cacheKey, match.name);
                     logger.info(`[RAG] Found existing store for ${cacheKey}:`, match.name);
@@ -301,7 +300,7 @@ export class GeminiRetrievalService {
      * If fileUri is null/empty, it searches the entire store.
      */
     async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string) {
-        let tools: any[] | undefined;
+        let tools: Record<string, unknown>[] | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
@@ -370,7 +369,7 @@ export class GeminiRetrievalService {
      * Streams query responses using the Gemini API.
      */
     async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string): AsyncGenerator<string> {
-        let tools: any[] | undefined;
+        let tools: Record<string, unknown>[] | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
         if (!fileContent) {

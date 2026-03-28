@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { BaseAgent } from './BaseAgent';
 import { z } from 'zod';
 import { FunctionDeclaration } from './types';
@@ -324,14 +323,14 @@ When a request falls outside your scope:
                     const { generatedHistory, uploadedImages } = useStore.getState();
 
                     // Combine histories for full asset discovery
-                    const allAssets = [...generatedHistory, ...uploadedImages];
+                    const allAssets = [...(generatedHistory || []), ...(uploadedImages || [])] as unknown as Record<string, unknown>[];
 
                     // Filter history to find matching images
                     const searchLower = query.toLowerCase();
-                    let matches = allAssets.filter((item: any) => {
+                    let matches = allAssets.filter((item) => {
                         // Match against prompt or filename
-                        const promptMatch = item.prompt?.toLowerCase().includes(searchLower);
-                        const idMatch = item.id?.toLowerCase().includes(searchLower);
+                        const promptMatch = (typeof item.prompt === 'string') ? item.prompt.toLowerCase().includes(searchLower) : false;
+                        const idMatch = (typeof item.id === 'string') ? item.id.toLowerCase().includes(searchLower) : false;
 
                         // If projectId specified, filter by project
                         if (projectId && item.projectId !== projectId) return false;
@@ -341,7 +340,7 @@ When a request falls outside your scope:
 
                     // Sort by recency
                     matches = matches
-                        .sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0))
+                        .sort((a, b) => ((b.timestamp as number) || 0) - ((a.timestamp as number) || 0))
                         .slice(0, limit);
 
                     return {
@@ -349,13 +348,13 @@ When a request falls outside your scope:
                         data: {
                             query,
                             count: matches.length,
-                            assets: matches.map((item: any) => ({
-                                id: item.id,
-                                url: item.url,
+                            assets: matches.map((item) => ({
+                                id: item.id as string,
+                                url: item.url as string,
                                 prompt: item.prompt || 'Untitled',
                                 type: item.type || 'image',
-                                projectId: item.projectId,
-                                timestamp: item.timestamp
+                                projectId: item.projectId as string | undefined,
+                                timestamp: item.timestamp as number | undefined
                             }))
                         },
                         message: `Found ${matches.length} assets matching "${query}"`

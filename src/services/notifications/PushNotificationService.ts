@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, Messaging, MessagePayload } from 'firebase/messaging';
 import { getAuth } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { app, db } from '@/services/firebase';
@@ -59,8 +58,8 @@ export class PushNotificationService {
     /**
      * Listens for foreground messages when the app is active.
      */
-    public onForegroundMessage(callback: (payload: any) => void): () => void {
-        if (!this.messaging) return () => {};
+    public onForegroundMessage(callback: (payload: MessagePayload) => void): () => void {
+        if (!this.messaging) return () => { };
 
         return onMessage(this.messaging, (payload) => {
             logger.info('[PushNotificationService] Received foreground message:', payload);
