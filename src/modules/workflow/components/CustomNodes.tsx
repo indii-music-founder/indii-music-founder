@@ -4,6 +4,7 @@ import type { NodeProps } from 'reactflow';
 import type { InputNodeData, OutputNodeData, AudioSegmentNodeData, AnyAsset } from '../types';
 import { Pencil, AudioWaveform, Play, Sparkles } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import UniversalNode from './UniversalNode';
 
 // Re-export UniversalNode as DepartmentNode for backward compatibility in nodeTypes map
@@ -21,7 +22,11 @@ const NodeWrapper: React.FC<{ children: React.ReactNode, selected: boolean, clas
 );
 
 export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>) => {
-    const { nodes, setSelectedNodeId, setNodes } = useStore();
+    const { nodes, setSelectedNodeId, setNodes } = useStore(useShallow(state => ({
+        nodes: state.nodes,
+        setSelectedNodeId: state.setSelectedNodeId,
+        setNodes: state.setNodes
+    })));
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newPrompt = e.target.value;

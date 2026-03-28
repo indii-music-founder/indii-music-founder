@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Card } from '@/components/ui/card';
@@ -27,7 +28,14 @@ export default function AILab() {
         generatedHistory,
         setViewMode,
         setVideoInputs
-    } = useStore();
+    } = useStore(useShallow(state => ({
+        userProfile: state.userProfile,
+        addToHistory: state.addToHistory,
+        currentProjectId: state.currentProjectId,
+        generatedHistory: state.generatedHistory,
+        setViewMode: state.setViewMode,
+        setVideoInputs: state.setVideoInputs
+    })));
 
     const toast = useToast();
 

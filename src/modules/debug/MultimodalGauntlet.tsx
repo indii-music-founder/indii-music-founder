@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,9 @@ import { Loader2, Play, CheckCircle, AlertCircle, Image as ImageIcon, Video } fr
 import { logger } from '@/utils/logger';
 
 export default function MultimodalGauntlet() {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const toast = useToast();
 
     const [step, setStep] = useState(0);

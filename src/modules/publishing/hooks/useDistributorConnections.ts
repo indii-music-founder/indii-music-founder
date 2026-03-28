@@ -1,12 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import type { DistributorId, DistributorCredentials, DistributorConnection } from '@/services/distribution/types/distributor';
 
 export type DistributorConnectionState = DistributorConnection;
 
 export function useDistributorConnections() {
-    const { distribution, fetchDistributors, connectDistributor } = useStore();
+    const { distribution, fetchDistributors, connectDistributor } = useStore(
+        useShallow(state => ({
+            distribution: state.distribution,
+            fetchDistributors: state.fetchDistributors,
+            connectDistributor: state.connectDistributor,
+        }))
+    );
     const [localLoading, setLocalLoading] = useState(false);
 
     const refresh = useCallback(async () => {

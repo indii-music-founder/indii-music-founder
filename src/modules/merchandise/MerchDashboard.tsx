@@ -11,6 +11,7 @@ import {
 
 import { useMerchandise, MerchStats } from './hooks/useMerchandise';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { TopSellingProductItem } from './components/TopSellingProductItem';
 import { RecentDesignItem } from './components/RecentDesignItem';
 import { formatCurrency } from '@/lib/utils';
@@ -56,7 +57,7 @@ const MerchNavItem = ({ to, icon, children, exact }: { to: string; icon: React.R
 
 export default function MerchDashboard() {
     const navigate = useNavigate();
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
     const { stats, topSellingProducts, products, loading, error } = useMerchandise();
     const [centerTab, setCenterTab] = useState<CenterTab>('dashboard');
     const [web3SubTab, setWeb3SubTab] = useState<Web3SubTab>('wallet');
@@ -118,8 +119,11 @@ export default function MerchDashboard() {
                 </div>
 
                 <div className="p-4 border-t border-white/5">
-                    <button className="flex items-center gap-3 text-neutral-500 hover:text-white transition-colors w-full px-4 py-2 text-sm font-medium rounded-lg hover:bg-white/5">
-                        <LogOut size={18} />
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="flex items-center gap-3 text-neutral-500 hover:text-white transition-colors w-full px-4 py-2 text-sm font-medium rounded-lg hover:bg-white/5 group"
+                    >
+                        <LogOut size={18} className="group-hover:text-red-400 transition-colors" />
                         <span>Exit Studio</span>
                     </button>
                 </div>

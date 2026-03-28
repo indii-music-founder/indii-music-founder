@@ -27,6 +27,7 @@ import {
     FileText
 } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useReleases } from './hooks/useReleases';
 import { useAnalytics, usePayouts } from './hooks/useAnalytics';
 import ReleaseWizard from './components/ReleaseWizard';
@@ -65,7 +66,15 @@ import { logger } from '@/utils/logger';
 
 export default function PublishingDashboard() {
     const setModule = useStore(state => state.setModule);
-    const { finance, distribution, fetchDistributors, fetchEarnings, currentOrganizationId } = useStore();
+    const { finance, distribution, fetchDistributors, fetchEarnings, currentOrganizationId } = useStore(
+        useShallow(state => ({
+            finance: state.finance,
+            distribution: state.distribution,
+            fetchDistributors: state.fetchDistributors,
+            fetchEarnings: state.fetchEarnings,
+            currentOrganizationId: state.currentOrganizationId,
+        }))
+    );
     const toast = useToast();
 
     // Core State

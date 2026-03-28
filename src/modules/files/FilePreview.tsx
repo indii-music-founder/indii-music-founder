@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { FileNode } from '@/services/FileSystemService';
 import { FileText, Image as ImageIcon, Music, Video, File, Folder } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,7 +10,10 @@ interface FilePreviewProps {
 }
 
 export default function FilePreview({ variant = 'default' }: FilePreviewProps) {
-    const { selectedFileNodeId, fileNodes } = useStore();
+    const { selectedFileNodeId, fileNodes } = useStore(useShallow(state => ({
+        selectedFileNodeId: state.selectedFileNodeId,
+        fileNodes: state.fileNodes
+    })));
 
     const selectedNode = fileNodes.find((n: FileNode) => n.id === selectedFileNodeId);
 

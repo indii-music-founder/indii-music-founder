@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Building2, Check, Plus, ChevronDown, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const OrganizationSelector = () => {
-    const { organizations, currentOrganizationId, setOrganization, addOrganization } = useStore();
+    const { organizations, currentOrganizationId, setOrganization, addOrganization } = useStore(
+        useShallow(state => ({
+            organizations: state.organizations,
+            currentOrganizationId: state.currentOrganizationId,
+            setOrganization: state.setOrganization,
+            addOrganization: state.addOrganization,
+        }))
+    );
     const [isOpen, setIsOpen] = useState(false);
     const [showNewOrgInput, setShowNewOrgInput] = useState(false);
     const [newOrgName, setNewOrgName] = useState('');

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { licensingService } from '@/services/licensing/LicensingService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { License, LicenseRequest } from '@/services/licensing/types';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
@@ -22,7 +23,9 @@ export function useLicensing() {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { userProfile } = useStore();
+  const { userProfile } = useStore(useShallow(state => ({
+    userProfile: state.userProfile
+  })));
   const toast = useToast();
 
   const isLoading = (!licensesLoaded || !requestsLoaded) || isActionLoading;

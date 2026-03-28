@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Package, Plus, DollarSign, Tag, Image as ImageIcon, Sparkles, Box, Trash2, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
 import { UserService } from '@/services/UserService';
@@ -17,7 +18,9 @@ interface MerchTableProps {
 }
 
 export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false, pageSize = 6 }) => {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const toast = useToast();
     const [products, setProducts] = useState<Product[]>([]);
     const [assets, setAssets] = useState<BrandAsset[]>([]); // From BrandKit

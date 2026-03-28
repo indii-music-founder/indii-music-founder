@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore, CanvasImage } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { Loader2 } from 'lucide-react';
@@ -10,7 +11,23 @@ import { logger } from '@/utils/logger';
 
 export default function InfiniteCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { canvasImages, addCanvasImage, updateCanvasImage, removeCanvasImage, selectedCanvasImageId, selectCanvasImage, currentProjectId } = useStore();
+    const {
+        canvasImages,
+        addCanvasImage,
+        updateCanvasImage,
+        removeCanvasImage,
+        selectedCanvasImageId,
+        selectCanvasImage,
+        currentProjectId
+    } = useStore(useShallow(state => ({
+        canvasImages: state.canvasImages,
+        addCanvasImage: state.addCanvasImage,
+        updateCanvasImage: state.updateCanvasImage,
+        removeCanvasImage: state.removeCanvasImage,
+        selectedCanvasImageId: state.selectedCanvasImageId,
+        selectCanvasImage: state.selectCanvasImage,
+        currentProjectId: state.currentProjectId
+    })));
     const toast = useToast();
 
     // Camera State (Refs for performance)

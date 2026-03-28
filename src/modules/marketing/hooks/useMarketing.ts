@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { db, auth } from '@/services/firebase';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { CampaignAsset, MarketingStats } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { useToast } from '@/core/context/ToastContext';
@@ -10,7 +11,9 @@ import * as Sentry from '@sentry/react';
 import { logger } from '@/utils/logger';
 
 export function useMarketing() {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const toast = useToast();
 
     // Data State

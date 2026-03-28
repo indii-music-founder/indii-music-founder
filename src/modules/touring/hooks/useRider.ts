@@ -3,12 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { RiderService } from '@/services/touring/RiderService';
 import { RiderItem } from '../types';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const useRider = () => {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
     const [items, setItems] = useState<RiderItem[]>([]);
     const [loading, setLoading] = useState(true);
     const toast = useToast();

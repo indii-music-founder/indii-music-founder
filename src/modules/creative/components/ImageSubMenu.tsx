@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { Sparkles, Tags } from 'lucide-react';
 
@@ -11,7 +12,21 @@ interface ImageSubMenuProps {
 }
 
 export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTogglePromptBuilder, showPromptBuilder }: ImageSubMenuProps) {
-    const { generatedHistory, setSelectedItem, setActiveReferenceImage, setViewMode, setPrompt, userProfile } = useStore();
+    const {
+        generatedHistory,
+        setSelectedItem,
+        setActiveReferenceImage,
+        setViewMode,
+        setPrompt,
+        userProfile
+    } = useStore(useShallow(state => ({
+        generatedHistory: state.generatedHistory,
+        setSelectedItem: state.setSelectedItem,
+        setActiveReferenceImage: state.setActiveReferenceImage,
+        setViewMode: state.setViewMode,
+        setPrompt: state.setPrompt,
+        userProfile: state.userProfile
+    })));
     const toast = useToast();
 
     return (

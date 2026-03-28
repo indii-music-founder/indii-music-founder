@@ -7,6 +7,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 import { StorageService } from '@/services/StorageService';
 import { agentService } from '@/services/agent/AgentService';
@@ -186,7 +187,13 @@ async function extractImageDimensions(imageUrl: string): Promise<{ width: number
 }
 
 export function useDDEXRelease(): UseDDEXReleaseReturn {
-  const { currentOrganizationId, organizations, userProfile } = useStore();
+  const { currentOrganizationId, organizations, userProfile } = useStore(
+    useShallow(state => ({
+      currentOrganizationId: state.currentOrganizationId,
+      organizations: state.organizations,
+      userProfile: state.userProfile,
+    }))
+  );
 
   // Get current organization
   const activeOrg = useMemo(() =>

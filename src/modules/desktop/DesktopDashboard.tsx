@@ -2,11 +2,17 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Monitor, Cpu, HardDrive, Wifi, ShieldCheck, ToggleLeft, ToggleRight, Keyboard, Database, Network, Power } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/core/context/ToastContext';
 
 export default function DesktopDashboard() {
-    const { userProfile, currentProjectId } = useStore();
+    const { userProfile, currentProjectId } = useStore(
+        useShallow(state => ({
+            userProfile: state.userProfile,
+            currentProjectId: state.currentProjectId,
+        }))
+    );
     const toast = useToast();
 
     const [settings, setSettings] = useState({

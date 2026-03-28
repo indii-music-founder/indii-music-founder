@@ -1,6 +1,7 @@
 import React from 'react';
 import { Disc3, Image, Share2, Sparkles, Music, Palette } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'motion/react';
 import type { TargetMedia } from '@/core/store/slices/creative';
 
@@ -30,7 +31,10 @@ interface WhiskPresetStylesProps {
 }
 
 export default function WhiskPresetStyles({ onSelectPreset }: WhiskPresetStylesProps) {
-    const { whiskState, setTargetMedia } = useStore();
+    const { whiskState, setTargetMedia } = useStore(useShallow(state => ({
+        whiskState: state.whiskState,
+        setTargetMedia: state.setTargetMedia
+    })));
 
     const handlePresetSelect = (preset: StylePreset) => {
         if (preset.targetMedia === 'image') {

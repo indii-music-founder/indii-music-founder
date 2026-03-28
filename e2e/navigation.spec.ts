@@ -117,16 +117,15 @@ test.describe('CommandBar', () => {
     });
 
     test('prompt input is visible and accepts text', async ({ authedPage: page }) => {
-        const promptInput = page.locator('[data-testid="prompt-input"], textarea, [role="textbox"]');
-        const found = await promptInput.first().isVisible().catch(() => false);
+        // Open Command Menu (CommandBar)
+        const commandBarTrigger = page.locator('button:has-text("Open Command Menu"), button:has-text("Search...")').first();
+        await commandBarTrigger.click();
 
-        if (found) {
-            await promptInput.first().click();
-            await promptInput.first().type('test query');
-            const value = await promptInput.first().inputValue().catch(() =>
-                promptInput.first().textContent()
-            );
-            expect(value).toContain('test');
-        }
+        // Wait for the modal/input to appear
+        const input = page.locator('input[placeholder*="Search"], [data-testid="command-bar-input"]').first();
+        await input.waitFor({ state: 'visible', timeout: 15_000 });
+
+        await input.fill('test');
+        await expect(input).toHaveValue('test');
     });
 });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
 import { financeService, Expense } from '@/services/finance/FinanceService';
@@ -8,7 +9,9 @@ import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/rev
 import { logger } from '@/utils/logger';
 
 export function useFinance() {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
 
     const [earningsSummary, setEarningsSummary] = useState<ValidatedEarningsSummary | null>(null);
     const [earningsLoading, setEarningsLoading] = useState(true);

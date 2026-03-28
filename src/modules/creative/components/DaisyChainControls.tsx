@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
 interface DaisyChainControlsProps {
@@ -7,7 +8,10 @@ interface DaisyChainControlsProps {
 }
 
 export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainControlsProps) {
-    const { videoInputs, setVideoInput } = useStore();
+    const { videoInputs, setVideoInput } = useStore(useShallow(state => ({
+        videoInputs: state.videoInputs,
+        setVideoInput: state.setVideoInput
+    })));
     const toast = useToast();
 
     return (

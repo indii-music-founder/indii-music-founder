@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import {
     Shield, Palette, Disc, Activity,
     User, Zap, Sparkles, MessageCircle
@@ -23,7 +24,11 @@ import type { BrandKitWithDefaults, ReleaseDetails } from './brand-manager';
 type TabId = 'identity' | 'visuals' | 'release' | 'health' | 'interview';
 
 const BrandManager: React.FC = () => {
-    const { userProfile, updateBrandKit, setUserProfile } = useStore();
+    const { userProfile, updateBrandKit, setUserProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile,
+        updateBrandKit: state.updateBrandKit,
+        setUserProfile: state.setUserProfile
+    })));
 
     // Tab State
     const [activeTab, setActiveTab] = useState<TabId>('identity');
