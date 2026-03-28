@@ -124,16 +124,12 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Dynamic environment check
-    const checkIsElectron = () => {
-        return !!(typeof window !== 'undefined' && (window as any).electronAPI);
-    };
-
-    const isElectron = checkIsElectron();
+    const isElectron = !!(typeof window !== 'undefined' && window.electronAPI);
     const allPassed = checks !== null && checks.every(c => c.passed);
     const filename = filePath.split(/[\\/]/).pop() ?? '';
 
     const handleRunQC = useCallback(async () => {
-        const currentlyElectron = checkIsElectron();
+        const currentlyElectron = !!(typeof window !== 'undefined' && window.electronAPI);
 
         if (!filePath && currentlyElectron) {
             toast.error('Select an audio file first');

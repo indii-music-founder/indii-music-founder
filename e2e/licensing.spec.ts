@@ -7,30 +7,30 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Licensing Module', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        await page.goto('http://localhost:4242');
+        await page.waitForLoadState('networkidle');
+
+        // Login as guest if on login page
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible()) {
+            await guestBtn.click();
+        }
+
+        // Navigate to licensing
+        const licensingNav = page.locator('[data-testid="nav-item-licensing"]');
+        await expect(licensingNav).toBeVisible({ timeout: 15000 });
+        await licensingNav.click();
+
+        // Wait for module to load (Licensing module has content)
+        await page.waitForTimeout(2000);
     });
 
     test('navigates to licensing module without crash', async ({ page }) => {
-        const nav = page.locator('[data-testid="nav-item-licensing"]');
-        const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
-
-        await nav.click();
-        await page.waitForTimeout(1_500);
         await expect(page.locator('#root')).toBeVisible();
     });
 
     test('licensing module has content area', async ({ page }) => {
-        const nav = page.locator('[data-testid="nav-item-licensing"]');
-        const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
-
-        await nav.click();
-        await page.waitForTimeout(2_000);
-
-        const content = page.locator('main, [role="main"], .flex-1');
+        const content = page.locator('main, [role="main"], h1, h2');
         await expect(content.first()).toBeVisible();
     });
 });

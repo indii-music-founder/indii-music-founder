@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 /**
  * EPKGeneratorService.ts
  * 
@@ -50,7 +49,11 @@ export class EPKGeneratorService {
             brandColors: brandKit?.colors || ['#000000', '#ffffff'],
             fonts: brandKit?.fonts || 'Inter',
             socials: (brandKit?.socials as Record<string, string> | undefined) || {},
-            pressShots: (brandKit?.brandAssets || []).map((a: any) => (typeof a === 'string' ? a : a?.url ?? '')),
+            pressShots: (brandKit?.brandAssets || []).map((a: unknown) => {
+                if (typeof a === 'string') return a;
+                const asset = a as { url?: string };
+                return asset?.url ?? '';
+            }),
             latestRelease: releaseDetails ? {
                 title: releaseDetails.title,
                 type: releaseDetails.type,

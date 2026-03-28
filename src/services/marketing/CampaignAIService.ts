@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 // useStore removed
@@ -256,7 +255,7 @@ Ensure all versions respect the platform's character limit.
         prompt: string,
         style: string,
         audioUrl?: string,
-        config?: Record<string, any>
+        config?: Record<string, unknown>
     ): Promise<string> {
         const brandContext = await this.getBrandContext();
 
