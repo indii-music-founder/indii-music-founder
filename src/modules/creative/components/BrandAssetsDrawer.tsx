@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { functions, functionsWest1 } from '@/services/firebase';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { X, Upload, Image as ImageIcon, Plus, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import FileUpload from '@/components/kokonutui/file-upload';
@@ -14,7 +15,19 @@ interface BrandAssetsDrawerProps {
 }
 
 export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDrawerProps) {
-    const { userProfile, updateBrandKit, addUploadedImage, currentProjectId, setActiveReferenceImage } = useStore();
+    const {
+        userProfile,
+        updateBrandKit,
+        addUploadedImage,
+        currentProjectId,
+        setActiveReferenceImage
+    } = useStore(useShallow(state => ({
+        userProfile: state.userProfile,
+        updateBrandKit: state.updateBrandKit,
+        addUploadedImage: state.addUploadedImage,
+        currentProjectId: state.currentProjectId,
+        setActiveReferenceImage: state.setActiveReferenceImage
+    })));
     const toast = useToast();
     const [isDragging, setIsDragging] = useState(false);
     const [activeTab, setActiveTab] = useState<'upload' | 'generate'>('upload');

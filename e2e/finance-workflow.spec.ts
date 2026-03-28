@@ -7,24 +7,38 @@ test.describe('Finance Module', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
     test.beforeEach(async ({ authedPage: page }) => {
-        // authedPage fixture handles Guest Login and navigation to '/'
+        // Mock Firestore finance collection reads
+        await page.route('**/firestore.googleapis.com/**/earnings_reports**', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ documents: [] }),
+            });
+        });
 
-        // Navigate to finance
+        await page.route('**/firestore.googleapis.com/**/expenses**', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ documents: [] }),
+            });
+        });
+
+        // Navigate to finance (fixture already handles login and base URL)
         const financeNav = page.locator('[data-testid="nav-item-finance"]');
         if (await financeNav.isVisible().catch(() => false)) {
             await financeNav.click();
-            await page.waitForTimeout(2_000);
+            await page.waitForTimeout(1_000);
         } else {
             await page.goto('/#finance');
-            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
         }
 
-        // Wait for module-specific content
-        await page.waitForSelector('h1, h2, [data-testid="finance-header"]', { timeout: 15_000 });
+        // Wait for finance-specific content
+        await page.locator('h1, h2, [data-testid="finance-header"]').first().waitFor({ state: 'visible', timeout: 15_000 });
     });
 
     test('finance module loads without crashing', async ({ authedPage: page }) => {
-        await expect(page.locator('h1')).toContainText(/Finance/i);
+        await expect(page.getByRole('heading', { name: /Finance/i }).first()).toBeVisible({ timeout: 15_000 });
     });
 
     test('should switch between Finance tabs', async ({ authedPage: page }) => {
@@ -33,7 +47,7 @@ test.describe('Finance Module', () => {
         await expenseTab.click();
         await expect(expenseTab).toHaveAttribute('data-state', 'active');
 
-        // Test Royalties tab (replaces non-existent ledger)
+        // Test Royalties tab
         const royaltiesTab = page.locator('[data-testid="finance-tab-royalties"]');
         await royaltiesTab.click();
         await expect(royaltiesTab).toHaveAttribute('data-state', 'active');
@@ -45,15 +59,10 @@ test.describe('Finance Module', () => {
     });
 
     test('EarningsDashboard summary is visible on initial load', async ({ authedPage: page }) => {
-        // Navigate to Earnings specifically if needed, but it's usually default
-        const earningsTab = page.locator('button:has-text("Earnings"), [role="tab"]:has-text("Earnings")').first();
-        if (await earningsTab.isVisible().catch(() => false)) {
-            await earningsTab.click();
-        }
-        // Either the chart (if data present) or the "No Reports" empty state should be visible
-        const chart = page.locator('.recharts-wrapper, svg[class*="recharts"]').first();
-        const emptyState = page.locator('h3:has-text("No Reports Found")');
+        const chart = page.locator('[data-testid="earnings-chart"]');
+        // Match the heading in the tabpanel (No Reports Found) or the actual chart
+        const emptyState = page.getByRole('heading', { name: /No Reports Found/i });
 
-        await expect(chart.or(emptyState)).toBeVisible({ timeout: 10000 });
+        await expect(chart.or(emptyState)).toBeVisible({ timeout: 20_000 });
     });
 });

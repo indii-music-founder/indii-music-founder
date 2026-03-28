@@ -3,11 +3,12 @@ import { distributionService } from '@/services/distribution/DistributionService
 import { Loader2, Key, Barcode, FileCode, Send } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { DistributionSyncService } from '@/services/distribution/DistributionSyncService';
 
 export const AuthorityPanel: React.FC = () => {
     const { success, error: toastError } = useToast();
-    const { distribution } = useStore();
+    const { distribution } = useStore(useShallow(state => ({ distribution: state.distribution })));
     const { releases } = distribution;
     const [selectedReleaseId, setSelectedReleaseId] = useState<string>('');
     const [isrc, setIsrc] = useState<string | undefined>(undefined);

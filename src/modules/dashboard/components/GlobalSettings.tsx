@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sliders, Monitor, Globe } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { PrivacySettingsPanel } from '@/components/shared/PrivacySettingsPanel';
 import { useTranslation } from 'react-i18next';
 
@@ -10,7 +11,12 @@ const SUPPORTED_LANGUAGES = [
 ];
 
 export default function GlobalSettings() {
-    const { userProfile, setUserProfile } = useStore();
+    const { userProfile, setUserProfile } = useStore(
+        useShallow(state => ({
+            userProfile: state.userProfile,
+            setUserProfile: state.setUserProfile,
+        }))
+    );
     const { i18n } = useTranslation();
 
     const preferences = userProfile?.preferences || {};
@@ -79,11 +85,10 @@ export default function GlobalSettings() {
                         <button
                             key={lang.code}
                             onClick={() => i18n.changeLanguage(lang.code)}
-                            className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                                i18n.resolvedLanguage?.startsWith(lang.code)
+                            className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${i18n.resolvedLanguage?.startsWith(lang.code)
                                     ? 'bg-white/10 border-white/20 text-white font-semibold'
                                     : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                            }`}
+                                }`}
                         >
                             {lang.label}
                         </button>

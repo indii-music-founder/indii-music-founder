@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import { useState, useRef, useEffect } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { canvasOps } from '../services/CanvasOperationsService';
@@ -29,7 +30,10 @@ interface UseCreativeCanvasProps {
 }
 
 export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvasProps) {
-    const { generatedHistory, currentProjectId } = useStore();
+    const { generatedHistory, currentProjectId } = useStore(useShallow(state => ({
+        generatedHistory: state.generatedHistory,
+        currentProjectId: state.currentProjectId
+    })));
     const toast = useToast();
 
     // UI State

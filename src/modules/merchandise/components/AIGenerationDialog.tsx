@@ -5,6 +5,7 @@ import { MerchButton } from './MerchButton';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
 
@@ -22,7 +23,11 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
     const [prompt, setPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const toast = useToast();
-    const { currentProjectId, addToHistory, userProfile } = useStore();
+    const { currentProjectId, addToHistory, userProfile } = useStore(useShallow(state => ({
+        currentProjectId: state.currentProjectId,
+        addToHistory: state.addToHistory,
+        userProfile: state.userProfile
+    })));
 
     const handleGenerate = async () => {
         if (!prompt.trim()) {

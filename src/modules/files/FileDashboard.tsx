@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, File, Image as ImageIcon, Music, Video, FileText, Search, Plus, Upload, Filter, Grid, List as ListIcon, MoreVertical, Star, Clock, Trash2, Download, ExternalLink, X } from 'lucide-react';
 import { FileNode } from '@/services/FileSystemService';
@@ -7,7 +8,12 @@ import { cn } from '@/lib/utils';
 import FilePreview from './FilePreview';
 
 export default function FileDashboard() {
-    const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode } = useStore();
+    const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode } = useStore(useShallow(state => ({
+        fileNodes: state.fileNodes,
+        currentProjectId: state.currentProjectId,
+        selectedFileNodeId: state.selectedFileNodeId,
+        setSelectedFileNode: state.setSelectedFileNode
+    })));
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<FileNode['fileType'] | 'all'>('all');

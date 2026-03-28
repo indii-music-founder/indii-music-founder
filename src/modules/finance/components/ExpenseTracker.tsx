@@ -7,6 +7,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { useFinance } from '../hooks/useFinance';
 import { Expense } from '@/services/finance/FinanceService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ExpenseItem } from './ExpenseItem';
 import { ExpenseManualEntryModal } from './ExpenseManualEntryModal';
 import { ReceiptScanResultSchema } from '@/modules/finance/schemas';
@@ -14,7 +15,9 @@ import { logger } from '@/utils/logger';
 import { EmptyState } from '@/components/shared/EmptyState';
 
 export const ExpenseTracker: React.FC = React.memo(() => {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const {
         expenses,
         expensesLoading: isLoading,

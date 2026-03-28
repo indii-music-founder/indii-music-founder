@@ -66,7 +66,6 @@ export default function MultiPlatformPoster() {
     const [newPlatforms, setNewPlatforms] = useState<SocialPlatform[]>(['tiktok']);
     const [isPosting, setIsPosting] = useState<string | null>(null);
     const toast = useToast();
-    const store = useStore();
 
     const togglePlatform = (id: SocialPlatform) => {
         setNewPlatforms(prev =>

@@ -4,6 +4,7 @@ import * as fabric from 'fabric';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 export interface AutoSaveOptions {
     interval?: number; // Auto-save interval in milliseconds (default: 30000)
@@ -25,7 +26,12 @@ export const useAutoSave = (
 ): AutoSaveReturn => {
     const { interval = 30000, enabled = true } = options;
 
-    const { user, currentOrganizationId, organizations, currentProjectId } = useStore();
+    const { user, currentOrganizationId, organizations, currentProjectId } = useStore(useShallow(state => ({
+        user: state.user,
+        currentOrganizationId: state.currentOrganizationId,
+        organizations: state.organizations,
+        currentProjectId: state.currentProjectId
+    })));
     const activeOrg = organizations.find(org => org.id === currentOrganizationId);
 
     const [lastSaved, setLastSaved] = useState<Date | null>(null);

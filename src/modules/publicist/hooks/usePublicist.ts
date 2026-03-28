@@ -1,11 +1,14 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store'; // Access global store for userProfile
+import { useShallow } from 'zustand/react/shallow';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { Campaign, Contact, PublicistStats } from '../types';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const usePublicist = () => {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const [activeTab, setActiveTab] = useState<'campaigns' | 'contacts' | 'superfans'>('campaigns');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'Live' | 'Draft' | 'Scheduled'>('all');

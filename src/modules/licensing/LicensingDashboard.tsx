@@ -4,6 +4,7 @@ import { licensingService } from '@/services/licensing/LicensingService';
 import type { LicenseRequest, License } from '@/services/licensing/types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
 import { useLicensing } from './hooks/useLicensing';
@@ -30,7 +31,9 @@ import { logger } from '@/utils/logger';
 
 export default function LicensingDashboard() {
     const { licenses, requests, projectedValue, loading: isLoading, initiateDrafting } = useLicensing();
-    const { currentModule } = useStore();
+    const { currentModule } = useStore(useShallow(state => ({
+        currentModule: state.currentModule
+    })));
     const toast = useToast();
 
     useEffect(() => {

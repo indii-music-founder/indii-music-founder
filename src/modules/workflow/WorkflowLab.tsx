@@ -5,6 +5,7 @@ import WorkflowGeneratorModal from './components/WorkflowGeneratorModal';
 import WorkflowTemplateModal from './components/WorkflowTemplateModal';
 import WorkflowLoadModal from './components/WorkflowLoadModal';
 import { useStore } from '../../core/store';
+import { useShallow } from 'zustand/react/shallow';
 import type { ModuleId } from '@/core/constants';
 import {
     Play, Loader2, GitBranch, Sparkles, LayoutTemplate, Save, FolderOpen,
@@ -37,7 +38,13 @@ import 'driver.js/dist/driver.css';
 
 export default function WorkflowLab() {
     // Hooks must be called unconditionally before early returns
-    const { nodes, edges, setNodes, setEdges, user } = useStore();
+    const { nodes, edges, setNodes, setEdges, user } = useStore(useShallow(state => ({
+        nodes: state.nodes,
+        edges: state.edges,
+        setNodes: state.setNodes,
+        setEdges: state.setEdges,
+        user: state.user
+    })));
     const { success: toastSuccess, error: toastError } = useToast();
     const [isRunning, setIsRunning] = useState(false);
     const [workflowName, setWorkflowName] = useState('My Workflow');
@@ -520,7 +527,9 @@ function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; selected?: b
 }
 
 function HelpDocsPanel() {
-    const { setModule } = useStore();
+    const { setModule } = useStore(useShallow(state => ({
+        setModule: state.setModule
+    })));
     const goToKnowledge = () => setModule('knowledge' as ModuleId);
     const links = [
         { label: 'Getting Started', icon: BookOpen, desc: 'Learn the basics', onClick: goToKnowledge },

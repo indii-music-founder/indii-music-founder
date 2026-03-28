@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { X, Image as ImageIcon, Sparkles, Loader2, Search } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -13,7 +14,12 @@ interface FrameSelectionModalProps {
 }
 
 export default function FrameSelectionModal({ isOpen, onClose, onSelect, target }: FrameSelectionModalProps) {
-    const { currentProjectId, addToHistory } = useStore();
+    const { currentProjectId, addToHistory } = useStore(
+        useShallow(state => ({
+            currentProjectId: state.currentProjectId,
+            addToHistory: state.addToHistory,
+        }))
+    );
     const [activeTab, setActiveTab] = useState<'gallery' | 'generate'>('gallery');
     const [searchQuery, setSearchQuery] = useState('');
     const [prompt, setPrompt] = useState('');

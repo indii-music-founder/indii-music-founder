@@ -50,23 +50,20 @@ export const test = base.extend<AuthFixtures>({
         await page.goto('/');
         await page.waitForSelector('#root', { timeout: 15_000 });
 
-        // If the login form is visible, click "Guest Login (Dev)" to authenticate.
-        // The button is rendered only in DEV mode (import.meta.env.DEV === true),
-        // which is always true for the Playwright web server.
-        const guestBtn = page.locator('button:has-text("Guest Login")');
-        const loginVisible = await guestBtn.isVisible().catch(() => false);
+        const guestBtn = page.locator('button:has-text("Guest Login"), [data-testid="guest-login-btn"]');
+        const loginVisible = await guestBtn.isVisible({ timeout: 5_000 }).catch(() => false);
 
         if (loginVisible) {
-            await guestBtn.click();
+            await guestBtn.first().click();
             // Wait for Firebase anonymous auth to complete and the app shell to appear.
-            await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 })
-                .catch(() => {
-                    // App container may not yet have the testid — fall back to a fixed delay
-                });
-            await page.waitForTimeout(2_000);
+            await page.locator('[data-testid="app-container"], nav, .app-shell').first().waitFor({ state: 'visible', timeout: 20_000 });
+            await page.waitForTimeout(2_500);
         } else {
-            // Already authenticated (e.g. session restored from IndexedDB)
-            await page.waitForTimeout(1_000);
+            // Already authenticated or login hidden - check if we are actually in the app
+            const hqVisible = await page.locator('text=HQ Overview, text=Studio HQ').first().isVisible().catch(() => false);
+            if (!hqVisible) {
+                await page.waitForTimeout(1_500);
+            }
         }
 
         // eslint-disable-next-line react-hooks/rules-of-hooks

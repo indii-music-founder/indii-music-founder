@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import type { Subscription, UsageStats, SubscriptionTier } from '@/services/subscription/types';
 import { logger } from '@/utils/logger';
 
 export function useSubscription() {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [usage, setUsage] = useState<UsageStats | null>(null);
     const [loading, setLoading] = useState(true);

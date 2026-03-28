@@ -3,12 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { TouringService } from '@/services/touring/TouringService';
 import { VehicleStats, Itinerary, ItineraryStop } from '../types';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const useTouring = () => {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
     const [vehicleStats, setVehicleStats] = useState<VehicleStats | null>(null);
     const [itineraries, setItineraries] = useState<Itinerary[]>([]);
     const [currentItinerary, setCurrentItinerary] = useState<Itinerary | null>(null);

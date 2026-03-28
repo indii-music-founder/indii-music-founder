@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Camera, Upload, X, ScanLine, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { StorageService } from '@/services/StorageService';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
@@ -12,7 +13,14 @@ import { logger } from '@/utils/logger';
 const clayButtonStyles = "relative overflow-hidden bg-card/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:bg-card/80 active:scale-95 shadow-lg shadow-black/50 hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]";
 
 export default function GhostCapture() {
-    const { currentProjectId, userProfile, createFileNode, setModule } = useStore();
+    const { currentProjectId, userProfile, createFileNode, setModule } = useStore(
+        useShallow(state => ({
+            currentProjectId: state.currentProjectId,
+            userProfile: state.userProfile,
+            createFileNode: state.createFileNode,
+            setModule: state.setModule,
+        }))
+    );
     const toast = useToast();
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);

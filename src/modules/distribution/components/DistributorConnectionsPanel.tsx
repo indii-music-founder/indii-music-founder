@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { DistributorCard } from './DistributorCard';
 import ConnectDistributorModal from './ConnectDistributorModal';
 import { DistributorService } from '@/services/distribution/DistributorService';
@@ -7,7 +8,12 @@ import type { IDistributorAdapter } from '@/services/distribution/types/distribu
 import { logger } from '@/utils/logger';
 
 export const DistributorConnectionsPanel: React.FC = () => {
-    const { distribution, fetchDistributors } = useStore();
+    const { distribution, fetchDistributors } = useStore(
+        useShallow(state => ({
+            distribution: state.distribution,
+            fetchDistributors: state.fetchDistributors,
+        }))
+    );
     const { connections, loading, error } = distribution;
 
     const [selectedAdapter, setSelectedAdapter] = useState<IDistributorAdapter | null>(null);

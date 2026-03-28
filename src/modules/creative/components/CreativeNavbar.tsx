@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import { Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare, Palette, PanelLeftClose, PanelRightClose, Maximize2, Clock } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
@@ -13,7 +14,21 @@ import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
 export default function CreativeNavbar(props: CreativeNavbarProps) {
-    const { setVideoInput, prompt, setPrompt, generationMode, viewMode, setViewMode } = useStore();
+    const {
+        setVideoInput,
+        prompt,
+        setPrompt,
+        generationMode,
+        viewMode,
+        setViewMode
+    } = useStore(useShallow(state => ({
+        setVideoInput: state.setVideoInput,
+        prompt: state.prompt,
+        setPrompt: state.setPrompt,
+        generationMode: state.generationMode,
+        viewMode: state.viewMode,
+        setViewMode: state.setViewMode
+    })));
     const toast = useToast();
     const [showPromptBuilder, setShowPromptBuilder] = useState(false);
     const [showBrandAssets, setShowBrandAssets] = useState(false);

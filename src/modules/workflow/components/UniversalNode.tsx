@@ -4,6 +4,7 @@ import { DepartmentNodeData, LogicNodeData, Status, AnyAsset } from '../types';
 import { getNodeDefinition, getJobDefinition, DATA_TYPE_COLORS, DataType } from '../services/nodeRegistry';
 import { CheckCircle, Hourglass, LoaderCircle, AlertTriangle, Settings, Pencil } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Extended asset shape for workflow node results.
@@ -41,7 +42,9 @@ const statusConfig: Record<Status, StatusStyle> = {
 type UniversalNodeData = DepartmentNodeData | LogicNodeData;
 
 const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => {
-    const { nodes } = useStore();
+    const { nodes } = useStore(useShallow(state => ({
+        nodes: state.nodes
+    })));
 
     // 1. Resolve Definition
     // For logic nodes, departmentName is 'Logic'.

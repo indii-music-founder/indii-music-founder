@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { X, Sparkles, Save, Loader2 } from 'lucide-react';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { isTextPart } from '@/shared/types/ai.dto';
@@ -7,7 +8,12 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
 
 export default function WorkflowNodeInspector() {
-    const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore();
+    const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore(useShallow(state => ({
+        nodes: state.nodes,
+        setNodes: state.setNodes,
+        selectedNodeId: state.selectedNodeId,
+        setSelectedNodeId: state.setSelectedNodeId
+    })));
     const [prompt, setPrompt] = useState('');
     const [aiInstruction, setAiInstruction] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);

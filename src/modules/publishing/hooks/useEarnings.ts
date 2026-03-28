@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 export function useEarnings(period: { startDate: string; endDate: string }) {
-    const { finance, fetchEarnings } = useStore();
+    const { finance, fetchEarnings } = useStore(
+        useShallow(state => ({
+            finance: state.finance,
+            fetchEarnings: state.fetchEarnings,
+        }))
+    );
     const [localLoading, setLocalLoading] = useState(false);
 
     const refresh = useCallback(async () => {

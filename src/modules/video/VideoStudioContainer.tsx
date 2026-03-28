@@ -4,9 +4,17 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import VideoWorkflow from './VideoWorkflow';
 import VideoNavbar from './components/VideoNavbar';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function VideoStudio() {
-    const { toggleRightPanel, isRightPanelOpen, setModule, setGenerationMode } = useStore();
+    const { toggleRightPanel, isRightPanelOpen, setModule, setGenerationMode } = useStore(
+        useShallow(state => ({
+            toggleRightPanel: state.toggleRightPanel,
+            isRightPanelOpen: state.isRightPanelOpen,
+            setModule: state.setModule,
+            setGenerationMode: state.setGenerationMode,
+        }))
+    );
 
     // Defined outside useEffect to simplify parser logic
     const initializeStudio = () => {

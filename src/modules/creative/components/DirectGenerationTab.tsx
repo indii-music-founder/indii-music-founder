@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
@@ -16,7 +17,21 @@ interface GeneratedItem {
 }
 
 export default function DirectGenerationTab() {
-    const { studioControls, setPrompt, addToHistory, currentProjectId, whiskState, setSelectedItem } = useStore();
+    const {
+        studioControls,
+        setPrompt,
+        addToHistory,
+        currentProjectId,
+        whiskState,
+        setSelectedItem
+    } = useStore(useShallow(state => ({
+        studioControls: state.studioControls,
+        setPrompt: state.setPrompt,
+        addToHistory: state.addToHistory,
+        currentProjectId: state.currentProjectId,
+        whiskState: state.whiskState,
+        setSelectedItem: state.setSelectedItem
+    })));
     const toast = useToast();
 
     // Local state for direct mode isolation

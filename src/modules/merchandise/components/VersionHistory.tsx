@@ -3,6 +3,7 @@ import { X, History, Clock, RotateCcw, Eye, Trash2, ChevronDown, ChevronUp, Cale
 import { collection, query, where, orderBy, getDocs, doc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 
@@ -28,7 +29,11 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     onRestoreVersion,
     currentDesignId
 }) => {
-    const { userProfile, currentOrganizationId, currentProjectId } = useStore();
+    const { userProfile, currentOrganizationId, currentProjectId } = useStore(useShallow(state => ({
+        userProfile: state.userProfile,
+        currentOrganizationId: state.currentOrganizationId,
+        currentProjectId: state.currentProjectId
+    })));
     const [versions, setVersions] = useState<DesignVersion[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedVersion, setSelectedVersion] = useState<DesignVersion | null>(null);

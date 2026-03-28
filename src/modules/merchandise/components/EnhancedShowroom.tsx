@@ -5,6 +5,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import ManufacturingPanel from './ManufacturingPanel';
 import { THEMES } from '../themes';
 import { ProductType, PRODUCT_TYPE_MAPPING } from '../types';
@@ -122,7 +123,10 @@ interface EnhancedShowroomProps {
 
 export default function EnhancedShowroom({ initialAsset = null, productId }: EnhancedShowroomProps) {
     const toast = useToast();
-    const { addToHistory, currentProjectId } = useStore();
+    const { addToHistory, currentProjectId } = useStore(useShallow(state => ({
+        addToHistory: state.addToHistory,
+        currentProjectId: state.currentProjectId
+    })));
     const [activeMobileSection, setActiveMobileSection] = useState<'setup' | 'stage' | 'production'>('stage');
 
     // State

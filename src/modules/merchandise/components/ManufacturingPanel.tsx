@@ -6,6 +6,7 @@ import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { PrintOnDemandService, PODProvider } from '@/services/pod/PrintOnDemandService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ProductType, CatalogProductSchema } from '../types';
 import { logger } from '@/utils/logger';
 
@@ -60,7 +61,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
     const [selectedColor, setSelectedColor] = React.useState(COLORS[0]!);
     const [quantity, setQuantity] = React.useState(100);
     const toast = useToast();
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
 
     // Fulfillment Mode - Internal (self-managed) or POD (Printful, etc.)
     const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>('internal');
@@ -218,11 +219,10 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => setFulfillmentMode('internal')}
-                            className={`p-3 rounded-lg border text-left transition-all ${
-                                fulfillmentMode === 'internal'
-                                    ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400'
-                                    : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
-                            }`}
+                            className={`p-3 rounded-lg border text-left transition-all ${fulfillmentMode === 'internal'
+                                ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400'
+                                : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                                }`}
                         >
                             <div className="flex items-center gap-2 mb-1">
                                 <ShoppingBag className="w-4 h-4" />
@@ -232,11 +232,10 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         </button>
                         <button
                             onClick={() => setFulfillmentMode('pod')}
-                            className={`p-3 rounded-lg border text-left transition-all relative ${
-                                fulfillmentMode === 'pod'
-                                    ? 'bg-purple-500/20 border-purple-400 text-purple-400'
-                                    : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
-                            }`}
+                            className={`p-3 rounded-lg border text-left transition-all relative ${fulfillmentMode === 'pod'
+                                ? 'bg-purple-500/20 border-purple-400 text-purple-400'
+                                : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                                }`}
                         >
                             <div className="flex items-center gap-2 mb-1">
                                 <Zap className="w-4 h-4" />

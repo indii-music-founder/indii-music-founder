@@ -6,6 +6,7 @@ import {
     Upload
 } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { FileNode } from '@/services/FileSystemService';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/core/context/ToastContext';
@@ -33,7 +34,22 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
         renameNode,
         createFileNode,
         isFileSystemLoading
-    } = useStore();
+    } = useStore(useShallow(state => ({
+        currentProjectId: state.currentProjectId,
+        userProfile: state.userProfile,
+        fileNodes: state.fileNodes,
+        fetchFileNodes: state.fetchFileNodes,
+        expandedFolderIds: state.expandedFolderIds,
+        toggleFolder: state.toggleFolder,
+        selectedFileNodeId: state.selectedFileNodeId,
+        setSelectedFileNode: state.setSelectedFileNode,
+        createFolder: state.createFolder,
+        deleteNode: state.deleteNode,
+        moveNode: state.moveNode,
+        renameNode: state.renameNode,
+        createFileNode: state.createFileNode,
+        isFileSystemLoading: state.isFileSystemLoading
+    })));
 
     const toast = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
