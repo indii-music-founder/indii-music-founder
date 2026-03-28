@@ -193,9 +193,9 @@ describe('SchedulerService', () => {
 
     describe('status()', () => {
         it('returns correct active and total counts', () => {
-            SchedulerService.register({ name: 'Active 1', action: 'a', schedule: { type: 'interval', ms: 1_000 }, enabled: true, notify: false });
-            SchedulerService.register({ name: 'Active 2', action: 'b', schedule: { type: 'interval', ms: 1_000 }, enabled: true, notify: false });
-            SchedulerService.register({ name: 'Inactive', action: 'c', schedule: { type: 'interval', ms: 1_000 }, enabled: false, notify: false });
+            SchedulerService.register({ name: 'Active 1', action: 'test:active-1', schedule: { type: 'interval', ms: 1_000 }, enabled: true, notify: false });
+            SchedulerService.register({ name: 'Active 2', action: 'test:active-2', schedule: { type: 'interval', ms: 1_000 }, enabled: true, notify: false });
+            SchedulerService.register({ name: 'Inactive', action: 'test:inactive', schedule: { type: 'interval', ms: 1_000 }, enabled: false, notify: false });
 
             const { tasks, activeCount } = SchedulerService.status();
             expect(tasks).toHaveLength(3);
@@ -211,7 +211,7 @@ describe('SchedulerService', () => {
 
     describe('get()', () => {
         it('returns a task by id', () => {
-            const task = SchedulerService.register({ name: 'Gettable', action: 'g', schedule: { type: 'interval', ms: 1_000 }, enabled: false, notify: false });
+            const task = SchedulerService.register({ name: 'Gettable', action: 'test:gettable', schedule: { type: 'interval', ms: 1_000 }, enabled: false, notify: false });
             expect(SchedulerService.get(task.id)?.name).toBe('Gettable');
         });
 
