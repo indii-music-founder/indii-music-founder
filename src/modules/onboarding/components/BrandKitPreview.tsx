@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { Sparkles, Edit3, RotateCcw, X, Check } from 'lucide-react';
+import type { UserProfile } from '@/types/User';
 
 interface BrandKitPreviewProps {
-    userProfile: any;
+    userProfile: UserProfile;
     isEditingBio: boolean;
     editedBio: string;
     isRegenerating: boolean;

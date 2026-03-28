@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Package, Plus, DollarSign, Tag, Image as ImageIcon, Sparkles, Box, Trash2, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
 import { UserService } from '@/services/UserService';
+import type { BrandAsset } from '@/types/User';
 import { useToast } from '@/core/context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
@@ -20,12 +20,12 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
     const { userProfile } = useStore();
     const toast = useToast();
     const [products, setProducts] = useState<Product[]>([]);
-    const [assets, setAssets] = useState<any[]>([]); // From BrandKit
+    const [assets, setAssets] = useState<BrandAsset[]>([]); // From BrandKit
     const [isMinting, setIsMinting] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
 
     // Minting Form State
-    const [selectedAsset, setSelectedAsset] = useState<any>(null);
+    const [selectedAsset, setSelectedAsset] = useState<BrandAsset | null>(null);
     const [price, setPrice] = useState('0.99');
     const [title, setTitle] = useState('');
     const [inventory, setInventory] = useState('100');

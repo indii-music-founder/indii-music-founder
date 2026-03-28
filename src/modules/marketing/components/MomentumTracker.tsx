@@ -24,10 +24,7 @@ interface DataPoint {
 }
 
 const MILESTONE_EVENTS: MilestoneEvent[] = [
-    { day: 1, label: 'Release Day', color: '#a855f7' },
-    { day: 7, label: 'Week 1', color: '#3b82f6' },
-    { day: 14, label: 'Pitchfork Feature', color: '#f59e0b' },
-    { day: 21, label: 'TikTok Viral', color: '#ef4444' },
+    // Populated dynamically from real release analytics — empty by default
 ];
 
 function generateData(days: number): DataPoint[] {
@@ -110,8 +107,8 @@ export default function MomentumTracker() {
                             key={r}
                             onClick={() => setDateRange(r)}
                             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${dateRange === r
-                                    ? 'bg-dept-marketing text-white shadow'
-                                    : 'text-gray-500 hover:text-gray-300'
+                                ? 'bg-dept-marketing text-white shadow'
+                                : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
                             {r}
@@ -120,121 +117,136 @@ export default function MomentumTracker() {
                 </div>
             </div>
 
-            {/* Stats Row */}
-            <div className="grid grid-cols-4 gap-3">
-                {[
-                    { label: 'Total Streams', value: totalStreams.toLocaleString(), icon: BarChart2, color: 'text-dept-marketing' },
-                    { label: 'Week 1 Streams', value: week1Streams.toLocaleString(), icon: Calendar, color: 'text-blue-400' },
-                    { label: 'Total Ad Spend', value: `$${totalAdSpend.toLocaleString()}`, icon: DollarSign, color: 'text-yellow-400' },
-                    { label: 'Organic %', value: `${organicRatio}%`, icon: TrendingUp, color: 'text-green-400' },
-                ].map(s => (
-                    <div key={s.label} className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                        <s.icon size={13} className={`${s.color} mb-1.5`} />
-                        <p className="text-base font-bold text-white">{s.value}</p>
-                        <p className="text-[10px] text-gray-500">{s.label}</p>
+            {totalStreams === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-3 rounded-xl bg-white/[0.02] border border-white/5 border-dashed">
+                    <div className="w-12 h-12 rounded-xl bg-dept-marketing/10 flex items-center justify-center">
+                        <Flame size={20} className="text-dept-marketing/60" />
                     </div>
-                ))}
-            </div>
-
-            {/* Timeline Chart */}
-            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
-                    Streams + Ad Spend Timeline
-                </h3>
-                <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                        <XAxis
-                            dataKey="day"
-                            tick={{ fill: '#6b7280', fontSize: 10 }}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={v => `D${v}`}
-                            interval={dateRange === '7d' ? 0 : dateRange === '30d' ? 4 : 11}
-                        />
-                        <YAxis
-                            yAxisId="streams"
-                            tick={{ fill: '#6b7280', fontSize: 10 }}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={v => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)}
-                            width={36}
-                        />
-                        <YAxis
-                            yAxisId="spend"
-                            orientation="right"
-                            tick={{ fill: '#6b7280', fontSize: 10 }}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={v => `$${v}`}
-                            width={36}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend
-                            wrapperStyle={{ fontSize: '11px', paddingTop: '12px' }}
-                            formatter={(value) => <span style={{ color: '#9ca3af' }}>{value}</span>}
-                        />
-                        {relevantMilestones.map(m => (
-                            <ReferenceLine
-                                key={m.day}
-                                x={m.day}
-                                yAxisId="streams"
-                                stroke={m.color}
-                                strokeDasharray="4 3"
-                                strokeOpacity={0.5}
-                                label={{ value: m.label, fill: m.color, fontSize: 9, position: 'top' }}
-                            />
-                        ))}
-                        <Line
-                            yAxisId="streams"
-                            type="monotone"
-                            dataKey="streams"
-                            name="streams"
-                            stroke="#a855f7"
-                            strokeWidth={2}
-                            dot={false}
-                            activeDot={{ r: 4, fill: '#a855f7' }}
-                        />
-                        <Line
-                            yAxisId="spend"
-                            type="monotone"
-                            dataKey="adSpend"
-                            name="adSpend"
-                            stroke="#f59e0b"
-                            strokeWidth={1.5}
-                            dot={false}
-                            strokeDasharray="4 3"
-                            activeDot={{ r: 4, fill: '#f59e0b' }}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
-            </div>
-
-            {/* Key Moments Feed */}
-            <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <Zap size={11} /> Key Moments
-                </h3>
-                <div className="space-y-2">
-                    {relevantMoments.map((m, i) => {
-                        const Icon = m.icon;
-                        return (
-                            <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                                <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <Icon size={12} className={m.color} />
-                                </div>
-                                <div>
-                                    <span className="text-[10px] font-mono text-gray-600">Day {m.day}</span>
-                                    <p className="text-xs text-gray-300 leading-relaxed">{m.text}</p>
-                                </div>
-                            </div>
-                        );
-                    })}
-                    {relevantMoments.length === 0 && (
-                        <p className="text-xs text-gray-600 text-center py-4">No key moments in this range yet.</p>
-                    )}
+                    <div>
+                        <p className="text-sm font-bold text-gray-400">No Release Data Yet</p>
+                        <p className="text-[11px] text-gray-600 mt-1 max-w-xs mx-auto">
+                            Momentum tracking activates after your first release is distributed. Connect your distributor in the Distribution module to get started.
+                        </p>
+                    </div>
                 </div>
-            </div>
+            ) : (
+                <>
+                    <div className="grid grid-cols-4 gap-3">
+                        {[
+                            { label: 'Total Streams', value: totalStreams.toLocaleString(), icon: BarChart2, color: 'text-dept-marketing' },
+                            { label: 'Week 1 Streams', value: week1Streams.toLocaleString(), icon: Calendar, color: 'text-blue-400' },
+                            { label: 'Total Ad Spend', value: `$${totalAdSpend.toLocaleString()}`, icon: DollarSign, color: 'text-yellow-400' },
+                            { label: 'Organic %', value: `${organicRatio}%`, icon: TrendingUp, color: 'text-green-400' },
+                        ].map(s => (
+                            <div key={s.label} className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                                <s.icon size={13} className={`${s.color} mb-1.5`} />
+                                <p className="text-base font-bold text-white">{s.value}</p>
+                                <p className="text-[10px] text-gray-500">{s.label}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Timeline Chart */}
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
+                            Streams + Ad Spend Timeline
+                        </h3>
+                        <ResponsiveContainer width="100%" height={220}>
+                            <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                                <XAxis
+                                    dataKey="day"
+                                    tick={{ fill: '#6b7280', fontSize: 10 }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={v => `D${v}`}
+                                    interval={dateRange === '7d' ? 0 : dateRange === '30d' ? 4 : 11}
+                                />
+                                <YAxis
+                                    yAxisId="streams"
+                                    tick={{ fill: '#6b7280', fontSize: 10 }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={v => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)}
+                                    width={36}
+                                />
+                                <YAxis
+                                    yAxisId="spend"
+                                    orientation="right"
+                                    tick={{ fill: '#6b7280', fontSize: 10 }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={v => `$${v}`}
+                                    width={36}
+                                />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend
+                                    wrapperStyle={{ fontSize: '11px', paddingTop: '12px' }}
+                                    formatter={(value) => <span style={{ color: '#9ca3af' }}>{value}</span>}
+                                />
+                                {relevantMilestones.map(m => (
+                                    <ReferenceLine
+                                        key={m.day}
+                                        x={m.day}
+                                        yAxisId="streams"
+                                        stroke={m.color}
+                                        strokeDasharray="4 3"
+                                        strokeOpacity={0.5}
+                                        label={{ value: m.label, fill: m.color, fontSize: 9, position: 'top' }}
+                                    />
+                                ))}
+                                <Line
+                                    yAxisId="streams"
+                                    type="monotone"
+                                    dataKey="streams"
+                                    name="streams"
+                                    stroke="#a855f7"
+                                    strokeWidth={2}
+                                    dot={false}
+                                    activeDot={{ r: 4, fill: '#a855f7' }}
+                                />
+                                <Line
+                                    yAxisId="spend"
+                                    type="monotone"
+                                    dataKey="adSpend"
+                                    name="adSpend"
+                                    stroke="#f59e0b"
+                                    strokeWidth={1.5}
+                                    dot={false}
+                                    strokeDasharray="4 3"
+                                    activeDot={{ r: 4, fill: '#f59e0b' }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Key Moments Feed */}
+                    <div>
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <Zap size={11} /> Key Moments
+                        </h3>
+                        <div className="space-y-2">
+                            {relevantMoments.map((m, i) => {
+                                const Icon = m.icon;
+                                return (
+                                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                                        <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <Icon size={12} className={m.color} />
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] font-mono text-gray-600">Day {m.day}</span>
+                                            <p className="text-xs text-gray-300 leading-relaxed">{m.text}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {relevantMoments.length === 0 && (
+                                <p className="text-xs text-gray-600 text-center py-4">No key moments in this range yet.</p>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

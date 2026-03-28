@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 /**
  * Gmail Provider — Uses Google Identity Services (GIS) for OAuth
  * and the Gmail REST API for message operations.
@@ -40,10 +39,13 @@ const GMAIL_SCOPES = [
 /**
  * Parse a Gmail API message resource into our unified EmailMessage type.
  */
-function parseGmailMessage(raw: any, accountId: string): EmailMessage {
-    const headers = raw.payload?.headers || [];
+function parseGmailMessage(raw: unknown, accountId: string): EmailMessage {
+    const rawMsg = raw as Record<string, unknown>;
+    const payloadInfo = rawMsg.payload as Record<string, unknown> | undefined;
+
+    const headers = (payloadInfo?.headers as Array<Record<string, unknown>>) || [];
     const getHeader = (name: string): string =>
-        headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+        (headers.find((h: Record<string, unknown>) => typeof h.name === 'string' && h.name.toLowerCase() === name.toLowerCase())?.value as string) || '';
 
     const fromRaw = getHeader('From');
     const toRaw = getHeader('To');
@@ -66,60 +68,66 @@ function parseGmailMessage(raw: any, accountId: string): EmailMessage {
     // Extract body text
     let bodyText = '';
     let bodyHtml = '';
-    const extractBody = (payload: any) => {
-        if (payload.mimeType === 'text/plain' && payload.body?.data) {
-            bodyText = atob(payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+    const extractBody = (payload: unknown) => {
+        const p = payload as Record<string, unknown>;
+        const bodyObj = p.body as Record<string, unknown> | undefined;
+
+        if (p.mimeType === 'text/plain' && typeof bodyObj?.data === 'string') {
+            bodyText = atob(bodyObj.data.replace(/-/g, '+').replace(/_/g, '/'));
         }
-        if (payload.mimeType === 'text/html' && payload.body?.data) {
-            bodyHtml = atob(payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+        if (p.mimeType === 'text/html' && typeof bodyObj?.data === 'string') {
+            bodyHtml = atob(bodyObj.data.replace(/-/g, '+').replace(/_/g, '/'));
         }
-        if (payload.parts) {
-            payload.parts.forEach(extractBody);
+        if (Array.isArray(p.parts)) {
+            p.parts.forEach(extractBody);
         }
     };
-    if (raw.payload) extractBody(raw.payload);
+    if (payloadInfo) extractBody(payloadInfo);
 
     // Extract attachments
     const attachments: EmailAttachment[] = [];
-    const extractAttachments = (payload: any) => {
-        if (payload.filename && payload.body?.attachmentId) {
+    const extractAttachments = (payload: unknown) => {
+        const p = payload as Record<string, unknown>;
+        const bodyObj = p.body as Record<string, unknown> | undefined;
+
+        if (typeof p.filename === 'string' && p.filename && typeof bodyObj?.attachmentId === 'string') {
             attachments.push({
-                id: payload.body.attachmentId,
-                filename: payload.filename,
-                mimeType: payload.mimeType || 'application/octet-stream',
-                size: payload.body.size || 0,
+                id: bodyObj.attachmentId,
+                filename: p.filename,
+                mimeType: (p.mimeType as string) || 'application/octet-stream',
+                size: (bodyObj.size as number) || 0,
             });
         }
-        if (payload.parts) {
-            payload.parts.forEach(extractAttachments);
+        if (Array.isArray(p.parts)) {
+            p.parts.forEach(extractAttachments);
         }
     };
-    if (raw.payload) extractAttachments(raw.payload);
+    if (payloadInfo) extractAttachments(payloadInfo);
 
-    const labelIds: string[] = raw.labelIds || [];
+    const labelIds: string[] = (rawMsg.labelIds as string[]) || [];
     const isRead = !labelIds.includes('UNREAD');
     const isStarred = labelIds.includes('STARRED');
     const isDraft = labelIds.includes('DRAFT');
 
     return {
-        id: `gmail_${raw.id}`,
-        threadId: raw.threadId || raw.id,
+        id: `gmail_${rawMsg.id}`,
+        threadId: (rawMsg.threadId as string) || (rawMsg.id as string),
         provider: 'gmail',
         accountId,
         from: parseAddress(fromRaw),
         to: parseAddressList(toRaw),
         cc: parseAddressList(ccRaw),
         subject,
-        snippet: raw.snippet || '',
+        snippet: (rawMsg.snippet as string) || '',
         bodyText,
         bodyHtml,
-        date: raw.internalDate ? parseInt(raw.internalDate) : new Date(dateRaw).getTime(),
+        date: rawMsg.internalDate ? parseInt(rawMsg.internalDate as string) : new Date(dateRaw).getTime(),
         isRead,
         isStarred,
         isDraft,
         labels: labelIds,
         attachments,
-        providerMessageId: raw.id,
+        providerMessageId: rawMsg.id as string,
     };
 }
 
@@ -259,7 +267,7 @@ export class GmailProvider implements EmailProviderInterface {
             .replace(/\//g, '_')
             .replace(/=+$/, '');
 
-        const body: any = { raw: encoded };
+        const body: Record<string, string> = { raw: encoded };
         if (data.threadId) {
             body.threadId = data.threadId;
         }

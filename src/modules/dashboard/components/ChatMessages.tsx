@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageItem } from '@/core/components/chat/ChatMessage';
+import { type AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { Bot, MoreHorizontal } from 'lucide-react';
 
 interface ChatMessagesProps {
-    history: any[];
+    history: AgentMessage[];
     isProcessing: boolean;
     chatEndRef: React.RefObject<HTMLDivElement>;
 }

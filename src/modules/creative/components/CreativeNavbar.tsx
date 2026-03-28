@@ -146,7 +146,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                             if (granted) {
                                 ScreenControl.openProjectorWindow(window.location.href);
                             } else {
-                                alert("Screen Control API not supported or permission denied.");
+                                toast.error('Screen Control API not supported or permission denied.');
                             }
                         }}
                         title="Open Projector"

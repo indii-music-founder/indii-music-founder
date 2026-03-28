@@ -15,6 +15,7 @@ import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ModuleErrorBoundary } from './components/ModuleErrorBoundary';
+import { ModuleAmbientBackground } from './components/ModuleAmbientBackground';
 import { MobileTabBar } from './components/MobileTabBar';
 import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
@@ -529,13 +530,16 @@ export default function App() {
                                             </div>
                                         )}
 
-                                        <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
+                                        <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative z-0">
+                                            {/* Module Ambient Background */}
+                                            <ModuleAmbientBackground />
+
                                             {/* Mobile Header — phone only */}
                                             {showChrome && (
                                                 <MobileHeader />
                                             )}
 
-                                            <div className={`flex-1 overflow-y-auto relative custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
+                                            <div className={`flex-1 overflow-y-auto relative z-10 custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
                                                 {/* Item 336: ModuleErrorBoundary wraps every lazy module — shows module name in error UI */}
                                                 <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
                                                     <Suspense fallback={<LoadingFallback />}>
@@ -543,8 +547,6 @@ export default function App() {
                                                     </Suspense>
                                                 </ModuleErrorBoundary>
                                             </div>
-
-
                                         </main>
 
                                         {/* Right Panel - Hidden for standalone modules and mobile */}

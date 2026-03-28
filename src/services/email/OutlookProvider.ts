@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 /**
  * Outlook Provider — Uses Microsoft Identity Platform (MSAL) for OAuth
  * and Microsoft Graph API for message operations.
@@ -37,38 +36,51 @@ const OUTLOOK_SCOPES = [
 /**
  * Parse a Microsoft Graph message into our unified EmailMessage type.
  */
-function parseOutlookMessage(raw: any, accountId: string): EmailMessage {
-    const parseAddress = (addr: any): EmailAddress => ({
-        name: addr?.emailAddress?.name || '',
-        email: addr?.emailAddress?.address || '',
+function parseOutlookMessage(raw: unknown, accountId: string): EmailMessage {
+    const rawMsg = raw as Record<string, unknown>;
+
+    const parseAddress = (addr: unknown): EmailAddress => {
+        const a = addr as Record<string, unknown>;
+        const emailAddress = a?.emailAddress as Record<string, unknown> | undefined;
+        return {
+            name: (emailAddress?.name as string) || '',
+            email: (emailAddress?.address as string) || '',
+        };
+    };
+
+    const rawAttachments = Array.isArray(rawMsg.attachments) ? rawMsg.attachments : [];
+    const attachments: EmailAttachment[] = rawAttachments.map((att: unknown) => {
+        const a = att as Record<string, unknown>;
+        return {
+            id: (a.id as string) || '',
+            filename: (a.name as string) || 'attachment',
+            mimeType: (a.contentType as string) || 'application/octet-stream',
+            size: (a.size as number) || 0,
+        };
     });
 
-    const attachments: EmailAttachment[] = (raw.attachments || []).map((att: any) => ({
-        id: att.id,
-        filename: att.name || 'attachment',
-        mimeType: att.contentType || 'application/octet-stream',
-        size: att.size || 0,
-    }));
+    const bodyObj = rawMsg.body as Record<string, unknown> | undefined;
+    const flagObj = rawMsg.flag as Record<string, unknown> | undefined;
 
     return {
-        id: `outlook_${raw.id}`,
-        threadId: raw.conversationId || raw.id,
+        id: `outlook_${rawMsg.id}`,
+        threadId: (rawMsg.conversationId as string) || (rawMsg.id as string),
         provider: 'outlook',
         accountId,
-        from: parseAddress(raw.from),
-        to: (raw.toRecipients || []).map(parseAddress),
-        cc: (raw.ccRecipients || []).map(parseAddress),
-        subject: raw.subject || '',
-        snippet: raw.bodyPreview || '',
-        bodyText: raw.body?.contentType === 'text' ? raw.body?.content : undefined,
-        bodyHtml: raw.body?.contentType === 'html' ? raw.body?.content : undefined,
-        date: new Date(raw.receivedDateTime || raw.createdDateTime).getTime(),
-        isRead: raw.isRead ?? true,
-        isStarred: raw.flag?.flagStatus === 'flagged',
-        isDraft: raw.isDraft ?? false,
-        labels: raw.categories || [],
+        from: parseAddress(rawMsg.from),
+        to: (Array.isArray(rawMsg.toRecipients) ? rawMsg.toRecipients : []).map(parseAddress),
+        cc: (Array.isArray(rawMsg.ccRecipients) ? rawMsg.ccRecipients : []).map(parseAddress),
+        subject: (rawMsg.subject as string) || '',
+        snippet: (rawMsg.bodyPreview as string) || '',
+        bodyText: bodyObj?.contentType === 'text' ? (bodyObj?.content as string) : undefined,
+        bodyHtml: bodyObj?.contentType === 'html' ? (bodyObj?.content as string) : undefined,
+        date: new Date((rawMsg.receivedDateTime as string) || (rawMsg.createdDateTime as string)).getTime(),
+        isRead: typeof rawMsg.isRead === 'boolean' ? rawMsg.isRead : true,
+        isStarred: flagObj?.flagStatus === 'flagged',
+        isDraft: typeof rawMsg.isDraft === 'boolean' ? rawMsg.isDraft : false,
+        labels: (rawMsg.categories as string[]) || [],
         attachments,
-        providerMessageId: raw.id,
+        providerMessageId: rawMsg.id as string,
     };
 }
 
@@ -152,8 +164,8 @@ export class OutlookProvider implements EmailProviderInterface {
             throw new Error(`Graph API error: ${res.status}`);
         }
 
-        const data = await res.json();
-        const messages = (data.value || []).map((m: any) =>
+        const data = (await res.json()) as { value?: unknown[], '@odata.nextLink'?: string, '@odata.count'?: number };
+        const messages = (Array.isArray(data.value) ? data.value : []).map((m: unknown) =>
             parseOutlookMessage(m, 'outlook-primary')
         );
 
@@ -169,7 +181,7 @@ export class OutlookProvider implements EmailProviderInterface {
         accessToken: string,
         data: ComposeEmailData
     ): Promise<SendEmailResult> {
-        const message: any = {
+        const message: Record<string, unknown> = {
             subject: data.subject,
             body: {
                 contentType: data.isHtml ? 'HTML' : 'Text',

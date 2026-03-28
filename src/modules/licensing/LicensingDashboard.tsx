@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useEffect } from 'react';
 import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, Scale, TrendingUp, Briefcase, BarChart3 } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
-import { LicenseRequest } from '@/services/licensing/types';
+import type { LicenseRequest, License } from '@/services/licensing/types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
@@ -329,7 +328,7 @@ function RecentClearancesPanel({ requests, onDraft }: { requests: LicenseRequest
     );
 }
 
-function ActionButtonsPanel({ toast }: { toast: any }) {
+function ActionButtonsPanel({ toast }: { toast: ReturnType<typeof useToast> }) {
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Quick Actions</h3>
@@ -372,7 +371,7 @@ function LicensingTemplatesPanel() {
     );
 }
 
-function ComplianceChecklistPanel({ licenses }: { licenses: any[] }) {
+function ComplianceChecklistPanel({ licenses }: { licenses: License[] }) {
     // Compliance checklist should be generated dynamically based on deal status
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">

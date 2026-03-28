@@ -54,7 +54,7 @@ const setupTouringMock = (overrides = {}) => {
 
 vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn(() => ({})),
-    httpsCallable: (functionsInstance: any, name: string) => {
+    httpsCallable: (functionsInstance: unknown, name: string) => {
         console.log(`Mock httpsCallable called for: ${name}`);
         return vi.fn().mockImplementation(async (data) => {
             console.log(`Mock function executed for ${name} with data:`, data);

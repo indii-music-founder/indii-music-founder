@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import {
     AreaChart,
@@ -30,15 +29,22 @@ interface AnalyticsChartsProps {
     className?: string;
 }
 
-const CustomTooltip = ({ active, payload, label, isRevenue }: any) => {
-    if (active && payload && payload.length) {
+type CustomTooltipProps = {
+    active?: boolean;
+    payload?: Array<{ value: number; name: string;[key: string]: unknown }>;
+    label?: string | number;
+    isRevenue: boolean;
+};
+
+const CustomTooltip = ({ active, payload, label, isRevenue }: CustomTooltipProps) => {
+    if (active && payload && payload.length > 0 && label !== undefined) {
         return (
             <div className="bg-[#18181b] border border-gray-800 p-3 rounded-lg shadow-2xl backdrop-blur-md">
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">
-                    {new Date(label).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {new Date(String(label)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
                 <p className="text-sm font-black text-white">
-                    {isRevenue ? '$' : ''}{payload[0].value.toLocaleString()}
+                    {isRevenue ? '$' : ''}{payload[0]?.value?.toLocaleString()}
                     <span className="ml-1 text-[10px] font-bold text-gray-400 uppercase tracking-tight">
                         {isRevenue ? 'USD' : 'Streams'}
                     </span>
@@ -157,7 +163,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                     <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Peak Performance</p>
                     <p className="text-xl font-black text-white tracking-tight">
                         {isRevenue ? '$' : ''}
-                        {Math.max(...data.map(d => d[selectedMetric] || 0)).toLocaleString()}
+                        {data.length > 0 ? Math.max(...data.map(d => d[selectedMetric] || 0)).toLocaleString() : '0'}
                     </p>
                 </div>
                 <div className="p-4 bg-gray-900/30 rounded-2xl border border-gray-800/50">

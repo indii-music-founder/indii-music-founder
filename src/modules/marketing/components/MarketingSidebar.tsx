@@ -163,18 +163,15 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
                 </div>
             </div>
 
-            {/* User Profile / Footer (Optional placeholder) */}
+            {/* Module Footer */}
             <div className="p-4 border-t border-white/5">
                 <div className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5">
-                    <div className="h-8 w-8 rounded-full bg-dept-marketing flex items-center justify-center text-xs font-bold text-white">
-                        CM
+                    <div className="h-8 w-8 rounded-full bg-dept-marketing/20 flex items-center justify-center">
+                        <Megaphone size={14} className="text-dept-marketing" />
                     </div>
                     <div className="overflow-hidden">
-                        <p className="text-sm font-medium text-white truncate">Campaign Mgr</p>
-                        <p className="text-xs text-green-400 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                            Online
-                        </p>
+                        <p className="text-sm font-medium text-white truncate">Marketing Studio</p>
+                        <p className="text-xs text-gray-500">indiiOS</p>
                     </div>
                 </div>
             </div>
