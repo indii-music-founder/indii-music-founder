@@ -64,7 +64,7 @@ export class DSRService {
 
         // indiiOS Phase 4: Persist processed earnings to Firestore
         const { earningsService } = await import('@/services/distribution/EarningsService');
-        
+
         // Find distributorId from mapping
         const distributorId = (distributorKey || 'unknown') as DistributorId;
 
@@ -73,14 +73,18 @@ export class DSRService {
             await earningsService.recordEarnings({
                 distributorId,
                 releaseId: calc.releaseId,
-                period: calc.period,
+                period: {
+                    startDate: calc.period.startDate,
+                    endDate: calc.period.endDate || new Date().toISOString()
+                },
                 streams: calc.totalStreams,
                 downloads: calc.totalDownloads,
                 grossRevenue: calc.grossRevenue,
                 distributorFee: calc.distributorFees,
                 netRevenue: calc.netRevenue,
                 currencyCode: calc.currencyCode,
-                lastUpdated: new Date().toISOString()
+                matchedReleases: 1, // Individual record per release
+                unmatchedISRCs: []
             });
         }
 

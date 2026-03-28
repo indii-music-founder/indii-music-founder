@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Radio } from 'lucide-react';
+import { Radio, PlusCircle, Library, BarChart3, Activity } from 'lucide-react';
 
 /* ── UI Components ── */
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,7 @@ import { TransferPanel } from './components/TransferPanel';
 import { QCVisualizer } from './components/QCVisualizer';
 
 /* ── Extracted Sub-components ── */
+
 import { ReleasesContent } from './components/ReleasesContent';
 import { DistributorQuickView } from './components/DistributorQuickView';
 import { DeliveryHealthPanel } from './components/DeliveryHealthPanel';
@@ -25,22 +26,24 @@ import { RegistrationChecklistPanel } from './components/RegistrationChecklistPa
 /* ── Logic ── */
 import { useDistributionDashboard } from './hooks/useDistributionDashboard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useTranslation } from 'react-i18next';
 
 /* ================================================================== */
 /*  Distribution Dashboard — Three-Panel Layout                        */
 /* ================================================================== */
 
 export default function DistributionDashboard() {
+    const { t } = useTranslation();
     const { releases, loading, error, handleRetry } = useDistributionDashboard();
 
     const TABS = [
-        { value: 'releases', label: 'Releases' },
-        { value: 'connections', label: 'Distributors' },
-        { value: 'bank', label: 'Bank' },
-        { value: 'authority', label: 'Authority' },
-        { value: 'keys', label: 'Keys' },
-        { value: 'brain', label: 'Brain (QC)' },
-        { value: 'transmission', label: 'Transfer' },
+        { value: 'releases', label: t('distribution.tabs.releases') },
+        { value: 'connections', label: t('distribution.tabs.connections') },
+        { value: 'bank', label: t('distribution.tabs.bank') },
+        { value: 'authority', label: t('distribution.tabs.authority') },
+        { value: 'keys', label: t('distribution.tabs.keys') },
+        { value: 'brain', label: t('distribution.tabs.brain') },
+        { value: 'transmission', label: t('distribution.tabs.transmission') },
     ];
 
     return (
@@ -63,13 +66,13 @@ export default function DistributionDashboard() {
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center gap-2.5">
-                                    <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">Distribution</h1>
+                                    <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">{t('distribution.title')}</h1>
                                     <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-dept-publishing/10 border border-dept-publishing/20 rounded-full">
                                         <div className="w-1.5 h-1.5 rounded-full bg-dept-publishing animate-pulse" />
                                         <span className="text-[10px] font-bold text-dept-publishing tracking-widest uppercase">Live System</span>
                                     </div>
                                 </div>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.15em] mt-1">150+ PLATFORMS • ONE-CLICK GLOBAL DELIVERY</p>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.15em] mt-1">{t('distribution.subtitle')}</p>
                             </div>
                         </div>
                     </div>
@@ -78,15 +81,18 @@ export default function DistributionDashboard() {
                     <Tabs defaultValue="releases" className="flex-1 flex flex-col overflow-hidden">
                         <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-hide bg-black/5">
                             <TabsList className="bg-transparent gap-6 p-0 h-14 inline-flex">
-                                {TABS.map((tab) => (
-                                    <TabsTrigger
-                                        key={tab.value}
-                                        value={tab.value}
-                                        className="text-muted-foreground data-[state=active]:text-dept-publishing data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-publishing rounded-none px-0 h-full font-black transition-all text-[11px] uppercase tracking-widest whitespace-nowrap"
-                                    >
-                                        {tab.label}
-                                    </TabsTrigger>
-                                ))}
+                                <TabsTrigger value="new-release" data-testid="distro-tab-new" className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <PlusCircle size={14} /> {t('distribution.tabs.new')}
+                                </TabsTrigger>
+                                <TabsTrigger value="catalogue" data-testid="distro-tab-catalogue" className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Library size={14} /> {t('distribution.tabs.catalogue')}
+                                </TabsTrigger>
+                                <TabsTrigger value="analytics" data-testid="distro-tab-analytics" className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <BarChart3 size={14} /> {t('distribution.tabs.analytics')}
+                                </TabsTrigger>
+                                <TabsTrigger value="transmissions" data-testid="distro-tab-transmissions" className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Activity size={14} /> {t('distribution.tabs.transmissions')}
+                                </TabsTrigger>
                             </TabsList>
                         </div>
 

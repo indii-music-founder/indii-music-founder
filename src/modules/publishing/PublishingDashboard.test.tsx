@@ -77,8 +77,8 @@ vi.mock('./components/PublishingSkeleton', () => ({
 // Mock motion to avoid animation issues in tests
 vi.mock('motion/react', () => ({
     motion: {
-        div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-        button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+        div: ({ children, layout, layoutId, initial, animate, exit, transition, whileHover, whileTap, variants, ...props }: any) => <div {...props}>{children}</div>,
+        button: ({ children, layout, layoutId, initial, animate, exit, transition, whileHover, whileTap, variants, ...props }: any) => <button {...props}>{children}</button>,
     },
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -261,6 +261,7 @@ describe('PublishingDashboard', () => {
         fireEvent.click(checkboxes[1]!);
 
         // Find delete button in floating bar
+        const deleteBtn = screen.getByRole('button', { name: /Delete/i });
         await act(async () => {
             fireEvent.click(deleteBtn);
         });
@@ -296,6 +297,7 @@ describe('PublishingDashboard', () => {
         fireEvent.click(checkboxes[1]!);
 
         // Find archive button
+        const archiveBtn = screen.getByRole('button', { name: /Archive/i });
         await act(async () => {
             fireEvent.click(archiveBtn);
         });

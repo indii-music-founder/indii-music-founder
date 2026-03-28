@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 /**
  * Agent Context Bridge
  *
@@ -9,7 +8,9 @@
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 import { SubscriptionService, subscriptionService } from '@/services/subscription/SubscriptionService';
 import { instrumentRegistry } from './instruments/InstrumentRegistry';
-import { Instrument } from './instruments/InstrumentTypes';
+import { Instrument, InstrumentInput } from './instruments/InstrumentTypes';
+import type { UsageStats } from '@/services/subscription/types';
+import { logger } from '@/utils/logger';
 
 export interface AgentInstrumentContext {
   /** Available instruments formatted for agent discovery */
@@ -92,7 +93,7 @@ export class AgentContextBridge {
   /**
    * Check if user has remaining quota for any operations
    */
-  private hasRemainingQuota(usage: any): boolean {
+  private hasRemainingQuota(usage: UsageStats): boolean {
     if (this.tier === SubscriptionTier.STUDIO) return true;
 
     return (
@@ -110,7 +111,7 @@ export class AgentContextBridge {
   async formatInstrumentsForLLM(): Promise<Array<{
     name: string;
     description: string;
-    parameters: any;
+    parameters: Record<string, unknown>;
   }>> {
     const context = await this.buildAgentContext();
 
@@ -140,25 +141,20 @@ export class AgentContextBridge {
   /**
    * Get parameter schema for a specific instrument
    */
-  private getInstrumentParameters(instrumentId: string): any {
+  private getInstrumentParameters(instrumentId: string): Record<string, unknown> {
     const instrument = instrumentRegistry.get(instrumentId);
     if (!instrument) return {};
 
     return instrument.inputs.reduce((acc, input) => {
       acc[input.name] = {
-        type: (input.schema.type as string).toUpperCase(),
+        type: (String(input.schema.type)).toUpperCase(),
         description: input.description,
         ...(input.schema.enum && { enum: input.schema.enum }),
         ...(input.schema.default !== undefined && { default: input.schema.default })
       };
 
-      if (input.required) {
-        // Note: In actual implementation, we'd build the required array separately
-        // as it can't be included in the properties object
-      }
-
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
   }
 
   /**
@@ -166,9 +162,9 @@ export class AgentContextBridge {
    */
   async executeAgentInstrument(
     instrumentId: string,
-    parameters: Record<string, any>,
-    context?: any
-  ): Promise<any> {
+    parameters: Record<string, unknown>,
+    _context?: unknown
+  ): Promise<unknown> {
     const instrument = instrumentRegistry.get(instrumentId);
     if (!instrument) {
       throw new Error(`Instrument not found: ${instrumentId}`);
@@ -206,7 +202,7 @@ export class AgentContextBridge {
    */
   private async requestApproval(
     instrumentId: string,
-    parameters: Record<string, any>
+    parameters: Record<string, unknown>
   ): Promise<boolean> {
     const instrument = instrumentRegistry.get(instrumentId);
     if (!instrument) return false;
@@ -215,16 +211,18 @@ export class AgentContextBridge {
 
     return new Promise((resolve) => {
       // Dispatch custom event that UI components can listen to
+      const eventDetail: Record<string, unknown> = {
+        instrumentId,
+        instrumentName: instrument.metadata.name,
+        parameters,
+        estimatedCost: cost.amount,
+        onApprove: () => resolve(true),
+        onDeny: () => resolve(false)
+      };
+
       window.dispatchEvent(
         new CustomEvent('instrument-approval-request', {
-          detail: {
-            instrumentId,
-            instrumentName: instrument.metadata.name,
-            parameters,
-            estimatedCost: cost.amount,
-            onApprove: () => resolve(true),
-            onDeny: () => resolve(false)
-          }
+          detail: eventDetail
         })
       );
     });
@@ -235,13 +233,14 @@ export class AgentContextBridge {
    */
   private async checkQuotaBeforeExecution(
     instrumentId: string,
-    parameters: Record<string, any>
+    parameters: Record<string, unknown>
   ): Promise<{ allowed: boolean; reason?: string }> {
     // Map instrument type to quota action
     if (instrumentId.includes('image')) {
-      return await this.subscriptionService.canPerformAction('generateImage', parameters.count || 1);
+      const count = (parameters['count'] as number) || 1;
+      return await this.subscriptionService.canPerformAction('generateImage', count);
     } else if (instrumentId.includes('video')) {
-      const duration = parameters.duration || 15;
+      const duration = (parameters['duration'] as number) || 15;
       return await this.subscriptionService.canPerformAction('generateVideo', duration);
     }
 

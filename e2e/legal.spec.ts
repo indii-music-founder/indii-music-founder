@@ -1,41 +1,45 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Legal Module E2E Tests
- * Covers: module load, contract list view, AI review placeholder
+ * Legal Module E2E Test
  */
-
 test.describe('Legal Module', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        await page.goto('http://localhost:4242');
+        await page.waitForLoadState('networkidle');
+
+        // Navigate to legal
+        const legalNav = page.locator('[data-testid="nav-item-legal"]');
+        await expect(legalNav).toBeVisible({ timeout: 10000 });
+        await legalNav.click();
+
+        // Wait for module header
+        await page.waitForSelector('h1:has-text("Legal & Rights")', { timeout: 10000 });
     });
 
-    test('navigates to legal module without crash', async ({ page }) => {
-        const nav = page.locator('[data-testid="nav-item-legal"]');
-        const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
-
-        await nav.click();
-        await page.waitForTimeout(1_500);
-        await expect(page.locator('#root')).toBeVisible();
-        // No white screen
-        const bodyText = await page.locator('body').innerText();
-        expect(bodyText.length).toBeGreaterThan(10);
+    test('should navigate to legal module', async ({ page }) => {
+        await expect(page.locator('h1')).toContainText(/Legal/i);
     });
 
-    test('legal module renders key UI elements', async ({ page }) => {
-        const nav = page.locator('[data-testid="nav-item-legal"]');
-        const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
+    test('should switch between Legal tabs', async ({ page }) => {
+        // Test DMCA tab
+        const dmcaTab = page.locator('[data-testid="legal-tab-dmca"]');
+        await dmcaTab.click();
+        await expect(dmcaTab).toHaveAttribute('data-state', 'active');
 
-        await nav.click();
-        await page.waitForTimeout(2_000);
+        // Test Counsel tab
+        const counselTab = page.locator('[data-testid="legal-tab-counsel"]');
+        await counselTab.click();
+        await expect(counselTab).toHaveAttribute('data-state', 'active');
 
-        // Should have some heading or content
-        const headings = page.locator('h1, h2, h3');
-        const count = await headings.count();
-        expect(count).toBeGreaterThan(0);
+        // Test Analyzer tab
+        const analyzerTab = page.locator('[data-testid="legal-tab-analyzer"]');
+        await analyzerTab.click();
+        await expect(analyzerTab).toHaveAttribute('data-state', 'active');
+    });
+
+    test('should show file drop area in Analyzer mode', async ({ page }) => {
+        const dropArea = page.locator('text=/Drop contract here/i').first();
+        await expect(dropArea).toBeVisible();
     });
 });

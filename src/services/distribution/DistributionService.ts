@@ -1,7 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { auth, storage } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
-import { DistributionTaskDocument, TaxProfileDocument } from '@/types/firestore';
+import {
+    DistributionTaskDocument,
+    TaxProfileDocument,
+    DDEXReleaseDocument,
+    ReleaseDistributionStatus
+} from '@/types/firestore';
 import { isrcService } from './ISRCService';
 import { upcService } from './UPCService';
 import { taxService } from './TaxService';
@@ -60,6 +64,8 @@ async function writeDistributionAuditEvent(
 }
 
 class DistributionService extends FirestoreService<DistributionTaskDocument> {
+    private releasesService = new FirestoreService<DDEXReleaseDocument>('ddexReleases');
+
     constructor() {
         super('distribution_tasks');
     }
@@ -511,8 +517,6 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
     }
 
-    private releasesService = new FirestoreService<any>('ddexReleases');
-
     /**
      * Stage a new release for distribution
      */
@@ -531,16 +535,16 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         return this.releasesService.add({
             ...data,
             userId,
-            status: 'validating',
+            status: 'validating' as ReleaseDistributionStatus,
             lastCheckedAt: Timestamp.now(),
             submittedAt: null
-        });
+        } as unknown as DDEXReleaseDocument);
     }
 
     /**
      * Get all releases for the current user/org
      */
-    async getReleases(orgId?: string): Promise<any[]> {
+    async getReleases(orgId?: string): Promise<DDEXReleaseDocument[]> {
         const userId = auth.currentUser?.uid;
         if (!userId) return [];
 
@@ -572,6 +576,26 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         // Item 414: Snapshot metadata at the point of submission for post-distribution history
         writeMetadataSnapshot(releaseId, releaseData).catch(() => { /* best-effort */ });
+
+        // Item: Check mechanical royalty clearance before distribution (Hardened Pre-flight)
+        try {
+            const { MechanicalRoyaltyService } = await import('@/services/publishing/MechanicalRoyaltyService');
+            const clearance = await MechanicalRoyaltyService.isReleaseClearedForDistribution(releaseId);
+            if (!clearance.cleared) {
+                const errorMsg = `Release distribution blocked: Mechanical license pending for [${clearance.pendingTracks.join(', ')}]`;
+                await this.updateTask(taskId, { status: 'FAILED', error: errorMsg });
+                // In production, we block. In dev, we might just warn?
+                // For now, let's enforce production rules.
+                throw new Error(errorMsg);
+            }
+            logger.info(`[Distribution] Mechanical clearance verified for release ${releaseId}`);
+        } catch (clearanceErr) {
+            if (clearanceErr instanceof Error && clearanceErr.message.includes('blocked')) {
+                throw clearanceErr;
+            }
+            logger.warn('[Distribution] Clearance check service unavailable or errored:', clearanceErr);
+            // Default to allow in dev if service errors, but log warning
+        }
 
         // Item 409: Auto-assign UPC to releases that are missing one
         if (!releaseData.upc || releaseData.upc.trim() === '') {
@@ -607,8 +631,8 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         let cleanup: (() => void) | undefined;
-        if (onProgress) {
-            cleanup = window.electronAPI.distribution.onSubmitProgress(onProgress as (progress: number) => void);
+        if (onProgress && window.electronAPI) {
+            cleanup = window.electronAPI.distribution.onSubmitProgress(onProgress);
         }
 
         try {
@@ -693,7 +717,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Subscribe to releases
      */
-    subscribeReleases(callback: (releases: any[]) => void, orgId?: string) {
+    subscribeReleases(callback: (releases: DDEXReleaseDocument[]) => void, orgId?: string) {
         const userId = auth.currentUser?.uid;
         if (!userId) return () => { };
 

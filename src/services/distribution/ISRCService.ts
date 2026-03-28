@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { getFirestore, collection, addDoc, getDocs, query, where, limit, updateDoc, doc, runTransaction, Timestamp } from 'firebase/firestore';
 import { app, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
@@ -9,7 +8,7 @@ export interface ISRCRecord {
     isrc: string;
     status: 'available' | 'assigned' | 'reserved';
     assignedTo?: string; // Release ID or Track ID
-    assignedAt?: any;
+    assignedAt?: Timestamp;
 }
 
 export class ISRCService {
@@ -80,14 +79,14 @@ export class ISRCService {
         const q = query(this.registryRef, where('isrc', '==', isrc), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) return null;
-        return { id: snap.docs[0]!.id, ...snap.docs[0]!.data() } as ISRCRecordDocument;
+        return { id: snap.docs[0]!.id, ...snap.docs[0]!.data() } as unknown as ISRCRecordDocument;
     }
 
     /** Look up all registry records for a given release. */
     async getByRelease(releaseId: string): Promise<ISRCRecordDocument[]> {
         const q = query(this.registryRef, where('releaseId', '==', releaseId));
         const snap = await getDocs(q);
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as ISRCRecordDocument));
+        return snap.docs.map(d => ({ id: d.id, ...d.data() } as unknown as ISRCRecordDocument));
     }
 
     /** Get all registry entries belonging to the currently authenticated user. */
@@ -96,7 +95,7 @@ export class ISRCService {
         if (!userId) return [];
         const q = query(this.registryRef, where('userId', '==', userId));
         const snap = await getDocs(q);
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as ISRCRecordDocument));
+        return snap.docs.map(d => ({ id: d.id, ...d.data() } as unknown as ISRCRecordDocument));
     }
 }
 

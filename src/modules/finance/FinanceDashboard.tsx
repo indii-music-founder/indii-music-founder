@@ -16,9 +16,10 @@ import { useFinance } from './hooks/useFinance';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useTranslation } from 'react-i18next';
 import {
     Briefcase, CreditCard, ShoppingBag, TrendingUp,
-    DollarSign, ArrowUpRight, Wallet,
+    DollarSign, ArrowUpRight, Wallet, Clock, Scale,
     AlertTriangle, Calendar, PiggyBank, Globe, Users,
     FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark
 } from 'lucide-react';
@@ -31,7 +32,6 @@ import type { Expense } from './schemas';
 /*  ┌──────────┬───────────────────────────┬──────────────┐            */
 /*  │  LEFT    │    CENTER                 │   RIGHT      │            */
 /*  │  Quick   │    Tab System             │   Forecast   │            */
-/*  │  Stats   │    (Earnings/Expenses/    │   Breakdown  │            */
 /*  │  Txns    │     Merch) full-width     │   Alerts     │            */
 /*  │  Tax     │                           │              │            */
 /*  └──────────┴───────────────────────────┴──────────────┘            */
@@ -41,6 +41,7 @@ import type { Expense } from './schemas';
 /* ================================================================== */
 
 export default function FinanceDashboard() {
+    const { t } = useTranslation();
     const {
         earningsSummary,
         earningsLoading,
@@ -80,8 +81,8 @@ export default function FinanceDashboard() {
                                 <TrendingUp size={18} className="text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Finance</h1>
-                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">REAL-TIME FISCAL OPERATIONS</p>
+                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">{t('finance.title')}</h1>
+                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">{t('finance.subtitle')}</p>
                             </div>
                         </div>
                     </div>
@@ -90,44 +91,44 @@ export default function FinanceDashboard() {
                     <Tabs defaultValue="earnings" className="flex-1 flex flex-col overflow-hidden">
                         <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
                             <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
-                                <TabsTrigger value="earnings" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Briefcase size={14} /> Earnings
+                                <TabsTrigger value="earnings" data-testid="finance-tab-earnings" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Clock size={14} /> {t('finance.tabs.earnings')}
                                 </TabsTrigger>
-                                <TabsTrigger value="expenses" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <CreditCard size={14} /> Expenses
+                                <TabsTrigger value="expenses" data-testid="finance-tab-expenses" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <FileText size={14} /> {t('finance.tabs.expenses')}
                                 </TabsTrigger>
-                                <TabsTrigger value="merch" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <ShoppingBag size={14} /> Merchandise
+                                <TabsTrigger value="merch" data-testid="finance-tab-merch" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Scale size={14} /> {t('finance.tabs.merch')}
                                 </TabsTrigger>
-                                <TabsTrigger value="royalties" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <TrendingUp size={14} /> Royalties
+                                <TabsTrigger value="royalties" data-testid="finance-tab-royalties" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Briefcase size={14} /> {t('finance.tabs.royalties')}
                                 </TabsTrigger>
-                                <TabsTrigger value="currency" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Globe size={14} /> Multi-Currency
+                                <TabsTrigger value="currency" data-testid="finance-tab-currency" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <Globe size={14} /> {t('finance.tabs.currency')}
                                 </TabsTrigger>
-                                <TabsTrigger value="splits" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <GitMerge size={14} /> Split Escrow
+                                <TabsTrigger value="splits" data-testid="finance-tab-splits" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <GitMerge size={14} /> {t('finance.tabs.splits')}
                                 </TabsTrigger>
                                 <TabsTrigger value="onboarding" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Users size={14} /> Stripe Connect
+                                    <Users size={14} /> {t('finance.tabs.onboarding')}
                                 </TabsTrigger>
                                 <TabsTrigger value="tax" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <FileText size={14} /> Tax Forms
+                                    <FileText size={14} /> {t('finance.tabs.tax')}
                                 </TabsTrigger>
                                 <TabsTrigger value="anomaly" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Activity size={14} /> Anomaly
+                                    <Activity size={14} /> {t('finance.tabs.anomaly')}
                                 </TabsTrigger>
                                 <TabsTrigger value="audit" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Shield size={14} /> Audit Logs
+                                    <Shield size={14} /> {t('finance.tabs.audit')}
                                 </TabsTrigger>
                                 <TabsTrigger value="budget" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <DollarSign size={14} /> Budget
+                                    <DollarSign size={14} /> {t('finance.tabs.budget')}
                                 </TabsTrigger>
                                 <TabsTrigger value="receipts" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Camera size={14} /> Receipt OCR
+                                    <Camera size={14} /> {t('finance.tabs.receipts')}
                                 </TabsTrigger>
                                 <TabsTrigger value="recoupment" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Landmark size={14} /> Recoupment
+                                    <Landmark size={14} /> {t('finance.tabs.recoupment')}
                                 </TabsTrigger>
                             </TabsList>
                         </div>

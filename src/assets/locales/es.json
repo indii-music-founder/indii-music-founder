@@ -56,11 +56,49 @@
     },
     "distribution": {
         "title": "Distribución",
+        "subtitle": "MÁS DE 150 PLATAFORMAS • ENTREGA GLOBAL CON UN CLIC",
         "newRelease": "Nuevo lanzamiento",
         "status": "Estado",
         "distributed": "Distribuido",
         "pending": "Pendiente",
-        "failed": "Fallido"
+        "failed": "Fallido",
+        "tabs": {
+            "releases": "Lanzamientos",
+            "connections": "Distribuidores",
+            "bank": "Banco",
+            "authority": "Autoridad",
+            "keys": "Claves",
+            "brain": "Cerebro (QC)",
+            "transmission": "Transferencia"
+        }
+    },
+    "finance": {
+        "title": "Finanzas",
+        "subtitle": "OPERACIONES FISCALES EN TIEMPO REAL",
+        "tabs": {
+            "earnings": "Ganancias",
+            "expenses": "Gastos",
+            "merch": "Mercancía",
+            "royalties": "Regalías",
+            "currency": "Múltiples Monedas",
+            "splits": "Gestión de Divisiones",
+            "onboarding": "Stripe Connect",
+            "tax": "Formularios de Impuestos",
+            "anomaly": "Anomalías",
+            "audit": "Registros de Auditoría",
+            "budget": "Presupuesto",
+            "receipts": "OCR de Recibos",
+            "recoupment": "Recuperación"
+        }
+    },
+    "legal": {
+        "title": "Legal",
+        "subtitle": "ANÁLISIS DE CONTRATOS POR IA",
+        "tabs": {
+            "analyzer": "Análisis de Contratos",
+            "dmca": "Avisos DMCA",
+            "counsel": "Buscar Asesoría"
+        }
     },
     "agent": {
         "title": "Asistente de IA",

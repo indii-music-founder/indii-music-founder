@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
+
 
 import * as DistributionTypes from './distribution';
 
@@ -128,7 +128,7 @@ export interface ElectronAPI {
         downloadRemoteFile: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string>;
         // Item 350: Typed submitRelease + onSubmitProgress (replaces `as any` casts)
         submitRelease: (releaseData: unknown) => Promise<{ success: boolean; error?: string; report?: { sftp_skipped?: boolean } }>;
-        onSubmitProgress: (callback: (progress: number) => void) => () => void;
+        onSubmitProgress: (callback: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void) => () => void;
     };
     on: (channel: string, callback: (...args: unknown[]) => void) => () => void;
     // Item 351: Explicit invoke signature to remove @ts-ignore in usePowerState and UpdaterMonitor

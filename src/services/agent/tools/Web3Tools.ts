@@ -41,7 +41,7 @@ Requirements:
 3. Add a PaymentSplitter that respects the percentage splits above
 4. Include a mint() function (owner-only)
 5. Add natspec comments
-6. Ensure the contract compiles with no warnings under solc 0.8.20
+6. Ensure the contract complies with no warnings under solc 0.8.20
 
 Return ONLY the complete Solidity source code, no markdown fences.`;
 
@@ -52,6 +52,25 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
             // Verify it looks like Solidity (basic sanity check)
             if (!sourceCode.includes('pragma solidity') || !sourceCode.includes('contract ')) {
                 throw new Error('AI did not return valid Solidity source.');
+            }
+
+            // Persist the generated contract metadata/source for the user
+            try {
+                const { db, auth } = await import('@/services/firebase');
+                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const uid = auth.currentUser?.uid;
+                if (uid) {
+                    await addDoc(collection(db, 'users', uid, 'web3Contracts'), {
+                        name: args.contractName,
+                        type: args.tokenType,
+                        splits: args.splits,
+                        sourceCode,
+                        createdAt: serverTimestamp(),
+                        version: '0.8.20',
+                    });
+                }
+            } catch (pErr) {
+                logger.warn('[Web3Tools] Failed to persist generated contract:', pErr);
             }
 
             return toolSuccess({

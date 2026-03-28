@@ -9,6 +9,7 @@ import { LegalTools } from '@/services/agent/tools/LegalTools';
 import { LegalService } from '@/services/legal/LegalService';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useTranslation } from 'react-i18next';
 
 /* ================================================================== */
 /*  Legal Dashboard — Three-Panel Layout                                */
@@ -23,6 +24,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 /* ================================================================== */
 
 export default function LegalDashboard() {
+    const { t } = useTranslation();
     const [isDragging, setIsDragging] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<null | {
@@ -195,8 +197,8 @@ Only return valid JSON.
                                 <Shield size={18} className="text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Legal</h1>
-                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">AI-POWERED CONTRACT ANALYSIS</p>
+                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">{t('legal.title')}</h1>
+                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">{t('legal.subtitle')}</p>
                             </div>
                         </div>
                     </div>
@@ -204,14 +206,14 @@ Only return valid JSON.
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                         <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
                             <TabsList className="bg-transparent gap-6 p-0 h-12">
-                                <TabsTrigger value="analyzer" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                    <FileText size={14} /> Contract Analysis
+                                <TabsTrigger value="analyzer" data-testid="legal-tab-analyzer" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <FileText size={14} /> {t('legal.tabs.analyzer')}
                                 </TabsTrigger>
-                                <TabsTrigger value="dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                    <Shield size={14} /> DMCA Notices
+                                <TabsTrigger value="dmca" data-testid="legal-tab-dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Shield size={14} /> {t('legal.tabs.dmca')}
                                 </TabsTrigger>
-                                <TabsTrigger value="counsel" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                    <Scale size={14} /> Find Counsel
+                                <TabsTrigger value="counsel" data-testid="legal-tab-counsel" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                    <Scale size={14} /> {t('legal.tabs.counsel')}
                                 </TabsTrigger>
                             </TabsList>
                         </div>
