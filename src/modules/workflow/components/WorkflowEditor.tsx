@@ -1,6 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 
-import { Maximize, Eraser } from 'lucide-react';
+import { Maximize, Eraser, Users } from 'lucide-react';
+
 import ReactFlow, {
     ReactFlowProvider,
     addEdge,
@@ -57,6 +58,7 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
         if (readOnly) return;
         setEdges((eds) => applyEdgeChanges(changes, eds));
     }, [setEdges, readOnly]);
+
 
 
     // --- STRICT CONNECTION VALIDATION ---
