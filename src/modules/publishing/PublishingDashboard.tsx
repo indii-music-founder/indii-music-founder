@@ -317,8 +317,15 @@ export default function PublishingDashboard() {
                                         .filter(r => r.metadata.isrc)
                                         .map(r => [r.metadata.isrc!, r.metadata])
                                 );
+
+                                const result = await dsrUploadService.processAndSaveReport(report, catalog);
+
+                                if (!result.success) {
+                                    throw new Error(result.error || 'Failed to process report');
+                                }
+
                                 setIsDSRModalOpen(false);
-                                toast.success('Sales report integrated successfully');
+                                toast.success(`Integrated ${result.matchedReleases} releases from report`);
                                 await fetchEarnings({ startDate: defaultDateRange.start, endDate: defaultDateRange.end });
                             } catch (error) {
                                 logger.error('[DSR Upload] Error:', error);

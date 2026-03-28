@@ -25,6 +25,7 @@ import { MessageItem } from '@/core/components/chat/ChatMessage';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { useTranslation } from 'react-i18next';
 
 const InboxTabNew = React.lazy(() => import('./InboxTab'));
 
@@ -35,6 +36,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const CampaignsTab: React.FC = () => {
+    const { t } = useTranslation();
     const [campaigns, setCampaigns] = React.useState<CampaignAsset[]>([]);
     const [loading, setLoading] = React.useState(true);
 
@@ -54,7 +56,7 @@ const CampaignsTab: React.FC = () => {
         <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Megaphone size={18} className="text-cyan-400" /> Campaigns
+                    <Megaphone size={18} className="text-cyan-400" /> {t('agent.tabs.campaigns')}
                 </h2>
                 <button
                     onClick={fetchCampaigns}
@@ -115,6 +117,7 @@ const CampaignsTab: React.FC = () => {
 
 
 const AgentDashboard: React.FC = () => {
+    const { t } = useTranslation();
     // Hooks must be called unconditionally before early returns
     const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks'>('scout');
     const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -212,11 +215,11 @@ const AgentDashboard: React.FC = () => {
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`px-4 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${activeTab === tab
-                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
                                         }`}
                                 >
-                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                    {t(`agent.tabs.${tab}`)}
                                 </button>
                             ))}
                         </div>
@@ -226,11 +229,11 @@ const AgentDashboard: React.FC = () => {
                         <AgentToolbar
                             left={
                                 <div className="flex items-center gap-3">
-                                    <h2 className="font-bold text-lg text-white tracking-tight">Booking Agent</h2>
+                                    <h2 className="font-bold text-lg text-white tracking-tight">{t('agent.title')}</h2>
                                     <span className="text-slate-600">/</span>
                                     <span className="flex items-center gap-2 text-cyan-400 text-sm font-medium bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
                                         <Sparkles size={12} />
-                                        {activeTab === 'scout' ? 'The Scout' : activeTab === 'browser' ? 'Browser Agent' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                                        {t(`agent.tabs.${activeTab}`)}
                                     </span>
                                 </div>
                             }

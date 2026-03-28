@@ -117,7 +117,7 @@ export const RoadTools = {
         const contingency = Math.round(subtotal * 0.10); // 10% contingency
         const total = subtotal + contingency;
 
-        return toolSuccess({
+        const result = {
             totalBudget: total,
             breakdown: {
                 lodging: lodgingCost,
@@ -126,7 +126,25 @@ export const RoadTools = {
                 crew_costs: crewWages,
                 contingency: contingency
             }
-        }, `Tour budget calculated for ${d} days and ${c} crew at ${level} level.`);
+        };
+
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+            try {
+                const { serverTimestamp } = await import('firebase/firestore');
+                await setDoc(doc(collection(db, `users/${userId}/tour_budgets`)), {
+                    ...result,
+                    days: d,
+                    crew: c,
+                    level,
+                    createdAt: serverTimestamp()
+                });
+            } catch (e) {
+                logger.warn('[RoadTools] Failed to persist budget:', e);
+            }
+        }
+
+        return toolSuccess(result, `Tour budget calculated for ${d} days and ${c} crew at ${level} level.`);
     }),
 
     generate_itinerary: wrapTool('generate_itinerary', async ({ route, city, date, venue, show_time }: { route?: any, city?: string, date?: string, venue?: string, show_time?: string }) => {
@@ -143,6 +161,20 @@ export const RoadTools = {
         );
 
         const validated = ItinerarySchema.parse(data);
+
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+            try {
+                const { serverTimestamp } = await import('firebase/firestore');
+                await setDoc(doc(collection(db, `users/${userId}/itineraries`)), {
+                    ...validated,
+                    createdAt: serverTimestamp()
+                });
+            } catch (e) {
+                logger.warn('[RoadTools] Failed to persist itinerary:', e);
+            }
+        }
+
         return toolSuccess(validated, `Itinerary generated for ${validated.tourName}.`);
     }),
 

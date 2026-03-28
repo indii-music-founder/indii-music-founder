@@ -23,14 +23,12 @@ export class DSRUploadService {
     private readonly PROCESSED_REPORTS_COLLECTION = 'dsr_processed_reports';
 
     /**
-     * Upload and process a DSR file
-     * @param file - The DSR file (CSV, TSV, TXT, or Excel)
-     * @param distributorId - The distributor ID (Spotify, Apple Music, etc.)
+     * Process a parsed DSR report and save earnings/royalties
+     * @param report - The parsed DSR report
      * @param userCatalog - Map of user's releases for matching
      */
-    async uploadAndProcess(
-        file: File,
-        distributorId: string,
+    async processAndSaveReport(
+        report: DSRReport,
         userCatalog: Map<string, ExtendedGoldenMetadata>
     ): Promise<DSRUploadResult> {
         try {
@@ -40,31 +38,23 @@ export class DSRUploadService {
 
             const userId = auth.currentUser.uid;
 
-            // Step 1: Read file content
-            const content = await this.readFileContent(file);
-
-            // Step 2: Parse the DSR file
-            const parseResult = await dsrService.ingestFlatFile(content);
-
-            if (!parseResult.success || !parseResult.data) {
-                return {
-                    success: false,
-                    error: parseResult.error || 'Failed to parse DSR file'
-                };
-            }
-
-            const report = parseResult.data;
-
-            // Step 3: Process the report and calculate royalties
+            // Step 1: Deduce distributor from senderId (handled inside DSRService)
+            // Note: dsrService handles the distributor fee deduction and grouping.
             const processedBatch = await dsrService.processReport(report, userCatalog);
 
-            // Step 4: Count matched releases
+            // Figure out the distributor ID to save under (matching logic from dsrService)
+            const { DISTRIBUTORS } = await import('@/core/config/distributors');
+            const distributorKey = Object.keys(DISTRIBUTORS).find(
+                key => DISTRIBUTORS[key]!.ddexPartyId === report.senderId
+            ) || 'unknown';
+
+            // Step 2: Count matched releases
             const matchedReleases = new Set(
                 processedBatch.royalties.map(r => r.isrc)
             ).size;
 
-            // Step 5: Save to Firestore for persistence
-            await this.saveProcessedReport(userId, distributorId, processedBatch, report);
+            // Step 3: Save to Firestore for persistence
+            await this.saveProcessedReport(userId, distributorKey, processedBatch, report);
 
             return {
                 success: true,
@@ -75,7 +65,7 @@ export class DSRUploadService {
             };
 
         } catch (error) {
-            logger.error('[DSRUploadService] Upload failed:', error);
+            logger.error('[DSRUploadService] Processing failed:', error);
             Sentry.captureException(error);
 
             return {
@@ -83,30 +73,6 @@ export class DSRUploadService {
                 error: error instanceof Error ? error.message : 'Unknown error occurred'
             };
         }
-    }
-
-    /**
-     * Read file content as text
-     */
-    private async readFileContent(file: File): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-                const content = e.target?.result;
-                if (typeof content === 'string') {
-                    resolve(content);
-                } else {
-                    reject(new Error('Failed to read file as text'));
-                }
-            };
-
-            reader.onerror = () => {
-                reject(new Error('File reading failed'));
-            };
-
-            reader.readAsText(file);
-        });
     }
 
     /**

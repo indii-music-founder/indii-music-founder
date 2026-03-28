@@ -69,7 +69,15 @@
         "sidecarOnline": "AI Service Online",
         "sidecarOffline": "AI Service Offline",
         "sidecarChecking": "Checking AI Service…",
-        "restart": "Restart AI Service"
+        "restart": "Restart AI Service",
+        "tabs": {
+            "scout": "The Scout",
+            "browser": "Browser Agent",
+            "chat": "Chat",
+            "tasks": "Task Queue",
+            "campaigns": "Campaigns",
+            "inbox": "Inbox"
+        }
     },
     "sync": {
         "synced": "All changes synced",
@@ -84,5 +92,15 @@
         "forgotPassword": "Forgot Password?",
         "noAccount": "Don't have an account?",
         "hasAccount": "Already have an account?"
+    },
+    "onboarding": {
+        "title": "Brand Kit Builder",
+        "placeholder": "Type your answer...",
+        "profileStatus": "Profile Status",
+        "artistIdentity": "Artist Identity",
+        "currentRelease": "Current Release",
+        "livePreview": "Live Preview",
+        "bio": "Bio",
+        "activeRelease": "Active Release"
     }
 }

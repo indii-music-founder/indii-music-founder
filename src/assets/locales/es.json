@@ -69,7 +69,15 @@
         "sidecarOnline": "Servicio de IA en línea",
         "sidecarOffline": "Servicio de IA sin conexión",
         "sidecarChecking": "Verificando servicio de IA…",
-        "restart": "Reiniciar servicio de IA"
+        "restart": "Reiniciar servicio de IA",
+        "tabs": {
+            "scout": "El Explorador",
+            "browser": "Agente de Navegador",
+            "chat": "Chat",
+            "tasks": "Cola de Tareas",
+            "campaigns": "Campañas",
+            "inbox": "Bandeja de Entrada"
+        }
     },
     "sync": {
         "synced": "Todos los cambios sincronizados",
@@ -84,5 +92,15 @@
         "forgotPassword": "¿Olvidaste tu contraseña?",
         "noAccount": "¿No tienes una cuenta?",
         "hasAccount": "¿Ya tienes una cuenta?"
+    },
+    "onboarding": {
+        "title": "Constructor de Kit de Marca",
+        "placeholder": "Escribe tu respuesta...",
+        "profileStatus": "Estado del Perfil",
+        "artistIdentity": "Identidad del Artista",
+        "currentRelease": "Lanzamiento Actual",
+        "livePreview": "Vista Previa en Vivo",
+        "bio": "Biografía",
+        "activeRelease": "Lanzamiento Activo"
     }
 }

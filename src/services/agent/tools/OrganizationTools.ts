@@ -116,5 +116,90 @@ export const OrganizationTools = {
             ...org,
             message: `Details retrieved for ${org.name}.`
         };
+    }),
+
+    add_contact: wrapTool('add_contact', async (args: { name: string; email: string; phone?: string; role?: string; company?: string }) => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError("User must be authenticated to add a contact.");
+            }
+
+            const docRef = await addDoc(collection(db, 'users', uid, 'contacts'), {
+                ...args,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+
+            return {
+                contactId: docRef.id,
+                ...args,
+                message: `Successfully added contact "${args.name}" to directory.`
+            };
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to add contact: ${error.message}`);
+        }
+    }),
+
+    list_contacts: wrapTool('list_contacts', async (args: { role?: string; company?: string }) => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError("User must be authenticated to list contacts.");
+            }
+
+            let contactsQuery = query(collection(db, 'users', uid, 'contacts'), orderBy('name', 'asc'));
+            if (args.role) {
+                contactsQuery = query(contactsQuery, where('role', '==', args.role));
+            }
+            if (args.company) {
+                contactsQuery = query(contactsQuery, where('company', '==', args.company));
+            }
+
+            const snapshot = await getDocs(contactsQuery);
+            const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            return {
+                contacts,
+                message: `Found ${contacts.length} contacts matching criteria.`
+            };
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to list contacts: ${error.message}`);
+        }
+    }),
+
+    schedule_event: wrapTool('schedule_event', async (args: { title: string; date: string; attendees?: string[]; description?: string }) => {
+        try {
+            const { db, auth } = await import('@/services/firebase');
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError("User must be authenticated to schedule an event.");
+            }
+
+            const docRef = await addDoc(collection(db, 'users', uid, 'events'), {
+                ...args,
+                status: 'scheduled',
+                createdAt: serverTimestamp()
+            });
+
+            return {
+                eventId: docRef.id,
+                ...args,
+                message: `Successfully scheduled event "${args.title}" on ${args.date}.`
+            };
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to schedule event: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;

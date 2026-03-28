@@ -97,6 +97,20 @@ if (typeof globalThis.localStorage === 'undefined' || !(globalThis.localStorage?
 // FIREBASE MOCKS - Centralized for all test files
 // ============================================================================
 
+// Mock react-i18next
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (str: string) => str,
+        i18n: {
+            changeLanguage: () => new Promise(() => { }),
+        },
+    }),
+    initReactI18next: {
+        type: '3rdParty',
+        init: () => { },
+    }
+}));
+
 // Mock the @/services/firebase module FIRST to prevent module-level initialization
 // This is critical because firebase.ts has side effects that call real Firebase APIs at import time
 vi.mock('@/services/firebase', () => ({

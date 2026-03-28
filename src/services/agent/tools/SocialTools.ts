@@ -1,7 +1,7 @@
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { SocialService } from '@/services/social/SocialService';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 
@@ -96,8 +96,36 @@ Be specific and data-driven based on the post content above.`;
             { crawledAccounts: accounts, ...result, trend_score: normalizedTrendScore },
             `Weekly sentiment report for ${accounts.join(', ')}: ${result.sentiment} (score ${normalizedTrendScore}/100).`
         );
+    }),
+
+    schedule_social_post: wrapTool('schedule_social_post', async (args: { platform: string; content: string; scheduledTime: string; mediaUrls?: string[] }) => {
+        try {
+            const postId = await SocialService.schedulePost({
+                platform: args.platform as 'Twitter' | 'Instagram' | 'LinkedIn',
+                copy: args.content,
+                day: 0, // Fallback for relative schedule
+                scheduledTime: new Date(args.scheduledTime).getTime(),
+                ...(args.mediaUrls?.length ? {
+                    imageAsset: {
+                        assetType: 'image',
+                        title: 'Auto-scheduled media',
+                        imageUrl: args.mediaUrls[0] || '',
+                        caption: ''
+                    }
+                } : {})
+            });
+
+            return toolSuccess({
+                postId,
+                ...args
+            }, `Successfully scheduled post for ${args.platform} at ${args.scheduledTime}. (ID: ${postId})`);
+        } catch (e) {
+            const error = e as Error;
+            logger.error('[SocialTools] Failed to schedule post:', error);
+            return toolError(`Failed to schedule post: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
 // Aliases
-export const { generate_social_post, analyze_social_sentiment } = SocialTools;
+export const { generate_social_post, analyze_social_sentiment, schedule_social_post } = SocialTools;

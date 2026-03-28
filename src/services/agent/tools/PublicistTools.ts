@@ -84,6 +84,22 @@ export const PublicistTools = {
             }
         }
 
+        const { auth, db } = await import('@/services/firebase');
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+            try {
+                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                await addDoc(collection(db, 'users', uid, 'press_releases'), {
+                    ...validated,
+                    topic,
+                    pdfPath: pdfResult?.path || null,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                logger.warn('[PublicistTools] Failed to persist press release:', err);
+            }
+        }
+
         return toolSuccess({
             ...validated,
             pdf: pdfResult
@@ -104,7 +120,23 @@ export const PublicistTools = {
         );
 
         const validated = GenerateCrisisResponseSchema.parse(data);
-        return toolSuccess(validated, "Crisis response strategy developed.");
+
+        const { auth, db } = await import('@/services/firebase');
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+            try {
+                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                await addDoc(collection(db, 'users', uid, 'crisis_responses'), {
+                    ...validated,
+                    situation,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                logger.warn('[PublicistTools] Failed to persist crisis response:', err);
+            }
+        }
+
+        return toolSuccess(validated, "Crisis response strategy developed and saved.");
     }),
 
     pitch_story: wrapTool('pitch_story', async ({ story_summary, recipient_type }: { story_summary: string; recipient_type?: string }) => {
@@ -121,7 +153,24 @@ export const PublicistTools = {
         );
 
         const validated = PitchStorySchema.parse(data);
-        return toolSuccess(validated, `Email pitch created: ${validated.subject_line}`);
+
+        const { auth, db } = await import('@/services/firebase');
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+            try {
+                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                await addDoc(collection(db, 'users', uid, 'email_pitches'), {
+                    ...validated,
+                    story_summary,
+                    recipient_type,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                logger.warn('[PublicistTools] Failed to persist email pitch:', err);
+            }
+        }
+
+        return toolSuccess(validated, `Email pitch created and saved: ${validated.subject_line}`);
     }),
 
     draft_pitch_email: wrapTool('draft_pitch_email', async (args: { playlistName: string; genre: string; trackTitle: string }) => {
@@ -137,7 +186,24 @@ export const PublicistTools = {
         );
 
         const validated = PitchStorySchema.parse(data);
-        return toolSuccess(validated, `Personalized pitch email drafted for Spotify playlist "${args.playlistName}".`);
+
+        const { auth, db } = await import('@/services/firebase');
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+            try {
+                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                await addDoc(collection(db, 'users', uid, 'email_pitches'), {
+                    ...validated,
+                    playlistName: args.playlistName,
+                    trackTitle: args.trackTitle,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                logger.warn('[PublicistTools] Failed to persist playlist pitch:', err);
+            }
+        }
+
+        return toolSuccess(validated, `Personalized pitch email drafted and saved for Spotify playlist "${args.playlistName}".`);
     })
 } satisfies Record<string, AnyToolFunction>;
 
