@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
 import { revenueService } from '@/services/RevenueService';
 import { MerchProduct } from '../types';
@@ -21,7 +22,9 @@ export interface MerchStats {
 }
 
 export const useMerchandise = () => {
-    const userProfile = useStore(state => state.userProfile);
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
     const [stats, setStats] = useState<MerchStats>({

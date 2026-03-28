@@ -195,7 +195,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
                 className={`border-2 border-dashed p-6 text-center ${filePath ? 'border-white/10' : 'cursor-pointer border-white/5'}`}
             >
                 <input type="file" ref={inputRef} className="hidden" accept="audio/*" onChange={(e) => setFilePath(e.target.files?.[0]?.path ?? '')} />
-                <div className="text-gray-400">{filePath || 'Drop audio file here or browse'}</div>
+                <div data-testid="qc-audio-file-path" className="text-gray-400">{filePath || 'Drop audio file here or browse'}</div>
             </div>
 
             <AnimatePresence>
@@ -207,7 +207,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
                                     <div className="text-xs text-gray-500">{c.type}</div>
                                     <div className="text-sm font-semibold text-white">{c.value}</div>
                                 </div>
-                                <div className={c.passed ? 'text-green-500' : 'text-red-500'}>{c.passed ? 'PASS' : 'FAIL'}</div>
+                                <div data-testid={`qc-check-status-${c.id}`} className={c.passed ? 'text-green-500' : 'text-red-500'}>{c.passed ? 'PASS' : 'FAIL'}</div>
                             </div>
                         ))}
                     </motion.div>
@@ -216,18 +216,33 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
 
             <div className="flex gap-3">
                 {(runState === 'idle' || runState === 'error') ? (
-                    <button onClick={handleRunQC} className="flex-1 py-3 bg-purple-600 text-white rounded-xl">
+                    <button
+                        onClick={handleRunQC}
+                        data-testid="qc-run-analysis"
+                        className="flex-1 py-3 bg-purple-600 text-white rounded-xl"
+                    >
                         {isElectron && filePath ? 'Run Audio QC Analysis' : 'Run QC (Demo Mode)'}
                     </button>
                 ) : runState === 'running' ? (
                     <button disabled className="flex-1 py-3 bg-purple-800/40 text-purple-300 rounded-xl">Analyzing...</button>
                 ) : (
-                    <button id="qc-execute-delivery-button" onClick={allPassed ? onSubmit : undefined} className={`flex-1 py-3 rounded-xl ${allPassed ? 'bg-white text-black' : 'bg-white/5 text-gray-600 cursor-not-allowed'}`}>
+                    <button
+                        id="qc-execute-delivery-button"
+                        data-testid="qc-execute-delivery"
+                        onClick={allPassed ? onSubmit : undefined}
+                        className={`flex-1 py-3 rounded-xl ${allPassed ? 'bg-white text-black' : 'bg-white/5 text-gray-600 cursor-not-allowed'}`}
+                    >
                         {allPassed ? 'Execute Delivery' : 'Block Delivery'}
                     </button>
                 )}
                 {(runState === 'done' || runState === 'error') && (
-                    <button id="qc-reset-button" onClick={handleReset} className="p-3 bg-white/5 rounded-xl text-gray-400" aria-label="Reset QC">
+                    <button
+                        id="qc-reset-button"
+                        data-testid="qc-reset-button"
+                        onClick={handleReset}
+                        className="p-3 bg-white/5 rounded-xl text-gray-400"
+                        aria-label="Reset QC"
+                    >
                         <RotateCcw size={16} />
                     </button>
                 )}

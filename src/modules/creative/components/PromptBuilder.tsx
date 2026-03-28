@@ -3,6 +3,7 @@ import { STUDIO_TAGS } from '@/modules/creative/constants';
 import { ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 interface PromptBuilderProps {
     onAddTag: (tag: string) => void;
@@ -89,7 +90,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
 
 function PromptBuilder({ onAddTag }: PromptBuilderProps) {
     const [openCategory, setOpenCategory] = useState<string | null>(null);
-    const brandKit = useStore(state => state.userProfile?.brandKit);
+    const brandKit = useStore(useShallow(state => state.userProfile?.brandKit));
 
     // Memoize brandTags computation
     const brandTags = useMemo(() => [

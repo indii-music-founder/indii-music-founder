@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { ProductType, StemLabel } from '@/services/marketplace/types';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';
 
 interface CreateProductModalProps {
@@ -20,7 +21,7 @@ const STEM_SLOTS: { label: StemLabel; display: string; hint: string }[] = [
 
 export default function CreateProductModal({ onClose, onProductCreated }: CreateProductModalProps) {
     const toast = useToast();
-    const currentUser = useStore((state) => state.userProfile);
+    const currentUser = useStore(useShallow((state) => state.userProfile));
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');

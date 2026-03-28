@@ -19,6 +19,8 @@ import { useMobile } from '@/hooks/useMobile';
 import { useVoice } from '@/core/context/VoiceContext';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import type { StoreState } from '@/core/store';
 import { FieldContactService } from '@/services/contacts/FieldContactService';
 import { FieldContactRole, CaptureLocation } from '@/types/contacts';
 import { logger } from '@/utils/logger';
@@ -50,7 +52,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
     const { isAnyPhone } = useMobile();
     const { isListening, toggleListening, transcript } = useVoice();
     const toast = useToast();
-    const userId = useStore((s) => s.userProfile?.uid);
+    const userId = useStore(useShallow((s: StoreState) => s.userProfile?.uid));
 
     // Form state
     const [name, setName] = useState('');
@@ -250,11 +252,10 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                                         onClick={() => startVoiceDictation('name')}
                                         aria-label={isListening && voiceTarget === 'name' ? 'Stop voice dictation for name' : 'Start voice dictation for name'}
                                         aria-pressed={isListening && voiceTarget === 'name'}
-                                        className={`p-3 rounded-xl border transition-all flex-shrink-0 ${
-                                            isListening && voiceTarget === 'name'
-                                                ? 'bg-red-500/20 border-red-500/30 text-red-400 animate-pulse'
-                                                : 'bg-white/5 border-white/10 text-slate-400'
-                                        }`}
+                                        className={`p-3 rounded-xl border transition-all flex-shrink-0 ${isListening && voiceTarget === 'name'
+                                            ? 'bg-red-500/20 border-red-500/30 text-red-400 animate-pulse'
+                                            : 'bg-white/5 border-white/10 text-slate-400'
+                                            }`}
                                     >
                                         {isListening && voiceTarget === 'name'
                                             ? <MicOff size={18} />
@@ -318,11 +319,10 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                                             role="radio"
                                             aria-checked={role === opt.value}
                                             onClick={() => setRole(opt.value)}
-                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-all flex-shrink-0 ${
-                                                role === opt.value
-                                                    ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
-                                                    : 'bg-white/5 border-white/10 text-slate-400'
-                                            }`}
+                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-all flex-shrink-0 ${role === opt.value
+                                                ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                                                : 'bg-white/5 border-white/10 text-slate-400'
+                                                }`}
                                         >
                                             <span>{opt.emoji}</span>
                                             <span>{opt.label}</span>

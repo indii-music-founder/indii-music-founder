@@ -106,6 +106,7 @@ export const TransmissionMonitor: React.FC = () => {
                             <span className="text-xs font-bold tracking-wider uppercase text-white/70">Transmission Monitor</span>
                         </div>
                         <button
+                            data-testid="transmission-monitor-close"
                             onClick={() => setIsOpen(false)}
                             className="text-zinc-500 hover:text-white transition-colors"
                         >
@@ -115,7 +116,7 @@ export const TransmissionMonitor: React.FC = () => {
 
                     <div className="overflow-y-auto flex-1 p-2 space-y-2 custom-scrollbar">
                         {tasks.map((task) => (
-                            <div key={task.id} className="p-3 bg-white/5 rounded-xl border border-white/5 space-y-2">
+                            <div key={task.id} data-testid={`transmission-task-${task.id}`} className="p-3 bg-white/5 rounded-xl border border-white/5 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <div className="p-1.5 bg-zinc-800 rounded-lg text-zinc-400">
@@ -155,12 +156,16 @@ export const TransmissionMonitor: React.FC = () => {
                 </div>
             ) : (
                 <button
+                    data-testid="transmission-monitor-toggle"
                     onClick={() => setIsOpen(true)}
                     className="w-12 h-12 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center shadow-2xl hover:bg-zinc-800 transition-all group relative"
                 >
                     <Activity className={`w-5 h-5 text-blue-400 ${activeTasks > 0 ? 'animate-pulse' : ''}`} />
                     {activeTasks > 0 && (
-                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-zinc-900">
+                        <div
+                            data-testid="transmission-active-count"
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-zinc-900"
+                        >
                             {activeTasks}
                         </div>
                     )}

@@ -81,16 +81,53 @@ export default function DistributionDashboard() {
                     <Tabs defaultValue="releases" className="flex-1 flex flex-col overflow-hidden">
                         <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-hide bg-black/5">
                             <TabsList className="bg-transparent gap-6 p-0 h-14 inline-flex">
-                                <TabsTrigger value="new-release" data-testid="distro-tab-new" className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                <TabsTrigger
+                                    value="releases"
+                                    data-testid="distro-tab-releases"
+                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                >
                                     <PlusCircle size={14} /> {t('distribution.tabs.new')}
                                 </TabsTrigger>
-                                <TabsTrigger value="catalogue" data-testid="distro-tab-catalogue" className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                <TabsTrigger
+                                    value="connections"
+                                    data-testid="distro-tab-connections"
+                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                >
                                     <Library size={14} /> {t('distribution.tabs.catalogue')}
                                 </TabsTrigger>
-                                <TabsTrigger value="analytics" data-testid="distro-tab-analytics" className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                <TabsTrigger
+                                    value="bank"
+                                    data-testid="distro-tab-bank"
+                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                >
                                     <BarChart3 size={14} /> {t('distribution.tabs.analytics')}
                                 </TabsTrigger>
-                                <TabsTrigger value="transmissions" data-testid="distro-tab-transmissions" className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                <TabsTrigger
+                                    value="authority"
+                                    data-testid="distro-tab-authority"
+                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                >
+                                    <PlusCircle size={14} /> Authority
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="keys"
+                                    data-testid="distro-tab-keys"
+                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                >
+                                    <Library size={14} /> Keys
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="brain"
+                                    data-testid="distro-tab-brain"
+                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                >
+                                    <Activity size={14} /> Brain
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="transmission"
+                                    data-testid="distro-tab-transmission"
+                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                >
                                     <Activity size={14} /> {t('distribution.tabs.transmissions')}
                                 </TabsTrigger>
                             </TabsList>
@@ -102,7 +139,7 @@ export default function DistributionDashboard() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="p-4 md:p-8"
                             >
-                                <TabsContent value="releases" className="mt-0 border-none outline-none">
+                                <TabsContent value="releases" data-testid="distro-content-releases" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Releases">
                                         <ReleasesContent
                                             releases={releases}
@@ -112,27 +149,27 @@ export default function DistributionDashboard() {
                                         />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
-                                <TabsContent value="connections" className="mt-0 border-none outline-none">
+                                <TabsContent value="connections" data-testid="distro-content-connections" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Distributors">
                                         <DistributorConnectionsPanel />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
-                                <TabsContent value="bank" className="mt-0 border-none outline-none">
+                                <TabsContent value="bank" data-testid="distro-content-bank" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Bank">
                                         <BankPanel />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
-                                <TabsContent value="authority" className="mt-0 border-none outline-none">
+                                <TabsContent value="authority" data-testid="distro-content-authority" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Authority">
                                         <AuthorityPanel />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
-                                <TabsContent value="keys" className="mt-0 border-none outline-none">
+                                <TabsContent value="keys" data-testid="distro-content-keys" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Keys">
                                         <KeysPanel />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
-                                <TabsContent value="brain" className="mt-0 border-none outline-none">
+                                <TabsContent value="brain" data-testid="distro-content-brain" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / QC">
                                         <QCPanel />
                                         <div className="mt-6">
@@ -140,7 +177,7 @@ export default function DistributionDashboard() {
                                         </div>
                                     </ModuleErrorBoundary>
                                 </TabsContent>
-                                <TabsContent value="transmission" className="mt-0 border-none outline-none">
+                                <TabsContent value="transmission" data-testid="distro-content-transmission" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Transfer">
                                         <TransferPanel />
                                     </ModuleErrorBoundary>

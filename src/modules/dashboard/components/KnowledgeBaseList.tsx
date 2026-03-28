@@ -1,12 +1,14 @@
 
 import React from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import type { StoreState } from '@/core/store';
 import { FileText, Image, Music, Clock, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
 
 export const KnowledgeBaseList: React.FC = () => {
     // Access knowledgeBase safely, defaulting to empty array if undefined
-    const knowledgeBase = useStore((state) => state.knowledgeBase || []);
+    const knowledgeBase = useStore(useShallow((state: StoreState) => state.knowledgeBase || []));
 
     if (knowledgeBase.length === 0) {
         return null;
@@ -35,8 +37,8 @@ export const KnowledgeBaseList: React.FC = () => {
 
                                 <ThreeDCardItem translateZ="30">
                                     <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border ${doc.indexingStatus === 'ready' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
-                                            doc.indexingStatus === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                                                'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                        doc.indexingStatus === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                                            'bg-blue-500/10 border-blue-500/20 text-blue-400'
                                         }`}>
                                         {doc.indexingStatus === 'ready' && <CheckCircle size={10} />}
                                         {doc.indexingStatus === 'indexing' && <Loader2 size={10} className="animate-spin" />}

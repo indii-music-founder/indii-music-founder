@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { RefreshCw, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -9,8 +10,12 @@ export interface SidecarStatusProps {
 }
 
 export const SidecarStatus: React.FC<SidecarStatusProps> = ({ collapsed }) => {
-    const sidecarStatus = useStore((state) => state.sidecarStatus);
-    const triggerSidecarRestart = useStore((state) => state.triggerSidecarRestart);
+    const { sidecarStatus, triggerSidecarRestart } = useStore(
+        useShallow((state) => ({
+            sidecarStatus: state.sidecarStatus,
+            triggerSidecarRestart: state.triggerSidecarRestart,
+        }))
+    );
 
 
     const config = {
@@ -50,9 +55,9 @@ export const SidecarStatus: React.FC<SidecarStatusProps> = ({ collapsed }) => {
             aria-live="polite"
             aria-label={`AI Sidecar status: ${current.label}`}
             className={cn(
-            "flex items-center gap-2 rounded-lg bg-card/50 border border-border/50 transition-all duration-300",
-            collapsed ? "p-1 justify-center" : "px-3 py-2"
-        )}>
+                "flex items-center gap-2 rounded-lg bg-card/50 border border-border/50 transition-all duration-300",
+                collapsed ? "p-1 justify-center" : "px-3 py-2"
+            )}>
             <div className={cn("p-1.5 rounded-full transition-colors", current.bg)} title={collapsed ? current.label : undefined}>
                 <Icon
                     size={14}
