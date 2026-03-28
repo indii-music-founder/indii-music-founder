@@ -205,7 +205,8 @@ export function CookieConsentBanner() {
                             {/* Quick-dismiss: saves minimal (essential-only) consent */}
                             <button
                                 onClick={handleRejectNonEssential}
-                                aria-label="Dismiss cookie banner"
+                                aria-label="Reject non-essential cookies"
+                                title="Reject non-essential cookies"
                                 className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
                             >
                                 <X className="w-4 h-4" />

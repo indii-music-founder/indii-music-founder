@@ -22,6 +22,7 @@ import ReactFlow, {
 
 import 'reactflow/dist/style.css';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { validateConnection } from '../utils/validationUtils';
 import { DepartmentNode, InputNode, OutputNode, AudioSegmentNode, LogicNode } from './CustomNodes';
 import { createNodeFromDrop } from '../utils/dndUtils';
@@ -43,7 +44,15 @@ interface WorkflowEditorProps {
 }
 
 const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false, onInit }) => {
-    const { nodes, edges, setNodes, setEdges, addNode } = useStore();
+    const { nodes, edges, setNodes, setEdges, addNode } = useStore(
+        useShallow((state) => ({
+            nodes: state.nodes,
+            edges: state.edges,
+            setNodes: state.setNodes,
+            setEdges: state.setEdges,
+            addNode: state.addNode,
+        }))
+    );
 
 
     const reactFlowWrapper = useRef<HTMLDivElement>(null);

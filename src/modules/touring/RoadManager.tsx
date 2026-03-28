@@ -7,7 +7,7 @@ import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { useTouring } from './hooks/useTouring';
-import { Itinerary, NearbyPlace, FuelLogistics } from './types';
+import { Itinerary, NearbyPlace, FuelLogistics, LogisticsReport } from './types';
 
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
@@ -20,13 +20,6 @@ import { SetlistAnalytics } from './components/SetlistAnalytics';
 import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-
-interface LogisticsReport {
-    isFeasible: boolean;
-    issues: string[];
-    suggestions: string[];
-}
-
 
 
 const RoadManager: React.FC = () => {

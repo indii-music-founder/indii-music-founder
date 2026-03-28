@@ -28,13 +28,17 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
                     </p>
                 )
             ))}
-            {isForecast && payload.find((e) => e.name === 'lower') && (
-                <p className="text-xs text-slate-500 mt-0.5">
-                    Range: {Number(payload.find((e) => e.name === 'lower')?.value ?? 0).toLocaleString()}
-                    {' – '}
-                    {Number(payload.find((e) => e.name === 'upper')?.value ?? 0).toLocaleString()}
-                </p>
-            )}
+            {(() => {
+                const lower = payload.find((e) => e.name === 'lower')?.value;
+                const upper = payload.find((e) => e.name === 'upper')?.value;
+                return isForecast && lower !== undefined && upper !== undefined ? (
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        Range: {Number(lower).toLocaleString()}
+                        {' – '}
+                        {Number(upper).toLocaleString()}
+                    </p>
+                ) : null;
+            })()}
         </div>
     );
 };

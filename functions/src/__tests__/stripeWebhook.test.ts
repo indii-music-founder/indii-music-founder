@@ -409,7 +409,8 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         await stripeWebhook(req, res);
 
         expect(jsonFn).toHaveBeenCalledWith({ received: true });
-        // Ledger add should be called with payment details
+        // Ledger write must target users/{userId}/ledger
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('users/user-123/ledger');
         expect(mocks.mockAdd).toHaveBeenCalledWith(
             expect.objectContaining({
                 type: 'subscription_payment',
@@ -448,7 +449,8 @@ describe('Stripe Webhook Handler (WO-8)', () => {
             expect.anything(),
             expect.objectContaining({ status: 'past_due' })
         );
-        // Dunning record written
+        // Dunning record must target dunning_notifications collection
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('dunning_notifications');
         expect(mocks.mockAdd).toHaveBeenCalledWith(
             expect.objectContaining({
                 invoiceId: 'in_failed_001',

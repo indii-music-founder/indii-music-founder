@@ -3,11 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Calendar, Truck, Plus, Trash2, Save, X, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Itinerary, ItineraryStop } from '../types';
+import { Itinerary, ItineraryStop, LogisticsReport } from '../types';
 import { TourMap } from './TourMap';
-
-
-interface LogisticsReport { isFeasible: boolean; issues?: string[]; summary?: string }
 
 interface PlanningTabProps {
     startDate: string;
