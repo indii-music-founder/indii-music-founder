@@ -22,3 +22,24 @@ export const SalesAnalyticsSchema = z.object({
 });
 
 export type SalesAnalyticsData = z.infer<typeof SalesAnalyticsSchema>;
+
+// Schema for the dashboard revenue MTD data
+export const DashboardRevenueStatsSchema = z.object({
+    mtdRevenue: MetricSchema,
+    totalRevenue: MetricSchema,
+    pendingPayouts: MetricSchema,
+    lastPayout: MetricSchema,
+    period: z.string().default('mtd'),
+    lastUpdated: z.number().optional(),
+});
+
+export type DashboardRevenueStats = z.infer<typeof DashboardRevenueStatsSchema>;
+// Schema for the dashboard streams today data
+export const DashboardStreamsStatsSchema = z.object({
+    streamsToday: MetricSchema,
+    weeklyStreams: z.array(z.number()), // [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+    period: z.string().default('daily'),
+    lastUpdated: z.number().optional(),
+});
+
+export type DashboardStreamsStats = z.infer<typeof DashboardStreamsStatsSchema>;

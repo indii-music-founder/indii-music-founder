@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
-import { DashboardService, StorageStats } from '@/services/dashboard/DashboardService';
+import { StorageQuotaService } from '@/services/StorageQuotaService';
 import { Layers, HardDrive, MessageSquare, FolderOpen } from 'lucide-react';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 
@@ -48,9 +48,15 @@ export default function StatsRibbon() {
     const [storagePercent, setStoragePercent] = useState(0);
 
     useEffect(() => {
-        DashboardService.getStorageStats()
-            .then((stats: StorageStats) => setStoragePercent(stats.percentUsed))
-            .catch(() => setStoragePercent(0));
+        const unsubscribe = StorageQuotaService.subscribeToQuota((quota) => {
+            if (quota) {
+                setStoragePercent(quota.usedPercent);
+            } else {
+                setStoragePercent(0);
+            }
+        });
+
+        return () => unsubscribe();
     }, []);
 
     return (

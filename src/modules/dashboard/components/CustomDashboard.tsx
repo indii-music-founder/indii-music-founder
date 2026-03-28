@@ -22,8 +22,9 @@ import {
     MapPin,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
-import { revenueService } from '@/services/RevenueService';
-import type { RevenueStats } from '@/services/revenue/schema';
+import { useShallow } from 'zustand/react/shallow';
+import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
+import type { DashboardRevenueStats, DashboardStreamsStats } from '@/services/dashboard/schema';
 
 /* ================================================================== */
 /*  Item 159 — Customizable Dashboard                                  */
@@ -80,6 +81,32 @@ function formatCurrency(amount: number): string {
 /* ── Individual Widget Content ─────────────────────────────────────── */
 
 function StreamsTodayWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [streamsData, setStreamsData] = useState<DashboardStreamsStats | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+
+        const unsubscribe = AnalyticsService.subscribeToDashboardStreams(
+            userId,
+            (data) => {
+                setStreamsData(data);
+                setIsLoading(false);
+            },
+            () => {
+                setStreamsData(AnalyticsService.getStreamsZeroState());
+                setIsLoading(false);
+            }
+        );
+
+        return () => unsubscribe();
+    }, [userId]);
+
+    const displayValue = streamsData?.streamsToday.formatted || '--';
+    const weeklyStreams = streamsData?.weeklyStreams || [0, 0, 0, 0, 0, 0, 0];
+    const maxVal = Math.max(...weeklyStreams, 100);
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -89,12 +116,18 @@ function StreamsTodayWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Streams Today</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">--</p>
-                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Connect a DSP to see streams</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {displayValue}
+                </p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Daily stream count across all DSPs</p>
             </div>
             <div className="mt-3 flex items-end gap-1 h-8">
-                {[0, 0, 0, 0, 0, 0, 0].map((_, i) => (
-                    <div key={i} className="flex-1 rounded-sm bg-purple-500/10" style={{ height: '20%' }} />
+                {weeklyStreams.map((val, i) => (
+                    <div
+                        key={i}
+                        className="flex-1 rounded-sm bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
+                        style={{ height: `${Math.max(5, (val / maxVal) * 100)}%` }}
+                    />
                 ))}
             </div>
         </div>
@@ -102,19 +135,34 @@ function StreamsTodayWidget() {
 }
 
 function RevenueMTDWidget() {
-    const userProfile = useStore((s) => s.userProfile);
-    const [revenue, setRevenue] = useState<number | null>(null);
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const [revenueData, setRevenueData] = useState<DashboardRevenueStats | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!userProfile?.id) return;
-        revenueService.getUserRevenueStats(userProfile.id, '30d')
-            .then((stats: RevenueStats) => setRevenue(stats.totalRevenue))
-            .catch(() => setRevenue(0));
-    }, [userProfile?.id]);
+        if (!userId) return;
+
+        const unsubscribe = AnalyticsService.subscribeToDashboardRevenue(
+            userId,
+            (data) => {
+                setRevenueData(data);
+                setIsLoading(false);
+            },
+            () => {
+                setRevenueData(AnalyticsService.getRevenueZeroState());
+                setIsLoading(false);
+            }
+        );
+
+        return () => unsubscribe();
+    }, [userId]);
 
     const now = new Date();
     const dayOfMonth = now.getDate();
     const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    const displayValue = revenueData?.mtdRevenue.formatted || '--';
+    const hasGoal = false; // Internal toggle for future goal support
 
     return (
         <div className="flex flex-col h-full justify-between">
@@ -125,11 +173,13 @@ function RevenueMTDWidget() {
                 <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Revenue MTD</span>
             </div>
             <div>
-                <p className="text-4xl font-semibold text-white tracking-tight">{revenue !== null ? formatCurrency(revenue) : '--'}</p>
+                <p className={`text-4xl font-semibold text-white tracking-tight ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    {displayValue}
+                </p>
                 <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">{dayOfMonth} days into {monthName}</p>
             </div>
             <div className="mt-3">
-                <p className="text-[10px] text-white/30">Revenue goal not set</p>
+                <p className="text-[10px] text-white/30">{hasGoal ? 'Target: $10,000' : 'Revenue goal not set'}</p>
             </div>
         </div>
     );
