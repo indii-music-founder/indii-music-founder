@@ -13,6 +13,18 @@ import {
     DashboardNextReleaseSchema,
     DashboardAgentActivity,
     DashboardAgentActivitySchema,
+    DashboardActiveCampaigns,
+    DashboardActiveCampaignsSchema,
+    DashboardPendingTasks,
+    DashboardPendingTasksSchema,
+    DashboardSocialEngagement,
+    DashboardSocialEngagementSchema,
+    DashboardBrandIdentity,
+    DashboardBrandIdentitySchema,
+    DashboardMerchSales,
+    DashboardMerchSalesSchema,
+    DashboardTourStatus,
+    DashboardTourStatusSchema,
 } from './schema';
 import { db } from '@/services/firebase';
 import {
@@ -238,6 +250,123 @@ export class AnalyticsService {
             recentTasks: [],
             runningCount: 0,
             completedToday: 0,
+            lastUpdated: Date.now(),
+        };
+    }
+
+    // ── Active Campaigns ──────────────────────────────────────────────────────
+
+    static subscribeToActiveCampaigns(
+        userId: string,
+        onUpdate: (data: DashboardActiveCampaigns) => void,
+        onError?: (error: Error) => void,
+    ): Unsubscribe {
+        const ref = doc(db, 'users', userId, 'stats', 'active_campaigns');
+        return createDocSubscription(ref, DashboardActiveCampaignsSchema, onUpdate, onError, () => this.getActiveCampaignsZeroState(), 'active_campaigns');
+    }
+
+    static getActiveCampaignsZeroState(): DashboardActiveCampaigns {
+        return {
+            activeCount: 0,
+            totalBudget: { value: 0, trend: 'neutral', formatted: '$0' },
+            lastUpdated: Date.now(),
+        };
+    }
+
+    // ── Pending Tasks ─────────────────────────────────────────────────────────
+
+    static subscribeToPendingTasks(
+        userId: string,
+        onUpdate: (data: DashboardPendingTasks) => void,
+        onError?: (error: Error) => void,
+    ): Unsubscribe {
+        const ref = doc(db, 'users', userId, 'stats', 'pending_tasks');
+        return createDocSubscription(ref, DashboardPendingTasksSchema, onUpdate, onError, () => this.getPendingTasksZeroState(), 'pending_tasks');
+    }
+
+    static getPendingTasksZeroState(): DashboardPendingTasks {
+        return {
+            tasks: [],
+            totalCount: 0,
+            lastUpdated: Date.now(),
+        };
+    }
+
+    // ── Social Engagement ─────────────────────────────────────────────────────
+
+    static subscribeToSocialEngagement(
+        userId: string,
+        onUpdate: (data: DashboardSocialEngagement) => void,
+        onError?: (error: Error) => void,
+    ): Unsubscribe {
+        const ref = doc(db, 'users', userId, 'stats', 'social_engagement');
+        return createDocSubscription(ref, DashboardSocialEngagementSchema, onUpdate, onError, () => this.getSocialEngagementZeroState(), 'social_engagement');
+    }
+
+    static getSocialEngagementZeroState(): DashboardSocialEngagement {
+        return {
+            engagementRate: { value: 0, trend: 'neutral', formatted: '--' },
+            weeklyEngagement: [0, 0, 0, 0, 0, 0, 0],
+            totalInteractions: { value: 0, trend: 'neutral', formatted: '0' },
+            lastUpdated: Date.now(),
+        };
+    }
+
+    // ── Brand Identity ────────────────────────────────────────────────────────
+
+    static subscribeToBrandIdentity(
+        userId: string,
+        onUpdate: (data: DashboardBrandIdentity) => void,
+        onError?: (error: Error) => void,
+    ): Unsubscribe {
+        const ref = doc(db, 'users', userId, 'stats', 'brand_identity');
+        return createDocSubscription(ref, DashboardBrandIdentitySchema, onUpdate, onError, () => this.getBrandIdentityZeroState(), 'brand_identity');
+    }
+
+    static getBrandIdentityZeroState(): DashboardBrandIdentity {
+        return {
+            complianceScore: { value: 0, trend: 'neutral', formatted: '--' },
+            assetsStatus: 'missing',
+            issues: 0,
+            lastUpdated: Date.now(),
+        };
+    }
+
+    // ── Merch Sales ───────────────────────────────────────────────────────────
+
+    static subscribeToMerchSales(
+        userId: string,
+        onUpdate: (data: DashboardMerchSales) => void,
+        onError?: (error: Error) => void,
+    ): Unsubscribe {
+        const ref = doc(db, 'users', userId, 'stats', 'merch_sales');
+        return createDocSubscription(ref, DashboardMerchSalesSchema, onUpdate, onError, () => this.getMerchSalesZeroState(), 'merch_sales');
+    }
+
+    static getMerchSalesZeroState(): DashboardMerchSales {
+        return {
+            weeklyRevenue: { value: 0, trend: 'neutral', formatted: '$0' },
+            totalOrders: { value: 0, trend: 'neutral', formatted: '0' },
+            lowStockAlerts: 0,
+            lastUpdated: Date.now(),
+        };
+    }
+
+    // ── Tour Status ───────────────────────────────────────────────────────────
+
+    static subscribeToTourStatus(
+        userId: string,
+        onUpdate: (data: DashboardTourStatus) => void,
+        onError?: (error: Error) => void,
+    ): Unsubscribe {
+        const ref = doc(db, 'users', userId, 'stats', 'tour_status');
+        return createDocSubscription(ref, DashboardTourStatusSchema, onUpdate, onError, () => this.getTourStatusZeroState(), 'tour_status');
+    }
+
+    static getTourStatusZeroState(): DashboardTourStatus {
+        return {
+            upcomingShows: 0,
+            totalTicketRevenue: { value: 0, trend: 'neutral', formatted: '$0' },
             lastUpdated: Date.now(),
         };
     }
