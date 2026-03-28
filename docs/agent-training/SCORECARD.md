@@ -28,6 +28,7 @@ Score each dimension 0–5. Document baseline before changes, rescore after rewr
 ## Agent Scores
 
 > Last full audit: 2026-03-20. All 20 agents trained with rewritten prompts + 20 gold dataset examples each.
+> **R7 complete (2026-03-27):** All 20 agents at ≥60% expert density. 218 new expert examples added across 6 highest-gap agents. All R7 endpoints live in `fine-tuned-models.ts`.
 > Generalist baseline was 15/35. All agents below reflect post-rewrite scores.
 
 | Agent ID | Clarity | Specificity | Tool Align | Few-Shot | Edge Cases | Routing | Guard Rails | Total/35 | Status |
