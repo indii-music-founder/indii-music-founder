@@ -23,43 +23,31 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import {
+    type MechanicalLicenseDocument,
+    type MechanicalLicenseStatus,
+} from '@/types/firestore';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-export type MechanicalLicenseStatus =
-    | 'pending_search'
-    | 'rights_located'
-    | 'license_requested'
-    | 'license_active'
-    | 'license_denied'
-    | 'not_required';          // original composition — no license needed
+export type { MechanicalLicenseStatus };
 
+/**
+ * Composition Info for Mechanical Licensing
+ */
 export interface CompositionInfo {
-    iswc?: string;              // International Standard Musical Work Code
+    iswc?: string;
     title: string;
     writers: string[];
     publishers: string[];
-    hfaCode?: string;           // Harry Fox Agency song code
-    controlled: boolean;        // true = HFA/Songfile can license it
+    hfaCode?: string;
+    controlled: boolean;
 }
 
-export interface MechanicalLicense {
-    id: string;
-    userId: string;
-    releaseId: string;
-    trackTitle: string;
-    isrc?: string;
-    composition: CompositionInfo;
-    status: MechanicalLicenseStatus;
-    distributionCopies: number;   // physical + digital units
-    ratePerCopy: number;          // USD — default 0.091
-    totalFee: number;             // computed: copies × rate
-    licenseNumber?: string;       // issued by HFA/Songfile
-    requestedAt?: Timestamp;
-    activatedAt?: Timestamp;
-    expiresAt?: Timestamp;
-    notes?: string;
-}
+/**
+ * Legacy support for the UI component
+ */
+export type MechanicalLicense = MechanicalLicenseDocument;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -72,7 +60,6 @@ const CF_BASE = import.meta.env.VITE_FUNCTIONS_BASE_URL ?? '';
 export const MechanicalRoyaltyService = {
     /**
      * Search the Harry Fox Agency / Songfile catalogue for a composition.
-     * Falls back to a structured stub if the CF proxy is unavailable.
      */
     async searchComposition(trackTitle: string, writerHint?: string): Promise<CompositionInfo | null> {
         try {
@@ -84,7 +71,7 @@ export const MechanicalRoyaltyService = {
             const data = await res.json();
             return data.result as CompositionInfo;
         } catch (err) {
-            logger.warn('MechanicalRoyaltyService.searchComposition: CF unavailable, returning null', err);
+            logger.warn('MechanicalRoyaltyService.searchComposition: CF unavailable or failed', err);
             return null;
         }
     },
@@ -106,7 +93,7 @@ export const MechanicalRoyaltyService = {
         const fee = parseFloat((copies * STATUTORY_RATE_USD).toFixed(2));
 
         const licenseId = `ml_${uid}_${Date.now()}`;
-        const license: MechanicalLicense = {
+        const license: Omit<MechanicalLicense, 'createdAt' | 'updatedAt'> = {
             id: licenseId,
             userId: uid,
             releaseId: params.releaseId,
@@ -117,20 +104,26 @@ export const MechanicalRoyaltyService = {
             distributionCopies: copies,
             ratePerCopy: STATUTORY_RATE_USD,
             totalFee: fee,
+            requestedAt: Timestamp.now()
         };
 
-        await setDoc(doc(db, COLLECTION, uid, 'licenses', licenseId), {
+        const docRef = doc(db, COLLECTION, uid, 'licenses', licenseId);
+        await setDoc(docRef, {
             ...license,
-            requestedAt: serverTimestamp(),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
         });
 
         logger.info('MechanicalRoyaltyService: License record created', { licenseId });
-        return license;
+        return {
+            ...license,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
+        } as MechanicalLicense;
     },
 
     /**
      * Submit a license request to HFA/Songfile via Cloud Function proxy.
-     * Updates the Firestore record to `license_requested`.
      */
     async requestLicense(licenseId: string): Promise<void> {
         const uid = auth.currentUser?.uid;
@@ -144,12 +137,15 @@ export const MechanicalRoyaltyService = {
             });
 
             if (!res.ok) throw new Error(`License request failed: ${res.status}`);
-            const { result } = await res.json();
+            const data = await res.json();
+            const result = data.result;
 
-            await updateDoc(doc(db, COLLECTION, uid, 'licenses', licenseId), {
+            const docRef = doc(db, COLLECTION, uid, 'licenses', licenseId);
+            await updateDoc(docRef, {
                 status: 'license_requested',
                 licenseNumber: result?.licenseNumber,
                 requestedAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
             });
 
             logger.info('MechanicalRoyaltyService: License requested', { licenseId, licenseNumber: result?.licenseNumber });
@@ -160,8 +156,7 @@ export const MechanicalRoyaltyService = {
     },
 
     /**
-     * Fetch all mechanical licenses for the current user, optionally filtered
-     * by releaseId.
+     * Fetch all mechanical licenses for the current user, optionally filtered by releaseId.
      */
     async getLicenses(releaseId?: string): Promise<MechanicalLicense[]> {
         const uid = auth.currentUser?.uid;
@@ -169,9 +164,9 @@ export const MechanicalRoyaltyService = {
 
         try {
             const col = collection(db, COLLECTION, uid, 'licenses');
-            const q = releaseId ? query(col, where('releaseId', '==', releaseId)) : col;
+            const q = releaseId ? query(col, where('releaseId', '==', releaseId)) : query(col);
             const snap = await getDocs(q);
-            return snap.docs.map(d => d.data() as MechanicalLicense);
+            return snap.docs.map(d => ({ id: d.id, ...d.data() } as MechanicalLicense));
         } catch (err) {
             logger.error('MechanicalRoyaltyService.getLicenses failed', err);
             return [];
@@ -180,7 +175,6 @@ export const MechanicalRoyaltyService = {
 
     /**
      * Check if all cover tracks in a release have active or not-required licenses.
-     * Used as a pre-flight gate in the distribution flow.
      */
     async isReleaseClearedForDistribution(releaseId: string): Promise<{
         cleared: boolean;

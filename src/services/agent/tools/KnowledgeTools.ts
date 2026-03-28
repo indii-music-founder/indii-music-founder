@@ -1,6 +1,7 @@
 import { logger } from '@/utils/logger';
 import { runAgenticWorkflow } from '@/services/rag/ragService';
-// useStore removed
+import { db, auth } from '@/services/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
@@ -27,13 +28,27 @@ export const KnowledgeTools = {
         );
 
         // Return structured data for the agent to consume
-        return {
+        const result = {
             answer: asset.content,
             sources: asset.sources.map(s => ({
                 title: s.name
             })),
             message: "Knowledge search completed successfully."
         };
+
+        // Item 415: Persist knowledge search to Firestore for session history/audit
+        if (auth.currentUser) {
+            const historyCol = collection(db, 'knowledge_history');
+            addDoc(historyCol, {
+                userId: auth.currentUser.uid,
+                query: args.query,
+                answer: result.answer,
+                sourceCount: result.sources.length,
+                timestamp: serverTimestamp()
+            }).catch(err => logger.warn('[KnowledgeTools] Failed to persist search history:', err));
+        }
+
+        return result;
     }),
 
     /**
@@ -62,7 +77,7 @@ export const KnowledgeTools = {
         // Return snippets for quick answers
         const topChunks = searchResults.chunks.slice(0, args.maxResults || 5);
 
-        return {
+        const result = {
             answer: topChunks.map(c => c.content).join('\n\n---\n\n'),
             results: topChunks.map(c => ({
                 snippet: c.content.slice(0, 300),
@@ -72,6 +87,19 @@ export const KnowledgeTools = {
             })),
             message: `Found ${searchResults.chunks.length} results from Google developer docs.`
         };
+
+        // Item 415: Persist Google search to Firestore
+        if (auth.currentUser) {
+            const historyCol = collection(db, 'google_search_history');
+            addDoc(historyCol, {
+                userId: auth.currentUser.uid,
+                query: args.query,
+                resultCount: searchResults.chunks.length,
+                timestamp: serverTimestamp()
+            }).catch(err => logger.warn('[KnowledgeTools] Failed to persist Google search history:', err));
+        }
+
+        return result;
     }),
 
     /**

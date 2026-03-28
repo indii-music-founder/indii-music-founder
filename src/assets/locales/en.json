@@ -56,11 +56,49 @@
     },
     "distribution": {
         "title": "Distribution",
+        "subtitle": "150+ PLATFORMS • ONE-CLICK GLOBAL DELIVERY",
         "newRelease": "New Release",
         "status": "Status",
         "distributed": "Distributed",
         "pending": "Pending",
-        "failed": "Failed"
+        "failed": "Failed",
+        "tabs": {
+            "releases": "Releases",
+            "connections": "Distributors",
+            "bank": "Bank",
+            "authority": "Authority",
+            "keys": "Keys",
+            "brain": "Brain (QC)",
+            "transmission": "Transfer"
+        }
+    },
+    "finance": {
+        "title": "Finance",
+        "subtitle": "REAL-TIME FISCAL OPERATIONS",
+        "tabs": {
+            "earnings": "Earnings",
+            "expenses": "Expenses",
+            "merch": "Merchandise",
+            "royalties": "Royalties",
+            "currency": "Multi-Currency",
+            "splits": "Split Escrow",
+            "onboarding": "Stripe Connect",
+            "tax": "Tax Forms",
+            "anomaly": "Anomaly",
+            "audit": "Audit Logs",
+            "budget": "Budget",
+            "receipts": "Receipt OCR",
+            "recoupment": "Recoupment"
+        }
+    },
+    "legal": {
+        "title": "Legal",
+        "subtitle": "AI-POWERED CONTRACT ANALYSIS",
+        "tabs": {
+            "analyzer": "Contract Analysis",
+            "dmca": "DMCA Notices",
+            "counsel": "Find Counsel"
+        }
     },
     "agent": {
         "title": "AI Assistant",

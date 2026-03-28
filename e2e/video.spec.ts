@@ -1,37 +1,54 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Video Producer Module E2E Tests
- * Covers: module load, timeline presence, generation controls
+ * Video Producer E2E Tests
  */
-
-test.describe('Video Producer Module', () => {
+test.describe('Video Producer', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        await page.goto('http://localhost:4242');
+        await page.waitForLoadState('networkidle');
+
+        // Navigate to video
+        const videoNav = page.locator('[data-testid="nav-item-video"]');
+        await expect(videoNav).toBeVisible({ timeout: 10000 });
+        await videoNav.click();
+
+        // Wait for module header
+        await page.waitForSelector('h1:has-text("Video Producer")', { timeout: 10000 });
     });
 
-    test('navigates to video module without crash', async ({ page }) => {
-        const nav = page.locator('[data-testid="nav-item-video"]');
-        const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
-
-        await nav.click();
-        await page.waitForTimeout(2_000);
-        await expect(page.locator('#root')).toBeVisible();
+    test('should show studio by default', async ({ page }) => {
+        // Look for the "Studio" active state in navbar (Studio contains the prompt bar in Director mode)
+        const studioBtn = page.locator('[data-testid="mode-director-btn"]');
+        await expect(studioBtn).toBeVisible();
     });
 
-    test('video module shows editor or generation area', async ({ page }) => {
-        const nav = page.locator('[data-testid="nav-item-video"]');
-        const visible = await nav.isVisible().catch(() => false);
-        if (!visible) { test.skip(); return; }
+    test('should switch to Editor mode', async ({ page }) => {
+        const editorBtn = page.locator('[data-testid="mode-editor-btn"]');
+        await editorBtn.click();
 
-        await nav.click();
-        await page.waitForTimeout(2_500);
+        // In editor mode, direct prompt bar should be hidden or replaced
+        const promptInput = page.locator('[data-testid="director-prompt-input"]');
+        await expect(promptInput).not.toBeVisible();
+    });
 
-        // Should have a content area with controls
-        const bodyText = await page.locator('body').innerText();
-        expect(bodyText.length).toBeGreaterThan(10);
+    test('should allow prompt entry in Director mode', async ({ page }) => {
+        const promptInput = page.locator('[data-testid="director-prompt-input"]');
+        await expect(promptInput).toBeVisible();
+        await promptInput.fill('Cinematic shot of a space station orbiting a neon planet');
+
+        const generateBtn = page.locator('[data-testid="video-generate-btn"]');
+        await expect(generateBtn).toBeEnabled();
+    });
+
+    test('should trigger video generation process', async ({ page }) => {
+        const promptInput = page.locator('[data-testid="director-prompt-input"]');
+        await promptInput.fill('Test sequence');
+
+        const generateBtn = page.locator('[data-testid="video-generate-btn"]');
+        await generateBtn.click();
+
+        // Should show "Action..." or "Generating" state
+        await expect(generateBtn).toHaveText(/Action|Generating/i);
     });
 });

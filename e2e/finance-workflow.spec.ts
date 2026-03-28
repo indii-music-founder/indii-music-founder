@@ -2,237 +2,47 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Finance Workflow E2E Tests
- *
- * Covers: EarningsDashboard, ExpenseTracker, MultiCurrencyLedger,
- * RevenueChart rendering, and manual expense entry.
- *
- * Run: npx playwright test e2e/finance-workflow.spec.ts
  */
-
 test.describe('Finance Module', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
     test.beforeEach(async ({ page }) => {
-        // Mock Firestore finance collection reads
-        await page.route('**/firestore.googleapis.com/**/transactions**', async route => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({ documents: [] }),
-            });
-        });
-
-        await page.route('**/firestore.googleapis.com/**/expenses**', async route => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({ documents: [] }),
-            });
-        });
-
-        await page.route('**/firestore.googleapis.com/**/revenue**', async route => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({ documents: [] }),
-            });
-        });
-
-        await page.goto('/');
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        await page.goto('http://localhost:4242');
+        await page.waitForLoadState('networkidle');
 
         // Navigate to finance
         const financeNav = page.locator('[data-testid="nav-item-finance"]');
-        const isVisible = await financeNav.isVisible().catch(() => false);
+        await expect(financeNav).toBeVisible({ timeout: 10000 });
+        await financeNav.click();
 
-        if (isVisible) {
-            await financeNav.click();
-            await page.waitForTimeout(2_000);
-        } else {
-            await page.goto('/#finance');
-            await page.waitForTimeout(2_000);
-        }
+        // Wait for module header
+        await page.waitForSelector('h1:has-text("Royalties & Finance")', { timeout: 10000 });
     });
 
     test('finance module loads without crashing', async ({ page }) => {
-        await expect(page.locator('#root')).toBeVisible();
+        await expect(page.locator('h1')).toContainText(/Finance/i);
     });
 
-    test('EarningsDashboard or revenue summary is visible', async ({ page }) => {
-        const earningsContent = page.locator(
-            // eslint-disable-next-line no-useless-escape
-            '[class*="earnings"], [class*="revenue"], [class*="dashboard"], text=/revenue|earnings|\$/i'
-        ).first();
-        const contentVisible = await earningsContent.isVisible().catch(() => false);
-        console.log(`Earnings content found: ${contentVisible}`);
+    test('should switch between Finance tabs', async ({ page }) => {
+        // Test Expenses tab
+        const expenseTab = page.locator('[data-testid="finance-tab-expenses"]');
+        await expenseTab.click();
+        await expect(expenseTab).toHaveAttribute('data-state', 'active');
 
+        // Test Ledger tab
+        const ledgerTab = page.locator('[data-testid="finance-tab-ledger"]');
+        await ledgerTab.click();
+        await expect(ledgerTab).toHaveAttribute('data-state', 'active');
+
+        // Test Recoupment tab
+        const recoupTab = page.locator('[data-testid="finance-tab-recoupment"]');
+        await recoupTab.click();
+        await expect(recoupTab).toHaveAttribute('data-state', 'active');
+    });
+
+    test('EarningsDashboard summary is visible on initial load', async ({ page }) => {
         // RevenueChart (Recharts SVG) should be present
         const chart = page.locator('.recharts-wrapper, svg[class*="recharts"]').first();
-        const chartVisible = await chart.isVisible().catch(() => false);
-        console.log(`Revenue chart found: ${chartVisible}`);
-
-        await expect(page.locator('#root')).toBeVisible();
-    });
-
-    test('ExpenseTracker tab renders expense list', async ({ page }) => {
-        const expenseTab = page.locator(
-            'button:has-text("Expenses"), [role="tab"]:has-text("Expenses")'
-        ).first();
-        const tabVisible = await expenseTab.isVisible().catch(() => false);
-
-        if (tabVisible) {
-            await expenseTab.click();
-            await page.waitForTimeout(1_000);
-
-            const expenseContent = page.locator(
-                '[class*="expense"], table, [class*="empty"]'
-            ).first();
-            const contentVisible = await expenseContent.isVisible().catch(() => false);
-            console.log(`Expense content found: ${contentVisible}`);
-        }
-
-        await expect(page.locator('#root')).toBeVisible();
-    });
-
-    test('add expense button opens entry form', async ({ page }) => {
-        // Look for expense tab first
-        const expenseTab = page.locator(
-            'button:has-text("Expenses"), [role="tab"]:has-text("Expenses")'
-        ).first();
-        const tabVisible = await expenseTab.isVisible().catch(() => false);
-        if (tabVisible) {
-            await expenseTab.click();
-            await page.waitForTimeout(800);
-        }
-
-        const addBtn = page.locator(
-            'button:has-text("Add Expense"), button:has-text("+ Expense"), button:has-text("New Expense")'
-        ).first();
-        const btnVisible = await addBtn.isVisible().catch(() => false);
-
-        if (btnVisible) {
-            await addBtn.click();
-            await page.waitForTimeout(800);
-
-            const form = page.locator('[role="dialog"] form, [class*="modal"] form, form').first();
-            const formVisible = await form.isVisible().catch(() => false);
-            console.log(`Expense form opened: ${formVisible}`);
-
-            // Close without submitting
-            await page.keyboard.press('Escape');
-        }
-
-        await expect(page.locator('#root')).toBeVisible();
-    });
-
-    test('MultiCurrencyLedger or royalties section renders', async ({ page }) => {
-        const royaltiesTab = page.locator(
-            'button:has-text("Royalties"), [role="tab"]:has-text("Royalties")'
-        ).first();
-        const tabVisible = await royaltiesTab.isVisible().catch(() => false);
-
-        if (tabVisible) {
-            await royaltiesTab.click();
-            await page.waitForTimeout(1_000);
-        }
-
-        await expect(page.locator('#root')).toBeVisible();
-    });
-
-    test('finance tabs render without Recharts SVG a11y violations', async ({ page }) => {
-        // Charts render SVG elements — ensure they don't crash accessibility scan
-        // (Recharts SVGs are excluded from a11y.spec.ts; verify they at least render)
-        const svgCharts = page.locator('svg');
-        const svgCount = await svgCharts.count();
-        console.log(`SVG elements in finance: ${svgCount}`);
-
-        await expect(page.locator('#root')).toBeVisible();
-    });
-
-    // ── Item 277: Tests for new components added in PRODUCTION_300 ──────────────
-
-    test('Recoupment tab is accessible and renders empty state when no deals exist', async ({ page }) => {
-        // Navigate to the Recoupment tab
-        const recoupTab = page.locator(
-            'button:has-text("Recoupment"), [role="tab"]:has-text("Recoupment")'
-        ).first();
-        const tabVisible = await recoupTab.isVisible().catch(() => false);
-
-        if (tabVisible) {
-            await recoupTab.click();
-            await page.waitForTimeout(1_200);
-
-            // Should render a heading
-            const heading = page.locator('h2:has-text("Label Deal Recoupment"), h2:has-text("Recoupment")').first();
-            const headingVisible = await heading.isVisible().catch(() => false);
-            console.log(`Recoupment heading visible: ${headingVisible}`);
-
-            // Add Deal button should be present
-            const addBtn = page.locator('button:has-text("Add Deal")').first();
-            const addVisible = await addBtn.isVisible().catch(() => false);
-            console.log(`Add Deal button visible: ${addVisible}`);
-
-            if (addVisible) {
-                await addBtn.click();
-                await page.waitForTimeout(600);
-
-                // Form should appear
-                const form = page.locator('form, [class*="form"]').first();
-                const formVisible = await form.isVisible().catch(() => false);
-                console.log(`Add deal form visible: ${formVisible}`);
-
-                // Cancel to close
-                const cancelBtn = page.locator('button:has-text("Cancel")').first();
-                if (await cancelBtn.isVisible().catch(() => false)) {
-                    await cancelBtn.click();
-                }
-            }
-        }
-
-        await expect(page.locator('#root')).toBeVisible();
-    });
-
-    test('LabelDealRecoupment form fields are keyboard accessible', async ({ page }) => {
-        const recoupTab = page.locator(
-            'button:has-text("Recoupment"), [role="tab"]:has-text("Recoupment")'
-        ).first();
-        const tabVisible = await recoupTab.isVisible().catch(() => false);
-
-        if (tabVisible) {
-            await recoupTab.click();
-            await page.waitForTimeout(800);
-
-            const addBtn = page.locator('button:has-text("Add Deal")').first();
-            if (await addBtn.isVisible().catch(() => false)) {
-                await addBtn.click();
-                await page.waitForTimeout(600);
-
-                // Tab through form fields
-                await page.keyboard.press('Tab');
-                await page.keyboard.press('Tab');
-                await page.keyboard.press('Tab');
-
-                // Label input should be focusable (has id="ld-label")
-                const labelInput = page.locator('#ld-label');
-                if (await labelInput.isVisible().catch(() => false)) {
-                    await labelInput.fill('Test Label Inc.');
-                }
-
-                // Advance amount
-                const advanceInput = page.locator('#ld-advance');
-                if (await advanceInput.isVisible().catch(() => false)) {
-                    await advanceInput.fill('50000');
-                }
-
-                // Cancel
-                const cancelBtn = page.locator('button:has-text("Cancel")').first();
-                if (await cancelBtn.isVisible().catch(() => false)) {
-                    await cancelBtn.click();
-                }
-            }
-        }
-
-        await expect(page.locator('#root')).toBeVisible();
+        await expect(chart).toBeVisible({ timeout: 5000 });
     });
 });

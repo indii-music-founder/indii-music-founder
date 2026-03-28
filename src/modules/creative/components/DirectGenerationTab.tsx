@@ -138,6 +138,7 @@ export default function DirectGenerationTab() {
                     <div className="flex bg-white/5 rounded-lg p-1 border border-white/5 shrink-0">
                         <button
                             onClick={() => setMode('image')}
+                            data-testid="direct-image-mode-btn"
                             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'image' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
@@ -146,6 +147,7 @@ export default function DirectGenerationTab() {
                         </button>
                         <button
                             onClick={() => setMode('video')}
+                            data-testid="direct-video-mode-btn"
                             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'video' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
@@ -163,6 +165,7 @@ export default function DirectGenerationTab() {
                             onChange={(e) => setLocalPrompt(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleGenerate()}
                             placeholder={`Describe your ${mode}...`}
+                            data-testid="direct-prompt-input"
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-12 text-sm focus:outline-none focus:border-dept-creative/50 focus:ring-1 focus:ring-dept-creative/20 transition-all relative z-10"
                         />
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground z-20">
@@ -175,6 +178,7 @@ export default function DirectGenerationTab() {
                             </span>
                             <button
                                 onClick={handleGenerate}
+                                data-testid="direct-generate-btn"
                                 disabled={isGenerating || !localPrompt.trim()}
                                 className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >

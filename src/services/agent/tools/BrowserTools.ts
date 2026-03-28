@@ -16,6 +16,23 @@ export const BrowserTools = {
             if (typeof window !== 'undefined' && window.electronAPI?.agent) {
                 const result = await window.electronAPI.agent.navigateAndExtract(args.url);
                 if (result.success) {
+                    // Record navigation in Firestore for observability
+                    try {
+                        const { db, auth } = await import('@/services/firebase');
+                        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                        const uid = auth.currentUser?.uid;
+                        if (uid) {
+                            await addDoc(collection(db, 'users', uid, 'browserHistory'), {
+                                url: args.url,
+                                title: result.title || 'Untitled Page',
+                                timestamp: serverTimestamp(),
+                                status: 'success',
+                            });
+                        }
+                    } catch (pErr) {
+                        logger.warn('[BrowserTools] Failed to persist navigation history:', pErr);
+                    }
+
                     return toolSuccess(result, `Successfully navigated to ${args.url}`);
                 }
                 return toolError(result.error || 'Navigation failed', 'BROWSER_NAV_ERROR');

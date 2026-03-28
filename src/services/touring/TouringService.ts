@@ -13,6 +13,7 @@ import {
     Timestamp
 } from 'firebase/firestore';
 import { VehicleStats, Itinerary } from '@/modules/touring/types';
+import { TourVehicleDocument, TourItineraryDocument } from '@/types/firestore';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
 
@@ -65,23 +66,23 @@ export const TouringService = {
 
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
-                const data = snapshot.docs[0]!.data();
+                const docSnapshot = snapshot.docs[0]!;
+                const data = docSnapshot.data() as TourVehicleDocument;
                 try {
-                    VehicleStatsSchema.passthrough().parse(data);
+                    const validated = VehicleStatsSchema.passthrough().parse(data);
                     return {
-                        id: snapshot.docs[0]!.id,
-                        ...data
+                        ...validated,
+                        id: docSnapshot.id,
+                        createdAt: validated.createdAt,
+                        updatedAt: validated.updatedAt
                     } as VehicleStats;
                 } catch (validationError) {
                     logger.error('Invalid VehicleStats data:', validationError);
-                    // Decide whether to return partial data or null.
-                    // For safety, returning null forces a fallback/re-seed flow or error state.
                     return null;
                 }
             }
             return null;
         } catch (error: unknown) {
-            // Suppress permission-denied — expected in dev without matching Firestore rules
             const code = (error as { code?: string })?.code;
             if (code === 'permission-denied') {
                 logger.debug('[Touring] Vehicle stats unavailable — insufficient permissions (expected in dev).');
@@ -103,16 +104,17 @@ export const TouringService = {
         );
 
         return onSnapshot(q, (snapshot) => {
-            const items = snapshot.docs.map(doc => {
-                const data = doc.data();
+            const items = snapshot.docs.map(docSnapshot => {
+                const data = docSnapshot.data() as TourItineraryDocument;
                 try {
-                    ItinerarySchema.passthrough().parse(data);
+                    const validated = ItinerarySchema.passthrough().parse(data);
                     return {
-                        id: doc.id,
-                        ...data
+                        ...validated,
+                        id: docSnapshot.id,
+                        createdAt: validated.createdAt
                     } as Itinerary;
                 } catch (validationError) {
-                    logger.warn(`Skipping invalid itinerary ${doc.id}:`, validationError);
+                    logger.warn(`Skipping invalid itinerary ${docSnapshot.id}:`, validationError);
                     return null;
                 }
             }).filter((item): item is Itinerary => item !== null);
@@ -125,10 +127,10 @@ export const TouringService = {
      */
     saveItinerary: async (itinerary: Omit<Itinerary, 'id'>) => {
         // Validate input before sending to DB
-        ItinerarySchema.omit({ createdAt: true, updatedAt: true }).passthrough().parse(itinerary);
+        const validated = ItinerarySchema.omit({ createdAt: true, updatedAt: true }).passthrough().parse(itinerary);
 
         await addDoc(collection(db, ITINERARIES_COLLECTION), {
-            ...itinerary,
+            ...validated,
             createdAt: serverTimestamp()
         });
     },
@@ -158,12 +160,7 @@ export const TouringService = {
             const docRef = snapshot.docs[0]!.ref;
             await updateDoc(docRef, { ...stats, updatedAt: serverTimestamp() });
         } else {
-            // Validate creation payload if possible, though 'stats' is Partial.
-            // We assume the merging with existing data or defaults happens upstream or we trust the partial update.
-            // However, creating a NEW doc requires checks.
-
-            // If we are creating, we expect essential fields.
-            // Ideally we should enforce full object for creation, but following existing signature:
+            // If we are creating, we expect essential fields from standard partial updates
             await addDoc(collection(db, VEHICLES_COLLECTION), {
                 ...stats,
                 userId,

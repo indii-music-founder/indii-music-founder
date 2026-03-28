@@ -52,21 +52,62 @@ const NavItem = React.memo(function NavItem({
                             onNavigate(item.id);
                         }}
                         style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
-                        className={`
-                            w-full flex items-center gap-3 px-4 py-2 text-sm
-                            bolt-interactive relative
-                            ${isActive
-                                ? `${colors.text} ${colors.bg} border-l-2 border-l-[--dept-color]`
-                                : `text-gray-400 ${colors.hoverText} ${colors.hoverBg} border-l-2 border-l-transparent`
-                            }
-                            ${!isSidebarOpen ? 'justify-center px-2' : ''}
-                        `}
+                        className={cn(
+                            "w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1",
+                            isActive
+                                ? `${colors.text} bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]`
+                                : "text-gray-400 hover:text-white hover:bg-white/[0.02]"
+                        )}
                         data-testid={`nav-item-${item.id}`}
                         aria-current={isActive ? 'page' : undefined}
                         aria-label={!isSidebarOpen ? item.label : undefined}
                     >
-                        <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
-                        {isSidebarOpen && <span className="truncate">{item.label}</span>}
+                        {/* Active Indicator Pillar */}
+                        {isActive && (
+                            <motion.div
+                                layoutId="active-pill"
+                                className="absolute left-0 w-1 h-2/3 rounded-r-full"
+                                style={{ backgroundColor: 'var(--dept-color)' }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            />
+                        )}
+
+                        {/* Interactive Glow Backlight */}
+                        <div
+                            className={cn(
+                                "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
+                                isActive ? "opacity-5" : ""
+                            )}
+                            style={{
+                                background: `radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px)`
+                            }}
+                        />
+
+                        <item.icon
+                            size={18}
+                            className={cn(
+                                "relative z-10 transition-transform duration-300 group-hover:scale-110",
+                                isActive ? "drop-shadow-[0_0_8px_var(--dept-color)]" : "opacity-70 group-hover:opacity-100"
+                            )}
+                        />
+
+                        {isSidebarOpen && (
+                            <span className={cn(
+                                "truncate relative z-10 font-medium transition-all duration-300",
+                                isActive ? "translate-x-1" : "group-hover:translate-x-0.5"
+                            )}>
+                                {item.label}
+                            </span>
+                        )}
+
+                        {/* Particle Shine Effect on Active */}
+                        {isActive && (
+                            <motion.div
+                                animate={{ x: ['-100%', '200%'] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent skew-x-12"
+                            />
+                        )}
                     </button>
                 </TooltipTrigger>
                 {!isSidebarOpen && (
@@ -78,6 +119,7 @@ const NavItem = React.memo(function NavItem({
         </TooltipProvider>
     );
 });
+
 
 export default function Sidebar() {
     const { t } = useTranslation();
@@ -150,9 +192,12 @@ export default function Sidebar() {
                 duration: isThrottled ? 0.2 : 0.4
             }}
             className={cn(
-                "hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar z-sidebar"
+                "hidden md:flex h-full flex-col flex-shrink-0 relative z-20",
+                "bg-[#0d1117]/60 backdrop-blur-2xl border-r border-white/5",
+                "transition-colors duration-500 overflow-y-auto custom-scrollbar shadow-2xl"
             )}
         >
+
             {/* Header */}
             <div className={`p-4 border-b border-white/5 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
                 {isSidebarOpen && (

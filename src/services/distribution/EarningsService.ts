@@ -1,48 +1,49 @@
-import { db } from '@/services/firebase';
-import { collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, limit, doc, setDoc, FieldValue } from 'firebase/firestore';
-import type { DistributorEarnings } from './types/distributor';
+import { serverTimestamp, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { auth } from '@/services/firebase';
+import { FirestoreService } from '@/services/FirestoreService';
+import type { EarningsDocument } from '@/types/firestore';
 import type { DateRange } from '@/services/ddex/types/common';
+import type { DistributorEarnings, DistributorId } from './types/distributor';
 import { logger } from '@/utils/logger';
 
-export interface EarningsRecord extends Omit<DistributorEarnings, 'lastUpdated'> {
-    id?: string;
-    createdAt: FieldValue | Date; // serverTimestamp
-    lastUpdated: FieldValue | Date; // serverTimestamp
-}
-
-export class EarningsService {
-    private readonly COLLECTION = 'earnings';
+/**
+ * Earnings Service
+ * Manages tracking of digital sales revenue and stream counts from DSPs.
+ */
+export class EarningsService extends FirestoreService<EarningsDocument> {
+    constructor() {
+        super('earnings');
+    }
 
     /**
      * Get earnings for a specific release from a specific distributor
      */
     async getEarnings(distributorId: string, releaseId: string, period?: DateRange): Promise<DistributorEarnings | null> {
         try {
-            let q = query(
-                collection(db, this.COLLECTION),
-                where('distributorId', '==', distributorId),
-                where('releaseId', '==', releaseId)
-            );
+            const userId = auth.currentUser?.uid;
+            if (!userId) return null;
 
-            if (period) {
-                q = query(q,
-                    where('period.startDate', '==', period.startDate),
-                    where('period.endDate', '==', period.endDate)
-                );
-            } else {
-                q = query(q, orderBy('period.endDate', 'desc'), limit(1));
-            }
+            const baseConstraints = [
+                this.where('userId', '==', userId),
+                this.where('distributorId', '==', distributorId),
+                this.where('releaseId', '==', releaseId)
+            ];
 
-            const snapshot = await getDocs(q);
-            if (snapshot.empty) return null;
+            const constraints = period ? [
+                ...baseConstraints,
+                this.where('period.startDate', '==', period.startDate),
+                this.where('period.endDate', '==', period.endDate)
+            ] : [
+                ...baseConstraints,
+                this.orderBy('period.endDate', 'desc'),
+                limit(1)
+            ];
 
-            const data = snapshot.docs[0]!.data();
-            return ({
-                ...data,
-                id: snapshot.docs[0]!.id,
-                // Handle Timestamp conversion
-                lastUpdated: data.lastUpdated?.toDate?.()?.toISOString() || new Date().toISOString()
-            } as unknown) as DistributorEarnings;
+            const results = await this.list(constraints);
+            if (results.length === 0) return null;
+
+            const doc = results[0]!;
+            return this.mapToEarnings(doc);
         } catch (error) {
             logger.error('[EarningsService] Failed to fetch earnings:', error);
             return null;
@@ -54,27 +55,23 @@ export class EarningsService {
      */
     async getAllEarnings(distributorId: string, period?: DateRange): Promise<DistributorEarnings[]> {
         try {
-            let q = query(
-                collection(db, this.COLLECTION),
-                where('distributorId', '==', distributorId)
-            );
+            const userId = auth.currentUser?.uid;
+            if (!userId) return [];
+
+            const constraints = [
+                this.where('userId', '==', userId),
+                this.where('distributorId', '==', distributorId)
+            ];
 
             if (period) {
-                q = query(q,
-                    where('period.startDate', '>=', period.startDate),
-                    where('period.endDate', '<=', period.endDate)
+                constraints.push(
+                    this.where('period.startDate', '>=', period.startDate),
+                    this.where('period.endDate', '<=', period.endDate)
                 );
             }
 
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => {
-                const data = doc.data();
-                return ({
-                    ...data,
-                    id: doc.id,
-                    lastUpdated: data.lastUpdated?.toDate?.()?.toISOString() || new Date().toISOString()
-                } as unknown) as DistributorEarnings;
-            });
+            const results = await this.list(constraints);
+            return results.map(this.mapToEarnings);
         } catch (error) {
             logger.error('[EarningsService] Failed to fetch all earnings:', error);
             return [];
@@ -84,22 +81,35 @@ export class EarningsService {
     /**
      * Record new earnings data (Ingest)
      */
-    async recordEarnings(data: DistributorEarnings): Promise<string> {
+    async recordEarnings(data: Omit<EarningsDocument, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<string> {
         try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) throw new Error('User not authenticated');
+
             const earningsId = `${data.distributorId}_${data.releaseId}_${data.period.startDate}_${data.period.endDate}`;
-            const record = {
+
+            const record: EarningsDocument = {
                 ...data,
-                createdAt: serverTimestamp(),
-                lastUpdated: serverTimestamp()
+                userId,
+                id: earningsId,
+                createdAt: serverTimestamp() as unknown as Timestamp,
+                updatedAt: serverTimestamp() as unknown as Timestamp
             };
 
-            // Use setDoc with a deterministic ID to prevent duplicates if the same report is processed twice
-            await setDoc(doc(db, this.COLLECTION, earningsId), record, { merge: true });
+            await this.set(earningsId, record);
             return earningsId;
         } catch (error) {
             logger.error('[EarningsService] Failed to record earnings:', error);
             throw error;
         }
+    }
+
+    private mapToEarnings(doc: EarningsDocument): DistributorEarnings {
+        return {
+            ...doc,
+            distributorId: doc.distributorId as DistributorId,
+            lastUpdated: doc.updatedAt.toDate().toISOString()
+        };
     }
 }
 

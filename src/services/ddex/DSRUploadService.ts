@@ -1,9 +1,11 @@
-import { logger } from '@/utils/logger';
-import { dsrService, type ProcessedSalesBatches } from '@/services/ddex/DSRService';
-import type { DSRReport, RoyaltyCalculation } from '@/services/ddex/types/dsr';
+import { Timestamp, serverTimestamp } from 'firebase/firestore';
+import { auth } from '@/services/firebase';
+import { FirestoreService } from '@/services/FirestoreService';
+import type { DSRProcessedReportDocument } from '@/types/firestore';
+import type { DSRReport } from '@/services/ddex/types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { db, auth } from '@/services/firebase';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { dsrService, type ProcessedSalesBatches } from '@/services/ddex/DSRService';
+import { logger } from '@/utils/logger';
 import * as Sentry from '@sentry/react';
 
 export interface DSRUploadResult {
@@ -17,10 +19,12 @@ export interface DSRUploadResult {
 
 /**
  * DSR Upload Service
- * Handles the complete flow of uploading, parsing, and processing sales reports
+ * Handles the complete flow of uploading, parsing, and processing sales reports.
  */
-export class DSRUploadService {
-    private readonly PROCESSED_REPORTS_COLLECTION = 'dsr_processed_reports';
+export class DSRUploadService extends FirestoreService<DSRProcessedReportDocument> {
+    constructor() {
+        super('dsr_processed_reports');
+    }
 
     /**
      * Process a parsed DSR report and save earnings/royalties
@@ -32,17 +36,15 @@ export class DSRUploadService {
         userCatalog: Map<string, ExtendedGoldenMetadata>
     ): Promise<DSRUploadResult> {
         try {
-            if (!auth.currentUser) {
+            const userId = auth.currentUser?.uid;
+            if (!userId) {
                 throw new Error('User not authenticated');
             }
 
-            const userId = auth.currentUser.uid;
-
             // Step 1: Deduce distributor from senderId (handled inside DSRService)
-            // Note: dsrService handles the distributor fee deduction and grouping.
             const processedBatch = await dsrService.processReport(report, userCatalog);
 
-            // Figure out the distributor ID to save under (matching logic from dsrService)
+            // Figure out the distributor ID to save under
             const { DISTRIBUTORS } = await import('@/core/config/distributors');
             const distributorKey = Object.keys(DISTRIBUTORS).find(
                 key => DISTRIBUTORS[key]!.ddexPartyId === report.senderId
@@ -85,7 +87,7 @@ export class DSRUploadService {
         originalReport: DSRReport
     ): Promise<void> {
         try {
-            await addDoc(collection(db, this.PROCESSED_REPORTS_COLLECTION), {
+            const reportData: Omit<DSRProcessedReportDocument, 'id' | 'createdAt' | 'updatedAt'> = {
                 userId,
                 distributorId,
                 batchId: batch.batchId,
@@ -95,24 +97,23 @@ export class DSRUploadService {
                 processedAt: Timestamp.fromDate(new Date(batch.processedAt)),
                 reportPeriod: {
                     start: originalReport.reportingPeriod.startDate,
-                    end: originalReport.reportingPeriod.endDate
+                    end: originalReport.reportingPeriod.endDate || new Date().toISOString()
                 },
-                // Store aggregated royalties (not raw transactions for privacy/size)
                 royaltiesSummary: {
                     count: batch.royalties.length,
-                    totalNetRevenue: batch.royalties.reduce((sum: number, r) => sum + r.netRevenue, 0),
-                    totalGrossRevenue: batch.royalties.reduce((sum: number, r) => sum + r.grossRevenue, 0)
+                    totalNetRevenue: batch.royalties.reduce((sum, r) => sum + r.netRevenue, 0),
+                    totalGrossRevenue: batch.royalties.reduce((sum, r) => sum + r.grossRevenue, 0)
                 },
                 metadata: {
                     createdAt: Timestamp.now(),
                     source: 'dsr_upload_modal'
                 }
-            });
+            };
 
+            await this.add(reportData);
             logger.debug('[DSRUploadService] Report saved successfully:', batch.batchId);
         } catch (error) {
             logger.error('[DSRUploadService] Failed to save report:', error);
-            // Don't throw here - processing was successful even if save failed
             Sentry.captureException(error);
         }
     }

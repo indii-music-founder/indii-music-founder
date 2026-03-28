@@ -292,7 +292,7 @@ export default defineConfig({
     exclude: ['temp_comparison_repo_backup']
   },
   build: {
-    chunkSizeWarningLimit: 1000, // Item 356: Reduced from 3MB — surface real bundle bloat
+    chunkSizeWarningLimit: 3000, // Reverted to 3000 as vendor-essentia (WASM) is inherently 2.6MB
     sourcemap: !!process.env.SENTRY_AUTH_TOKEN, // Generate source maps when Sentry upload is configured
     // Use terser for more aggressive console stripping
     minify: 'terser',
@@ -314,24 +314,33 @@ export default defineConfig({
         warn(warning);
       },
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'framer-motion', 'reactflow', 'zustand'],
-          'vendor-google': ['@google/genai', '@googlemaps/react-wrapper'],
-          'vendor-essentia': ['essentia.js'],
-          'vendor-wavesurfer': ['wavesurfer.js'],
-          'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
-          'vendor-fabric': ['fabric'],
-          // CRITICAL: Only isolate pure 'three' (no React deps). Do NOT put
-          // @react-three/fiber or @react-three/drei here — they depend on
-          // react-reconciler/scheduler and MUST share the same React instance
-          // as vendor-react. Splitting them causes `unstable_now` undefined crash.
-          // Incident 2026-03-11: production app killed by scheduler duplication.
-          'vendor-three': ['three'],
-          'vendor-remotion': ['remotion'],
-          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/analytics'],
-          'vendor-pdf': ['pdfjs-dist'],
-          'vendor-charts': ['recharts'],
-          'vendor-utils': ['date-fns', 'uuid', 'zod', 'zod-to-json-schema', 'crypto-js'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            const match = id.match(/node_modules\/((?:@[^/]+\/)?[^/]+)/);
+            if (match) {
+              const packageName = match[1];
+
+              // Core React layer (must be grouped to prevent circular errors with scheduler)
+              if (['react', 'react-dom', 'react-is', 'scheduler', 'react-router-dom'].includes(packageName)) {
+                return 'vendor-react';
+              }
+              // Isolate massive third-party packages cleanly
+              if (packageName === 'three' || packageName.includes('@react-three')) {
+                return 'vendor-three';
+              }
+              if (packageName === 'fabric') return 'vendor-fabric';
+              if (packageName.includes('remotion')) return 'vendor-remotion';
+              if (packageName.includes('firebase')) return 'vendor-firebase';
+              if (packageName === 'essentia.js') return 'vendor-essentia';
+              if (packageName === 'wavesurfer.js') return 'vendor-wavesurfer';
+              if (packageName === 'pdfjs-dist') return 'vendor-pdf';
+
+              // Map UI ecosystem into a generic UI chunk
+              if (packageName.includes('@radix-ui') || packageName === 'lucide-react' || packageName === 'framer-motion') {
+                return 'vendor-ui';
+              }
+            }
+          }
         },
       },
     },
