@@ -15,43 +15,34 @@ test.describe('Distribution Module', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
     test.beforeEach(async ({ authedPage: page }) => {
-        // Mock Firestore distribution collection reads with more generic patterns to ensure interception
+        // Mock Firestore distribution collection reads
         await page.route('**/firestore.googleapis.com/**/ddexReleases**', async route => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({ documents: [] }),
-            });
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ documents: [] }) });
         });
 
         await page.route('**/firestore.googleapis.com/**/distributors**', async route => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({ documents: [] }),
-            });
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ documents: [] }) });
         });
 
-        // Navigate to distribution
-        const distroNav = page.locator('[data-testid="nav-item-distribution"]');
-        if (await distroNav.isVisible().catch(() => false)) {
-            await distroNav.click();
-        } else {
-            await page.goto('/department/distribution');
-        }
+        // Direct navigation is more reliable in CI
+        await page.goto('/department/distribution');
 
-        // Wait for distribution header to confirm load
-        await expect(page.getByRole('heading', { name: /Distribution/i })).toBeVisible({ timeout: 15_000 });
+        // Wait for root module markers
+        await expect(page.getByRole('heading', { name: /Distribution/i }).first()).toBeVisible({ timeout: 20_000 });
+        await expect(page.getByText(/Live System/i).first()).toBeVisible({ timeout: 20_000 });
     });
 
     test('distribution module loads without crashing', async ({ authedPage: page }) => {
-        // Confirm any part of the distribution engine is visible
-        await expect(page.getByText(/Distribution Engine/i).or(page.getByText(/Live System/i))).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByText(/Distribution Engine/i).or(page.getByText(/150\+ PLATFORMS/i))).toBeVisible({ timeout: 15_000 });
     });
 
     test('Releases tab renders releases list or empty state', async ({ authedPage: page }) => {
-        // Confirm releases content or empty state
-        const emptyState = page.getByRole('heading', { name: /No Reports Found/i }).or(page.getByText(/Failed to load releases/i)).or(page.getByRole('heading', { name: /No releases found/i }));
+        // We start on New Release or Catalogue? The snapshot showed New Release active.
+        // Let's click Catalogue specifically to see releases
+        const catalogueTab = page.locator('[data-testid="distro-tab-catalogue"]').or(page.getByRole('tab', { name: /Catalogue/i }));
+        await catalogueTab.click();
+
+        const emptyState = page.getByRole('heading', { name: /No Reports Found/i }).or(page.getByText(/No releases found/i));
         const releasesList = page.locator('[data-testid="release-card"]');
 
         await expect(releasesList.first().or(emptyState.first())).toBeVisible({ timeout: 20_000 });
@@ -107,11 +98,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
                 status: 200,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    result: {
-                        deliveryId: 'delivery-mock-001',
-                        status: 'queued',
-                        distributor: 'DistroKid',
-                    },
+                    result: { deliveryId: 'delivery-mock-001', status: 'queued', distributor: 'DistroKid' },
                 }),
             });
         });
@@ -121,27 +108,17 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
                 status: 200,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    result: {
-                        deliveryId: 'delivery-mock-001',
-                        status: 'delivered',
-                        distributor: 'DistroKid',
-                        deliveredAt: new Date().toISOString(),
-                    },
+                    result: { deliveryId: 'delivery-mock-001', status: 'delivered', distributor: 'DistroKid', deliveredAt: new Date().toISOString() },
                 }),
             });
         });
 
-        // ── Mock QC validation endpoint ──────────────────────────────────────
         await page.route('**/cloudfunctions.net/**/validateDDEX**', async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    result: {
-                        valid: true,
-                        errors: [],
-                        warnings: ['Cover art is 1400×1400 — recommend 3000×3000'],
-                    },
+                    result: { valid: true, errors: [], warnings: ['Cover art warning'] },
                 }),
             });
         });
@@ -165,15 +142,8 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
             });
         });
 
-        // Navigate to distribution (already handled by top-level beforeEach ideally, but pipeline needs same setup)
-        const distroNav = page.locator('[data-testid="nav-item-distribution"]');
-        if (await distroNav.isVisible().catch(() => false)) {
-            await distroNav.click();
-        } else {
-            await page.goto('/department/distribution');
-        }
-
-        await expect(page.getByRole('heading', { name: /Distribution/i })).toBeVisible({ timeout: 15_000 });
+        await page.goto('/department/distribution');
+        await expect(page.getByRole('heading', { name: /Distribution/i }).first()).toBeVisible({ timeout: 20_000 });
     });
 
     test('delivery pipeline initiates and returns a delivery ID', async ({ authedPage: page }) => {
