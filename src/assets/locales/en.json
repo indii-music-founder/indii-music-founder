@@ -69,7 +69,11 @@
             "authority": "Authority",
             "keys": "Keys",
             "brain": "Brain (QC)",
-            "transmission": "Transfer"
+            "transmission": "Transfer",
+            "new": "New Release",
+            "catalogue": "Catalogue",
+            "analytics": "Analytics",
+            "transmissions": "Transmissions"
         }
     },
     "finance": {

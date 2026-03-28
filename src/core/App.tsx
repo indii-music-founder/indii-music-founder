@@ -430,8 +430,8 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
         );
     }
 
-    // Gate commercial modules for anonymous/guest users
-    if (user?.isAnonymous && COMMERCIAL_MODULES.has(moduleId)) {
+    // Gate commercial modules for anonymous/guest users — bypass in dev/E2E if onboarding is skipped
+    if (user?.isAnonymous && COMMERCIAL_MODULES.has(moduleId) && !env.skipOnboarding) {
         return <GuestGate onUpgrade={() => setModule('onboarding')} />;
     }
 

@@ -95,6 +95,8 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
 
         // Extract base64 images from all candidates
         for (const candidate of candidates) {
+            logger.info('[DirectImageGenerator] Candidate parts:', candidate.content?.parts?.length || 0);
+
             // Iterate through parts to find inlineData containing the image
             const imagePart = candidate.content?.parts?.find(
                 p => p.inlineData && p.inlineData.mimeType?.startsWith('image/')
@@ -109,13 +111,16 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
                 // Check if generation was blocked by safety filters
                 const textPart = candidate.content?.parts?.find(p => 'text' in p);
                 if (textPart && 'text' in textPart) {
-                    logger.warn('[DirectImageGenerator] Received text instead of image (likely safety block):', textPart.text);
+                    logger.warn('[DirectImageGenerator] Received text instead of image (likely safety block):', (textPart as any).text);
+                } else {
+                    logger.warn('[DirectImageGenerator] Candidate part missing image data and text. Part keys:',
+                        candidate.content?.parts?.map(p => Object.keys(p)).flat());
                 }
             }
         }
 
         if (generatedImages.length === 0) {
-            throw new Error('Generation completed but no valid image data was extracted from the response parts.');
+            throw new Error(`Generation completed but no valid image data was extracted from ${candidates.length} candidate(s).`);
         }
 
         logger.info(`[DirectImageGenerator] ✅ Successfully generated ${generatedImages.length} image(s) directly.`);

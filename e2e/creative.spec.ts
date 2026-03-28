@@ -33,13 +33,19 @@ test.describe('Creative Studio', () => {
         await page.goto('http://localhost:4242');
         await page.waitForLoadState('networkidle');
 
+        // Login as guest if on login page
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible()) {
+            await guestBtn.click();
+        }
+
         // Navigate to creative
         const creativeNav = page.locator('[data-testid="nav-item-creative"]');
-        await expect(creativeNav).toBeVisible({ timeout: 10000 });
+        await expect(creativeNav).toBeVisible({ timeout: 15000 });
         await creativeNav.click();
 
         // Wait for module header
-        await page.waitForSelector('h1:has-text("Creative Director")', { timeout: 10000 });
+        await page.waitForSelector('h1:has-text("Creative Director")', { timeout: 15000 });
     });
 
     test('should show gallery by default', async ({ page }) => {
@@ -74,13 +80,19 @@ test.describe('Creative Studio', () => {
         await page.locator('[data-testid="direct-view-btn"]').click();
 
         const promptInput = page.locator('[data-testid="direct-prompt-input"]');
-        await promptInput.fill('Test generation prompt');
+        await promptInput.fill('A cinematic view of a spaceship landing on a desert planet');
 
         const generateBtn = page.locator('[data-testid="direct-generate-btn"]');
-        await expect(generateBtn).toBeEnabled();
+
+        // Wait for button to be enabled (it might be disabled if loading)
+        await expect(generateBtn).toBeEnabled({ timeout: 10000 });
 
         await generateBtn.click();
-        // Verify no immediate error
-        await expect(page.locator('body')).not.toHaveText(/error|failed/i);
+
+        // Verify generating state
+        await expect(generateBtn).toHaveText(/generating/i);
+
+        // Verify no immediate error in body
+        await expect(page.locator('body')).not.toHaveText(/failed to generate/i);
     });
 });

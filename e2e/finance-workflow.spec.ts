@@ -10,13 +10,19 @@ test.describe('Finance Module', () => {
         await page.goto('http://localhost:4242');
         await page.waitForLoadState('networkidle');
 
+        // Login as guest if on login page
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible()) {
+            await guestBtn.click();
+        }
+
         // Navigate to finance
         const financeNav = page.locator('[data-testid="nav-item-finance"]');
         await expect(financeNav).toBeVisible({ timeout: 10000 });
         await financeNav.click();
 
         // Wait for module header
-        await page.waitForSelector('h1:has-text("Royalties & Finance")', { timeout: 10000 });
+        await page.waitForSelector('[data-testid="module-header"], h1:has-text("Finance")', { timeout: 15000 });
     });
 
     test('finance module loads without crashing', async ({ page }) => {

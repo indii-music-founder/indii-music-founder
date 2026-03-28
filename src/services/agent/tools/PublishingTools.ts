@@ -113,16 +113,14 @@ export const PublishingTools = {
 
             const docRef = doc(db, 'users', uid, 'publishingCatalog', args.catalogId);
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const updates: Record<string, any> = {
+            const updates: Record<string, string | ReturnType<typeof serverTimestamp>> = {
                 updatedAt: serverTimestamp()
             };
 
             if (args.status) updates.status = args.status;
             if (args.isrc) updates.isrc = args.isrc;
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await updateDoc(docRef, updates as any);
+            await updateDoc(docRef, updates);
 
             return toolSuccess({
                 catalogId: args.catalogId,

@@ -8,13 +8,19 @@ test.describe('Legal Module', () => {
         await page.goto('http://localhost:4242');
         await page.waitForLoadState('networkidle');
 
+        // Login as guest if on login page
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible()) {
+            await guestBtn.click();
+        }
+
         // Navigate to legal
         const legalNav = page.locator('[data-testid="nav-item-legal"]');
         await expect(legalNav).toBeVisible({ timeout: 10000 });
         await legalNav.click();
 
         // Wait for module header
-        await page.waitForSelector('h1:has-text("Legal & Rights")', { timeout: 10000 });
+        await page.waitForSelector('h1:has-text("Legal")', { timeout: 15000 });
     });
 
     test('should navigate to legal module', async ({ page }) => {

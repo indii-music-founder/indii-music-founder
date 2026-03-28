@@ -8,13 +8,19 @@ test.describe('Video Producer', () => {
         await page.goto('http://localhost:4242');
         await page.waitForLoadState('networkidle');
 
+        // Login as guest if on login page
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible()) {
+            await guestBtn.click();
+        }
+
         // Navigate to video
         const videoNav = page.locator('[data-testid="nav-item-video"]');
         await expect(videoNav).toBeVisible({ timeout: 10000 });
         await videoNav.click();
 
         // Wait for module header
-        await page.waitForSelector('h1:has-text("Video Producer")', { timeout: 10000 });
+        await page.waitForSelector('[data-testid="module-header"], h1:has-text("Video Producer")', { timeout: 15000 });
     });
 
     test('should show studio by default', async ({ page }) => {

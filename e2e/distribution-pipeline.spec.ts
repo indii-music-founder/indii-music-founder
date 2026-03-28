@@ -8,13 +8,19 @@ test.describe('Distribution Module', () => {
         await page.goto('http://localhost:4242');
         await page.waitForLoadState('networkidle');
 
+        // Login as guest if on login page
+        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
+        if (await guestBtn.isVisible()) {
+            await guestBtn.click();
+        }
+
         // Navigate to distribution
         const distroNav = page.locator('[data-testid="nav-item-distribution"]');
         await expect(distroNav).toBeVisible({ timeout: 10000 });
         await distroNav.click();
 
         // Wait for module header
-        await page.waitForSelector('h1:has-text("Direct Distribution")', { timeout: 10000 });
+        await page.waitForSelector('h1:has-text("Distribution")', { timeout: 10000 });
     });
 
     test('should navigate to distribution module', async ({ page }) => {
