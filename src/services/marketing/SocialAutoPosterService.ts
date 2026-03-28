@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 /**
  * SocialAutoPosterService.ts
  * 
@@ -54,7 +53,13 @@ export class SocialAutoPosterService {
             const { functionsWest1 } = await import('@/services/firebase');
             const { httpsCallable } = await import('firebase/functions');
 
-            const dispatchFunction = httpsCallable<any, { success: boolean; externalId: string; timestamp: string }>(
+            interface DispatchPayload {
+                mediaUrl: string;
+                platform: string;
+                caption: string;
+            }
+
+            const dispatchFunction = httpsCallable<DispatchPayload, { success: boolean; externalId: string; timestamp: string }>(
                 functionsWest1,
                 'dispatchSocialPost'
             );

@@ -110,8 +110,8 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
             } else {
                 // Check if generation was blocked by safety filters
                 const textPart = candidate.content?.parts?.find(p => 'text' in p);
-                if (textPart && 'text' in textPart) {
-                    logger.warn('[DirectImageGenerator] Received text instead of image (likely safety block):', (textPart as any).text);
+                if (textPart && 'text' in textPart && typeof textPart.text === 'string') {
+                    logger.warn('[DirectImageGenerator] Received text instead of image (likely safety block):', textPart.text);
                 } else {
                     logger.warn('[DirectImageGenerator] Candidate part missing image data and text. Part keys:',
                         candidate.content?.parts?.map(p => Object.keys(p)).flat());

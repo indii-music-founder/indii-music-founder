@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 /**
  * InfluencerBountyService.ts
  * 
@@ -41,7 +40,13 @@ export class InfluencerBountyService {
             const { functionsWest1 } = await import('@/services/firebase');
             const { httpsCallable } = await import('firebase/functions');
 
-            const createBountyFunction = httpsCallable<any, { success: boolean; refCode: string; link: string }>(
+            interface BountyPayload {
+                influencerHandle: string;
+                trackName: string;
+                rewardAmount: number;
+            }
+
+            const createBountyFunction = httpsCallable<BountyPayload, { success: boolean; refCode: string; link: string }>(
                 functionsWest1,
                 'createInfluencerBounty'
             );
