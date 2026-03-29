@@ -213,7 +213,13 @@ vi.mock('@/core/store', () => {
         endSession: vi.fn(),
         setActiveSessionId: vi.fn(),
         registerSubscription: vi.fn(() => () => { }),
-        setHasUnsavedChanges: vi.fn()
+        setHasUnsavedChanges: vi.fn(),
+        // Agent task slice — required by BatchingStatus & TaskTracker
+        batchingTasks: [],
+        clearCompletedBatchTasks: vi.fn(),
+        addBatchingTask: vi.fn(),
+        updateBatchingTask: vi.fn(),
+        dispatchBatchQueue: vi.fn()
     };
 
     const useStoreMock = Object.assign(
