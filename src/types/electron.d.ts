@@ -1,6 +1,7 @@
 
 
 import * as DistributionTypes from './distribution';
+import * as SchedulerTypes from '../services/scheduler/types';
 
 export interface AuthTokenData {
     idToken: string;
@@ -165,12 +166,12 @@ export interface ElectronAPI {
 
     // Built-in Task Scheduler (Neural Sync + background jobs)
     scheduler?: {
-        register: (request: unknown) => Promise<{ success: boolean; task?: unknown; error?: string }>;
+        register: (request: SchedulerTypes.CreateTaskRequest) => Promise<{ success: boolean; task?: SchedulerTypes.ScheduledTask; error?: string }>;
         cancel: (taskId: string) => Promise<{ success: boolean; error?: string }>;
         setEnabled: (taskId: string, enabled: boolean) => Promise<{ success: boolean; error?: string }>;
-        status: () => Promise<{ success: boolean; status?: unknown; error?: string }>;
-        get: (taskId: string) => Promise<{ success: boolean; task?: unknown; error?: string }>;
-        onTick: (callback: (event: unknown) => void) => () => void;
+        status: () => Promise<{ success: boolean; status?: SchedulerTypes.SchedulerStatus; error?: string }>;
+        get: (taskId: string) => Promise<{ success: boolean; task?: SchedulerTypes.ScheduledTask; error?: string }>;
+        onTick: (callback: (event: SchedulerTypes.SchedulerTickEvent) => void) => () => void;
         onNeuralSync: (callback: (payload: unknown) => void) => () => void;
     };
 }

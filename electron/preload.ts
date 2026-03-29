@@ -24,8 +24,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPlatform: () => ipcRenderer.invoke('get-platform'),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     setPrivacyMode: (enabled: boolean) => ipcRenderer.invoke('privacy:toggle-protection', enabled),
-    selectFile: (options?: any) => ipcRenderer.invoke('system:select-file', options),
-    selectDirectory: (options?: any) => ipcRenderer.invoke('system:select-directory', options),
+    selectFile: (options?: unknown) => ipcRenderer.invoke('system:select-file', options),
+    selectDirectory: (options?: unknown) => ipcRenderer.invoke('system:select-directory', options),
     getDirectoryContents: (dirPath: string, options?: { recursive?: boolean, extensions?: string[] }) => ipcRenderer.invoke('system:get-directory-contents', dirPath, options),
     getGpuInfo: () => ipcRenderer.invoke('system:get-gpu-info'),
     showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', { title, body }),
@@ -67,24 +67,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     // Brand Capabilities
     brand: {
-        analyzeConsistency: (assetPath: string, brandKit: any) => ipcRenderer.invoke('brand:analyze-consistency', assetPath, brandKit),
+        analyzeConsistency: (assetPath: string, brandKit: unknown) => ipcRenderer.invoke('brand:analyze-consistency', assetPath, brandKit),
     },
     publicist: {
-        generatePdf: (data: any) => ipcRenderer.invoke('publicist:generate-pdf', data),
+        generatePdf: (data: unknown) => ipcRenderer.invoke('publicist:generate-pdf', data),
     },
     marketing: {
-        analyzeTrends: (data: any) => ipcRenderer.invoke('marketing:analyze-trends', data),
+        analyzeTrends: (data: unknown) => ipcRenderer.invoke('marketing:analyze-trends', data),
     },
     security: {
-        rotateCredentials: (data: any) => ipcRenderer.invoke('security:rotate-credentials', data),
-        scanVulnerabilities: (data: any) => ipcRenderer.invoke('security:scan-vulnerabilities', data),
+        rotateCredentials: (data: unknown) => ipcRenderer.invoke('security:rotate-credentials', data),
+        scanVulnerabilities: (data: unknown) => ipcRenderer.invoke('security:scan-vulnerabilities', data),
     },
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),
         performAction: (action: string, selector: string, text?: string) => ipcRenderer.invoke('agent:perform-action', action, selector, text),
         captureState: () => ipcRenderer.invoke('agent:capture-state'),
-        saveHistory: (id: string, data: any) => ipcRenderer.invoke('agent:save-history', id, data),
+        saveHistory: (id: string, data: unknown) => ipcRenderer.invoke('agent:save-history', id, data),
         getHistory: (id: string) => ipcRenderer.invoke('agent:get-history', id),
         deleteHistory: (id: string) => ipcRenderer.invoke('agent:delete-history', id),
     },
@@ -102,26 +102,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
         stageRelease: (releaseId: string, files: { type: string, data: string, name: string }[]) => ipcRenderer.invoke('distribution:stage-release', releaseId, files),
         runForensics: (filePath: string) => ipcRenderer.invoke('distribution:run-forensics', filePath),
         packageITMSP: (releaseId: string) => ipcRenderer.invoke('distribution:package-itmsp', releaseId),
-        calculateTax: (data: any) => ipcRenderer.invoke('distribution:calculate-tax', data),
-        certifyTax: (userId: string, data: any) => ipcRenderer.invoke('distribution:certify-tax', userId, data),
-        executeWaterfall: (data: any) => ipcRenderer.invoke('distribution:execute-waterfall', data),
-        validateMetadata: (metadata: any) => ipcRenderer.invoke('distribution:validate-metadata', metadata),
-        generateISRC: (options?: any) => ipcRenderer.invoke('distribution:generate-isrc', options),
-        generateUPC: (options?: any) => ipcRenderer.invoke('distribution:generate-upc', options),
-        registerRelease: (metadata: any, releaseId?: string) => ipcRenderer.invoke('distribution:register-release', metadata, releaseId),
-        generateDDEX: (metadata: any) => ipcRenderer.invoke('distribution:generate-ddex', metadata),
-        generateContentIdCSV: (data: any) => ipcRenderer.invoke('distribution:generate-content-id-csv', data),
-        generateBWARM: (data: any) => ipcRenderer.invoke('distribution:generate-bwarm', data),
-        checkMerlinStatus: (data: any) => ipcRenderer.invoke('distribution:check-merlin-status', data),
-        transmit: (config: any) => ipcRenderer.invoke('distribution:transmit', config),
-        submitRelease: (releaseData: any) => ipcRenderer.invoke('distribution:submit-release', releaseData),
-        onSubmitProgress: (callback: (data: any) => void) => {
-            const handler = (_event: any, data: any) => callback(data);
+        calculateTax: (data: unknown) => ipcRenderer.invoke('distribution:calculate-tax', data),
+        certifyTax: (userId: string, data: unknown) => ipcRenderer.invoke('distribution:certify-tax', userId, data),
+        executeWaterfall: (data: unknown) => ipcRenderer.invoke('distribution:execute-waterfall', data),
+        validateMetadata: (metadata: unknown) => ipcRenderer.invoke('distribution:validate-metadata', metadata),
+        generateISRC: (options?: unknown) => ipcRenderer.invoke('distribution:generate-isrc', options),
+        generateUPC: (options?: unknown) => ipcRenderer.invoke('distribution:generate-upc', options),
+        registerRelease: (metadata: unknown, releaseId?: string) => ipcRenderer.invoke('distribution:register-release', metadata, releaseId),
+        generateDDEX: (metadata: unknown) => ipcRenderer.invoke('distribution:generate-ddex', metadata),
+        generateContentIdCSV: (data: unknown) => ipcRenderer.invoke('distribution:generate-content-id-csv', data),
+        generateBWARM: (data: unknown) => ipcRenderer.invoke('distribution:generate-bwarm', data),
+        checkMerlinStatus: (data: unknown) => ipcRenderer.invoke('distribution:check-merlin-status', data),
+        transmit: (config: unknown) => ipcRenderer.invoke('distribution:transmit', config),
+        submitRelease: (releaseData: unknown) => ipcRenderer.invoke('distribution:submit-release', releaseData),
+        onSubmitProgress: (callback: (data: unknown) => void) => {
+            const handler = (_event: unknown, data: unknown) => callback(data);
             ipcRenderer.on('distribution:submit-progress', handler);
             return () => ipcRenderer.removeListener('distribution:submit-progress', handler);
         },
-        onTransmitProgress: (callback: (data: any) => void) => {
-            const handler = (_event: any, data: any) => callback(data);
+        onTransmitProgress: (callback: (data: unknown) => void) => {
+            const handler = (_event: unknown, data: unknown) => callback(data);
             ipcRenderer.on('distribution:transmit-progress', handler);
             return () => ipcRenderer.removeListener('distribution:transmit-progress', handler);
         },
@@ -138,8 +138,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('updater:checking', callback);
             return () => ipcRenderer.removeListener('updater:checking', callback);
         },
-        onAvailable: (callback: (info: any) => void) => {
-            const handle = (_e: any, info: any) => callback(info);
+        onAvailable: (callback: (info: unknown) => void) => {
+            const handle = (_e: unknown, info: unknown) => callback(info);
             ipcRenderer.on('updater:available', handle);
             return () => ipcRenderer.removeListener('updater:available', handle);
         },
@@ -147,18 +147,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('updater:not-available', callback);
             return () => ipcRenderer.removeListener('updater:not-available', callback);
         },
-        onProgress: (callback: (data: any) => void) => {
-            const handle = (_e: any, data: any) => callback(data);
+        onProgress: (callback: (data: unknown) => void) => {
+            const handle = (_e: unknown, data: unknown) => callback(data);
             ipcRenderer.on('updater:progress', handle);
             return () => ipcRenderer.removeListener('updater:progress', handle);
         },
-        onDownloaded: (callback: (info: any) => void) => {
-            const handle = (_e: any, info: any) => callback(info);
+        onDownloaded: (callback: (info: unknown) => void) => {
+            const handle = (_e: unknown, info: unknown) => callback(info);
             ipcRenderer.on('updater:downloaded', handle);
             return () => ipcRenderer.removeListener('updater:downloaded', handle);
         },
-        onError: (callback: (err: any) => void) => {
-            const handle = (_e: any, err: any) => callback(err);
+        onError: (callback: (err: unknown) => void) => {
+            const handle = (_e: unknown, err: unknown) => callback(err);
             ipcRenderer.on('updater:error', handle);
             return () => ipcRenderer.removeListener('updater:error', handle);
         }
@@ -191,7 +191,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     sidecar: {
         restart: () => ipcRenderer.invoke('sidecar:restart'),
         onStatusUpdate: (callback: (status: string) => void) => {
-            const handle = (_e: any, status: string) => callback(status);
+            const handle = (_e: unknown, status: string) => callback(status);
             ipcRenderer.on('sidecar:status-update', handle);
             return () => ipcRenderer.removeListener('sidecar:status-update', handle);
         }
