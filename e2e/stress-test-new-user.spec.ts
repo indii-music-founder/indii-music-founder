@@ -144,6 +144,9 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 15000 });
 
+        // Switch to "My Dashboard" tab where projects are created
+        await page.getByRole('button', { name: /my dashboard/i }).first().click();
+
         // C. Create New Project (Creative Domain)
         // Dashboard may be loading initially — wait for it to settle
         await page.waitForTimeout(2000);

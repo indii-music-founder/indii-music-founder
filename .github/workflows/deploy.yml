@@ -251,14 +251,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests against staging (Item 345)
-        run: |
-          if npm run test:e2e --if-present 2>/dev/null; then
-            echo "E2E tests passed"
-          else
-            echo "::warning::E2E tests skipped (test:e2e script not found or tests failed)"
-          fi
+        run: npm run test:e2e
         timeout-minutes: 20
-        continue-on-error: true
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deploy-staging.outputs.staging-url }}
           E2E_STUDIO_URL: ${{ needs.deploy-staging.outputs.staging-url }}

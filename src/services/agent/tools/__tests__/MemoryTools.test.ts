@@ -225,7 +225,7 @@ describe('MemoryTools', () => {
                         ])
                     })
                 ]),
-                'gemini-2.5-flash',
+                'gemini-3-flash-preview',
                 expect.objectContaining({
                     responseMimeType: 'application/json'
                 })

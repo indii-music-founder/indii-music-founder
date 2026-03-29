@@ -75,6 +75,19 @@ if (typeof window !== 'undefined') {
             dispatchEvent: vi.fn(),
         })),
     });
+
+    // Mock electronAPI
+    Object.defineProperty(window, 'electronAPI', {
+        writable: true,
+        configurable: true,
+        value: {
+            sftp: {
+                connectDistributor: vi.fn().mockResolvedValue({ success: true }),
+                uploadRelease: vi.fn().mockResolvedValue({ success: true, url: 'sftp://mock' }),
+                disconnect: vi.fn().mockResolvedValue({ success: true })
+            }
+        }
+    });
 }
 
 // ============================================================================

@@ -152,6 +152,61 @@ export const test = base.extend<AuthFixtures>({
             });
         });
 
+        // Intercept ragProxy API calls to prevent 401s during E2E with mocked auth
+        await page.route('**/*ragProxy*/**', async route => {
+            const url = route.request().url();
+            console.log(`[E2E] Intercepted RAG Proxy: ${url}`);
+
+            if (url.includes('fileSearchStores')) {
+                if (route.request().method() === 'POST' && !url.includes(':importFile')) {
+                    await route.fulfill({
+                        status: 200,
+                        contentType: 'application/json',
+                        body: JSON.stringify({ name: 'fileSearchStores/mock-e2e-store' })
+                    });
+                    return;
+                }
+                if (route.request().method() === 'GET') {
+                    await route.fulfill({
+                        status: 200,
+                        contentType: 'application/json',
+                        body: JSON.stringify({ fileSearchStores: [{ name: 'fileSearchStores/mock-e2e-store', displayName: 'indiiOS Default Store' }] })
+                    });
+                    return;
+                }
+            }
+
+            if (url.includes('importFile')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ name: 'operations/mock-op', done: true })
+                });
+                return;
+            }
+
+            // Default success for others (e.g. generateContent)
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    candidates: [{
+                        content: { role: 'model', parts: [{ text: 'Mock RAG Response' }] }
+                    }]
+                })
+            });
+        });
+
+        // Intercept Gemini API file uploads (which go to a different path sometimes)
+        await page.route('**/*upload/v1beta/files*', async route => {
+            console.log(`[E2E] Intercepted RAG Upload: ${route.request().url()}`);
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ file: { name: 'files/mock-file-123', state: 'ACTIVE' } })
+            });
+        });
+
         // Inject Mocks BEFORE navigation using a typed cast to avoid `any`
         await page.addInitScript(() => {
             const w = window as unknown as E2EWindowGlobals;

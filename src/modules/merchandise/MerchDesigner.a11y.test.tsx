@@ -21,6 +21,7 @@ vi.mock('fabric', () => {
     },
     Rect: vi.fn(),
     IText: vi.fn(),
+    Textbox: vi.fn(),
     Image: { fromURL: vi.fn().mockResolvedValue({ scaleToWidth: vi.fn(), set: vi.fn() }) },
   };
 });
