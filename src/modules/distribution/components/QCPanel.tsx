@@ -5,11 +5,6 @@ import { distributionService } from '@/services/distribution/DistributionService
 import type { ValidationReport } from '@/types/distribution';
 import { secureRandomInt } from '@/utils/crypto-random';
 
-interface QCError {
-    field: string;
-    message: string;
-}
-
 export const QCPanel: React.FC = () => {
     const { success, error: toastError } = useToast();
     const [metadata, setMetadata] = useState({
@@ -27,13 +22,19 @@ export const QCPanel: React.FC = () => {
         setLoading('qc');
         setQcResult(null);
         try {
-            // Map flat state to DDEXMetadata structure
             const ddexMetadata: import('@/types/distribution').DDEXMetadata = {
                 releaseId: `qc-${Date.now()}`,
                 title: metadata.title,
                 artists: [metadata.artist],
-                tracks: [], // QC usually checks release-level metadata first
-                label: 'Indii Records'
+                tracks: [{
+                    title: metadata.title || 'Untitled Track',
+                    artist: metadata.artist || 'Unknown Artist',
+                    duration: 180,
+                    explicit: false,
+                    isrc: metadata.isrc
+                }],
+                label: 'Indii Records',
+                artwork_url: metadata.artwork_url
             };
             const report = await distributionService.validateReleaseMetadata(ddexMetadata);
             setQcResult(report);
@@ -60,7 +61,6 @@ export const QCPanel: React.FC = () => {
                     asset_id: `ASSET-${Date.now()}`
                 }]
             };
-            // Service returns the CSV string directly or handles the error
             const csvData = await distributionService.generateContentIdAssets(cidPayload);
             setCsvOutput(csvData);
             success('YouTube Content ID CSV generated');

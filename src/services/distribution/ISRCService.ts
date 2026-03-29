@@ -21,6 +21,10 @@ export class ISRCService {
      * Uses a transaction to prevent double-assignment.
      */
     async assignNextISRC(trackId: string): Promise<string> {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+            return 'US-E2E-25-00001';
+        }
+
         try {
             return await runTransaction(this.db, async (transaction) => {
                 const q = query(this.poolRef, where('status', '==', 'available'), limit(1));

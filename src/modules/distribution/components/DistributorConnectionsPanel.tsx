@@ -42,7 +42,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
 
     if (loading && connections.length === 0) {
         return (
-            <div className="p-12 flex flex-col items-center justify-center min-h-[400px]" data-testid="distributors-loading">
+            <div className="p-12 flex flex-col items-center justify-center min-h-[400px]" data-testid="distro-scanning-connections">
                 <div className="w-12 h-12 rounded-full border-t-2 border-dept-distribution animate-spin mb-4" />
                 <p className="text-gray-500 font-bold uppercase tracking-[0.2em] text-[10px]">Scanning Connections</p>
             </div>
@@ -50,7 +50,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
     }
 
     return (
-        <div className="animate-in fade-in duration-700">
+        <div className="animate-in fade-in duration-700" data-testid="distro-connections-list">
             <div className="mb-12">
                 <h2 className="text-3xl font-black tracking-tighter text-white mb-2 uppercase italic">Management Console</h2>
                 <p className="text-gray-500 font-medium max-w-2xl">

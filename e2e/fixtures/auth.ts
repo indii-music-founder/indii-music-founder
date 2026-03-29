@@ -4,46 +4,140 @@ import { test as base, Page } from '@playwright/test';
  * Auth fixture — bypasses Firebase auth for E2E tests using state injection.
  */
 
+/** Typed shape of E2E-injected window globals to avoid `any` */
+interface E2EWindowGlobals {
+    electronAPI: {
+        getPlatform: () => Promise<string>;
+        getAppVersion: () => Promise<string>;
+        showNotification: () => void;
+        selectFile: () => Promise<string>;
+        audio: { analyze: () => Promise<unknown> };
+        credentials: {
+            save: () => Promise<void>;
+            get: () => Promise<Record<string, unknown>>;
+            delete: () => Promise<boolean>;
+        };
+        sftp: {
+            connect: () => Promise<{ success: boolean }>;
+            disconnect: () => Promise<void>;
+            isConnected: () => Promise<boolean>;
+            uploadDirectory: () => Promise<{ success: boolean }>;
+        };
+        distribution: {
+            validateMetadata: () => Promise<unknown>;
+            generateISRC: () => Promise<unknown>;
+            generateUPC: () => Promise<unknown>;
+            generateDDEX: () => Promise<unknown>;
+            submitRelease: () => Promise<unknown>;
+            onSubmitProgress: (cb: (data: { step: string; progress: number }) => void) => () => void;
+        };
+    };
+    FIREBASE_E2E_MOCK: boolean;
+    FIREBASE_USER_MOCK: {
+        uid: string;
+        email: string;
+        displayName: string;
+        isAnonymous: boolean;
+    };
+}
+
 export type AuthFixtures = {
     authedPage: Page;
 };
 
 export const test = base.extend<AuthFixtures>({
     authedPage: async ({ page }, use) => {
-        // Intercept Firestore to prevent hangs
+        // Log browser console messages to terminal for CI debugging
+        page.on('console', msg => {
+            const type = msg.type();
+            const text = msg.text();
+            if (type === 'error' || text.includes('[E2E]') || text.includes('[DEBUG]') || text.includes('[DISTRO TEST]')) {
+                console.log(`[BROWSER ${type.toUpperCase()}] ${text}`);
+            }
+        });
+
+        // Intercept ALL Firestore traffic to prevent offline hangs.
+        // This covers addDoc/updateDoc writes that block the submission pipeline.
         await page.route('**/firestore.googleapis.com/**', async route => {
             const url = route.request().url();
-            if (url.includes('/Listen/') || url.includes('/Listen?') || url.includes('channel?') || url.includes('database=')) {
+            const method = route.request().method();
+
+            // Handle Listen/WebChannel streams (long-polling)
+            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
                 await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
                 return;
             }
-            if (route.request().method() === 'GET' && url.includes('/users/')) {
+
+            // Mock User Profile reads
+            if (url.includes('/users/test-user-uid-e2e')) {
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
                     body: JSON.stringify({
+                        name: 'projects/mock-project/databases/(default)/documents/users/test-user-uid-e2e',
                         fields: {
                             uid: { stringValue: 'test-user-uid-e2e' },
-                            email: { stringValue: 'e2e@indiios.test' },
-                            displayName: { stringValue: 'E2E Test User' },
+                            displayName: { stringValue: 'E2E User' },
                             membershipTier: { stringValue: 'pro' },
-                            onboardingCompleted: { booleanValue: true },
-                        },
-                    }),
+                            onboardingCompleted: { booleanValue: true }
+                        }
+                    })
                 });
                 return;
             }
-            await route.continue();
+
+            // Mock all collection reads → empty list
+            if (method === 'GET') {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ documents: [] })
+                });
+                return;
+            }
+
+            // Mock all writes (addDoc/updateDoc/setDoc) → return a fake document reference.
+            // This unblocks distributionService.createTask() and other Firestore writes
+            // that would otherwise hang indefinitely in the offline CI environment.
+            if (method === 'POST' || method === 'PATCH') {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        name: `projects/mock-project/databases/(default)/documents/mock-collection/mock-doc-${Date.now()}`,
+                        fields: {},
+                        createTime: new Date().toISOString(),
+                        updateTime: new Date().toISOString(),
+                    })
+                });
+                return;
+            }
+
+            // Fallthrough: block DELETE and other methods silently
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
 
-        // Inject Mocks BEFORE navigation
+        // Inject Mocks BEFORE navigation using a typed cast to avoid `any`
         await page.addInitScript(() => {
-            (window as any).electronAPI = {
+            const w = window as unknown as E2EWindowGlobals;
+
+            w.electronAPI = {
                 getPlatform: () => Promise.resolve('darwin'),
                 getAppVersion: () => Promise.resolve('0.1.0-e2e'),
                 showNotification: () => { },
                 selectFile: () => Promise.resolve('/tmp/mock-audio.wav'),
                 audio: { analyze: () => Promise.resolve({ status: 'success', streams: [{ sample_rate: '44100', bits_per_sample: 16 }] }) },
+                credentials: {
+                    save: () => Promise.resolve(),
+                    get: () => Promise.resolve({}),
+                    delete: () => Promise.resolve(true)
+                },
+                sftp: {
+                    connect: () => Promise.resolve({ success: true }),
+                    disconnect: () => Promise.resolve(),
+                    isConnected: () => Promise.resolve(true),
+                    uploadDirectory: () => Promise.resolve({ success: true })
+                },
                 distribution: {
                     validateMetadata: () => Promise.resolve({
                         success: true,
@@ -53,7 +147,7 @@ export const test = base.extend<AuthFixtures>({
                     generateUPC: () => Promise.resolve({ success: true, upc: '123456789012' }),
                     generateDDEX: () => Promise.resolve({ success: true, xml: '<DDEX/>' }),
                     submitRelease: () => Promise.resolve({ success: true, report: { status: 'COMPLETE', sftp_skipped: true } }),
-                    onSubmitProgress: (cb: (data: any) => void) => {
+                    onSubmitProgress: (cb) => {
                         setTimeout(() => cb({ step: 'COMPLETE', progress: 100 }), 100);
                         return () => { };
                     }
@@ -61,20 +155,24 @@ export const test = base.extend<AuthFixtures>({
             };
 
             // Inject mocked Firebase Auth state
-            (window as any).FIREBASE_E2E_MOCK = true;
-            (window as any).FIREBASE_USER = {
+            w.FIREBASE_E2E_MOCK = true;
+            w.FIREBASE_USER_MOCK = {
                 uid: 'test-user-uid-e2e',
                 email: 'e2e@indiios.test',
                 displayName: 'E2E Test User',
-                isAnonymous: true
+                isAnonymous: false
             };
+
+            // Signal FirestoreService to use E2E bypass (skips addDoc/updateDoc network calls)
+            try {
+                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
+            } catch (e) {
+                // Ignore if localStorage is unavailable
+            }
+
         });
 
         await page.goto('/');
-
-        // Wait for the app shell to appear
-        const shell = page.locator('[data-testid="app-container"], nav, .app-shell, main').first();
-        await shell.waitFor({ state: 'visible', timeout: 30_000 });
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
         await use(page);

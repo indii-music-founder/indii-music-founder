@@ -107,9 +107,28 @@ if (isDev && useEmulator && typeof window !== 'undefined') {
 
 // Use initializeAuth to ensure persistence is correctly configured for Electron
 // HINT: Added indexedDBLocalPersistence to fix Bug M1 where localStorage full causes silent auth drop.
-export const auth = initializeAuth(app, {
-    persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
-});
+import { Auth, User } from 'firebase/auth';
+let auth: Auth;
+if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).FIREBASE_E2E_MOCK) {
+    logger.debug('[Firebase] Using E2E Auth Mock');
+    const mockUser = (window as unknown as Record<string, unknown>).FIREBASE_USER_MOCK as User || null;
+    auth = {
+        app,
+        currentUser: mockUser,
+        onAuthStateChanged: (cb: (user: User | null) => void) => {
+            setTimeout(() => cb(mockUser), 100);
+            return () => { };
+        },
+        signInAnonymously: () => Promise.resolve({ user: mockUser }),
+        signOut: () => Promise.resolve(),
+        // Add other required Auth members for type safety if needed, or cast
+    } as unknown as Auth;
+} else {
+    auth = initializeAuth(app, {
+        persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
+    });
+}
+export { auth };
 
 // Initialize Remote Config
 export const remoteConfig = getRemoteConfig(app);

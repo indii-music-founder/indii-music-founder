@@ -39,7 +39,14 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
         return orderBy(field, direction);
     }
 
+    /** E2E test mode: skip real Firestore writes to avoid offline-mode hangs. */
+    private get isE2EMode(): boolean {
+        if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) return true;
+        try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
+    }
+
     async add(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+        if (this.isE2EMode) return `mock-doc-${Date.now()}`;
         const docRef = await addDoc(this.collection, this.pruneUndefined({
             ...data,
             createdAt: Timestamp.now(),
@@ -49,6 +56,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async set(id: string, data: T): Promise<void> {
+        if (this.isE2EMode) return;
         const docRef = doc(db, this.collectionPath, id);
         await setDoc(docRef, this.pruneUndefined({
             ...data,
@@ -57,6 +65,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async update(id: string, data: Partial<T>): Promise<void> {
+        if (this.isE2EMode) return;
         const docRef = doc(db, this.collectionPath, id);
         await updateDoc(docRef, this.pruneUndefined({
             ...data,

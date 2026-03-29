@@ -218,7 +218,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
                 {(runState === 'idle' || runState === 'error') ? (
                     <button
                         onClick={handleRunQC}
-                        data-testid="qc-run-analysis"
+                        data-testid="qc-run-audio-analysis"
                         className="flex-1 py-3 bg-purple-600 text-white rounded-xl"
                     >
                         {isElectron && filePath ? 'Run Audio QC Analysis' : 'Run QC (Demo Mode)'}

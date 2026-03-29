@@ -39,6 +39,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
     if (!isOpen || !adapter) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
+        console.log('[E2E-MODAL] handleSubmit called');
         e.preventDefault();
         setIsLoading(true);
         setError(null);
@@ -56,8 +57,10 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                 privateKey: sftp.privateKey || undefined
             };
 
+            console.log(`[E2E-MODAL] Connecting to adapter: ${adapter.id}`);
             // This will attempt the real connection via the adapter's connect method (which uses sftp IPC)
             await DistributorService.connect(adapter.id, credentials);
+            console.log('[E2E-MODAL] Connection successful');
 
             onSuccess();
             onClose();
@@ -106,6 +109,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
 
                     {/* Modal Content */}
                     <motion.div
+                        data-testid="connect-distributor-modal"
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
