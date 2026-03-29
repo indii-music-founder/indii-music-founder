@@ -28,6 +28,28 @@ vi.mock('./right-panel/VideoPanel', () => ({
 }));
 
 // Mock remaining sub-components used by RightPanel
+vi.mock('./right-panel/WorkflowPanel', () => ({
+    default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
+        <div data-testid="workflow-panel">
+            Workflow Panel Content
+            <button onClick={toggleRightPanel} data-testid="close-workflow">Close</button>
+        </div>
+    ),
+}));
+
+vi.mock('./right-panel/KnowledgePanel', () => ({
+    default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
+        <div data-testid="knowledge-panel">
+            Knowledge Panel Content
+            <button onClick={toggleRightPanel} data-testid="close-knowledge">Close</button>
+        </div>
+    ),
+}));
+
+vi.mock('./agent/BatchingStatus', () => ({
+    BatchingStatus: () => null,
+}));
+
 vi.mock('@/components/project/ResourceTree', () => ({
     ResourceTree: () => <div data-testid="resource-tree" />,
 }));
@@ -35,7 +57,7 @@ vi.mock('@/modules/files/FilePreview', () => ({
     default: () => <div data-testid="file-preview" />,
 }));
 vi.mock('@/core/theme/moduleColors', () => ({
-    getColorForModule: () => ({ bg: 'bg-gray-500', text: 'text-white', border: 'border-gray-700', ring: 'ring-gray-700' }),
+    getColorForModule: () => ({ bg: 'bg-gray-500', text: 'text-white', border: 'border-gray-700', ring: 'ring-gray-700', cssVar: '--color-dept-default' }),
 }));
 vi.mock('./command-bar/PromptArea', () => ({
     PromptArea: () => <div data-testid="prompt-area" />,
