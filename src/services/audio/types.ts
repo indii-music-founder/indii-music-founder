@@ -36,15 +36,17 @@ export interface AudioSemanticData {
         oneLiner: string;   // "A crushing industrial anthem for the digital age."
     };
     targetPrompts: {
-        image: string;      // Optimized for gemini-3.1-pro-image-preview
+        image: string;      // Optimized for gemini-3-pro-image-preview
         veo: string;        // Optimized for veo-3.1-generate-preview
     };
 }
 
 export interface AudioIntelligenceProfile {
-    id: string;             // Content hash or unique ID
-    technical: AudioFeatures; // Speed, Key, Energy
-    semantic: AudioSemanticData; // Vibe, Imagery, Prompts
+    id: string;             // Content hash — fingerprint from FingerprintService
+    technical: AudioFeatures; // BPM, Key, Energy — from Essentia.js WASM
+    semantic: AudioSemanticData; // Mood, Genre, Imagery, Prompts — from Gemini 3 Pro
     analyzedAt: number;
-    modelVersion: string;   // e.g., "gemini-3.1-pro-preview"
+    modelVersion: string;   // e.g., "gemini-3-pro-preview"
 }
+// Note: Render directives (image/veo prompts) are retrieved via NeuralCortexService.
+// Call neuralCortex.processAndDirect(profile, label) after analyze() to get directives.

@@ -29,6 +29,7 @@ import {
     SFTPReport,
     ForensicsReport
 } from '@/types/distribution';
+import { musicLibraryService } from '@/services/music/MusicLibraryService';
 
 export type { DistributionTaskDocument as DistributionTask };
 
@@ -634,6 +635,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         // Item 408: Auto-assign ISRCs to tracks that are missing them
+        // Item 415: Map AI Audio DNA into DDEX Payload
         if (releaseData.tracks?.length) {
             for (const track of releaseData.tracks) {
                 if (!track.isrc || track.isrc.trim() === '') {
@@ -642,6 +644,27 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                         logger.info(`[Distribution] Auto-assigned ISRC ${track.isrc} to track "${track.title}"`);
                     } catch (isrcErr) {
                         logger.warn(`[Distribution] Could not auto-assign ISRC for track "${track.title}":`, isrcErr);
+                    }
+                }
+
+                // Map AI Audio DNA into the DDEX Payload if track has a file hash
+                if (track.file_hash) {
+                    try {
+                        const analysis = await musicLibraryService.getAnalysisByHash(track.file_hash);
+                        if (analysis && analysis.semantic) {
+                            const semantic = analysis.semantic;
+                            // Map AI Semantic Data to DDEX Track
+                            track.genre = track.genre || semantic.ddexGenre;
+                            track.sub_genre = track.sub_genre || semantic.ddexSubGenre;
+                            track.language = track.language || semantic.language;
+                            track.marketing_comment = track.marketing_comment || semantic.marketingComment;
+                            track.explicit = track.explicit !== undefined ? track.explicit : semantic.isExplicit;
+                            track.audio_dna = semantic; // Pass the entire raw DNA for advanced mapping
+
+                            logger.info(`[Distribution] Successfully mapped Audio DNA for track "${track.title}"`);
+                        }
+                    } catch (dnaErr) {
+                        logger.warn(`[Distribution] Failed to map Audio DNA for track "${track.title}":`, dnaErr);
                     }
                 }
             }

@@ -33,6 +33,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
     });
 
     authedTest('Scenario 1: New User "Speedrun" (Onboarding -> Project -> Agent)', async ({ authedPage: page }) => {
+        authedTest.setTimeout(120000); // 120 seconds timeout due to AI loading
         // Enable console log proxying
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
 
@@ -141,16 +142,30 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             await skipBtn.click();
         }
 
-        // Now expect Dashboard
-        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 15000 });
 
         // C. Create New Project (Creative Domain)
-        await page.getByRole('button', { name: /new project/i }).first().click();
+        // Dashboard may be loading initially — wait for it to settle
+        await page.waitForTimeout(2000);
+
+        // Click the '+' icon New Project button (has title="New Project" and icon-only)
+        // Try the icon button first, fall back to the empty state "Create Project" text button
+        const newProjectIconBtn = page.locator('button[title="New Project"]');
+        const createProjectBtn = page.getByRole('button', { name: /create project/i });
+
+        if (await newProjectIconBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+            await newProjectIconBtn.click();
+        } else {
+            // Empty state: "Create Project" button
+            await createProjectBtn.first().click();
+        }
+
+        // Fill project name in modal
         await page.getByPlaceholder(/project name/i).fill(`Gauntlet Project ${Date.now()}`);
-        await page.getByRole('button', { name: /create/i }).click();
+        await page.getByRole('button', { name: /^create$/i }).click();
 
         // D. Verify Redirection to Creative Module
-        await expect(page.getByRole('button', { name: /generate image/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /generate image/i })).toBeVisible({ timeout: 15000 });
 
         // E. Stress Test: Agent Delegation (The fix we just made)
         // 4. Send a generic message to trigger GenUI (Choice Tool)
@@ -404,7 +419,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             await page.getByRole('button', { name: /sign in/i }).click();
 
             // Wait for successful auth
-            await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i })).toBeVisible({ timeout: 30000 });
+            await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
             console.log('[Gauntlet] Real auth successful!');
         } else {
             console.log('[Gauntlet] No login form visible, may already be authenticated');

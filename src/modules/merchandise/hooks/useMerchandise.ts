@@ -69,9 +69,14 @@ export const useMerchandise = () => {
 
         // Defensive timeout
         const timer = setTimeout(() => {
-            if (mounted && isCatalogLoading) {
-                logger.warn("[Merchandise] Catalog load timed out, proceeding...");
-                setIsCatalogLoading(false);
+            if (mounted) {
+                setIsCatalogLoading((prev) => {
+                    if (prev) {
+                        logger.warn("[Merchandise] Catalog load timed out, proceeding...");
+                        return false;
+                    }
+                    return prev;
+                });
             }
         }, 5000);
 
@@ -79,7 +84,6 @@ export const useMerchandise = () => {
             mounted = false;
             clearTimeout(timer);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- isCatalogLoading is mutated inside this effect
     }, []);
 
     // Subscribe to user's products

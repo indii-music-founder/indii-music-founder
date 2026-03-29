@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 /**
  * Design Templates for Indie Music Artists
  *
@@ -785,6 +784,32 @@ export const INDIE_ARTIST_TEMPLATES: z.input<typeof DesignTemplateSchema>[] = [
 // Template Service
 // ============================================================================
 
+export interface TemplateFabricObject {
+    type: 'textbox' | 'rect';
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+    angle?: number;
+    opacity?: number;
+    selectable?: boolean;
+    evented?: boolean;
+    name?: string;
+    text?: string;
+    fontFamily?: string;
+    fontSize?: number;
+    fontWeight?: string | number;
+    textAlign?: "left" | "center" | "right";
+    fill?: string;
+    stroke?: string;
+    strokeWidth?: number;
+    strokeDashArray?: number[];
+    rx?: number;
+    ry?: number;
+    isPlaceholder?: boolean;
+    placeholderText?: string;
+}
+
 export class TemplateService {
     private templates: DesignTemplate[] = INDIE_ARTIST_TEMPLATES.map(t => DesignTemplateSchema.parse(t));
 
@@ -871,7 +896,7 @@ export class TemplateService {
     /**
      * Convert template elements to Fabric.js compatible objects
      */
-    toFabricObjects(template: DesignTemplate): any[] {
+    toFabricObjects(template: DesignTemplate): TemplateFabricObject[] {
         return template.elements.map(element => {
             const baseProps = {
                 left: (element.x / 100) * template.canvasWidth,
@@ -888,19 +913,19 @@ export class TemplateService {
             switch (element.type) {
                 case 'text':
                     return {
-                        type: 'textbox',
+                        type: 'textbox' as const,
                         ...baseProps,
                         text: element.content || '',
                         fontFamily: element.fontFamily || 'Inter',
                         fontSize: element.fontSize || 24,
                         fontWeight: element.fontWeight || '400',
-                        textAlign: element.textAlign || 'left',
+                        textAlign: (element.textAlign || 'left') as "left" | "center" | "right",
                         fill: element.fill || '#ffffff'
                     };
 
                 case 'shape':
                     return {
-                        type: 'rect',
+                        type: 'rect' as const,
                         ...baseProps,
                         fill: element.fill || '#333333',
                         stroke: element.stroke,
@@ -910,7 +935,7 @@ export class TemplateService {
                 case 'placeholder':
                 case 'image':
                     return {
-                        type: 'rect',
+                        type: 'rect' as const,
                         ...baseProps,
                         fill: element.fill || '#1a1a1a',
                         stroke: '#FFE135',
@@ -926,7 +951,7 @@ export class TemplateService {
                 default:
                     return null;
             }
-        }).filter(Boolean);
+        }).filter((item) => item !== null) as unknown as TemplateFabricObject[];
     }
 }
 
