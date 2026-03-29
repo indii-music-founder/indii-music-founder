@@ -79,7 +79,7 @@ test.describe('Authentication Flow', () => {
         await page.locator('form button[type="submit"]').click();
 
         // Wait for successful auth - should redirect to dashboard
-        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
         console.log('[Auth] Login successful!');
     });
 
@@ -105,7 +105,7 @@ test.describe('Authentication Flow', () => {
         await page.locator('form button[type="submit"]').click();
 
         // Wait for dashboard
-        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
 
         // Find and click logout
         const logoutButton = page.getByRole('button', { name: /logout|sign out/i });
@@ -153,14 +153,14 @@ test.describe('Authentication Flow', () => {
         await page.locator('form button[type="submit"]').click();
 
         // Wait for dashboard
-        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
 
         // Reload page
         await page.reload();
         await page.waitForLoadState('domcontentloaded');
 
         // Should still be on dashboard (session persisted)
-        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
         console.log('[Auth] Session persisted after reload');
     });
 
@@ -178,7 +178,7 @@ test.describe('Authentication Flow', () => {
 
         // Should be redirected to login or see login form
         const isOnLogin = await page.getByLabel(/email/i).isVisible({ timeout: 5000 }).catch(() => false);
-        const isOnDashboard = await page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).isVisible({ timeout: 2000 }).catch(() => false);
+        const isOnDashboard = await page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first().isVisible({ timeout: 2000 }).catch(() => false);
 
         // Either we're on login page, or we see an auth prompt
         if (!isOnDashboard) {
