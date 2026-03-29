@@ -59,6 +59,17 @@ vi.mock('./RightPanel', () => ({ default: () => <div data-testid="right-panel">R
 vi.mock('./MobileNav', () => ({ MobileNav: () => <div data-testid="mobile-nav">Mobile Nav</div> }));
 vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));
 
+// Mock feature flags — useGatedModules returns empty Set (all modules visible) in tests
+vi.mock('@/config/featureFlags', () => ({
+    useGatedModules: vi.fn(() => new Set<string>()),
+    isFeatureEnabled: vi.fn(() => true),
+}));
+
+// Mock Sidebar sub-components added in 135633ca that bring heavy deps
+vi.mock('@/core/components/ui/ThemeToggle', () => ({ ThemeToggle: () => <div data-testid="theme-toggle" /> }));
+vi.mock('@/core/components/ui/BiometricToggle', () => ({ BiometricToggle: () => <div data-testid="biometric-toggle" /> }));
+vi.mock('@/core/hooks/usePowerState', () => ({ usePowerState: vi.fn(() => ({ isThrottled: false })) }));
+
 describe('Sidebar Navigation Integration', () => {
     const mockSetModule = vi.fn();
     const mockInitializeAuth = vi.fn();
@@ -95,6 +106,10 @@ describe('Sidebar Navigation Integration', () => {
         toggleAgentWindow: vi.fn(),
         setSidecarStatus: vi.fn(),
         setIsOffline: vi.fn(),
+        // Fields added to Sidebar.tsx in commit 135633ca:
+        updatePreferences: vi.fn(),
+        setCommandMenuOpen: vi.fn(),
+        logout: vi.fn(),
         ...overrides,
     });
 
