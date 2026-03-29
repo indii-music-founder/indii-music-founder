@@ -20,13 +20,26 @@ export class DistributionSyncService {
             });
         }
 
+        // Extract semantic properties for audio DNA badging
+        const rawMoods = data.metadata.mood || [];
+        const primaryMood = rawMoods.length > 0 ? rawMoods[0] : undefined;
+        let vocalPresence: string | undefined;
+        if (data.metadata.isInstrumental === true) vocalPresence = 'Instrumental';
+        else if (data.metadata.isInstrumental === false) vocalPresence = 'Vocal';
+
         return {
             id: docId,
             title: data.metadata.releaseTitle || data.metadata.trackTitle,
             artist: data.metadata.artistName,
             coverArtUrl: data.assets?.coverArtUrl,
             releaseDate: data.metadata.releaseDate,
-            deployments
+            deployments,
+            // Semantic metadata fields
+            genre: data.metadata.genre,
+            subGenre: data.metadata.subGenre,
+            primaryMood,
+            vocalPresence,
+            marketingComment: data.metadata.marketingComment
         };
     }
 
