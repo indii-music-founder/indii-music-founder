@@ -18,7 +18,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
         try {
             await onAdd(venue);
             setIsAdded(true);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to add venue:", error);
             // Parent handles error toast
         } finally {

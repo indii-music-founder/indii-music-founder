@@ -43,42 +43,8 @@ declare global {
     }
 }
 
-import { DSPComplianceValidator, type DSPComplianceReport } from './DSPComplianceValidator';
-
-export interface TechnicalAudit {
-    peakLevel: number;
-    truePeakDb: number;
-    integratedLoudness: number;
-    sampleRate: number;
-    isStereo: boolean;
-    rejectionRisks: string[];
-    compliance?: DSPComplianceReport;
-}
-
-export interface AudioFeatures {
-    bpm: number;
-    key: string;
-    scale: string;
-    energy: number;
-    duration: number;
-    danceability: number;
-    loudness: number;
-    valence?: number; // Happiness/Sadness
-    audit?: TechnicalAudit;
-    segments?: { start: number; label: string; energy: number }[];
-}
-
-export interface DeepAudioFeatures extends AudioFeatures {
-    genre?: { [key: string]: number };
-    moods?: {
-        happy: number;
-        aggressive: number;
-        relaxed: number;
-        sad: number;
-    };
-    voice_instrumental?: number; // >0.5 instrumental
-    danceability_ml?: number;
-}
+import { DSPComplianceValidator } from './DSPComplianceValidator';
+import type { AudioFeatures, DeepAudioFeatures, TechnicalAudit } from './types';
 
 // const MODEL_URLS = { ... }; // Removed
 
@@ -146,7 +112,7 @@ export class AudioAnalysisService {
 
                 this.essentia = new Essentia(moduleInstance);
                 logger.info("[AudioAnalysis] Essentia.js WASM engine ready.");
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error("[AudioAnalysis] Failed to initialize Essentia.js:", error);
                 this.initPromise = null;
                 throw error;
@@ -179,7 +145,7 @@ export class AudioAnalysisService {
                 // Safely cast cached features to DeepAudioFeatures if compatible, or just return as is
                 return { features: cached.features as DeepAudioFeatures, fromCache: true };
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
         }
 
@@ -215,7 +181,7 @@ export class AudioAnalysisService {
 
         try {
             await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("[AudioAnalysis] Failed to save to local cache", e);
         }
 

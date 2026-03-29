@@ -84,7 +84,7 @@ export class LegalAuditService {
 
             logger.info(`[LegalAudit] Recorded event: ${actionType} on ${targetType} ${targetId}`);
             return docRef.id;
-        } catch (error) {
+        } catch (error: unknown) {
             // Critical failure — legal actions should theoretically block if auditing fails
             logger.error(`[LegalAudit] FAILED to record event: ${actionType}`, error);
             throw new Error(`Failed to record legal audit trail: ${error}`);

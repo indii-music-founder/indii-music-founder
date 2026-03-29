@@ -112,7 +112,7 @@ class MetadataPersistenceService {
             localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
             logger.info(`[MetadataPersistence] Queued ${item.assetType} for later sync (${queue.length} items pending)`);
             events.emit('SYNC_QUEUE_CHANGE', { count: queue.length });
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[MetadataPersistence] Failed to queue for later:', e);
         }
     }
@@ -175,7 +175,7 @@ class MetadataPersistenceService {
                         });
                     }
                     successCount++;
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.error(`[MetadataPersistence] Failed to sync queued item:`, e);
                     if (item.retryCount < 3) {
                         failedItems.push({ ...item, retryCount: item.retryCount + 1 });
@@ -283,7 +283,7 @@ class MetadataPersistenceService {
                     docId: docRef.id,
                     retryable: false,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 lastError = error as Error;
                 logger.warn(`[MetadataPersistence] Save attempt ${attempt + 1}/${maxRetries + 1} failed:`, error);
 
@@ -361,7 +361,7 @@ class MetadataPersistenceService {
                 await setDoc(doc(db, collectionPath, docId), enrichedData, { merge: true });
                 logger.info(`[MetadataPersistence] ✅ Updated ${collectionPath}/${docId}`);
                 return { success: true, docId, retryable: false };
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.warn(`[MetadataPersistence] Update attempt ${attempt + 1} failed:`, error);
                 if (attempt < maxRetries) {
                     await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));

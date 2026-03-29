@@ -235,7 +235,7 @@ export class ImageGenerationInstrument implements Instrument {
           }
         }
       };
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[ImageGenerationInstrument] Execution failed:', error);
       return {
         success: false,

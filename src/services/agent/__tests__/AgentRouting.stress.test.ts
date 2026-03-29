@@ -345,7 +345,7 @@ describe('🎯 Hub Routing Accuracy Stress Test (25 scenarios)', () => {
         capturedRoutingCalls = [];
 
         const mockState = createMockStoreState();
-        vi.mocked(useStore.getState).mockReturnValue(mockState as any);
+        vi.mocked(useStore.getState).mockReturnValue(mockState as unknown as ReturnType<typeof useStore.getState>);
 
         // Configure AI mock to return routing decisions
         vi.mocked(AI.generateContent).mockImplementation(async (content: any) => {
@@ -384,11 +384,11 @@ describe('🎯 Hub Routing Accuracy Stress Test (25 scenarios)', () => {
             return {
                 text: () => JSON.stringify(routingDecision),
                 functionCalls: () => [],
-            } as any;
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>;
         });
 
         vi.mocked(AI.generateContentStream).mockResolvedValue(
-            createStreamResponse('Routing response') as any
+            createStreamResponse('Routing response') as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>
         );
 
         service = new AgentService();

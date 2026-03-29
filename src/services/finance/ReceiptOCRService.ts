@@ -78,7 +78,7 @@ export class ReceiptOCRService {
                 extractedText: text
             };
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[ReceiptOCR] Failed to process receipt:', error);
             throw error;
         }

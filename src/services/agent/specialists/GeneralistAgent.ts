@@ -565,7 +565,7 @@ CURRENT REQUEST: ${task}
                             accumulatedResponse += chunkText;
                         }
                     }
-                } catch (streamError) {
+                } catch (streamError: unknown) {
                     logger.warn('[indii:Conductor] Stream read interrupted:', streamError);
                 }
 

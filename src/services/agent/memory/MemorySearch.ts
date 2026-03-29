@@ -103,7 +103,7 @@ export class MemorySearch {
                     APPROVED_MODELS.EMBEDDING_DEFAULT
                 );
                 return results;
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[MemorySearch] Batch embedding failed:', error);
                 return texts.map(() => []);
             }
@@ -189,7 +189,7 @@ export class MemorySearch {
             if (includeInsights) {
                 response.insights = await this.searchInsights(userId, searchQuery);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemorySearch] Search failed:', error);
         }
 
@@ -311,7 +311,7 @@ export class MemorySearch {
         let queryEmbedding: number[] = [];
         try {
             queryEmbedding = await this.embeddingBatcher.add(queryText);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[MemorySearch] Query embedding failed, using keyword fallback');
         }
 
@@ -478,7 +478,7 @@ export class MemorySearch {
                 .filter(s => s.score > 0.1)
                 .slice(0, maxResults)
                 .map(s => s.insight);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemorySearch] Insight search failed:', error);
             return [];
         }

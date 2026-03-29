@@ -43,7 +43,7 @@ export const QCPanel: React.FC = () => {
             } else {
                 toastError(`QC Failed: ${report.errors.length} error(s)`);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toastError(error instanceof Error ? error.message : 'QC validation failed');
         } finally {
             setLoading(null);
@@ -64,7 +64,7 @@ export const QCPanel: React.FC = () => {
             const csvData = await distributionService.generateContentIdAssets(cidPayload);
             setCsvOutput(csvData);
             success('YouTube Content ID CSV generated');
-        } catch (error) {
+        } catch (error: unknown) {
             toastError(error instanceof Error ? error.message : 'CID generation failed');
         } finally {
             setLoading(null);

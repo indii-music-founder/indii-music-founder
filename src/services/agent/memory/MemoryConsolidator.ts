@@ -120,7 +120,7 @@ export class MemoryConsolidator {
             await batch.commit();
 
             return newDoc.id;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Consolidation failed:', error);
             return null;
         }
@@ -222,7 +222,7 @@ export class MemoryConsolidator {
             );
 
             return result;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Consolidation cycle failed:', error);
             return result;
         }
@@ -368,7 +368,7 @@ export class MemoryConsolidator {
                 logger.debug(
                     `[MemoryConsolidator] 🔗 Connection: ${conn.fromMemoryId} → ${conn.toMemoryId}: ${conn.relationship}`
                 );
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[MemoryConsolidator] Failed to store connection:', error);
             }
         }
@@ -449,7 +449,7 @@ export class MemoryConsolidator {
             }
 
             return decayedCount;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Importance decay failed:', error);
             return 0;
         }
@@ -526,7 +526,7 @@ export class MemoryConsolidator {
             }
 
             return tiersChanged;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Tier update failed:', error);
             return 0;
         }
@@ -565,7 +565,7 @@ export class MemoryConsolidator {
                 lastAccessedAt: Timestamp.now(),
                 updatedAt: Timestamp.now(),
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Reinforcement failed:', error);
         }
     }

@@ -80,7 +80,7 @@ export const PUBLICIST_TOOLS = {
             const parsed = JSON.parse(jsonText);
             const result = PressReleaseSchema.parse(parsed);
             return toolSuccess(result, `Press release generated for ${args.headline}.`);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('PUBLICIST_TOOLS.write_press_release error:', e);
             return toolError("Error generating press release.", 'GENERATION_ERROR');
         }
@@ -108,7 +108,7 @@ export const PUBLICIST_TOOLS = {
             const parsed = JSON.parse(jsonText);
             const result = CrisisResponseSchema.parse(parsed);
             return toolSuccess(result, `Crisis response generated for: ${args.issue}.`);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('PUBLICIST_TOOLS.generate_crisis_response error:', e);
             return toolError("Error generating crisis response.", 'GENERATION_ERROR');
         }
@@ -170,7 +170,7 @@ export const PUBLICIST_TOOLS = {
             const result = CampaignAssetsSchema.parse(parsed);
 
             return toolSuccess(result, `Campaign assets generated for ${args.trackTitle}.`);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('PUBLICIST_TOOLS.generate_campaign_assets error:', e);
             return toolError("Error generating campaign assets.", 'GENERATION_ERROR');
         }

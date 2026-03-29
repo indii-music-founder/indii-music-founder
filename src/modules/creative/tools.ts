@@ -49,7 +49,7 @@ export const CREATIVE_TOOLS = {
             }
 
             return toolSuccess(simplified, `Retrieved ${simplified.length} studio assets.`);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('CREATIVE_TOOLS.get_studio_assets error:', e);
             return toolError("Error retrieving studio assets.", 'RETRIEVAL_ERROR');
         }

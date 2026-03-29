@@ -54,7 +54,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                 sourceId
             );
             setPurchased(true);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Purchase failed:", error);
         } finally {
             setPurchasing(false);

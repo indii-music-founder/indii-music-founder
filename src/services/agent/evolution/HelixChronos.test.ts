@@ -45,8 +45,8 @@ describe('🧬 Helix: Chronos (Time Integrity)', () => {
 
     // 1. Setup: Population with undefined generation (simulating data corruption)
     const population: AgentGene[] = [
-      { ...baseGene, id: 'a1', generation: undefined as any },
-      { ...baseGene, id: 'a2', generation: null as any }
+      { ...baseGene, id: 'a1', generation: undefined as unknown as number },
+      { ...baseGene, id: 'a2', generation: null as unknown as number }
     ];
 
     // 2. Evolve
@@ -56,8 +56,8 @@ describe('🧬 Helix: Chronos (Time Integrity)', () => {
     // Offspring must have a valid Number generation (1)
     // Because undefined/null should be treated as 0 -> offspring is 0+1 = 1.
     nextGen.forEach(child => {
-        expect(child.generation).toBe(1);
-        expect(Number.isNaN(child.generation)).toBe(false);
+      expect(child.generation).toBe(1);
+      expect(Number.isNaN(child.generation)).toBe(false);
     });
   });
 });

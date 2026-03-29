@@ -59,7 +59,7 @@ export class RAGAgent extends BaseAgent {
                 logger.debug(`[RAGAgent] No specific domain knowledge extracted for task.`);
                 onProgress?.({ type: 'thought', content: 'Proceeding with standard protocol (no supplemental insights required).' });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn(`[RAGAgent] Knowledge Base Query Failed for ${this.id}:`, error);
             onProgress?.({ type: 'thought', content: 'Proceeding without supplemental domain knowledge (KB offline).' });
         }

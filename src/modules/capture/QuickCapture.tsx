@@ -134,7 +134,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                     const storagePath = `users/${userId}/contacts/${crypto.randomUUID()}.${ext}`;
                     const snapshot = await uploadBytes(ref(storage, storagePath), photoFile);
                     photoUrl = await getDownloadURL(snapshot.ref);
-                } catch (uploadErr) {
+                } catch (uploadErr: unknown) {
                     logger.warn('[QuickCapture] Photo upload failed, saving without photo:', uploadErr);
                 }
             }
@@ -164,7 +164,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
             setPhotoPreview(null);
             setPhotoFile(null);
             onClose();
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[QuickCapture] Failed to save contact:', error);
             toast.error('Failed to save contact');
         } finally {

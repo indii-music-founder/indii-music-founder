@@ -37,7 +37,7 @@ export const PublishingTools = {
                     });
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[PublishingTools] Firestore PRO lookup failed:', e);
         }
 
@@ -90,7 +90,7 @@ export const PublishingTools = {
                 catalogId: docRef.id,
                 ...args
             }, `Successfully registered "${args.trackTitle}" into the Firestore publishing catalog (ID: ${docRef.id}).`);
-        } catch (e) {
+        } catch (e: unknown) {
             const error = e as Error;
             logger.error('[PublishingTools] Registration failed:', error);
             return toolError(`Failed to register catalog work: ${error.message}`);
@@ -126,7 +126,7 @@ export const PublishingTools = {
                 catalogId: args.catalogId,
                 updates
             }, `Successfully updated catalog work ${args.catalogId}.`);
-        } catch (e) {
+        } catch (e: unknown) {
             const error = e as Error;
             logger.error('[PublishingTools] Update failed:', error);
             return toolError(`Failed to update catalog work: ${error.message}`);

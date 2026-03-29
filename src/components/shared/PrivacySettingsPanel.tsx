@@ -36,7 +36,7 @@ function DataExportSection() {
             const result = await exportUserData(uid);
             downloadExport(result);
             setState('done');
-        } catch (err) {
+        } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Export failed. Please try again.');
             setState('error');
         }
@@ -103,7 +103,7 @@ function AccountDeletionSection() {
             const fn = httpsCallable(getFunctions(), 'requestAccountDeletion');
             await fn({});
             setState('done');
-        } catch (err) {
+        } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Deletion request failed. Please contact support.');
             setState('error');
         }

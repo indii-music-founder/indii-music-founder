@@ -77,7 +77,7 @@ describe('LicensingAgent', () => {
                 termsSummary: 'Free for use',
                 isCommercialAllowed: true
             };
-            vi.mocked(licenseScannerService.scanUrl).mockResolvedValue(mockScanResult as any);
+            vi.mocked(licenseScannerService.scanUrl).mockResolvedValue(mockScanResult as unknown as Awaited<ReturnType<typeof licenseScannerService.scanUrl>>);
             vi.mocked(licensingService.createRequest).mockResolvedValue('new-request-id');
 
             const args = {
@@ -86,8 +86,8 @@ describe('LicensingAgent', () => {
                 usage: 'Commercial Video',
                 url: 'https://example.com/license'
             };
-
-            const result = await (LicensingAgent.functions!.check_availability as any)(args);
+            type ResultType = { success: boolean; data: { status?: string; requestId?: string } };
+            const result = await (LicensingAgent.functions!.check_availability as (args: unknown) => Promise<ResultType>)(args);
 
             expect(licenseScannerService.scanUrl).toHaveBeenCalledWith(args.url);
             expect(licensingService.createRequest).toHaveBeenCalledWith(expect.objectContaining({
@@ -106,7 +106,7 @@ describe('LicensingAgent', () => {
                 termsSummary: 'Negotiation required',
                 isCommercialAllowed: false
             };
-            vi.mocked(licenseScannerService.scanUrl).mockResolvedValue(mockScanResult as any);
+            vi.mocked(licenseScannerService.scanUrl).mockResolvedValue(mockScanResult as unknown as Awaited<ReturnType<typeof licenseScannerService.scanUrl>>);
             vi.mocked(licensingService.createRequest).mockResolvedValue('restricted-request-id');
 
             const args = {
@@ -115,8 +115,8 @@ describe('LicensingAgent', () => {
                 usage: 'Film Sync',
                 url: 'https://label.com/rights'
             };
-
-            const result = await (LicensingAgent.functions!.check_availability as any)(args);
+            type ResultType = { success: boolean; data: { status?: string; requestId?: string } };
+            const result = await (LicensingAgent.functions!.check_availability as (args: unknown) => Promise<ResultType>)(args);
 
             expect(result.data.status).toBe('restricted');
             expect(result.data.requestId).toBe('restricted-request-id');
@@ -130,8 +130,8 @@ describe('LicensingAgent', () => {
                 artist: 'Unknown Artist',
                 usage: 'Background music'
             };
-
-            const result = await (LicensingAgent.functions!.check_availability as any)(args);
+            type ResultType = { success: boolean; data: { status?: string; requestId?: string } };
+            const result = await (LicensingAgent.functions!.check_availability as (args: unknown) => Promise<ResultType>)(args);
 
             expect(licenseScannerService.scanUrl).not.toHaveBeenCalled();
             expect(result.data.status).toBe('pending');
@@ -147,8 +147,8 @@ describe('LicensingAgent', () => {
                 file_data: 'base64data',
                 mime_type: 'application/pdf'
             };
-
-            const result = await (LicensingAgent.functions!.analyze_contract as any)(args);
+            type ResultType = { success: boolean; data: { summary?: string } };
+            const result = await (LicensingAgent.functions!.analyze_contract as (args: unknown) => Promise<ResultType>)(args);
 
             expect(firebaseAI.analyzeImage).toHaveBeenCalled();
             expect(result.success).toBe(true);
@@ -166,8 +166,8 @@ describe('LicensingAgent', () => {
                 parties: ['Artist', 'Label'],
                 terms: 'Commercial use for 1 year'
             };
-
-            const result = await (LicensingAgent.functions!.draft_license as any)(args);
+            type ResultType = { success: boolean; data: { contract?: string } };
+            const result = await (LicensingAgent.functions!.draft_license as (args: unknown) => Promise<ResultType>)(args);
 
             expect(LegalTools.draft_contract).toHaveBeenCalledWith(args);
             expect(result.success).toBe(true);

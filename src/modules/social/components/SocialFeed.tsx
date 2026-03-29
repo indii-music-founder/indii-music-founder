@@ -50,7 +50,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
         try {
             const products = await MarketplaceService.getProductsByArtist(userProfile.id);
             setArtistProducts(products);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to load products for picker:", error);
         }
     };

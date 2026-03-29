@@ -43,7 +43,7 @@ export class PDFService {
             }
 
             return fullText.trim();
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('PDF Extraction Error:', error);
             throw new Error('Failed to extract text from PDF');
         }

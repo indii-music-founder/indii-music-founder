@@ -63,7 +63,7 @@ describe('AgentOrchestrator', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(agentRegistry.getAll).mockReturnValue(mockAgents as any);
+        vi.mocked(agentRegistry.getAll).mockReturnValue(mockAgents as unknown as ReturnType<typeof agentRegistry.getAll>);
         vi.mocked(TraceService.startTrace).mockResolvedValue('mock-trace-id');
         orchestrator = new AgentOrchestrator();
     });
@@ -78,7 +78,7 @@ describe('AgentOrchestrator', () => {
                         reasoning: `Routing to ${agentId}`
                     })
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
         };
 
         it('routes legal queries to LegalAgent', async () => {
@@ -163,7 +163,7 @@ describe('AgentOrchestrator', () => {
                 response: {
                     text: () => ''
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),

@@ -16,7 +16,7 @@ export const saveWorkflow = async (workflow: Omit<SavedWorkflow, 'id'> & { id?: 
             nodes: workflow.nodes.map(node => {
                 try {
                     return JSON.parse(JSON.stringify(node));
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.error("Failed to serialize node", node, e);
                     throw e;
                 }
@@ -24,7 +24,7 @@ export const saveWorkflow = async (workflow: Omit<SavedWorkflow, 'id'> & { id?: 
             edges: workflow.edges.map(edge => {
                 try {
                     return JSON.parse(JSON.stringify(edge));
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.error("Failed to serialize edge", edge, e);
                     throw e;
                 }
@@ -44,7 +44,7 @@ export const saveWorkflow = async (workflow: Omit<SavedWorkflow, 'id'> & { id?: 
             });
             return docRef.id;
         }
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error("Error saving workflow:", error);
         throw error;
     }
@@ -58,7 +58,7 @@ export const getUserWorkflows = async (userId: string): Promise<SavedWorkflow[]>
             id: doc.id,
             ...doc.data()
         } as SavedWorkflow));
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error("Error getting user workflows:", error);
         throw error;
     }
@@ -74,7 +74,7 @@ export const loadWorkflow = async (workflowId: string): Promise<SavedWorkflow | 
         } else {
             return null;
         }
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error("Error loading workflow:", error);
         throw error;
     }

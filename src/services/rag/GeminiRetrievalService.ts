@@ -60,7 +60,7 @@ export class GeminiRetrievalService {
                 const idToken = await currentUser.getIdToken();
                 headers['Authorization'] = `Bearer ${idToken}`;
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[GeminiRetrieval] Could not get auth token:', e);
         }
 
@@ -215,7 +215,7 @@ export class GeminiRetrievalService {
                     return match.name;
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("Failed to list FileSearchStores, trying create...", e);
         }
 
@@ -336,7 +336,7 @@ export class GeminiRetrievalService {
                     }
                 ];
                 logger.info(`[RAG] Querying Store: ${storeName} ${projectId ? `(Project: ${projectId})` : ''} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.error("[RAG] File Search Setup Failed:", e);
             }
         }
@@ -380,7 +380,7 @@ export class GeminiRetrievalService {
                     { fileSearch: { fileSearchStoreNames: [storeName] } },
                     { googleSearchRetrieval: { dynamicRetrievalConfig: { mode: 'MODE_DYNAMIC', dynamicThreshold: 0.3 } } }
                 ];
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.error("[RAG] Stream Query Setup Failed:", e);
             }
         }
@@ -410,7 +410,7 @@ export class GeminiRetrievalService {
                 const idToken = await currentUser.getIdToken();
                 streamHeaders['Authorization'] = `Bearer ${idToken}`;
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[GeminiRetrieval] streamQuery: Could not get auth token:', e);
         }
 
@@ -463,7 +463,7 @@ export class GeminiRetrievalService {
                         if (text) yield text;
                         buffer = buffer.substring(lastBracket + 1);
                         firstBracket = buffer.indexOf('{');
-                    } catch (e) {
+                    } catch (e: unknown) {
                         // Incomplete JSON or parse error, break and wait for more data
                         break;
                     }

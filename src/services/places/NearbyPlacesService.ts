@@ -96,7 +96,7 @@ const ensureGoogleMapsLoaded = (): Promise<void> => {
                 // Wait for it to load, then import Places
                 const waitForLoad = () => {
                     if (typeof google !== 'undefined' && google.maps?.importLibrary) {
-                        google.maps.importLibrary('places').then(() => resolve()).catch(reject);
+                        google.maps.importLibrary('places').then(() => resolve()).catch (reject: unknown);
                     } else {
                         setTimeout(waitForLoad, 200);
                     }

@@ -68,7 +68,7 @@ async function getLatestEntry(userId: string): Promise<{ prevHash: string; seque
             prevHash: latestDoc.entryHash as string,
             sequenceNumber: latestDoc.sequenceNumber as number,
         };
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('[AuditLog] Failed to fetch latest entry', error);
         return null;
     }
@@ -178,7 +178,7 @@ export async function verifyAuditChain(userId: string, maxEntries = 100): Promis
         }
 
         return { valid: true, entriesChecked: snapshot.size };
-    } catch (error) {
+    } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         logger.error('[AuditLog] Chain verification failed', error);
         return { valid: false, entriesChecked: 0, error: message };

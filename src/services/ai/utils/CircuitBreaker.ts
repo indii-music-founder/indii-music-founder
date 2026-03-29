@@ -66,7 +66,7 @@ export class CircuitBreaker {
             const result = await action();
             this.onSuccess();
             return result;
-        } catch (error) {
+        } catch (error: unknown) {
             // Non-recoverable errors should fail fast WITHOUT tripping the circuit
             // These are configuration issues that won't be fixed by retrying
             if (isNonRecoverableError(error)) {

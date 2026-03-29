@@ -52,7 +52,7 @@ export const ShareTargetReceiver: React.FC = () => {
 
                 setStatus('success');
 
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[ShareTarget] Failed to process shared content', error);
                 setStatus('error');
                 setMessage('Failed to process incoming content.');

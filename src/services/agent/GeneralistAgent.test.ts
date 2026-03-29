@@ -66,25 +66,25 @@ describe('GeneralistAgent', () => {
             currentOrganizationId: 'org1',
             currentProjectId: 'proj1',
             uploadedImages: []
-        } as any);
+        } as unknown as ReturnType<typeof useStore.getState>);
     });
 
     it('executes a tool via native function calling', async () => {
         // First call returns a function call, second call returns final response
         vi.mocked(AI.generateContentStream)
-            .mockResolvedValueOnce(mockFunctionCallResponse('test_tool', {}) as any)
-            .mockResolvedValueOnce(mockTextResponse('Task completed successfully.') as any);
+            .mockResolvedValueOnce(mockFunctionCallResponse('test_tool', {}) as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockResolvedValueOnce(mockTextResponse('Task completed successfully.') as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
-        await generalistAgent.execute('Run the test tool', { currentOrganizationId: 'org1', currentProjectId: 'proj1' } as any);
+        await generalistAgent.execute('Run the test tool', { currentOrganizationId: 'org1', currentProjectId: 'proj1' } as unknown as Parameters<typeof generalistAgent.execute>[1]);
 
         expect(TOOL_REGISTRY.test_tool).toHaveBeenCalled();
     });
 
     it('returns the final text response correctly', async () => {
         vi.mocked(AI.generateContentStream)
-            .mockResolvedValueOnce(mockTextResponse('This is my helpful response.') as any);
+            .mockResolvedValueOnce(mockTextResponse('This is my helpful response.') as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
-        const result = await generalistAgent.execute('Help me with something', {} as any);
+        const result = await generalistAgent.execute('Help me with something', {} as unknown as Parameters<typeof generalistAgent.execute>[1]);
 
         expect(result.text).toBe('This is my helpful response.');
     });
@@ -96,10 +96,10 @@ describe('GeneralistAgent', () => {
         // First call returns function call that will fail
         // Second call returns recovery response
         vi.mocked(AI.generateContentStream)
-            .mockResolvedValueOnce(mockFunctionCallResponse('test_tool', {}) as any)
-            .mockResolvedValueOnce(mockTextResponse('I encountered an error but recovered.') as any);
+            .mockResolvedValueOnce(mockFunctionCallResponse('test_tool', {}) as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockResolvedValueOnce(mockTextResponse('I encountered an error but recovered.') as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
-        const result = await generalistAgent.execute('Run failing tool', {} as any);
+        const result = await generalistAgent.execute('Run failing tool', {} as unknown as Parameters<typeof generalistAgent.execute>[1]);
 
         expect(TOOL_REGISTRY.test_tool).toHaveBeenCalled();
         // The agent should continue and eventually return
@@ -109,9 +109,9 @@ describe('GeneralistAgent', () => {
     it('detects and prevents infinite loops', async () => {
         // Simulate the AI calling the same tool repeatedly
         vi.mocked(AI.generateContentStream)
-            .mockResolvedValue(mockFunctionCallResponse('test_tool', { same: 'args' }) as any);
+            .mockResolvedValue(mockFunctionCallResponse('test_tool', { same: 'args' }) as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
-        const result = await generalistAgent.execute('Loop forever', {} as any);
+        const result = await generalistAgent.execute('Loop forever', {} as unknown as Parameters<typeof generalistAgent.execute>[1]);
 
         // Should detect the loop and stop
         expect(result.error || result.text).toBeDefined();

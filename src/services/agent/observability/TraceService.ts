@@ -60,7 +60,7 @@ export class TraceService {
 
             await setDoc(doc(db, this.COLLECTION, traceId), cleanFirestoreData(trace));
             return traceId;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[TraceService] Failed to start trace: (Non-blocking)', error);
             return crypto.randomUUID();
         }
@@ -103,7 +103,7 @@ export class TraceService {
                     }
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             // Ignore config errors, fall back to static pricing
         }
 
@@ -184,7 +184,7 @@ export class TraceService {
                     }
                 }));
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[TraceService] Failed to add step with usage to trace ${traceId}: (Non-blocking)`, error);
             // Non-blocking: We don't throw here to ensure the main agent flow continues
         }
@@ -215,7 +215,7 @@ export class TraceService {
                 durationMs,
                 ...(output ? { output } : {})
             }));
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[TraceService] Failed to complete trace ${traceId}: (Non-blocking)`, error);
         }
     }
@@ -238,7 +238,7 @@ export class TraceService {
                 durationMs,
                 error
             }));
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error(`[TraceService] Failed to fail trace ${traceId}: (Non-blocking)`, e);
         }
     }

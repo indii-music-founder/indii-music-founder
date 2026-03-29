@@ -162,8 +162,8 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
 
     // Mock sequence: Fail -> Fail -> Success
     mockMutationFn
-      .mockResolvedValueOnce({ ...baseGene, parameters: undefined as any }) // Defect
-      .mockResolvedValueOnce({ ...baseGene, parameters: null as any })      // Defect
+      .mockResolvedValueOnce({ ...baseGene, parameters: undefined as unknown as Record<string, unknown> }) // Defect
+      .mockResolvedValueOnce({ ...baseGene, parameters: null as unknown as Record<string, unknown> })      // Defect
       .mockResolvedValue({
         ...baseGene,
         systemPrompt: 'Valid [GEMINI-3-PRO-EVOLVED]',

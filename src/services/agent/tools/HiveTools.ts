@@ -50,7 +50,7 @@ export const HiveTools = {
                         ? `Found ${memories.length} relevant memories for "${args.query}".`
                         : `No relevant memories found for "${args.query}".`,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Hive search failed: ${error}`, 'SEARCH_FAILED');
             }
         }

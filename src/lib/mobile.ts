@@ -139,7 +139,7 @@ export const nativeShare = async (data: ShareData): Promise<boolean> => {
     try {
         await navigator.share(data);
         return true;
-    } catch (error) {
+    } catch (error: unknown) {
         if ((error as Error).name === 'AbortError') {
             // User cancelled the share
             return false;
@@ -186,7 +186,7 @@ export const requestWakeLock = async (): Promise<boolean> => {
         });
 
         return true;
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('[WakeLock] Error:', error);
         return false;
     }
@@ -397,7 +397,7 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
                         const token = await getToken(messaging, { vapidKey });
                         if (token) logger.debug('[Notifications] Token:', token);
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn('[Notifications] Token retrieval warning:', e);
                 }
             }
@@ -405,7 +405,7 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
             return true;
         }
         return false;
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('[Notifications] Error requesting permission:', error);
         return false;
     }
@@ -421,7 +421,7 @@ export const onMessageListener = (callback: (payload: unknown) => void) => {
             logger.debug('[Notifications] Foreground message received:', payload);
             callback(payload);
         });
-    } catch (e) {
+    } catch (e: unknown) {
         logger.error('[Notifications] Error setting up listener:', e);
         return () => { };
     }

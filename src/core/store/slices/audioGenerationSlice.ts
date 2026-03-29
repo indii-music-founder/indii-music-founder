@@ -23,7 +23,7 @@ export const createAudioGenerationSlice: StateCreator<AudioGenerationSlice> = (s
         try {
             const assets = await audioPersistenceService.listUserAudio();
             set({ generatedAssets: assets, isAudioLoading: false });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AudioGenSlice] Failed to fetch library:', error);
             set({
                 audioError: 'Failed to load audio library',
@@ -44,7 +44,7 @@ export const createAudioGenerationSlice: StateCreator<AudioGenerationSlice> = (s
             set(state => ({
                 generatedAssets: state.generatedAssets.filter(a => a.id !== id)
             }));
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AudioGenSlice] Failed to delete asset:', error);
             throw error;
         }

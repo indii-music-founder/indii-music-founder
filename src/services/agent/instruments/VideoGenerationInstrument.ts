@@ -256,7 +256,7 @@ export class VideoGenerationInstrument implements Instrument {
           }
         }
       };
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[VideoGenerationInstrument] Execution failed:', error);
       return {
         success: false,

@@ -179,7 +179,7 @@ export class GeminiRetrievalService {
             logger.info(`[RAG] File uploaded: ${readyFile.displayName} (${readyFile.name})`);
             return readyFile;
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[RAG] Upload failed:', error);
             throw error;
         }
@@ -317,7 +317,7 @@ Always cite which document(s) your answer comes from.`;
                 sources,
             };
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[RAG] Query failed:', error);
             throw new Error(`Retrieval query failed: ${error}`);
         }
@@ -371,7 +371,7 @@ Only return the JSON array, no other text.`;
 
             return [];
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[RAG] Semantic search failed:', error);
             return [];
         }

@@ -189,14 +189,14 @@ export class MemoryInboxWatcher {
                 // Process the file
                 try {
                     await this.processFile(file, ext);
-                } catch (err) {
+                } catch (err: unknown) {
                     logger.error(`[MemoryInboxWatcher] Error processing ${file.name}:`, err);
                 }
 
                 // Mark as processed regardless of success/failure
                 this.processedFiles.add(file.path);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryInboxWatcher] Inbox polling failed:', error);
         }
     }

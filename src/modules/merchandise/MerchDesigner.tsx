@@ -119,7 +119,7 @@ export default function MerchDesigner() {
     const handleAddAsset = useCallback(async (url: string, name: string) => {
         try {
             await addImage(url, name);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Failed to add asset:', error);
             toast.error('Failed to add asset to canvas');
         }
@@ -130,7 +130,7 @@ export default function MerchDesigner() {
         try {
             await addImage(url, name);
             toast.success('AI image added to canvas');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Failed to add AI image:', error);
             toast.error('Failed to add AI image');
         }
@@ -326,7 +326,7 @@ export default function MerchDesigner() {
                     rect.set('isPlaceholder' as keyof fabric.Rect, objData.isPlaceholder);
                     canvas.add(rect);
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('Failed to add template element:', error);
             }
         }
@@ -355,7 +355,7 @@ export default function MerchDesigner() {
 
             setDesignName(version.name);
             toast.success(`Restored "${version.name}"`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Failed to restore version:', error);
             toast.error('Failed to restore version');
         }
@@ -384,7 +384,7 @@ export default function MerchDesigner() {
             try {
                 await addImage(url, name || 'Dropped Image');
                 toast.success('Asset added to canvas');
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('Failed to add dropped asset:', error);
                 toast.error('Failed to add asset');
             }

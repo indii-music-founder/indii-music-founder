@@ -85,7 +85,7 @@ export function useFinance() {
             // Replace temporary with actual from server (or rely on subscription)
             setExpenses(prev => prev.map(e => e.id === tempId ? newExpense : e));
             return true;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Operation failed:", e);
             Sentry.captureException(e);
             toast.error("Failed to add expense.");

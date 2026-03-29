@@ -7,7 +7,7 @@ import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdap
 import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
 import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { ReleaseAssets, IDistributorAdapter } from '@/services/distribution/types/distributor';
+import type { ReleaseAssets, DistributorAdapter } from '@/services/distribution/types/distributor';
 
 // Mock Electron API for distribution
 if (typeof window !== 'undefined') {
@@ -124,7 +124,7 @@ describe('All Distribution Adapters Integration', () => {
         }
     });
 
-    const adapters: IDistributorAdapter[] = [
+    const adapters: DistributorAdapter[] = [
         new SymphonicAdapter(),
         new DistroKidAdapter(),
         new TuneCoreAdapter(),

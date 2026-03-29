@@ -109,7 +109,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                     } else {
                         toast.error("Could not read receipt data.");
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.error("Receipt analysis error:", e);
                     toast.error("Failed to analyze receipt.");
                 } finally {
@@ -117,7 +117,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                 }
             };
             reader.readAsDataURL(file);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Operation failed:", e);
             toast.error("Failed to read file.");
             setIsAnalyzing(false);

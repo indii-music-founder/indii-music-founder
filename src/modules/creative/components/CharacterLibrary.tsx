@@ -130,7 +130,7 @@ export const CharacterLibrary: React.FC = () => {
         setIsValidating(true);
         try {
             await processFile(file, characterReferences.length);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[CharacterLibrary] Validation error:', err);
             toast.error('Failed to validate image. Please try a different file.');
         } finally {
@@ -205,7 +205,7 @@ export const CharacterLibrary: React.FC = () => {
             if (accepted === 0 && filesToProcess.length > 0) {
                 toast.error('No valid images found. Check file type, size, and resolution.');
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[CharacterLibrary] Drop validation error:', err);
             toast.error('Failed to process dropped files.');
         } finally {

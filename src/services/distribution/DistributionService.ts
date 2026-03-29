@@ -45,7 +45,7 @@ async function writeMetadataSnapshot(releaseId: string, metadata: DDEXMetadata):
             timestamp: serverTimestamp(),
             userId: auth.currentUser?.uid ?? null,
         });
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[DistributionService] Failed to write metadata snapshot:', err);
     }
 }
@@ -65,7 +65,7 @@ async function writeDistributionAuditEvent(
             timestamp: serverTimestamp(),
             userId: auth.currentUser?.uid ?? null,
         });
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[DistributionService] Failed to write audit event:', err);
     }
 }
@@ -164,7 +164,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
 
             return result.report;
-        } catch (error) {
+        } catch (error: unknown) {
             const errorMsg = error instanceof Error ? error.message : 'Unknown forensics error';
             await this.updateTask(taskId, { status: 'FAILED', error: errorMsg });
 
@@ -199,7 +199,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'Tax calculation failed');
             }
             return result.report;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Unexpected tax engine error:', error);
             throw error;
         }
@@ -238,7 +238,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             const profile = await taxService.getProfile(userId);
             if (!profile) throw new Error('Tax profile not found after certification');
             return profile;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Tax certification error:', error);
             throw error;
         }
@@ -258,7 +258,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'Waterfall execution failed');
             }
             return result.report;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Waterfall engine error:', error);
             throw error;
         }
@@ -281,7 +281,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 if (result.error) throw new Error(result.error);
             }
             return result.report || { valid: false, errors: ['Unknown validation error'] };
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Validation engine error:', error);
             throw error;
         }
@@ -303,7 +303,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'Content ID generation failed');
             }
             return result.csvData || JSON.stringify(result.report);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Content ID engine error:', error);
             throw error;
         }
@@ -342,7 +342,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
 
             return result.isrc;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] ISRC engine error:', error);
             throw error;
         }
@@ -362,7 +362,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'UPC Generation failed');
             }
             return result.upc;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] UPC engine error:', error);
             throw error;
         }
@@ -382,7 +382,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'DDEX Generation failed');
             }
             return result.xml;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] DDEX engine error:', error);
             throw error;
         }
@@ -402,7 +402,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'Merlin status check failed');
             }
             return result.report;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Merlin engine error:', error);
             throw error;
         }
@@ -422,7 +422,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'BWARM generation failed');
             }
             return result.csv || JSON.stringify(result.report);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] BWARM engine error:', error);
             throw error;
         }
@@ -442,7 +442,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'Transmission failed');
             }
             return result.report;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Transmission engine error:', error);
             throw error;
         }
@@ -463,7 +463,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'Spotify packaging failed');
             }
             return result.report || { status: 'PASS' };
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Spotify packaging error:', error);
             throw error;
         }
@@ -504,7 +504,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 status: 'PACKAGED',
                 bundlePath: packageResult.packagePath
             };
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] Apple packaging error:', error);
             throw error;
         }
@@ -525,7 +525,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(result.error || 'XSD validation failed');
             }
             return result.report;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Distribution] XSD validation error:', error);
             throw error;
         }
@@ -607,7 +607,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 throw new Error(errorMsg);
             }
             logger.info(`[Distribution] Mechanical clearance verified for release ${releaseId}`);
-        } catch (clearanceErr) {
+        } catch (clearanceErr: unknown) {
             if (clearanceErr instanceof Error && clearanceErr.message.includes('blocked')) {
                 throw clearanceErr;
             }
@@ -629,7 +629,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                     releaseTitle: releaseData.title,
                     assignedAt: new Date(),
                 }).catch(err => logger.warn('[Distribution] UPC registry record failed:', err));
-            } catch (upcErr) {
+            } catch (upcErr: unknown) {
                 logger.warn('[Distribution] Could not auto-assign UPC for release:', upcErr);
             }
         }
@@ -642,7 +642,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                     try {
                         track.isrc = await isrcService.assignNextISRC(track.title ?? 'unknown');
                         logger.info(`[Distribution] Auto-assigned ISRC ${track.isrc} to track "${track.title}"`);
-                    } catch (isrcErr) {
+                    } catch (isrcErr: unknown) {
                         logger.warn(`[Distribution] Could not auto-assign ISRC for track "${track.title}":`, isrcErr);
                     }
                 }
@@ -663,7 +663,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
                             logger.info(`[Distribution] Successfully mapped Audio DNA for track "${track.title}"`);
                         }
-                    } catch (dnaErr) {
+                    } catch (dnaErr: unknown) {
                         logger.warn(`[Distribution] Failed to map Audio DNA for track "${track.title}":`, dnaErr);
                     }
                 }
@@ -716,7 +716,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
 
             return { status: 'success', ...result.report } as { status: string; xml?: string; xml_path?: string; tracks?: unknown[] };
-        } catch (error) {
+        } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : 'Unknown submission error';
             await this.updateTask(taskId, { status: 'FAILED', error: msg });
             // Item 393: Write failure audit event

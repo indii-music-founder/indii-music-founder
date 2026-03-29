@@ -72,7 +72,7 @@ export class ItmspPackagingFeature {
         success: true,
         data: result
       };
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)

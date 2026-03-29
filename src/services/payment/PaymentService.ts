@@ -64,7 +64,7 @@ export async function createOneTimePayment(request: OneTimePaymentRequest): Prom
 
         logger.info(`[PaymentService] Checkout session created: ${result.data.sessionId}`);
         return result.data.checkoutUrl;
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('[PaymentService] Failed to create checkout session:', error);
         throw error;
     }

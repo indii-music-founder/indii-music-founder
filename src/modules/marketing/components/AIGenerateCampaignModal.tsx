@@ -117,7 +117,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
 
             setGeneratedPlan(plan);
             toast.success('Campaign plan generated!');
-        } catch (error) {
+        } catch (error: unknown) {
             // logger.error('Generation failed:', error);
             toast.error('Failed to generate campaign. Please try again.');
         } finally {

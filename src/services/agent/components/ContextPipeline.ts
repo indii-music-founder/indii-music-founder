@@ -78,7 +78,7 @@ export class ContextPipeline {
                     `episodic:${bigBrainContext.meta.episodicMatches}, ` +
                     `rules:${bigBrainContext.meta.alignmentRuleCount})`
                 );
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[ContextPipeline] BigBrain assembly failed (non-blocking):', err);
                 // Fallback: still try to get basic memories
                 relevantMemories = await this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString);
@@ -120,7 +120,7 @@ export class ContextPipeline {
                 recentContext,
                 5
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[ContextPipeline] Fallback memory retrieval failed:', error);
             return [];
         }

@@ -257,7 +257,7 @@ export class DashboardService {
             };
 
             return result;
-        } catch (_error) {
+        } catch (_error: unknown) {
             // Silently fail in beta production build, just return empty stats
             return { usedBytes: 0, quotaBytes: STORAGE_QUOTAS.free, percentUsed: 0 };
         }
@@ -286,7 +286,7 @@ export class DashboardService {
 
             return metadata;
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Dashboard] Error creating project:', error);
             throw error;
         }
@@ -351,7 +351,7 @@ export class DashboardService {
 
             return metadata;
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Dashboard] Error duplicating project:', error);
             throw error;
         }
@@ -388,11 +388,11 @@ export class DashboardService {
                 const q = query(historyRef, where('projectId', '==', projectId));
                 const snapshot = await getDocs(q);
                 await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
-            } catch (cleanupError) {
+            } catch (cleanupError: unknown) {
                 logger.warn('[Dashboard] Cleanup warning:', cleanupError);
             }
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Dashboard] Error deleting project:', error);
             throw error;
         }
@@ -500,7 +500,7 @@ export class DashboardService {
             };
 
             return result;
-        } catch (_error) {
+        } catch (_error: unknown) {
             return {
                 totalGenerations: 0,
                 totalMessages: 0,
@@ -586,7 +586,7 @@ export class DashboardService {
                     this.cache.set(period, { data, timestamp: Date.now() });
 
                     return data;
-                } catch (apiError) {
+                } catch (apiError: unknown) {
                     logger.warn('[Dashboard] API fetch failed, falling back to Firestore:', apiError);
                     // Fallthrough to Firestore
                 }
@@ -608,7 +608,7 @@ export class DashboardService {
                             logger.warn('[Dashboard] Firestore data failed schema validation:', parseResult.error);
                         }
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn('[Dashboard] Firestore fetch failed:', e);
                 }
             }
@@ -617,7 +617,7 @@ export class DashboardService {
             // We removed the mock data fallback here to ensure production correctness.
             return zeroState;
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Dashboard] Critical failure in getSalesAnalytics:', error);
             // Return safe default to prevent UI crash
             return zeroState;

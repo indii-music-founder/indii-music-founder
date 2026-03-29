@@ -124,7 +124,7 @@ export const LicensingAgent: AgentConfig = {
                         next_steps: "AI Analysis complete. Legal counsel review mandatory for final approval."
                     }
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return { success: false, error: "Failed to analyze contract: " + (error as Error).message };
             }
         },
@@ -148,7 +148,7 @@ export const LicensingAgent: AgentConfig = {
                         message: "Initial draft generated. Review and finalize before signing."
                     }
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return { success: false, error: "Failed to draft license: " + (error as Error).message };
             }
         }

@@ -48,7 +48,7 @@ export function BiometricToggle({ isMinimized }: { isMinimized?: boolean }) {
                 // Turning OFF: Just disable
                 updatePreferences({ biometricEnabled: false });
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('Biometric toggle error:', err);
             setError('An error occurred.');
         } finally {

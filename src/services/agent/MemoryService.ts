@@ -49,7 +49,7 @@ class MemoryService {
             try {
                 // Pass texts directly to batch API (FirebaseAIService handles the content wrapping)
                 return await AI.batchEmbedContents(texts, this.embeddingModel);
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[MemoryService] Batch embedding failed:', error);
                 throw error;
             }
@@ -69,7 +69,7 @@ class MemoryService {
         try {
             // Use the batcher instead of direct call
             return await this.embeddingBatcher.add(text);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[MemoryService] Failed to get embedding, falling back to keyword search:', error);
             return [];
         }
@@ -99,7 +99,7 @@ class MemoryService {
         let existingMemories: MemoryItem[] = [];
         try {
             existingMemories = await service.list();
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[MemoryService] Failed to list memories for dedup: (Non-blocking)', e);
         }
 
@@ -126,7 +126,7 @@ class MemoryService {
 
         try {
             await service.add(item);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[MemoryService] Failed to save memory: (Non-blocking)', e);
         }
     }
@@ -150,7 +150,7 @@ class MemoryService {
             let memories: MemoryItem[] = [];
             try {
                 memories = await service.list(); // In production, push filters to DB query if possible
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[MemoryService] Failed to list memories for retrieval: (Non-blocking)', e);
                 return [];
             }
@@ -251,7 +251,7 @@ class MemoryService {
 
             return relevantItems.map(m => m.content);
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryService] Error retrieving memories:', error);
             return [];
         }
@@ -342,7 +342,7 @@ class MemoryService {
 
             logger.info(`[MemoryService] Consolidated ${parsed.idsToDelete?.length || 0} memories into ${parsed.consolidated?.length || 0} summaries.`);
 
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[MemoryService] Consolidation failed:', e);
         }
     }

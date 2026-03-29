@@ -207,7 +207,7 @@ export class SmartContractService {
                 logger.info(`[SmartContract] Payout tx submitted: ${txHash}`);
                 await this.recordToLedger('SPLIT_EXECUTION', contractAddress, `Distributed ${amountUSDC} USDC (tx: ${txHash})`);
                 return true;
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[SmartContract] On-chain payout failed:', error);
                 // Fall through to Firestore-only record
             }
@@ -246,7 +246,7 @@ export class SmartContractService {
 
                 tokenContract = await this.waitForDeployment(txHash);
                 logger.info(`[SmartContract] SongShares token deployed at ${tokenContract}`);
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.warn('[SmartContract] On-chain minting failed, using Firestore-only tracking:', error);
                 tokenContract = `pending:token:${isrc}:${Date.now()}`;
             }
@@ -276,7 +276,7 @@ export class SmartContractService {
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        } catch (_e) {
+        } catch (_e: unknown) {
             // Fallback if SubtleCrypto unavailable (e.g., non-secure context)
             hash = `sha256_${crypto.randomUUID().replace(/-/g, '')}`;
         }
@@ -292,7 +292,7 @@ export class SmartContractService {
         try {
             await addDoc(collection(db, this.LEDGER_COLLECTION), entry);
             logger.info(`[Blockchain Ledger] New Block: ${entry.hash.slice(0, 16)}... | ${action} | ${entityId}`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Blockchain Ledger] Failed to persist entry:', error);
         }
     }
@@ -310,7 +310,7 @@ export class SmartContractService {
 
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => doc.data() as LedgerEntry);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[SmartContract] Failed to fetch chain of custody:', error);
             return [];
         }

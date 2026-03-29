@@ -51,7 +51,7 @@ export class RequestBatcher<T, R> {
                 throw new Error(`Batch result count mismatch: expected ${batch.length}, got ${results.length}`);
             }
             batch.forEach((b, i) => b.resolve(results[i]!));
-        } catch (error) {
+        } catch (error: unknown) {
             batch.forEach(b => b.reject(error));
         }
     }

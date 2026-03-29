@@ -25,7 +25,7 @@ export const SOCIAL_TOOLS = {
                 AI_MODELS.TEXT.AGENT
             );
             return res.response.text() || "Failed to generate copy.";
-        } catch (e) {
+        } catch (e: unknown) {
             return "Error generating copy.";
         }
     },
@@ -65,7 +65,7 @@ export const SOCIAL_TOOLS = {
                 undefined, // thinkingBudget
                 undefined, // systemInstruction
             );
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Failed to generate social identity", e);
             throw e; // Let the component handle the error
         }

@@ -30,7 +30,7 @@ export function useSubscription() {
 
             setSubscription(subData);
             setUsage(usageData);
-        } catch (err) {
+        } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Failed to fetch subscription data';
             logger.error('[useSubscription] Error:', err);
             setError(message);
@@ -58,7 +58,7 @@ export function useSubscription() {
             if (result.checkoutUrl) {
                 window.location.href = result.checkoutUrl;
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[useSubscription] Checkout failed:', err);
             toast.error('Failed to start checkout. Please try again.');
         }
@@ -70,7 +70,7 @@ export function useSubscription() {
             if (result.url) {
                 window.location.href = result.url;
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[useSubscription] Portal failed:', err);
             toast.error('Failed to access billing portal.');
         }

@@ -150,7 +150,7 @@ export class CloudStorageService {
                 size: compressed.blob.size,
                 thumbnailSize: thumbnail.blob.size
             };
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.error('CloudStorage', 'Cloud upload failed:', error);
             throw error;
         }
@@ -188,7 +188,7 @@ export class CloudStorageService {
 
             Logger.info('CloudStorage', `Audio uploaded: ${blob.size} bytes → ${downloadUrl}`);
             return downloadUrl;
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.error('CloudStorage', 'Audio upload failed:', error);
             throw error;
         }
@@ -202,7 +202,7 @@ export class CloudStorageService {
             const ext = mimeType.split('/')[1] || 'wav';
             const audioRef = ref(storage, `users/${userId}/audio/${id}.${ext}`);
             await deleteObject(audioRef);
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.warn('CloudStorage', `Audio deletion failed for ${id}:`, error);
         }
     }

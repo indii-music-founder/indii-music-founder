@@ -104,7 +104,7 @@ describe('Agent SDK Integration', () => {
                 }],
                 usageMetadata: {}
             }
-        } as any);
+        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
         // 2. Second call: AI sees tool result and finishes
         aiSpy.mockResolvedValueOnce({
@@ -115,7 +115,7 @@ describe('Agent SDK Integration', () => {
                 }],
                 usageMetadata: {}
             }
-        } as any);
+        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
         const result = await harness.run('Do work');
 

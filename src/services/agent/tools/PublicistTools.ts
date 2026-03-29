@@ -79,7 +79,7 @@ export const PublicistTools = {
         if (generate_pdf && electronWin.electronAPI?.publicist) {
             try {
                 pdfResult = await electronWin.electronAPI.publicist.generatePdf(validated);
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.error('[PublicistTools] PDF generation failed:', err);
             }
         }
@@ -95,7 +95,7 @@ export const PublicistTools = {
                     pdfPath: pdfResult?.path || null,
                     createdAt: serverTimestamp()
                 });
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[PublicistTools] Failed to persist press release:', err);
             }
         }
@@ -131,7 +131,7 @@ export const PublicistTools = {
                     situation,
                     createdAt: serverTimestamp()
                 });
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[PublicistTools] Failed to persist crisis response:', err);
             }
         }
@@ -165,7 +165,7 @@ export const PublicistTools = {
                     recipient_type,
                     createdAt: serverTimestamp()
                 });
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[PublicistTools] Failed to persist email pitch:', err);
             }
         }
@@ -198,7 +198,7 @@ export const PublicistTools = {
                     trackTitle: args.trackTitle,
                     createdAt: serverTimestamp()
                 });
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[PublicistTools] Failed to persist playlist pitch:', err);
             }
         }

@@ -34,7 +34,7 @@ export const LicensingTools = {
                 genre: t.genre,
                 mood: t.mood
             }));
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[LicensingTools] Could not load catalog, using AI-only matching:', e);
         }
 

@@ -55,7 +55,7 @@ export class EmailMarketingService {
 
             logger.info(`[EmailMarketing] ${provider} sync complete: ${result.data.synced} synced, ${result.data.failed} failed.`);
             return true;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn(`[EmailMarketing] ${provider} sync Cloud Function unavailable:`, error);
             logger.info(`[EmailMarketing] ${provider} sync queued locally for list ${listId} (${members.length} members). Deploy Cloud Function 'syncEmailList' for live integration.`);
             return false;
@@ -87,7 +87,7 @@ export class EmailMarketingService {
 
             logger.info(`[EmailMarketing] Campaign ${result.data.campaignId} successfully queued for sending.`);
             return result.data.campaignId;
-        } catch (_error) {
+        } catch (_error: unknown) {
             const campaignId = `camp_${Date.now()}`;
             logger.warn(`[EmailMarketing] Deploy Cloud Function unavailable. Campaign ${campaignId} tracked locally.`);
             return campaignId;
@@ -111,7 +111,7 @@ export class EmailMarketingService {
 
             const result = await getStatsFn({ campaignId, provider });
             return result.data;
-        } catch (_error) {
+        } catch (_error: unknown) {
             logger.warn(`[EmailMarketing] Stats Cloud Function unavailable for campaign ${campaignId}. Deploy Cloud Function 'getEmailCampaignStats'.`);
             return {
                 openRate: 0,

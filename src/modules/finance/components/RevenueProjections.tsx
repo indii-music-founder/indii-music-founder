@@ -29,7 +29,7 @@ export const RevenueProjections = () => {
             if (result.success) {
                 setProjections(result.data.projections);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Forecast failed:", error);
         } finally {
             setLoading(false);

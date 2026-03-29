@@ -56,7 +56,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
                 engine: 'Industrial (Python)',
                 ddex: rawDdex,
             }, 'Industrial DDEX ERN 4.3 generated via Python Engine.');
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[DistributionTools] Industrial DDEX generation failed, falling back to JS Service:', e);
         }
     }
@@ -114,7 +114,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
             release: { title, artist, upc, isrc },
             xml_length: ernResult.xml?.length || 0
         };
-    } catch (error) {
+    } catch (error: unknown) {
         return toolError(error instanceof Error ? error.message : 'Unknown error', 'EXECUTION_ERROR');
     }
 });
@@ -192,7 +192,7 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
                 source: 'Authority Layer (Python)',
                 registry: 'Local'
             };
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[DistributionTools] Authority Layer ISRC generation failed, falling back to JS:', e);
         }
     }
@@ -216,7 +216,7 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
             track_title: trackTitle,
             registry_status: 'REGISTERED'
         }, `ISRC ${isrc} generated and registered for "${trackTitle}".`);
-    } catch (error) {
+    } catch (error: unknown) {
         return toolError(error instanceof Error ? error.message : 'ISRC failed', 'ISRC_ERROR');
     }
 });
@@ -257,7 +257,7 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
                     engine: 'Bank Layer (Python)'
                 };
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[DistributionTools] Bank Layer certification failed, falling back to JS:', e);
         }
     }
@@ -349,7 +349,7 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
                 ...waterfallResult.report,
                 message: `Industrial Waterfall Executed. Net Distributable: $${waterfallResult.report ? waterfallResult.report.net_revenue : 0}`
             };
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[DistributionTools] Bank Layer waterfall failed, falling back to JS:', e);
         }
     }
@@ -396,7 +396,7 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
                     message: result.report.valid ? 'QC Passed' : `QC Failed: ${result.report.errors.length} errors`
                 };
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[DistributionTools] Brain Layer QC failed, falling back to JS:', e);
         }
     }
@@ -472,7 +472,7 @@ const generate_bwarm = wrapTool('generate_bwarm', async (args: {
                 report: result.report,
                 engine: 'Keys Layer (Python)'
             };
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[DistributionTools] Keys Layer BWARM generation failed:', e);
             throw e;
         }
@@ -505,7 +505,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
             }
             throw new Error("No report returned");
 
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[DistributionTools] Keys Layer Merlin check failed:', e);
             throw e;
         }
@@ -562,7 +562,7 @@ export const DistributionTools = {
                 deliveryStatus: data.status || 'QUEUED',
                 pipelineId: data.pipelineId || null,
             }, `Premium music video "${args.videoTitle}" submitted to ${dsp} ingestion pipeline via Cloud Function.`);
-        } catch (cfError) {
+        } catch (cfError: unknown) {
             logger.warn(`[DistributionTools] ${dsp} Cloud Function unavailable, falling back to local record:`, cfError);
             // Fallback: video is persisted in Firestore for manual pipeline pickup
             return toolSuccess({
@@ -620,7 +620,7 @@ export const DistributionTools = {
                 validationErrors: validationErrors.length > 0 ? validationErrors : undefined,
                 xmlLength: result.xml?.length || 0,
             }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via ERNService. ${validationErrors.length === 0 ? 'Structural validation passed.' : `${validationErrors.length} validation issue(s) detected.`}`);
-        } catch (error) {
+        } catch (error: unknown) {
             return toolError(error instanceof Error ? error.message : 'ERN export failed', 'ERN_EXPORT_ERROR');
         }
     }),
@@ -651,7 +651,7 @@ export const DistributionTools = {
                 checksumValid: isValid,
                 status: 'REGISTERED',
             }, `UPC generated (${upc}) via IdentifierService for release "${args.releaseTitle}". GTIN-12 checksum: ${isValid ? 'VALID' : 'INVALID'}.`);
-        } catch (error) {
+        } catch (error: unknown) {
             return toolError(error instanceof Error ? error.message : 'UPC generation failed', 'UPC_ERROR');
         }
     }),
@@ -697,7 +697,7 @@ export const DistributionTools = {
                     timestamp: new Date().toISOString(),
                     engine: 'Electron SFTP',
                 }, `Direct SFTP pipeline successfully delivered "${args.releaseFolder}" to ${args.targetDSP} via Electron IPC.`);
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[DistributionTools] Electron SFTP failed, trying Cloud Function:', e);
             }
         }
@@ -727,7 +727,7 @@ export const DistributionTools = {
                 timestamp: new Date().toISOString(),
                 engine: 'Cloud Function',
             }, `SFTP delivery for "${args.releaseFolder}" to ${args.targetDSP} completed via Cloud Function.`);
-        } catch (cfError) {
+        } catch (cfError: unknown) {
             logger.warn('[DistributionTools] SFTP Cloud Function unavailable:', cfError);
             // Mark as pending for manual processing
             await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
@@ -829,7 +829,7 @@ export const DistributionTools = {
                 distributorsNotified: data.distributorsNotified || 0,
                 estimatedRemovalTime: '24-48 hours',
             }, `Automated takedown issued for release ${args.releaseId}. ${data.distributorsNotified || 'All'} distributor(s) notified. Estimated removal: 24-48 hours.`);
-        } catch (cfError) {
+        } catch (cfError: unknown) {
             logger.warn('[DistributionTools] Takedown Cloud Function unavailable:', cfError);
             // Takedown is already recorded in Firestore — manual follow-up possible
             return toolSuccess({

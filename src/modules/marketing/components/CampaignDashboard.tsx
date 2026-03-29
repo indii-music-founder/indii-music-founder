@@ -58,7 +58,7 @@ const CampaignDashboard: React.FC = () => {
                 if (newCampaign) {
                     setSelectedCampaign(newCampaign);
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error("Failed to load new campaign", error);
             }
         }
@@ -73,7 +73,7 @@ const CampaignDashboard: React.FC = () => {
             });
             const savedCampaign = await MarketingService.getCampaignById(newId);
             if (savedCampaign) setSelectedCampaign(savedCampaign);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to save AI campaign", error);
         }
     }, []);

@@ -56,7 +56,7 @@ export class TraceService {
                 updatedAt: serverTimestamp()
             });
             return docRef.id;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[TraceService] Failed to start trace:', error);
             return `local_${Date.now()}`; // Fallback ID for non-blocking execution
         }
@@ -78,7 +78,7 @@ export class TraceService {
                 }),
                 updatedAt: serverTimestamp()
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[TraceService] Failed to add step:', error);
         }
     }
@@ -107,7 +107,7 @@ export class TraceService {
                 }),
                 updatedAt: serverTimestamp()
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[TraceService] Failed to add step with usage:', error);
         }
     }
@@ -125,7 +125,7 @@ export class TraceService {
                 status: 'completed',
                 updatedAt: serverTimestamp()
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[TraceService] Failed to complete trace:', error);
         }
     }
@@ -143,7 +143,7 @@ export class TraceService {
                 status: 'failed',
                 updatedAt: serverTimestamp()
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[TraceService] Failed to fail trace:', error);
         }
     }

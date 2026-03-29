@@ -87,7 +87,7 @@ export class AudioService {
             };
 
             await audio.play();
-        } catch (error) {
+        } catch (error: unknown) {
             // AudioService Failed to play audio
             this.isProcessing = false;
             item.reject(error);

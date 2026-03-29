@@ -5,7 +5,7 @@ import {
     AgentContext,
     AgentMessage,
     SpecializedAgent,
-    IAgentRegistry,
+    AgentRegistryProvider,
     AgentResponse,
     AgentProgressCallback
 } from '../types';
@@ -18,9 +18,9 @@ import { logger } from '@/utils/logger';
  * It manages tracing, context propagation, and agent fallback logic.
  */
 export class AgentExecutor {
-    private registry: IAgentRegistry;
+    private registry: AgentRegistryProvider;
 
-    constructor(registry: IAgentRegistry) {
+    constructor(registry: AgentRegistryProvider) {
         this.registry = registry;
     }
 

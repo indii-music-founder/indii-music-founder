@@ -58,7 +58,7 @@ describe('Agent Tools Validation', () => {
 
             try {
                 await BrandTools.verify_output({ goal: "Test", content: "Test content" });
-            } catch (error) {
+            } catch (error: unknown) {
                 // Should probably return a failed tool result, but if it throws, we catch it here.
                 // Assuming tool wraps error:
             }

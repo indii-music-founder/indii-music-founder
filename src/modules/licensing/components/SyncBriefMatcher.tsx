@@ -108,7 +108,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
             });
             setUploadedUrls(urls);
             setStatus('done');
-        } catch (err) {
+        } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Upload failed. Please try again.');
             setStatus('error');
         }
@@ -380,7 +380,7 @@ export function SyncBriefMatcher() {
             ]);
             setBriefs(loadedBriefs);
             setCatalog(loadedCatalog);
-        } catch (err) {
+        } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to load sync briefs');
         } finally {
             setLoading(false);

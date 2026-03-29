@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
+import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 import {
     Briefcase, CreditCard, ShoppingBag, TrendingUp,
     DollarSign, ArrowUpRight, Wallet, Clock, Scale,
@@ -50,10 +51,16 @@ export default function FinanceDashboard() {
     } = useFinance();
 
     return (
-        <ModuleErrorBoundary moduleName="Finance">
-            <div className="absolute inset-0 flex">
-                {/* ── LEFT PANEL — Quick Stats & Summary ──────────────── */}
-                <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+        <ThreePanelDashboard
+            moduleName="Finance"
+            headerIcon={<TrendingUp size={18} className="text-white" />}
+            title={t('finance.title')}
+            subtitle={t('finance.subtitle')}
+            bgBlobClass="bg-dept-royalties/8"
+            iconBgClass="bg-gradient-to-br from-dept-royalties to-dept-royalties-glow"
+            iconShadowClass="shadow-dept-royalties/20"
+            leftPanel={
+                <>
                     <QuickStatsPanel
                         earningsSummary={earningsSummary}
                         expenses={expenses}
@@ -69,144 +76,10 @@ export default function FinanceDashboard() {
                         expenses={expenses}
                         loading={earningsLoading}
                     />
-                </aside>
-
-                {/* ── CENTER — Tabbed Content ─────────────────────────── */}
-                <div className="flex-1 flex flex-col min-w-0">
-                    {/* Header */}
-                    <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
-                        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-dept-royalties/8 blur-[100px] pointer-events-none rounded-full" />
-                        <div className="relative z-10 flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-dept-royalties to-dept-royalties-glow flex items-center justify-center shadow-lg shadow-dept-royalties/20">
-                                <TrendingUp size={18} className="text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">{t('finance.title')}</h1>
-                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">{t('finance.subtitle')}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Tabs */}
-                    <Tabs defaultValue="earnings" className="flex-1 flex flex-col overflow-hidden">
-                        <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
-                            <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
-                                <TabsTrigger value="earnings" data-testid="finance-tab-earnings" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                    <Clock size={14} /> {t('finance.tabs.earnings')}
-                                </TabsTrigger>
-                                <TabsTrigger value="expenses" data-testid="finance-tab-expenses" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                    <FileText size={14} /> {t('finance.tabs.expenses')}
-                                </TabsTrigger>
-                                <TabsTrigger value="merch" data-testid="finance-tab-merch" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                    <Scale size={14} /> {t('finance.tabs.merch')}
-                                </TabsTrigger>
-                                <TabsTrigger value="royalties" data-testid="finance-tab-royalties" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                                    <Briefcase size={14} /> {t('finance.tabs.royalties')}
-                                </TabsTrigger>
-                                <TabsTrigger value="currency" data-testid="finance-tab-currency" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Globe size={14} /> {t('finance.tabs.currency')}
-                                </TabsTrigger>
-                                <TabsTrigger value="splits" data-testid="finance-tab-splits" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <GitMerge size={14} /> {t('finance.tabs.splits')}
-                                </TabsTrigger>
-                                <TabsTrigger value="onboarding" data-testid="finance-tab-onboarding" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Users size={14} /> {t('finance.tabs.onboarding')}
-                                </TabsTrigger>
-                                <TabsTrigger value="tax" data-testid="finance-tab-tax" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <FileText size={14} /> {t('finance.tabs.tax')}
-                                </TabsTrigger>
-                                <TabsTrigger value="anomaly" data-testid="finance-tab-anomaly" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Activity size={14} /> {t('finance.tabs.anomaly')}
-                                </TabsTrigger>
-                                <TabsTrigger value="audit" data-testid="finance-tab-audit" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Shield size={14} /> {t('finance.tabs.audit')}
-                                </TabsTrigger>
-                                <TabsTrigger value="budget" data-testid="finance-tab-budget" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <DollarSign size={14} /> {t('finance.tabs.budget')}
-                                </TabsTrigger>
-                                <TabsTrigger value="receipts" data-testid="finance-tab-receipts" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Camera size={14} /> {t('finance.tabs.receipts')}
-                                </TabsTrigger>
-                                <TabsTrigger value="recoupment" data-testid="finance-tab-recoupment" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                    <Landmark size={14} /> {t('finance.tabs.recoupment')}
-                                </TabsTrigger>
-                            </TabsList>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <div className="p-4 md:p-6">
-                                <TabsContent value="earnings" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Earnings">
-                                        <EarningsDashboard />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="expenses" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Expenses">
-                                        <ExpenseTracker />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="merch" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Merchandise">
-                                        <MerchandiseDashboard />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="royalties" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Royalties">
-                                        <RoyaltiesPrediction />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="currency" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Currency">
-                                        <MultiCurrencyLedger />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="splits" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Splits">
-                                        <SplitSheetEscrow />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="onboarding" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Stripe Onboarding">
-                                        <StripeConnectOnboarding />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="tax" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Tax">
-                                        <TaxFormCollection />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="anomaly" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Anomaly Detection">
-                                        <AnomalyDetector />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="audit" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Audit Logs">
-                                        <AuditLogsPanel />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="budget" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Budget">
-                                        <BudgetVsActuals />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="receipts" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Receipts">
-                                        <ReceiptOCR />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                                <TabsContent value="recoupment" className="mt-0 outline-none">
-                                    <ModuleErrorBoundary moduleName="Finance / Recoupment">
-                                        <LabelDealRecoupment />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
-                            </div>
-                        </div>
-                    </Tabs>
-                </div>
-
-                {/* ── RIGHT PANEL — Revenue Breakdown & Alerts ──────────── */}
-                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                </>
+            }
+            rightPanel={
+                <>
                     <RevenueByPlatformPanel
                         earningsSummary={earningsSummary}
                         loading={earningsLoading}
@@ -219,9 +92,126 @@ export default function FinanceDashboard() {
                         earningsSummary={earningsSummary}
                         expenses={expenses}
                     />
-                </aside>
-            </div>
-        </ModuleErrorBoundary>
+                </>
+            }
+        >
+            {/* Tabs */}
+            <Tabs defaultValue="earnings" className="flex-1 flex flex-col overflow-hidden">
+                <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
+                    <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
+                        <TabsTrigger value="earnings" data-testid="finance-tab-earnings" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <Clock size={14} /> {t('finance.tabs.earnings')}
+                        </TabsTrigger>
+                        <TabsTrigger value="expenses" data-testid="finance-tab-expenses" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <FileText size={14} /> {t('finance.tabs.expenses')}
+                        </TabsTrigger>
+                        <TabsTrigger value="merch" data-testid="finance-tab-merch" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <Scale size={14} /> {t('finance.tabs.merch')}
+                        </TabsTrigger>
+                        <TabsTrigger value="royalties" data-testid="finance-tab-royalties" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <Briefcase size={14} /> {t('finance.tabs.royalties')}
+                        </TabsTrigger>
+                        <TabsTrigger value="currency" data-testid="finance-tab-currency" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <Globe size={14} /> {t('finance.tabs.currency')}
+                        </TabsTrigger>
+                        <TabsTrigger value="splits" data-testid="finance-tab-splits" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <GitMerge size={14} /> {t('finance.tabs.splits')}
+                        </TabsTrigger>
+                        <TabsTrigger value="onboarding" data-testid="finance-tab-onboarding" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <Users size={14} /> {t('finance.tabs.onboarding')}
+                        </TabsTrigger>
+                        <TabsTrigger value="tax" data-testid="finance-tab-tax" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <FileText size={14} /> {t('finance.tabs.tax')}
+                        </TabsTrigger>
+                        <TabsTrigger value="anomaly" data-testid="finance-tab-anomaly" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <Activity size={14} /> {t('finance.tabs.anomaly')}
+                        </TabsTrigger>
+                        <TabsTrigger value="audit" data-testid="finance-tab-audit" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <Shield size={14} /> {t('finance.tabs.audit')}
+                        </TabsTrigger>
+                        <TabsTrigger value="budget" data-testid="finance-tab-budget" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <DollarSign size={14} /> {t('finance.tabs.budget')}
+                        </TabsTrigger>
+                        <TabsTrigger value="receipts" data-testid="finance-tab-receipts" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <Camera size={14} /> {t('finance.tabs.receipts')}
+                        </TabsTrigger>
+                        <TabsTrigger value="recoupment" data-testid="finance-tab-recoupment" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <Landmark size={14} /> {t('finance.tabs.recoupment')}
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+                    <div className="p-4 md:p-6">
+                        <TabsContent value="earnings" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Earnings">
+                                <EarningsDashboard />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="expenses" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Expenses">
+                                <ExpenseTracker />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="merch" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Merchandise">
+                                <MerchandiseDashboard />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="royalties" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Royalties">
+                                <RoyaltiesPrediction />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="currency" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Currency">
+                                <MultiCurrencyLedger />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="splits" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Splits">
+                                <SplitSheetEscrow />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="onboarding" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Stripe Onboarding">
+                                <StripeConnectOnboarding />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="tax" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Tax">
+                                <TaxFormCollection />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="anomaly" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Anomaly Detection">
+                                <AnomalyDetector />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="audit" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Audit Logs">
+                                <AuditLogsPanel />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="budget" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Budget">
+                                <BudgetVsActuals />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="receipts" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Receipts">
+                                <ReceiptOCR />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="recoupment" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Recoupment">
+                                <LabelDealRecoupment />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                    </div>
+                </div>
+            </Tabs>
+        </ThreePanelDashboard>
     );
 }
 

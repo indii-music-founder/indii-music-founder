@@ -20,7 +20,7 @@ import type {
   AggregatedEarnings,
   DistributorConnection,
   DistributorCredentials,
-  IDistributorAdapter,
+  DistributorAdapter,
   DashboardRelease,
   ReleaseStatus,
 } from './types/distributor';
@@ -47,7 +47,7 @@ import { SymphonicAdapter } from './adapters/SymphonicAdapter';
 import { logger } from '@/utils/logger';
 
 class DistributorServiceImpl {
-  private adapters: Map<DistributorId, IDistributorAdapter> = new Map();
+  private adapters: Map<DistributorId, DistributorAdapter> = new Map();
   private store: typeof distributionStore = distributionStore;
   private circuitBreakers: Map<DistributorId, CircuitBreaker> = new Map();
 
@@ -67,7 +67,7 @@ class DistributorServiceImpl {
   /**
    * Register a distributor adapter
    */
-  registerAdapter(adapter: IDistributorAdapter): void {
+  registerAdapter(adapter: DistributorAdapter): void {
     this.adapters.set(adapter.id, adapter);
     this.circuitBreakers.set(adapter.id, new CircuitBreaker(5, 60000, 2));
     logger.info(`[DistributorService] Registered adapter: ${adapter.name}`);
@@ -83,7 +83,7 @@ class DistributorServiceImpl {
   /**
    * Get a specific adapter
    */
-  getAdapter(distributorId: DistributorId): IDistributorAdapter | undefined {
+  getAdapter(distributorId: DistributorId): DistributorAdapter | undefined {
     return this.adapters.get(distributorId);
   }
 
@@ -142,7 +142,7 @@ class DistributorServiceImpl {
         await credentialService.saveCredentials(distributorId, credentials as Record<string, string | undefined>);
         logger.info(`[DistributorService] Credentials saved for ${distributorId}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(`[DistributorService] Connection failed for ${distributorId}:`, error);
       throw error;
     }
@@ -162,7 +162,7 @@ class DistributorServiceImpl {
       // Remove credentials from secure storage
       await credentialService.deleteCredentials(distributorId);
       logger.info(`[DistributorService] Disconnected from ${adapter.name}`);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(`[DistributorService] Disconnect failed for ${distributorId}:`, error);
       throw error;
     }
@@ -219,7 +219,7 @@ class DistributorServiceImpl {
       validatedMetadata = ExtendedGoldenMetadataSchema.parse(metadata) as ExtendedGoldenMetadata;
       // We'll trust ReleaseAssets type for now as it's complex, but we can add z.any() if needed
       validatedAssets = assets;
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         return {
           isValid: false,
@@ -360,7 +360,7 @@ class DistributorServiceImpl {
 
       return result;
 
-    } catch (error) {
+    } catch (error: unknown) {
       // Handle unexpected errors during submission
       this.store.updateDeploymentStatus(deployment.id, 'failed', {
         errors: [{ code: 'SUBMISSION_ERROR', message: error instanceof Error ? error.message : 'Unknown error', severity: 'error' }]
@@ -397,7 +397,7 @@ class DistributorServiceImpl {
     const promises = targetDistributors.map(async (id) => {
       try {
         results[id] = await this.createRelease(id, metadata, assets);
-      } catch (error) {
+      } catch (error: unknown) {
         results[id] = {
           success: false,
           status: 'failed',

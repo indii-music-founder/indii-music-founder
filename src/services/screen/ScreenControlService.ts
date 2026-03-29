@@ -40,7 +40,7 @@ class ScreenControlService {
         try {
             this.screenDetails = await window.getScreenDetails();
             return true;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Failed to get screen details:", e);
             return false;
         }

@@ -79,23 +79,23 @@ describe('🧬 Helix: Gemini 3 Pro Mutation Integration', () => {
     expect(offspring.length).toBe(2);
 
     for (const child of offspring) {
-        // Must have new ID
-        expect(child.id).not.toBe('agent-1');
-        expect(child.id).not.toBe('agent-2');
-        expect(child.id).not.toBe('agent-3');
+      // Must have new ID
+      expect(child.id).not.toBe('agent-1');
+      expect(child.id).not.toBe('agent-2');
+      expect(child.id).not.toBe('agent-3');
 
-        // Must be mutated by "Gemini"
-        expect(child.systemPrompt).toContain('GEMINI-ENHANCED');
-        expect(child.systemPrompt).toContain('You are a secret agent.');
+      // Must be mutated by "Gemini"
+      expect(child.systemPrompt).toContain('GEMINI-ENHANCED');
+      expect(child.systemPrompt).toContain('You are a secret agent.');
 
-        // Must be valid object
-        expect(child.parameters).toBeDefined();
+      // Must be valid object
+      expect(child.parameters).toBeDefined();
 
-        // Generation must increment
-        expect(child.generation).toBe(1);
+      // Generation must increment
+      expect(child.generation).toBe(1);
 
-        // Lineage must be tracked
-        expect(child.lineage.length).toBe(2);
+      // Lineage must be tracked
+      expect(child.lineage.length).toBe(2);
     }
   });
 
@@ -105,26 +105,26 @@ describe('🧬 Helix: Gemini 3 Pro Mutation Integration', () => {
 
     // Mock Mutation returning a gene with MISSING parameters (Gene Loss)
     mockMutationFn.mockResolvedValueOnce({
-        id: 'bad-gene',
-        name: 'Broken',
-        systemPrompt: 'I lost my params',
-        parameters: null as any, // Simulating schema break
-        generation: 1,
-        lineage: []
+      id: 'bad-gene',
+      name: 'Broken',
+      systemPrompt: 'I lost my params',
+      parameters: null as unknown as Record<string, unknown>, // Simulating schema break
+      generation: 1,
+      lineage: []
     } as AgentGene);
 
     // Then return valid one so loop finishes
     mockMutationFn.mockResolvedValue({
-        ...baseGene,
-        id: 'good-gene',
-        systemPrompt: 'I am valid',
-        parameters: { temperature: 0.9 }
+      ...baseGene,
+      id: 'good-gene',
+      systemPrompt: 'I am valid',
+      parameters: { temperature: 0.9 }
     });
 
     const population: AgentGene[] = [
-        { ...baseGene, id: 'p1', fitness: 1.0 },
-        { ...baseGene, id: 'p2', fitness: 1.0 },
-        { ...baseGene, id: 'p3', fitness: 1.0 }
+      { ...baseGene, id: 'p1', fitness: 1.0 },
+      { ...baseGene, id: 'p2', fitness: 1.0 },
+      { ...baseGene, id: 'p3', fitness: 1.0 }
     ];
 
     engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);

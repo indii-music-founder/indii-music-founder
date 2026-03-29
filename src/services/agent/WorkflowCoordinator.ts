@@ -127,7 +127,7 @@ export class WorkflowCoordinator {
                     userId: context.userId
                 });
             }
-        } catch (e) {
+        } catch (e: unknown) {
             // Ignore error if folder creation fails (might already exist)
         }
     }
@@ -157,7 +157,7 @@ export class WorkflowCoordinator {
             if (onStream) onStream(text);
             return text;
 
-        } catch (e) {
+        } catch (e: unknown) {
             return "DELEGATED_TO_AGENT";
         }
     }

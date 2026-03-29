@@ -97,7 +97,7 @@ export class HandoffService {
             if (snapshot.exists()) {
                 return snapshot.data() as HandoffState;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[HandoffService] Failed to retrieve handoff state', error);
         }
         return null;

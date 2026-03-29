@@ -53,7 +53,7 @@ export const SqueezerTools = {
                         ? `Found ${results.length} matching transcripts for "${args.query}".`
                         : `No matching transcripts found for "${args.query}".`,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Transcript search failed: ${error}`, 'SEARCH_FAILED');
             }
         }
@@ -80,7 +80,7 @@ export const SqueezerTools = {
                         ? `Retrieved current session transcript (${compiledView.length} chars).`
                         : 'No session history available yet.',
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Failed to expand transcript: ${error}`, 'EXPAND_FAILED');
             }
         }

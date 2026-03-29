@@ -162,7 +162,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
             } else {
                 toast.error('QC Issues detected');
             }
-        } catch (err) {
+        } catch (err: unknown) {
             setRunState('error');
             toast.error(err instanceof Error ? err.message : 'QC failed');
         }

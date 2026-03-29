@@ -50,7 +50,7 @@ describe('MemoryService', () => {
         mockDelete = vi.fn().mockResolvedValue(undefined);
 
         // Mock the FirestoreService implementation
-        (FirestoreService as any).mockImplementation(function () {
+        vi.mocked(FirestoreService).mockImplementation(function () {
             return {
                 list: mockList,
                 add: mockAdd,

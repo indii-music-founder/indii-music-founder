@@ -25,7 +25,7 @@ export interface ContractAnalysis {
 }
 
 // Lazy load to break agent dependencies from UI layer if not directly used
-let LegalToolsModule: any = null;
+let LegalToolsModule: typeof import('@/services/agent/tools/LegalTools') | null = null;
 async function getLegalTools() {
     if (!LegalToolsModule) {
         LegalToolsModule = await import('@/services/agent/tools/LegalTools');

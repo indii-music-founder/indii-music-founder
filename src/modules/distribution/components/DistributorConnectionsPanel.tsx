@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { DistributorCard } from './DistributorCard';
 import ConnectDistributorModal from './ConnectDistributorModal';
 import { DistributorService } from '@/services/distribution/DistributorService';
-import type { IDistributorAdapter } from '@/services/distribution/types/distributor';
+import type { DistributorAdapter } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
 
 export const DistributorConnectionsPanel: React.FC = () => {
@@ -16,7 +16,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
     );
     const { connections, loading, error } = distribution;
 
-    const [selectedAdapter, setSelectedAdapter] = useState<IDistributorAdapter | null>(null);
+    const [selectedAdapter, setSelectedAdapter] = useState<DistributorAdapter | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {

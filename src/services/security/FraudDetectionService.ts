@@ -130,7 +130,7 @@ export class FraudDetectionService {
                     };
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[FraudDetection] Failed to query content rules', e);
         }
 
@@ -193,7 +193,7 @@ export class FraudDetectionService {
 
             return { safe: true, fingerprint: fingerprint || undefined };
 
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[FraudDetection] Failed to run Copyright AI filter', e);
             // Fail open so we don't block distribution completely on external API failure,
             // but we log it heavily for manual review.
@@ -223,7 +223,7 @@ export class FraudDetectionService {
                     };
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[FraudDetection] Failed to query broad spectrum rules', e);
         }
 
@@ -233,7 +233,7 @@ export class FraudDetectionService {
     private static async persistAlert(alert: FraudAlert) {
         try {
             await addDoc(collection(db, 'fraud_alerts'), { ...alert, createdAt: Timestamp.now() });
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[FraudDetection] Failed to persist alert', e);
         }
     }

@@ -133,7 +133,7 @@ export class DeliveryService {
                     xml: generationResult.xml
                 };
 
-            } catch (fsError) {
+            } catch (fsError: unknown) {
                 logger.warn('[DeliveryService] FileSystem access not available. Returning XML content only.', fsError);
                 return {
                     success: true,
@@ -142,7 +142,7 @@ export class DeliveryService {
                 };
             }
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[DeliveryService] Failed to generate release package:', error);
             return {
                 success: false,
@@ -321,7 +321,7 @@ export class DeliveryService {
             } else {
                 throw new Error('SFTP delivery is only supported in the Electron desktop environment. Please use the desktop app to distribute releases.');
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[DeliveryService] Delivery failed:', error);
             if (await this.transporter.isConnected()) {
                 await this.transporter.disconnect();

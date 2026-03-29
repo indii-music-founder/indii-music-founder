@@ -38,7 +38,7 @@ export function DoNotSellToggle() {
                     const data = snap.data();
                     setDoNotSell(data?.privacyPreferences?.doNotSell === true);
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[CCPA] Failed to load privacy preferences', error);
             }
         };
@@ -64,7 +64,7 @@ export function DoNotSellToggle() {
 
             // Auto-clear the "saved" indicator after 2 seconds
             setTimeout(() => setSaved(false), 2000);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[CCPA] Failed to save privacy preferences', error);
             // Revert on failure
             setDoNotSell(!newValue);

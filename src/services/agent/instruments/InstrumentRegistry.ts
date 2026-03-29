@@ -53,7 +53,7 @@ class InstrumentRegistry {
         });
       });
       logger.info(`[InstrumentRegistry] Loaded usage stats for ${statsSnap.size} instruments from Firestore`);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.warn('[InstrumentRegistry] Failed to load usage stats from Firestore, using empty defaults:', error);
     }
 
@@ -88,7 +88,7 @@ class InstrumentRegistry {
         },
         { merge: true }
       );
-    } catch (error) {
+    } catch (error: unknown) {
       logger.warn(`[InstrumentRegistry] Failed to persist stats for ${instrumentId}:`, error);
     }
   }
@@ -287,7 +287,7 @@ class InstrumentRegistry {
       }
 
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       stats.failedExecutions++;
       return {
         success: false,

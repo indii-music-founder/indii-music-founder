@@ -57,7 +57,7 @@ export class OfflineStorageService {
             await db.put(STORE_NAME, cachedTrack);
             logger.info(`[OfflineStorage] Successfully cached track ${trackId}.`);
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[OfflineStorage] Failed to cache track ${trackId}:`, error);
             throw error;
         }
@@ -78,7 +78,7 @@ export class OfflineStorageService {
 
             logger.info(`[OfflineStorage] Track ${trackId} not found in local cache.`);
             return null;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[OfflineStorage] Failed to retrieve cached track ${trackId}:`, error);
             return null;
         }
@@ -100,7 +100,7 @@ export class OfflineStorageService {
                 cachedAt: t.cachedAt,
                 mimeType: t.mimeType
             }));
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[OfflineStorage] Failed to retrieve all cached tracks:', error);
             return [];
         }
@@ -114,7 +114,7 @@ export class OfflineStorageService {
             const db = await this.dbPromise;
             await db.delete(STORE_NAME, trackId);
             logger.info(`[OfflineStorage] Removed track ${trackId} from cache.`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[OfflineStorage] Failed to remove track ${trackId}:`, error);
             throw error;
         }

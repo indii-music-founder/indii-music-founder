@@ -7,14 +7,14 @@ import { type ValidAgentId } from '../types';
 
 // Mock dependencies
 vi.mock('../AgentService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     agentService: {
         runAgent: vi.fn().mockResolvedValue({ role: 'model', text: 'Task executing', timestamp: Date.now() })
     }
 }));
 
 vi.mock('../registry', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     agentRegistry: {
         getAsync: vi.fn()
     }
@@ -39,7 +39,7 @@ vi.mock('@/services/firebase', () => ({
 const mockGetDocs = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     collection: vi.fn(),
     addDoc: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
     query: vi.fn(),
@@ -47,7 +47,7 @@ vi.mock('firebase/firestore', () => ({
     onSnapshot: vi.fn(),
     updateDoc: vi.fn().mockResolvedValue({}),
     doc: vi.fn(),
-    getDocs: (...args: any[]) => mockGetDocs(...args)
+    getDocs: (...args: unknown[]) => mockGetDocs(...args)
 }));
 
 describe('ProactiveService', () => {
@@ -75,7 +75,7 @@ describe('ProactiveService', () => {
                 {
                     id: 'task-1',
                     data: () => ({
-  serverTimestamp: vi.fn(),
+                        serverTimestamp: vi.fn(),
                         agentId: 'marketing',
                         task: 'Follow up',
                         triggerType: 'schedule',
@@ -88,10 +88,10 @@ describe('ProactiveService', () => {
         });
 
         // Mock the agent registry to return a specific agent config for 'marketing'
-        (agentRegistry.getAsync as any).mockImplementation(async (agentId: string) => {
+        vi.mocked(agentRegistry.getAsync).mockImplementation(async (agentId: string) => {
             if (agentId === 'marketing') {
                 return {
-    serverTimestamp: vi.fn(),
+                    serverTimestamp: vi.fn(),
                     id: 'marketing',
                     name: 'Marketing Agent',
                     description: 'Agent for marketing tasks',
@@ -99,7 +99,7 @@ describe('ProactiveService', () => {
                     category: 'specialist',
                     color: 'bg-blue-500',
                     tools: []
-                };
+                } as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>;
             }
             return undefined;
         });
@@ -121,7 +121,7 @@ describe('ProactiveService', () => {
                 {
                     id: 'sub-1',
                     data: () => ({
-  serverTimestamp: vi.fn(),
+                        serverTimestamp: vi.fn(),
                         agentId: 'researcher',
                         task: 'Analyze result',
                         triggerType: 'event',
@@ -134,10 +134,10 @@ describe('ProactiveService', () => {
         });
 
         // Mock the agent registry to return a specific agent config for 'researcher'
-        (agentRegistry.getAsync as any).mockImplementation(async (agentId: string) => {
+        vi.mocked(agentRegistry.getAsync).mockImplementation(async (agentId: string) => {
             if (agentId === 'researcher') {
                 return {
-    serverTimestamp: vi.fn(),
+                    serverTimestamp: vi.fn(),
                     id: 'researcher',
                     name: 'Researcher Agent',
                     description: 'Can analyze results',
@@ -146,7 +146,7 @@ describe('ProactiveService', () => {
                     color: 'bg-green-500',
                     tools: [],
                     functions: {}
-                };
+                } as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>;
             }
             return undefined;
         });
@@ -156,7 +156,7 @@ describe('ProactiveService', () => {
 
         // Wait for it to be called
         await vi.waitFor(() => {
-            if ((agentService.runAgent as any).mock.calls.length === 0) {
+            if (vi.mocked(agentService.runAgent).mock.calls.length === 0) {
                 throw new Error('Not called yet');
             }
         }, { timeout: 2000 });

@@ -96,7 +96,7 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
                 return platformsCache;
             }
         }
-    } catch (error) {
+    } catch (error: unknown) {
         // Firestore load failed - will use fallback
     }
 

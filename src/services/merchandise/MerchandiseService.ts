@@ -55,7 +55,7 @@ export const MerchandiseService = {
             });
 
             return products;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[MerchandiseService] Failed to load catalog:', error);
             return [];
         }

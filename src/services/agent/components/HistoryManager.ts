@@ -135,7 +135,7 @@ ${formattedRecent}
             }, { merge: true });
 
             Logger.info('HistoryManager', `Persisted transcript (${history.length} turns) for session ${sessionId}`);
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.warn('HistoryManager', 'Failed to persist transcript (non-blocking):', error);
         }
     }
@@ -183,7 +183,7 @@ ${formattedRecent}
             });
 
             return results.slice(0, limit);
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.warn('HistoryManager', 'Failed to search transcripts:', error);
             return [];
         }

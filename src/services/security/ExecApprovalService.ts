@@ -277,7 +277,7 @@ class ExecApprovalService {
           // Non-critical: localStorage is the source of truth
         });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error('[ExecApproval] Failed to persist approvals', err);
     }
   }

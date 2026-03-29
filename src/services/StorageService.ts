@@ -99,7 +99,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                         Logger.info('StorageService', 'File available at', downloadURL);
                         resolve(downloadURL);
-                    } catch (e) {
+                    } catch (e: unknown) {
                         Logger.error('StorageService', 'Failed to get download URL', e);
                         events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to retrieve file URL' });
                         reject(e);
@@ -113,7 +113,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         try {
             const storageRef = ref(storage, path);
             await deleteObject(storageRef);
-        } catch (error) {
+        } catch (error: unknown) {
             // Silently fail storage cleanup if file missing
         }
     }
@@ -148,7 +148,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     if (thumbnailUrl) {
                         logger.info(`[StorageService] Video thumbnail: ${thumbnailUrl}`);
                     }
-                } catch (uploadError) {
+                } catch (uploadError: unknown) {
                     logger.warn('[StorageService] Video blob upload failed, saving blob URL as fallback:', uploadError);
                     // Still save the blob: URL — at least the current session can play it
                 }
@@ -175,7 +175,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     imageUrl = result.url;
                     thumbnailUrl = result.thumbnailUrl;
                     logger.debug(`[StorageService] Image saved (${result.strategy}):`, item.id);
-                } catch (error) {
+                } catch (error: unknown) {
                     logger.error('[StorageService] Cloud upload failed:', error);
                     // Critical protection: If it's large and upload failed, we CANNOT save it as-is
                     if (isLarge) {

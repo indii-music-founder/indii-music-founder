@@ -49,7 +49,7 @@ export class FieldContactService {
 
             logger.info(`[FieldContactService] Added contact "${input.name}" (${docRef.id})`);
             return docRef.id;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[FieldContactService] Failed to add contact:', error);
             throw error;
         }
@@ -70,7 +70,7 @@ export class FieldContactService {
                 id: d.id,
                 ...d.data(),
             })) as FieldContact[];
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[FieldContactService] Failed to get contacts:', error);
             throw error;
         }
@@ -85,7 +85,7 @@ export class FieldContactService {
                 doc(db, 'users', userId, 'fieldContacts', contactId)
             );
             logger.info(`[FieldContactService] Deleted contact ${contactId}`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[FieldContactService] Failed to delete contact:', error);
             throw error;
         }

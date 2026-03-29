@@ -168,7 +168,7 @@ registerRoute(
 
             // Redirect back to the app with a query param indicating a share action
             return Response.redirect('/?action=share-target', 303);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[ServiceWorker] Share target error:', error);
             // Fallback redirect even on error
             return Response.redirect('/?error=share_failed', 303);

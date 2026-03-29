@@ -118,7 +118,7 @@ export class UnitedMastersAdapter extends BaseDistributorAdapter {
                             }
                         };
                     }
-                } catch (apiErr) {
+                } catch (apiErr: unknown) {
                     logger.warn('[UnitedMasters] API delivery failed:', apiErr);
                 }
             }
@@ -134,7 +134,7 @@ export class UnitedMastersAdapter extends BaseDistributorAdapter {
                     note: 'Add UnitedMasters API key in Settings > Integrations for automatic delivery.',
                 }
             };
-        } catch (e) {
+        } catch (e: unknown) {
             return {
                 success: false, status: 'failed',
                 errors: [{ code: 'SUBMISSION_FAILED', message: e instanceof Error ? e.message : 'Unknown error' }]

@@ -101,7 +101,7 @@ export class ImageGenerationService {
                     ? await subscriptionService.getSubscription(userId)
                     : await subscriptionService.getCurrentSubscription();
                 tier = sub.tier;
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('Failed to fetch tier for QuotaExceededError, defaulting to free', e);
             }
 
@@ -174,7 +174,7 @@ export class ImageGenerationService {
                         });
                         finalUrl = compressed.dataUri;
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn('Failed to upload to cloud storage, falling back to compressed data URI:', e);
                     try {
                         const { CloudStorageService } = await import('@/services/CloudStorageService');
@@ -184,7 +184,7 @@ export class ImageGenerationService {
                             quality: 0.6
                         });
                         finalUrl = compressed.dataUri;
-                    } catch (compressionError) {
+                    } catch (compressionError: unknown) {
                         logger.warn('Compression failed, using original size:', compressionError);
                     }
                 }
@@ -237,7 +237,7 @@ export class ImageGenerationService {
                         resolution: options.resolution
                     });
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 // Usage tracking failure should not block generation
             }
 
@@ -372,7 +372,7 @@ export class ImageGenerationService {
                         };
                     }
                     return null;
-                } catch (error) {
+                } catch (error: unknown) {
                     logger.error('Individual Batch Remix Error:', error);
                     return null;
                 }
@@ -382,7 +382,7 @@ export class ImageGenerationService {
             parallelResults.forEach(res => {
                 if (res) results.push(res);
             });
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('Batch Remix Error:', e);
             throw e;
         }

@@ -32,7 +32,7 @@ export const BankPanel: React.FC = () => {
             const result = await distributionService.calculateWithholding(userId, parseFloat(amount));
             setTaxReport(result);
             success('Tax compliance verified.');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Tax calc failed:', error);
             toastError('Tax verification failed.');
         } finally {
@@ -54,7 +54,7 @@ export const BankPanel: React.FC = () => {
             const result = await distributionService.executeWaterfall(data);
             setWaterfallReport(result);
             success('Revenue waterfall executed.');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Waterfall failed:', error);
             toastError('Waterfall execution failed.');
         } finally {

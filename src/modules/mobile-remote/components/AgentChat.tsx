@@ -201,7 +201,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
                     }
                 }
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AgentChat] Failed to send command:', error);
             setMessages(prev => [...prev, {
                 id: `err-${Date.now()}`,

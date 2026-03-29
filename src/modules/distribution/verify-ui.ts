@@ -15,7 +15,7 @@ try {
     logger.info('✅ DistributionDashboard imported successfully');
 
     logger.info('✨ UI Component Verification Passed (Static Analysis)');
-} catch (error) {
+} catch (error: unknown) {
     logger.error('❌ Verification Failed:', error);
     process.exit(1);
 }

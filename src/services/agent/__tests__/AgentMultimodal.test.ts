@@ -75,7 +75,7 @@ describe('Agent Multimodal Support', () => {
             }
         };
 
-        (GenAI.generateContent as any).mockResolvedValue(mockResponse);
+        vi.mocked(GenAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
         const attachments = [
             { mimeType: 'image/jpeg', base64: 'base64-data-here' }

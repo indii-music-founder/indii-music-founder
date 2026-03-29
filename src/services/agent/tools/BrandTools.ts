@@ -190,7 +190,7 @@ export const BrandTools = {
             return toolSuccess({
                 config: args
             }, `Successfully saved the brand kit for "${args.name}" to Firestore.`);
-        } catch (e) {
+        } catch (e: unknown) {
             const error = e as Error;
             logger.error('[BrandTools] Save brand kit failed:', error);
             return toolError(`Failed to save brand kit: ${error.message}`);
@@ -216,7 +216,7 @@ export const BrandTools = {
                 exists: true,
                 config: snap.data()
             }, `Successfully loaded the current brand kit.`);
-        } catch (e) {
+        } catch (e: unknown) {
             const error = e as Error;
             logger.error('[BrandTools] Load brand kit failed:', error);
             return toolError(`Failed to load brand kit: ${error.message}`);

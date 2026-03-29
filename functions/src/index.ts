@@ -36,10 +36,12 @@ admin.initializeApp();
 
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
+export { createStripeConnectAccount } from './stripe/createStripeConnectAccount';
 
 // Stripe Split Escrow (Item 135)
 export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
 
+export { requestTaxForms } from './stripe/taxForms';
 
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
@@ -49,6 +51,9 @@ export { processDDEXAck } from './distribution/processDDEXAck';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';
+
+export { sendForDigitalSignature } from './legal/digitalSignature';
+export { verifyMechanicalLicense } from './legal/mechanicalLicense';
 
 // Legal Functions (Item 242: PandaDoc Proxy — API key secured server-side)
 export {
@@ -358,10 +363,11 @@ export const triggerVideoJob = functions
  */
 export const executeVideoJob = functions
     .region("us-west1")
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, 
+    .runWith({
+        enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 540, // 9 minutes
         memory: "2GB"
-     })
+    })
     .firestore.document("videoJobs/{jobId}")
     .onCreate(async (snapshot, context) => {
         const jobId = context.params.jobId;
@@ -675,10 +681,11 @@ export const renderVideo = functions
  * to execute steps.
  */
 export const inngestApi = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, 
+    .runWith({
+        enforceAppCheck: ENFORCE_APP_CHECK,
         secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
         timeoutSeconds: 540 // 9 minutes
-     })
+    })
 
     .https.onRequest(async (req, res) => {
         const inngestClient = getInngestClient();
@@ -717,7 +724,7 @@ export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
 export const generateSpeech = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB"  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context): Promise<{ audioContent: string }> => {
         if (!context.auth) {
@@ -782,10 +789,11 @@ export const generateSpeech = functions
     });
 
 export const generateContentStream = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, 
+    .runWith({
+        enforceAppCheck: ENFORCE_APP_CHECK,
         secrets: [geminiApiKey],
         timeoutSeconds: 300
-     })
+    })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
             if (req.method !== 'POST') {
@@ -867,10 +875,11 @@ export const generateContentStream = functions
     });
 
 export const ragProxy = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, 
+    .runWith({
+        enforceAppCheck: ENFORCE_APP_CHECK,
         secrets: [geminiApiKey],
         timeoutSeconds: 60
-     })
+    })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
             // Verify Authentication
@@ -971,7 +980,7 @@ import * as marketingService from './lib/marketing';
  * List GKE Clusters
  */
 export const listGKEClusters = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 30, memory: '256MB'  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
         requireAdmin(context);
 
@@ -1005,7 +1014,7 @@ export const createInfluencerBounty = marketingService.createInfluencerBounty;
  * Get GKE Cluster Status
  */
 export const getGKEClusterStatus = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 30, memory: '256MB'  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (data: { location: string; clusterName: string }, context) => {
         requireAdmin(context);
 
@@ -1025,7 +1034,7 @@ export const getGKEClusterStatus = functions
  * Scale GKE Node Pool
  */
 export const scaleGKENodePool = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 60, memory: '256MB'  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: '256MB' })
     .https.onCall(async (data: { location: string; clusterName: string; nodePoolName: string; nodeCount: number }, context) => {
         requireAdmin(context);
 
@@ -1045,7 +1054,7 @@ export const scaleGKENodePool = functions
  * List GCE Instances
  */
 export const listGCEInstances = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 30, memory: '256MB'  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
         requireAdmin(context);
 
@@ -1065,7 +1074,7 @@ export const listGCEInstances = functions
  * Restart GCE Instance
  */
 export const restartGCEInstance = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 60, memory: '256MB'  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: '256MB' })
     .https.onCall(async (data: { zone: string; instanceName: string }, context) => {
         requireAdmin(context);
 
@@ -1089,7 +1098,7 @@ export const restartGCEInstance = functions
  * Execute BigQuery Query
  */
 export const executeBigQueryQuery = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 120, memory: '512MB'  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: '512MB' })
     .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
         requireAdmin(context);
 
@@ -1105,7 +1114,7 @@ export const executeBigQueryQuery = functions
  * Get BigQuery Table Schema
  */
 export const getBigQueryTableSchema = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 30, memory: '256MB'  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (data: { datasetId: string; tableId: string }, context) => {
         requireAdmin(context);
 
@@ -1125,7 +1134,7 @@ export const getBigQueryTableSchema = functions
  * List BigQuery Datasets
  */
 export const listBigQueryDatasets = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 30, memory: '256MB'  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
         requireAdmin(context);
 
@@ -1182,7 +1191,7 @@ export {
  * (images/audio stored in Cloud Storage) - those URLs are included.
  */
 export const exportUserData = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 120, memory: "512MB"  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (_data, context): Promise<Record<string, unknown>> => {
         if (!context.auth) {
@@ -1249,7 +1258,7 @@ export const exportUserData = functions
  * Actual deletion happens asynchronously via a scheduled function.
  */
 export const requestAccountDeletion = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 120, memory: "256MB"  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: "256MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (_data, context): Promise<{ success: boolean; deletedDocs: number; errors: string[]; deletedAt: string }> => {
         if (!context.auth) {
@@ -1320,7 +1329,7 @@ export const requestAccountDeletion = functions
  * Returns service status and basic diagnostics.
  */
 export const healthCheck = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 60, memory: "256MB"  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         const status: Record<string, unknown> = {
             status: "ok",
@@ -1350,7 +1359,7 @@ export const healthCheck = functions
  */
 export const healthCheckWest1 = functions
     .region("us-west1")
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK,  timeoutSeconds: 60, memory: "256MB"  })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         res.status(200).json({
             status: "ok",

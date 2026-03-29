@@ -81,7 +81,7 @@ export default function WorkflowLab() {
                 await engine.saveWorkflow(currentWorkflowId, workflowName, 'Auto-saved workflow', viewport);
 
                 setSaveStatus('saved');
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error("Auto-save failed:", error);
                 setSaveStatus('unsaved'); // Revert to unsaved on error
             }
@@ -105,7 +105,7 @@ export default function WorkflowLab() {
                     setEdges(savedEdges);
                     setWorkflowName(name);
                     setSaveStatus('unsaved'); // It's a draft, so it's unsaved in cloud
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.error("Failed to load draft", e);
                 }
             }
@@ -157,7 +157,7 @@ export default function WorkflowLab() {
         try {
             const engine = new WorkflowEngine(nodes, edges, setNodes);
             await engine.run();
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Workflow failed", e);
         } finally {
             setIsRunning(false);
@@ -176,7 +176,7 @@ export default function WorkflowLab() {
             setEdges(workflow.edges);
             setShowGenerator(false);
             setGeneratorPrompt('');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to generate workflow:", error);
             toastError('Failed to generate workflow. Please try again.');
         } finally {
@@ -228,7 +228,7 @@ export default function WorkflowLab() {
             );
             setCurrentWorkflowId(id);
             toastSuccess('Workflow saved.');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to save workflow:", error);
             toastError(`Failed to save workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
@@ -246,7 +246,7 @@ export default function WorkflowLab() {
         try {
             const workflows = await getUserWorkflows(currentUser.uid);
             setSavedWorkflows(workflows);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to load workflows:", error);
         }
     };

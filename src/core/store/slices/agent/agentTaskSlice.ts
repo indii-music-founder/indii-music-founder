@@ -87,7 +87,7 @@ export function buildAgentTaskState(
                     savedAt: serverTimestamp(),
                 });
                 logger.info(`[AgentSlice] Persisted ${pendingTasks.length} queue tasks to Firestore`);
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[AgentSlice] Queue persistence failed:', err);
             }
         },
@@ -119,7 +119,7 @@ export function buildAgentTaskState(
 
                 // Clean up the persisted queue after loading
                 await deleteDoc(queueRef);
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[AgentSlice] Queue resume failed:', err);
             }
         },
@@ -141,7 +141,7 @@ export function buildAgentTaskState(
                 });
 
                 set({ availableAgents: validatedAgents });
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[AgentSlice] Failed to load agents:', error);
                 set({ agentsError: (error as Error).message || 'Failed to load agents' });
             } finally {

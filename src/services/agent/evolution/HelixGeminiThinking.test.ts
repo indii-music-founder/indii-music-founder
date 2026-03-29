@@ -106,12 +106,12 @@ describe('🧬 Helix: Gemini 3 Pro Thinking Budget Evolution', () => {
     // Check non-elites
     const offspring = nextGen.slice(1);
     offspring.forEach(child => {
-        // Must be mutated
-        expect(child.systemPrompt).toContain('[DEEPER THOUGHT]');
-        // Budget should be higher than min parent (1024)
-        expect(child.parameters.thinkingBudget).toBeGreaterThan(1024);
-        // Should be a valid number
-        expect(typeof child.parameters.thinkingBudget).toBe('number');
+      // Must be mutated
+      expect(child.systemPrompt).toContain('[DEEPER THOUGHT]');
+      // Budget should be higher than min parent (1024)
+      expect(child.parameters.thinkingBudget).toBeGreaterThan(1024);
+      // Should be a valid number
+      expect(typeof child.parameters.thinkingBudget).toBe('number');
     });
   });
 
@@ -138,8 +138,8 @@ describe('🧬 Helix: Gemini 3 Pro Thinking Budget Evolution', () => {
 
     // Mock Mutation to modify IN PLACE (Dangerous!)
     mockMutationFn.mockImplementation(async (g) => {
-        g.parameters.thinkingBudget = 999999; // Corrupt the budget
-        return g;
+      g.parameters.thinkingBudget = 999999; // Corrupt the budget
+      return g;
     });
 
     // Evolve
@@ -167,16 +167,16 @@ describe('🧬 Helix: Gemini 3 Pro Thinking Budget Evolution', () => {
 
     // Mock Mutation to fail then succeed
     mockMutationFn
-        .mockResolvedValueOnce({
-            ...baseGene,
-            id: 'BadChild',
-            parameters: { thinkingBudget: "Maximum" as any } // Invalid
-        })
-        .mockResolvedValueOnce({
-            ...baseGene,
-            id: 'GoodChild',
-            parameters: { thinkingBudget: 2048 } // Valid
-        });
+      .mockResolvedValueOnce({
+        ...baseGene,
+        id: 'BadChild',
+        parameters: { thinkingBudget: "Maximum" as unknown as number } // Invalid
+      })
+      .mockResolvedValueOnce({
+        ...baseGene,
+        id: 'GoodChild',
+        parameters: { thinkingBudget: 2048 } // Valid
+      });
 
     // Mock Fitness to reject non-numbers (Engine allows object, but Fitness logic defines "validity" here)
     // Actually, EvolutionEngine doesn't validate 'parameters' content beyond being an object.
@@ -190,8 +190,8 @@ describe('🧬 Helix: Gemini 3 Pro Thinking Budget Evolution', () => {
     // However, we can assert that the SYSTEM survives this "bad gene" entering the pool.
 
     const population: AgentGene[] = [
-        { ...baseGene, id: 'P1', fitness: 10 },
-        { ...baseGene, id: 'P2', fitness: 10 }
+      { ...baseGene, id: 'P1', fitness: 10 },
+      { ...baseGene, id: 'P2', fitness: 10 }
     ];
 
     const nextGen = await engine.evolve(population);

@@ -145,7 +145,7 @@ export function buildCreativeHistoryState(
                                 useStore.getState().registerSubscription('creative_history', unsubscribe);
                             });
 
-                        } catch (err) {
+                        } catch (err: unknown) {
                             logger.error('[CreativeSlice] Failed to initialize history:', err);
                             resolve();
                         }

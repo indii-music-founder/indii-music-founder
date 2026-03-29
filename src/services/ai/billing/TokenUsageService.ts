@@ -83,7 +83,7 @@ export class TokenUsageService {
             }
 
             return true;
-        } catch (error) {
+        } catch (error: unknown) {
             if (error instanceof AppException) throw error;
             // Fail open on DB error to avoid blocking service
             return true;
@@ -131,7 +131,7 @@ export class TokenUsageService {
                     expiresAt: serverTimestamp() // In a real setup, we'd want TTL, but Firestore TTL is background
                 });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             if (error instanceof AppException) throw error;
             // Fail open on DB error to avoid blocking legitimate user service during outages
             logger.error('Rate limit check failed (failing open):', error);

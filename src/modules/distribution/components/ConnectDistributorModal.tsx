@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { DistributorId, IDistributorAdapter } from '@/services/distribution/types/distributor';
+import { DistributorId, DistributorAdapter } from '@/services/distribution/types/distributor';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { X, Lock, Save, Loader2, AlertCircle, Globe, Terminal, ShieldCheck, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -9,7 +9,7 @@ import { logger } from '@/utils/logger';
 interface ConnectDistributorModalProps {
     isOpen: boolean;
     onClose: () => void;
-    adapter: IDistributorAdapter | undefined;
+    adapter: DistributorAdapter | undefined;
     onSuccess: () => void;
 }
 
@@ -64,7 +64,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
 
             onSuccess();
             onClose();
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Operation failed:", err);
             setError(err instanceof Error ? err.message : 'Authentication failed. Please check your credentials.');
         } finally {

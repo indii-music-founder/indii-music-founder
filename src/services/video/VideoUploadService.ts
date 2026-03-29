@@ -52,7 +52,7 @@ export class VideoUploadService {
                 Logger.warn(TAG, `Upload blocked by quota: ${quotaCheck.reason}`);
                 throw new Error(quotaCheck.reason || 'Storage quota exceeded');
             }
-        } catch (quotaErr) {
+        } catch (quotaErr: unknown) {
             // Only re-throw if it's our quota error (has a reason message)
             if (quotaErr instanceof Error && quotaErr.message.includes('quota') || quotaErr instanceof Error && quotaErr.message.includes('exceed')) {
                 throw quotaErr;
@@ -105,7 +105,7 @@ export class VideoUploadService {
                                 destinationPath,
                                 uploadTask.snapshot.ref.parent?.fullPath
                             );
-                        } catch (thumbErr) {
+                        } catch (thumbErr: unknown) {
                             Logger.warn(TAG, 'Thumbnail generation failed (non-blocking):', thumbErr);
                         }
 
@@ -116,7 +116,7 @@ export class VideoUploadService {
                             contentType: uploadMetadata.contentType,
                             thumbnailUrl,
                         });
-                    } catch (e) {
+                    } catch (e: unknown) {
                         Logger.error(TAG, 'Failed to get download URL:', e);
                         reject(e);
                     }
@@ -211,7 +211,7 @@ export class VideoUploadService {
                             const thumbUrl = await getDownloadURL(thumbRef);
                             Logger.info(TAG, `Thumbnail uploaded: ${thumbUrl}`);
                             resolve(thumbUrl);
-                        } catch (uploadErr) {
+                        } catch (uploadErr: unknown) {
                             Logger.warn(TAG, 'Thumbnail upload failed:', uploadErr);
                             resolve(undefined);
                         }

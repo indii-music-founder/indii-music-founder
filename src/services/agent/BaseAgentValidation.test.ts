@@ -85,7 +85,7 @@ describe('BaseAgent Tool Validation', () => {
         const { GenAI } = await import('@/services/ai/GenAI');
 
         // Setup AI mock to call the tool
-        (GenAI.generateContent as any).mockResolvedValueOnce({
+        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => 'Calling tool...',
                 functionCalls: () => [{
@@ -96,13 +96,13 @@ describe('BaseAgent Tool Validation', () => {
                     }
                 }]
             }
-        });
+        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
-        (GenAI.generateContent as any).mockResolvedValueOnce({
+        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => 'Tool execution confirmed.'
             }
-        });
+        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
         const response = await agent.execute('Task');
 
@@ -113,7 +113,7 @@ describe('BaseAgent Tool Validation', () => {
     it('should block tool execution when args are invalid', async () => {
         const { GenAI } = await import('@/services/ai/GenAI');
 
-        (GenAI.generateContent as any).mockResolvedValueOnce({
+        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => 'Calling tool with invalid args...',
                 functionCalls: () => [{
@@ -124,13 +124,13 @@ describe('BaseAgent Tool Validation', () => {
                     }
                 }]
             }
-        });
+        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
-        (GenAI.generateContent as any).mockResolvedValueOnce({
+        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
             response: {
                 text: () => 'I see there was a validation error.'
             }
-        });
+        } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
         const response = await agent.execute('Task');
 

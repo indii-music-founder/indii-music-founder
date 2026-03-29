@@ -189,7 +189,7 @@ describe("ImageGenerationService", () => {
         await ImageGeneration.generateImages({
           prompt: "A test image",
         });
-      } catch (e) {
+      } catch (e: unknown) {
         expect(e).toBeDefined();
       }
     });

@@ -49,7 +49,7 @@ export class FeatureFlagService {
         try {
             const flags = await this.getAllFlags();
             return flags[flagName] ?? DEFAULT_FLAGS[flagName] ?? false;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn(`[FeatureFlags] Failed to check flag "${flagName}", using default`, error);
             return DEFAULT_FLAGS[flagName] ?? false;
         }
@@ -79,7 +79,7 @@ export class FeatureFlagService {
 
             cacheTimestamp = now;
             return flagCache;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[FeatureFlags] Firestore unreachable, using defaults', error);
             return { ...DEFAULT_FLAGS };
         }

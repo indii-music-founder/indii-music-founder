@@ -49,7 +49,7 @@ export const useRider = () => {
                 completed: false
             });
             toast.success("Rider item added");
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to add rider item", error);
             toast.error("Failed to add item");
         }
@@ -58,7 +58,7 @@ export const useRider = () => {
     const toggleItem = async (id: string, completed: boolean) => {
         try {
             await RiderService.updateItem(id, { completed });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to toggle item", error);
             toast.error("Failed to update status");
         }
@@ -68,7 +68,7 @@ export const useRider = () => {
         try {
             await RiderService.deleteItem(id);
             toast.success("Item removed");
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to delete item", error);
             toast.error("Failed to remove item");
         }

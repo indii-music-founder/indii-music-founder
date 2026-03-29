@@ -108,7 +108,7 @@ export class AlwaysOnMemoryEngine {
                     results.push(result.values || []);
                 }
                 return results;
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[AlwaysOnMemoryEngine] Batch embedding failed:', error);
                 throw error;
             }
@@ -148,7 +148,7 @@ export class AlwaysOnMemoryEngine {
     private async getEmbedding(text: string): Promise<number[]> {
         try {
             return await this.embeddingBatcher.add(text);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Embedding failed (non-blocking):', error);
             return [];
         }
@@ -243,7 +243,7 @@ export class AlwaysOnMemoryEngine {
             let existingMemories: AlwaysOnMemory[] = [];
             try {
                 existingMemories = await service.list();
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[AlwaysOnMemoryEngine] List for dedup failed (non-blocking):', e);
             }
 
@@ -300,7 +300,7 @@ export class AlwaysOnMemoryEngine {
             logger.info(`[AlwaysOnMemoryEngine] 📥 Ingested memory #${memoryId}: ${summary?.slice(0, 60)}...`);
             this.isIngesting = false;
             return memoryId;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AlwaysOnMemoryEngine] Ingestion failed:', error);
             await this.updateIngestionEvent(userId, eventId, 'failed', undefined, String(error));
             this.isIngesting = false;
@@ -364,7 +364,7 @@ export class AlwaysOnMemoryEngine {
             logger.info(`[AlwaysOnMemoryEngine] 🖼️ Ingested ${mediaType}: ${fileName}`);
             this.isIngesting = false;
             return memoryId;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[AlwaysOnMemoryEngine] File ingestion failed for ${fileName}:`, error);
             await this.updateIngestionEvent(userId, eventId, 'failed', undefined, String(error));
             this.isIngesting = false;
@@ -385,7 +385,7 @@ export class AlwaysOnMemoryEngine {
             let allMemories: AlwaysOnMemory[] = [];
             try {
                 allMemories = await memoryService.list();
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[AlwaysOnMemoryEngine] Failed to list memories for query:', e);
             }
 
@@ -401,7 +401,7 @@ export class AlwaysOnMemoryEngine {
             let insights: ConsolidationInsight[] = [];
             try {
                 insights = await insightService.list();
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[AlwaysOnMemoryEngine] Failed to list insights (non-blocking):', e);
             }
 
@@ -442,7 +442,7 @@ Be thorough but concise. Always cite your sources.`;
             );
 
             return answer;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AlwaysOnMemoryEngine] Query failed:', error);
             return 'Sorry, I encountered an error while searching my memories. Please try again.';
         }
@@ -466,7 +466,7 @@ Be thorough but concise. Always cite your sources.`;
             let allMemories: AlwaysOnMemory[] = [];
             try {
                 allMemories = await service.list();
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[AlwaysOnMemoryEngine] Failed to list memories for consolidation:', e);
                 this.isConsolidating = false;
                 return null;
@@ -536,7 +536,7 @@ Be thorough but concise. Always cite your sources.`;
             logger.info(`[AlwaysOnMemoryEngine] 🔄 Consolidation complete. Insight: ${insightData.insight.slice(0, 80)}...`);
 
             return { id: insightId, ...insightData } as ConsolidationInsight;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AlwaysOnMemoryEngine] Consolidation failed:', error);
             this.isConsolidating = false;
             return null;
@@ -576,7 +576,7 @@ Be thorough but concise. Always cite your sources.`;
             // (Placeholder for deadline scanner against Compute Allocations)
 
             logger.info(`[AlwaysOnMemoryEngine] ✅ Neural Sync complete for indiiOD.`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AlwaysOnMemoryEngine] Neural Sync failed:', error);
         }
     }
@@ -591,7 +591,7 @@ Be thorough but concise. Always cite your sources.`;
         let memories: AlwaysOnMemory[] = [];
         try {
             memories = await service.list();
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Failed to list memories for tier promotion:', e);
             return 0;
         }
@@ -649,7 +649,7 @@ Be thorough but concise. Always cite your sources.`;
         let memories: AlwaysOnMemory[] = [];
         try {
             memories = await service.list();
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Failed to list memories for decay:', e);
             return 0;
         }
@@ -709,7 +709,7 @@ Be thorough but concise. Always cite your sources.`;
         let memories: AlwaysOnMemory[] = [];
         try {
             memories = await service.list();
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Failed to list memories:', e);
             return [];
         }
@@ -750,7 +750,7 @@ Be thorough but concise. Always cite your sources.`;
     async getInsights(userId: string): Promise<ConsolidationInsight[]> {
         try {
             return await this.getInsightService(userId).list();
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Failed to list insights:', e);
             return [];
         }
@@ -791,7 +791,7 @@ Be thorough but concise. Always cite your sources.`;
         let memories: AlwaysOnMemory[] = [];
         try {
             memories = await service.list();
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Failed to list memories for status:', e);
         }
 
@@ -799,7 +799,7 @@ Be thorough but concise. Always cite your sources.`;
         try {
             const insights = await this.getInsightService(userId).list();
             insightCount = insights.length;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Failed to count insights:', e);
         }
 
@@ -842,7 +842,7 @@ Be thorough but concise. Always cite your sources.`;
                 AI_MODELS.TEXT.FAST,
                 { temperature: 0.2 } as Record<string, unknown>,
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Summary generation failed, using truncation:', error);
             return text.slice(0, 300);
         }
@@ -926,7 +926,7 @@ Be thorough but concise. Always cite your sources.`;
                 status,
                 createdAt: Timestamp.now(),
             } as Omit<IngestionEvent, 'id'>);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Failed to log ingestion event (non-blocking):', e);
             return '';
         }
@@ -948,7 +948,7 @@ Be thorough but concise. Always cite your sources.`;
                 errorMessage,
                 processedAt: Timestamp.now(),
             } as Partial<IngestionEvent>);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[AlwaysOnMemoryEngine] Failed to update ingestion event (non-blocking):', e);
         }
     }

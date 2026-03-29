@@ -114,7 +114,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                 distributorReleaseId: releaseId
             };
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Symphonic] Delivery failed:', error);
             return {
                 success: false,

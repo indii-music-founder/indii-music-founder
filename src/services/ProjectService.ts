@@ -35,7 +35,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
             try {
                 const demoProject = await this.createProject('Demo Project', 'creative', orgId);
                 return [demoProject];
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.error("Failed to seed demo project", e);
                 return [];
             }
@@ -93,7 +93,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
             await knowledgeBaseService.uploadFiles(dt.files, id);
             logger.info(`[ProjectService] Seeded branding guidelines for project ${id}`);
 
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("[ProjectService] Failed to seed branding guidelines:", e);
             // Don't fail project creation just because seeding failed
         }

@@ -143,7 +143,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     toast.success("Generation queued in background!");
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Video generation failed:", e);
             toast.error("Video generation failed");
             useVideoEditorStore.getState().setStatus('failed');

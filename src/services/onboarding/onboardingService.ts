@@ -306,7 +306,7 @@ ALWAYS preserve what they're NOT changing.`;
             text,
             functionCalls,
         };
-    } catch (error) {
+    } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         const isTimeout = msg.includes('timed out') || msg.includes('TIMEOUT');
         const isRateLimit = msg.includes('429') || msg.includes('rate limit') || msg.includes('RATE_LIMITED');

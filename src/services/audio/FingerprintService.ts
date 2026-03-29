@@ -36,7 +36,7 @@ export class FingerprintService {
                     featureTag = `${features.bpm}BPM_${features.key}${features.scale}_${Math.round(duration)}s`;
                 }
 
-            } catch (_err) {
+            } catch (_err: unknown) {
                 // Feature extraction failed
             }
 
@@ -55,7 +55,7 @@ export class FingerprintService {
 
             return `SONIC-${shortHash}-${featureTag.replace(/\s+/g, '')}-${soulHash}`;
 
-        } catch (_error) {
+        } catch (_error: unknown) {
             return null;
         }
     }

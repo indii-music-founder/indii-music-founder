@@ -35,7 +35,7 @@ export async function safeStorageFetch(url: string): Promise<StorageFetchResult>
         const blob = await res.blob();
         const mimeType = blob.type || guessMimeFromUrl(url);
         return { blob, mimeType };
-    } catch (directErr) {
+    } catch (directErr: unknown) {
         logger.warn('[safeStorageFetch] Direct fetch failed, attempting no-cors fallback:', directErr);
     }
 

@@ -46,7 +46,7 @@ export class ISRCService {
                 logger.info(`[ISRC] Assigned ${isrcData.isrc} to track ${trackId}`);
                 return isrcData.isrc;
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[ISRC] Assignment failed:', error);
             throw error;
         }

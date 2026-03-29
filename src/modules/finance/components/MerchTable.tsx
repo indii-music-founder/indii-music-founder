@@ -44,7 +44,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
         try {
             const items = await MarketplaceService.getProductsByArtist(userProfile.id);
             setProducts(items);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Failed to load products", err);
         }
     }, [userProfile]);
@@ -56,7 +56,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
             if (profile?.brandKit?.referenceImages) {
                 setAssets(profile.brandKit.referenceImages);
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Failed to load assets", err);
         }
     }, [userProfile]);
@@ -97,7 +97,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
             setTitle('');
             setPrice('0.99');
             setSelectedAsset(null);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Operation failed:", error);
             toast.error('Failed to mint asset.');
         }
@@ -321,7 +321,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                                                         await MarketplaceService.deleteProduct(product.id);
                                                         toast.success('Product deleted successfully');
                                                         loadProducts();
-                                                    } catch (err) {
+                                                    } catch (err: unknown) {
                                                         toast.error('Failed to delete product');
                                                     }
                                                 }}

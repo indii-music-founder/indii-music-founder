@@ -82,7 +82,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
                 setIsUploading(false);
             };
             reader.readAsDataURL(file as Blob);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Upload error:', error);
             toast.error('Failed to upload image');
             setIsUploading(false);
@@ -99,7 +99,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
         try {
             await onAddAsset(asset.url, asset.prompt || 'Image');
             toast.success('Asset added to canvas');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Failed to add asset:', error);
             toast.error('Failed to add asset');
         }

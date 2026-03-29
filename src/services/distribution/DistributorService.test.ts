@@ -3,7 +3,7 @@ import { DistributorService } from './DistributorService';
 import { distributionStore } from './DistributionPersistenceService';
 import { currencyConversionService } from './CurrencyConversionService';
 import { useStore } from '@/core/store';
-import { IDistributorAdapter, DistributorEarnings, DateRange } from './types/distributor';
+import { DistributorAdapter, DistributorEarnings, DateRange } from './types/distributor';
 
 // Mock CurrencyConversionService
 vi.mock('./CurrencyConversionService', () => ({
@@ -41,7 +41,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock Adapters
-const mockAdapter1: IDistributorAdapter = {
+const mockAdapter1: DistributorAdapter = {
   id: 'distrokid',
   name: 'DistroKid',
   requirements: {} as any,
@@ -58,7 +58,7 @@ const mockAdapter1: IDistributorAdapter = {
   validateAssets: vi.fn(),
 };
 
-const mockAdapter2: IDistributorAdapter = {
+const mockAdapter2: DistributorAdapter = {
   id: 'tunecore',
   name: 'TuneCore',
   requirements: {} as any,

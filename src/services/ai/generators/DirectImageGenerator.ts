@@ -126,7 +126,7 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
         logger.info(`[DirectImageGenerator] ✅ Successfully generated ${generatedImages.length} image(s) directly.`);
         return generatedImages;
 
-    } catch (error) {
+    } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         logger.error('[DirectImageGenerator] Direct image generation failed:', msg);
 

@@ -285,7 +285,7 @@ export class AlwaysOnMemoryEngine {
                 `${result.insightsGenerated} insights, ` +
                 `${result.connectionsFound} connections`
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AlwaysOnMemoryEngine] Consolidation failed:', error);
             return `❌ Consolidation failed: ${error instanceof Error ? error.message : String(error)}`;
         } finally {
@@ -359,7 +359,7 @@ ANSWER:`;
             });
 
             return answer;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AlwaysOnMemoryEngine] Query failed:', error);
             return `❌ Query failed: ${error instanceof Error ? error.message : String(error)}`;
         }
@@ -420,7 +420,7 @@ ANSWER:`;
                     status.memoriesByCategory[category] = (status.memoriesByCategory[category] || 0) + 1;
                 }
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AlwaysOnMemoryEngine] Status fetch failed:', error);
         }
 

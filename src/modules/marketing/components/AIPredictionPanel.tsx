@@ -23,7 +23,7 @@ export default function AIPredictionPanel({ campaign }: AIPredictionPanelProps) 
             const result = await CampaignAI.predictEngagement(campaign);
             setPrediction(result);
             toast.success('Prediction generated!');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Prediction failed:', error);
             toast.error('Failed to generate prediction. Please try again.');
         } finally {

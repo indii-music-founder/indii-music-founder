@@ -80,7 +80,7 @@ describe('Multi-Agent Architecture Tests', () => {
             currentModule: 'dashboard',
             addAgentMessage: vi.fn(),
             updateAgentMessage: vi.fn()
-        } as any);
+        } as unknown as ReturnType<typeof useStore.getState>);
 
         // Instantiate AgentService to trigger agent registration
         new AgentService();
@@ -101,7 +101,7 @@ describe('Multi-Agent Architecture Tests', () => {
             ];
             vi.mocked(useStore.getState).mockReturnValue({
                 agentHistory: mockHistory
-            } as any);
+            } as unknown as ReturnType<typeof useStore.getState>);
 
             const compiledView = await historyManager.getCompiledView();
             expect(compiledView).toContain('User: Hello');
@@ -133,7 +133,7 @@ describe('Multi-Agent Architecture Tests', () => {
             expect(agent).toBeDefined();
 
             // Access protected functions via any cast for testing
-            const functions = (agent as any).functions as Record<string, (args: any) => Promise<any>>;
+            const functions = (agent as unknown as { functions: Record<string, (args: Record<string, unknown>) => Promise<{ success: boolean; data: any }>> }).functions;
             expect(functions).toHaveProperty('get_project_details');
 
             // Test the tool execution - returns { success, data } structure
@@ -157,10 +157,10 @@ describe('Multi-Agent Architecture Tests', () => {
                         reasoning: 'Request is about contracts'
                     })
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
-            const context = { currentModule: 'creative' }; // Even in creative module
-            const agentId = await orchestrator.determineAgent(context as any, 'Draft a contract');
+            const context = { currentModule: 'creative' } as unknown as Parameters<typeof orchestrator.determineAgent>[0]; // Even in creative module
+            const agentId = await orchestrator.determineAgent(context, 'Draft a contract');
 
             expect(agentId).toBe('legal');
             expect(AI.generateContent).toHaveBeenCalledWith(
@@ -180,7 +180,7 @@ describe('Multi-Agent Architecture Tests', () => {
             const orchestrator = new AgentOrchestrator();
             vi.mocked(AI.generateContent).mockRejectedValueOnce(new Error('LLM Error'));
 
-            const context: any = {};
+            const context = {} as unknown as Parameters<typeof orchestrator.determineAgent>[0];
             const agentId = await orchestrator.determineAgent(context, 'Hello');
             expect(agentId).toBe('generalist');
         });
@@ -196,7 +196,7 @@ describe('Multi-Agent Architecture Tests', () => {
                 const agent = agentRegistry.get(agentId);
                 expect(agent).toBeDefined();
                 expect(agent?.id).toBe(agentId);
-                expect((agent as any)?.systemPrompt).toBeDefined();
+                expect((agent as unknown as { systemPrompt: string })?.systemPrompt).toBeDefined();
             });
         });
 
@@ -258,11 +258,11 @@ describe('Multi-Agent Architecture Tests', () => {
             // Use 'legal' agent delegating to 'generalist' (hub) - this is valid per hub-and-spoke architecture
             // Specialist → Specialist is blocked, only Specialist → Hub or Hub → Specialist is allowed
             const agent = agentRegistry.get('legal'); // Any BaseAgent
-            const delegateFunc = (agent as any).functions['delegate_task'];
+            const delegateFunc = (agent as unknown as { functions: Record<string, (...args: any[]) => Promise<any>> }).functions['delegate_task'];
 
             expect(delegateFunc).toBeDefined();
 
-            const result = await delegateFunc({
+            const result = await delegateFunc!({
                 targetAgentId: 'generalist',
                 task: 'Create strict delegation test'
             }, {
@@ -302,7 +302,7 @@ describe('Multi-Agent Architecture Tests', () => {
                 projects: [{ id: 'p1', name: 'Test Project', type: 'creative' }],
                 userProfile: { brandKit: {} },
                 currentModule: 'creative'
-            } as unknown as any));
+            } as unknown as ReturnType<typeof useStore.getState>));
 
             // eslint-disable-next-line prefer-const
             let agentSvc_thoughts = new AgentService();
@@ -319,7 +319,7 @@ describe('Multi-Agent Architecture Tests', () => {
                     return "Final Answer";
                 })
             };
-            (agentSvc_thoughts as any).executor = executorMock;
+            (agentSvc_thoughts as unknown as { executor: unknown }).executor = executorMock;
 
             await agentSvc_thoughts.sendMessage('Test Message', undefined, 'director');
 
@@ -327,10 +327,11 @@ describe('Multi-Agent Architecture Tests', () => {
             expect(updateSpy).toHaveBeenCalled();
             // Check calls for 'thoughts' property update
             const calls = updateSpy.mock.calls;
-            const thoughtUpdate = calls.find((c: any) => c[1].thoughts);
+            const thoughtUpdate = calls.find((c: unknown[]) => (c[1] as Record<string, unknown>).thoughts);
             expect(thoughtUpdate).toBeDefined();
-            expect((thoughtUpdate?.[1] as any)?.thoughts?.length).toBeGreaterThan(0);
-            expect((thoughtUpdate?.[1] as any)?.thoughts?.[0]?.text).toBe('Thinking process started...');
+            const payload = thoughtUpdate?.[1] as { thoughts?: { text?: string }[] };
+            expect(payload.thoughts?.length).toBeGreaterThan(0);
+            expect(payload.thoughts?.[0]?.text).toBe('Thinking process started...');
         });
     });
 });

@@ -51,7 +51,7 @@ export const CaptainsLogTools = {
                         ? `Retrieved ${entries.length} log entries.`
                         : 'No log entries found for this date.',
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Failed to read log: ${error}`, 'READ_FAILED');
             }
         }
@@ -87,7 +87,7 @@ export const CaptainsLogTools = {
                     description: args.description.trim(),
                     message: `Decision logged: "${args.description.substring(0, 60)}..."`,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Failed to log decision: ${error}`, 'LOG_FAILED');
             }
         }
@@ -119,7 +119,7 @@ export const CaptainsLogTools = {
                     description: args.description.trim(),
                     message: `Milestone logged: "${args.description.substring(0, 60)}..."`,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Failed to log milestone: ${error}`, 'LOG_FAILED');
             }
         }

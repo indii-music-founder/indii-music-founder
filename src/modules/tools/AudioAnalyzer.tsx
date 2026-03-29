@@ -82,7 +82,7 @@ const AudioAnalyzer: React.FC = () => {
             toast.dismiss(extractToastId);
             toast.success("Extraction Complete: Deep AI acoustic fingerprint generated.");
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Deep Extraction Failed", error);
             toast.dismiss(extractToastId);
             toast.error("Deep Extraction failed. Gemini 3 limits or connectivity issues detected.");
@@ -100,7 +100,7 @@ const AudioAnalyzer: React.FC = () => {
             await audioAnalysisService.saveAnalysisToFirestore(profile.technical, file.name, { ...profile.semantic });
             toast.dismiss(toastId);
             toast.success("DDEX Standards and Acoustic Profile logged to Database.");
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Save failed", error);
             toast.dismiss(toastId);
             toast.error("Failed to log audit.");

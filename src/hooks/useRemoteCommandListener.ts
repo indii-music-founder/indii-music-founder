@@ -151,7 +151,7 @@ function useHttpRelayFallback(enabled: boolean) {
                                 }),
                             });
                         }
-                    } catch (error) {
+                    } catch (error: unknown) {
                         logger.error('[RemoteRelay/HTTP] Failed:', error);
                         await fetch(`${BASE_URL}/api/remote/respond`, {
                             method: 'POST',
@@ -209,7 +209,7 @@ function useFirestoreRelay(enabled: boolean) {
                     activeSessionId: activeSessionId || '',
                     online: true,
                 });
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.warn('[RemoteRelay/Firestore] State push failed:', error);
             }
         };
@@ -396,7 +396,7 @@ function useFirestoreRelay(enabled: boolean) {
                             setTimeout(() => reject(new Error('Agent call timed out after 45s')), 45_000)
                         )
                     ]);
-                } catch (sendErr) {
+                } catch (sendErr: unknown) {
                     writeDiagnostic('agent_send_error', { commandId: command.id, error: String(sendErr) });
                     // Send error response to phone so user isn't stuck forever
                     await remoteRelayService.sendResponse(
@@ -454,7 +454,7 @@ function useFirestoreRelay(enabled: boolean) {
 
                 // Mark command as completed
                 await remoteRelayService.markCommandCompleted(command.id);
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[RemoteRelay/Firestore] Command failed:', error);
                 await remoteRelayService.sendResponse(
                     command.id,

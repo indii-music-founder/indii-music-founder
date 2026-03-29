@@ -83,7 +83,7 @@ export class DistributionSyncService {
             return snapshot.docs.map(doc =>
                 this.mapRelease(doc.id, doc.data() as DDEXReleaseRecord)
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Error fetching releases from Firestore:', error);
             throw error;
         }
@@ -101,7 +101,7 @@ export class DistributionSyncService {
                 return { ...data, id: snapshot.id };
             }
             return null;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Error fetching release:', error);
             throw error;
         }

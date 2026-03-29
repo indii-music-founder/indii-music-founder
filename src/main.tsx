@@ -49,7 +49,7 @@ try {
             </BrowserRouter>
         </React.StrictMode>,
     );
-} catch (fatalError) {
+} catch (fatalError: unknown) {
     // LAST RESORT: If React fails to mount (Firebase crash, import chain break,
     // missing env vars), render a bare-metal fallback directly in the DOM.
     // This prevents the infinite CSS spinner that traps users on a blank page.

@@ -62,7 +62,7 @@ describe('Fine-Tuned Model Registry', () => {
 
         // Each pending agent should return undefined even with flag enabled
         for (const agentId of pendingAgents) {
-            expect(getFineTunedModel(agentId as any)).toBeUndefined();
+            expect(getFineTunedModel(agentId as Parameters<typeof getFineTunedModel>[0])).toBeUndefined();
         }
     });
 

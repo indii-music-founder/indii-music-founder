@@ -201,7 +201,7 @@ class EventLoggerService {
 
     logger.info('[EventLogger] Compaction complete:', result.summary);
     this.compactionCallbacks.forEach(cb => {
-      try { cb(result); } catch (err) { logger.error('[EventLogger] Compaction callback error', err); }
+      try { cb(result); } catch (err: unknown) { logger.error('[EventLogger] Compaction callback error', err); }
     });
   }
 

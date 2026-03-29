@@ -57,12 +57,12 @@ describe('Phase 3: Architectural Improvements', () => {
                 id: 'test-agent',
                 userId: 'user-1',
                 projectId: 'proj-1'
-            } as any;
+            } as unknown as AgentContext;
 
             // Mock store state
-            (useStore.getState as any).mockReturnValue({
+            vi.mocked(useStore.getState).mockReturnValue({
                 projects: [{ id: 'proj-1', name: 'Test Project' }]
-            });
+            } as unknown as ReturnType<typeof useStore.getState>);
         });
 
         it('should start a transaction and snapshot state', async () => {
@@ -70,7 +70,7 @@ describe('Phase 3: Architectural Improvements', () => {
             const txId = await manager.beginTransaction(context);
 
             expect(txId).toBeDefined();
-            expect((manager as any).stateManager.hasSnapshot(txId)).toBe(true);
+            expect((manager as unknown as { stateManager: { hasSnapshot: (id: string) => boolean } }).stateManager.hasSnapshot(txId)).toBe(true);
         });
 
         it('should commit a transaction (clearing snapshot)', async () => {
@@ -78,7 +78,7 @@ describe('Phase 3: Architectural Improvements', () => {
             const txId = await manager.beginTransaction(context);
 
             await manager.commit(txId);
-            expect((manager as any).stateManager.hasSnapshot(txId)).toBe(false);
+            expect((manager as unknown as { stateManager: { hasSnapshot: (id: string) => boolean } }).stateManager.hasSnapshot(txId)).toBe(false);
         });
 
         it('should rollback a transaction (restoring state)', async () => {
@@ -88,7 +88,7 @@ describe('Phase 3: Architectural Improvements', () => {
             // Simulate state change (in a real integration test, we'd change the store)
 
             await manager.rollback(txId);
-            expect((manager as any).stateManager.hasSnapshot(txId)).toBe(false);
+            expect((manager as unknown as { stateManager: { hasSnapshot: (id: string) => boolean } }).stateManager.hasSnapshot(txId)).toBe(false);
             // Verify setState was called to restore (this depends on StateManager implementation details)
             expect(useStore.setState).toHaveBeenCalled();
         });

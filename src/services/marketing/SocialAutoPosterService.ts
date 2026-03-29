@@ -137,7 +137,7 @@ export class SocialAutoPosterService {
 
             const result = await getInsightsFn({ externalId, platform });
             return result.data;
-        } catch (_error) {
+        } catch (_error: unknown) {
             logger.warn(`[SocialPost] Insights Cloud Function unavailable for ${platform}:${externalId}. Deploy Cloud Function 'getSocialPostInsights'.`);
             return {
                 views: 0,

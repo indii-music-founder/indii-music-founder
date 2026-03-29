@@ -91,7 +91,7 @@ export default function UnifiedAssetLibrary({
             }
 
             onUpdate([...currentAssets, ...newAssets]);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`Failed to upload ${storagePath}`, error);
         } finally {
             setIsUploading(false);

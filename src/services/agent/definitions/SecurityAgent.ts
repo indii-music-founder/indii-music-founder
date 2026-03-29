@@ -122,7 +122,7 @@ If a task is outside Security, say:
             try {
                 const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema);
                 return { success: true, data: response };
-            } catch (e) {
+            } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };
             }
         },

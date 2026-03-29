@@ -216,7 +216,7 @@ export class RevenueService {
 
       return result;
 
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error("[RevenueService] Failed to fetch stats:", error);
       throw error;
     }
@@ -256,7 +256,7 @@ export class RevenueService {
         createdAt: entry.timestamp ? Timestamp.fromMillis(entry.timestamp) : serverTimestamp()
       });
       logger.info('[RevenueService] Sale recorded successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error("[RevenueService] Failed to record sale:", error);
       throw error;
     }

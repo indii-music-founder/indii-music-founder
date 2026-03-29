@@ -79,7 +79,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     const firstDate = formatDateKey(fetchedVersions[0]!.lastModified);
                     setExpandedDates(new Set([firstDate]));
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('Failed to fetch design versions:', error);
             } finally {
                 setLoading(false);
@@ -113,7 +113,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
         try {
             await deleteDoc(doc(db, 'designs', version.id));
             setVersions(prev => prev.filter(v => v.id !== version.id));
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Failed to delete version:', error);
         }
     };

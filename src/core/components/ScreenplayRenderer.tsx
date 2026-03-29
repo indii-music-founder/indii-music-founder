@@ -30,7 +30,7 @@ export default function ScreenplayRenderer({ data }: ScreenplayRendererProps) {
     const screenplay: ScreenplayData | null = typeof data === 'string' ? (() => {
         try {
             return JSON.parse(data);
-        } catch (e) {
+        } catch (e: unknown) {
             return null;
         }
     })() : data;

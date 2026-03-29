@@ -91,7 +91,7 @@ export const useTouring = () => {
 
         try {
             await TouringService.updateItinerary(currentItinerary.id, { stops: updatedStops });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to update itinerary", error);
             toast.error("Failed to save changes");
             // Optionally revert logical state here if needed
@@ -106,7 +106,7 @@ export const useTouring = () => {
                 userId: userProfile.id
             });
             toast.success("Itinerary saved");
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to save itinerary", error);
             toast.error("Failed to save itinerary");
         }
@@ -118,7 +118,7 @@ export const useTouring = () => {
         try {
             await TouringService.saveVehicleStats(userProfile.id, stats);
             toast.success("Vehicle stats updated");
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to save vehicle stats", error);
             toast.error("Failed to save vehicle stats");
         }

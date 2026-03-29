@@ -44,7 +44,7 @@ export class TranscodingService {
             try {
                 const result = await window.electronAPI.audio.transcode(options);
                 return result.success;
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[TranscodingService] Native transcode failed:', error);
                 return false;
             }

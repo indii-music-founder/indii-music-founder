@@ -48,7 +48,7 @@ export default function FounderBadge() {
             await navigator.clipboard.writeText(founder.covenantHash);
             setHashCopied(true);
             setTimeout(() => setHashCopied(false), 2000);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[FounderBadge] Clipboard write failed:', err);
         }
     };

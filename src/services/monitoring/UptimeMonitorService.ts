@@ -84,7 +84,7 @@ export class UptimeMonitorService {
 
             clearTimeout(timeout);
             statusCode = response.status;
-        } catch (err) {
+        } catch (err: unknown) {
             error = err instanceof Error ? err.message : String(err);
             statusCode = 0;
         }

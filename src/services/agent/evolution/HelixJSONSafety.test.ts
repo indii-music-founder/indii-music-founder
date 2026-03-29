@@ -45,7 +45,7 @@ describe('🧬 Helix: JSON Safety (Serialization & Schema)', () => {
     // Call 1: Returns INVALID parameters (Array) -> Should be rejected
     // Call 2: Returns VALID parameters (Object) -> Should be accepted
     mockMutationFn
-      .mockResolvedValueOnce({ ...healthyGene, parameters: [{ temp: 0.5 }] as any }) // Defect: Array
+      .mockResolvedValueOnce({ ...healthyGene, parameters: [{ temp: 0.5 }] as unknown as Record<string, unknown> }) // Defect: Array
       .mockResolvedValue({ ...healthyGene, parameters: { temp: 0.8 } });       // Valid
 
     const population: AgentGene[] = [
@@ -88,8 +88,8 @@ describe('🧬 Helix: JSON Safety (Serialization & Schema)', () => {
     // Call 1: Circular Reference -> Reject (JSON.stringify throws)
     // Call 2+: Valid -> Accept
     mockMutationFn
-        .mockResolvedValueOnce({ ...healthyGene, parameters: circular })
-        .mockResolvedValue({ ...healthyGene, parameters: { temp: 0.9 } });
+      .mockResolvedValueOnce({ ...healthyGene, parameters: circular })
+      .mockResolvedValue({ ...healthyGene, parameters: { temp: 0.9 } });
 
     const population: AgentGene[] = [
       { ...healthyGene, id: 'p1' },
@@ -104,9 +104,9 @@ describe('🧬 Helix: JSON Safety (Serialization & Schema)', () => {
 
     const offspring = nextGen.slice(1);
     offspring.forEach(child => {
-        // Must be serializable (implied by surviving the check we will add)
-        expect(child.parameters.temp).toBe(0.9);
-        expect(child.parameters.self).toBeUndefined();
+      // Must be serializable (implied by surviving the check we will add)
+      expect(child.parameters.temp).toBe(0.9);
+      expect(child.parameters.self).toBeUndefined();
     });
 
     // Verify rejection occurred

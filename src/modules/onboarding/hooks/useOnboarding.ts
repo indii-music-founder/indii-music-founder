@@ -271,7 +271,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                 nextHistory.push({ role: 'model', parts: [{ text }] });
             }
             setHistory(nextHistory);
-        } catch (error) {
+        } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
 
             let errorText: string;
@@ -351,7 +351,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             if (newBio) {
                 setUserProfile({ ...userProfile, bio: newBio });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             // silent catch
         } finally {
             setIsRegenerating(false);

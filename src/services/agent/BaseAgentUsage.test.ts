@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from './BaseAgent';
 import { AgentConfig } from './types';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // Mock dependencies
 vi.mock('@/services/ai/GenAI', () => ({
@@ -75,7 +76,7 @@ describe('BaseAgent Usage Defenses', () => {
                     }],
                     usageMetadata: undefined
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
         const response = await agent.execute('Task');
         expect(response.text).toContain('Response content');
@@ -99,7 +100,7 @@ describe('BaseAgent Usage Defenses', () => {
                         totalTokenCount: 30
                     }
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
         const response = await agent.execute('Task');
         expect(response.text).toContain('Response content');

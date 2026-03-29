@@ -96,7 +96,7 @@ export class RoyaltyService {
             }
 
             return { success: true, payoutCount: totalPayoutsStored };
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[RoyaltyService] Ingestion failed:', error);
             return { success: false, payoutCount: 0, error: error instanceof Error ? error.message : 'Unknown error' };
         }

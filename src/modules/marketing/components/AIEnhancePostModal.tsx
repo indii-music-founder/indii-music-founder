@@ -73,7 +73,7 @@ export default function AIEnhancePostModal({
       const result = await CampaignAI.enhancePostCopy(post, enhancementType);
       setEnhancement(result);
       toast.success("Post enhanced!");
-    } catch (error) {
+    } catch (error: unknown) {
       // logger.error('Enhancement failed:', error);
       toast.error("Failed to enhance post. Please try again.");
     } finally {

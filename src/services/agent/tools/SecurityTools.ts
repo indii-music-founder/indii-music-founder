@@ -82,7 +82,7 @@ export const SecurityTools = {
                     last_check: new Date().toISOString()
                 }, `Status retrieved for ${api_name} from inventory.`);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[SecurityTools] Firestore unavailable, using fallback:', error);
         }
 
@@ -184,7 +184,7 @@ export const SecurityTools = {
                         realRoles![role] = (realRoles![role] || 0) + 1;
                     });
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[SecurityTools] Failed to query real permissions:', e);
             }
         }

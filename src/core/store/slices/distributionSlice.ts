@@ -56,7 +56,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
                     error: null
                 }
             }));
-        } catch (error) {
+        } catch (error: unknown) {
             set((state) => ({
                 distribution: {
                     ...state.distribution,
@@ -84,7 +84,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
                     error: null
                 }
             }));
-        } catch (error) {
+        } catch (error: unknown) {
             set((state) => ({
                 distribution: {
                     ...state.distribution,
@@ -114,7 +114,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
                     error: null
                 }
             }));
-        } catch (error) {
+        } catch (error: unknown) {
             set((state) => ({
                 distribution: {
                     ...state.distribution,

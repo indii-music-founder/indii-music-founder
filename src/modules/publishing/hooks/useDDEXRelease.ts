@@ -157,7 +157,7 @@ async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; b
     } finally {
       await audioContext.close();
     }
-  } catch (error) {
+  } catch (error: unknown) {
     logger.warn('[useDDEXRelease] AudioContext decoding failed, using format defaults:', error);
     // Fallback: derive from file extension
     const ext = file.name.split('.').pop()?.toLowerCase();
@@ -293,7 +293,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       }
 
       return url;
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(`Error uploading ${type} asset:`, error);
       throw error;
     }
@@ -426,7 +426,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
           Audio URL: ${assets.audioFile?.url}
           Cover Art URL: ${assets.coverArt?.url}`
         );
-      } catch (agentError) {
+      } catch (agentError: unknown) {
         logger.warn('[useDDEXRelease] Agent packaging trigger failed:', agentError);
         // We don't fail the whole submission if the agent trigger fails,
         // since the record is already saved.
@@ -435,7 +435,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       setCurrentStep('complete');
 
       return docRef.id;
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit release';
       setSubmitError(errorMessage);
       setCurrentStep('review');

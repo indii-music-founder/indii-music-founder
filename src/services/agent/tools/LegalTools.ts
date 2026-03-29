@@ -61,7 +61,7 @@ Key Terms: ${args.terms}`;
                 contractId,
                 title
             }, `Contract draft generated and saved to Legal Dashboard (ID: ${contractId})`);
-        } catch (persistError) {
+        } catch (persistError: unknown) {
             logger.warn('[LegalTools] Failed to persist contract:', persistError);
             return toolSuccess({
                 content
@@ -137,7 +137,7 @@ Key Terms: ${args.terms}`;
                 status: result.data.status,
                 sentTo: result.data.sentTo
             }, `Digital signature requests sent via ${provider} to ${args.signers.length} signers.`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn(`[LegalTools] ${provider} Cloud Function unavailable, using local tracking:`, error);
             const envelopeId = `env-${crypto.randomUUID()}`;
 
@@ -156,7 +156,7 @@ Key Terms: ${args.terms}`;
                         createdAt: new Date().toISOString()
                     });
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[LegalTools] Failed to persist signature request:', e);
             }
 
@@ -246,7 +246,7 @@ Signature: ____________________________
                         checkedAt: serverTimestamp(),
                     });
                 }
-            } catch (persistError) {
+            } catch (persistError: unknown) {
                 logger.warn('[LegalTools] Failed to persist license check:', persistError);
             }
 
@@ -260,7 +260,7 @@ Signature: ____________________________
                 requiresClearance: result.data.requiresClearance,
                 link: 'https://www.songfile.com/',
             }, `Mechanical license verification for "${args.trackTitle}": Status=${result.data.status}, Publisher=${result.data.publisher}. ${result.data.requiresClearance ? 'Clearance required before delivery.' : 'License verified — cleared for delivery.'}`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[LegalTools] verifyMechanicalLicense Cloud Function unavailable:', error);
 
             // Fallback: Persist the check request for manual processing
@@ -277,7 +277,7 @@ Signature: ____________________________
                         checkedAt: serverTimestamp(),
                     });
                 }
-            } catch (persistError) {
+            } catch (persistError: unknown) {
                 logger.warn('[LegalTools] Failed to persist fallback license check:', persistError);
             }
 

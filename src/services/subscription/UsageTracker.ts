@@ -100,7 +100,7 @@ class UsageTracker {
         ...record,
         timestamp: Date.now()
       });
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(`[UsageTracker] Error tracking usage (attempt ${attempt + 1}):`, error);
 
       const maxAttempts = 3;

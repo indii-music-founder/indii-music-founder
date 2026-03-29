@@ -72,13 +72,13 @@ describe.skip('Agent Streaming', () => {
 
         // Mock the final response
         const mockResponse: WrappedResponse = {
-            response: {} as any,
+            response: {} as unknown as WrappedResponse['response'],
             text: () => tokens.join(''),
             functionCalls: () => [],
             usage: () => undefined
         };
 
-        (AI.generateContentStream as any).mockResolvedValue({
+        vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: mockStream,
             response: Promise.resolve(mockResponse)
         });
@@ -122,13 +122,13 @@ describe.skip('Agent Streaming', () => {
                         }
                     }
                 ]
-            } as any,
+            } as unknown as WrappedResponse['response'],
             text: () => 'I will save this.',
             functionCalls: () => [{ name: 'save_memory', args: { content: 'test' } }],
             usage: () => undefined
         };
 
-        (AI.generateContentStream as any).mockResolvedValue({
+        vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: mockStream,
             response: Promise.resolve(mockResponse)
         });

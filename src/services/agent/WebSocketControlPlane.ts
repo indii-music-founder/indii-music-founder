@@ -250,7 +250,7 @@ class WebSocketControlPlane {
         try {
           const result = await this._dispatchEntry(entry.message);
           entry.resolve(result);
-        } catch (err) {
+        } catch (err: unknown) {
           entry.reject(err instanceof Error ? err : new Error(String(err)));
         }
       }
@@ -282,7 +282,7 @@ class WebSocketControlPlane {
   private _rawSend(msg: WCPMessage): void {
     try {
       this.ws?.send(JSON.stringify(msg));
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error('[WCP] Send error', err);
     }
   }

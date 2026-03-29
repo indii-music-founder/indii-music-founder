@@ -112,7 +112,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             removeToast(id);
             addToast(messages.success, 'success');
             return result;
-        } catch (error) {
+        } catch (error: unknown) {
             removeToast(id);
             addToast(messages.error, 'error');
             throw error;

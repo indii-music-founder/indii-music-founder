@@ -25,7 +25,7 @@ export const KeysPanel: React.FC = () => {
                 const results = await isrcService.getUserCatalog();
                 setCatalog(results);
                 setDataLoaded(true);
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.error('[KeysPanel] Failed to load catalog:', err);
                 error('Failed to load your ISRC catalog.');
             }
@@ -59,7 +59,7 @@ export const KeysPanel: React.FC = () => {
             setStatusReport(report);
             success(`Merlin Readiness Check Complete. Status: ${report.status}`);
 
-        } catch (err) {
+        } catch (err: unknown) {
             error(err instanceof Error ? err.message : 'Unknown error during Merlin check');
         } finally {
             setLoading(false);
@@ -93,7 +93,7 @@ export const KeysPanel: React.FC = () => {
             const csv = await distributionService.generateBWARM({ works });
             setBwarmCsv(csv);
             success('BWARM CSV Generated. Ready for download.');
-        } catch (err) {
+        } catch (err: unknown) {
             error(err instanceof Error ? err.message : 'Unknown error during BWARM generation');
         } finally {
             setLoading(false);

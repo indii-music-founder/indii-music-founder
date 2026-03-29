@@ -56,7 +56,7 @@ export function getFirebaseAI(): AI | null {
         });
         logger.debug('[Firebase] Firebase AI initialized with Vertex AI backend (us-central1)');
         return _aiInstance;
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('[Firebase] Failed to initialize Firebase AI:', error);
         return null;
     }
@@ -99,7 +99,7 @@ if (isDev && useEmulator && typeof window !== 'undefined') {
         connectFunctionsEmulator(functions, '127.0.0.1', 5001);
         connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
         logger.debug('[Firebase] Connected to Functions emulator on port 5001');
-    } catch (e) {
+    } catch (e: unknown) {
         // Emulator connection may fail if already connected or emulator not running
         logger.warn('[Firebase] Functions emulator connection skipped:', e);
     }
@@ -142,7 +142,7 @@ import { getMessaging } from 'firebase/messaging';
 export const messaging = typeof window !== 'undefined' ? (() => {
     try {
         return getMessaging(app);
-    } catch (e) {
+    } catch (e: unknown) {
         logger.warn('Firebase Messaging not supported:', e);
         return null;
     }
@@ -209,7 +209,7 @@ if (typeof window !== 'undefined') {
                 provider: new ReCaptchaEnterpriseProvider(env.appCheckKey!),
                 isTokenAutoRefreshEnabled: true
             });
-        } catch (e) {
+        } catch (e: unknown) {
             // CRITICAL: Do NOT re-throw here. A failed App Check must not crash
             // the entire app (killing React before it mounts). Firestore/Storage
             // Security Rules still enforce authorization even without App Check.

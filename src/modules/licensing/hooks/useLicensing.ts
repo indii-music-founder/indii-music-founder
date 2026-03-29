@@ -75,7 +75,7 @@ export function useLicensing() {
           }
         });
 
-      } catch (err) {
+      } catch (err: unknown) {
         logger.error('[useLicensing] Setup Error:', err);
         if (isMounted) {
           const message = (err as Error).message;
@@ -114,7 +114,7 @@ export function useLicensing() {
           error: 'Failed to initiate drafting.'
         }
       );
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error("Failed to initiate drafting:", error);
     }
   }, [toast]);

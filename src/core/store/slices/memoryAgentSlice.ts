@@ -122,7 +122,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
                 set({ alwaysOnEngineStatus: status });
             }).catch(e => logger.warn('[MemoryAgentSlice] Status refresh after start failed:', e));
             logger.info('[MemoryAgentSlice] 🧠 Memory engine started');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to start memory engine:', error);
         }
     },
@@ -144,7 +144,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
                 limit: 100,
             });
             set({ alwaysOnMemories: memories });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to load memories:', error);
         }
     },
@@ -153,7 +153,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
         try {
             const insights = await alwaysOnMemoryEngine.getInsights(userId);
             set({ alwaysOnInsights: insights });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to load insights:', error);
         }
     },
@@ -162,7 +162,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
         try {
             const directives = await DirectiveService.getAllDirectives(userId);
             set({ activeDirectives: directives });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to load directives:', error);
         }
     },
@@ -188,7 +188,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
                 return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
             });
             set({ memoryInboxItems: items });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to load memory inbox:', error);
         }
     },
@@ -200,7 +200,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
             // Reload the inbox
             await get().loadMemoryInbox(userId);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to update memory inbox item:', error);
         }
     },
@@ -209,7 +209,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
         try {
             const status = await alwaysOnMemoryEngine.getStatus(userId);
             set({ alwaysOnEngineStatus: status });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to refresh status:', error);
         }
     },
@@ -225,7 +225,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
             ]);
             set({ alwaysOnMemories: memories, alwaysOnEngineStatus: status });
             return memoryId;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Ingestion failed:', error);
             return '';
         }
@@ -251,13 +251,13 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
                 alwaysOnInsights: insights,
                 alwaysOnEngineStatus: status,
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Consolidation failed:', error);
             // Refresh status to clear isConsolidating flag
             try {
                 const status = await alwaysOnMemoryEngine.getStatus(userId);
                 set({ alwaysOnEngineStatus: status });
-            } catch (_e) { /* non-blocking */ }
+            } catch (_e: unknown) { /* non-blocking */ }
         }
     },
 
@@ -270,7 +270,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
             }));
             const status = await alwaysOnMemoryEngine.getStatus(userId);
             set({ alwaysOnEngineStatus: status });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Delete failed:', error);
         }
     },
@@ -278,7 +278,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
     queryAlwaysOnMemory: async (userId: string, question: string) => {
         try {
             return await alwaysOnMemoryEngine.queryMemory(userId, question);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Query failed:', error);
             return `Failed to query memory: ${error instanceof Error ? error.message : String(error)}`;
         }
@@ -294,7 +294,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
                 alwaysOnEngineStatus: { ...defaultEngineStatus },
                 selectedMemoryId: null,
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Clear all failed:', error);
         }
     },

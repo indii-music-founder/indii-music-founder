@@ -28,7 +28,7 @@ export class EvolutionEngine {
           try {
             const fitness = await this.fitnessFn(gene);
             return { ...gene, fitness };
-          } catch (error) {
+          } catch (error: unknown) {
             // Helix: If fitness check crashes, the gene is defective.
             // Assign 0.0 fitness (Death to the buggy).
             return { ...gene, fitness: 0.0 };
@@ -97,7 +97,7 @@ export class EvolutionEngine {
         // we don't accidentally mutate the parent (which might be an Elite survivor).
         try {
           offspring = structuredClone(offspring);
-        } catch (e) {
+        } catch (e: unknown) {
           // Helix: Robust fallback for non-clonable objects (e.g. methods attached to genes)
           offspring = JSON.parse(JSON.stringify(offspring));
         }
@@ -136,7 +136,7 @@ export class EvolutionEngine {
         // Ensure the offspring is valid JSON (no cycles, no functions).
         try {
           JSON.stringify(offspring);
-        } catch (e) {
+        } catch (e: unknown) {
           throw new Error("Helix Guardrail: Mutation produced non-serializable offspring (JSON Error)");
         }
 
@@ -150,7 +150,7 @@ export class EvolutionEngine {
         offspring.fitness = undefined; // Reset fitness for new gene
 
         nextGeneration.push(offspring);
-      } catch (error) {
+      } catch (error: unknown) {
         // Helix: Survival of the fittest, but death to the buggy.
         // If mutation/crossover fails (e.g., invalid JSON), we discard this offspring
         // and loop again to try a new combination.

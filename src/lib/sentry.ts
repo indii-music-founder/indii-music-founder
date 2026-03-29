@@ -80,7 +80,7 @@ export function initSentry(): void {
         });
 
         logger.debug('[Sentry] Initialized for production');
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('[Sentry] Initialization failed:', error);
     }
 }

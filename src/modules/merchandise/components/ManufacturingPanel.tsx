@@ -441,7 +441,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                                 toast.success(`Sample request sent! ID: ${result.requestId}`);
                             }
                             onClose?.();
-                        } catch (e) {
+                        } catch (e: unknown) {
                             logger.error("Sample request failed:", e);
                             toast.error("Failed to order sample.");
                         }

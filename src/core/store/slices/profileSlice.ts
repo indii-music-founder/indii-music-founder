@@ -193,10 +193,10 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 });
 
                 useStore.getState().registerSubscription('global_profile', unsubscribe);
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.error('[Profile] Failed to initialize real-time listener:', err);
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[Profile] Failed to load profile:', err);
         }
     },
@@ -204,7 +204,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         try {
             const { useStore } = await import('@/core/store');
             useStore.getState().clearAllSubscriptions();
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[Profile] Failed to clear subscriptions on logout', err);
         }
         logger.info('[System] Logout requested - resetting session state...');

@@ -146,7 +146,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`,
                 date: parsed.date || new Date().toISOString().slice(0, 10),
                 category: parsed.category || 'Other',
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[ReceiptOCR] Analysis failed:', error);
             setError(error instanceof Error ? error.message : 'Analysis failed. Please try again.');
         } finally {

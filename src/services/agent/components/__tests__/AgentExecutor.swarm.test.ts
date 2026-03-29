@@ -30,31 +30,31 @@ vi.mock('@/services/firebase', () => ({
 class MockAgent extends BaseAgent {
     constructor() {
         super({
-            id: 'mock-agent' as any,
+            id: 'mock-agent' as unknown as string,
             name: 'Mock Agent',
             description: 'Mock Description',
             color: '#000000',
-            category: 'generalist' as any,
+            category: 'generalist' as unknown as string,
             systemPrompt: 'You are a mock agent.',
             tools: []
-        });
+        } as unknown as any); // Constructor arguments are untyped here
     }
 
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
-        return { text: 'success', toolCalls: [], thoughts: [] } as any;
+        return { text: 'success', toolCalls: [], thoughts: [] } as unknown as Awaited<ReturnType<BaseAgent['execute']>>;
     }
 }
 
 describe('AgentExecutor Swarm Support', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (agentRegistry.getAsync as any).mockResolvedValue(new MockAgent());
-        (TraceService.startTrace as any).mockResolvedValue('new-trace-id');
+        vi.mocked(agentRegistry.getAsync).mockResolvedValue(new MockAgent() as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>);
+        vi.mocked(TraceService.startTrace).mockResolvedValue('new-trace-id');
     });
 
     it('should initialize a new swarmId for root execution', async () => {
-        const executor = new AgentExecutor(agentRegistry as any);
-        const context: any = { activeModule: 'test' };
+        const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
+        const context = { activeModule: 'test' } as unknown as any;
 
         // execute(agentId, userGoal, context, ...)
         await executor.execute('mock-agent', 'Do something', context);
@@ -74,12 +74,12 @@ describe('AgentExecutor Swarm Support', () => {
     });
 
     it('should propagate existing swarmId to child agents', async () => {
-        const executor = new AgentExecutor(agentRegistry as any);
+        const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
         // Existing context from a parent
-        const context: any = {
+        const context = {
             activeModule: 'test',
             swarmId: 'root-swarm-123'
-        };
+        } as unknown as any;
 
         // execute(agentId, userGoal, context, onProgress, signal, parentTraceId, attachments)
         await executor.execute('mock-agent', 'Sub task', context, undefined, undefined, 'parent-trace-456');

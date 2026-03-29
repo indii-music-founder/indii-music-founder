@@ -26,7 +26,7 @@ export const SocialTools = {
         try {
             postId = await SocialService.createPost(text);
             persistMessage = `Saved to Feed (ID: ${postId})`;
-        } catch (persistError) {
+        } catch (persistError: unknown) {
             logger.warn('Failed to persist social post:', persistError);
         }
 
@@ -46,7 +46,7 @@ export const SocialTools = {
                 .slice(0, 20)
                 .map((p: { content?: string }) => (p.content ?? '').slice(0, 200))
                 .filter(Boolean);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[SocialTools] Could not fetch posts for sentiment context:', e);
         }
 
@@ -119,7 +119,7 @@ Be specific and data-driven based on the post content above.`;
                 postId,
                 ...args
             }, `Successfully scheduled post for ${args.platform} at ${args.scheduledTime}. (ID: ${postId})`);
-        } catch (e) {
+        } catch (e: unknown) {
             const error = e as Error;
             logger.error('[SocialTools] Failed to schedule post:', error);
             return toolError(`Failed to schedule post: ${error.message}`);

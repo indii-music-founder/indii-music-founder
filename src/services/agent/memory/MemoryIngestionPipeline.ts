@@ -79,7 +79,7 @@ export class MemoryIngestionPipeline {
                         APPROVED_MODELS.EMBEDDING_DEFAULT
                     );
                     return results;
-                } catch (error) {
+                } catch (error: unknown) {
                     logger.error('[MemoryIngestionPipeline] Batch embedding failed:', error);
                     return texts.map(() => []);
                 }
@@ -162,7 +162,7 @@ export class MemoryIngestionPipeline {
                 memoryId,
                 summary: extracted.summary,
             };
-        } catch (error) {
+        } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             await this.updateIngestionEvent(userId, eventId, {
                 status: 'failed',
@@ -254,7 +254,7 @@ export class MemoryIngestionPipeline {
                 memoryId,
                 summary: extracted.summary,
             };
-        } catch (error) {
+        } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             await this.updateIngestionEvent(userId, eventId, {
                 status: 'failed',
@@ -342,7 +342,7 @@ Rules:
             );
 
             return results;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryIngestionPipeline] Session ingestion failed:', error);
             return [];
         }
@@ -396,7 +396,7 @@ SUMMARY:`;
             );
 
             return summary.trim();
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryIngestionPipeline] Summary generation failed:', error);
             return text.slice(0, 200);
         }
@@ -436,7 +436,7 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
 
             const parsed = JSON.parse(response);
             return parsed.category || 'fact';
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryIngestionPipeline] Category classification failed:', error);
             return 'fact';
         }
@@ -487,7 +487,7 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
                 || '';
 
             return typeof responseText === 'string' ? responseText : String(responseText);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[MemoryIngestionPipeline] Media analysis failed for ${fileName}:`, error);
             return '';
         }
@@ -582,7 +582,7 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
             }
 
             return false;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryIngestionPipeline] Deduplication check failed:', error);
             return false; // Don't block ingestion on dedupe failure
         }
@@ -594,7 +594,7 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
     private async generateEmbedding(text: string): Promise<number[]> {
         try {
             return await this.embeddingBatcher.add(text);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryIngestionPipeline] Embedding generation failed:', error);
             return [];
         }
@@ -624,7 +624,7 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
                 createdAt: serverTimestamp(),
             });
             return docRef.id;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryIngestionPipeline] Failed to log ingestion event:', error);
             return '';
         }
@@ -651,7 +651,7 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
                 ...updates,
                 processedAt: serverTimestamp(),
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemoryIngestionPipeline] Failed to update ingestion event:', error);
         }
     }

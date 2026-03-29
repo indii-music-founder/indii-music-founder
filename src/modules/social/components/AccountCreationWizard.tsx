@@ -46,7 +46,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
 
             setGeneratedIdentity(identity);
             toast.success("Identity ideas generated!");
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Operation failed:", error);
             toast.error("Failed to generate identity ideas. Please try again.");
             setGeneratedIdentity(null);

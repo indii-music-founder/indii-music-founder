@@ -1,5 +1,5 @@
 import type {
-  IDistributorAdapter,
+  DistributorAdapter,
   DistributorId,
   DistributorRequirements,
   DistributorCredentials,
@@ -13,7 +13,7 @@ import type {
 } from '../types/distributor';
 import { logger } from '@/utils/logger';
 
-export abstract class BaseDistributorAdapter implements IDistributorAdapter {
+export abstract class BaseDistributorAdapter implements DistributorAdapter {
   abstract readonly id: DistributorId;
   abstract readonly name: string;
   abstract readonly requirements: DistributorRequirements;
@@ -53,7 +53,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
       } else {
         throw new Error(`Missing required credentials for ${this.name}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       this.connected = false;
       this.credentials = undefined;
       throw error;
@@ -95,7 +95,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
         throw new Error(`SFTP Upload Failed: ${result.error}`);
       }
       logger.info(`[${this.name}] Upload complete.`);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(`[${this.name}] Upload error:`, error);
       throw error;
     }

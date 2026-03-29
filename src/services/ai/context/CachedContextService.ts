@@ -42,7 +42,7 @@ export class CachedContextService {
                     return data.id;
                 }
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[CachedContextService] Failed to find cache:', error);
         }
         return null;
@@ -64,7 +64,7 @@ export class CachedContextService {
                 ...data,
                 updatedAt: serverTimestamp()
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[CachedContextService] Failed to register cache:', error);
         }
     }

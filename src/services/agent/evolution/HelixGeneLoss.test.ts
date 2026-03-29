@@ -47,8 +47,8 @@ describe('🧬 Helix: Gene Loss Prevention', () => {
     // Call 2: Returns gene with NULL parameters -> Should be rejected
     // Call 3+: Returns VALID gene -> Should be accepted
     mockMutationFn
-      .mockResolvedValueOnce({ ...healthyGene, parameters: undefined as any }) // Defect 1
-      .mockResolvedValueOnce({ ...healthyGene, parameters: null as any })      // Defect 2
+      .mockResolvedValueOnce({ ...healthyGene, parameters: undefined as unknown as Record<string, unknown> }) // Defect 1
+      .mockResolvedValueOnce({ ...healthyGene, parameters: null as unknown as Record<string, unknown> })      // Defect 2
       .mockResolvedValue({ ...healthyGene, parameters: { temp: 0.8 } });       // Valid
 
     const population: AgentGene[] = [

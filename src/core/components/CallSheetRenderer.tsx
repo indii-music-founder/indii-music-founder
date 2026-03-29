@@ -21,7 +21,7 @@ export default function CallSheetRenderer({ data }: CallSheetRendererProps) {
     const sheet: CallSheetData | null = typeof data === 'string' ? (() => {
         try {
             return JSON.parse(data);
-        } catch (e) {
+        } catch (e: unknown) {
             return null;
         }
     })() : data;

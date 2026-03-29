@@ -68,7 +68,7 @@ export class ERNService {
             }
 
             return { success: true, xml };
-        } catch (error) {
+        } catch (error: unknown) {
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error generating ERN',

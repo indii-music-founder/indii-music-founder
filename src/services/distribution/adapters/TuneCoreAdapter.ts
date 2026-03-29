@@ -118,7 +118,7 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
                         };
                     }
                     logger.warn('[TuneCore] HTTP API returned non-OK, falling back to pending status');
-                } catch (apiErr) {
+                } catch (apiErr: unknown) {
                     logger.warn('[TuneCore] HTTP API delivery failed, returning ERN-ready status:', apiErr);
                 }
             }
@@ -136,7 +136,7 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
                     note: 'Add TuneCore API key in Settings > Integrations for automatic delivery.',
                 }
             };
-        } catch (e) {
+        } catch (e: unknown) {
             return {
                 success: false,
                 status: 'failed',
@@ -170,7 +170,7 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
                 distributorReleaseId: releaseId,
                 errors: response.ok ? [] : [{ code: 'UPDATE_FAILED', message: `HTTP ${response.status}` }],
             };
-        } catch (e) {
+        } catch (e: unknown) {
             return {
                 success: false,
                 status: 'failed',

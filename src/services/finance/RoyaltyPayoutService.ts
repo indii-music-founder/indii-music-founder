@@ -30,7 +30,7 @@ export class RoyaltyPayoutService {
             });
             logger.info(`[Royalty] Created pending payout for ${payout.artistName} (${payout.amount} ${payout.currency})`);
             return docRef.id;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Royalty] Failed to create payout:', error);
             throw error;
         }
@@ -47,7 +47,7 @@ export class RoyaltyPayoutService {
                 processedAt: new Date()
             });
             logger.info(`[Royalty] Payout ${payoutId} updated to ${status}`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Royalty] Failed to finalize payout:', error);
         }
     }
@@ -68,7 +68,7 @@ export class RoyaltyPayoutService {
                 payouts.push({ id: doc.id, ...doc.data() } as RoyaltyPayout);
             });
             return payouts;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Royalty] Failed to fetch pending payouts:', error);
             return [];
         }
@@ -97,7 +97,7 @@ export class RoyaltyPayoutService {
 
             logger.info(`[Royalty] Generated CSV for ${payouts.length} payouts.`);
             return csvContent;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Royalty] CSV generation failed:', error);
             return '';
         }

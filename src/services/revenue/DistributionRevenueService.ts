@@ -7,7 +7,7 @@ import {
     DistributorEarnings,
     AggregatedEarnings,
     DateRange,
-    IDistributorAdapter,
+    DistributorAdapter,
     DistributorCredentials
 } from '@/services/distribution/types/distributor';
 
@@ -18,7 +18,7 @@ import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
 import { logger } from '@/utils/logger';
 
 export class DistributionRevenueService {
-    private adapters: Map<DistributorId, IDistributorAdapter>;
+    private adapters: Map<DistributorId, DistributorAdapter>;
 
     constructor() {
         this.adapters = new Map();
@@ -28,7 +28,7 @@ export class DistributionRevenueService {
         this.registerAdapter(new CDBabyAdapter());
     }
 
-    private registerAdapter(adapter: IDistributorAdapter) {
+    private registerAdapter(adapter: DistributorAdapter) {
         this.adapters.set(adapter.id, adapter);
     }
 
@@ -44,7 +44,7 @@ export class DistributionRevenueService {
                     return await adapter.getAllEarnings(period);
                 }
                 return [];
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.error(`Failed to fetch earnings from ${adapter.name}`, e);
                 return [];
             }

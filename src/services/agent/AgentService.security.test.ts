@@ -128,7 +128,7 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
                 reasoning: 'Safe query'
             }),
             functionCalls: () => []
-        } as any);
+        } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
         vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: {
@@ -140,8 +140,8 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
             response: Promise.resolve({
                 text: () => 'Response',
                 functionCalls: () => []
-            })
-        } as any);
+            }) as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>['response']
+        } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
         service = new AgentService();
     });
@@ -163,7 +163,7 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
         // We verify that the call arguments contain the redacted text.
         const calls = vi.mocked(AI.generateContent).mock.calls;
         const orchestratorCall = calls.find(args => {
-            const contentArray = args[0] as any[]; // First arg is Content[]
+            const contentArray = args[0] as unknown as { parts?: { text?: string }[] }[]; // First arg is Content[]
             if (Array.isArray(contentArray) && contentArray.length > 0) {
                 const parts = contentArray[0]?.parts;
                 if (parts && parts[0]?.text) {
@@ -175,8 +175,8 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
 
         // If orchestrator was called
         if (orchestratorCall) {
-            const contentArray = orchestratorCall[0] as any[];
-            const promptText = contentArray[0].parts[0].text;
+            const contentArray = orchestratorCall[0] as unknown as { parts: { text: string }[] }[];
+            const promptText = contentArray[0]?.parts[0]?.text || '';
             expect(promptText).toContain(expectedRedacted);
             expect(promptText).not.toContain("4111 1111 1111 1111");
         } else {
@@ -451,7 +451,7 @@ describe('🛡️ Guard Rails: Injection via sendMessage is sanitized at store l
                 reasoning: 'Routed safely'
             }),
             functionCalls: () => []
-        } as any);
+        } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
         vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: {
@@ -463,8 +463,8 @@ describe('🛡️ Guard Rails: Injection via sendMessage is sanitized at store l
             response: Promise.resolve({
                 text: () => 'Safe',
                 functionCalls: () => []
-            })
-        } as any);
+            }) as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>['response']
+        } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
         service = new AgentService();
     });

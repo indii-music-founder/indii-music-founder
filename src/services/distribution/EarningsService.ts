@@ -44,7 +44,7 @@ export class EarningsService extends FirestoreService<EarningsDocument> {
 
             const doc = results[0]!;
             return this.mapToEarnings(doc);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[EarningsService] Failed to fetch earnings:', error);
             return null;
         }
@@ -72,7 +72,7 @@ export class EarningsService extends FirestoreService<EarningsDocument> {
 
             const results = await this.list(constraints);
             return results.map(this.mapToEarnings);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[EarningsService] Failed to fetch all earnings:', error);
             return [];
         }
@@ -98,7 +98,7 @@ export class EarningsService extends FirestoreService<EarningsDocument> {
 
             await this.set(earningsId, record);
             return earningsId;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[EarningsService] Failed to record earnings:', error);
             throw error;
         }

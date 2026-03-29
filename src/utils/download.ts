@@ -27,7 +27,7 @@ export async function downloadAsset(url: string, defaultFilename: string = 'down
             URL.revokeObjectURL(blobUrl);
         }
         return true;
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('Failed to download asset:', error);
         return false;
     }

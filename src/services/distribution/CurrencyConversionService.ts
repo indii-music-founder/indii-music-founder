@@ -129,7 +129,7 @@ export class CurrencyConversionService {
 
       this.lastFetchTime = Date.now();
       logger.info(`[CurrencyConversion] Updated ${Object.keys(data.rates).length} exchange rates (ECB date: ${data.date})`);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.warn('[CurrencyConversion] Failed to fetch live rates, using cached/default rates:', error);
       // Don't update lastFetchTime — retry on next call
     }

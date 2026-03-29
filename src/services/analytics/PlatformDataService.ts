@@ -181,7 +181,7 @@ export class PlatformDataService {
             try {
                 const channel = await youTubeAnalyticsService.getChannel();
                 regionData = await youTubeAnalyticsService.buildRegionData(channel.id);
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[PlatformDataService] YouTube region data unavailable:', err);
             }
         }
@@ -197,7 +197,7 @@ export class PlatformDataService {
                 let spotifyHistory: StreamDataPoint[] = emptyHistory();
                 try {
                     spotifyHistory = await spotifyService.buildStreamHistory(track.id);
-                } catch (err) {
+                } catch (err: unknown) {
                     logger.warn(`[PlatformDataService] Stream history unavailable for ${track.name}:`, err);
                 }
 

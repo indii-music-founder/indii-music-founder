@@ -27,7 +27,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Error accessing camera:", err);
             setError("Could not access camera. Please check permissions.");
         } finally {

@@ -94,7 +94,7 @@ export class LivingFileService {
                 // Return default template if not found (and optionally handle initialization elsewhere)
                 return DEFAULT_TEMPLATES[fileName];
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[LivingFileService] Failed to read ${fileName}:`, error);
             return DEFAULT_TEMPLATES[fileName]; // Fallback
         }
@@ -126,7 +126,7 @@ export class LivingFileService {
             }, { merge: true });
 
             logger.debug(`[LivingFileService] Wrote ${fileName} for user ${userId}`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[LivingFileService] Failed to write ${fileName}:`, error);
             throw error;
         }

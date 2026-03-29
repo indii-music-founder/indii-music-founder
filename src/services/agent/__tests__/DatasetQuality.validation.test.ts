@@ -118,7 +118,7 @@ function loadDatasets(): void {
             try {
                 const parsed = JSON.parse(line) as DatasetExample;
                 examples.push(parsed);
-            } catch (err) {
+            } catch (err: unknown) {
                 parseErrors.push(`Line ${lineIndex + 1}: ${(err as Error).message}`);
             }
         });

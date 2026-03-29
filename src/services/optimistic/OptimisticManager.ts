@@ -59,13 +59,13 @@ class OptimisticManager {
       const result = await executeFn();
       action.isComplete = true;
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
       action.error = err;
 
       try {
         await rollbackFn();
-      } catch (rollbackError) {
+      } catch (rollbackError: unknown) {
         logger.error('[OptimisticManager] Rollback failed:', rollbackError);
       }
 
@@ -112,7 +112,7 @@ class OptimisticManager {
       this.pendingActions.delete(actionId);
       try {
         await action.rollbackFn();
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error('[OptimisticManager] Cancel rollback failed:', error);
       }
     }

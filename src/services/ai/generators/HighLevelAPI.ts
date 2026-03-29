@@ -143,7 +143,7 @@ export async function generateStructuredData<T>(
     if (cached) {
         try {
             return safeJsonParse(cached) as T;
-        } catch (_e) {
+        } catch (_e: unknown) {
             // Ignore parse failure
         }
     }

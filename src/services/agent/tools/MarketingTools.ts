@@ -83,7 +83,7 @@ export const MarketingTools = {
                 ...briefData
             } as unknown as Parameters<typeof MarketingService.createCampaign>[0]);
             logger.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
-        } catch (persistError) {
+        } catch (persistError: unknown) {
             logger.warn('[MarketingTools] Persistence failed:', persistError);
         }
 
@@ -259,7 +259,7 @@ export const MarketingTools = {
                     else results.Standard++;
                 });
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.warn('[MarketingTools] tier_superfans Firestore read failed:', err);
         }
 

@@ -130,7 +130,7 @@ export default function ObservabilityDashboard() {
             setError(null);
             const data = await MetricsService.getSystemMetrics(timeRange);
             setMetrics(data);
-        } catch (err) {
+        } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to load metrics');
         } finally {
             setLoading(false);

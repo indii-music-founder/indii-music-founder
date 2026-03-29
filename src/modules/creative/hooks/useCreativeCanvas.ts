@@ -75,7 +75,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     if (json) {
                         await saveCanvasStateToStorage(item.id, json);
                     }
-                } catch (err) {
+                } catch (err: unknown) {
                     logger.warn('[CreativeStudio] Auto-save failed', err);
                 }
             }, 1000);
@@ -92,7 +92,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     // Initialize WITH base image URL
                     canvasOps.initialize(canvasEl.current, item.url, undefined, handleCanvasChange);
                 }
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn('[CreativeStudio] Failed to restore canvas state', err);
                 if (isMounted) {
                     // Fallback to fresh canvas

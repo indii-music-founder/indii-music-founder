@@ -78,7 +78,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             </div>
                         );
                     }
-                } catch (e) { logger.warn("Failed to parse image tool output:", e); }
+                } catch (e: unknown) { logger.warn("Failed to parse image tool output:", e); }
             }
 
             // Detect Delegate Task Output
@@ -115,11 +115,11 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                         {JSON.stringify(innerJson, null, 2)}
                                     </div>
                                 );
-                            } catch (e) { /* ignore */ }
+                            } catch (e: unknown) { /* ignore */ }
                         }
                         return <ReactMarkdown>{json.text}</ReactMarkdown>;
                     }
-                } catch (e) { logger.warn("Failed to parse delegate tool output:", e); }
+                } catch (e: unknown) { logger.warn("Failed to parse delegate tool output:", e); }
             }
             return <p className="mb-4 last:mb-0">{children}</p>;
         },
@@ -131,7 +131,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
                 if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return children;
-                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (e) { /* ignore */ } }
+                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (e: unknown) { /* ignore */ } }
             }
             return <CodeBlock {...props}>{children}</CodeBlock>;
         },
@@ -154,7 +154,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                     if (data.elements && data.elements[0]?.type === 'slugline') return <ScreenplayRenderer data={data} />;
                     if (data.callTime && data.nearestHospital) return <CallSheetRenderer data={data} />;
                     return <JsonViewer data={data} />;
-                } catch (e) { /* ignore */ }
+                } catch (e: unknown) { /* ignore */ }
             }
             return <code className={className} {...props}>{children}</code>
         }
@@ -256,7 +256,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 );
                             }
                         }
-                    } catch (e) { /* ignore parse errors */ }
+                    } catch (e: unknown) { /* ignore parse errors */ }
                     return null;
                 })}
 

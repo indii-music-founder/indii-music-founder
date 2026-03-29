@@ -24,7 +24,7 @@ export const PWAInstallPrompt: React.FC = () => {
                     return daysSinceDismissal < 7;
                 }
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.debug('[PWA] localStorage unavailable during init:', error);
         }
         return false;
@@ -71,7 +71,7 @@ export const PWAInstallPrompt: React.FC = () => {
         // Save dismissal timestamp (with safe localStorage access)
         try {
             localStorage.setItem('pwa-install-dismissed', Date.now().toString());
-        } catch (error) {
+        } catch (error: unknown) {
             // localStorage unavailable (private browsing, quota exceeded, etc.)
             // Silently ignore - user dismissed the prompt in memory
             logger.debug('[PWA] localStorage unavailable, dismissal not persisted:', error);

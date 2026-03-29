@@ -49,7 +49,7 @@ export class MultiCurrencyService {
 
             logger.info(`[Currency] Converted ${amount} ${from} -> ${convertedAmount} ${to}`);
             return parseFloat(convertedAmount.toFixed(4));
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[Currency] Conversion failed:', error);
             return amount;
         }

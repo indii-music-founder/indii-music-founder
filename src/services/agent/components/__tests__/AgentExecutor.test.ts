@@ -39,7 +39,7 @@ describe('AgentExecutor', () => {
     let executor: AgentExecutor;
 
     beforeEach(() => {
-        executor = new AgentExecutor(agentRegistry as any);
+        executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
         vi.clearAllMocks();
     });
 
@@ -50,10 +50,10 @@ describe('AgentExecutor', () => {
             execute: vi.fn().mockResolvedValue('Agent Output')
         };
 
-        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as any);
+        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>);
         vi.mocked(TraceService.startTrace).mockResolvedValue('mock-trace-id');
 
-        const context: any = { activeModule: 'test', projectHandle: { name: 'p1' } };
+        const context = { activeModule: 'test', projectHandle: { name: 'p1' } } as unknown as Parameters<typeof executor.execute>[2];
         const result = await executor.execute('mock-agent', 'Do something', context);
 
         expect(result).toBe('Agent Output');
@@ -78,10 +78,10 @@ describe('AgentExecutor', () => {
             })
         };
 
-        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as any);
+        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>);
         vi.mocked(TraceService.startTrace).mockResolvedValue('mock-trace-id');
 
-        await executor.execute('mock-agent', 'Do something', {} as any);
+        await executor.execute('mock-agent', 'Do something', {} as unknown as Parameters<typeof executor.execute>[2]);
 
         expect(TraceService.addStep).toHaveBeenCalledWith('mock-trace-id', 'thought', 'Thinking...');
         expect(TraceService.addStep).toHaveBeenCalledWith('mock-trace-id', 'tool_call', { tool: 'testTool', args: '{ "arg": 1 }' });
@@ -94,10 +94,10 @@ describe('AgentExecutor', () => {
             execute: vi.fn().mockRejectedValue(new Error('Agent Failed'))
         };
 
-        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as any);
+        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>);
         vi.mocked(TraceService.startTrace).mockResolvedValue('mock-trace-id');
 
-        await expect(executor.execute('mock-agent', 'Fail', {} as any))
+        await expect(executor.execute('mock-agent', 'Fail', {} as unknown as Parameters<typeof executor.execute>[2]))
             .rejects.toThrow('Agent Failed');
 
         expect(TraceService.failTrace).toHaveBeenCalledWith('mock-trace-id', 'Agent Failed');

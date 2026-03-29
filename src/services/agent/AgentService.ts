@@ -55,7 +55,7 @@ export class AgentService {
         try {
             await agentRegistry.warmup();
             this.isWarmedUp = true;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[indii:Service] Warmup failed, will retry on first message:', e);
         }
     }
@@ -464,7 +464,7 @@ export class AgentService {
                 if (pipelineContext.memoryContext && pipelineContext.memoryContext.trim()) {
                     knowledgeContext = `\n\nKNOWLEDGE BASE CONTEXT (from the artist's uploaded files and project data):\n${pipelineContext.memoryContext}`;
                 }
-            } catch (kbErr) {
+            } catch (kbErr: unknown) {
                 logger.warn('[AgentService] Knowledge Base retrieval failed in direct chat, continuing without:', kbErr);
             }
         }
@@ -572,7 +572,7 @@ If the user asks you to do something that requires active tools (like generating
             // Deep clone to isolate execution contexts
             try {
                 context = structuredClone(parentContext);
-            } catch (e) {
+            } catch (e: unknown) {
                 context = { ...parentContext };
             }
 
@@ -598,7 +598,7 @@ If the user asks you to do something that requires active tools (like generating
                             .join('\n');
                         logger.debug(`[AgentService] Injected ${memories.length} memories into context.`);
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn('[AgentService] Semantic retrieval failed (non-blocking):', e);
                 }
             }

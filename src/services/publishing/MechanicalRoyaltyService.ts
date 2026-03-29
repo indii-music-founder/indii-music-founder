@@ -70,7 +70,7 @@ export const MechanicalRoyaltyService = {
             if (!res.ok) throw new Error(`Songfile search failed: ${res.status}`);
             const data = await res.json();
             return data.result as CompositionInfo;
-        } catch (err) {
+        } catch (err: unknown) {
             logger.warn('MechanicalRoyaltyService.searchComposition: CF unavailable or failed', err);
             return null;
         }
@@ -149,7 +149,7 @@ export const MechanicalRoyaltyService = {
             });
 
             logger.info('MechanicalRoyaltyService: License requested', { licenseId, licenseNumber: result?.licenseNumber });
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('MechanicalRoyaltyService.requestLicense failed', err);
             throw err;
         }
@@ -167,7 +167,7 @@ export const MechanicalRoyaltyService = {
             const q = releaseId ? query(col, where('releaseId', '==', releaseId)) : query(col);
             const snap = await getDocs(q);
             return snap.docs.map(d => ({ id: d.id, ...d.data() } as MechanicalLicense));
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('MechanicalRoyaltyService.getLicenses failed', err);
             return [];
         }

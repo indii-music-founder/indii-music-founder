@@ -177,11 +177,11 @@ describe('Agent Architecture Integration (Hardened)', () => {
             };
 
             return Promise.resolve({
-                stream: stream as any,
+                stream: stream as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>['stream'],
                 response: Promise.resolve({
                     text: () => '{"final_response":"Generalist fallback response"}',
                     functionCalls: () => []
-                }) as any
+                }) as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>['response']
             });
         });
 
@@ -204,7 +204,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
                     }],
                     usageMetadata: { totalTokenCount: 100 }
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
             await service.sendMessage('Analyze market trends');
 
@@ -265,8 +265,8 @@ describe('Agent Architecture Integration (Hardened)', () => {
             };
 
             vi.mocked(AI.generateContentStream)
-                .mockResolvedValueOnce(stream1 as any)
-                .mockResolvedValueOnce(stream2 as any);
+                .mockResolvedValueOnce(stream1 as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+                .mockResolvedValueOnce(stream2 as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
             await service.sendMessage('Save this budget');
 
@@ -288,11 +288,11 @@ describe('Agent Architecture Integration (Hardened)', () => {
                             releaseLock: () => { }
                         }),
                         [Symbol.asyncIterator]: async function* () { yield { text: () => 'slow response' }; }
-                    } as any,
+                    } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>['stream'],
                     response: Promise.resolve({
                         text: () => 'slow response',
                         functionCalls: () => []
-                    }) as any
+                    }) as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>['response']
                 };
             });
 
@@ -318,14 +318,14 @@ describe('Agent Architecture Integration (Hardened)', () => {
                         complete: true
                     })
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
             // 2. Generalist Fallback
             vi.mocked(AI.generateContent).mockResolvedValueOnce({
                 response: {
                     text: () => 'I am generalist.'
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
             const generalistSpy = vi.spyOn(agentRegistry, 'getAsync');
 

@@ -75,7 +75,7 @@ export class CollaborationService {
                 // logger.debug('[CollaborationService] Awareness updated', states.length, 'users');
             });
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[CollaborationService] Failed to connect', error);
         }
     }

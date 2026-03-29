@@ -34,7 +34,7 @@ export class ContractSnippetStore {
 
             logger.info(`[SnippetStore] Fetched ${snippets.length} snippets for ${category || 'ALL'}`);
             return snippets;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[SnippetStore] Failed to fetch snippets:', error);
             return [];
         }
@@ -51,7 +51,7 @@ export class ContractSnippetStore {
             });
             logger.info(`[SnippetStore] Added new snippet: ${snippet.title}`);
             return docRef.id;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[SnippetStore] Failed to add snippet:', error);
             throw error;
         }
