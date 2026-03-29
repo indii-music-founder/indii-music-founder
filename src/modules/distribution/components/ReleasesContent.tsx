@@ -83,6 +83,11 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
                             coverArtUrl={release.coverArtUrl}
                             deployments={release.deployments}
                             releaseDate={release.releaseDate || new Date().toISOString()}
+                            genre={release.genre}
+                            subGenre={release.subGenre}
+                            primaryMood={release.primaryMood}
+                            vocalPresence={release.vocalPresence}
+                            marketingComment={release.marketingComment}
                         />
                     ))}
                 </div>

@@ -195,8 +195,28 @@ class DDEXGenerator:
 
         # Genre
         genre = track.get("genre", "Pop")
+        sub_genre = track.get("sub_genre")
         genre_elem = self._create_element(details_list, "Genre")
         self._create_element(genre_elem, "GenreText", genre)
+        if sub_genre:
+            self._create_element(genre_elem, "SubGenre", sub_genre)
+
+        # Language
+        language = track.get("language")
+        if language:
+            # ISO 639-2 language code, often needed for DSP indexing
+            self._create_element(sr, "LanguageAndScriptCode", language)
+
+        # Marketing Comment (DSP Pitch)
+        marketing_comment = track.get("marketing_comment")
+        if marketing_comment:
+            self._create_element(details_list, "MarketingComment", marketing_comment)
+
+        # Audio DNA Proprietary ID (if semantic data was injected)
+        audio_dna_hash = track.get("audio_dna", {}).get("hash")
+        if audio_dna_hash:
+            dna_id = self._create_element(sr, "SoundRecordingId")
+            self._create_element(dna_id, "ProprietaryId", audio_dna_hash, Namespace="IndiiOS:AudioDNA")
 
         # Parental Warning
         self._create_element(

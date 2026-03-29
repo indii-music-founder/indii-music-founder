@@ -10,6 +10,11 @@ interface ReleaseStatusCardProps {
     deployments: Record<string, { status: ReleaseStatus; error?: string }>;
     releaseDate?: string;
     upc?: string;
+    genre?: string;
+    subGenre?: string;
+    primaryMood?: string;
+    vocalPresence?: string;
+    marketingComment?: string;
 }
 
 const getStatusColor = (status: ReleaseStatus): string => {
@@ -43,7 +48,12 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
     coverArtUrl,
     deployments,
     releaseDate,
-    upc
+    upc,
+    genre,
+    subGenre,
+    primaryMood,
+    vocalPresence,
+    marketingComment
 }) => {
     // Item 398: Web Share API for release links
     const handleShare = useCallback(async () => {
@@ -103,6 +113,36 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                             Released: {releaseDate ? new Date(releaseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
                         </p>
                     </div>
+
+                    {/* Audio DNA Semantic Badges */}
+                    {(genre || primaryMood || vocalPresence) && (
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                            {genre && (
+                                <span className="px-2 py-0.5 bg-gray-800/50 text-gray-300 text-[9px] font-bold uppercase tracking-wider rounded-md border border-gray-700/50">
+                                    {genre}{subGenre ? ` : ${subGenre}` : ''}
+                                </span>
+                            )}
+                            {primaryMood && (
+                                <span className="px-2 py-0.5 bg-dept-marketing/10 text-dept-marketing text-[9px] font-bold uppercase tracking-wider rounded-md border border-dept-marketing/20">
+                                    {primaryMood}
+                                </span>
+                            )}
+                            {vocalPresence && (
+                                <span className="px-2 py-0.5 bg-dept-brand/10 text-dept-brand-glow text-[9px] font-bold uppercase tracking-wider rounded-md border border-dept-brand/20">
+                                    {vocalPresence}
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Marketing Pitch / Comment */}
+                    {marketingComment && (
+                        <div className="mb-4">
+                            <p className="text-[11px] text-gray-400 italic line-clamp-2 leading-relaxed pl-2 border-l-2 border-dept-marketing/30">
+                                "{marketingComment}"
+                            </p>
+                        </div>
+                    )}
 
                     {/* Deployments List */}
                     <div className="space-y-2 mb-4">

@@ -47,23 +47,23 @@ export type DistributorId = DirectDSPId | LegacyAggregatorId;
  * US rights → entity B). Each entry overrides the global split for the listed territories.
  */
 export interface TerritoryRightsSplit {
-    /** ISO 3166-1 alpha-2 territory codes, or 'WORLD' for worldwide */
-    territories: string[];
-    /** Rights holder name */
-    rightsHolder: string;
-    /** Percentage (0–100) for this holder in these territories */
-    percentage: number;
-    /** Type of rights covered */
-    rightsType: 'master' | 'publishing' | 'sync' | 'performance' | 'mechanical';
-    /** Optional Stripe Connect account ID for payout routing */
-    accountId?: string;
+  /** ISO 3166-1 alpha-2 territory codes, or 'WORLD' for worldwide */
+  territories: string[];
+  /** Rights holder name */
+  rightsHolder: string;
+  /** Percentage (0–100) for this holder in these territories */
+  percentage: number;
+  /** Type of rights covered */
+  rightsType: 'master' | 'publishing' | 'sync' | 'performance' | 'mechanical';
+  /** Optional Stripe Connect account ID for payout routing */
+  accountId?: string;
 }
 
 /** Territory rights configuration attached to a release */
 export interface TerritoryRightsConfig {
-    /** Whether territory-specific splits override the global split */
-    enabled: boolean;
-    splits: TerritoryRightsSplit[];
+  /** Whether territory-specific splits override the global split */
+  enabled: boolean;
+  splits: TerritoryRightsSplit[];
 }
 
 // ... (existing code)
@@ -342,4 +342,10 @@ export interface DashboardRelease {
   coverArtUrl?: string;
   releaseDate?: string;
   deployments: Record<string, { status: ReleaseStatus; error?: string }>;
+  // Optional Semantic Audio DNA fields to surface in the UI
+  genre?: string;
+  subGenre?: string;
+  primaryMood?: string;
+  vocalPresence?: string;
+  marketingComment?: string;
 }
