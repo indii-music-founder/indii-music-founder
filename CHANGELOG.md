@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.43.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.42.0...v1.43.0) (2026-03-29)
+
+
+### Features
+
+* enhance agent orchestration and DDEX distribution workflows with updated security rules and expanded test coverage ([d0fd190](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d0fd190526125125e7ea66646a73d4c8ffef8508))
+* overhaul distribution module architecture, add unit tests for authority and registration panels, and update UI components across multiple modules ([2a6c50e](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/2a6c50e83e562702c0bd8133a653b84bb606c391))
+
 ## [1.42.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.41.0...v1.42.0) (2026-03-28)
 
 
