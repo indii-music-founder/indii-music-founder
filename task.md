@@ -34,5 +34,17 @@
 | 6.3 | SchedulerClientService unit tests (18 tests) | [x] | Session |
 | 6.4 | SchedulerStatusPanel in Observability Dashboard | [x] | Session |
 
+## Sprint 7 — Audio AI Distribution Pipeline (COMPLETE)
+
+| ID | Task | Status | Source |
+| :--- | :--- | :--- | :--- |
+| 7.1 | `DDEXTrack` type: add `audio_dna`, `sub_genre`, `language`, `marketing_comment` fields | [x] | Item 415 |
+| 7.2 | `DistributionService.submitRelease`: map Audio DNA from `MusicLibraryService` into DDEX payload | [x] | Item 415 |
+| 7.3 | `NeuralCortexService`: vector-retrieval pipeline (embeddings, drift detection, render directives) | [x] | NEURAL_CORTEX.md |
+| 7.4 | `AudioIntelligenceService`: auto-register profiles in Neural Cortex after each analysis | [x] | NEURAL_CORTEX.md |
+| 7.5 | `RightPanel`: 7-item nav hub (Creative, Video, Workflow, Knowledge, Files, History, Agent) | [x] | User request |
+| 7.6 | `WorkflowPanel` + `KnowledgePanel` right-panel sub-components | [x] | User request |
+| 7.7 | E2E Firestore listener hang fix (distribution-workflow.spec.ts) | [x] | CI stability |
+
 ---
 *Self-managed task list for Antigravity.*

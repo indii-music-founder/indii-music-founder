@@ -4,7 +4,8 @@ import { AudioIntelligenceProfile, AudioSemanticData } from './types';
 import { Schema } from 'firebase/ai';
 import { fingerprintService } from './FingerprintService';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { musicLibraryService } from '@/services/music/MusicLibraryService'; // Import library service
+import { musicLibraryService } from '@/services/music/MusicLibraryService';
+import { neuralCortex } from '@/services/ai/NeuralCortexService';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
 
@@ -123,8 +124,14 @@ export class AudioIntelligenceService {
                 modelVersion: AI_MODELS.TEXT.AGENT
             };
 
-            // 5. Save to Cache
+            // 5. Save to Firestore/Music Library Cache
             await musicLibraryService.saveAnalysis(id, file.name, technical, id, semantic);
+
+            // 6. Auto-register in Neural Cortex (non-blocking, fail-safe)
+            //    Generates embeddings for targetPrompts and stores for visual drift detection.
+            neuralCortex.ingest(profile, file.name).catch((cortexErr) => {
+                Logger.warn('AudioIntelligence', `Neural Cortex ingest failed (non-fatal): ${String(cortexErr)}`);
+            });
 
             return profile;
         });
