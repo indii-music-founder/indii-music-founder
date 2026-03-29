@@ -404,9 +404,34 @@ class DDEXParserImpl {
     };
   }
 
-  private parseDealList(dealList: Record<string, unknown>) {
-    // Simplified parsing - expand as needed
-    return [];
+  private parseDealList(dealList: Record<string, unknown> | null | undefined): ERNMessage['dealList'] {
+    if (!dealList || !dealList.ReleaseDeal) return [];
+
+    const releaseDeals = Array.isArray(dealList.ReleaseDeal)
+      ? (dealList.ReleaseDeal as Record<string, unknown>[])
+      : [dealList.ReleaseDeal as Record<string, unknown>];
+
+    return releaseDeals.map((rd) => {
+      const deal = (rd.Deal || {}) as Record<string, unknown>;
+      const dealTerms = (deal.DealTerms || {}) as Record<string, unknown>;
+      const usage = (dealTerms.Usage || []) as Record<string, unknown>[];
+      const territories = dealTerms.TerritoryCode || dealTerms.Territory || ['Worldwide'];
+
+      return {
+        dealReference: String(rd['@_DealReference'] || ''),
+        dealTerms: {
+          commercialModelType: (dealTerms.CommercialModelType as ERNMessage['dealList'][0]['dealTerms']['commercialModelType']) || 'SubscriptionModel',
+          usage: (Array.isArray(usage) ? usage : [usage]).map((u) => ({
+            useType: (u.UseType as ERNMessage['dealList'][0]['dealTerms']['usage'][0]['useType']) || 'OnDemandStream',
+          })),
+          territoryCode: (Array.isArray(territories) ? territories : [territories]) as string[],
+          validityPeriod: {
+            startDate: String(dealTerms.ValidityPeriod ? (dealTerms.ValidityPeriod as Record<string, unknown>).StartDate : ''),
+            endDate: dealTerms.ValidityPeriod ? String((dealTerms.ValidityPeriod as Record<string, unknown>).EndDate || '') || undefined : undefined,
+          },
+        },
+      };
+    });
   }
 
   private buildDealList(deals: ERNMessage['dealList']) {

@@ -24,17 +24,11 @@ test.describe('Finance Module', () => {
             });
         });
 
-        // Navigate to finance (fixture already handles login and base URL)
-        const financeNav = page.locator('[data-testid="nav-item-finance"]');
-        if (await financeNav.isVisible().catch(() => false)) {
-            await financeNav.click();
-            await page.waitForTimeout(1_000);
-        } else {
-            await page.goto('/#finance');
-        }
+        // Navigate directly to finance for consistency
+        await page.goto('/#finance');
 
         // Wait for finance-specific content
-        await page.locator('h1, h2, [data-testid="finance-header"]').first().waitFor({ state: 'visible', timeout: 15_000 });
+        await page.locator('h1, h2, [data-testid="finance-header"], [data-testid="finance-tab-expenses"]').first().waitFor({ state: 'visible', timeout: 20_000 });
     });
 
     test('finance module loads without crashing', async ({ authedPage: page }) => {

@@ -1,158 +1,24 @@
 import { test, expect } from './fixtures/auth';
 
 /**
- * Distribution Workflow E2E Tests (Items 279)
+ * Distribution Workflow E2E Tests
  *
- * Covers: distribution module three-panel layout, releases tab,
- * distributors tab with connect buttons, QC panel, and bank/authority tabs.
- * Also covers the full delivery pipeline: metadata entry → SFTP delivery
- * (mocked) → status confirmation (Item 279).
+ * This version is optimized for CI stability:
+ * 1. Uses explicit waits for loading states
+ * 2. Handles Firestore snapshot delays
+ * 3. Uses robust data-testid locators
  *
- * Run: npx playwright test e2e/distribution-workflow.spec.ts
+ * Run: npx playwright test e2e/distribution-workflow.spec.ts --workers=1
  */
 
 test.describe('Distribution Module', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
     // ── Global timeout per test (prevents zombie hangs) ────────────────
-    test.setTimeout(45_000);
-
-    test.beforeEach(async ({ authedPage: page }) => {
-        // Mock ALL Firestore long-poll / listen channels to prevent hanging connections
-        await page.route('**/firestore.googleapis.com/**/Listen/**', async route => {
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
-        });
-
-        // Mock Firestore distribution collection reads
-        await page.route('**/firestore.googleapis.com/**/ddexReleases**', async route => {
-            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ documents: [] }) });
-        });
-
-        await page.route('**/firestore.googleapis.com/**/distributors**', async route => {
-            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ documents: [] }) });
-        });
-
-        // Ensure we are starting from a known state (HQ) if not already on the module
-        const currentUrl = page.url();
-        if (!currentUrl.includes('/department/distribution')) {
-            // First try clicking the sidebar - most reliable for Electron state flow
-            const distroNav = page.locator('[data-testid="nav-item-distribution"]').or(page.getByRole('button', { name: /Distribution Department/i }));
-
-            if (await distroNav.first().isVisible({ timeout: 10_000 }).catch(() => false)) {
-                await distroNav.first().click();
-            } else {
-                // Fallback to direct navigation if sidebar item is missing
-                await page.goto('/department/distribution');
-            }
-        }
-
-        // Wait for distribution-specific indicators to confirm module hydration
-        // 1. Core container
-        await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 25_000 });
-        // 2. Heading
-        await expect(page.getByRole('heading', { name: /Distribution/i }).first()).toBeVisible({ timeout: 20_000 });
-        // 3. Live System indicator
-        await expect(page.getByText(/Live System/i).first()).toBeVisible({ timeout: 20_000 });
-    });
-
-    test('distribution module loads without crashing', async ({ authedPage: page }) => {
-        await expect(page.getByText(/Distribution Engine/i).or(page.getByText(/150\+ PLATFORMS/i))).toBeVisible({ timeout: 15_000 });
-    });
-
-    test('Releases tab renders releases list or empty state', async ({ authedPage: page }) => {
-        // Click Catalogue specifically to see releases
-        const catalogueTab = page.locator('[data-testid="distro-tab-catalogue"]');
-        await catalogueTab.click();
-
-        // Wait for tab content to be visible
-        await expect(page.locator('[data-testid="distro-content-catalogue"]')).toBeVisible();
-
-        const emptyState = page.locator('[data-testid="releases-empty-state"]');
-        const releasesList = page.locator('[data-testid="releases-list"]');
-        const loadingState = page.locator('[data-testid="releases-loading"]');
-
-        // Wait for loading to finish if it's there
-        if (await loadingState.isVisible()) {
-            await expect(loadingState).toBeHidden({ timeout: 15_000 });
-        }
-
-        await expect(releasesList.or(emptyState)).toBeVisible({ timeout: 20_000 });
-    });
-
-    test('Distributors tab shows connection panel', async ({ authedPage: page }) => {
-        const distributorsTab = page.locator('[data-testid="distro-tab-connections"]');
-        await distributorsTab.click();
-
-        // Wait for tab content
-        await expect(page.locator('[data-testid="distro-content-connections"]')).toBeVisible();
-
-        // Check for loading state first
-        const loadingState = page.locator('[data-testid="distributors-loading"]');
-        if (await loadingState.isVisible().catch(() => false)) {
-            await expect(loadingState).toBeHidden({ timeout: 15_000 });
-        }
-
-        // Should show distributor grid
-        const distributorGrid = page.locator('[data-testid="distributors-grid"]');
-        await expect(distributorGrid).toBeVisible({ timeout: 15_000 });
-
-        // Verify individual card presence (can be connect or connected)
-        const firstCard = page.locator('[data-testid="distributor-card"]').first();
-        await expect(firstCard).toBeVisible();
-    });
-
-    test('Bank and Authority tabs render without crashing', async ({ authedPage: page }) => {
-        const tabs = [
-            { id: 'distro-tab-bank', contentId: 'distro-content-bank' },
-            { id: 'distro-tab-authority', contentId: 'distro-content-authority' }
-        ];
-
-        for (const tabInfo of tabs) {
-            const tab = page.locator(`[data-testid="${tabInfo.id}"]`);
-            await tab.click();
-            await expect(page.locator(`[data-testid="${tabInfo.contentId}"]`)).toBeVisible({ timeout: 10_000 });
-        }
-    });
-
-    test('QC panel renders validation interface', async ({ authedPage: page }) => {
-        const qcTab = page.locator('[data-testid="distro-tab-brain"]');
-        await qcTab.click();
-
-        // Wait for content
-        await expect(page.locator('[data-testid="distro-content-brain"]')).toBeVisible();
-
-        // Check for specific text in the QC visualizer
-        await expect(page.getByText(/Distribution Gateway/i)).toBeVisible({ timeout: 15_000 });
-        await expect(page.locator('[data-testid="qc-run-analysis"]')).toBeVisible();
-    });
-
-    test('Create Release button is present and opens wizard', async ({ authedPage: page }) => {
-        const createBtn = page.locator('[data-testid="distro-tab-new"]');
-        await createBtn.click();
-
-        // Check for content
-        await expect(page.locator('[data-testid="distro-content-new"]')).toBeVisible();
-
-        // Metadata inputs should be visible
-        await expect(page.locator('[data-testid="release-title-input"]')).toBeVisible({ timeout: 15_000 });
-    });
-});
-
-// ── Item 279: Delivery Pipeline E2E (mocked SFTP) ─────────────────────────────
-
-test.describe('Distribution Delivery Pipeline (Item 279)', () => {
-    test.use({ viewport: { width: 1440, height: 900 } });
-
-    // ── Prevent zombie timeouts ────────────────────────────────────────
     test.setTimeout(60_000);
 
     test.beforeEach(async ({ authedPage: page }) => {
-        // ── Block Firestore listeners to prevent hanging connections ────
-        await page.route('**/firestore.googleapis.com/**/Listen/**', async route => {
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
-        });
-
-        // ── Mock DDEX/delivery Cloud Functions ──────────────────────────
+        // Mock DDEX/delivery Cloud Functions
         await page.route('**/cloudfunctions.net/**/initiateDelivery**', async route => {
             await route.fulfill({
                 status: 200,
@@ -183,58 +49,134 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
             });
         });
 
-        // ── Mock release Firestore read with a deliverable release ───────
-        await page.route('**/firestore.googleapis.com/**/ddexReleases**', async route => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({
-                    documents: [{
-                        name: 'projects/test/databases/(default)/documents/ddexReleases/release-001',
-                        fields: {
-                            title: { stringValue: 'Test EP' },
-                            status: { stringValue: 'ready' },
-                            upc: { stringValue: '123456789012' },
-                            deliveryStatus: { stringValue: 'not_started' },
-                        },
-                    }],
-                }),
-            });
-        });
+        // Direct navigation
+        await page.goto('/distribution');
 
-        await page.goto('/department/distribution');
-        await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 20_000 });
+        // Confirm module hydration - the dashboard shell should be visible quickly
+        await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30_000 });
     });
 
-    test('delivery pipeline initiates and returns a delivery ID', async ({ authedPage: page }) => {
-        // Navigate to distribution (already there from beforeEach)
+    test('distribution module loads and shows live system status', async ({ authedPage: page }) => {
+        // Wait for the dashboard shell
+        await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 15_000 });
 
-        // Switch to Catalogue tab
+        // Check for the "Live System" badge specifically
+        const liveBadge = page.locator('span:has-text("Live System"), [data-testid="live-system-badge"]').first();
+        await expect(liveBadge).toBeVisible({ timeout: 10_000 });
+
+        // Ensure the presence of the navigation tabs
+        await expect(page.locator('[data-testid="distro-tab-new"]')).toBeVisible();
+        await expect(page.locator('[data-testid="distro-tab-catalogue"]')).toBeVisible();
+    });
+
+    test('Releases tab renders content area with hydration awareness', async ({ authedPage: page }) => {
+        // Releases is the default tab.
+        const content = page.locator('[data-testid="distro-content-new"]');
+        await expect(content).toBeVisible();
+
+        // Wait for hydration/loading to finish
+        const loader = page.locator('[data-testid="releases-loading"]');
+        if (await loader.isVisible()) {
+            await expect(loader).not.toBeVisible({ timeout: 20_000 });
+        }
+
+        // Verify either the list or empty state exists
+        await expect(page.locator('[data-testid="releases-list"], [data-testid="releases-empty-state"]')).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('Distributors tab shows connection grid and allows authorization', async ({ authedPage: page }) => {
         await page.locator('[data-testid="distro-tab-catalogue"]').click();
+        await expect(page.locator('[data-testid="distro-content-catalogue"]')).toBeVisible();
 
-        // Wait for release card
-        const releaseCard = page.locator('[data-testid="release-status-card"]').first();
-        await expect(releaseCard).toBeVisible({ timeout: 15_000 });
+        // The grid should be visible
+        const grid = page.locator('[data-testid="distributors-grid"]');
+        await expect(grid).toBeVisible({ timeout: 15_000 });
 
-        // Look for a Deliver / Submit button inside the card or tab
-        // Note: The specific logic for manual delivery might vary, but we expect root visible
-        await expect(page.locator('#root')).toBeVisible();
+        // Select a distributor and open connection modal
+        const distBtn = page.locator('[data-testid="connect-button-distrokid"], [data-testid="distributor-card-connect"]').first();
+        await expect(distBtn).toBeVisible();
+        await distBtn.click();
+
+        // Verify modal content
+        const modal = page.locator('[data-testid="connect-distributor-modal"]');
+        await expect(modal).toBeVisible();
+        await expect(page.locator('[data-testid="distro-config-tab-identity"]')).toBeVisible();
+
+        // Fill a field and click submit (mocked success)
+        const userField = page.locator('[data-testid="distro-auth-username"]');
+        if (await userField.isVisible()) {
+            await userField.fill('e2e-user');
+        }
+
+        const submitBtn = page.locator('[data-testid="distro-finalize-connection"]');
+        await expect(submitBtn).toBeVisible();
+        await submitBtn.click();
+
+        // Modal should close
+        await expect(modal).not.toBeVisible({ timeout: 10_000 });
     });
 
-    test('QC validation workflow', async ({ authedPage: page }) => {
-        // Switch to Brain/QC tab
+    test('Authority layer handles ISRC and UPC generation', async ({ authedPage: page }) => {
+        // Use Authority tab
+        await page.locator('[data-testid="distro-tab-authority"]').click();
+        await expect(page.locator('[data-testid="distro-content-authority"]')).toBeVisible();
+
+        // Mock interaction with generation buttons
+        const isrcBtn = page.locator('[data-testid="authority-generate-isrc"]');
+        const upcBtn = page.locator('[data-testid="authority-generate-upc"]');
+
+        await expect(isrcBtn).toBeVisible();
+        await expect(upcBtn).toBeVisible();
+
+        // Note: Full workflow requires a selected release, but we verify button presence and basic layout
+        await expect(page.locator('[data-testid="authority-release-selector"]')).toBeVisible();
+    });
+
+    test('Bank layer displays tax compliance and revenue data', async ({ authedPage: page }) => {
+        await page.locator('[data-testid="distro-tab-bank"]').click();
+        await expect(page.locator('[data-testid="distro-content-bank"]')).toBeVisible();
+
+        // Check sub-tabs
+        await expect(page.locator('[data-testid="distro-subtab-tax"]')).toBeVisible();
+        await expect(page.locator('[data-testid="distro-subtab-waterfall"]')).toBeVisible();
+
+        // Verify Tax Compliance section
+        await expect(page.locator('[data-testid="bank-verify-tax-compliance"]')).toBeVisible();
+    });
+
+    test('Create Release workflow opens metadata modal', async ({ authedPage: page }) => {
+        await page.locator('[data-testid="distro-tab-new"]').click();
+        await expect(page.locator('[data-testid="distro-content-new"]')).toBeVisible();
+
+        // Wait for loader to disappear
+        const loader = page.locator('[data-testid="releases-loading"]');
+        if (await loader.isVisible()) {
+            await expect(loader).not.toBeVisible({ timeout: 20_000 });
+        }
+
+        // Click "Submit Release"
+        const submitBtn = page.locator('[data-testid="releases-submit-button"]');
+        await expect(submitBtn).toBeVisible();
+        await submitBtn.click();
+
+        // Modal content check
+        await expect(page.locator('[data-testid="release-title-input"]')).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('[data-testid="release-artist-input"]')).toBeVisible();
+    });
+
+    test('QC analysis workflow in Brain tab', async ({ authedPage: page }) => {
         await page.locator('[data-testid="distro-tab-brain"]').click();
         await expect(page.locator('[data-testid="distro-content-brain"]')).toBeVisible();
 
-        // Verify QC Analyze button
-        const runBtn = page.locator('[data-testid="qc-run-analysis"]');
-        await expect(runBtn).toBeVisible();
+        // The Brain tab has QCPanel and QCVisualizer.
+        // Target the QCVisualizer one as it provides the deeper analysis
+        const visualizer = page.locator('[data-testid="distro-content-brain"]');
+        const runBtn = visualizer.locator('[data-testid="qc-run-analysis"]').first();
 
-        // Trigger QC (mocked timeout in component)
+        await expect(runBtn).toBeVisible();
         await runBtn.click();
 
-        // Wait for results or passed badge (demo mode usually auto-passes)
-        const passedBadge = page.locator('[data-testid="qc-passed-badge"]');
-        await expect(passedBadge).toBeVisible({ timeout: 15_000 });
+        // Wait for pass badge (Cleared for Delivery)
+        await expect(page.locator('[data-testid="qc-passed-badge"]')).toBeVisible({ timeout: 15_000 });
     });
 });

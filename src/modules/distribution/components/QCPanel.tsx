@@ -139,7 +139,7 @@ export const QCPanel: React.FC = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button
-                                data-testid="qc-run-validation"
+                                data-testid="qc-run-analysis"
                                 onClick={handleValidate}
                                 disabled={loading === 'qc'}
                                 className="bg-dept-distribution hover:bg-dept-distribution/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
@@ -175,7 +175,7 @@ export const QCPanel: React.FC = () => {
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between border-b border-white/5 pb-4">
                                         <span
-                                            data-testid="qc-status-badge"
+                                            data-testid={qcResult.valid ? "qc-passed-badge" : "qc-failed-badge"}
                                             className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${qcResult.valid ? 'bg-dept-licensing/10 text-dept-licensing border border-dept-licensing/20' : 'bg-dept-marketing/10 text-dept-marketing border border-dept-marketing/20'
                                                 }`}>
                                             {qcResult.valid ? 'PASSED' : 'FAILED'}

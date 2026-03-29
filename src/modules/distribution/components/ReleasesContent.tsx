@@ -61,16 +61,18 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
             </div>
 
             {releases.length === 0 ? (
-                <ActionableEmptyState
-                    icon={<Radio size={48} />}
-                    title="NO ACTIVE RELEASES"
-                    description="Submit your first release using the button above."
-                    colorClasses={{
-                        text: 'text-gray-500',
-                        bg: 'bg-white/5',
-                        border: 'border-white/5'
-                    }}
-                />
+                <div data-testid="releases-empty-state">
+                    <ActionableEmptyState
+                        icon={<Radio size={48} />}
+                        title="NO ACTIVE RELEASES"
+                        description="Submit your first release using the button above."
+                        colorClasses={{
+                            text: 'text-gray-500',
+                            bg: 'bg-white/5',
+                            border: 'border-white/5'
+                        }}
+                    />
+                </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="releases-list">
                     {releases.map((release) => (

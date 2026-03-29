@@ -18,7 +18,8 @@ import {
     ConsultExpertsArgs,
     ExpertConsultation,
     ToolFunctionArgs,
-    ToolFunctionResult
+    ToolFunctionResult,
+    validateHubAndSpoke
 } from './types';
 import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
@@ -95,29 +96,6 @@ export class BaseAgent implements SpecializedAgent {
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }: DelegateTaskArgs, context, _toolContext?: ToolExecutionContext) => {
-                const { agentService } = await import('./AgentService');
-                const { toolError } = await import('./utils/ToolUtils');
-                const { DelegationLoopDetector } = await import('./LoopDetector');
-                const { validateHubAndSpoke } = await import('./types');
-
-                if (typeof targetAgentId !== 'string' || typeof task !== 'string') {
-                    return toolError('Invalid delegation parameters', 'INVALID_ARGS');
-                }
-                // Runtime validation: reject invalid agent IDs to prevent hallucination issues
-                if (!VALID_AGENT_IDS.includes(targetAgentId)) {
-                    return toolError(
-                        `Invalid agent ID: "${targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
-                        'INVALID_AGENT_ID'
-                    );
-                }
-
-                // Phase 4: Enforce hub-and-spoke architecture
-                const hubSpokeError = validateHubAndSpoke(this.id, targetAgentId);
-                if (hubSpokeError) {
-                    logger.warn(`[BaseAgent] Hub-and-spoke violation: ${this.id} -> ${targetAgentId}`);
-                    return toolError(hubSpokeError, 'HUB_SPOKE_VIOLATION');
-                }
-
                 // Phase 2: Check for delegation loops
                 const traceId = context?.traceId || 'unknown';
                 const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, targetAgentId);
@@ -129,19 +107,24 @@ export class BaseAgent implements SpecializedAgent {
                     );
                 }
 
-                const result = await agentService.runAgent(targetAgentId, task, context, context?.traceId, context?.attachments);
-                return {
-                    success: true,
-                    data: result,
-                    message: `Delegated task to ${targetAgentId}`
-                };
+                try {
+                    if (!context?.runAgent) {
+                        return toolError('Agent system runner not available in context', 'INTERNAL_ERROR');
+                    }
+
+                    const result = await context.runAgent(targetAgentId, task, context, context?.traceId, context?.attachments);
+                    return {
+                        success: true,
+                        data: result,
+                        message: `Delegated task to ${targetAgentId}`
+                    };
+                } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    return toolError(`Delegation failed: ${message}`, 'EXECUTION_ERROR');
+                }
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             consult_experts: async ({ consultations }: ConsultExpertsArgs, context, _toolContext?: ToolExecutionContext) => {
-                const { agentService } = await import('./AgentService');
-                const { toolError } = await import('./utils/ToolUtils');
-                const { validateHubAndSpoke } = await import('./types');
-
                 if (!Array.isArray(consultations)) {
                     return toolError('Consultations must be an array', 'INVALID_ARGS');
                 }
@@ -160,7 +143,11 @@ export class BaseAgent implements SpecializedAgent {
                                 return { agentId: c.targetAgentId, error: hubSpokeError };
                             }
 
-                            const res = await agentService.runAgent(c.targetAgentId, c.task, context, context?.traceId, context?.attachments);
+                            if (!context?.runAgent) {
+                                return { agentId: c.targetAgentId, error: 'Agent system runner not available in context' };
+                            }
+
+                            const res = await context.runAgent(c.targetAgentId, c.task, context, context?.traceId, context?.attachments);
                             return { agentId: c.targetAgentId, response: res };
                         })
                     );

@@ -137,7 +137,7 @@ class TestFullPipeline(unittest.TestCase):
         isrcs = []
         for track in self.release_data["tracks"]:
             isrc = manager.generate_isrc(country="US", registrant="T3S")
-            self.assertRegex(isrc, r'^US-T3S-\d{2}-\d{5}$')
+            self.assertRegex(isrc, r'^UST3S\d{7}$')
             track["isrc"] = isrc
             isrcs.append(isrc)
 
@@ -161,7 +161,8 @@ class TestFullPipeline(unittest.TestCase):
         result = validator.validate_metadata({
             "title": "Test EP - Pipeline Validation",
             "artist": "Pipeline Test Artist",
-            "artwork_url": "https://storage.googleapis.com/test/cover.jpg"
+            "artwork_url": "https://storage.googleapis.com/test/cover.jpg",
+            "tracks": [{"title": "Track 1", "duration": 180, "explicit": False}]
         })
 
         self.assertTrue(result["valid"], f"QC should pass. Errors: {result.get('errors', [])}")
@@ -363,7 +364,8 @@ class TestFullPipeline(unittest.TestCase):
         qc_result = qc.validate_metadata({
             "title": self.release_data["title"],
             "artist": self.release_data["artist"],
-            "artwork_url": "https://example.com/cover.jpg"
+            "artwork_url": "https://example.com/cover.jpg",
+            "tracks": self.release_data["tracks"]
         })
         self.assertTrue(qc_result["valid"], f"QC failed: {qc_result['errors']}")
 

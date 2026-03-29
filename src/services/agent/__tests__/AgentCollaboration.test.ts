@@ -102,7 +102,10 @@ describe('Agent Collaboration', () => {
             text: 'Marketing plan content.'
         });
 
-        const result = await agent.execute('Help with marketing', { traceId: 'parent-trace-123' });
+        const result = await agent.execute('Help with marketing', {
+            traceId: 'parent-trace-123',
+            runAgent: agentService.runAgent.bind(agentService)
+        });
 
         // Verify delegation call
         expect(agentService.runAgent).toHaveBeenCalledWith(
@@ -159,7 +162,10 @@ describe('Agent Collaboration', () => {
             return { text: 'Unknown' };
         });
 
-        const result = await agent.execute('Analyze and market this track', { traceId: 'main-trace' });
+        const result = await agent.execute('Analyze and market this track', {
+            traceId: 'main-trace',
+            runAgent: agentService.runAgent.bind(agentService)
+        });
 
         // Verify parallel calls
         expect(agentService.runAgent).toHaveBeenCalledTimes(2);

@@ -84,11 +84,9 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     tracks = release.get("tracks", [])
     for i, track in enumerate(tracks):
         if not track.get("isrc"):
-            isrc_data = id_manager.generate_isrc(
-                track_title=track.get("title", f"Track {i + 1}"),
-                artist_name=release.get("artist") or (release.get("artists") or ["Unknown"])[0],
-            )
-            track["isrc"] = isrc_data["isrc"]
+            # isrc_manager.py: generate_isrc(country=None, registrant=None) -> str
+            isrc = id_manager.generate_isrc()
+            track["isrc"] = isrc
             logger.info(f"Assigned ISRC {track['isrc']} to track '{track.get('title')}'")
 
     emit("isrc", "done", 45, f"ISRC assigned to {len(tracks)} track(s)", {"tracks": [t.get("isrc") for t in tracks]})
@@ -100,8 +98,16 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     generator = DDEXGenerator()
 
     # Normalise the release dict into the shape expected by DDEXGenerator
+    # Ensure mandatory cover fields are present if using artwork_url
+    if "artwork_url" in release and "cover_filename" not in release:
+        release["cover_filename"] = "cover.jpg"
+    
     ddex_metadata = {**release, "tracks": tracks}
-    xml_string = generator.generate(ddex_metadata)
+    xml_string = generator.generate_ern(ddex_metadata)
+    
+    # If a UPC was assigned during Identity management, ensure it's in metadata
+    if not ddex_metadata.get("upc"):
+        ddex_metadata["upc"] = id_manager.generate_upc()
 
     xml_path = os.path.join(storage_path, f"ddex_{release.get('releaseId', 'release')}.xml")
     os.makedirs(storage_path, exist_ok=True)

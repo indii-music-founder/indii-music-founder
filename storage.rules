@@ -124,7 +124,8 @@ service firebase.storage {
 
     // Public readable assets (e.g., thumbnails, shared media)
     match /public/{allPaths=**} {
-      allow read: if true;
+      // SECURITY: Only authenticated users can read public assets (prevents scraper exfiltration)
+      allow read: if isAuthenticated();
       // SECURITY: Restrict unauthorized writes to public assets
       allow write: if false;
     }

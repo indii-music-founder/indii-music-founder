@@ -1,9 +1,15 @@
 import { auth, db } from '@/services/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { TraceService } from '../observability/TraceService';
-import { agentRegistry } from '../registry';
+import {
+    AgentContext,
+    AgentMessage,
+    SpecializedAgent,
+    IAgentRegistry,
+    AgentResponse,
+    AgentProgressCallback
+} from '../types';
 import { PipelineContext } from './ContextPipeline';
-import { AgentResponse, AgentProgressCallback } from '../types';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
 
@@ -12,7 +18,11 @@ import { logger } from '@/utils/logger';
  * It manages tracing, context propagation, and agent fallback logic.
  */
 export class AgentExecutor {
-    constructor() { }
+    private registry: IAgentRegistry;
+
+    constructor(registry: IAgentRegistry) {
+        this.registry = registry;
+    }
 
     /**
      * Executes the requested agent with the provided context and observability tracing.
@@ -34,7 +44,7 @@ export class AgentExecutor {
         attachments?: { mimeType: string; base64: string }[]
     ): Promise<AgentResponse> {
         // Try to get specific agent, or default to generalist
-        let agent = await agentRegistry.getAsync(agentId);
+        let agent = await this.registry.getAsync(agentId);
 
         if (!agent) {
             logger.warn(`[AgentExecutor] Agent '${agentId}' not found. Falling back to Generalist.`);
@@ -42,18 +52,18 @@ export class AgentExecutor {
             // Try lowercase version first (handle LLM casing hallucinations)
             if (agentId !== agentId.toLowerCase()) {
                 const lowerId = agentId.toLowerCase();
-                agent = await agentRegistry.getAsync(lowerId);
+                agent = await this.registry.getAsync(lowerId);
             }
 
             // If still not found, fallback to Generalist
             if (!agent) {
-                agent = await agentRegistry.getAsync('generalist');
+                agent = await this.registry.getAsync('generalist');
             }
         }
 
         if (!agent) {
             // Get diagnostic info about why the load failed
-            const loadError = agentRegistry.getLoadError('generalist');
+            const loadError = this.registry.getLoadError('generalist');
             const errorDetail = loadError
                 ? `Last error: ${loadError.error.message} (${loadError.attempts} attempts)`
                 : 'No error details available';
@@ -61,7 +71,7 @@ export class AgentExecutor {
             logger.error(`[AgentExecutor] FATAL: Agent load failure diagnostic:`, {
                 requestedAgentId: agentId,
                 generalistLoadError: loadError,
-                registeredAgents: agentRegistry.getAll().map(a => a.id)
+                registeredAgents: this.registry.getAll().map(a => a.id)
             });
 
             throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and fallback Generalist failed to load. ${errorDetail}`);

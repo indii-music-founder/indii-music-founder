@@ -2,6 +2,7 @@
 import { logger } from '@/utils/logger';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { useStore } from '@/core/store';
+import { AgentRunner } from './types';
 
 export type TaskPriority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
 
@@ -86,14 +87,24 @@ export class MaestroBatchingService {
         return tasks.map(t => resultsMap.get(t.id));
     }
 
+    private agentRunner: AgentRunner | null = null;
+
+    /**
+     * Injects the agent runner function to avoid circular dependencies.
+     */
+    setRunner(runner: AgentRunner): void {
+        this.agentRunner = runner;
+    }
+
     private async executeIndividualTask(task: BatchedTask): Promise<any> {
         logger.debug(`[Maestro] Executing task ${task.id} for agent ${task.agentId} (Priority: ${task.priority})`);
 
         try {
-            // Dynamic import to avoid circular dependency with AgentService
-            const { agentService } = await import('./AgentService');
+            if (!this.agentRunner) {
+                throw new Error('[Maestro] Agent runner not initialized');
+            }
 
-            const result = await agentService.runAgent(
+            const result = await this.agentRunner(
                 task.agentId,
                 task.description,
                 task.context,

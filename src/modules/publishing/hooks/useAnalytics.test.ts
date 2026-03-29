@@ -39,7 +39,7 @@ describe('useAnalytics', () => {
         capturedOnNext = () => { };
         capturedOnError = () => { };
 
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ id: 'test-user-id' });
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ userProfile: { id: 'test-user-id' } });
         (getFirestore as ReturnType<typeof vi.fn>).mockReturnValue({});
 
         (onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query, onNext, onError) => {
@@ -127,7 +127,7 @@ describe('usePayouts', () => {
         capturedOnNext = () => { };
         capturedOnError = () => { };
 
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ id: 'test-user-id' });
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ userProfile: { id: 'test-user-id' } });
         (getFirestore as ReturnType<typeof vi.fn>).mockReturnValue({});
 
         (onSnapshot as ReturnType<typeof vi.fn>).mockImplementation((_query, onNext, onError) => {

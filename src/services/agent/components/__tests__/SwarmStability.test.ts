@@ -42,9 +42,9 @@ class RecursiveAgent extends BaseAgent {
         });
     }
 
-     
+
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
-        const executor = new AgentExecutor();
+        const executor = new AgentExecutor(agentRegistry as any);
         // Simulate recursion
         return executor.execute('recursive-agent', task, context);
     }
@@ -63,7 +63,7 @@ class FailingAgent extends BaseAgent {
         });
     }
 
-     
+
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]): Promise<any> {
         throw new Error('Intentional Failure');
     }
@@ -81,9 +81,9 @@ class ParentAgent extends BaseAgent {
             tools: []
         });
     }
-     
+
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
-        const executor = new AgentExecutor();
+        const executor = new AgentExecutor(agentRegistry as any);
         return executor.execute('child', task, context);
     }
 }
@@ -95,7 +95,7 @@ describe('Swarm Stability Integration', () => {
     });
 
     it('should handle failure propagation from child agents', async () => {
-        const executor = new AgentExecutor();
+        const executor = new AgentExecutor(agentRegistry as any);
 
         (agentRegistry.getAsync as any).mockImplementation(async (id: string) => {
             if (id === 'parent') return new ParentAgent();
@@ -117,7 +117,7 @@ describe('Swarm Stability Integration', () => {
     });
 
     it('should detect and prevent infinite recursion', async () => {
-        const executor = new AgentExecutor();
+        const executor = new AgentExecutor(agentRegistry as any);
 
         (agentRegistry.getAsync as any).mockImplementation(async (id: string) => {
             if (id === 'recursive-agent') return new RecursiveAgent();

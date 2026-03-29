@@ -20,7 +20,8 @@ const getDistributorColor = (id: string) => {
 export const DistributorCard: React.FC<DistributorCardProps> = ({ connection, onConnect, isConnecting }) => {
     return (
         <Card
-            data-testid={`distributor-card-${connection.distributorId}`}
+            data-testid="distributor-card"
+            data-testid-distributor={connection.distributorId}
             className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-dept-distribution/30 transition-all duration-300 backdrop-blur-sm"
         >
             {/* Top Gradient Banner */}
