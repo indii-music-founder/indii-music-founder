@@ -80,10 +80,10 @@ export class PromptSanitizer {
             }
         }
 
-        // 2. Normalize control characters (strip null bytes, DEL, non-printable)
+        // 2. Normalize control characters (strip null bytes, DEL, non-printable, zero-width)
         const originalLength = sanitized.length;
         // eslint-disable-next-line no-control-regex
-        sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u200B-\u200D\uFEFF]/g, '');
         if (sanitized.length !== originalLength) {
             reasons.push('Stripped control characters');
         }

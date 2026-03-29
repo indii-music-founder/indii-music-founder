@@ -206,7 +206,7 @@ export default function Sidebar() {
                         <h2 className="text-sm font-semibold text-gray-200 whitespace-nowrap">Studio Resources</h2>
                         <button
                             onClick={() => throttledSetModule('dashboard')}
-                            className="flex items-center gap-2 text-xs text-gray-500 mt-1 hover:text-white transition-colors"
+                            className="flex items-center gap-2 text-xs text-gray-400 mt-1 hover:text-white transition-colors"
                             data-testid="return-hq-btn"
                             aria-label="Return to HQ"
                         >
@@ -258,7 +258,7 @@ export default function Sidebar() {
             <div className="flex-1 py-4 space-y-6">
                 {/* Manager's Office */}
                 <div data-testid="manager-section">
-                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Manager's Office</h3>}
+                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap">Manager's Office</h3>}
                     <div className="space-y-0.5">
                         {visibleManagerItems.map(item => (
                             <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
@@ -268,7 +268,7 @@ export default function Sidebar() {
 
                 {/* Departments */}
                 <div>
-                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Departments</h3>}
+                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap">Departments</h3>}
                     <div className="space-y-0.5">
                         {visibleDepartmentItems.map(item => (
                             <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
@@ -278,7 +278,7 @@ export default function Sidebar() {
 
                 {/* Tools */}
                 <div>
-                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Tools</h3>}
+                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap">Tools</h3>}
                     <div className="space-y-0.5">
                         {visibleToolItems.map(item => (
                             <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />

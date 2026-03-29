@@ -8,6 +8,7 @@ import { z } from 'zod';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import { credentialService } from '../services/CredentialService';
 
 export const registerSFTPHandlers = () => {
     ipcMain.handle('sftp:connect', async (event, config: unknown) => {
@@ -23,9 +24,38 @@ export const registerSFTPHandlers = () => {
         } catch (error) {
             console.error('SFTP Connect Failed:', error);
             if (error instanceof z.ZodError) {
-                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
             return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('sftp:connect-distributor', async (event, distributorId: string) => {
+        try {
+            validateSender(event);
+            if (!distributorId) throw new Error('distributorId is required');
+
+            // 1. Fetch credentials securely from the main process keychain
+            const credentials = await credentialService.getCredentials(distributorId as any);
+            if (!credentials || !credentials.sftpHost || (!credentials.sftpPassword && !credentials.password)) {
+                throw new Error(`Missing or incomplete SFTP credentials for ${distributorId}`);
+            }
+
+            // 2. Validate host to prevent SSRF
+            await validateSafeHostAsync(credentials.sftpHost);
+
+            // 3. Connect securely
+            await sftpService.connect({
+                host: credentials.sftpHost,
+                port: credentials.sftpPort ? parseInt(credentials.sftpPort) : 22,
+                username: credentials.sftpUsername || credentials.username || '',
+                password: credentials.sftpPassword || credentials.password || ''
+            });
+
+            return { success: true };
+        } catch (error) {
+            console.error(`[SFTP] Secure Connect Failed for ${distributorId}:`, error);
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
 
@@ -60,7 +90,7 @@ export const registerSFTPHandlers = () => {
         } catch (error) {
             console.error('SFTP Upload Failed:', error);
             if (error instanceof z.ZodError) {
-                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
             return { success: false, error: String(error) };
         }

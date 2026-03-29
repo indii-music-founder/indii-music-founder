@@ -70,6 +70,7 @@ export interface ElectronAPI {
     // SFTP (Distribution)
     sftp: {
         connect: (config: unknown) => Promise<{ success: boolean; error?: string }>;
+        connectDistributor: (distributorId: string) => Promise<{ success: boolean; error?: string }>;
         uploadDirectory: (localPath: string, remotePath: string) => Promise<{ success: boolean; files?: string[]; error?: string }>;
         disconnect: () => Promise<{ success: boolean }>;
         isConnected: () => Promise<boolean>;
@@ -89,6 +90,14 @@ export interface ElectronAPI {
     // AI Sidecar (Docker container management)
     sidecar?: {
         restart: () => void;
+        onStatusUpdate?: (callback: (status: string) => void) => () => void;
+    };
+
+    // Power Monitor
+    power?: {
+        getState: () => Promise<string>;
+        onBattery: (callback: () => void) => () => void;
+        onAC: (callback: () => void) => () => void;
     };
 
     // Video (Local Asset Management)
@@ -129,13 +138,17 @@ export interface ElectronAPI {
         // Item 350: Typed submitRelease + onSubmitProgress (replaces `as any` casts)
         submitRelease: (releaseData: unknown) => Promise<{ success: boolean; error?: string; report?: { sftp_skipped?: boolean } }>;
         onSubmitProgress: (callback: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void) => () => void;
+        onTransmitProgress: (callback: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string; percentage?: number }) => void) => () => void;
     };
-    on: (channel: string, callback: (...args: unknown[]) => void) => () => void;
-    // Item 351: Explicit invoke signature to remove @ts-ignore in usePowerState and UpdaterMonitor
-    invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
-    updater: {
+    updater?: {
         check: () => Promise<{ available: boolean; version?: string; error?: string }>;
         install: () => Promise<void>;
+        onChecking: (callback: () => void) => () => void;
+        onAvailable: (callback: (info: { version: string }) => void) => () => void;
+        onNotAvailable: (callback: () => void) => () => void;
+        onProgress: (callback: (data: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => void) => () => void;
+        onDownloaded: (callback: (info: { version: string }) => void) => () => void;
+        onError: (callback: (err: { message: string }) => void) => () => void;
     };
 
     // Security IPC bridge (Electron-only)

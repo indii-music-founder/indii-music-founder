@@ -61,7 +61,7 @@ test.describe('Chat / CommandBar Interaction', () => {
         if (!isVisible) {
             // CommandBar may be in a different state — try clicking to open it
             const commandBar = page.locator('[class*="command"], [class*="prompt"]').first();
-            await commandBar.click().catch(() => {});
+            await commandBar.click().catch(() => { });
             await page.waitForTimeout(500);
         }
 
@@ -76,7 +76,7 @@ test.describe('Chat / CommandBar Interaction', () => {
             return;
         }
 
-        await inputRetry.click();
+        await inputRetry.click({ force: true });
         await inputRetry.fill('hello indiiOS');
 
         const value = await inputRetry.inputValue().catch(() =>

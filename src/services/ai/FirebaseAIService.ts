@@ -289,6 +289,12 @@ export class FirebaseAIService implements AIContext {
         delete configRecord.toolConfig;
         delete configRecord.safetySettings;
 
+        // Remove thinkingConfig for models that don't support it (e.g., gemini-2.5-pro)
+        const supportsThinking = modelName.includes('gemini-3') || modelName.includes('gemini-2.0-pro-exp');
+        if (!supportsThinking) {
+            delete configRecord.thinkingConfig;
+        }
+
         // 1. Request Coalescing & Cache Key
         // Create a lean key that avoids stringifying large binary data
         const leanPrompt = Array.isArray(prompt)
@@ -525,6 +531,12 @@ export class FirebaseAIService implements AIContext {
         delete streamConfigRecord.tools;
         delete streamConfigRecord.toolConfig;
         delete streamConfigRecord.safetySettings;
+
+        // Remove thinkingConfig for models that don't support it
+        const supportsThinking = modelName.includes('gemini-3') || modelName.includes('gemini-2.0-pro-exp');
+        if (!supportsThinking) {
+            delete streamConfigRecord.thinkingConfig;
+        }
 
         // Create an internal AbortController for timeout if specified
         const timeoutController = new AbortController();

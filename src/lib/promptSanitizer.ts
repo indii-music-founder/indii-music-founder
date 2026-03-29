@@ -117,7 +117,8 @@ export interface SanitizationResult {
  * @returns Sanitized result with metadata
  */
 export function sanitizePrompt(input: string): SanitizationResult {
-    let sanitized = input;
+    // Strip zero-width characters used to bypass regex matching
+    let sanitized = input.replace(/[\u200B-\u200D\uFEFF]/g, '');
     const detectedPatterns: string[] = [];
     let replacementCount = 0;
 

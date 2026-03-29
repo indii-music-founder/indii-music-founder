@@ -47,7 +47,7 @@ export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
             <div className="hidden md:flex items-center gap-12">
                 <StatusPill label="Status" status={isProcessing ? 'Thinking' : 'Standby'} />
                 <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Session Uptime</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Session Uptime</span>
                     <span className="text-[11px] font-bold text-white uppercase italic tracking-tighter tabular-nums mt-0.5">{uptime}</span>
                 </div>
             </div>

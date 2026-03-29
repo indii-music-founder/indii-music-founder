@@ -111,8 +111,9 @@ test.describe('Chaos — Error Boundaries', () => {
     });
 
     test('submitting empty prompt is rejected without crash', async ({ authedPage: page }) => {
+        // Find an actual input, textarea, or contenteditable element inside or as the prompt-input
         const input = page
-            .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
+            .locator('textarea:visible, input[type="text"]:visible, [contenteditable="true"]:visible')
             .first();
 
         const isVisible = await input.isVisible().catch(() => false);
@@ -131,7 +132,7 @@ test.describe('Chaos — Error Boundaries', () => {
 
     test('injecting invalid characters into prompt does not crash', async ({ authedPage: page }) => {
         const input = page
-            .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
+            .locator('textarea:visible, input[type="text"]:visible, [contenteditable="true"]:visible')
             .first();
 
         const isVisible = await input.isVisible().catch(() => false);
@@ -171,7 +172,7 @@ test.describe('Chaos — Error Boundaries', () => {
         const count = await navItems.count();
 
         for (let i = 0; i < Math.min(count, 4); i++) {
-            await navItems.nth(i).click().catch(() => {});
+            await navItems.nth(i).click().catch(() => { });
             await page.waitForTimeout(800);
         }
 

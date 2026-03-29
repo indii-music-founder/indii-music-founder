@@ -36,12 +36,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
     try {
       // 1. If SFTP credentials provided, try to establish a real connection
       if (credentials.sftpHost && window.electronAPI?.sftp) {
-        const result = await window.electronAPI.sftp.connect({
-          host: credentials.sftpHost,
-          port: credentials.sftpPort ? parseInt(credentials.sftpPort) : 22,
-          username: credentials.sftpUsername || credentials.username || '',
-          password: credentials.sftpPassword || credentials.password || ''
-        });
+        const result = await window.electronAPI.sftp.connectDistributor(this.id);
 
         if (!result.success) {
           throw new Error(`Failed to establish SFTP connection to ${credentials.sftpHost}`);

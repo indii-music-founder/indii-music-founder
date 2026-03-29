@@ -60,6 +60,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // SFTP (Distribution)
     sftp: {
         connect: (config: SFTPConfig) => ipcRenderer.invoke('sftp:connect', config),
+        connectDistributor: (distributorId: string) => ipcRenderer.invoke('sftp:connect-distributor', distributorId),
         uploadDirectory: (localPath: string, remotePath: string) => ipcRenderer.invoke('sftp:upload-directory', localPath, remotePath),
         disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
         isConnected: () => ipcRenderer.invoke('sftp:is-connected'),
@@ -119,6 +120,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('distribution:submit-progress', handler);
             return () => ipcRenderer.removeListener('distribution:submit-progress', handler);
         },
+        onTransmitProgress: (callback: (data: any) => void) => {
+            const handler = (_event: any, data: any) => callback(data);
+            ipcRenderer.on('distribution:transmit-progress', handler);
+            return () => ipcRenderer.removeListener('distribution:transmit-progress', handler);
+        },
         packageSpotify: (releaseId: string, stagingPath: string, outputPath?: string) => ipcRenderer.invoke('distribution:package-spotify', releaseId, stagingPath, outputPath),
         deliverApple: (command: string, bundlePath: string) => ipcRenderer.invoke('distribution:deliver-apple', command, bundlePath),
         validateXSD: (xmlContent: string) => ipcRenderer.invoke('distribution:validate-xsd', xmlContent),
@@ -128,6 +134,34 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updater: {
         check: () => ipcRenderer.invoke('updater:check'),
         install: () => ipcRenderer.invoke('updater:install'),
+        onChecking: (callback: () => void) => {
+            ipcRenderer.on('updater:checking', callback);
+            return () => ipcRenderer.removeListener('updater:checking', callback);
+        },
+        onAvailable: (callback: (info: any) => void) => {
+            const handle = (_e: any, info: any) => callback(info);
+            ipcRenderer.on('updater:available', handle);
+            return () => ipcRenderer.removeListener('updater:available', handle);
+        },
+        onNotAvailable: (callback: () => void) => {
+            ipcRenderer.on('updater:not-available', callback);
+            return () => ipcRenderer.removeListener('updater:not-available', callback);
+        },
+        onProgress: (callback: (data: any) => void) => {
+            const handle = (_e: any, data: any) => callback(data);
+            ipcRenderer.on('updater:progress', handle);
+            return () => ipcRenderer.removeListener('updater:progress', handle);
+        },
+        onDownloaded: (callback: (info: any) => void) => {
+            const handle = (_e: any, info: any) => callback(info);
+            ipcRenderer.on('updater:downloaded', handle);
+            return () => ipcRenderer.removeListener('updater:downloaded', handle);
+        },
+        onError: (callback: (err: any) => void) => {
+            const handle = (_e: any, err: any) => callback(err);
+            ipcRenderer.on('updater:error', handle);
+            return () => ipcRenderer.removeListener('updater:error', handle);
+        }
     },
 
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
@@ -153,9 +187,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
         },
     },
 
-    on: (channel: string, callback: (...args: any[]) => void) => {
-        const subscription = (_event: any, ...args: any[]) => callback(...args);
-        ipcRenderer.on(channel, subscription);
-        return () => ipcRenderer.removeListener(channel, subscription);
+    // AI Sidecar
+    sidecar: {
+        restart: () => ipcRenderer.invoke('sidecar:restart'),
+        onStatusUpdate: (callback: (status: string) => void) => {
+            const handle = (_e: any, status: string) => callback(status);
+            ipcRenderer.on('sidecar:status-update', handle);
+            return () => ipcRenderer.removeListener('sidecar:status-update', handle);
+        }
+    },
+
+    // Power Monitor
+    power: {
+        getState: () => ipcRenderer.invoke('power:get-state'),
+        onBattery: (callback: () => void) => {
+            ipcRenderer.on('power:on-battery', callback);
+            return () => ipcRenderer.removeListener('power:on-battery', callback);
+        },
+        onAC: (callback: () => void) => {
+            ipcRenderer.on('power:on-ac', callback);
+            return () => ipcRenderer.removeListener('power:on-ac', callback);
+        }
     }
 });

@@ -16,6 +16,11 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.email != null;
     }
     
+    // Check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+    
     // Check if user owns this resource
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
@@ -451,6 +456,97 @@ service cloud.firestore {
       allow read: if isVerifiedUser() && request.auth.uid == userId;
       allow create: if isVerifiedUser() && request.auth.uid == userId;
       allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // Core Domain Collections (Distribution, Legal, Finance, Marketing, etc.)
+    // =========================================================================
+
+    match /ddexReleases/{releaseId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+    }
+    match /distribution_audit/{releaseId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // immutable audit logs
+    }
+    match /distribution_tasks/{taskId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /distribution_takedowns/{releaseId}/{allPaths=**} {
+      allow read, write: if isAuthenticated();
+    }
+    match /isrc_pool/{docId} {
+      allow read, update: if isAuthenticated();
+      allow create, delete: if false;
+    }
+    match /isrc_registry/{docId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+    match /upc_pool/{docId} {
+      allow read, update: if isAuthenticated();
+      allow create, delete: if false;
+    }
+    match /upc_registry/{docId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+    match /campaigns/{campaignId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /bountyLinks/{bountyId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /scheduled_posts/{postId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+    }
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+    }
+    match /legal_audit_ledger/{auditId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+    match /legal_templates/{templateId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /expenses/{expenseId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+    match /earnings/{earningId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.labelId == request.auth.uid);
+      allow write: if false;
+    }
+    match /payouts/{payoutId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+    match /timelines/{userId}/items/{itemId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/contracts/{contractId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/contract_analyses/{analysisId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/emailAccounts/{accountId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/syncBriefs/{briefId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/styleMemory/{memoryId} {
+      allow read, write: if isOwner(userId);
     }
 
     // =========================================================================

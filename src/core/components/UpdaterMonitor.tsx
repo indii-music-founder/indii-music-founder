@@ -19,39 +19,35 @@ export const UpdaterMonitor: React.FC = () => {
 
     useEffect(() => {
         const api = window.electronAPI;
-        if (!api?.on) return;
+        if (!api?.updater?.onChecking) return;
 
         const unsubs = [
-            api.on('updater:checking', () => {
+            api.updater.onChecking(() => {
                 logger.info('[Updater] Checking for updates...');
                 setStatus('checking');
                 setIsVisible(true);
             }),
-            api.on('updater:available', (...args) => {
-                const info = args[0] as { version: string };
+            api.updater.onAvailable((info: { version: string }) => {
                 logger.info(`[Updater] Update available: ${info.version}`);
                 setVersion(info.version);
                 setStatus('available');
                 setIsVisible(true);
             }),
-            api.on('updater:not-available', () => {
+            api.updater.onNotAvailable(() => {
                 logger.info('[Updater] No update available');
                 setTimeout(() => setIsVisible(false), 3000);
             }),
-            api.on('updater:progress', (...args) => {
-                const data = args[0] as UpdateProgress;
+            api.updater.onProgress((data: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => {
                 setStatus('downloading');
-                setProgress(data);
+                setProgress(data as UpdateProgress);
                 setIsVisible(true);
             }),
-            api.on('updater:downloaded', (...args) => {
-                const info = args[0] as { version: string };
+            api.updater.onDownloaded((info: { version: string }) => {
                 logger.info(`[Updater] Update downloaded: ${info.version}`);
                 setStatus('downloaded');
                 setIsVisible(true);
             }),
-            api.on('updater:error', (...args) => {
-                const err = args[0] as { message: string };
+            api.updater.onError((err: { message: string }) => {
                 logger.error('[Updater] Error:', err.message);
                 setError(err.message);
                 setStatus('error');
@@ -81,8 +77,8 @@ export const UpdaterMonitor: React.FC = () => {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className={`p-2 rounded-lg ${status === 'error' ? 'bg-red-500/20 text-red-400' :
-                                        status === 'downloaded' ? 'bg-emerald-500/20 text-emerald-400' :
-                                            'bg-purple-500/20 text-purple-400'
+                                    status === 'downloaded' ? 'bg-emerald-500/20 text-emerald-400' :
+                                        'bg-purple-500/20 text-purple-400'
                                     }`}>
                                     {status === 'checking' && <RefreshCw className="w-4 h-4 animate-spin" />}
                                     {status === 'available' && <Download className="w-4 h-4 animate-bounce" />}

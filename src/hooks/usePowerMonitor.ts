@@ -15,7 +15,7 @@ export function usePowerMonitor() {
             const api = window.electronAPI;
 
             // Get initial state
-            api.invoke('power:get-state').then((state) => {
+            api.power?.getState().then((state: string) => {
                 setIsOnBattery(state === 'battery');
             }).catch((e: Error) => logger.warn('[usePowerMonitor] Failed to get initial power state', e));
 
@@ -30,8 +30,8 @@ export function usePowerMonitor() {
                 setIsOnBattery(false);
             };
 
-            const unsubBattery = api.on('power:on-battery', handleBattery);
-            const unsubAC = api.on('power:on-ac', handleAC);
+            const unsubBattery = api.power?.onBattery(handleBattery);
+            const unsubAC = api.power?.onAC(handleAC);
 
             return () => {
                 // Cleanup IPC listeners

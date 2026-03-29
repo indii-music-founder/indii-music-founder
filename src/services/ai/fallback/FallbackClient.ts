@@ -116,6 +116,12 @@ export async function generateWithFallback(
         delete (cleanConfig as Record<string, unknown>).toolConfig;
         delete (cleanConfig as Record<string, unknown>).safetySettings;
 
+        // Remove thinkingConfig for models that don't support it
+        const supportsThinking = resolvedModel.includes('gemini-3') || resolvedModel.includes('gemini-2.0-pro-exp');
+        if (!supportsThinking) {
+            delete (cleanConfig as Record<string, unknown>).thinkingConfig;
+        }
+
         // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
         // NOT nested inside config (which maps to generation_config in the API payload).
         const result = await fallbackClient.models.generateContent({
@@ -175,6 +181,12 @@ export async function streamWithFallback(
     delete (cleanConfig as Record<string, unknown>).tools;
     delete (cleanConfig as Record<string, unknown>).toolConfig;
     delete (cleanConfig as Record<string, unknown>).safetySettings;
+
+    // Remove thinkingConfig for models that don't support it
+    const supportsThinking = resolvedModel.includes('gemini-3') || resolvedModel.includes('gemini-2.0-pro-exp');
+    if (!supportsThinking) {
+        delete (cleanConfig as Record<string, unknown>).thinkingConfig;
+    }
 
     // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
     // NOT nested inside config (which maps to generation_config in the API payload).
