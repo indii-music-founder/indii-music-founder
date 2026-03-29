@@ -6,6 +6,8 @@ export interface MerlinTrack {
     [key: string]: unknown;
 }
 
+import type { AudioSemanticData } from '@/services/audio/types';
+
 export interface MerlinCheckData {
     catalog_id?: string;
     tracks: MerlinTrack[];
@@ -107,6 +109,10 @@ export interface DDEXTrack {
     filename?: string;
     file_hash?: string; // MD5 hash
     genre?: string;
+    sub_genre?: string;
+    language?: string;
+    marketing_comment?: string;
+    audio_dna?: AudioSemanticData;
     label?: string;
     p_line?: string; // Phonographic Copyright
     c_line?: string; // Copyright

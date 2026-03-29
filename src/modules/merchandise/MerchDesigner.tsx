@@ -12,7 +12,7 @@ import EnhancedShowroom from './components/EnhancedShowroom';
 import { TemplatePicker } from './components/TemplatePicker';
 import { VersionHistory } from './components/VersionHistory';
 import { KeyboardShortcuts, useKeyboardShortcutsHint } from './components/KeyboardShortcuts';
-import { DesignTemplate, templateService } from './templates/DesignTemplates';
+import { DesignTemplate, templateService, TemplateFabricObject } from './templates/DesignTemplates';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2, FolderOpen, History, HelpCircle, Star } from 'lucide-react';
@@ -288,16 +288,16 @@ export default function MerchDesigner() {
         // Convert template elements to Fabric objects and add them
         const fabricObjects = templateService.toFabricObjects(template);
 
-        for (const objData of fabricObjects) {
+        for (const objData of fabricObjects as TemplateFabricObject[]) {
             try {
                 if (objData.type === 'textbox') {
-                    const text = new fabric.Textbox(objData.text, {
+                    const text = new fabric.Textbox(objData.text ?? '', {
                         left: objData.left,
                         top: objData.top,
                         width: objData.width,
                         fontFamily: objData.fontFamily,
                         fontSize: objData.fontSize,
-                        fontWeight: objData.fontWeight,
+                        fontWeight: objData.fontWeight as string | undefined,
                         textAlign: objData.textAlign,
                         fill: objData.fill,
                         opacity: objData.opacity,
@@ -314,10 +314,10 @@ export default function MerchDesigner() {
                         height: objData.height,
                         fill: objData.fill,
                         stroke: objData.stroke,
-                        strokeWidth: objData.strokeWidth || 0,
+                        strokeWidth: objData.strokeWidth ?? 0,
                         strokeDashArray: objData.strokeDashArray,
-                        rx: objData.rx || 0,
-                        ry: objData.ry || 0,
+                        rx: objData.rx ?? 0,
+                        ry: objData.ry ?? 0,
                         opacity: objData.opacity,
                         selectable: objData.selectable,
                         evented: objData.evented
