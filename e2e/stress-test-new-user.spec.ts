@@ -144,31 +144,13 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 15000 });
 
-        // Switch to "My Dashboard" tab where projects are created
-        await page.getByRole('button', { name: /my dashboard/i }).first().click();
-
-        // C. Create New Project (Creative Domain)
-        // Dashboard may be loading initially — wait for it to settle
-        await page.waitForTimeout(2000);
-
-        // Click the '+' icon New Project button (has title="New Project" and icon-only)
-        // Try the icon button first, fall back to the empty state "Create Project" text button
-        const newProjectIconBtn = page.locator('button[title="New Project"]');
-        const createProjectBtn = page.getByRole('button', { name: /create project/i });
-
-        if (await newProjectIconBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await newProjectIconBtn.click();
-        } else {
-            // Empty state: "Create Project" button
-            await createProjectBtn.first().click();
-        }
-
-        // Fill project name in modal
-        await page.getByPlaceholder(/project name/i).fill(`Gauntlet Project ${Date.now()}`);
-        await page.getByRole('button', { name: /^create$/i }).click();
+        // C. Navigate to Creative Domain
+        // Project creation is no longer required upfront; users jump straight into modules
+        await page.waitForTimeout(1000);
+        await page.locator('[data-testid="nav-creative"]').click();
 
         // D. Verify Redirection to Creative Module
-        await expect(page.getByRole('button', { name: /generate image/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('button', { name: /generate image/i }).first()).toBeVisible({ timeout: 15000 });
 
         // E. Stress Test: Agent Delegation (The fix we just made)
         // 4. Send a generic message to trigger GenUI (Choice Tool)

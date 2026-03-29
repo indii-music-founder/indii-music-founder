@@ -24,6 +24,15 @@ export interface ContractAnalysis {
     analyzedAt: string;
 }
 
+// Lazy load to break agent dependencies from UI layer if not directly used
+let LegalToolsModule: any = null;
+async function getLegalTools() {
+    if (!LegalToolsModule) {
+        LegalToolsModule = await import('@/services/agent/tools/LegalTools');
+    }
+    return LegalToolsModule.LegalTools;
+}
+
 export class LegalService {
 
     /**
@@ -126,5 +135,27 @@ export class LegalService {
 
         const snapshot = await getDocs(q);
         return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as ContractAnalysis));
+    }
+
+    // -----------------------------------------------------------------------
+    // Agent Tool Wrappers (Decoupling UI from direct Agent invocations)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Generate an NDA via AI Agent 
+     */
+    static async generateNDA(parties: string[], purpose: string) {
+        const tools = await getLegalTools();
+        if (!tools.generate_nda) throw new Error('Tool generate_nda is missing');
+        return tools.generate_nda({ parties, purpose });
+    }
+
+    /**
+     * Draft an arbitrary contract via AI Agent
+     */
+    static async draftContract(type: string, parties: string[], terms: string) {
+        const tools = await getLegalTools();
+        if (!tools.draft_contract) throw new Error('Tool draft_contract is missing');
+        return tools.draft_contract({ type, parties, terms });
     }
 }

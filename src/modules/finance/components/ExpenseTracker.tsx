@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion } from 'motion/react';
 import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
-import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
 import { useFinance } from '../hooks/useFinance';
 import { Expense } from '@/services/finance/FinanceService';
@@ -77,10 +76,12 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         return;
                     }
 
-                    const resultJson = await FinanceTools.analyze_receipt!({
-                        image_data: base64String,
-                        mime_type: file.type
-                    });
+                    const { financeService } = await import('@/services/finance/FinanceService');
+
+                    const resultJson = await financeService.analyzeReceipt(
+                        base64String,
+                        file.type
+                    );
 
                     const jsonMatch = resultJson.data?.raw_data?.match(/\{[\s\S]*\}/);
                     if (jsonMatch && userProfile?.id) {
