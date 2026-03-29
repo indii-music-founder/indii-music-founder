@@ -119,7 +119,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     # -----------------------------------------------------------------------
     # STEP 4 — SFTP Upload (skipped in dry-run mode)
     # -----------------------------------------------------------------------
-    sftp_config = release.get("sftpConfig")
+    sftp_config: Dict[str, Any] = release.get("sftpConfig") or {}
     if dry_run or not sftp_config:
         reason = "dry-run mode" if dry_run else "no sftpConfig provided"
         emit("sftp", "done", 100, f"SFTP upload skipped ({reason})")
@@ -132,18 +132,19 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
             "sftp_skip_reason": reason,
         }
 
-    emit("sftp", "running", 75, f"Uploading to {sftp_config.get('host')}…")
+    host = str(sftp_config.get("host", "unknown"))
+    emit("sftp", "running", 75, f"Uploading to {host}…")
     uploader = SFTPUploader(storage_path=storage_path)
 
     # Credentials come in via env vars (SFTP_PASSWORD / SFTP_KEY_PATH) for security.
     sftp_result = uploader.upload(
-        host=sftp_config["host"],
+        host=host,
         port=int(sftp_config.get("port", 22)),
-        username=sftp_config["user"],
+        username=str(sftp_config.get("user", "")),
         password=os.environ.get("SFTP_PASSWORD"),
         key_path=os.environ.get("SFTP_KEY_PATH"),
         local_path=xml_path,
-        remote_path=sftp_config.get("remotePath", "/"),
+        remote_path=str(sftp_config.get("remotePath", "/")),
     )
 
     if sftp_result.get("status") != "SUCCESS":

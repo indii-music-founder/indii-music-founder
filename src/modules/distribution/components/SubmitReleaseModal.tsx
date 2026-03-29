@@ -55,8 +55,12 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
 
     const handleClose = () => {
         if (submitting) return;
+        if (done) {
+            onSubmitted?.();
+        } else {
+            onClose();
+        }
         reset();
-        onClose();
     };
 
     const handleSubmit = async () => {
@@ -104,7 +108,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             setDone(true);
             setOverallProgress(100);
             toastSuccess('Release submitted successfully!');
-            onSubmitted?.();
+            // Wait for user to click Done button, which triggers onSubmitted via handleClose
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Submission failed';
             toastError(msg);
@@ -118,7 +122,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="metadata-modal">
             <div className="relative w-full max-w-xl mx-4 bg-[#0e0e0e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">

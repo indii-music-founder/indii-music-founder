@@ -25,12 +25,17 @@ test.describe('Agent Dashboard', () => {
             });
         });
 
+        console.log('[AGENT TEST] Navigating to Agent module...');
         // Navigate directly to agent module for speed and stability
-        await page.goto('/#agent');
-        await page.waitForSelector('[data-testid="app-container"], nav, .app-shell', { timeout: 20_000 });
+        await page.goto('/agent');
 
-        // Wait for specific module content to confirm navigation
-        await page.locator('button:has-text("Browser"), [role="tab"]:has-text("Scout")').first().waitFor({ state: 'visible', timeout: 15_000 });
+        console.log('[AGENT TEST] Waiting for navigation item...');
+        // Wait for the specific module container to be rendered
+        await page.locator('[data-testid="nav-item-agent"]').first().waitFor({ state: 'visible', timeout: 15_000 });
+
+        console.log('[AGENT TEST] Checking for "The Scout" content...');
+        // "The Scout" is the default view in Agent module
+        await page.locator('h1:has-text("The Scout")').waitFor({ state: 'visible', timeout: 15_000 });
     });
 
     test('agent module loads without crashing on desktop viewport', async ({ authedPage: page }) => {
@@ -94,32 +99,43 @@ test.describe('Agent Mobile Warning', () => {
     test.use({ viewport: { width: 375, height: 812 } }); // iPhone SE
 
     test('agent module shows mobile warning on small viewports', async ({ authedPage: page }) => {
-        // Handle Guest Login
-        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
-        if (await guestBtn.isVisible().catch(() => false)) {
-            await guestBtn.click();
-        }
+        // IMPORTANT: authedPage fixture only sets up mocks — it does NOT navigate.
+        // Navigate directly to the agent route.
+        await page.goto('/agent');
 
-        await page.waitForSelector('[data-testid="app-container"], #root', { timeout: 15_000 });
+        // Root must always be present once React mounts
+        await page.waitForSelector('#root', { state: 'visible', timeout: 20_000 });
 
-        const agentNav = page.locator('[data-testid="nav-item-agent"]');
-        const isVisible = await agentNav.isVisible().catch(() => false);
+        // On a 375px phone viewport, App.tsx auto-routes to 'mobile-remote' via
+        // the isAnyPhone useEffect. Acceptable outcomes:
+        //   1. MobileRemote rendered ("indiiCONTROLLER" header)
+        //   2. AgentDashboard MobileOnlyWarning (requires larger screen text)
+        //   3. app-container present (app stable, content loading)
+        const remoteLoc = page.locator('h1:has-text("indiiCONTROLLER"), h1:has-text("indiiREMOTE")').first();
+        const warningLoc = page.locator('text=/requires a larger screen|wider screen|desktop/i').first();
+        const containerLoc = page.locator('[data-testid="app-container"]').first();
 
-        if (isVisible) {
-            await agentNav.click();
-            await page.waitForTimeout(1_500);
+        // Wait up to 20s for one of the valid outcomes to appear
+        await Promise.race([
+            remoteLoc.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => { }),
+            warningLoc.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => { }),
+            containerLoc.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => { }),
+        ]);
 
-            // On mobile, the AgentDashboard shows MobileOnlyWarning
-            // Look for warning text or mobile-specific content
-            const warning = page.locator(
-                'text=/mobile|desktop|wider screen/i'
-            ).first();
-            const warningExists = await warning.isVisible().catch(() => false);
+        const [remoteSeen, warningSeen, containerSeen] = await Promise.all([
+            remoteLoc.isVisible(),
+            warningLoc.isVisible(),
+            containerLoc.isVisible(),
+        ]);
 
-            // If no warning, the module may not be routing to AgentDashboard
-            // Either way, the app should not crash
-            await expect(page.locator('#root')).toBeVisible();
-            console.log(`Mobile warning shown: ${warningExists}`);
-        }
+        console.log(`[AGENT MOBILE] mobileRemote=${remoteSeen} mobileWarning=${warningSeen} appContainer=${containerSeen}`);
+
+        // App must not have crashed — root always visible
+        await expect(page.locator('#root')).toBeVisible();
+
+        // At least one mobile-appropriate content indicator must be present
+        expect(remoteSeen || warningSeen || containerSeen,
+            'Expected mobile-remote, a mobile warning, or app-container to be visible on phone viewport'
+        ).toBe(true);
     });
 });

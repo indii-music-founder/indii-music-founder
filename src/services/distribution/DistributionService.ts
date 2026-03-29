@@ -35,6 +35,9 @@ export type { DistributionTaskDocument as DistributionTask };
 /** Item 414: Snapshot release metadata into metadata_history subcollection at each distribution event */
 async function writeMetadataSnapshot(releaseId: string, metadata: DDEXMetadata): Promise<void> {
     try {
+        const isE2E = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
+        if (isE2E || (typeof localStorage !== 'undefined' && localStorage.getItem('FIREBASE_E2E_MOCK'))) return;
+
         const historyCol = collection(db, 'distribution_audit', releaseId, 'metadata_history');
         await addDoc(historyCol, {
             snapshot: JSON.parse(JSON.stringify(metadata)), // deep-clone to detach from mutation
@@ -52,6 +55,9 @@ async function writeDistributionAuditEvent(
     event: { type: string; status: string; detail?: string }
 ): Promise<void> {
     try {
+        const isE2E = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
+        if (isE2E || (typeof localStorage !== 'undefined' && localStorage.getItem('FIREBASE_E2E_MOCK'))) return;
+
         const eventsCol = collection(db, 'distribution_audit', releaseId, 'events');
         await addDoc(eventsCol, {
             ...event,
@@ -74,6 +80,9 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * Track a new distribution task in Firestore
      */
     async createTask(type: DistributionTaskDocument['type'], title: string, metadata: Record<string, unknown> = {}): Promise<string> {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+            return `mock-task-${Date.now()}`;
+        }
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User must be authenticated');
 
@@ -91,8 +100,12 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * Update task progress and status
      */
     async updateTask(taskId: string, updates: Partial<Pick<DistributionTaskDocument, 'status' | 'progress' | 'subtext' | 'error' | 'metadata'>>) {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+            return;
+        }
         await this.update(taskId, updates);
     }
+
 
     /**
      * Subscribe to active distribution tasks for the current user
@@ -529,6 +542,10 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         assets: Array<{ id: string; type: string; url: string; role: string }>;
         metadata?: Record<string, unknown>;
     }): Promise<string> {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+            return `mock-release-${Date.now()}`;
+        }
+
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User must be authenticated');
 

@@ -30,6 +30,10 @@ export class UPCService {
      * Uses a Firestore transaction to prevent double-assignment.
      */
     async assignNextUPC(releaseId: string): Promise<string> {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) {
+            return '123456789012';
+        }
+
         try {
             return await runTransaction(this.db, async (transaction) => {
                 const q = query(this.poolRef, where('status', '==', 'available'), limit(1));

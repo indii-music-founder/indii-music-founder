@@ -2,8 +2,9 @@ import { logger } from '@/utils/logger';
 
 import { StateCreator } from 'zustand';
 import {
+    Auth,
     User,
-    onAuthStateChanged,
+    onAuthStateChanged as firebaseOnAuthStateChanged,
     signInWithPopup,
     GoogleAuthProvider,
     signOut,
@@ -12,6 +13,22 @@ import {
     signInAnonymously,
     sendPasswordResetEmail
 } from 'firebase/auth';
+
+/** Minimal interface for E2E mock auth objects that provide their own listener */
+interface E2EMockAuth {
+    onAuthStateChanged: (callback: (user: User | null) => void) => () => void;
+}
+
+/**
+ * Enhanced auth listener with E2E mock support.
+ * Ensures that if a mock auth object provides its own listener, we use it.
+ */
+const onAuthStateChanged = (authObj: Auth | E2EMockAuth, callback: (user: User | null) => void) => {
+    if (typeof (authObj as E2EMockAuth).onAuthStateChanged === 'function') {
+        return (authObj as E2EMockAuth).onAuthStateChanged(callback);
+    }
+    return firebaseOnAuthStateChanged(authObj as Auth, callback);
+};
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -231,10 +248,13 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         logger.debug('[Auth] Initializing Auth Listener...');
 
         // FAST FAIL: If no API key, don't wait for Firebase (it might hang or crash)
-        const apiKey = auth.app.options.apiKey;
+        // EXCLUSION: If we are using the E2E mock, allow any API key string.
+        const apiKey = auth.app?.options?.apiKey;
         const apiKeyLower = apiKey?.toLowerCase() ?? '';
-        if (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass')) {
-            logger.warn('[Auth] No valid API Key found.');
+        const isE2EMock = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
+
+        if (!isE2EMock && (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass'))) {
+            logger.warn('[Auth] No valid API Key found and not in E2E mode.');
             set({ authLoading: false });
             return () => { };
         }
@@ -261,6 +281,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // Return unsubscribe function
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (isE2EMock) {
+                logger.debug('[Auth] Mock Auth Listener Fired', { userUid: user?.uid });
+            }
             hasResolved = true;
             clearTimeout(timeoutId);
 

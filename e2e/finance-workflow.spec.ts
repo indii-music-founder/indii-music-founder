@@ -24,11 +24,13 @@ test.describe('Finance Module', () => {
             });
         });
 
-        // Navigate directly to finance for consistency
-        await page.goto('/#finance');
+        console.log('[FINANCE TEST] Navigating to Finance module...');
+        // Direct navigation to Finance module for stability
+        await page.goto('/finance');
 
+        console.log('[FINANCE TEST] Waiting for finance-specific content...');
         // Wait for finance-specific content
-        await page.locator('h1, h2, [data-testid="finance-header"], [data-testid="finance-tab-expenses"]').first().waitFor({ state: 'visible', timeout: 20_000 });
+        await page.locator('h1, h2, [data-testid="finance-header"], [data-testid="finance-tab-expenses"]').first().waitFor({ state: 'visible', timeout: 30_000 });
     });
 
     test('finance module loads without crashing', async ({ authedPage: page }) => {

@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './fixtures/auth';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -15,19 +16,17 @@ import AxeBuilder from '@axe-core/playwright';
  */
 
 test.describe('Accessibility Compliance', () => {
-    test.beforeEach(async ({ page }) => {
-        // Navigate to the app root and wait for the shell to render
-        await page.goto('/');
+    test.beforeEach(async ({ authedPage }) => {
         // Wait for the main app container to be present
-        await page.waitForSelector('[data-testid="app-root"], #root', {
+        await authedPage.waitForSelector('[data-testid="app-root"], #root', {
             timeout: 15_000,
         });
         // Allow lazy-loaded modules time to settle
-        await page.waitForTimeout(2_000);
+        await authedPage.waitForTimeout(2_000);
     });
 
-    test('Dashboard should have no critical a11y violations', async ({ page }) => {
-        const results = await new AxeBuilder({ page })
+    test('Dashboard should have no critical a11y violations', async ({ authedPage }) => {
+        const results = await new AxeBuilder({ page: authedPage })
             .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
             .exclude('.recharts-wrapper') // Chart SVGs generate false positives
             .analyze();
@@ -57,8 +56,8 @@ test.describe('Accessibility Compliance', () => {
         expect(criticalViolations).toHaveLength(0);
     });
 
-    test('Color contrast should meet WCAG AA standards', async ({ page }) => {
-        const results = await new AxeBuilder({ page })
+    test('Color contrast should meet WCAG AA standards', async ({ authedPage }) => {
+        const results = await new AxeBuilder({ page: authedPage })
             .withRules(['color-contrast'])
             .analyze();
 
@@ -81,8 +80,8 @@ test.describe('Accessibility Compliance', () => {
         expect(seriousContrast).toHaveLength(0);
     });
 
-    test('All interactive elements should be keyboard accessible', async ({ page }) => {
-        const results = await new AxeBuilder({ page })
+    test('All interactive elements should be keyboard accessible', async ({ authedPage }) => {
+        const results = await new AxeBuilder({ page: authedPage })
             .withRules([
                 'button-name',
                 'link-name',
@@ -99,13 +98,13 @@ test.describe('Accessibility Compliance', () => {
         expect(violations).toHaveLength(0);
     });
 
-    test('Sidebar navigation should have no a11y violations', async ({ page }) => {
+    test('Sidebar navigation should have no a11y violations', async ({ authedPage }) => {
         // Ensure sidebar is visible
-        const sidebar = page.locator('[data-testid="sidebar"], nav[role="navigation"]');
+        const sidebar = authedPage.locator('[data-testid="sidebar"], nav[role="navigation"]');
         const isSidebarVisible = await sidebar.isVisible().catch(() => false);
 
         if (isSidebarVisible) {
-            const results = await new AxeBuilder({ page })
+            const results = await new AxeBuilder({ page: authedPage })
                 .include('[data-testid="sidebar"], nav[role="navigation"]')
                 .withTags(['wcag2a', 'wcag2aa'])
                 .analyze();

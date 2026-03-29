@@ -13,7 +13,6 @@ import { TransferPanel } from './components/TransferPanel';
 import { QCVisualizer } from './components/QCVisualizer';
 
 /* ── Extracted Sub-components ── */
-
 import { ReleasesContent } from './components/ReleasesContent';
 import { DistributorQuickView } from './components/DistributorQuickView';
 import { DeliveryHealthPanel } from './components/DeliveryHealthPanel';
@@ -35,16 +34,6 @@ import { useTranslation } from 'react-i18next';
 export default function DistributionDashboard() {
     const { t } = useTranslation();
     const { releases, loading, error, handleRetry } = useDistributionDashboard();
-
-    const TABS = [
-        { value: 'releases', label: t('distribution.tabs.releases') },
-        { value: 'connections', label: t('distribution.tabs.connections') },
-        { value: 'bank', label: t('distribution.tabs.bank') },
-        { value: 'authority', label: t('distribution.tabs.authority') },
-        { value: 'keys', label: t('distribution.tabs.keys') },
-        { value: 'brain', label: t('distribution.tabs.brain') },
-        { value: 'transmission', label: t('distribution.tabs.transmission') },
-    ];
 
     return (
         <ModuleErrorBoundary moduleName="Distribution">
