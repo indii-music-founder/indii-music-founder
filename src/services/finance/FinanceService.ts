@@ -23,6 +23,7 @@ import {
 } from '@/services/revenue/schema';
 import { ExpenseSchema, type Expense } from '@/modules/finance/schemas';
 import { logger } from '@/utils/logger';
+import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 
 export type { Expense };
 
@@ -225,6 +226,20 @@ export class FinanceService {
       logger.error("Error subscribing to earnings:", error);
       Sentry.captureException(error);
     });
+  }
+
+  // --------------------------------------------------------------------------
+  // Agent Tool Wrappers (Decoupling UI from direct Agent invocations)
+  // --------------------------------------------------------------------------
+
+  async analyzeReceipt(imageData: string, mimeType: string) {
+    if (!FinanceTools.analyze_receipt) throw new Error('Tool analyze_receipt is missing');
+    return FinanceTools.analyze_receipt({ image_data: imageData, mime_type: mimeType });
+  }
+
+  async forecastRevenue(currentStreams: number, platform: string, rightsHolderSplit: number) {
+    if (!FinanceTools.forecast_revenue) throw new Error('Tool forecast_revenue is missing');
+    return FinanceTools.forecast_revenue({ currentStreams, platform, rightsHolderSplit });
   }
 }
 

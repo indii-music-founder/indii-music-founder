@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, DollarSign, Loader2, RefreshCw, Calculator } from 'lucide-react';
-import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { logger } from '@/utils/logger';
 
 interface ProjectionData {
@@ -19,11 +18,13 @@ export const RevenueProjections = () => {
     const handleForecast = async () => {
         setLoading(true);
         try {
-            const result = await FinanceTools.forecast_revenue!({
-                currentStreams: streams,
-                platform: platform,
-                rightsHolderSplit: 100 // Assuming independent artist for this view
-            });
+            const { financeService } = await import('@/services/finance/FinanceService');
+
+            const result = await financeService.forecastRevenue(
+                streams,
+                platform,
+                100 // Assuming independent artist for this view
+            );
 
             if (result.success) {
                 setProjections(result.data.projections);

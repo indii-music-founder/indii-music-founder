@@ -81,6 +81,7 @@ if (typeof window !== 'undefined') {
         writable: true,
         configurable: true,
         value: {
+            showNotification: vi.fn(),
             sftp: {
                 connectDistributor: vi.fn().mockResolvedValue({ success: true }),
                 uploadRelease: vi.fn().mockResolvedValue({ success: true, url: 'sftp://mock' }),
