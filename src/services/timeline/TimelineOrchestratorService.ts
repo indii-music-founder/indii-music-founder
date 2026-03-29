@@ -619,7 +619,7 @@ Return a JSON object with:
             const q = query(colRef, orderBy('createdAt', 'desc'));
             const snapshot = await getDocs(q);
             return snapshot.docs.map(d => d.data() as Timeline);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[TimelineOrchestrator] Failed to fetch timelines:', error);
             return [];
         }
@@ -634,7 +634,7 @@ Return a JSON object with:
             const q = query(colRef, where('status', '==', status));
             const snapshot = await getDocs(q);
             return snapshot.docs.map(d => d.data() as Timeline);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[TimelineOrchestrator] Failed to fetch ${status} timelines:`, error);
             return [];
         }
@@ -652,7 +652,7 @@ Return a JSON object with:
             const snapshot = await getDoc(docRef);
             if (!snapshot.exists()) return null;
             return snapshot.data() as Timeline;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[TimelineOrchestrator] Failed to fetch timeline ${timelineId}:`, error);
             return null;
         }

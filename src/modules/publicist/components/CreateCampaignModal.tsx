@@ -44,7 +44,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
             setBudget('');
             setType('Single');
             onClose();
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to create campaign:", error);
             // Optionally add toast error here
         } finally {

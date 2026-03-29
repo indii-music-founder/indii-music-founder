@@ -78,7 +78,7 @@ export async function generateSpeech(
                         }
                     }
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 throw ctx.handleError(error);
             }
         }
@@ -120,7 +120,7 @@ export async function generateSpeech(
                     }
                 }
             };
-        } catch (error) {
+        } catch (error: unknown) {
             // If we hit an App Check error during normal mode, switch to fallback
             if (isAppCheckError(error) && !ctx.useFallbackMode) {
                 logger.warn('[SpeechGenerator] App Check error during speech, switching to fallback mode');

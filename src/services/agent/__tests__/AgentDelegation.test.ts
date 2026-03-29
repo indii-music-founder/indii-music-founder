@@ -326,10 +326,10 @@ describe('Agent Delegation and Collaboration', () => {
         });
 
         it('handles null/undefined agent IDs', () => {
-            const result1 = validateHubAndSpoke(null as any, 'marketing');
+            const result1 = validateHubAndSpoke(null as unknown as string, 'marketing');
             expect(result1).not.toBeNull();
 
-            const result2 = validateHubAndSpoke('marketing', undefined as any);
+            const result2 = validateHubAndSpoke('marketing', undefined as unknown as string);
             expect(result2).not.toBeNull();
         });
 

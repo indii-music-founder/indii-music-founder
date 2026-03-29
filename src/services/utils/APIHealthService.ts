@@ -62,7 +62,7 @@ class APIHealthService {
             // Minimal check: verify we can access auth state
             const _user = auth.currentUser;
             this.updateStatus('firebase_auth', 'healthy', Date.now() - start);
-        } catch (e) {
+        } catch (e: unknown) {
             this.updateStatus('firebase_auth', 'offline', undefined, String(e));
         }
     }
@@ -78,7 +78,7 @@ class APIHealthService {
             // In a real app, we might write a heartbeat if the user is authenticated
             // For now, we just verify we can reach the service
             this.updateStatus('firestore', 'healthy', Date.now() - start);
-        } catch (e) {
+        } catch (e: unknown) {
             this.updateStatus('firestore', 'offline', undefined, String(e));
         }
     }
@@ -90,7 +90,7 @@ class APIHealthService {
             // For now, we assume if Firestore is up, Functions are likely up 
             // but we could call a dummy function if needed.
             this.updateStatus('functions', 'healthy', Date.now() - start);
-        } catch (e) {
+        } catch (e: unknown) {
             this.updateStatus('functions', 'offline', undefined, String(e));
         }
     }
@@ -107,7 +107,7 @@ class APIHealthService {
             } else {
                 this.updateStatus('gemini_api', 'healthy', Date.now() - start);
             }
-        } catch (e) {
+        } catch (e: unknown) {
             this.updateStatus('gemini_api', 'offline', undefined, String(e));
         }
     }

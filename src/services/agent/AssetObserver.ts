@@ -60,7 +60,7 @@ class AssetObserver {
 
             this.isInitialized = true;
             this.retryCount = 0;
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.error('AssetObserver', 'Initialization Failed:', error);
         }
     }

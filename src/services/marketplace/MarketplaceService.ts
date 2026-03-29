@@ -117,7 +117,7 @@ export class MarketplaceService {
 
             this.productCache.set(productId, { product, timestamp: Date.now() });
             return product;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`Failed to fetch product ${productId}:`, error);
             return null;
         }
@@ -155,7 +155,7 @@ export class MarketplaceService {
             });
             // Clear cache
             this.productCache.delete(productId);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`Failed to delete product ${productId}:`, error);
             throw error;
         }
@@ -242,7 +242,7 @@ export class MarketplaceService {
 
             return purchaseRef.id;
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MarketplaceService] Purchase failed:', error);
 
             // ROLLBACK: Restore inventory if payment failed
@@ -252,7 +252,7 @@ export class MarketplaceService {
                         inventory: increment(1)
                     });
                     logger.info(`[MarketplaceService] Rolled back inventory for ${productId}`);
-                } catch (rollbackError) {
+                } catch (rollbackError: unknown) {
                     logger.error(`[MarketplaceService] CRITICAL: Failed to rollback inventory for ${productId}`, rollbackError);
                     // In a real system, we'd log this to an admin alert queue
                 }

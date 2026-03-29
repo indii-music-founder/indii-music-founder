@@ -77,7 +77,7 @@ export class IndiiNucleus {
         <current_mission>${showroom}</current_mission>
       </system_dna>
     `.trim();
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[IndiiNucleus] DNA Splicing Failed:', error);
       return '<system_dna><directive>You are indii, an AI creative director. Operate in safe mode — personality data unavailable.</directive></system_dna>';
     }
@@ -98,7 +98,7 @@ export class IndiiNucleus {
     if (projectId && query) {
       try {
         memories = await memoryService.retrieveRelevantMemories(projectId, query, 5);
-      } catch (error) {
+      } catch (error: unknown) {
         logger.warn('[IndiiNucleus] Memory retrieval failed:', error);
       }
     }
@@ -166,7 +166,7 @@ export class IndiiNucleus {
         ? `${userMessage.substring(0, 100)}...`
         : userMessage;
       await livingFileService.appendToEpisodic(userId, `Nucleus executed: "${summary}" → indii responded`);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.warn('[IndiiNucleus] Episodic logging failed:', error);
     }
 

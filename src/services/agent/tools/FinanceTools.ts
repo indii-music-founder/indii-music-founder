@@ -203,7 +203,7 @@ export const FinanceTools = {
                 pendingSignaturesFrom: args.parties,
                 status: result.data.status
             }, `$${args.holdAmount} successfully held in Stripe Connect escrow account (${result.data.escrowAccount}) until mathematical split sign-off is complete from all parties.`);
-        } catch (error) {
+        } catch (error: unknown) {
             // Graceful fallback if Cloud Function not yet deployed
             logger.warn('[FinanceTools] Escrow Cloud Function unavailable, using local tracking:', error);
             const escrowAccount = `acct_${crypto.randomUUID().slice(0, 8)}`;
@@ -325,7 +325,7 @@ export const FinanceTools = {
                 source = 'ECB';
                 logger.info(`[FinanceTools] ECB live rate ${src}→${tgt}: ${rate.toFixed(6)}`);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[FinanceTools] ECB API unavailable, using fallback rates:', error);
             const pair = `${src}_${tgt}`;
             rate = fallbackExchangeRates[pair] || 1.0;
@@ -369,7 +369,7 @@ export const FinanceTools = {
                 onboardingUrl: result.data.onboardingUrl,
                 status: result.data.status
             }, `Stripe Connect custom account onboarding initiated for ${args.email}. Account ID: ${result.data.accountId}.`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[FinanceTools] Stripe Connect Cloud Function unavailable:', error);
             const accountId = `acct_${crypto.randomUUID().slice(0, 16).replace(/-/g, '')}`;
             return toolSuccess({
@@ -396,7 +396,7 @@ export const FinanceTools = {
                 payeesProcessed: args.payees.length,
                 requests: result.data.requests
             }, `Automated tax form collection initiated for ${args.payees.length} payees. Payouts locked until validated.`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[FinanceTools] Tax forms Cloud Function unavailable:', error);
             const requests = args.payees.map(p => ({
                 name: p.name,
@@ -436,7 +436,7 @@ export const FinanceTools = {
                 normalizationAnalysis: analysisText,
                 status: 'Normalized into standard indiiOS ledger format'
             }, `Successfully analyzed and normalized ${args.csvFiles.length} distributor CSV statements into a unified format.`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[FinanceTools] Gemini normalization failed:', error);
             return toolSuccess({
                 filesProcessed: args.csvFiles.length,

@@ -54,7 +54,7 @@ export class SummaryService {
             const summary = response.response.text().trim();
             Logger.info('SummaryService', 'Summary generated successfully.');
             return summary;
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.error('SummaryService', 'Failed to generate summary:', error);
             // Fallback: return truncated original text if summarization fails
             return `[Truncated History] ... ${text.slice(-500)}`;

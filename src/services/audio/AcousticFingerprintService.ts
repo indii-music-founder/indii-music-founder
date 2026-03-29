@@ -42,7 +42,7 @@ export class AcousticFingerprintService {
                 fingerprint: data.fingerprint,
                 duration: data.duration
             };
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AcousticFingerprint] Failed to generate fingerprint:', error);
             return null;
         }
@@ -100,7 +100,7 @@ export class AcousticFingerprintService {
             // Similarity = percentage of matching bits
             const similarity = ((totalBits - differingBits) / totalBits) * 100;
             return Math.max(0, Math.min(100, Math.round(similarity * 100) / 100));
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AcousticFingerprint] Failed to compare fingerprints:', error);
             return 0;
         }

@@ -119,7 +119,7 @@ export const MusicTools = {
                     timestamp: new Date().toISOString(),
                     status: 'completed'
                 });
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[MusicTools] Failed to persist ID3 tag operation:', e);
             }
         }
@@ -179,7 +179,7 @@ export const MusicTools = {
                 writers: args.splits.map(s => `${s.writer} (${s.percentage}%, IPI: ${s.ipi})`),
                 status: 'Embedded in Distribution Metadata'
             }, `Songwriter splits deeply embedded into the distribution metadata blob for track ${args.trackId}. ${args.splits.length} writers registered.`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[MusicTools] Failed to inject splits:', error);
             return toolError('Failed to persist split data to Firestore.', 'PERSISTENCE_ERROR');
         }
@@ -209,7 +209,7 @@ export const MusicTools = {
                     createdAt: new Date().toISOString(),
                     status: 'Ready for Atmos Mixing'
                 });
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[MusicTools] Failed to persist Atmos export config:', e);
             }
         }

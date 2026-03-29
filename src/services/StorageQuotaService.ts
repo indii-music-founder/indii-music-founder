@@ -82,7 +82,7 @@ export class StorageQuotaService {
             }
 
             return StorageQuotaService.enrichQuota(usageDoc.data(), tier);
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.error(TAG, 'Failed to read storage quota:', error);
             return null;
         }

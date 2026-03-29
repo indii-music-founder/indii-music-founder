@@ -220,14 +220,14 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 const targetAgentId = isIndiiMode ? undefined : (knownAgentIds.includes(currentModule) ? currentModule : undefined);
                 await agentService.sendMessage(currentInput, processedAttachments, targetAgentId);
                 setIsProcessing(false);
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('PromptArea: Failed to send message:', error);
                 toast.error("Failed to send message.");
                 setCommandBarInput(currentInput);
                 setCommandBarAttachments(currentAttachments);
                 setIsProcessing(false);
             }
-        } catch (fatalError) {
+        } catch (fatalError: unknown) {
             logger.error("PromptArea: Fatal crash", fatalError);
             setIsProcessing(false);
         }

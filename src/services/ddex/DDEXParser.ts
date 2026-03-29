@@ -82,7 +82,7 @@ class DDEXParserImpl {
       };
 
       return { success: true, data: ern };
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: `ERN parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -165,7 +165,7 @@ class DDEXParserImpl {
       };
 
       return { success: true, data: report };
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: `DSR parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,

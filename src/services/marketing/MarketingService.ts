@@ -113,7 +113,7 @@ export class MarketingService {
                     logger.warn("[MarketingService] Invalid marketing stats data:", validation.error);
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("MarketingService: Stats fetch failed", e);
         }
 
@@ -153,7 +153,7 @@ export class MarketingService {
                 }
             }
             return results;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("MarketingService: Campaign fetch failed", e);
             return [];
         }
@@ -177,7 +177,7 @@ export class MarketingService {
                 return null;
             }
             return null;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("MarketingService: Failed to fetch campaign", error);
             return null;
         }
@@ -227,7 +227,7 @@ export class MarketingService {
             // Removing 'id' to prevent overwriting document key
             const { id: _id, ...cleanUpdates } = updates;
             await updateDoc(docRef, { ...cleanUpdates, updatedAt: serverTimestamp() });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("MarketingService: Update failed", error);
             throw error;
         }

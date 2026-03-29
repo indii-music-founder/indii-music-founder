@@ -27,7 +27,7 @@ export class LegalArchiverService {
             });
             logger.info(`[LegalArchiver] Archived ${agreement.type} v${agreement.versionId}`);
             return docRef.id;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[LegalArchiver] Failed to archive version:', error);
             throw error;
         }
@@ -50,7 +50,7 @@ export class LegalArchiverService {
 
             const doc = snapshot.docs[0]!;
             return { id: doc.id, ...doc.data() } as LegalAgreement;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[LegalArchiver] Failed to get latest for ${type}:`, error);
             return null;
         }

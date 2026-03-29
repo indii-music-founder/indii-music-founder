@@ -26,7 +26,7 @@ export default function KnowledgeBase() {
         try {
             const docs = await knowledgeBaseService.getDocuments();
             setDocuments(docs);
-        } catch (error) {
+        } catch (error: unknown) {
             toast.error("Failed to load Knowledge Base.");
         } finally {
             setIsLoading(false);
@@ -54,7 +54,7 @@ export default function KnowledgeBase() {
             } else {
                 toast.error("Upload failed.");
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast.error("Upload encountered an error.");
         } finally {
             setIsUploading(false);
@@ -68,7 +68,7 @@ export default function KnowledgeBase() {
             await knowledgeBaseService.deleteDocument(doc.rawName);
             toast.success("Document deleted.");
             await loadDocuments();
-        } catch (err) {
+        } catch (err: unknown) {
             toast.error("Failed to delete document.");
         }
     };

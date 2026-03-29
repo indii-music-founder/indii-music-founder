@@ -107,7 +107,7 @@ class AudioPersistenceService extends FirestoreService<PersistedAudioMetadata> {
                     await CloudStorageService.deleteAudio(id, userId, metadata.mimeType);
                 }
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.warn('[AudioPersistence] Storage cleanup pre-fetch failed:', err);
         }
 

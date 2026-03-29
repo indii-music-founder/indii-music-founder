@@ -55,7 +55,7 @@ export class AudioContextManager {
             try {
                 await this.context.suspend();
                 logger.debug('[AudioContextManager] AudioContext suspended to save resources.');
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[AudioContextManager] Failed to suspend context', error);
             }
         }
@@ -69,7 +69,7 @@ export class AudioContextManager {
             try {
                 await this.context.resume();
                 logger.debug('[AudioContextManager] AudioContext resumed.');
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[AudioContextManager] Failed to resume context', error);
             }
         }

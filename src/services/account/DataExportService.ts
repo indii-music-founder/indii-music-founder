@@ -91,7 +91,7 @@ async function exportUserStorageUrls(userId: string): Promise<{ path: string; ur
                 }
             }
         }
-    } catch (error) {
+    } catch (error: unknown) {
         logger.warn(`[DataExport] Storage listing error: ${error}`);
     }
 
@@ -124,7 +124,7 @@ export async function exportUserData(userId: string): Promise<DataExportResult> 
                 ...profileDoc.data(),
             };
         }
-    } catch (error) {
+    } catch (error: unknown) {
         result.errors.push(`Failed to export profile: ${error}`);
     }
 
@@ -136,7 +136,7 @@ export async function exportUserData(userId: string): Promise<DataExportResult> 
                 result.data[subcollection] = docs;
                 logger.info(`[DataExport] Exported ${docs.length} docs from ${subcollection}`);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             result.errors.push(`Failed to export ${subcollection}: ${error}`);
         }
     }
@@ -145,7 +145,7 @@ export async function exportUserData(userId: string): Promise<DataExportResult> 
     try {
         result.storageFileUrls = await exportUserStorageUrls(userId);
         logger.info(`[DataExport] Found ${result.storageFileUrls.length} storage files`);
-    } catch (error) {
+    } catch (error: unknown) {
         result.errors.push(`Storage export error: ${error}`);
     }
 

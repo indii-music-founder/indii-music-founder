@@ -243,7 +243,7 @@ class MembershipServiceImpl {
             if (snapshot.exists()) {
                 return snapshot.data() as DailyUsage;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[MembershipService] Failed to get usage:', error);
         }
 
@@ -304,7 +304,7 @@ class MembershipServiceImpl {
 
                 await setDoc(usageRef, newUsage);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MembershipService] Failed to increment usage:', error);
             // Don't throw - usage tracking shouldn't block generation
         }
@@ -324,7 +324,7 @@ class MembershipServiceImpl {
                 totalSpend: increment(amount),
                 updatedAt: Date.now()
             }, { merge: true });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MembershipService] Failed to record spend:', error);
         }
     }
@@ -383,7 +383,7 @@ class MembershipServiceImpl {
             if (email === 'the.walking.agency.det@gmail.com') {
                  return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
             }
-        } catch (e) {
+        } catch (e: unknown) {
             // Ignore
         }
 
@@ -412,7 +412,7 @@ class MembershipServiceImpl {
                     const q = query(collection(db, 'projects'), where('orgId', '==', 'personal'), where('userId', '==', userId));
                     const snapshot = await getCountFromServer(q);
                     currentUsage = snapshot.data().count;
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn('[MembershipService] Failed to count projects:', e);
                     currentUsage = 0;
                 }
@@ -444,7 +444,7 @@ class MembershipServiceImpl {
                         // This might need adjustment based on exact data model
                         currentUsage = 0;
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn('[MembershipService] Failed to count projects:', e);
                     currentUsage = 0; // Fail open but warn
                 }

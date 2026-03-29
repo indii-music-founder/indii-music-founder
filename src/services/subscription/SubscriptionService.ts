@@ -72,7 +72,7 @@ export class SubscriptionService {
       cacheService.set(`subscription:${userId}`, subscription, this.CACHE_TTL);
 
       return subscription;
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error("SubscriptionService.getSubscription error:", error);
       throw new Error('Failed to fetch subscription. Please try again.');
     }
@@ -119,7 +119,7 @@ export class SubscriptionService {
       this.usageCache.set(userId, { stats, timestamp: Date.now() });
 
       return stats;
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error("SubscriptionService.getUsageStats error:", error);
       throw new Error('Failed to fetch usage statistics. Please try again.');
     }
@@ -309,7 +309,7 @@ export class SubscriptionService {
 
       const result = await createSessionFn(params);
       return result.data as CheckoutSessionResponse;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error('Failed to create checkout session. Please try again.');
     }
   }
@@ -331,7 +331,7 @@ export class SubscriptionService {
         returnUrl
       });
       return result.data as { url: string };
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error('Failed to access customer portal. Please try again.');
     }
   }
@@ -354,7 +354,7 @@ export class SubscriptionService {
       // Invalidate cache
       this.subscriptionCache.delete(targetUserId);
       cacheService.invalidate(`subscription:${targetUserId}`);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error('Failed to cancel subscription. Please try again.');
     }
   }
@@ -377,7 +377,7 @@ export class SubscriptionService {
       // Invalidate cache
       this.subscriptionCache.delete(targetUserId);
       cacheService.invalidate(`subscription:${targetUserId}`);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error('Failed to resume subscription. Please try again.');
     }
   }

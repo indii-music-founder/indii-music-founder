@@ -31,7 +31,7 @@ async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?
                             error: `${file.name}: ${sampleRate}Hz ${bitsPerSample}-bit is below IndiiOS minimums (44.1kHz 16-bit).`
                         });
                     }
-                } catch (err) {
+                } catch (err: unknown) {
                     logger.error('Error parsing WAV header:', err);
                 }
                 resolve({ valid: true });

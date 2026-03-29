@@ -85,14 +85,14 @@ vi.mock('./context/AgentExecutionContext', () => ({
 describe('Ledger Circuit Breaker (Integration)', () => {
     let agent: BaseAgent;
     const mockConfig: AgentConfig = {
-        id: 'ledger-agent' as any,
+        id: 'ledger-agent',
         name: 'Ledger Agent',
         description: 'Testing Agent for Budgets',
         color: 'green',
         category: 'manager',
         systemPrompt: 'You are a test agent.',
         tools: []
-    };
+    } as unknown as AgentConfig;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -122,7 +122,7 @@ describe('Ledger Circuit Breaker (Integration)', () => {
             args: { purpose: 'spend money' }
         };
 
-        (AI.generateContent as any)
+        vi.mocked(AI.generateContent)
             .mockResolvedValueOnce({ // Iteration 1
                 response: {
                     text: () => 'I am spending a lot of tokens!',
@@ -140,7 +140,7 @@ describe('Ledger Circuit Breaker (Integration)', () => {
                         totalTokenCount: 1000000
                     }
                 }
-            })
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>)
             .mockResolvedValueOnce({ // Iteration 2 (Should NOT be reached)
                 response: {
                     text: () => 'I should not be running.',
@@ -151,7 +151,7 @@ describe('Ledger Circuit Breaker (Integration)', () => {
                     }],
                     usageMetadata: { totalTokenCount: 100 }
                 }
-            });
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
         // Execute
         const response = await agent.execute('Run expensive task', { userId: 'ledger-test-user' });

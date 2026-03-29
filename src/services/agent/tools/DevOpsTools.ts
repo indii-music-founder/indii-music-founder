@@ -211,7 +211,7 @@ export const DevOpsTools = {
             >(functions, 'runChaosMeshTests');
             const result = await runChaosFn(args);
             return toolSuccess(result.data, `Chaos mesh test completed for ${args.targetService}.`);
-        } catch (_error) {
+        } catch (_error: unknown) {
             return toolSuccess({
                 targetService: args.targetService,
                 duration: args.duration,
@@ -235,7 +235,7 @@ export const DevOpsTools = {
                 configId: result.data.configId,
                 status: result.data.status
             }, `Circuit breaker configured for ${args.serviceName}. Threshold: ${args.threshold}%. Fallback: ${args.fallbackBehavior}.`);
-        } catch (_error) {
+        } catch (_error: unknown) {
             return toolSuccess({
                 serviceName: args.serviceName,
                 threshold: args.threshold,
@@ -258,7 +258,7 @@ export const DevOpsTools = {
                 status: result.data.status,
                 configApplied: result.data.configApplied
             }, `WebSocket keep-alives configured for ${args.serviceId} with ${args.pingInterval}s interval.`);
-        } catch (_error) {
+        } catch (_error: unknown) {
             return toolSuccess({
                 serviceId: args.serviceId,
                 pingInterval: args.pingInterval,
@@ -280,7 +280,7 @@ export const DevOpsTools = {
                 parallelWrites: args.parallelWrites,
                 ...result.data
             }, `Lock contention test ${result.data.status} for ${args.database}. ${args.parallelWrites} writes, ${result.data.lockFailures} failures.`);
-        } catch (_error) {
+        } catch (_error: unknown) {
             return toolSuccess({
                 database: args.database,
                 parallelWrites: args.parallelWrites,
@@ -314,7 +314,7 @@ export const DevOpsTools = {
                 dsn: result.data.dsn,
                 status: result.data.status
             }, `Sentry crash reporting configured for ${args.environment}.`);
-        } catch (_error) {
+        } catch (_error: unknown) {
             return toolSuccess({
                 environment: args.environment,
                 provider: 'Sentry',
@@ -337,7 +337,7 @@ export const DevOpsTools = {
                 loopThreshold: args.loopThreshold,
                 ...result.data
             }, `Watchdog recovery executed for ${args.agentId}. Action: ${result.data.actionTaken}`);
-        } catch (_error) {
+        } catch (_error: unknown) {
             return toolSuccess({
                 agentId: args.agentId,
                 loopThreshold: args.loopThreshold,
@@ -362,7 +362,7 @@ export const DevOpsTools = {
                 shardKeys: result.data.shardKeys,
                 status: result.data.status
             }, `Logical partitioning configured for '${args.collection}' across ${args.shards} shards.`);
-        } catch (_error) {
+        } catch (_error: unknown) {
             return toolSuccess({
                 collection: args.collection,
                 shardsConfigured: args.shards,
@@ -388,7 +388,7 @@ export const DevOpsTools = {
                 expiresAt: result.data.expiresAt,
                 status: result.data.status
             }, `QA Sandbox '${args.environmentName}' provisioned at ${result.data.url}.`);
-        } catch (_error) {
+        } catch (_error: unknown) {
             return toolSuccess({
                 environmentName: args.environmentName,
                 snapshotUsed: args.snapshotId,

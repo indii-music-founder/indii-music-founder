@@ -109,7 +109,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             setOverallProgress(100);
             toastSuccess('Release submitted successfully!');
             // Wait for user to click Done button, which triggers onSubmitted via handleClose
-        } catch (err) {
+        } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Submission failed';
             toastError(msg);
             // Mark any running step as error

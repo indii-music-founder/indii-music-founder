@@ -245,7 +245,7 @@ If a task is outside Brand, say:
                     const prompt = `Critique this visual asset against standard brand guidelines (Logo usage, Color palette, Typography). Provide a pass/fail score (0-100) and specific feedback.`;
                     const analysis = await firebaseAI.analyzeImage(prompt, assetUrl);
                     results.push({ asset: assetUrl, analysis });
-                } catch (e) {
+                } catch (e: unknown) {
                     results.push({ asset: assetUrl, error: (e as Error).message });
                 }
             }

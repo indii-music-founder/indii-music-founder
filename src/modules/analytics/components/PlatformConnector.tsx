@@ -207,7 +207,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                 default:
                     break;
             }
-        } catch (err) {
+        } catch (err: unknown) {
             setErrorFor(platform, err instanceof Error ? err.message : 'Connection failed.');
         } finally {
             setLoaderFor(platform, false);
@@ -228,7 +228,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
             }
             await checkStatus();
             onConnectionChange?.();
-        } catch (err) {
+        } catch (err: unknown) {
             setErrorFor(platform, err instanceof Error ? err.message : 'Disconnect failed.');
         } finally {
             setLoaderFor(platform, false);

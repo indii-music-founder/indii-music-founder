@@ -43,7 +43,7 @@ export const CommerceTools = {
                 providers: ['Printful', 'Printify'],
                 readyForPOD: true,
             }, `Merchandise mockup generated for ${args.productType}. Image saved and ready for POD upload.`);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[CommerceTools] mockup_merchandise image gen failed:', err);
             return toolError('Failed to generate merchandise mockup. AI image service unavailable.', 'IMAGE_GEN_FAILED');
         }

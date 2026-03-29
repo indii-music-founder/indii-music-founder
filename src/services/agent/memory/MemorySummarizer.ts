@@ -72,7 +72,7 @@ SUMMARY:
             );
 
             return summary;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemorySummarizer] Summarization failed:', error);
             return memories.slice(0, 5).map(m => m.content).join('. ');
         }
@@ -155,7 +155,7 @@ Be specific and actionable. Focus on creative workflow, branding, distribution, 
                 createdAt: now,
                 confidence: parsed.confidence,
             };
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemorySummarizer] Insight generation failed:', error);
             return null;
         }
@@ -202,7 +202,7 @@ Only include clearly identifiable entities. Be precise with names. Return an emp
                 type: e.type || 'other',
                 mentionCount: 1,
             }));
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemorySummarizer] Entity extraction failed:', error);
             return [];
         }
@@ -241,7 +241,7 @@ Respond in JSON format:
 
             const parsed = safeParseJson(response, { topics: [] });
             return (parsed.topics || []).map((t: any) => String(t).toLowerCase());
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemorySummarizer] Topic assignment failed:', error);
             return [];
         }
@@ -293,7 +293,7 @@ Respond with ONLY a JSON object: {"importance": 0.X}`;
             const parsed = safeParseJson(response, { importance: 0.5 });
             const score = parseFloat(String(parsed.importance));
             return isNaN(score) ? 0.5 : Math.max(0, Math.min(1, score));
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[MemorySummarizer] Importance scoring failed:', error);
             return 0.5;
         }

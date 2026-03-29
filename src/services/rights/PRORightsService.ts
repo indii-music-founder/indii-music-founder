@@ -156,7 +156,7 @@ export async function registerWithASCAP(
         logger.info(`[PRORightsService] ASCAP registration successful: ${data.workId}`);
         return { success: true, organization: 'ASCAP', workId: data.workId, iswc: data.iswc, submittedAt };
 
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[PRORightsService] ASCAP registration error:', err);
         return {
             success: false,
@@ -265,7 +265,7 @@ export async function registerWithBMI(
         logger.info(`[PRORightsService] BMI registration successful: ${data.workId}`);
         return { success: true, organization: 'BMI', workId: data.workId, iswc: data.iswc, submittedAt };
 
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[PRORightsService] BMI registration error:', err);
         return { success: false, organization: 'BMI', error: err instanceof Error ? err.message : 'BMI registration failed', requiresManualReview: true, submittedAt };
     }
@@ -344,7 +344,7 @@ export async function enrollWithSoundExchange(
         logger.info(`[PRORightsService] SoundExchange enrollment: ${data.enrollmentId}`);
         return { success: true, enrollmentId: data.enrollmentId, submittedAt };
 
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[PRORightsService] SoundExchange enrollment error:', err);
         return { success: false, error: err instanceof Error ? err.message : 'Enrollment failed', submittedAt };
     }
@@ -440,7 +440,7 @@ export async function verifyCoverSongLicense(
             submittedAt,
         };
 
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[PRORightsService] Cover song verification error:', err);
         return {
             isVerified: false,

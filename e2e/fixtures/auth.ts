@@ -118,37 +118,68 @@ export const test = base.extend<AuthFixtures>({
         });
 
         // Intercept AI API calls to prevent real token spend
-        await page.route('**/firebasevertexai.googleapis.com/**', async route => {
+        await page.route(/.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/, async route => {
             const url = route.request().url();
             console.log(`[E2E] Intercepted Vertex AI: ${url}`);
+
+            const postData = route.request().postData() || '';
+            const hasUpdateProfileTool = postData.includes('updateProfile');
+
+            const parts: any[] = [
+                { text: "Awesome! I've updated your brand kit with those details. You're ready to go!" }
+            ];
+
+            if (hasUpdateProfileTool) {
+                parts.push({
+                    functionCall: {
+                        name: "updateProfile",
+                        args: {
+                            bio: "I am 22 and I make loud, distorted bubblegum bass music inspired by SOPHIE.",
+                            colors: ["Neon Pink", "Black"],
+                            social_instagram: "@glitched_official",
+                            brand_description: "Loud, distorted bubblegum bass.",
+                            career_stage: "Just starting out",
+                            goals: ["Grow fanbase", "Get playlisted"]
+                        }
+                    }
+                });
+            }
+
+            const aiResponseObj = {
+                candidates: [{
+                    content: {
+                        role: "model",
+                        parts: parts
+                    },
+                    finishReason: "STOP"
+                }]
+            };
+
+            if (url.includes('streamGenerateContent')) {
+                // Ensure Server-Sent Events (SSE) payload formatting to unblock the client parser
+                if (url.includes('alt=sse')) {
+                    await route.fulfill({
+                        status: 200,
+                        contentType: 'text/event-stream',
+                        body: `data: ${JSON.stringify(aiResponseObj)}\n\n`
+                    });
+                    return;
+                } else {
+                    // Sometimes just a JSON array is expected for non-SSE streams in legacy Vertex
+                    await route.fulfill({
+                        status: 200,
+                        contentType: 'application/json',
+                        body: JSON.stringify([aiResponseObj])
+                    });
+                    return;
+                }
+            }
+
+            // Normal generateContent
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
-                // Mimic Vertex AI JSON API response format
-                body: JSON.stringify({
-                    candidates: [{
-                        content: {
-                            role: "model",
-                            parts: [
-                                { text: "Awesome! I've updated your brand kit with those details. You're ready to go!" },
-                                {
-                                    functionCall: {
-                                        name: "updateProfile",
-                                        args: {
-                                            bio: "I am 22 and I make loud, distorted bubblegum bass music inspired by SOPHIE.",
-                                            colors: ["Neon Pink", "Black"],
-                                            social_instagram: "@glitched_official",
-                                            brand_description: "Loud, distorted bubblegum bass.",
-                                            career_stage: "Just starting out",
-                                            goals: ["Grow fanbase", "Get playlisted"]
-                                        }
-                                    }
-                                }
-                            ]
-                        },
-                        finishReason: "STOP"
-                    }]
-                })
+                body: JSON.stringify(aiResponseObj)
             });
         });
 

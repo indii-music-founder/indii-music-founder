@@ -183,7 +183,7 @@ If a task is outside Social, say:
             try {
                 const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema);
                 return { success: true, data: response };
-            } catch (e) {
+            } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };
             }
         },
@@ -207,7 +207,7 @@ If a task is outside Social, say:
             try {
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { calendar: response } };
-            } catch (e) {
+            } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };
             }
         },
@@ -228,7 +228,7 @@ If a task is outside Social, say:
             try {
                 const response = await firebaseAI.generateStructuredData(prompt, { type: 'array', items: { type: 'string' } } as Schema);
                 return { success: true, data: { thread: response } };
-            } catch (e) {
+            } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };
             }
         }

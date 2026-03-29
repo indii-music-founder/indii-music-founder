@@ -99,7 +99,7 @@ async function deleteUserStorage(userId: string): Promise<number> {
         }
 
         return deletedCount;
-    } catch (error) {
+    } catch (error: unknown) {
         logger.warn(`[AccountDeletion] Storage deletion error (may not exist): ${error}`);
         return 0;
     }
@@ -146,7 +146,7 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
                 result.deletedCollections.push(`${subcollection} (${count} docs)`);
                 logger.info(`[AccountDeletion] Deleted ${count} docs from ${subcollection}`);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             const msg = `Failed to delete ${subcollection}: ${error}`;
             result.errors.push(msg);
             logger.error(`[AccountDeletion] ${msg}`);
@@ -157,7 +157,7 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
     try {
         await deleteDoc(doc(db, 'users', userId));
         result.deletedCollections.push('users/ (profile doc)');
-    } catch (error) {
+    } catch (error: unknown) {
         result.errors.push(`Failed to delete user profile: ${error}`);
     }
 
@@ -165,7 +165,7 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
     try {
         result.deletedStorageFiles = await deleteUserStorage(userId);
         logger.info(`[AccountDeletion] Deleted ${result.deletedStorageFiles} storage files`);
-    } catch (error) {
+    } catch (error: unknown) {
         result.errors.push(`Storage deletion error: ${error}`);
     }
 
@@ -178,7 +178,7 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
         } else {
             result.errors.push('Cannot delete auth account: user not currently signed in');
         }
-    } catch (error) {
+    } catch (error: unknown) {
         result.errors.push(`Auth deletion error: ${error}`);
     }
 

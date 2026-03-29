@@ -137,7 +137,7 @@ export default function GenerationMonitor() {
                     }
                 }
             });
-        } catch (err) {
+        } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to generate');
             setIsSending(false);
         }

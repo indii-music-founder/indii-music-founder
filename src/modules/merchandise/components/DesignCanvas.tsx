@@ -154,7 +154,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                         multiplier: 0.15, // Low-res thumbnail (50x50 approx)
                     });
                     (obj as FabricObjectWithMeta).thumbnail = thumbnail;
-                } catch (err) {
+                } catch (err: unknown) {
                     logger.warn('Failed to generate thumbnail:', err);
                 }
             };
@@ -273,7 +273,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                 canvas.dispose();
                 fabricCanvasRef.current = null;
             };
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('Error initializing canvas:', err);
             requestAnimationFrame(() => {
                 setError('Failed to initialize canvas');
@@ -377,7 +377,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             };
 
             img.src = url;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Failed to add dropped image:', error);
             setError('Failed to add image');
         }
@@ -467,7 +467,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             canvas.add(img);
             canvas.setActiveObject(img);
             canvas.renderAll();
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Failed to load image:', error);
             throw error;
         }
@@ -508,7 +508,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
                     canvas.setActiveObject(fabricImg);
                     canvas.renderAll();
                     resolve();
-                } catch (err) {
+                } catch (err: unknown) {
                     reject(err);
                 }
             };
@@ -673,7 +673,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             }
 
             return dataURL;
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('Export error:', err);
             return null;
         }

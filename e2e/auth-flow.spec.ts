@@ -37,8 +37,8 @@ test.describe('Authentication Flow', () => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
-        const emailInput = page.getByLabel(/email/i);
-        const passwordInput = page.getByLabel(/password/i);
+        const emailInput = page.getByLabel(/email/i).first();
+        const passwordInput = page.getByLabel(/password/i).first();
 
         // Skip if no email login form
         if (!await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -49,7 +49,7 @@ test.describe('Authentication Flow', () => {
         // Try invalid credentials
         await emailInput.fill('invalid@example.com');
         await passwordInput.fill('wrongpassword123');
-        await page.locator('form button[type="submit"]').click();
+        await page.locator('form button[type="submit"]').first().click();
 
         // Should show error message
         const errorMessage = page.locator('[role="alert"], .error, [class*="error"]');
@@ -64,8 +64,8 @@ test.describe('Authentication Flow', () => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
-        const emailInput = page.getByLabel(/email/i);
-        const passwordInput = page.getByLabel(/password/i);
+        const emailInput = page.getByLabel(/email/i).first();
+        const passwordInput = page.getByLabel(/password/i).first();
 
         // Skip if no email login form
         if (!await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -76,7 +76,7 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Attempting login with test credentials...');
         await emailInput.fill(TEST_EMAIL!);
         await passwordInput.fill(TEST_PASSWORD!);
-        await page.locator('form button[type="submit"]').click();
+        await page.locator('form button[type="submit"]').first().click();
 
         // Wait for successful auth - should redirect to dashboard
         await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
@@ -90,8 +90,8 @@ test.describe('Authentication Flow', () => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
-        const emailInput = page.getByLabel(/email/i);
-        const passwordInput = page.getByLabel(/password/i);
+        const emailInput = page.getByLabel(/email/i).first();
+        const passwordInput = page.getByLabel(/password/i).first();
 
         // Skip if no email login form
         if (!await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -102,7 +102,7 @@ test.describe('Authentication Flow', () => {
         // Login first
         await emailInput.fill(TEST_EMAIL!);
         await passwordInput.fill(TEST_PASSWORD!);
-        await page.locator('form button[type="submit"]').click();
+        await page.locator('form button[type="submit"]').first().click();
 
         // Wait for dashboard
         await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
@@ -138,8 +138,8 @@ test.describe('Authentication Flow', () => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
-        const emailInput = page.getByLabel(/email/i);
-        const passwordInput = page.getByLabel(/password/i);
+        const emailInput = page.getByLabel(/email/i).first();
+        const passwordInput = page.getByLabel(/password/i).first();
 
         // Skip if no email login form
         if (!await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -150,7 +150,7 @@ test.describe('Authentication Flow', () => {
         // Login
         await emailInput.fill(TEST_EMAIL!);
         await passwordInput.fill(TEST_PASSWORD!);
-        await page.locator('form button[type="submit"]').click();
+        await page.locator('form button[type="submit"]').first().click();
 
         // Wait for dashboard
         await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });

@@ -209,7 +209,7 @@ export class LicensingService {
                     isrc: meta.isrc ?? data.isrc ?? '',
                 } satisfies SyncCatalogTrack;
             });
-        } catch (err) {
+        } catch (err: unknown) {
             logger.warn('[LicensingService] getCatalogTracksForSync failed:', err);
             return [];
         }
@@ -234,7 +234,7 @@ export class LicensingService {
 
             // Collection empty → generate and seed with AI
             return this.seedSyncBriefs(userProfile.id);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.warn('[LicensingService] getSyncBriefs failed:', err);
             return [];
         }
@@ -299,7 +299,7 @@ Make each brief feel authentic with real-sounding network names and project titl
 
             logger.info(`[LicensingService] Seeded ${briefs.length} sync briefs for ${userId}`);
             return briefs;
-        } catch (err) {
+        } catch (err: unknown) {
             logger.warn('[LicensingService] seedSyncBriefs failed:', err);
             return [];
         }

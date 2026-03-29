@@ -62,7 +62,7 @@ export class VoiceService {
 
         try {
             this.recognition.start();
-        } catch (e) {
+        } catch (e: unknown) {
             if (onError) onError(e);
             this.isListening = false;
         }

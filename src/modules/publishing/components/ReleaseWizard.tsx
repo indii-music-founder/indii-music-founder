@@ -95,7 +95,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     try {
       const id = await submitRelease();
       onComplete?.(id);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('Release submission failed:', error);
     }
   };

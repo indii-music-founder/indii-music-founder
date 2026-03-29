@@ -53,14 +53,14 @@ vi.mock('./tools', () => ({
 describe('BaseAgent Cost Circuit Breaker', () => {
     let agent: BaseAgent;
     const mockConfig: AgentConfig = {
-        id: 'ledger-agent' as any,
+        id: 'ledger-agent',
         name: 'Ledger Agent',
         description: 'Testing Agent for Budgets',
         color: 'green',
         category: 'manager',
         systemPrompt: 'You are a test agent.',
         tools: []
-    };
+    } as unknown as AgentConfig;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -88,7 +88,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
             args: { purpose: 'spend money again' }
         };
 
-        (AI.generateContent as any)
+        vi.mocked(AI.generateContent)
             .mockResolvedValueOnce({ // Iteration 1
                 response: {
                     text: () => 'I need to use a tool.',
@@ -102,7 +102,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
                     }],
                     usageMetadata: { promptTokenCount: 500, candidatesTokenCount: 500, totalTokenCount: 1000 }
                 }
-            } as any)
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>)
             .mockResolvedValueOnce({ // Iteration 2
                 response: {
                     text: () => 'I need to use another tool.',
@@ -116,7 +116,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
                     }],
                     usageMetadata: { promptTokenCount: 2500, candidatesTokenCount: 2500, totalTokenCount: 5000 }
                 }
-            } as any)
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>)
             // Iteration 3: AI should NOT be called.
             .mockResolvedValue({
                 response: {
@@ -128,15 +128,15 @@ describe('BaseAgent Cost Circuit Breaker', () => {
                     }],
                     usageMetadata: { totalTokenCount: 1000 }
                 }
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
         // Mock Budget Check
         // Iteration 1 check: Allowed
-        (MembershipService.checkBudget as any).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.90 });
+        vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.90 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
         // Iteration 2 check: Allowed
-        (MembershipService.checkBudget as any).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.40 });
+        vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: true, remainingBudget: 0.40 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
         // Iteration 3 check: FAILED
-        (MembershipService.checkBudget as any).mockResolvedValueOnce({ allowed: false, remainingBudget: -0.10 });
+        vi.mocked(MembershipService.checkBudget).mockResolvedValueOnce({ allowed: false, remainingBudget: -0.10 } as unknown as Awaited<ReturnType<typeof MembershipService.checkBudget>>);
 
         const response = await agent.execute('Run expensive task');
 

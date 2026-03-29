@@ -48,7 +48,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                 logger.error("Generation failed", result);
                 setStep('input'); // Reset on failure for now
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Operation failed:", e);
             setStep('input');
         }

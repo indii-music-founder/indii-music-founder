@@ -99,7 +99,7 @@ const RoadManager: React.FC = () => {
             });
 
             toast.success("Itinerary generated and saved");
-        } catch (error) {
+        } catch (error: unknown) {
             // logger.error("Itinerary Generation Failed:", error);
             toast.error("Failed to generate itinerary");
         } finally {
@@ -117,7 +117,7 @@ const RoadManager: React.FC = () => {
             const result = response.data as LogisticsReport;
             setLogisticsReport(result);
             toast.success("Logistics check complete");
-        } catch (error) {
+        } catch (error: unknown) {
             // logger.error("Logistics Check Failed:", error);
             toast.error("Failed to check logistics");
         } finally {
@@ -180,7 +180,7 @@ const RoadManager: React.FC = () => {
                 await updateItineraryStop(index, updatedStop);
                 toast.success("Day sheet updated");
             }
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Failed to update stop", err);
             toast.error("Failed to update stop");
         }

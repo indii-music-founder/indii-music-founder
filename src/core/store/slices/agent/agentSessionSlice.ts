@@ -310,7 +310,7 @@ export function buildAgentSessionState(
                 import('@/core/store').then(({ useStore }) => {
                     useStore.getState().registerSubscription('agent_sessions', unsubscribe);
                 });
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[AgentSlice] Failed to initialize sessions subscription:', error);
             }
         },

@@ -54,7 +54,7 @@ export default function SocialDashboard() {
                 day: post.day,
                 scheduledTime: scheduledTimeNum
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Operation failed:", error);
         }
     };

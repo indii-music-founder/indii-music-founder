@@ -5,7 +5,7 @@ import { AgentGene, EvolutionConfig } from './types';
 // Mock secureRandomInt — EvolutionEngine uses this for tournament selection and mutation probability
 const mockSecureRandomInt = vi.fn().mockReturnValue(0);
 vi.mock('@/utils/crypto-random', () => ({
-    secureRandomInt: (...args: unknown[]) => mockSecureRandomInt(...args),
+  secureRandomInt: (...args: unknown[]) => mockSecureRandomInt(...args),
 }));
 
 /**
@@ -172,7 +172,7 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     mockMutationFn.mockResolvedValueOnce({
       ...baseGene,
       id: 'defective',
-      parameters: undefined as any // Force defect
+      parameters: undefined as unknown as Record<string, unknown> // Force defect
     });
 
     // Mock second attempt to succeed
@@ -212,7 +212,7 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     mockMutationFn.mockResolvedValueOnce({
       ...baseGene,
       id: 'child-array',
-      parameters: [] as any // Force Array defect
+      parameters: [] as unknown as Record<string, unknown> // Force Array defect
     });
 
     // 2. Mock attempt: Circular Reference (Serialization Safety)

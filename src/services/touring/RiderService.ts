@@ -50,7 +50,7 @@ export const RiderService = {
                         id: doc.id,
                         ...data
                     } as RiderItem;
-                } catch (error) {
+                } catch (error: unknown) {
                     logger.warn(`Skipping invalid rider item ${doc.id}:`, error);
                     return null;
                 }

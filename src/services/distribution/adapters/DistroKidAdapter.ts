@@ -154,7 +154,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
                 errors: [{ code: 'CONNECTION_ERROR', message: 'DistroKid SFTP credentials missing or Electron bridge unavailable.' }]
             };
 
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[DistroKid] Create Release Error:', e);
             return {
                 success: false,

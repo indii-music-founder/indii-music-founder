@@ -72,7 +72,7 @@ export function useReleases(orgId: string | undefined) {
         try {
             const releaseRef = doc(db, 'ddexReleases', releaseId);
             await deleteDoc(releaseRef);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('Error deleting release:', err);
             Sentry.captureException(err);
             throw err;
@@ -83,7 +83,7 @@ export function useReleases(orgId: string | undefined) {
         try {
             const releaseRef = doc(db, 'ddexReleases', releaseId);
             await updateDoc(releaseRef, { status: 'archived' });
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('Error archiving release:', err);
             Sentry.captureException(err);
             throw err;

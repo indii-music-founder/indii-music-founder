@@ -43,7 +43,7 @@ export function useSocial(userId?: string) {
 
             setStats(fetchedStats);
             setScheduledPosts(fetchedScheduled);
-        } catch (err) {
+        } catch (err: unknown) {
             // BUG-004 FIX: Don't show a disruptive toast for expected failures.
             // Guest/anonymous users may not have social collections seeded,
             // and permission errors are expected during onboarding.
@@ -60,7 +60,7 @@ export function useSocial(userId?: string) {
             const targetId = filter === 'mine' ? userProfile?.id : userId;
             const fetchedPosts = await SocialService.getFeed(targetId, filter);
             setPosts(fetchedPosts);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Failed to load feed:", err);
             Sentry.captureException(err);
             toast.error("Failed to refresh feed.");
@@ -157,7 +157,7 @@ export function useSocial(userId?: string) {
             toast.success("Post scheduled successfully!");
             loadDashboardData(); // Refresh calendar data
             return true;
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Error scheduling post:", err);
             Sentry.captureException(err);
             toast.error("Failed to schedule post.");
@@ -173,7 +173,7 @@ export function useSocial(userId?: string) {
             loadFeed(); // Refresh feed immediately
             loadDashboardData(); // Update stats
             return true;
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Failed to create post:", err);
             Sentry.captureException(err);
             toast.error("Failed to publish post.");

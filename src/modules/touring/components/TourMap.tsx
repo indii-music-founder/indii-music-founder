@@ -191,7 +191,7 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
                     backgroundColor: '#0d1117'
                 });
                 setMap(initialMap);
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.error('[TourMap] Failed to initialize Google Maps:', err);
                 onAuthFailure();
             }

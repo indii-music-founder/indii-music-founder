@@ -41,7 +41,7 @@ export class SFTPTransporter {
             } else {
                 throw new Error('SFTP not available in this environment');
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[SFTP] Connection failed:', error);
             throw error;
         }
@@ -72,7 +72,7 @@ export class SFTPTransporter {
                 }
             }
             throw new Error('SFTP not available in this environment');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[SFTP] Upload failed:`, error);
             throw error;
         }

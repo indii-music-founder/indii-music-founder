@@ -56,7 +56,7 @@ export const CoreVaultTools = {
                         ? `Retrieved ${facts.length} active facts from vault/${args.category}.`
                         : `No facts stored in vault/${args.category} yet.`,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Failed to read vault: ${error}`, 'READ_FAILED');
             }
         }
@@ -112,7 +112,7 @@ export const CoreVaultTools = {
                     fact: args.fact.trim(),
                     message: `Fact saved to CORE Vault/${args.category}: "${args.fact.substring(0, 60)}..."`,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Failed to write to vault: ${error}`, 'WRITE_FAILED');
             }
         }
@@ -164,7 +164,7 @@ export const CoreVaultTools = {
                     category: args.category,
                     message: `Fact superseded: ${args.oldFactId} → ${newFactId}. Old version preserved.`,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Failed to supersede fact: ${error}`, 'SUPERSEDE_FAILED');
             }
         }
@@ -205,7 +205,7 @@ export const CoreVaultTools = {
                     })),
                     message: `Found ${chain.length} versions in the supersession chain.`,
                 };
-            } catch (error) {
+            } catch (error: unknown) {
                 return toolError(`Failed to get fact history: ${error}`, 'HISTORY_FAILED');
             }
         }

@@ -5,8 +5,11 @@ import { TraceService } from '../observability/TraceService';
 import { auth } from '@/services/firebase';
 import { agentRegistry } from '../registry';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
-import type { AgentService } from '../AgentService';
 import { logger } from '@/utils/logger';
+
+interface IAgentRunner {
+    runAgent: (agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string) => Promise<{ text: string; thoughtSignature?: string }>;
+}
 
 /**
  * HybridOrchestrator: The "Best of Both Worlds" engine.
@@ -31,10 +34,10 @@ export class HybridOrchestrator {
      * 
      * @param context - The current agent context.
      * @param userQuery - The original user request.
-     * @param service - Optional AgentService for delegating to specialists.
+     * @param service - Optional IAgentRunner for delegating to specialists.
      * @returns The final answer or progress report to the user.
      */
-    async execute(context: AgentContext, userQuery: string, service?: AgentService): Promise<string> {
+    async execute(context: AgentContext, userQuery: string, service?: IAgentRunner): Promise<string> {
         const userId = auth.currentUser?.uid || 'anonymous';
         const traceId = await TraceService.startTrace(userId, 'hybrid-orchestrator', userQuery);
 
@@ -159,7 +162,7 @@ export class HybridOrchestrator {
                             result: pruneResult(result.data?.answer || '', 3000)
                         });
                         lastAgentResponse = result.data?.answer ?? '';
-                    } catch (toolErr) {
+                    } catch (toolErr: unknown) {
                         logger.error(`[indii:Hybrid] Tool knowledge_base failed:`, toolErr);
                         history.push({ turn: currentTurn, tool: 'knowledge_base', error: String(toolErr) });
                     }
@@ -188,7 +191,7 @@ export class HybridOrchestrator {
 
                         history.push({ turn: currentTurn, tool: 'browser_control', result: pruneResult(result.data || result.message, 3000) });
                         lastAgentResponse = result.message || '';
-                    } catch (toolErr) {
+                    } catch (toolErr: unknown) {
                         logger.error(`[indii:Hybrid] Tool browser_control failed:`, toolErr);
                         history.push({ turn: currentTurn, tool: 'browser_control', error: String(toolErr) });
                     }

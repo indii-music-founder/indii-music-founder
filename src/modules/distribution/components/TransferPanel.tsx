@@ -86,7 +86,7 @@ export const TransferPanel: React.FC = () => {
                 error(`${protocol} Transmission Failed. Check logs.`);
                 addLog(`ERROR: ${result.report?.error || result.error}`);
             }
-        } catch (err) {
+        } catch (err: unknown) {
             const errMsg = err instanceof Error ? err.message : 'Unknown transmission error';
             error(errMsg);
             addLog(`CRITICAL ERROR: ${errMsg}`);

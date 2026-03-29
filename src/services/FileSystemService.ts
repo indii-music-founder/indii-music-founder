@@ -83,7 +83,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
                 createdAt: Date.now(),
                 updatedAt: Date.now()
             } as FileNode;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Error creating node:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to create file/folder' });
             throw error;
@@ -97,7 +97,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
                 ...updates,
                 updatedAt: Date.now()
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Error updating node:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to update file/folder' });
             throw error;
@@ -108,7 +108,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
         try {
             const docRef = doc(db, this.collectionPath, id);
             await deleteDoc(docRef);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Error deleting node:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to delete item' });
             throw error;
@@ -168,7 +168,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
         try {
             await this.batchDelete(Array.from(idsToDelete));
             events.emit('SYSTEM_ALERT', { level: 'success', message: `Deleted ${idsToDelete.size} items` });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Error batch deleting nodes:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to delete folder contents' });
             throw error;

@@ -29,7 +29,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
         try {
             await saveBrandKit({ releaseDetails: release });
             toast.success("Release details saved");
-        } catch (_e) {
+        } catch (_e: unknown) {
             toast.error("Failed to save release details");
         }
     };

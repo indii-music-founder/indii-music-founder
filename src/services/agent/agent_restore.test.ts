@@ -42,19 +42,19 @@ describe('indii Conductor Restoration', () => {
     });
 
     it('save_memory tool should call MemoryService', async () => {
-        const result = (await TOOL_REGISTRY['save_memory']!({ content: 'Test memory' })) as any;
+        const result = (await TOOL_REGISTRY['save_memory']!({ content: 'Test memory' })) as unknown as { data: { message: string } };
         expect(memoryService.saveMemory).toHaveBeenCalledWith('test-project', 'Test memory', 'fact');
         expect(result.data.message).toContain('Memory processed');
     });
 
     it('recall_memories tool should call MemoryService', async () => {
-        const result = (await TOOL_REGISTRY['recall_memories']!({ query: 'test' })) as any;
+        const result = (await TOOL_REGISTRY['recall_memories']!({ query: 'test' })) as unknown as { data: { message: string } };
         expect(memoryService.retrieveRelevantMemories).toHaveBeenCalledWith('test-project', 'test');
         expect(result.data.message).toContain('Retrieved');
     });
 
     it('request_approval tool should return approved message', async () => {
-        const result = (await TOOL_REGISTRY['request_approval']!({ content: 'Post this?' })) as any;
+        const result = (await TOOL_REGISTRY['request_approval']!({ content: 'Post this?' })) as unknown as { data: { message: string } };
         expect(result.data.message).toContain('[APPROVED]');
     });
 });

@@ -336,7 +336,7 @@ export default function PublishingDashboard() {
                                 setIsDSRModalOpen(false);
                                 toast.success(`Integrated ${result.matchedReleases} releases from report`);
                                 await fetchEarnings({ startDate: defaultDateRange.start, endDate: defaultDateRange.end });
-                            } catch (error) {
+                            } catch (error: unknown) {
                                 logger.error('[DSR Upload] Error:', error);
                                 toast.error('Failed to process sales report');
                             }

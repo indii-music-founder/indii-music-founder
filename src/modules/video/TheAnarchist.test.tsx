@@ -30,7 +30,7 @@ describe('The Anarchist Ⓐ', () => {
                     trackId: 'track-1',
                 });
             });
-        } catch (e) {
+        } catch (e: unknown) {
             // If it throws, that's arguably acceptable, but ideally it should handle it.
             // For now, we assert that the app state is not corrupted (e.g., project.clips is still an array)
         }

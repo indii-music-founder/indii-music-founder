@@ -47,7 +47,7 @@ export function ShareTargetHandler() {
                     // Clean up processed item immediately (optional strategy, specific to this UX)
                     // Or keep it until user explicitly handles it
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[ShareHandler] Failed to load content:', error);
             } finally {
                 setIsProcessing(false);

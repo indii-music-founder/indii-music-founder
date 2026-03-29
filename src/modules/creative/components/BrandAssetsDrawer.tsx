@@ -92,7 +92,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 newUploadedImages.forEach(img => addUploadedImage(img));
                 toast.success(`${files.length} asset(s) uploaded`);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Upload failed layout:", error);
             toast.error("Failed to upload assets");
         } finally {
@@ -169,7 +169,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 toast.error("Failed to generate image");
             }
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Generation failed:", error);
             toast.error("Generation failed");
         } finally {

@@ -33,7 +33,7 @@ export async function runAgenticWorkflow(
     try {
         const fileList = await GeminiRetrieval.listFiles();
         files = fileList.files || [];
-    } catch (err) {
+    } catch (err: unknown) {
         logger.warn("RAG Retrieval Failed (proceeding with Pure LLM):", err);
         reasoning.push(`Retrieval Error: ${err}`);
         // Fallback to empty files list -> triggers Pure LLM
@@ -71,7 +71,7 @@ export async function runAgenticWorkflow(
             responseText = await AI.generateText(query) || "I couldn't generate a response.";
         }
 
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error("Agent Logic Failed:", error);
         responseText = "I'm having trouble processing that right now.";
         reasoning.push(`Critical Error: ${error}`);
@@ -125,7 +125,7 @@ export async function processForKnowledgeBase(
                 schema as Record<string, unknown>
             );
             displayTitle = metadata.title || fileName;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn("Metadata extraction failed, using defaults:", error);
         }
     }
@@ -143,7 +143,7 @@ export async function processForKnowledgeBase(
             tags: ['gemini-file', file.mimeType.split('/').pop() || 'raw'],
             embeddingId: file.name
         };
-    } catch (e) {
+    } catch (e: unknown) {
         logger.error("[RAG] Ingestion failed:", e);
         return {
             title: displayTitle,

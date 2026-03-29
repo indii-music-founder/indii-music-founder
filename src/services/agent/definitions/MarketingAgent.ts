@@ -274,7 +274,7 @@ Provide:
             try {
                 const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' });
                 return { success: true, data: response };
-            } catch (e) {
+            } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };
             }
         },

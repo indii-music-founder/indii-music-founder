@@ -84,7 +84,7 @@ export const createNodeFromDrop = (
             label = parsed.label;
             start = parsed.start;
             end = parsed.end;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Failed to parse audio segment data", e);
             return;
         }

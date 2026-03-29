@@ -171,7 +171,7 @@ export class VenueScoutService {
 
             return processed;
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[VenueScoutService] Firestore/Network error, falling back to local seed data:', error);
             // Graceful Fallback
             return this._getFallbackData(city, genre);
@@ -245,11 +245,11 @@ export class VenueScoutService {
                         createdAt: serverTimestamp()
                     });
                     return [{ id: docRef.id, ...newVenue } as Venue];
-                } catch (e) {
+                } catch (e: unknown) {
                     return [{ id: 'temp-autonomous', ...newVenue } as Venue];
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             // logger.error("Autonomous search failed", e);
         }
         return [];
@@ -268,7 +268,7 @@ export class VenueScoutService {
             };
             await updateDoc(venueRef, updates);
             return updates;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("Failed to enrich venue (offline?)", e);
             return { lastScoutedAt: Date.now() };
         }
@@ -328,7 +328,7 @@ export class VenueScoutService {
             });
             await batch.commit();
 
-        } catch (e) {
+        } catch (e: unknown) {
             // Silent fail is acceptable here as searchVenues will fallback to local seed
             // logger.error('[VenueScoutService] Error seeding venues:', e);
         }

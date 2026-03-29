@@ -123,7 +123,7 @@ export type PODShippingRate = z.infer<typeof PODShippingRateSchema>;
 // Provider Interface
 // ============================================================================
 
-export interface IPODProvider {
+export interface PODProviderAdapter {
     name: PODProvider;
 
     // Product Catalog
@@ -150,7 +150,7 @@ export interface IPODProvider {
 // Printful Provider Implementation
 // ============================================================================
 
-class PrintfulProvider implements IPODProvider {
+class PrintfulProvider implements PODProviderAdapter {
     name: PODProvider = 'printful';
     private apiKey: string;
     private baseUrl = 'https://api.printful.com';
@@ -471,7 +471,7 @@ class PrintfulProvider implements IPODProvider {
 // Internal Provider (Fallback when no POD configured)
 // ============================================================================
 
-class InternalProvider implements IPODProvider {
+class InternalProvider implements PODProviderAdapter {
     name: PODProvider = 'internal';
 
     async getProducts(): Promise<PODProduct[]> {
@@ -614,7 +614,7 @@ class InternalProvider implements IPODProvider {
                 await setDoc(orderRef, order);
                 logger.info(`[InternalPOD] Order ${order.id} persisted to Firestore`);
             }
-        } catch (e) {
+        } catch (e: unknown) {
             // Persistence failure should not block order creation
             logger.warn('[InternalPOD] Failed to persist order to Firestore:', e);
         }
@@ -638,7 +638,7 @@ class InternalProvider implements IPODProvider {
             }
 
             return snapshot.data() as PODOrder;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[InternalPOD] Failed to fetch order from Firestore:', e);
             return null;
         }
@@ -673,7 +673,7 @@ class InternalProvider implements IPODProvider {
 
             logger.info(`[InternalPOD] Order ${orderId} cancelled`);
             return true;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[InternalPOD] Failed to cancel order:', e);
             return false;
         }
@@ -702,7 +702,7 @@ class InternalProvider implements IPODProvider {
                     const blob = await response.blob();
                     const buffer = await blob.arrayBuffer();
                     imageBytes = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn(`[InternalPOD] Failed to fetch design for base64 conversion, using fallback URL logic`, e);
                     return designUrl; // Fallback
                 }
@@ -724,7 +724,7 @@ class InternalProvider implements IPODProvider {
             if (url) return url;
 
             return designUrl; // Fallback
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[InternalPOD] AI Mockup generation error:', error);
             return designUrl; // Fallback
         }
@@ -736,7 +736,7 @@ class InternalProvider implements IPODProvider {
 // ============================================================================
 
 class PrintOnDemandServiceClass {
-    private providers: Map<PODProvider, IPODProvider> = new Map();
+    private providers: Map<PODProvider, PODProviderAdapter> = new Map();
     private defaultProvider: PODProvider = 'internal';
 
     constructor() {
@@ -750,11 +750,11 @@ class PrintOnDemandServiceClass {
         }
     }
 
-    registerProvider(provider: IPODProvider): void {
+    registerProvider(provider: PODProviderAdapter): void {
         this.providers.set(provider.name, provider);
     }
 
-    getProvider(name?: PODProvider): IPODProvider {
+    getProvider(name?: PODProvider): PODProviderAdapter {
         const providerName = name || this.defaultProvider;
         const provider = this.providers.get(providerName);
 

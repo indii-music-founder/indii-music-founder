@@ -160,7 +160,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                     });
                     toast.success('Asset added to timeline');
                 }
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.error('Failed to parse dropped item', err);
             }
         }

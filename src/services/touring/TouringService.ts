@@ -76,7 +76,7 @@ export const TouringService = {
                         createdAt: validated.createdAt,
                         updatedAt: validated.updatedAt
                     } as VehicleStats;
-                } catch (validationError) {
+                } catch (validationError: unknown) {
                     logger.error('Invalid VehicleStats data:', validationError);
                     return null;
                 }
@@ -113,7 +113,7 @@ export const TouringService = {
                         id: docSnapshot.id,
                         createdAt: validated.createdAt
                     } as Itinerary;
-                } catch (validationError) {
+                } catch (validationError: unknown) {
                     logger.warn(`Skipping invalid itinerary ${docSnapshot.id}:`, validationError);
                     return null;
                 }

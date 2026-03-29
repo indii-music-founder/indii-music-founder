@@ -36,7 +36,7 @@ const IdentityPanel: React.FC<IdentityPanelProps> = ({
             logger.info("[BrandManager] Bio save triggered via ProfileSlice");
             setIsEditingBio(false);
             toast.success("Bio updated");
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("[BrandManager] Bio save error:", e);
             toast.error("Failed to save bio");
         }

@@ -222,7 +222,7 @@ describe('Hub-and-Spoke Architecture', () => {
 
         it('ensures no overlap between hub and spoke IDs', () => {
             const hubAsArray = [HUB_AGENT_ID];
-            const intersection = hubAsArray.filter(id => SPOKE_AGENT_IDS.includes(id as any));
+            const intersection = hubAsArray.filter(id => SPOKE_AGENT_IDS.includes(id as unknown as typeof SPOKE_AGENT_IDS[number]));
             expect(intersection).toHaveLength(0);
         });
     });

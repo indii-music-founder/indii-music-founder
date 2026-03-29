@@ -198,14 +198,17 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         });
 
         // Bridge the store mock to the session service mock to satisfy integration expectations
-        const state = useStore.getState() as any;
-        state.addAgentMessage.mockImplementation((msg: any) => {
+        const state = useStore.getState() as unknown as ReturnType<typeof useStore.getState> & {
+            addAgentMessage: import('vitest').Mock;
+            updateAgentMessage: import('vitest').Mock;
+        };
+        state.addAgentMessage.mockImplementation((msg: unknown) => {
             const currentSessionId = useStore.getState().activeSessionId;
             if (currentSessionId) {
                 mockUpdateSession(currentSessionId, { messages: [msg] });
             }
         });
-        state.updateAgentMessage.mockImplementation((id: string, updates: any) => {
+        state.updateAgentMessage.mockImplementation((id: string, updates: Record<string, unknown>) => {
             const currentSessionId = useStore.getState().activeSessionId;
             if (currentSessionId) {
                 mockUpdateSession(currentSessionId, updates);
@@ -213,8 +216,10 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         });
 
         // Reset AgentService state (singleton)
-        (agentService as any).isProcessing = false;
-        (agentService as any).isWarmedUp = true;
+        // @ts-expect-error - testing internal state
+        agentService.isProcessing = false;
+        // @ts-expect-error - testing internal state
+        agentService.isWarmedUp = true;
 
         // Log locks
         // @ts-expect-error - testing internal state
@@ -248,10 +253,10 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         // 1. Verify Context Truncation (Context Window)
         // Chain: AgentService -> AgentExecutor -> BaseAgent -> ContextManager.truncateContext
         expect(ContextManager.truncateContext).toHaveBeenCalled();
-        const truncateArgs = (ContextManager.truncateContext as any).mock.calls[0];
+        const truncateArgs = vi.mocked(ContextManager.truncateContext).mock.calls[0];
 
         // Assert limit is passed correctly (15000)
-        expect(truncateArgs[1]).toBe(15000);
+        expect(truncateArgs![1]).toBe(15000);
 
         // Assert AI received the truncated context
         // mockGenerateContent was called by BaseAgent (1st call, as Orchestrator routing is mocked/skipped)

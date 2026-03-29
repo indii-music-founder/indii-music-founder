@@ -1,7 +1,6 @@
 import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
-import type { AudioFeatures } from '@/services/audio/AudioAnalysisService';
-import { AudioSemanticData } from '@/services/audio/types';
+import type { AudioFeatures, AudioSemanticData } from '@/services/audio/types';
 import { logger } from '@/utils/logger';
 
 export interface AnalyzedTrack {
@@ -44,7 +43,7 @@ export class MusicLibraryService {
             const trackRef = doc(db, this.COLLECTION, userId, 'analyzed_tracks', trackId);
             await setDoc(trackRef, data, { merge: true });
             logger.info(`[MusicLibrary] Saved analysis for track: ${filename} (${trackId})`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[MusicLibrary] Failed to save analysis for ${trackId}:`, error);
             // Non-blocking error, analysis is just lost from cache
         }
@@ -65,7 +64,7 @@ export class MusicLibraryService {
                 logger.info(`[MusicLibrary] Cache hit for track: ${trackId}`);
                 return snap.data() as AnalyzedTrack;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[MusicLibrary] Error fetching analysis for ${trackId}:`, error);
         }
 
@@ -88,7 +87,7 @@ export class MusicLibraryService {
                 logger.info(`[MusicLibrary] Cache hit by hash: ${fileHash}`);
                 return snap.docs[0]!.data() as AnalyzedTrack;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[MusicLibrary] Error fetching analysis by hash:`, error);
         }
 
@@ -110,7 +109,7 @@ export class MusicLibraryService {
             const tracks = snap.docs.map(doc => doc.data() as AnalyzedTrack);
             logger.info(`[MusicLibrary] Found ${tracks.length} analyzed tracks.`);
             return tracks;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[MusicLibrary] Error listing library:`, error);
             return [];
         }

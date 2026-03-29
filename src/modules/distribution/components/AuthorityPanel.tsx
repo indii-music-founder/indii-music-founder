@@ -22,7 +22,7 @@ export const AuthorityPanel: React.FC = () => {
             const result = await distributionService.assignISRCs();
             setIsrc(result);
             success(`ISRC Generated: ${result}`);
-        } catch (error) {
+        } catch (error: unknown) {
             toastError(error instanceof Error ? error.message : 'ISRC generation failed');
         } finally {
             setLoading(null);
@@ -35,7 +35,7 @@ export const AuthorityPanel: React.FC = () => {
             const result = await distributionService.generateUPC();
             setUpc(result);
             success(`UPC Generated: ${result}`);
-        } catch (error) {
+        } catch (error: unknown) {
             toastError(error instanceof Error ? error.message : 'UPC generation failed');
         } finally {
             setLoading(null);
@@ -103,7 +103,7 @@ export const AuthorityPanel: React.FC = () => {
             const result = await distributionService.generateDDEX(releasePayload);
             setDdexXml(result);
             success('DDEX ERN 4.3 Message Generated');
-        } catch (error) {
+        } catch (error: unknown) {
             toastError(error instanceof Error ? error.message : 'DDEX generation failed');
         } finally {
             setLoading(null);

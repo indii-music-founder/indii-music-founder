@@ -2,9 +2,9 @@ import { logger } from '@/utils/logger';
 import { AGENT_CONFIGS } from './agentConfig';
 import { freezeAgentConfig } from './FreezeDiagnostic';
 
-import { SpecializedAgent, IAgentRegistry } from './types';
+import { SpecializedAgent, AgentRegistryProvider } from './types';
 
-export class AgentRegistry implements IAgentRegistry {
+export class AgentRegistry implements AgentRegistryProvider {
     private agents: Map<string, SpecializedAgent> = new Map();
     private loaders: Map<string, () => Promise<SpecializedAgent>> = new Map();
     private metadata: Map<string, SpecializedAgent> = new Map();
@@ -31,7 +31,7 @@ export class AgentRegistry implements IAgentRegistry {
             } else {
                 logger.error('[AgentRegistry] Failed to pre-warm Generalist agent');
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[AgentRegistry] Warmup error:', e);
         }
     }
@@ -63,7 +63,7 @@ export class AgentRegistry implements IAgentRegistry {
                 }
                 return agent;
             });
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
         }
 
@@ -82,7 +82,7 @@ export class AgentRegistry implements IAgentRegistry {
                 const { MerchandiseAgent } = await import('./MerchandiseAgent');
                 return new MerchandiseAgent();
             });
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
         }
 
@@ -107,7 +107,7 @@ export class AgentRegistry implements IAgentRegistry {
                         freezeAgentConfig(agent);
                         return agent;
                     });
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn(`[AgentRegistry] Failed to register agent '${config?.id || 'unknown'}':`, e);
                 }
             });
@@ -138,7 +138,7 @@ export class AgentRegistry implements IAgentRegistry {
                 freezeAgentConfig(agent);
                 return agent;
             });
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register Keeper agent:", e);
         }
         // Register Curriculum Agent (Music Business Education)
@@ -156,7 +156,7 @@ export class AgentRegistry implements IAgentRegistry {
                 const { CurriculumAgent } = await import('./specialists/CurriculumAgent');
                 return new CurriculumAgent();
             });
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
         }
     }
@@ -205,7 +205,7 @@ export class AgentRegistry implements IAgentRegistry {
                 this.loadErrors.delete(id);
                 logger.debug(`[AgentRegistry] Agent '${id}' loaded successfully`);
                 return agent;
-            } catch (e) {
+            } catch (e: unknown) {
                 const error = e instanceof Error ? e : new Error(String(e));
                 const existingError = this.loadErrors.get(id);
                 const attempts = (existingError?.attempts || 0) + 1;

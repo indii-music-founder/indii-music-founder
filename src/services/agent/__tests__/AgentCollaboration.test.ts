@@ -92,15 +92,15 @@ describe('Agent Collaboration', () => {
             }
         };
 
-        const generateContentSpy = (GenAI.generateContent as any);
+        const generateContentSpy = vi.mocked(GenAI.generateContent);
         generateContentSpy
-            .mockResolvedValueOnce(mockToolCallResponse) // 1. Decide to delegate
-            .mockResolvedValueOnce(mockFinalResponse);   // 2. Report result
+            .mockResolvedValueOnce(mockToolCallResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>) // 1. Decide to delegate
+            .mockResolvedValueOnce(mockFinalResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);   // 2. Report result
 
         // Mock the specialist response
-        (agentService.runAgent as any).mockResolvedValue({
+        vi.mocked(agentService.runAgent).mockResolvedValue({
             text: 'Marketing plan content.'
-        });
+        } as unknown as Awaited<ReturnType<typeof agentService.runAgent>>);
 
         const result = await agent.execute('Help with marketing', {
             traceId: 'parent-trace-123',
@@ -150,16 +150,16 @@ describe('Agent Collaboration', () => {
             }
         };
 
-        const generateContentSpy = (GenAI.generateContent as any);
+        const generateContentSpy = vi.mocked(GenAI.generateContent);
         generateContentSpy
-            .mockResolvedValueOnce(mockToolCallResponse)
-            .mockResolvedValueOnce(mockFinalResponse);
+            .mockResolvedValueOnce(mockToolCallResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>)
+            .mockResolvedValueOnce(mockFinalResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
         // Mock specialist responses
-        (agentService.runAgent as any).mockImplementation(async (id: string) => {
-            if (id === 'producer') return { text: 'Audio is fine.' };
-            if (id === 'marketing') return { text: 'Tweet drafted.' };
-            return { text: 'Unknown' };
+        vi.mocked(agentService.runAgent).mockImplementation(async (id: string) => {
+            if (id === 'producer') return { text: 'Audio is fine.' } as unknown as Awaited<ReturnType<typeof agentService.runAgent>>;
+            if (id === 'marketing') return { text: 'Tweet drafted.' } as unknown as Awaited<ReturnType<typeof agentService.runAgent>>;
+            return { text: 'Unknown' } as unknown as Awaited<ReturnType<typeof agentService.runAgent>>;
         });
 
         const result = await agent.execute('Analyze and market this track', {
@@ -172,8 +172,9 @@ describe('Agent Collaboration', () => {
 
         // Check results aggregation
         // consult_experts returns { success: true, data: { results }, message: ... }
-        expect((result.data as any).success).toBe(true);
-        const results = (result.data as any).data.results;
+        const resultData = result.data as unknown as { success: boolean, data: { results: any[] } };
+        expect(resultData.success).toBe(true);
+        const results = resultData.data.results;
         expect(results).toHaveLength(2);
         expect(results[0].response.text).toBe('Audio is fine.');
         expect(results[1].response.text).toBe('Tweet drafted.');

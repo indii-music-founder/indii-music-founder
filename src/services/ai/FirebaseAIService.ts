@@ -183,7 +183,7 @@ export class FirebaseAIService implements AIContext {
                                 logger.warn('[FirebaseAIService] Invalid remote config schema:', validated.error);
                             }
                         }
-                    } catch (e) {
+                    } catch (e: unknown) {
                         logger.warn('[FirebaseAIService] Failed to parse ai_system_config JSON:', e);
                     }
                 }
@@ -207,12 +207,12 @@ export class FirebaseAIService implements AIContext {
             this.isInitialized = true;
             logger.info('[FirebaseAIService] Initialized with Firebase AI SDK');
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[FirebaseAIService] Bootstrap failed, attempting fallback:', error);
             // If we hit an App Check error OR ANY initialization error, fall back to direct Gemini SDK
             try {
                 await this.initializeFallbackMode();
-            } catch (fallbackError) {
+            } catch (fallbackError: unknown) {
                 throw this.handleError(fallbackError);
             }
         }
@@ -434,7 +434,7 @@ export class FirebaseAIService implements AIContext {
                                         : { contents: sanitizedPrompt as Content[] },
                                     { signal: internalSignal }
                                 );
-                            } catch (error) {
+                            } catch (error: unknown) {
                                 if (isAppCheckError(error) && !this.useFallbackMode) {
                                     await this.triggerGlobalFallback();
                                     return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
@@ -652,7 +652,7 @@ export class FirebaseAIService implements AIContext {
                                         });
                                     }
                                     controller.close();
-                                } catch (e) {
+                                } catch (e: unknown) {
                                     controller.error(e);
                                 }
                             }
@@ -669,7 +669,7 @@ export class FirebaseAIService implements AIContext {
                                         aggResult.usageMetadata.promptTokenCount || 0,
                                         aggResult.usageMetadata.candidatesTokenCount || 0
                                     );
-                                } catch (e) {
+                                } catch (e: unknown) {
                                     logger.warn('[FirebaseAIService] Failed to track usage for stream:', e);
                                 }
                             }
@@ -696,7 +696,7 @@ export class FirebaseAIService implements AIContext {
                         });
 
                         return { stream: transformedStream, response: wrappedResponsePromise };
-                    } catch (error) {
+                    } catch (error: unknown) {
                         if (isAppCheckError(error) && !this.useFallbackMode) {
                             await this.triggerGlobalFallback();
                             return this.streamWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
@@ -752,7 +752,7 @@ export class FirebaseAIService implements AIContext {
             logger.debug('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
             logger.debug('[DEBUG-PAYLOAD] prompt:', JSON.stringify(sanitizedForLog).substring(0, 500) + "...");
             logger.debug('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
-        } catch (e) { /* Ignore logging errors */ }
+        } catch (e: unknown) { /* Ignore logging errors */ }
 
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }

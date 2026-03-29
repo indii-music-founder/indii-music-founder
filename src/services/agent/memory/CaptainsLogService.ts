@@ -145,7 +145,7 @@ class CaptainsLogService {
 
             logger.debug(`[CaptainsLog] 📝 ${type}: ${content.substring(0, 80)}`);
             return entryId;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[CaptainsLog] Failed to append entry:', error);
             return '';
         }
@@ -173,7 +173,7 @@ class CaptainsLogService {
 
             const data = snap.data() as CaptainsLogDocument;
             return data.entries || [];
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn(`[CaptainsLog] Failed to read log for ${dateKey}:`, error);
             return [];
         }

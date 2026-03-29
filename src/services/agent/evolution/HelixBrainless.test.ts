@@ -54,7 +54,7 @@ describe('🧬 Helix: Brainless Check (Schema Integrity)', () => {
     mockMutationFn
       .mockResolvedValueOnce({ ...healthyGene, parameters: null }) // Fail 1
       .mockResolvedValueOnce({ ...healthyGene, parameters: undefined }) // Fail 2
-      .mockResolvedValueOnce({ ...healthyGene, parameters: "string" as any }) // Fail 3
+      .mockResolvedValueOnce({ ...healthyGene, parameters: "string" as unknown as Record<string, unknown> }) // Fail 3
       .mockResolvedValueOnce({ ...healthyGene, id: 'child1', parameters: { temp: 0.8 } }) // Success 1
       .mockResolvedValueOnce({ ...healthyGene, id: 'child2', parameters: { temp: 0.9 } }) // Success 2
       .mockResolvedValueOnce({ ...healthyGene, id: 'child3', parameters: { temp: 0.5 } }) // Success 3

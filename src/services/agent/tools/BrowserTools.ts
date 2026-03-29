@@ -29,7 +29,7 @@ export const BrowserTools = {
                                 status: 'success',
                             });
                         }
-                    } catch (pErr) {
+                    } catch (pErr: unknown) {
                         logger.warn('[BrowserTools] Failed to persist navigation history:', pErr);
                     }
 
@@ -42,7 +42,7 @@ export const BrowserTools = {
                 'Browser automation requires the indiiOS desktop app. Web sessions do not support native browser control.',
                 'BROWSER_DESKTOP_ONLY'
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[BrowserTools] browser_navigate error:', error);
             return toolError(`Failed to invoke browser navigation: ${String(error)}`, 'BROWSER_INVOKE_ERROR');
         }
@@ -65,7 +65,7 @@ export const BrowserTools = {
                 'Browser automation requires the indiiOS desktop app.',
                 'BROWSER_DESKTOP_ONLY'
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[BrowserTools] browser_action error:', error);
             return toolError(`Failed to invoke browser action: ${String(error)}`, 'BROWSER_INVOKE_ERROR');
         }
@@ -88,7 +88,7 @@ export const BrowserTools = {
                 'Browser automation requires the indiiOS desktop app.',
                 'BROWSER_DESKTOP_ONLY'
             );
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[BrowserTools] browser_snapshot error:', error);
             return toolError(`Failed to invoke browser snapshot: ${String(error)}`, 'BROWSER_INVOKE_ERROR');
         }

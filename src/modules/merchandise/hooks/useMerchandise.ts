@@ -182,7 +182,7 @@ export const useMerchandise = () => {
 
                     setTopSellingProducts(topSellers);
                 }
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.warn("[Merchandise] Failed to load merch stats or timed out:", err);
             } finally {
                 setIsStatsLoading(false);

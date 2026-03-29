@@ -58,7 +58,7 @@ export class FanEnrichmentService {
                         }
                     }
                     resolve(records);
-                } catch (err) {
+                } catch (err: unknown) {
                     reject(new Error("Malformed CSV structure"));
                 }
             };

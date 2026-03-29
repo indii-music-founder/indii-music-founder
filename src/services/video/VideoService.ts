@@ -83,7 +83,7 @@ export class VideoService {
             }));
 
             return uri || null;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Motion Brush Error:", e);
             throw e;
         }
@@ -166,13 +166,13 @@ export class VideoService {
                     if (userId) {
                         await MembershipService.incrementUsage(userId, 'video', 1, durationSeconds);
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     logger.warn('[VideoService] Failed to track usage:', e);
                 }
             }
 
             return uri || null;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Video Generation Error:", e);
             throw e;
         }
@@ -192,7 +192,7 @@ export class VideoService {
                 }
             }));
             return uri || null;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Keyframe Transition Error:", e);
             throw e;
         }

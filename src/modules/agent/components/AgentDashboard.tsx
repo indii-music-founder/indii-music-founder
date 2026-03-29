@@ -154,7 +154,7 @@ const AgentDashboard: React.FC = () => {
         try {
             await RosterService.addToRoster(venue);
             showToast(`Added ${venue.name} to roster`, 'success');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Failed to add to roster:', error);
             showToast('Failed to add venue to roster', 'error');
             throw error; // Let the card handle the loading state reset
@@ -191,7 +191,7 @@ const AgentDashboard: React.FC = () => {
                 setScanStatus(`Mission complete. Discovered ${newCount} new venues.`);
             }
 
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error("Scan failed", e);
             setScanStatus("Mission failed. Connection lost.");
         } finally {

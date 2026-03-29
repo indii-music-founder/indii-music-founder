@@ -80,7 +80,7 @@ export const useCanvasHistory = (
           index: newStates.length - 1,
         };
       });
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[useCanvasHistory] Failed to save canvas state:', error);
     }
   }, [canvas, maxHistorySize]);
@@ -118,7 +118,7 @@ export const useCanvasHistory = (
       setTimeout(() => {
         isPerformingAction.current = false;
       }, 100);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[useCanvasHistory] Failed to undo:', error);
       isPerformingAction.current = false;
     }
@@ -145,7 +145,7 @@ export const useCanvasHistory = (
       setTimeout(() => {
         isPerformingAction.current = false;
       }, 100);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[useCanvasHistory] Failed to redo:', error);
       isPerformingAction.current = false;
     }

@@ -106,7 +106,7 @@ export function WalletConnectPanel() {
                     setChain(`0x${info.chainId.toString(16)}`);
                 }
             }
-        } catch (err) {
+        } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Connection failed';
             setError(msg);
         } finally {

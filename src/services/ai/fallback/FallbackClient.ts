@@ -145,7 +145,7 @@ export async function generateWithFallback(
                 text: () => result.text || ''
             } as unknown as GenerateContentResponse
         } as GenerateContentResult;
-    } catch (error) {
+    } catch (error: unknown) {
         if (handleError) {
             throw handleError(error);
         }
@@ -215,7 +215,7 @@ export async function streamWithFallback(
                     try {
                         const c = chunk as unknown as GenAIStreamChunk;
                         chunkText = typeof c.text === 'function' ? c.text() : (c.text || '');
-                    } catch (e) { logger.debug('CAUGHT CHUNK ERROR', e); }
+                    } catch (e: unknown) { logger.debug('CAUGHT CHUNK ERROR', e); }
                     finalText += chunkText;
                     const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
                     const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
@@ -232,7 +232,7 @@ export async function streamWithFallback(
                     });
                 }
                 controller.close();
-            } catch (streamError) {
+            } catch (streamError: unknown) {
                 controller.error(streamError);
             }
         }

@@ -55,7 +55,7 @@ export class UPCService {
                 logger.info(`[UPC] Assigned ${upcData.upc} to release ${releaseId}`);
                 return upcData.upc;
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[UPC] Assignment failed:', error);
             throw error;
         }

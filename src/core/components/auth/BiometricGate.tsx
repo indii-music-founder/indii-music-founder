@@ -53,7 +53,7 @@ export function BiometricGate({ children }: BiometricGateProps) {
                 setFailCount(prev => prev + 1);
                 setVerificationError('Biometric verification failed. Please try again.');
             }
-        } catch (error) {
+        } catch (error: unknown) {
             setFailCount(prev => prev + 1);
             setVerificationError('An error occurred during verification.');
             logger.error("Operation failed:", error);
@@ -70,7 +70,7 @@ export function BiometricGate({ children }: BiometricGateProps) {
     const handleSignOut = async () => {
         try {
             await logout();
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[BiometricGate] Logout failed:', error);
             // Force reload as fallback
             window.location.reload();

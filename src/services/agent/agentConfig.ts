@@ -48,7 +48,7 @@ import { logger } from '@/utils/logger';
 AGENT_CONFIGS.forEach(agent => {
     try {
         freezeAgentConfig(agent);
-    } catch (e) {
+    } catch (e: unknown) {
         logger.warn(`[agentConfig] Failed to freeze agent "${agent.id}":`, e);
     }
 });

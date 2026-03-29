@@ -34,7 +34,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
         try {
             const data = await UserService.getUserProfile(targetId);
             setProfile(data);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to load profile", error);
         } finally {
             setLoading(false);
@@ -79,7 +79,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
                     });
                 }
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to toggle follow", error);
         } finally {
             setFollowLoading(false);

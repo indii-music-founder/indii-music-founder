@@ -21,7 +21,7 @@ export class BiometricService {
             // Check if platform authenticator is available
             const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
             return available;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[BiometricService] Availability check failed:', error);
             return false;
         }
@@ -72,7 +72,7 @@ export class BiometricService {
 
             // If we got a credential, the user successfully authenticated with FaceID/TouchID
             return !!credential;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[BiometricService] Registration failed:', error);
             return false;
         }
@@ -106,7 +106,7 @@ export class BiometricService {
             });
 
             return !!assertion;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[BiometricService] Verification failed or cancelled:', error);
             return false;
         }

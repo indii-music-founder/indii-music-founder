@@ -50,7 +50,7 @@ export class VideoGenerationService {
             Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
 
             return await firebaseAI.analyzeImage(analysisPrompt, image);
-        } catch (_e) {
+        } catch (_e: unknown) {
             // Temporal analysis failure should not block generation
             return "";
         }
@@ -63,7 +63,7 @@ export class VideoGenerationService {
                 canGenerate: quotaCheck.allowed,
                 reason: quotaCheck.allowed ? undefined : quotaCheck.reason
             };
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[VideoGeneration] Quota check failed:', e);
             if (import.meta.env.PROD) {
                 return { canGenerate: false, reason: 'Service unavailable. Please try again.' };
@@ -304,7 +304,7 @@ export class VideoGenerationService {
                         storeRef.getState().updateHistoryItem(jobId, { url: uploadResult.url });
 
                         logger.info(`[VideoGeneration] ✅ Video persisted to Storage: ${uploadResult.url}`);
-                    } catch (uploadError) {
+                    } catch (uploadError: unknown) {
                         logger.warn('[VideoGeneration] Background Storage upload failed (non-blocking):', uploadError);
                     }
                 })();
@@ -315,7 +315,7 @@ export class VideoGenerationService {
                 url: videoUrl,
                 prompt: enrichedPrompt
             }];
-        } catch (error) {
+        } catch (error: unknown) {
             // Update Firestore with failure for UI subscription
             const { updateDoc } = await import('firebase/firestore');
             const errorMsg = error instanceof Error ? error.message : String(error);
@@ -399,7 +399,7 @@ export class VideoGenerationService {
                                     reject(new Error(`Asset Integrity Failure: Video URL is unreachable (${response.status}).`));
                                     return;
                                 }
-                            } catch (e) {
+                            } catch (e: unknown) {
                                 // Network error during verification should not block generation unless strictly required.
                                 // We log the warning for debugging purposes, but proceed with strict verification logic.
                                 logger.warn("Lens: Video verification check failed", e);
@@ -569,7 +569,7 @@ export class VideoGenerationService {
                 url: segmentUrls[0]!,
                 prompt: options.prompt
             }];
-        } catch (error) {
+        } catch (error: unknown) {
             const { updateDoc } = await import('firebase/firestore');
             const errorMsg = error instanceof Error ? error.message : String(error);
 

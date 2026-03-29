@@ -19,7 +19,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, ...pr
             await navigator.clipboard.writeText(text);
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('Failed to copy text: ', err);
         }
     }, [children]);

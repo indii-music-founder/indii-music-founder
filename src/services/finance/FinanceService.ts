@@ -94,7 +94,7 @@ export class FinanceService {
 
       return parseResult.data;
 
-    } catch (error) {
+    } catch (error: unknown) {
       Sentry.captureException(error);
       throw error;
     }
@@ -125,7 +125,7 @@ export class FinanceService {
         ...validExpense,
         createdAt: now.toDate().toISOString()
       };
-    } catch (error) {
+    } catch (error: unknown) {
       Sentry.captureException(error);
       throw error;
     }
@@ -156,7 +156,7 @@ export class FinanceService {
           createdAt: (data.createdAt instanceof Timestamp) ? data.createdAt.toDate().toISOString() : data.createdAt
         } as Expense;
       });
-    } catch (error) {
+    } catch (error: unknown) {
       Sentry.captureException(error);
       throw error;
     }

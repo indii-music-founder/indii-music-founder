@@ -64,7 +64,7 @@ export const AnalysisTools = {
                     }
                 }
             }
-        } catch (err) {
+        } catch (err: unknown) {
             // Fall through to not-connected error
         }
 

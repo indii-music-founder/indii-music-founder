@@ -123,7 +123,7 @@ export function useMarketing() {
                 safeUnsubscribe(unsubscribeStats);
                 safeUnsubscribe(unsubscribeCampaigns);
             };
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Setup failed:", err);
             Sentry.captureException(err);
             const timer = setTimeout(() => {
@@ -164,7 +164,7 @@ export function useMarketing() {
     const refreshDashboard = useCallback(async () => {
         try {
             await MarketingService.getMarketingStats();
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Refresh failed:", err);
         }
     }, []);

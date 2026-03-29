@@ -27,7 +27,7 @@ export default function MarketplaceStorefront({ artistId }: MarketplaceStorefron
         try {
             const data = await MarketplaceService.getProductsByArtist(targetId);
             setProducts(data);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to load products", error);
         } finally {
             setLoading(false);

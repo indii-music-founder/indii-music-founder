@@ -135,7 +135,7 @@ export default function GrowthIntelligenceDashboard() {
                 setAnalyticsSelectedTrackId(reports[0]!.track.trackId);
             }
             setAnalyticsLastRefresh(Date.now());
-        } catch (err) {
+        } catch (err: unknown) {
             setLoadError(err instanceof Error ? err.message : 'Failed to load analytics data.');
         } finally {
             setAnalyticsLoading(false);

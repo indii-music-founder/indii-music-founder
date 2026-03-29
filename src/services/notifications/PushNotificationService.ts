@@ -19,7 +19,7 @@ export class PushNotificationService {
             if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
                 this.messaging = getMessaging(app);
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[PushNotificationService] FCM not supported in this environment.', e);
         }
     }
@@ -49,7 +49,7 @@ export class PushNotificationService {
                 logger.warn('[PushNotificationService] Notification permission denied.');
                 return null;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[PushNotificationService] Failed to get FCM token:', error);
             return null;
         }
@@ -96,7 +96,7 @@ export class PushNotificationService {
                 updatedAt: new Date().toISOString()
             }, { merge: true });
             logger.debug('[PushNotificationService] Saved FCM token to Firestore.');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[PushNotificationService] Failed to save FCM token to Firestore:', error);
         }
     }

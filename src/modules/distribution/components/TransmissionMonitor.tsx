@@ -49,7 +49,7 @@ export const TransmissionMonitor: React.FC = () => {
                     }
                 }
             );
-        } catch (error) {
+        } catch (error: unknown) {
             // Catch synchronous subscription setup errors
             logger.warn('[TransmissionMonitor] Failed to initialize subscription:', error);
         }
@@ -61,7 +61,7 @@ export const TransmissionMonitor: React.FC = () => {
             if (unsubscribe) {
                 try {
                     unsubscribe();
-                } catch (err) {
+                } catch (err: unknown) {
                     // Swallow errors during unsubscribe — the Firestore SDK may
                     // throw if the listener is already in an invalid state.
                     logger.warn('[TransmissionMonitor] Error during unsubscribe (swallowed):', err);

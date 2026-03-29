@@ -301,7 +301,7 @@ export const RoadMode: React.FC = () => {
             if (previousProvider === 'direct') {
                 useStore.setState({ activeAgentProvider: previousProvider });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[RoadMode] Failed to submit prompt:', error);
         } finally {
             setIsSubmitting(false);
@@ -324,7 +324,7 @@ export const RoadMode: React.FC = () => {
                 );
                 setSearchResults(results);
                 setActiveAction(action);
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error('[RoadMode] Places search failed:', error);
                 setSearchError(error instanceof Error ? error.message : 'Search failed');
                 // Fallback to agent if Places API fails

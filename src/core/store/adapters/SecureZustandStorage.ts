@@ -22,7 +22,7 @@ export const SecureZustandStorage: StateStorage = {
 
             // Fallback to standard localStorage
             return localStorage.getItem(name);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[SecureStorage] Failed to get item "${name}":`, error);
             return null;
         }
@@ -41,7 +41,7 @@ export const SecureZustandStorage: StateStorage = {
             }
 
             localStorage.setItem(name, value);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[SecureStorage] Failed to set item "${name}":`, error);
         }
     },
@@ -54,7 +54,7 @@ export const SecureZustandStorage: StateStorage = {
             }
 
             localStorage.removeItem(name);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[SecureStorage] Failed to remove item "${name}":`, error);
         }
     }

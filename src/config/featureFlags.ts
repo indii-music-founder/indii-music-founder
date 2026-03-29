@@ -161,7 +161,7 @@ class FeatureFlagService {
             this.version++;
             this.notifyListeners();
             Logger.info('FeatureFlags', `Loaded ${this.flags.size} flags from Remote Config`);
-        } catch (error) {
+        } catch (error: unknown) {
             Logger.warn('FeatureFlags', 'Remote Config unavailable, using defaults', error);
             // Defaults are already loaded - continue with them
         }

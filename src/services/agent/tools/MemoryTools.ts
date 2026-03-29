@@ -25,7 +25,7 @@ export const MemoryTools = {
 
         try {
             await memoryService.saveMemory(currentProjectId, args.content, args.type || 'fact');
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[MemoryTools] save_memory failed internally: (Non-blocking)', e);
         }
 
@@ -78,7 +78,7 @@ export const MemoryTools = {
         let verification;
         try {
             verification = JSON.parse(text);
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[MemoryTools] Failed to parse verification JSON:', text);
             verification = { score: 0, pass: false, reasoning: 'Failed to parse AI response' };
         }

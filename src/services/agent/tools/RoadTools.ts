@@ -139,7 +139,7 @@ export const RoadTools = {
                     level,
                     createdAt: serverTimestamp()
                 });
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[RoadTools] Failed to persist budget:', e);
             }
         }
@@ -170,7 +170,7 @@ export const RoadTools = {
                     ...validated,
                     createdAt: serverTimestamp()
                 });
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[RoadTools] Failed to persist itinerary:', e);
             }
         }
@@ -192,7 +192,7 @@ export const RoadTools = {
                     status: 'pending',
                     createdAt: new Date().toISOString()
                 });
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[RoadTools] Failed to persist logistics request:', e);
             }
         }
@@ -279,7 +279,7 @@ export const RoadTools = {
                     riderId,
                     createdAt: new Date().toISOString()
                 });
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[RoadTools] Failed to persist technical rider:', e);
             }
         }
@@ -308,7 +308,7 @@ export const RoadTools = {
                     createdAt: new Date().toISOString()
                 });
                 logger.info(`[RoadTools] Setlist ${setlistId} persisted for PRO submission.`);
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[RoadTools] Failed to persist setlist:', e);
             }
         }

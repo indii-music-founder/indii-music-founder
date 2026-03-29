@@ -156,7 +156,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
                     reviewRequired: true,
                 }
             };
-        } catch (e) {
+        } catch (e: unknown) {
             return {
                 success: false,
                 status: 'failed',

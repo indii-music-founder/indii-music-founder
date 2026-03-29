@@ -1,5 +1,39 @@
-import type { AudioFeatures } from './AudioAnalysisService';
+import { DSPComplianceReport } from './DSPComplianceValidator';
 
+export interface TechnicalAudit {
+    peakLevel: number;
+    truePeakDb: number;
+    integratedLoudness: number;
+    sampleRate: number;
+    isStereo: boolean;
+    rejectionRisks: string[];
+    compliance?: DSPComplianceReport;
+}
+
+export interface AudioFeatures {
+    bpm: number;
+    key: string;
+    scale: string;
+    energy: number;
+    duration: number;
+    danceability: number;
+    loudness: number;
+    valence?: number; // Happiness/Sadness
+    audit?: TechnicalAudit;
+    segments?: { start: number; label: string; energy: number }[];
+}
+
+export interface DeepAudioFeatures extends AudioFeatures {
+    genre?: { [key: string]: number };
+    moods?: {
+        happy: number;
+        aggressive: number;
+        relaxed: number;
+        sad: number;
+    };
+    voice_instrumental?: number; // >0.5 instrumental
+    danceability_ml?: number;
+}
 export interface AudioSemanticData {
     mood: string[];         // e.g., ["Dark", "Energetic"]
     genre: string[];        // e.g., ["Industrial Techno", "Cyberpunk"]

@@ -35,7 +35,7 @@ class KnowledgeBaseService {
                 // docs = docs.filter(prev => prev.rawName.includes(projectId)); 
             }
             return docs;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("KnowledgeBaseService: Failed to load docs", error);
             throw error;
         }
@@ -63,7 +63,7 @@ class KnowledgeBaseService {
                     } else {
                         throw new Error("Ingestion failed");
                     }
-                } catch (err) {
+                } catch (err: unknown) {
                     logger.error(`Upload Fail for ${file.name}:`, err);
                 }
             })());

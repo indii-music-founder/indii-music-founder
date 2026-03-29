@@ -97,7 +97,7 @@ export class AgentOrchestrator {
 
             try {
                 parsedResponse = JSON.parse(textResponse);
-            } catch (parseError) {
+            } catch (parseError: unknown) {
                 logger.warn('[indii:Orchestrator] Failed to parse JSON response:', textResponse);
                 await TraceService.addStep(traceId, 'routing', {
                     selectedAgent: 'generalist',
@@ -224,7 +224,7 @@ export class AgentOrchestrator {
             logger.info(`[AgentOrchestrator] Fan-out: ${validated.length} parallel tasks`, validated.map(v => v.agentId));
             return validated;
 
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[indii:Orchestrator] Fan-out decomposition failed, single agent fallback.', e);
             return [{ agentId: 'generalist', subtask: userQuery }];
         }

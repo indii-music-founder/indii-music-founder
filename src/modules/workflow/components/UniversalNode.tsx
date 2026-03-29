@@ -106,7 +106,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             } else {
                 asset = rawResult as WorkflowResultAsset;
             }
-        } catch (e) {
+        } catch (e: unknown) {
             return <p className="text-gray-400 text-[10px] p-1 truncate">{String(data.result).substring(0, 30)}</p>;
         }
 

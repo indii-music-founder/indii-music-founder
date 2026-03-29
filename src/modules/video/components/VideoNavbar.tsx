@@ -20,7 +20,7 @@ export default function VideoNavbar() {
             } else {
                 toast.error("Screen Control API not supported or permission denied.");
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Projector error:", error);
             toast.error("Failed to open projector window");
         } finally {

@@ -24,7 +24,7 @@ export function safeUnsubscribe(unsubscribe: (() => void) | undefined): void {
     if (!unsubscribe) return;
     try {
         unsubscribe();
-    } catch (_e) {
+    } catch (_e: unknown) {
         // Firestore SDK internal assertion race condition during rapid unmount.
         // Safe to swallow — the listener is being torn down regardless.
     }

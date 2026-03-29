@@ -69,7 +69,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                 timestamp: Date.now()
             };
             setMessages(prev => [...prev, botMsg]);
-        } catch (error) {
+        } catch (error: unknown) {
             const errorMsg: ChatMessage = {
                 id: Date.now().toString(),
                 role: 'model',

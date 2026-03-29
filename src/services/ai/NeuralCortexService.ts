@@ -194,7 +194,7 @@ export class NeuralCortexService {
             const snap = await getDoc(ref);
             if (!snap.exists()) return null;
             return snap.data() as CortexEntityProfile;
-        } catch (err) {
+        } catch (err: unknown) {
             logger.warn(`[NeuralCortex] Failed to retrieve entity ${id}:`, err);
             return null;
         }
@@ -210,7 +210,7 @@ export class NeuralCortexService {
             const ref = collection(db, 'users', uid, CORTEX_COLLECTION);
             const snap = await getDocs(ref);
             return snap.docs.map(d => d.data() as CortexEntityProfile);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[NeuralCortex] Failed to list entities:', err);
             return [];
         }

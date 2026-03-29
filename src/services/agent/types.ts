@@ -356,7 +356,7 @@ export interface SpecializedAgent {
     execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse>;
 }
 
-export interface IAgentRegistry {
+export interface AgentRegistryProvider {
     getAsync(id: string, retryCount?: number): Promise<SpecializedAgent | undefined>;
     getLoadError(id: string): { error: Error; timestamp: number; attempts: number } | undefined;
     getAll(): SpecializedAgent[];

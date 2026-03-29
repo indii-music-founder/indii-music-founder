@@ -64,7 +64,7 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
                     }
                 );
                 logger.info(`[AgentFeedbackSlice] Successfully saved strategic rule to UserMemory for user ${userId}`);
-            } catch (memoryError) {
+            } catch (memoryError: unknown) {
                 logger.error('[AgentFeedbackSlice] Failed to save rule to UserMemory (non-blocking):', memoryError);
             }
 
@@ -87,7 +87,7 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
             }));
 
             logger.info(`[AgentFeedbackSlice] Feedback submitted for action: ${currentFeedbackContext.actionType}`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[AgentFeedbackSlice] Failed to submit feedback:', error);
         }
     },

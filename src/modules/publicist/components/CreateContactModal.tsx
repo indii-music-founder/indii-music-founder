@@ -46,7 +46,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
             setRole('Journalist');
             setTier('Mid');
             onClose();
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Failed to create contact:", error);
             toast.error("Failed to add contact");
         } finally {

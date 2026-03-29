@@ -85,7 +85,7 @@ export function useAgentWorkspace() {
 
         try {
             await agentService.sendMessage(cmd);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('useAgentWorkspace: submitCommand failed', error);
         }
     }, [isAgentOpen, isRightPanelOpen, toggleAgentWindow, toggleRightPanel]);

@@ -52,7 +52,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                 size: Math.round(dataUrl.length / 1024) + 'KB'
             });
             return dataUrl;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[VideoStage] Frame capture failed:', e);
             return null;
         }
@@ -162,7 +162,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                     // Don't set error — the parent will re-render with the updated URL
                     return;
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 logger.warn('[VideoStage] Blob URL recovery attempt failed:', e);
             }
         }

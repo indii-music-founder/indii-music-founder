@@ -84,7 +84,7 @@ export class AudioFidelityFeature {
         success: true,
         data: result
       };
-    } catch (e) {
+    } catch (e: unknown) {
       const err = e as Error;
       return {
         success: false,

@@ -111,7 +111,7 @@ If you do not agree, propose a REVISED set of terms, explaining your reasoning.
             const result = await firebaseAI.generateContent(prompt);
             // FirebaseAIService returns an object wrapping the Gemini response
             return result.response?.text() || '';
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[NegotiationOrchestrator] Agent ${agentId} failed during negotiation`, error);
             return `[Error from ${agentId}]`;
         }

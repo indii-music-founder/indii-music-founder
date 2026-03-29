@@ -29,7 +29,7 @@ export function useTrackIngestion(): UseTrackIngestionResult {
 
             setProgress('Complete');
             return metadata;
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('Track ingestion failed:', err);
             setError(err instanceof Error ? err.message : 'Unknown error');
             return null;

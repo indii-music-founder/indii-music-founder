@@ -70,7 +70,7 @@ export const UserMemoryTools = {
           importance: args.importance || 'medium',
           message: `User memory saved: "${args.content.substring(0, 50)}${args.content.length > 50 ? '...' : ''}"`,
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to save user memory: ${error}`, 'SAVE_FAILED');
       }
     }
@@ -124,7 +124,7 @@ export const UserMemoryTools = {
               ? `Found ${results.length} relevant memories.`
               : 'No relevant memories found.',
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to search user memories: ${error}`, 'SEARCH_FAILED');
       }
     }
@@ -167,7 +167,7 @@ export const UserMemoryTools = {
           },
           message: 'User context retrieved successfully.',
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to get user context: ${error}`, 'CONTEXT_FAILED');
       }
     }
@@ -215,7 +215,7 @@ export const UserMemoryTools = {
           count: memories.length,
           message: `Retrieved ${memories.length} memories.`,
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to list user memories: ${error}`, 'LIST_FAILED');
       }
     }
@@ -260,7 +260,7 @@ export const UserMemoryTools = {
           updates,
           message: `Memory ${args.memoryId} updated successfully.`,
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to update user memory: ${error}`, 'UPDATE_FAILED');
       }
     }
@@ -290,7 +290,7 @@ export const UserMemoryTools = {
           memoryId: args.memoryId,
           message: `Memory ${args.memoryId} has been deactivated.`,
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to deactivate user memory: ${error}`, 'DEACTIVATE_FAILED');
       }
     }
@@ -320,7 +320,7 @@ export const UserMemoryTools = {
           memoryId: args.memoryId,
           message: `Memory ${args.memoryId} has been permanently deleted.`,
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to delete user memory: ${error}`, 'DELETE_FAILED');
       }
     }
@@ -359,7 +359,7 @@ export const UserMemoryTools = {
           },
           message: `Analytics generated for the last ${args.days || 30} days.`,
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to get user memory analytics: ${error}`, 'ANALYTICS_FAILED');
       }
     }
@@ -389,7 +389,7 @@ export const UserMemoryTools = {
             ? `Successfully consolidated ${result.processedCount} memories.`
             : `Consolidation completed with ${result.errorCount} errors.`,
         };
-      } catch (error) {
+      } catch (error: unknown) {
         return toolError(`Failed to consolidate user memories: ${error}`, 'CONSOLIDATION_FAILED');
       }
     }

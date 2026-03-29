@@ -53,7 +53,7 @@ class UserMemoryService {
     async (texts) => {
       try {
         return await AI.batchEmbedContents(texts, this.embeddingModel);
-      } catch (error) {
+      } catch (error: unknown) {
         logger.error('[UserMemoryService] Batch embedding failed:', error);
         throw error;
       }
@@ -80,7 +80,7 @@ class UserMemoryService {
   private async getEmbedding(text: string): Promise<number[]> {
     try {
       return await this.embeddingBatcher.add(text);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.warn('[UserMemoryService] Failed to get embedding:', error);
       return [];
     }
@@ -108,7 +108,7 @@ class UserMemoryService {
     let existingMemories: UserMemory[] = [];
     try {
       existingMemories = await service.list();
-    } catch (e) {
+    } catch (e: unknown) {
       logger.warn('[UserMemoryService] Failed to list memories for dedup: (Non-blocking)', e);
     }
 
@@ -144,7 +144,7 @@ class UserMemoryService {
     let memoryId = '';
     try {
       memoryId = await service.add(memory);
-    } catch (e) {
+    } catch (e: unknown) {
       logger.error('[UserMemoryService] Failed to save memory: (Non-blocking)', e);
     }
 
@@ -225,7 +225,7 @@ class UserMemoryService {
       let memories: UserMemory[] = [];
       try {
         memories = await service.list();
-      } catch (e) {
+      } catch (e: unknown) {
         logger.warn('[UserMemoryService] Failed to list memories for search: (Non-blocking)', e);
         return [];
       }
@@ -329,7 +329,7 @@ class UserMemoryService {
       ).catch((e) => logger.error('[UserMemoryService] Failed to update access stats:', e));
 
       return results;
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[UserMemoryService] Error searching memories:', error);
       return [];
     }
@@ -433,7 +433,7 @@ Be specific and actionable. Avoid generic statements.
         AI_MODELS.TEXT.FAST
       );
       summary = result.response.text() || 'No summary available';
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[UserMemoryService] Failed to generate summary:', error);
       summary = 'Unable to generate summary';
     }
@@ -521,7 +521,7 @@ Be specific and actionable. Avoid generic statements.
     const contextService = this.getContextService(userId);
     try {
       await contextService.add(context);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[UserMemoryService] Failed to save context:', error);
     }
 
@@ -634,7 +634,7 @@ JSON FORMAT:
             try {
               await service.delete(id);
               processedCount++;
-            } catch (error) {
+            } catch (error: unknown) {
               errors.push({ memoryId: id, error: String(error) });
             }
           }
@@ -662,7 +662,7 @@ JSON FORMAT:
         errorCount: errors.length,
         errors,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('[UserMemoryService] Consolidation failed:', error);
       return {
         success: false,
@@ -703,7 +703,7 @@ JSON FORMAT:
       try {
         await service.add({ ...memory, userId });
         processedCount++;
-      } catch (error) {
+      } catch (error: unknown) {
         errors.push({ memoryId: 'import', error: String(error) });
       }
     }

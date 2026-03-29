@@ -36,7 +36,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
                 if (isMounted) {
                     setAudioData(data);
                 }
-            } catch (err) {
+            } catch (err: unknown) {
                 logger.error("Failed to load audio waveform:", err);
                 if (isMounted) setError("Failed to load audio");
             }

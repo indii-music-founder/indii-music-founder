@@ -115,13 +115,13 @@ export default function LoginForm() {
             }
             try {
                 await signUpWithEmail(email, password);
-            } catch (_err) {
+            } catch (_err: unknown) {
                 // Error handled by store
             }
         } else {
             try {
                 await loginWithEmail(email, password);
-            } catch (_err) {
+            } catch (_err: unknown) {
                 // Error handled by store
             }
         }
@@ -209,6 +209,8 @@ export default function LoginForm() {
 
                                     {authError && (
                                         <motion.p
+                                            role="alert"
+                                            data-testid="auth-error"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             className="text-red-400 text-xs font-mono text-center p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
@@ -354,6 +356,8 @@ export default function LoginForm() {
 
                                 {authError && (
                                     <motion.p
+                                        role="alert"
+                                        data-testid="auth-error"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         className="text-red-400 text-xs font-mono text-center p-3 bg-red-500/10 border border-red-500/20 rounded-xl"

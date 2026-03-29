@@ -97,7 +97,7 @@ export default function GhostCapture() {
 
             toast.success("Capture transmitted successfully!");
             setModule('files');
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error("Capture upload failed:", err);
             toast.error("Failed to transmit capture.");
             resetCapture();

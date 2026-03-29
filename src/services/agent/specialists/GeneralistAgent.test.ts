@@ -20,13 +20,13 @@ describe('GeneralistAgent', () => {
         agent = new GeneralistAgent();
 
         // Mock current store state
-        (useStore.getState as any).mockReturnValue({
+        vi.mocked(useStore.getState).mockReturnValue({
             currentOrganizationId: 'org-1',
             currentProjectId: 'proj-1',
             uploadedImages: [],
             agentHistory: [],
             studioControls: {
-                resolution: '1024x1024',
+                resolution: '1080p',
                 aspectRatio: '1:1',
                 negativePrompt: ''
             },
@@ -43,15 +43,15 @@ describe('GeneralistAgent', () => {
                 email: 'test@example.com',
                 displayName: 'Test User',
                 photoURL: null,
-                createdAt: { seconds: 0, nanoseconds: 0 } as any,
-                updatedAt: { seconds: 0, nanoseconds: 0 } as any,
-                lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+                createdAt: { seconds: 0, nanoseconds: 0 },
+                updatedAt: { seconds: 0, nanoseconds: 0 },
+                lastLoginAt: { seconds: 0, nanoseconds: 0 },
                 emailVerified: true,
-                membership: { tier: 'free' as any, expiresAt: null },
-                preferences: { theme: 'dark' as any, notifications: true },
-                accountType: 'artist' as any,
+                membership: { tier: 'free', expiresAt: null },
+                preferences: { theme: 'dark', notifications: true },
+                accountType: 'artist',
                 bio: 'Test Bio'
-            },
+            } as unknown as Record<string, unknown>,
             brandKit: {
                 brandDescription: 'Dark and Moody',
                 colors: ['#000000', '#ffffff'],
@@ -75,10 +75,10 @@ describe('GeneralistAgent', () => {
                 brandAssets: [],
                 referenceImages: []
             }
-        };
+        } as unknown as AgentContext;
 
         // Mock AI response with native function calling format
-        (AI.generateContentStream as any).mockResolvedValue({
+        vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: {
                 [Symbol.asyncIterator]: async function* () {
                     yield { text: () => 'Understood. The brand context has been loaded.' };
@@ -88,7 +88,7 @@ describe('GeneralistAgent', () => {
                 text: () => 'Understood. The brand context has been loaded.',
                 functionCalls: () => null // No function calls
             })
-        });
+        } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
         // Spy on the AI call to inspect the prompt
         const generateSpy = vi.spyOn(AI, 'generateContentStream');
@@ -96,8 +96,8 @@ describe('GeneralistAgent', () => {
         await agent.execute('Test task', context);
 
         // Verify the prompt contains the injected data
-        const callArgs: any = generateSpy.mock.calls[0]?.[0];
-        const promptText = callArgs?.[0]?.parts?.find((p: any) => p.text?.includes('BRAND CONTEXT'))?.text;
+        const callArgs = generateSpy.mock.calls[0]?.[0] as unknown as { parts?: { text?: string }[] }[];
+        const promptText = callArgs?.[0]?.parts?.find((p) => p.text?.includes('BRAND CONTEXT'))?.text;
 
         expect(promptText).toBeDefined();
         expect(promptText).toContain('Identity: Test Bio');
@@ -109,7 +109,7 @@ describe('GeneralistAgent', () => {
 
     it('should execute generate_image tool when requested by AI via native function calling', async () => {
         // Mock AI to return a native function call (not JSON)
-        (AI.generateContentStream as any).mockResolvedValue({
+        vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: {
                 [Symbol.asyncIterator]: async function* () {
                     yield { text: () => 'I will generate the image for you.' };
@@ -122,7 +122,7 @@ describe('GeneralistAgent', () => {
                     args: { prompt: 'A cool cat' }
                 }]
             })
-        });
+        } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
         // Use dynamic import to spy on the singleton instance used by the tools
         const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
@@ -143,8 +143,8 @@ describe('GeneralistAgent', () => {
         expect(agent.tools).toBeDefined();
         expect(agent.tools.length).toBeGreaterThan(0);
 
-        const declarations = agent.tools[0]?.functionDeclarations || [];
-        const toolNames = declarations.map((d: any) => d.name);
+        const declarations = (agent.tools[0] as unknown as { functionDeclarations?: { name: string }[] })?.functionDeclarations || [];
+        const toolNames = declarations.map((d) => d.name);
 
         expect(toolNames).toContain('generate_image');
         expect(toolNames).toContain('generate_video');
@@ -155,7 +155,7 @@ describe('GeneralistAgent', () => {
 
     it('should have access to full TOOL_REGISTRY via functions property', async () => {
         await agent.initialize();
-        const agentAny = agent as any;
+        const agentAny = agent as unknown as { functions: Record<string, unknown> };
         expect(agentAny.functions).toBeDefined();
         expect(Object.keys(agentAny.functions).length).toBeGreaterThan(5);
 

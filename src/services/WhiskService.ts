@@ -229,7 +229,7 @@ export class WhiskService {
                 return JSON.parse(jsonMatch[0]);
             }
             return [];
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[WHISK_DEBUG] WhiskService.generateInspiration error:', JSON.stringify(error, null, 2));
             logger.error('[WHISK_DEBUG] Error message:', error instanceof Error ? error.message : String(error));
             // Strict No Mock policy: Return empty array on failure
@@ -253,7 +253,7 @@ export class WhiskService {
                 return results[0]!.url;
             }
             return null;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('WhiskService.generateInspirationImage error:', error);
             return null;
         }

@@ -72,7 +72,7 @@ function saveConsentPreferences(prefs: ConsentPreferences): void {
             ...prefs,
             timestamp: new Date().toISOString(),
         }));
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error('[CookieConsent] Failed to save preferences', error);
     }
 }

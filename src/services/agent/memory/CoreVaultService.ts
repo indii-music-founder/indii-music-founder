@@ -126,7 +126,7 @@ class CoreVaultService {
             if (snap.exists()) {
                 return snap.data() as VaultDocument;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn(`[CoreVault] Failed to fetch vault/${category}:`, error);
         }
 
@@ -141,7 +141,7 @@ class CoreVaultService {
 
         try {
             await setDoc(docRef, { ...newDoc, lastUpdated: serverTimestamp() });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[CoreVault] Failed to create vault/${category}:`, error);
         }
 
@@ -167,7 +167,7 @@ class CoreVaultService {
         try {
             const docRef = doc(db, this.getDocPath(userId, category));
             await updateDoc(docRef, { items: updatedItems });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[CoreVault] Failed to update access counts (non-blocking):', error);
         }
 
@@ -255,7 +255,7 @@ class CoreVaultService {
                 items: updatedItems,
                 lastUpdated: serverTimestamp(),
             });
-        } catch (error) {
+        } catch (error: unknown) {
             // Document might not exist yet (race condition with getOrCreateDocument)
             await setDoc(docRef, {
                 category,
@@ -336,7 +336,7 @@ Be specific and actionable. This summary is used by AI agents to quickly underst
                 AI_MODELS.TEXT.FAST
             );
             summary = result.response.text() || '';
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error(`[CoreVault] Failed to generate summary for ${category}:`, error);
             summary = `${activeFacts.length} active facts in ${category}.`;
         }
@@ -348,7 +348,7 @@ Be specific and actionable. This summary is used by AI agents to quickly underst
                 summary,
                 lastSummaryGenerated: serverTimestamp(),
             });
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[CoreVault] Failed to persist summary (non-blocking):', error);
         }
 

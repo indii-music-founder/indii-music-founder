@@ -38,7 +38,7 @@ export async function retryWithBackoff<T>(
     for (let attempt = 1; attempt <= opts.maxAttempts; attempt++) {
         try {
             return await fn();
-        } catch (error) {
+        } catch (error: unknown) {
             lastError = error instanceof Error ? error : new Error(String(error));
 
             // Check if error is retryable
@@ -127,7 +127,7 @@ export class CircuitBreaker {
             const result = await fn();
             this.onSuccess();
             return result;
-        } catch (error) {
+        } catch (error: unknown) {
             this.onFailure();
             throw error;
         }

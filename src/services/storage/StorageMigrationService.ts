@@ -48,7 +48,7 @@ export class StorageMigrationService {
                 const storageRef = ref(storage, `users/${userId}/assets/${assetId}`);
                 await uploadBytes(storageRef, blob);
                 // Migrated asset: ${assetId}
-            } catch (_e) {
+            } catch (_e: unknown) {
                 // Failed to migrate asset ${assetId}
             }
 
@@ -75,7 +75,7 @@ export class StorageMigrationService {
                     synced: true
                 }, { merge: true });
                 // Migrated workflow: ${workflowId}
-            } catch (_e) {
+            } catch (_e: unknown) {
                 // Failed to migrate workflow
             }
 

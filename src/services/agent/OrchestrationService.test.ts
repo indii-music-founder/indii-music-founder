@@ -32,7 +32,7 @@ describe('OrchestrationService', () => {
 
         const result = await orchestrationService.executeOrchestratedWorkflow(
             'Launch my summer campaign',
-            mockContext as any
+            mockContext as unknown as Parameters<typeof orchestrationService.executeOrchestratedWorkflow>[1]
         );
 
         expect(result).toContain('Workflow Report: Campaign Launch');
@@ -51,7 +51,7 @@ describe('OrchestrationService', () => {
 
         const result = await orchestrationService.executeOrchestratedWorkflow(
             'Plan a new merch drop',
-            mockContext as any
+            mockContext as unknown as Parameters<typeof orchestrationService.executeOrchestratedWorkflow>[1]
         );
 
         expect(result).toContain('Workflow Report: AI Merch Drop');
@@ -61,14 +61,14 @@ describe('OrchestrationService', () => {
     it('should throw error if no project is active', async () => {
         await expect(orchestrationService.executeOrchestratedWorkflow(
             'launch campaign',
-            { userId: '123' } as any
+            { userId: '123' } as unknown as Parameters<typeof orchestrationService.executeOrchestratedWorkflow>[1]
         )).rejects.toThrow('A project must be active to launch a campaign.');
     });
 
     it('should return null for unknown intents', async () => {
         const result = await orchestrationService.executeOrchestratedWorkflow(
             'Hello assistant',
-            mockContext as any
+            mockContext as unknown as Parameters<typeof orchestrationService.executeOrchestratedWorkflow>[1]
         );
         expect(result).toBeNull();
     });

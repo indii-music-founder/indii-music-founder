@@ -54,13 +54,13 @@ describe('🧬 Helix: Empty Soul Check (Guardrails)', () => {
     // Subsequent calls: Return VALID prompts -> Should be accepted
 
     mockMutationFn
-        .mockResolvedValueOnce({ ...healthyGene, systemPrompt: '' })         // Empty Soul 1
-        .mockResolvedValueOnce({ ...healthyGene, systemPrompt: '   ' })      // Empty Soul 2
-        .mockResolvedValueOnce({ ...healthyGene, systemPrompt: null as any }) // Empty Soul 3 (Type violation simulation)
-        .mockResolvedValueOnce({ ...healthyGene, id: 'child1', systemPrompt: 'Valid 1' }) // Success 1
-        .mockResolvedValueOnce({ ...healthyGene, id: 'child2', systemPrompt: 'Valid 2' }) // Success 2
-        .mockResolvedValueOnce({ ...healthyGene, id: 'child3', systemPrompt: 'Valid 3' }) // Success 3
-        .mockResolvedValueOnce({ ...healthyGene, id: 'child4', systemPrompt: 'Valid 4' }); // Success 4
+      .mockResolvedValueOnce({ ...healthyGene, systemPrompt: '' })         // Empty Soul 1
+      .mockResolvedValueOnce({ ...healthyGene, systemPrompt: '   ' })      // Empty Soul 2
+      .mockResolvedValueOnce({ ...healthyGene, systemPrompt: null as unknown as string }) // Empty Soul 3 (Type violation simulation)
+      .mockResolvedValueOnce({ ...healthyGene, id: 'child1', systemPrompt: 'Valid 1' }) // Success 1
+      .mockResolvedValueOnce({ ...healthyGene, id: 'child2', systemPrompt: 'Valid 2' }) // Success 2
+      .mockResolvedValueOnce({ ...healthyGene, id: 'child3', systemPrompt: 'Valid 3' }) // Success 3
+      .mockResolvedValueOnce({ ...healthyGene, id: 'child4', systemPrompt: 'Valid 4' }); // Success 4
 
     // 2. Evolve
     const nextGen = await engine.evolve(population);
@@ -71,9 +71,9 @@ describe('🧬 Helix: Empty Soul Check (Guardrails)', () => {
 
     // B. Quality Control: All survivors have valid, non-empty prompts
     nextGen.forEach(child => {
-        expect(child.systemPrompt).toBeTruthy();
-        expect(child.systemPrompt.trim().length).toBeGreaterThan(0);
-        expect(child.systemPrompt).toMatch(/Valid \d/);
+      expect(child.systemPrompt).toBeTruthy();
+      expect(child.systemPrompt.trim().length).toBeGreaterThan(0);
+      expect(child.systemPrompt).toMatch(/Valid \d/);
     });
 
     // C. Verify Rejection Count

@@ -186,7 +186,7 @@ export async function generateVideo(
                     const blobUrl = URL.createObjectURL(videoBlob);
                     logger.info(`[MediaGenerator] ✅ Video ready for playback (blob): ${blobUrl}`);
                     return blobUrl;
-                } catch (fetchError) {
+                } catch (fetchError: unknown) {
                     logger.warn('[MediaGenerator] Failed to fetch video bytes, falling back to raw URI:', fetchError);
                     // Fall back to raw URI — may still fail in <video> but allows Electron/download paths to work
                     return videoUri;
@@ -225,7 +225,7 @@ export async function generateVideo(
             AppErrorCode.INTERNAL_ERROR,
             'Video generation completed but no video data was returned.'
         );
-    } catch (error) {
+    } catch (error: unknown) {
         if (error instanceof AppException) throw error;
 
         const msg = error instanceof Error ? error.message : String(error);

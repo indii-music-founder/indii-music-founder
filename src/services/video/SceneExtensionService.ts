@@ -136,7 +136,7 @@ class SceneExtensionServiceImpl {
 
                 options.onProgress?.(project);
 
-            } catch (error) {
+            } catch (error: unknown) {
                 segment.status = 'failed';
                 segment.error = error instanceof Error ? error.message : 'Unknown error';
                 project.status = 'failed';
@@ -251,7 +251,7 @@ class SceneExtensionServiceImpl {
         try {
             const headRes = await fetch(videoUri, { method: 'HEAD' });
             if (!headRes.ok) throw new Error(`Video URL unreachable or CORS failed: ${headRes.status}`);
-        } catch (e) {
+        } catch (e: unknown) {
             throw new Error(`Failed CORS pre-check for video: ${e instanceof Error ? e.message : String(e)}`);
         }
 
@@ -285,7 +285,7 @@ class SceneExtensionServiceImpl {
                         mimeType: 'image/png',
                         data: base64,
                     });
-                } catch (error) {
+                } catch (error: unknown) {
                     reject(error);
                 }
             };
@@ -368,7 +368,7 @@ class SceneExtensionServiceImpl {
             if (userId) {
                 await MembershipService.incrementUsage(userId, 'video', numSegments, totalDurationSeconds);
             }
-        } catch (e) {
+        } catch (e: unknown) {
             // Usage tracking failure should not block generation
         }
     }

@@ -78,9 +78,9 @@ describe('HybridOrchestrator Integration', () => {
             }
         ];
 
-        (GenAI.generateContent as any)
-            .mockResolvedValueOnce(mockResponses[0])
-            .mockResolvedValueOnce(mockResponses[1]);
+        vi.mocked(GenAI.generateContent)
+            .mockResolvedValueOnce(mockResponses[0] as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>)
+            .mockResolvedValueOnce(mockResponses[1] as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
         const result = await orchestrator.execute(mockContext, "Check copyright for my new song 'Detroit Ghost'");
 
@@ -117,19 +117,19 @@ describe('HybridOrchestrator Integration', () => {
             }
         ];
 
-        (GenAI.generateContent as any)
-            .mockResolvedValueOnce(mockResponses[0])
-            .mockResolvedValueOnce(mockResponses[1]);
+        vi.mocked(GenAI.generateContent)
+            .mockResolvedValueOnce(mockResponses[0] as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>)
+            .mockResolvedValueOnce(mockResponses[1] as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
         await orchestrator.execute(mockContext, "Run with long data");
 
         expect(GenAI.generateContent).toHaveBeenCalledTimes(2);
-        
+
         // Verify the second call's prompt context
-        const calls = (GenAI.generateContent as any).mock.calls;
+        const calls = vi.mocked(GenAI.generateContent).mock.calls;
         if (calls.length >= 2) {
-            const secondCallContents = calls[1][0];
-            const secondCallPrompt = secondCallContents[0].parts[0].text;
+            const secondCallContents = calls[1]![0] as { parts: { text: string }[] }[];
+            const secondCallPrompt = secondCallContents[0]!.parts[0]!.text;
             // The orchestrator prunes tool results in its private loop
             // We're asserting the logic exists in HybridOrchestrator.ts
         }

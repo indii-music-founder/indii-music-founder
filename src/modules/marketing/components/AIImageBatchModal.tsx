@@ -92,7 +92,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
             }));
 
             toast.success(`Generated ${updatedPosts.filter(p => p.imageAsset.imageUrl).length} images!`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('Batch generation failed:', error);
             toast.error('Image generation failed. Some images may not have been generated.');
         } finally {
@@ -138,7 +138,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
             } else {
                 toast.error('Failed to regenerate image');
             }
-        } catch (error) {
+        } catch (error: unknown) {
             setPostStates(prev => prev.map(state =>
                 state.post.id === postId ? { ...state, status: 'error' } : state
             ));

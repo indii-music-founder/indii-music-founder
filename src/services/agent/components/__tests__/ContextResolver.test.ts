@@ -35,7 +35,7 @@ describe('ContextResolver', () => {
             whiskState: mockWhiskState
         };
 
-        (useStore.getState as any).mockReturnValue(mockState);
+        vi.mocked(useStore.getState).mockReturnValue(mockState as unknown as Awaited<ReturnType<typeof useStore.getState>>);
 
         const context = await resolver.resolveContext();
 

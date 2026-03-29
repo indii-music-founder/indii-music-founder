@@ -94,7 +94,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
             toast.success('Product listed!');
             onProductCreated();
             onClose();
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('CreateProductModal: submit failed', error);
             toast.error('Failed to create listing');
         } finally {

@@ -164,7 +164,7 @@ export class BrowserAgentService {
             // In web context, use the agent loop directly (for testing/dev)
             const result = await this.runAgentLoop(task, startUrl, credentials);
             return result;
-        } catch (err) {
+        } catch (err: unknown) {
             task.status = 'failed';
             task.error = err instanceof Error ? err.message : String(err);
             task.completedAt = new Date().toISOString();
@@ -375,7 +375,7 @@ Respond with a JSON object describing your next action. Use one of these types:
 
             // Parse the JSON action from the model response
             return this.parseActionFromResponse(text);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[BrowserAgent] Gemini API call failed:', error);
 
             // If the model fails, return done with error context
@@ -415,7 +415,7 @@ Respond with a JSON object describing your next action. Use one of these types:
             }
 
             return parsed as unknown as BrowserAction;
-        } catch (_parseError) {
+        } catch (_parseError: unknown) {
             // If parsing fails entirely, treat the response as a completion message
             return { type: 'done', result: `Could not parse action. Model said: ${text.substring(0, 500)}` };
         }
@@ -538,7 +538,7 @@ Respond with a JSON object describing your next action. Use one of these types:
             // Convert canvas to base64 PNG (strip the data:image/png;base64, prefix)
             const dataUrl = canvas.toDataURL('image/png');
             return dataUrl.replace(/^data:image\/png;base64,/, '');
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[BrowserAgent] html2canvas screenshot failed, falling back to empty:', error);
             return '';
         }

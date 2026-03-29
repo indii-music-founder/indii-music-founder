@@ -139,7 +139,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                         }
                     );
                     uploadedCount++;
-                } catch (error) {
+                } catch (error: unknown) {
                     logger.error(`Failed to upload ${file.name}:`, error);
                     toast.error(`Failed to upload ${file.name}`);
                 }
@@ -148,7 +148,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
             if (uploadedCount > 0) {
                 toast.success(`Successfully uploaded ${uploadedCount} file(s)`);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error("Upload process error:", error);
             toast.error("An error occurred during upload");
         } finally {

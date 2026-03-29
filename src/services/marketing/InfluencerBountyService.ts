@@ -145,7 +145,7 @@ export class InfluencerBountyService {
 
             return Array.from(leaderboard.values())
                 .sort((a, b) => b.totalCommission - a.totalCommission);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[BountyService] Failed to fetch leaderboard:', error);
             return [];
         }

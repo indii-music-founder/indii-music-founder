@@ -143,7 +143,7 @@ export async function refreshPlatformToken(
         await saveToken(uid, platform, refreshed);
         logger.info(`[SocialPlatformService] Token refreshed for ${platform}`);
         return refreshed;
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error(`[SocialPlatformService] Token refresh error for ${platform}:`, err);
         return null;
     }
@@ -206,7 +206,7 @@ export async function postToTwitter(uid: string, payload: PostPayload): Promise<
             postId,
             postUrl: postId ? `https://twitter.com/i/web/status/${postId}` : undefined,
         };
-    } catch (err) {
+    } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Network error';
         return { platform: 'twitter', success: false, error: msg };
     }
@@ -281,7 +281,7 @@ export async function postToInstagram(uid: string, payload: PostPayload): Promis
 
         const { id: postId } = await publishRes.json() as { id: string };
         return { platform: 'instagram', success: true, postId };
-    } catch (err) {
+    } catch (err: unknown) {
         return { platform: 'instagram', success: false, error: err instanceof Error ? err.message : 'Instagram error' };
     }
 }
@@ -341,7 +341,7 @@ export async function postToTikTok(uid: string, payload: PostPayload): Promise<P
 
         logger.info(`[SocialPlatformService] TikTok publish initiated: ${publishId}`);
         return { platform: 'tiktok', success: true, postId: publishId };
-    } catch (err) {
+    } catch (err: unknown) {
         return { platform: 'tiktok', success: false, error: err instanceof Error ? err.message : 'TikTok error' };
     }
 }
@@ -413,7 +413,7 @@ export async function uploadToYouTube(uid: string, payload: PostPayload): Promis
             postId: uploadUrl || 'pending',
             postUrl: uploadUrl ? undefined : 'https://studio.youtube.com',
         };
-    } catch (err) {
+    } catch (err: unknown) {
         return { platform: 'youtube', success: false, error: err instanceof Error ? err.message : 'YouTube error' };
     }
 }
@@ -469,7 +469,7 @@ export async function syncSpotifyStats(uid: string, artistId: string): Promise<P
         await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
 
         return stats;
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[SocialPlatformService] Spotify stats sync error:', err);
         return { platform: 'spotify', fetchedAt: Date.now() };
     }
@@ -539,7 +539,7 @@ export async function syncInstagramStats(uid: string): Promise<PlatformStats> {
         const cacheRef = doc(db, 'users', uid, 'platformStats', 'instagram');
         await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
         return stats;
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[SocialPlatformService] Instagram stats sync error:', err);
         return { platform: 'instagram', fetchedAt: Date.now() };
     }
@@ -586,7 +586,7 @@ export async function syncTikTokStats(uid: string): Promise<PlatformStats> {
         const cacheRef = doc(db, 'users', uid, 'platformStats', 'tiktok');
         await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
         return stats;
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[SocialPlatformService] TikTok stats sync error:', err);
         return { platform: 'tiktok', fetchedAt: Date.now() };
     }
@@ -627,7 +627,7 @@ export async function syncTwitterStats(uid: string): Promise<PlatformStats> {
         const cacheRef = doc(db, 'users', uid, 'platformStats', 'twitter');
         await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
         return stats;
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[SocialPlatformService] Twitter stats sync error:', err);
         return { platform: 'twitter', fetchedAt: Date.now() };
     }
@@ -674,7 +674,7 @@ export async function syncYouTubeStats(uid: string): Promise<PlatformStats> {
         const cacheRef = doc(db, 'users', uid, 'platformStats', 'youtube');
         await setDoc(cacheRef, { ...stats, updatedAt: serverTimestamp() }, { merge: true });
         return stats;
-    } catch (err) {
+    } catch (err: unknown) {
         logger.error('[SocialPlatformService] YouTube stats sync error:', err);
         return { platform: 'youtube', fetchedAt: Date.now() };
     }

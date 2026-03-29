@@ -66,7 +66,7 @@ export class DSRUploadService extends FirestoreService<DSRProcessedReportDocumen
                 matchedReleases
             };
 
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[DSRUploadService] Processing failed:', error);
             Sentry.captureException(error);
 
@@ -112,7 +112,7 @@ export class DSRUploadService extends FirestoreService<DSRProcessedReportDocumen
 
             await this.add(reportData);
             logger.debug('[DSRUploadService] Report saved successfully:', batch.batchId);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[DSRUploadService] Failed to save report:', error);
             Sentry.captureException(error);
         }

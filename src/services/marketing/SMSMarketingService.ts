@@ -55,7 +55,7 @@ export class SMSMarketingService {
 
             logger.info(`[SMSMarketing] Twilio broadcast complete: ${result.data.sent} sent, ${result.data.failed} failed.`);
             return true;
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[SMSMarketing] Twilio Cloud Function unavailable:', error);
             logger.info(`[SMSMarketing] SMS blast queued locally for ${members.length} recipients. Deploy Cloud Function 'sendSMSBlast' for live Twilio integration.`);
             return false;
@@ -79,7 +79,7 @@ export class SMSMarketingService {
 
             const result = await getStatusFn({ messageId });
             return result.data.status;
-        } catch (_error) {
+        } catch (_error: unknown) {
             logger.warn(`[SMSMarketing] Status check unavailable for ${messageId}. Deploy Cloud Function 'getSMSDeliveryStatus'.`);
             return 'pending';
         }

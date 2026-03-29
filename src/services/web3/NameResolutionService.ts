@@ -66,7 +66,7 @@ export class NameResolutionService {
             }
 
             return '0x' + result.slice(-40);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[ENS] Resolution failed:', err);
             return null;
         }
@@ -97,7 +97,7 @@ export class NameResolutionService {
             }
 
             return '0x' + result.slice(-40);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[UD] Resolution failed:', err);
             return null;
         }

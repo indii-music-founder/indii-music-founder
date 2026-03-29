@@ -69,7 +69,7 @@ export function sessions_list(
       .sort((a, b) => b.updatedAt - a.updatedAt);
 
     return { success: true, data: summaries };
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error('[SessionTools] sessions_list error', err);
     return { success: false, error: String(err) };
   }
@@ -116,7 +116,7 @@ export async function sessions_send(
         wcpInstance.releaseLock(targetSessionId);
       }
     }
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error('[SessionTools] sessions_send error', err);
     return { success: false, error: String(err) };
   }
@@ -152,7 +152,7 @@ export function sessions_history(
     }
 
     return { success: true, data: msgs };
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error('[SessionTools] sessions_history error', err);
     return { success: false, error: String(err) };
   }
@@ -207,7 +207,7 @@ export async function sessions_spawn(
     logger.info(`[SessionTools] Spawned session ${sessionId} with namespace '${namespace}'`);
 
     return { success: true, data: { sessionId, namespace } };
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error('[SessionTools] sessions_spawn error', err);
     return { success: false, error: String(err) };
   }

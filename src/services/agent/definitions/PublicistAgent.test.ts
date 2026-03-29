@@ -35,8 +35,8 @@ describe('PublicistAgent', () => {
                 type: 'Album' as const,
                 focus: 'Global Reach'
             };
-
-            const result = await (PublicistAgent.functions!.create_campaign as any)(args);
+            type ResultType = { success: boolean; data: { status?: string } };
+            const result = await (PublicistAgent.functions!.create_campaign as (args: unknown) => Promise<ResultType>)(args);
 
             expect(PublicistService.addCampaign).toHaveBeenCalledWith('user-123', expect.objectContaining({
                 title: 'New Album Launch',
@@ -61,8 +61,8 @@ describe('PublicistAgent', () => {
                 type: 'Single' as const,
                 focus: 'Test'
             };
-
-            const result = await (PublicistAgent.functions!.create_campaign as any)(args);
+            type ResultType = { success: boolean; data: { status?: string } };
+            const result = await (PublicistAgent.functions!.create_campaign as (args: unknown) => Promise<ResultType>)(args);
 
         });
     });
@@ -75,8 +75,8 @@ describe('PublicistAgent', () => {
                 key_points: ['Point 1', 'Point 2'],
                 tone: 'Professional' as const
             };
-
-            const result = await (PublicistAgent.functions!.write_press_release as any)(args);
+            type ResultType = { success: boolean; data: { generated_content?: string } };
+            const result = await (PublicistAgent.functions!.write_press_release as (args: unknown) => Promise<ResultType>)(args);
 
             expect(result.success).toBe(true);
             expect(result.data.generated_content).toBe('Mocked AI Content Response');
@@ -90,8 +90,8 @@ describe('PublicistAgent', () => {
                 severity: 'High' as const,
                 audience: 'Customers'
             };
-
-            const result = await (PublicistAgent.functions!.generate_crisis_response as any)(args);
+            type ResultType = { success: boolean; data: { draft_response?: string } };
+            const result = await (PublicistAgent.functions!.generate_crisis_response as (args: unknown) => Promise<ResultType>)(args);
 
             expect(result.success).toBe(true);
             expect(result.data.draft_response).toBe('Mocked AI Content Response');
@@ -105,8 +105,8 @@ describe('PublicistAgent', () => {
                 topic: 'New Feature',
                 tone: 'Excited' as const
             };
-
-            const result = await (PublicistAgent.functions!.generate_social_post as any)(args);
+            type ResultType = { success: boolean; data: { post_text?: string } };
+            const result = await (PublicistAgent.functions!.generate_social_post as (args: unknown) => Promise<ResultType>)(args);
 
             expect(result.success).toBe(true);
             expect(result.data.post_text).toBe('Mocked AI Content Response');

@@ -147,21 +147,21 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         // C. Navigate to Creative Domain
         // Project creation is no longer required upfront; users jump straight into modules
         await page.waitForTimeout(1000);
-        await page.locator('[data-testid="nav-creative"]').click();
+        await page.locator('[data-testid="nav-item-creative"]').click();
 
         // D. Verify Redirection to Creative Module
-        await expect(page.getByRole('button', { name: /generate image/i }).first()).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('heading', { name: /Creative Director/i })).toBeVisible({ timeout: 15000 });
 
         // E. Stress Test: Agent Delegation (The fix we just made)
         // 4. Send a generic message to trigger GenUI (Choice Tool)
-        const agentInput = page.getByPlaceholder(/describe your creative task/i);
+        const agentInput = page.getByPlaceholder(/describe your creative task|message creative|ask anything/i);
         await expect(agentInput).toBeVisible();
         await agentInput.fill("I want to update my genre. Please give me some options.");
         await page.keyboard.press('Enter');
 
         // 5. Wait for Agent Response AND GenUI Buttons
         console.log('[Gauntlet] Waiting for Agent response and Options...');
-        const agentResponse = page.locator('.bg-\\[\\#1a1f2e\\]').last();
+        const agentResponse = page.getByTestId('agent-message').last();
         await expect(agentResponse).toBeVisible({ timeout: 15000 });
 
         // Check if buttons rendered (GenUI validation)
@@ -208,18 +208,18 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         console.log('[Gauntlet] Starting Scenario 2: Chaos Check');
 
-        const navItems = ['dashboard', 'creative'];
+        const navItems = [/My Dashboard/i, /Agent Workspace/i, /Image Studio/i, /Video Studio/i];
 
         for (let i = 0; i < 5; i++) {
             const randomNav = navItems[Math.floor(Math.random() * navItems.length)];
-            console.log(`[Gauntlet] Chaos Step ${i + 1}: Clicking nav-${randomNav}`);
+            console.log(`[Gauntlet] Chaos Step ${i + 1}: Clicking ${randomNav}`);
 
-            const navLocator = page.locator(`[data-testid="nav-${randomNav}"]`);
-            try {
-                await expect(navLocator).toBeVisible({ timeout: 2000 });
+            const navLocator = page.getByRole('button', { name: randomNav }).first();
+            const isVisible = await navLocator.isVisible({ timeout: 2000 }).catch(() => false);
+            if (isVisible) {
                 await navLocator.click();
                 await page.waitForTimeout(500);
-            } catch (e) {
+            } else {
                 console.log(`[Gauntlet] Nav item ${randomNav} not found or not visible, skipping.`);
             }
         }

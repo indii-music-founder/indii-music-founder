@@ -134,7 +134,7 @@ export default function DistributorCredentialsPanel() {
             await DistributorService.connect(dist.id as Parameters<typeof DistributorService.connect>[0], credentials);
             setSaved(prev => new Set([...prev, dist.id]));
             logger.info(`[DistributorCredentialsPanel] Saved credentials for ${dist.name}`);
-        } catch (err) {
+        } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Failed to save credentials';
             setErrors(prev => ({ ...prev, [dist.id]: msg }));
             logger.error(`[DistributorCredentialsPanel] Save failed for ${dist.name}:`, err);

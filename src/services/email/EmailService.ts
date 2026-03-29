@@ -116,7 +116,7 @@ class EmailServiceImpl {
                         if (code) {
                             this.handleAuthCallback(provider, code)
                                 .then(resolve)
-                                .catch(reject);
+                                .catch (reject: unknown);
                         } else {
                             reject(new Error('No auth code received'));
                         }

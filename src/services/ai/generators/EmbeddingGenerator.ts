@@ -40,7 +40,7 @@ export async function embedContent(
                 });
                 const embedResult = result as unknown as GenAIEmbedResult;
                 return { values: embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [] };
-            } catch (error) {
+            } catch (error: unknown) {
                 throw ctx.handleError(error);
             }
         }
@@ -74,7 +74,7 @@ export async function embedContent(
 
             const result = await modelWithEmbed.embedContent({ content: options.content });
             return { values: result.embedding.values };
-        } catch (error) {
+        } catch (error: unknown) {
             // If we hit an App Check error during normal mode, switch to fallback
             if (isAppCheckError(error) && !ctx.useFallbackMode) {
                 logger.warn('[EmbeddingGenerator] App Check error during embedding, switching to fallback mode');
@@ -157,7 +157,7 @@ export async function batchEmbedContents(
                 }
                 throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
             }
-        } catch (error) {
+        } catch (error: unknown) {
             // If we hit an App Check error during normal mode, switch to fallback
             if (isAppCheckError(error) && !ctx.useFallbackMode) {
                 logger.warn('[EmbeddingGenerator] App Check error during batch embedding, switching to fallback mode');

@@ -69,7 +69,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
                         version: '0.8.20',
                     });
                 }
-            } catch (pErr) {
+            } catch (pErr: unknown) {
                 logger.warn('[Web3Tools] Failed to persist generated contract:', pErr);
             }
 
@@ -80,7 +80,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
                 sourceCode,
                 deployNote: 'Compile with: npx hardhat compile. Deploy to Polygon Mumbai testnet before mainnet. Requires Alchemy/Infura RPC_URL and PRIVATE_KEY env vars.',
             }, `Generated ${args.tokenType} smart contract "${args.contractName}" with EIP-2981 royalty splits. Review source before deploying.`);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('[Web3Tools] Contract generation failed:', err);
             return toolError('Smart contract generation failed. Check AI service connectivity.', 'GENERATION_FAILED');
         }
@@ -114,7 +114,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
                     }
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[Web3Tools] Firestore ISRC lookup failed:', e);
         }
 
@@ -151,7 +151,7 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
                     createdAt: serverTimestamp(),
                 });
             }
-        } catch (e) {
+        } catch (e: unknown) {
             logger.warn('[Web3Tools] Could not persist token gate:', e);
         }
 

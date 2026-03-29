@@ -53,7 +53,7 @@ export async function processSyncQueue(): Promise<void> {
             await uploadBytes(storageRef, item.data);
             itemsToRemove.push(id);
             logger.info(`[Repository] Successfully synced queued asset ${id}`);
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn(`[Repository] Failed to sync queued asset ${id}:`, error);
             item.retryCount++;
 
@@ -108,7 +108,7 @@ export async function saveAssetToStorage(blob: Blob): Promise<string> {
         try {
             const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
             await uploadBytes(storageRef, blob);
-        } catch (_error) {
+        } catch (_error: unknown) {
             // Failed to sync asset ${id} to cloud
             // Queue for retry on next sync
             queueAssetForSync(id, blob);
@@ -139,7 +139,7 @@ export async function getAssetFromStorage(id: string): Promise<string> {
         await dbLocal.put(STORE_NAME, cloudBlob, id);
 
         return URL.createObjectURL(cloudBlob);
-    } catch (error) {
+    } catch (error: unknown) {
         logger.warn(`Failed to fetch asset ${id} from cloud:`, error);
     }
 
@@ -184,7 +184,7 @@ export async function saveProfileToStorage(profile: UserProfile): Promise<void> 
         try {
             const docRef = doc(db, 'users', user.uid);
             await setDoc(docRef, profile, { merge: true });
-        } catch (_error) {
+        } catch (_error: unknown) {
             // Failed to sync profile to cloud
         }
     }
@@ -216,7 +216,7 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
                 await dbLocal.put(PROFILE_STORE, cloudProfile);
                 return cloudProfile;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             logger.warn('[Repository] Cloud profile fetch failed, falling back to local:', error);
         }
     }
@@ -247,7 +247,7 @@ export async function saveWorkflowToStorage(workflow: Workflow): Promise<void> {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', workflowId);
             await setDoc(docRef, { ...workflowWithId, synced: true }, { merge: true });
-        } catch (_error) {
+        } catch (_error: unknown) {
             // Failed to sync workflow ${workflowId} to cloud
         }
     }
@@ -270,7 +270,7 @@ export async function getWorkflowFromStorage(id: string): Promise<Workflow | und
                 await dbLocal.put(WORKFLOWS_STORE, workflow);
                 return workflow;
             }
-        } catch (_error) {
+        } catch (_error: unknown) {
             // Failed to fetch workflow from cloud
         }
     }
@@ -300,7 +300,7 @@ export async function saveCanvasStateToStorage(id: string, json: string): Promis
         const docRef = doc(db, 'users', user.uid, 'canvas_states', id);
         await setDoc(docRef, stateObj, { merge: true });
         // Saved canvas state for ${id}
-    } catch (_error) {
+    } catch (_error: unknown) {
         // Failed to sync canvas state ${id} to cloud
     }
 }
@@ -326,7 +326,7 @@ export async function getCanvasStateFromStorage(id: string): Promise<string | un
             await dbLocal.put(CANVAS_STORE, data);
             return data.json;
         }
-    } catch (_error) {
+    } catch (_error: unknown) {
         // Failed to fetch canvas state from cloud
     }
 
@@ -354,7 +354,7 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
             }
 
             return await dbLocal.getAll(WORKFLOWS_STORE); // Return updated local
-        } catch (_error) {
+        } catch (_error: unknown) {
             // Failed to fetch workflows from cloud
         }
     }
@@ -375,7 +375,7 @@ export async function syncWorkflows(): Promise<void> {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', wf.id);
             await setDoc(docRef, { ...wf, synced: true }, { merge: true });
-        } catch (_e) {
+        } catch (_e: unknown) {
             // Failed to sync workflow ${wf.id}
         }
     });

@@ -32,19 +32,19 @@ vi.mock('@/services/firebase', () => ({
 class RecursiveAgent extends BaseAgent {
     constructor() {
         super({
-            id: 'recursive-agent' as any,
+            id: 'recursive-agent' as unknown as string,
             name: 'Recursive Agent',
             description: 'Recursive',
             color: '#000',
-            category: 'generalist' as any,
+            category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
             tools: []
-        });
+        } as unknown as any);
     }
 
 
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
-        const executor = new AgentExecutor(agentRegistry as any);
+        const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
         // Simulate recursion
         return executor.execute('recursive-agent', task, context);
     }
@@ -53,14 +53,14 @@ class RecursiveAgent extends BaseAgent {
 class FailingAgent extends BaseAgent {
     constructor() {
         super({
-            id: 'failing-agent' as any,
+            id: 'failing-agent' as unknown as string,
             name: 'Failure',
             description: 'Failure',
             color: '#000',
-            category: 'generalist' as any,
+            category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
             tools: []
-        });
+        } as unknown as any);
     }
 
 
@@ -72,18 +72,18 @@ class FailingAgent extends BaseAgent {
 class ParentAgent extends BaseAgent {
     constructor() {
         super({
-            id: 'parent' as any,
+            id: 'parent' as unknown as string,
             name: 'Parent',
             description: 'Parent',
             color: '#000',
-            category: 'generalist' as any,
+            category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
             tools: []
-        });
+        } as unknown as any);
     }
 
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
-        const executor = new AgentExecutor(agentRegistry as any);
+        const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
         return executor.execute('child', task, context);
     }
 }
@@ -91,24 +91,24 @@ class ParentAgent extends BaseAgent {
 describe('Swarm Stability Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (TraceService.startTrace as any).mockResolvedValue('trace-id-' + Math.random());
+        vi.mocked(TraceService.startTrace).mockResolvedValue('trace-id-' + Math.random());
     });
 
     it('should handle failure propagation from child agents', async () => {
-        const executor = new AgentExecutor(agentRegistry as any);
+        const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
 
-        (agentRegistry.getAsync as any).mockImplementation(async (id: string) => {
+        vi.mocked(agentRegistry.getAsync).mockImplementation(async (id: string) => {
             if (id === 'parent') return new ParentAgent();
             if (id === 'child') return new FailingAgent();
-            return null;
+            return null as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>;
         });
 
-        const context: any = {
+        const context = {
             activeModule: 'test',
             chatHistoryString: '',
             relevantMemories: [],
             memoryContext: ''
-        };
+        } as unknown as any;
 
         // Expecting the promise to reject with the error from the child
         await expect(executor.execute('parent', 'Do task', context))
@@ -117,19 +117,19 @@ describe('Swarm Stability Integration', () => {
     });
 
     it('should detect and prevent infinite recursion', async () => {
-        const executor = new AgentExecutor(agentRegistry as any);
+        const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
 
-        (agentRegistry.getAsync as any).mockImplementation(async (id: string) => {
+        vi.mocked(agentRegistry.getAsync).mockImplementation(async (id: string) => {
             if (id === 'recursive-agent') return new RecursiveAgent();
-            return null;
+            return null as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>;
         });
 
-        const context: any = {
+        const context = {
             activeModule: 'test',
             chatHistoryString: '',
             relevantMemories: [],
             memoryContext: ''
-        };
+        } as unknown as any;
 
         // If generic recursion detection isn't implemented in AgentExecutor yet,
         // this test might timeout or crash. 

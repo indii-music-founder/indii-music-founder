@@ -150,7 +150,7 @@ export class CostPredictor {
                     }
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             // Ignore
         }
 

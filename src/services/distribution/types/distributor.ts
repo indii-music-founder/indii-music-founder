@@ -293,7 +293,7 @@ export interface DistributorConnection {
 }
 
 // Distributor adapter interface
-export interface IDistributorAdapter {
+export interface DistributorAdapter {
   readonly id: DistributorId;
   readonly name: string;
   readonly requirements: DistributorRequirements;

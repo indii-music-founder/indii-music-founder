@@ -98,7 +98,7 @@ export const useAutoSave = (
 
             setLastSaved(new Date());
             logger.debug(`Design "${designName}" auto-saved at ${new Date().toLocaleTimeString()}`);
-        } catch (err) {
+        } catch (err: unknown) {
             logger.error('Auto-save failed:', err);
             setError(err instanceof Error ? err.message : 'Auto-save failed');
         } finally {

@@ -64,7 +64,7 @@ export class AdAutomationService {
             });
 
             return result.data.campaignId;
-        } catch (_error) {
+        } catch (_error: unknown) {
             logger.warn('[AdAutomation] Campaign Cloud Function unavailable, using local ID.');
             return `camp_${Date.now()}`;
         }
@@ -89,7 +89,7 @@ export class AdAutomationService {
             });
 
             return result.data.adSetId;
-        } catch (_error) {
+        } catch (_error: unknown) {
             logger.warn('[AdAutomation] AdSet Cloud Function unavailable, using local ID.');
             return `adset_${Date.now()}`;
         }
@@ -115,7 +115,7 @@ export class AdAutomationService {
             });
 
             return result.data.adId;
-        } catch (_error) {
+        } catch (_error: unknown) {
             logger.warn('[AdAutomation] Ad Cloud Function unavailable, using local ID.');
             return `ad_${Date.now()}`;
         }
@@ -138,7 +138,7 @@ export class AdAutomationService {
 
             const result = await getInsightsFn({ adId });
             return result.data;
-        } catch (_error) {
+        } catch (_error: unknown) {
             logger.warn(`[AdAutomation] Insights Cloud Function unavailable for ad ${adId}. Deploy Cloud Function 'getAdInsights'.`);
             return {
                 impressions: 0,

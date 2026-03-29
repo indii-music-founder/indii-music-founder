@@ -137,7 +137,7 @@ export class CanvasOperationsService {
             this.canvas.renderAll();
 
             return { tiktok, instagram, youtube };
-        } catch (error) {
+        } catch (error: unknown) {
             logger.error('[CanvasBatching] Failed to export batch dimensions:', error);
             this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
             return null;

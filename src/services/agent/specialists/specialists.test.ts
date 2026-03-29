@@ -105,13 +105,14 @@ describe('Specialist Agents Connection', () => {
         const { GenAI } = await import('@/services/ai/GenAI');
         await brandAgent.execute('Test Task', {});
 
-        const tools = (GenAI.generateContent as any).mock.calls[0]?.[4] || []; // safe access
+        const tools = vi.mocked(GenAI.generateContent).mock.calls[0]?.[4] as unknown[] || []; // safe access
 
         // Create a flat list of all function declarations from all tool objects
-        const allFunctionDeclarations = tools.flatMap((t: any) => t.functionDeclarations || []);
+        const allFunctionDeclarations = tools.flatMap((t: unknown) => (t as { functionDeclarations?: { name: string }[] }).functionDeclarations || []);
 
-        const hasSaveMemory = allFunctionDeclarations.some((f: any) => f.name === 'save_memory');
-        const hasVerifyOutput = allFunctionDeclarations.some((f: any) => f.name === 'verify_output');
+        const hasSaveMemory = allFunctionDeclarations.some((f: { name: string }) => f.name === 'save_memory');
+        const hasVerifyOutput = allFunctionDeclarations.some((f: { name: string }) => f.name === 'verify_output');
+
 
         expect(hasSaveMemory).toBe(true);
         expect(hasVerifyOutput).toBe(true);

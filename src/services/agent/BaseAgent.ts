@@ -253,7 +253,7 @@ export class BaseAgent implements SpecializedAgent {
             logger.debug(`[BaseAgent] ${this.name} waiting for existing execution to complete...`);
             try {
                 await BaseAgent.executionLocks.get(lockKey);
-            } catch (err) {
+            } catch (err: unknown) {
                 // Previous execution failed, but we can proceed
                 logger.warn(`[BaseAgent] Previous execution failed for ${lockKey}, proceeding...`);
             }

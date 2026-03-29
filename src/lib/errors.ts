@@ -49,7 +49,7 @@ export async function withServiceError<T>(
 ): Promise<T> {
     try {
         return await fn();
-    } catch (error) {
+    } catch (error: unknown) {
         if (error instanceof AppException) {
             logger.error(`[${service}] ${operation} failed: ${error.message}`);
             if (arguments.length === 4) return fallback as T;
@@ -106,7 +106,7 @@ export async function retryAsync<T>(
 
         try {
             return await fn();
-        } catch (error) {
+        } catch (error: unknown) {
             lastError = error;
 
             if (attempt >= maxRetries || !shouldRetry(error, attempt)) {
@@ -142,7 +142,7 @@ export function withSafeExec<T>(
 ): T {
     try {
         return fn();
-    } catch (error) {
+    } catch (error: unknown) {
         logger.error(`[${label}] ${error instanceof Error ? error.message : String(error)}`);
         return fallback;
     }
