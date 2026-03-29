@@ -97,8 +97,9 @@ export interface UPCGenerationOptions {
 }
 
 export interface DDEXTrack {
-    isrc: string;
+    isrc?: string;
     title: string;
+    version?: string; // e.g. "Remix", "Radio Edit"
     artist?: string;
     artists?: string[];
     duration?: number; // In seconds
@@ -107,6 +108,11 @@ export interface DDEXTrack {
     file_hash?: string; // MD5 hash
     genre?: string;
     label?: string;
+    p_line?: string; // Phonographic Copyright
+    c_line?: string; // Copyright
+    track_number?: number;
+    volume_number?: number;
+    is_compilation?: boolean;
     sample_rate?: number;
     bit_depth?: number;
     channels?: number;
@@ -117,13 +123,23 @@ export interface DDEXTrack {
 export interface DDEXMetadata {
     releaseId: string;
     title: string;
+    version?: string;
     artist?: string;
     artists?: string[];
     tracks: DDEXTrack[];
     label?: string;
     upc?: string;
+    isrc?: string; // Release level identifier
     genre?: string;
     release_date?: string; // YYYY-MM-DD
+    releaseDate?: string; // Legacy/UI alias 
+    artwork_url?: string;
+    artworkUrl?: string; // UI alias
+    cover_filename?: string;
+    cover_hash?: string;
+    p_line?: string;
+    c_line?: string;
+    is_compilation?: boolean;
 }
 
 /** Typed details from Python audio_fidelity_auditor.py / scan_audio_dna.py */

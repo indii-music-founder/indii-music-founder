@@ -14,6 +14,8 @@ test.describe('Agent Dashboard', () => {
     test.use({ viewport: { width: 1280, height: 800 } }); // Desktop only — mobile shows warning
 
     test.beforeEach(async ({ authedPage: page }) => {
+        // Redundant Guest Login logic removed as it's handled by authedPage fixture
+
         // Mock Firestore agent_traces collection
         await page.route('**/firestore.googleapis.com/**/agent_traces**', async route => {
             await route.fulfill({
@@ -23,25 +25,12 @@ test.describe('Agent Dashboard', () => {
             });
         });
 
-        // Handle Guest Login for gated module
-        const guestBtn = page.locator('[data-testid="guest-login-btn"]');
-        if (await guestBtn.isVisible().catch(() => false)) {
-            await guestBtn.click();
-        }
+        // Navigate directly to agent module for speed and stability
+        await page.goto('/#agent');
+        await page.waitForSelector('[data-testid="app-container"], nav, .app-shell', { timeout: 20_000 });
 
-        // Wait for app container
-        await page.waitForSelector('[data-testid="app-container"], #root', { timeout: 15_000 });
-
-        // Navigate to agent module
-        const agentNav = page.locator('[data-testid="nav-item-agent"]');
-        const isVisible = await agentNav.isVisible().catch(() => false);
-        if (isVisible) {
-            await agentNav.click();
-            await page.waitForTimeout(2_000);
-        } else {
-            await page.goto('/#agent');
-            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
-        }
+        // Wait for specific module content to confirm navigation
+        await page.locator('button:has-text("Browser"), [role="tab"]:has-text("Scout")').first().waitFor({ state: 'visible', timeout: 15_000 });
     });
 
     test('agent module loads without crashing on desktop viewport', async ({ authedPage: page }) => {

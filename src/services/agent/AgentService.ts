@@ -12,6 +12,7 @@ import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
 import { orchestrationService } from './OrchestrationService';
+import { maestroBatchingService } from './MaestroBatchingService';
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 
@@ -33,7 +34,13 @@ export class AgentService {
         this.contextPipeline = new ContextPipeline();
         this.orchestrator = new AgentOrchestrator();
         this.hybridOrchestrator = new HybridOrchestrator();
-        this.executor = new AgentExecutor();
+        this.executor = new AgentExecutor(agentRegistry);
+
+        // Break circular dependencies by injecting runner into batcher and orchestration
+        const runner = this.runAgent.bind(this);
+        if (maestroBatchingService && typeof maestroBatchingService.setRunner === 'function') {
+            maestroBatchingService.setRunner(runner);
+        }
 
         // Pre-warm agents in the background (non-blocking)
         this.warmup();
@@ -610,6 +617,9 @@ If the user asks you to do something that requires active tools (like generating
         // Ensure minimal context exists
         if (!context.chatHistory) context.chatHistory = [];
         if (!context.chatHistoryString) context.chatHistoryString = '';
+
+        // Hub and Spoke: Inject runner for intra-agent delegation
+        context.runAgent = this.runAgent.bind(this);
 
         return await this.executor.execute(
             agentId,

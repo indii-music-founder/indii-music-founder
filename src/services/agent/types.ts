@@ -3,6 +3,7 @@ import type { WhiskState } from '@/core/store/slices/creative';
 export type { WhiskState };
 
 import type { AgentMessage } from '@/core/store/slices/agent';
+export type { AgentMessage };
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { INDII_MESSAGES } from './constants';
 
@@ -183,7 +184,17 @@ export interface AgentContext {
     proactiveTask?: ProactiveTask;
     /** The trigger type that caused this agent execution (schedule, event, etc.) */
     triggerType?: ProactiveTriggerType;
+    /** Breaking circular dependency: Runner provided at runtime */
+    runAgent?: AgentRunner;
 }
+
+export type AgentRunner = (
+    agentId: string,
+    task: string,
+    context?: AgentContext,
+    traceId?: string,
+    attachments?: { mimeType: string; base64: string }[]
+) => Promise<{ text: string; thoughtSignature?: string }>;
 
 export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';
 
@@ -343,4 +354,10 @@ export interface SpecializedAgent {
     color: string;
     category: AgentCategory;
     execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse>;
+}
+
+export interface IAgentRegistry {
+    getAsync(id: string, retryCount?: number): Promise<SpecializedAgent | undefined>;
+    getLoadError(id: string): { error: Error; timestamp: number; attempts: number } | undefined;
+    getAll(): SpecializedAgent[];
 }

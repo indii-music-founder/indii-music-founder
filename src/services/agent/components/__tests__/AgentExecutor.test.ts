@@ -39,7 +39,7 @@ describe('AgentExecutor', () => {
     let executor: AgentExecutor;
 
     beforeEach(() => {
-        executor = new AgentExecutor();
+        executor = new AgentExecutor(agentRegistry as any);
         vi.clearAllMocks();
     });
 

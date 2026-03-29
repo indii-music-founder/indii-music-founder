@@ -2,9 +2,9 @@ import { logger } from '@/utils/logger';
 import { AGENT_CONFIGS } from './agentConfig';
 import { freezeAgentConfig } from './FreezeDiagnostic';
 
-import { SpecializedAgent } from './types';
+import { SpecializedAgent, IAgentRegistry } from './types';
 
-export class AgentRegistry {
+export class AgentRegistry implements IAgentRegistry {
     private agents: Map<string, SpecializedAgent> = new Map();
     private loaders: Map<string, () => Promise<SpecializedAgent>> = new Map();
     private metadata: Map<string, SpecializedAgent> = new Map();

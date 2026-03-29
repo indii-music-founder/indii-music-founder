@@ -263,11 +263,14 @@ describe('Multi-Agent Architecture Tests', () => {
             expect(delegateFunc).toBeDefined();
 
             const result = await delegateFunc({
-                targetAgentId: 'generalist',  // Changed from 'video' to 'generalist' (hub)
+                targetAgentId: 'generalist',
                 task: 'Create strict delegation test'
-            }, { someContext: true });
+            }, {
+                someContext: true,
+                runAgent: agentService.runAgent.bind(agentService)
+            });
 
-            expect(spy).toHaveBeenCalledWith('generalist', 'Create strict delegation test', expect.objectContaining({ someContext: true }), undefined, undefined);
+            expect(agentService.runAgent).toHaveBeenCalledWith('generalist', 'Create strict delegation test', expect.objectContaining({ someContext: true }), undefined, undefined);
             expect(result.data.text).toBe('Delegation Success');
 
             spy.mockRestore();

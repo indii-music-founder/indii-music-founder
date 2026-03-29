@@ -38,7 +38,9 @@ export type ReleaseType =
   | 'Compilation'
   | 'Mixtape'
   | 'Audiobook'
-  | 'ClassicalAlbum';
+  | 'ClassicalAlbum'
+  | 'VideoSingle'
+  | 'Ringtone';
 
 // Use Types for deals
 export type UseType =

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { AgentContext } from './types';
-import { agentService } from './AgentService';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { WORKFLOW_REGISTRY, WorkflowDefinition } from './WorkflowRegistry';
 import { v4 as uuidv4 } from 'uuid';

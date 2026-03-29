@@ -44,7 +44,7 @@ class QCValidator:
         # 1. Title Hygiene
         title = data.get("title", "").strip()
         if not title:
-            self.errors.append("Title is required.")
+            self.errors.append("Release title is required.")
         else:
             # Check for forbidden contributor info in title
             contributor_regex = (
@@ -79,15 +79,54 @@ class QCValidator:
                 "prevent search manipulation."
             )
 
-        # 3. Artwork Presence
-        artwork_url = data.get("artwork_url", "")
+        # 3. Artwork Presence & Dimensions (Mandatory for High-Fidelity)
+        artwork_url = data.get("artwork_url") or data.get("artworkUrl")
         if not artwork_url:
             self.errors.append(
                 "Artwork URL is missing. Releases cannot be "
                 "distributed without cover art."
             )
+        
+        cover_width = data.get("cover_width", 3000)
+        cover_height = data.get("cover_height", 3000)
+        if cover_width < 3000 or cover_height < 3000:
+             self.errors.append(
+                 f"Cover art dimensions ({cover_width}x{cover_height}) are below "
+                 "the 3000x3000px industry standard for Apple/Spotify."
+             )
 
-        # 4. Versioning Check (Warnings)
+        # 4. UPC Format
+        upc = data.get("upc", "").strip()
+        if upc and not re.match(r'^\d{12,13}$', upc):
+            self.errors.append(f"Invalid UPC format: '{upc}'. Must be 12 or 13 digits.")
+
+        # 5. Track Validation
+        tracks = data.get("tracks", [])
+        if not tracks:
+            self.errors.append("Release must contain at least one track.")
+        
+        for i, track in enumerate(tracks, 1):
+            track_title = track.get("title", "").strip()
+            if not track_title:
+                self.errors.append(f"Track {i} is missing a title.")
+            
+            # ISRC Format
+            isrc = track.get("isrc", "").strip().upper()
+            if isrc and not re.match(r'^[A-Z]{2}[A-Z0-9]{3}\d{7}$', isrc):
+                self.errors.append(f"Invalid ISRC format in track '{track_title}': '{isrc}'.")
+            
+            # Duration check (prevent 0 or negative)
+            duration = track.get("duration", 0)
+            if duration <= 0:
+                self.errors.append(f"Track '{track_title}' has an invalid duration ({duration}s).")
+            elif duration < 30:
+                self.warnings.append(f"Track '{track_title}' is very short ({duration}s). DSPs may flag as snippet.")
+
+            # Explicit marker
+            if "explicit" not in track:
+                self.warnings.append(f"Track '{track_title}' is missing an explicit/clean marker. Assuming 'NotExplicit'.")
+
+        # 6. Versioning Check (Warnings)
         version = data.get("version", "").lower()
         if "original" in version:
             self.warnings.append(

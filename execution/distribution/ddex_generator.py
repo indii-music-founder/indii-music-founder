@@ -12,6 +12,7 @@ import datetime
 import json
 import logging
 import os
+import re
 import sys
 import uuid
 import xml.etree.ElementTree as ET
@@ -75,7 +76,13 @@ class DDEXGenerator:
 
         # Message Threading
         thread_id = str(uuid.uuid4())
-        msg_id = f"MSG-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
+        full_hex = uuid.uuid4().hex
+        msg_suffix = ""
+        for i in range(8):
+            msg_suffix += full_hex[i]
+        msg_id = f"MSG-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}-{msg_suffix.upper()}"
+        
+        # Message Threading
 
         self._create_element(header, "MessageThreadId", thread_id)
         self._create_element(header, "MessageId", msg_id)
@@ -136,24 +143,31 @@ class DDEXGenerator:
         self._create_element(details_list, "TerritoryCode", "Worldwide")
 
         # Title
+        title_text = track.get("title", track.get("track_title", "Untitled"))
+        version = track.get("version")
+        
         title_elem = self._create_element(
             details_list, "Title", TitleType="FormalTitle")
-        self._create_element(
-            title_elem, "TitleText", track.get(
-                "title", track.get("track_title", "Untitled")))
+        self._create_element(title_elem, "TitleText", title_text)
+        if version:
+            self._create_element(title_elem, "SubTitle", version)
 
         # Display Artist
-        artist_name = track.get("artist") or track.get("artist_name") or track.get("primary_artist")
-        if not artist_name and track.get("artists") and isinstance(track.get("artists"), list):
-             artist_name = track.get("artists")[0]
-        artist_name = artist_name or "Unknown Artist"
+        artists = track.get("artists")
+        primary_artist = (track.get("artist") or track.get("artist_name") or 
+                         track.get("primary_artist") or "Unknown Artist")
+        
+        if not artists:
+            artists = [primary_artist]
 
-        artist = self._create_element(
-            details_list, "DisplayArtist", SequenceNumber="1")
-        party_name = self._create_element(artist, "PartyName")
-        self._create_element(party_name, "FullName", artist_name)
-        artist_role = self._create_element(artist, "ArtistRole")
-        self._create_element(artist_role, "MainArtist")
+        for i, artist_name in enumerate(artists, 1):
+             artist_elem = self._create_element(
+                 details_list, "DisplayArtist", SequenceNumber=str(i))
+             party_name = self._create_element(artist_elem, "PartyName")
+             self._create_element(party_name, "FullName", artist_name)
+             artist_role = self._create_element(artist_elem, "ArtistRole")
+             role_tag = "MainArtist" if i == 1 else "FeaturedArtist"
+             self._create_element(artist_role, role_tag)
 
         # Label Name
         label = track.get("label", "Self-Released")
@@ -161,9 +175,23 @@ class DDEXGenerator:
 
         # P-Line
         p_year = datetime.datetime.now().year
-        p_line = self._create_element(details_list, "PLine")
-        self._create_element(p_line, "Year", str(p_year))
-        self._create_element(p_line, "PLineText", f"℗ {p_year} {label}")
+        p_line_text = track.get("p_line") or f"℗ {p_year} {label}"
+        
+        # Safe year extraction
+        p_line_year = str(p_year)
+        match = re.search(r'(\d{4})', p_line_text)
+        if match:
+            p_line_year = match.group(0)
+            
+        p_line_elem = self._create_element(details_list, "PLine")
+        self._create_element(p_line_elem, "Year", p_line_year)
+        self._create_element(p_line_elem, "PLineText", p_line_text)
+
+        # C-Line (Phonographic copyright owners usually own packaging too)
+        c_line_text = track.get("c_line") or f"© {p_year} {label}"
+        c_line_elem = self._create_element(details_list, "CLine")
+        self._create_element(c_line_elem, "Year", p_line_year)
+        self._create_element(c_line_elem, "CLineText", c_line_text)
 
         # Genre
         genre = track.get("genre", "Pop")
@@ -299,27 +327,40 @@ class DDEXGenerator:
         self._create_element(details, "TerritoryCode", "Worldwide")
 
         # Display Artist Name
-        artist_name = release_data.get("artist") or release_data.get("primary_artist")
-        if not artist_name and release_data.get("artists") and isinstance(release_data.get("artists"), list):
-             artist_name = release_data.get("artists")[0]
-        artist_name = artist_name or "Unknown Artist"
+        raw_artists = release_data.get("artists")
+        primary_artist = (release_data.get("artist") or 
+                         release_data.get("primary_artist") or "Unknown Artist")
+        
+        if isinstance(raw_artists, list):
+            artists = raw_artists
+        elif isinstance(raw_artists, str):
+            artists = [raw_artists]
+        else:
+            artists = [primary_artist]
 
+        display_artist_name = ", ".join(artists)
         artist_elem = self._create_element(details, "DisplayArtistName")
-        self._create_element(artist_elem, "FullName", artist_name)
+        self._create_element(artist_elem, "FullName", display_artist_name)
 
         # Release Title
         release_title = release_data.get("title") or release_data.get("album_title") or "Untitled Release"
+        version = release_data.get("version")
+        
         title_elem = self._create_element(
             details, "Title", TitleType="FormalTitle")
         self._create_element(title_elem, "TitleText", release_title)
+        if version:
+            self._create_element(title_elem, "SubTitle", version)
 
         # Display Artist
-        display_artist = self._create_element(
-            details, "DisplayArtist", SequenceNumber="1")
-        party_name = self._create_element(display_artist, "PartyName")
-        self._create_element(party_name, "FullName", artist_name)
-        artist_role = self._create_element(display_artist, "ArtistRole")
-        self._create_element(artist_role, "MainArtist")
+        for i, artist_name in enumerate(artists, 1):
+             display_artist = self._create_element(
+                 details, "DisplayArtist", SequenceNumber=str(i))
+             party_name = self._create_element(display_artist, "PartyName")
+             self._create_element(party_name, "FullName", artist_name)
+             artist_role = self._create_element(display_artist, "ArtistRole")
+             role_tag = "MainArtist" if i == 1 else "FeaturedArtist"
+             self._create_element(artist_role, role_tag)
 
         # Label Name
         label = release_data.get("label", "Self-Released")
@@ -347,13 +388,23 @@ class DDEXGenerator:
 
         # C-Line and P-Line
         c_year = datetime.datetime.now().year
-        c_line = self._create_element(details, "CLine")
-        self._create_element(c_line, "Year", str(c_year))
-        self._create_element(c_line, "CLineText", f"© {c_year} {label}")
+        l_name = release_data.get("label", "Self-Released")
+        
+        p_line_text = release_data.get("p_line") or f"℗ {c_year} {l_name}"
+        c_line_text = release_data.get("c_line") or f"© {c_year} {l_name}"
+        
+        p_line_year = str(c_year)
+        match = re.search(r'(\d{4})', p_line_text)
+        if match:
+            p_line_year = match.group(0)
 
-        p_line = self._create_element(details, "PLine")
-        self._create_element(p_line, "Year", str(c_year))
-        self._create_element(p_line, "PLineText", f"℗ {c_year} {label}")
+        c_line_elem = self._create_element(details, "CLine")
+        self._create_element(c_line_elem, "Year", p_line_year)
+        self._create_element(c_line_elem, "CLineText", c_line_text)
+
+        p_line_elem = self._create_element(details, "PLine")
+        self._create_element(p_line_elem, "Year", p_line_year)
+        self._create_element(p_line_elem, "PLineText", p_line_text)
 
         # Release Resource Reference List
         rr_list = self._create_element(release, "ReleaseResourceReferenceList")

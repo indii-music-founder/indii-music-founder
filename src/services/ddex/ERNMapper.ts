@@ -88,15 +88,18 @@ export class ERNMapper {
         const contributors = this.mapContributors(metadata.splits, metadata.artistName);
 
         // Determine ReleaseType
+        const RELEASE_TYPE_MAP: Record<string, ReleaseType> = {
+            'AudioAlbum': 'Album',
+            'Single': 'Single',
+            'EP': 'EP',
+            'Compilation': 'Compilation',
+            'VideoSingle': 'VideoSingle',
+            'Ringtone': 'Ringtone',
+        };
+
         let releaseType: ReleaseType = 'Single';
         if (metadata.releaseType) {
-            // Map internal release types to strict DDEX types if different
-            // Assuming types match for now based on types.ts
-            if ((metadata.releaseType as string) === 'AudioAlbum') releaseType = 'Album';
-            else if ((metadata.releaseType as string) === 'Single') releaseType = 'Single';
-            else if ((metadata.releaseType as string) === 'VideoSingle') releaseType = 'VideoSingle' as ReleaseType;
-            else if ((metadata.releaseType as string) === 'Ringtone') releaseType = 'Ringtone' as ReleaseType;
-            else releaseType = metadata.releaseType as ReleaseType;
+            releaseType = RELEASE_TYPE_MAP[metadata.releaseType] || 'Single';
         }
 
         const genre: GenreWithSubGenre = {

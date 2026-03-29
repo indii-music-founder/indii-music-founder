@@ -1,0 +1,38 @@
+
+> indii-os@1.41.0 test
+> vitest src/modules/creative/components/__tests__/DaisyChainControls.test.tsx
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron[39m
+
+(node:9783) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [31m❯[39m src/modules/creative/components/__tests__/DaisyChainControls.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 34[2mms[22m[39m
+     [32m✓[39m renders initial state correctly[32m 28[2mms[22m[39m
+     [32m✓[39m triggers frame modal on slot click[32m 3[2mms[22m[39m
+[31m     [31m×[31m updates time offset via slider[39m[32m 1[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/modules/creative/components/__tests__/DaisyChainControls.test.tsx[2m > [22mDaisyChainControls[2m > [22mupdates time offset via slider
+[31m[1mError[22m: Cannot find module '@/core/store'
+Require stack:
+- /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/modules/creative/components/__tests__/DaisyChainControls.test.tsx[39m
+[36m [2m❯[22m src/modules/creative/components/__tests__/DaisyChainControls.test.tsx:[2m52:30[22m[39m
+    [90m 50| [39m
+    [90m 51| [39m    [34mit[39m([32m'updates time offset via slider'[39m[33m,[39m () [33m=>[39m {
+    [90m 52| [39m        [35mconst[39m { useStore } [33m=[39m [34mrequire[39m([32m'@/core/store'[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m 53| [39m        [35mconst[39m setVideoInput [33m=[39m [34museStore[39m()[33m.[39msetVideoInput[33m;[39m
+    [90m 54| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (3)[39m
+[2m   Start at [22m 20:42:34
+[2m   Duration [22m 533ms[2m (transform 47ms, setup 80ms, import 64ms, tests 34ms, environment 251ms)[22m
+
+
+::error file=/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/modules/creative/components/__tests__/DaisyChainControls.test.tsx,title=src/modules/creative/components/__tests__/DaisyChainControls.test.tsx > DaisyChainControls > updates time offset via slider,line=52,column=30::Error: Cannot find module '@/core/store'%0ARequire stack:%0A- /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/modules/creative/components/__tests__/DaisyChainControls.test.tsx%0A ❯ src/modules/creative/components/__tests__/DaisyChainControls.test.tsx:52:30%0A%0A⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯%0ASerialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/modules/creative/components/__tests__/DaisyChainControls.test.tsx' ] }%0A

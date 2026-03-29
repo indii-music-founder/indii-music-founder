@@ -151,15 +151,12 @@ service cloud.firestore {
       // Public read for profile display
       allow read: if isAuthenticated();
       
-      // Only the user can initialize their stats
+      // Initial stats can be created by the user
       allow create: if isOwner(userId);
       
-      // Stats are updated via atomic increments only
-      // In practice, this should be done via Cloud Functions for accuracy
-      allow update: if isOwner(userId) &&
-        // Only allow incrementing/decrementing counters
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['followersCount', 'followingCount', 'postsCount', 'updatedAt']);
+      // Counters are READ-ONLY for clients (Item 205 fix)
+      // Must be updated via Cloud Functions trigger or internal batch
+      allow update: if false;
     }
 
     // =========================================================================
@@ -329,10 +326,10 @@ service cloud.firestore {
 
     // =========================================================================
     // Audit Logs (read-only — written by Cloud Functions only)
-    // =========================================================================
-    match /audit_logs/{logId} {
-      allow read: if isAuthenticated();
-      allow write: if false;
+    // System Audit logs: Only readable by Admins
+    match /audit_logs/{id} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
     }
 
     // =========================================================================

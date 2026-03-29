@@ -64,7 +64,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
 
     return (
         <Card
-            data-testid="release-card"
+            data-testid="release-status-card"
             className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-dept-distribution/30 transition-all duration-300 hover:shadow-2xl hover:shadow-dept-distribution/10 backdrop-blur-sm"
         >
             <div className="flex flex-col">

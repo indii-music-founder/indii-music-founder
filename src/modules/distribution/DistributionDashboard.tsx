@@ -48,7 +48,7 @@ export default function DistributionDashboard() {
 
     return (
         <ModuleErrorBoundary moduleName="Distribution">
-            <div className="absolute inset-0 flex bg-bg-dark/50">
+            <div data-testid="distribution-dashboard" className="absolute inset-0 flex bg-bg-dark/50">
                 {/* ── LEFT PANEL — Distributor Status & Health ────────── */}
                 <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
                     <DistributorQuickView />
@@ -69,7 +69,7 @@ export default function DistributionDashboard() {
                                     <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">{t('distribution.title')}</h1>
                                     <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-dept-publishing/10 border border-dept-publishing/20 rounded-full">
                                         <div className="w-1.5 h-1.5 rounded-full bg-dept-publishing animate-pulse" />
-                                        <span className="text-[10px] font-bold text-dept-publishing tracking-widest uppercase">Live System</span>
+                                        <span data-testid="live-system-badge" className="text-[10px] font-bold text-dept-publishing tracking-widest uppercase">Live System</span>
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.15em] mt-1">{t('distribution.subtitle')}</p>
@@ -83,14 +83,14 @@ export default function DistributionDashboard() {
                             <TabsList className="bg-transparent gap-6 p-0 h-14 inline-flex">
                                 <TabsTrigger
                                     value="releases"
-                                    data-testid="distro-tab-releases"
+                                    data-testid="distro-tab-new"
                                     className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
                                 >
                                     <PlusCircle size={14} /> {t('distribution.tabs.new')}
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="connections"
-                                    data-testid="distro-tab-connections"
+                                    data-testid="distro-tab-catalogue"
                                     className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
                                 >
                                     <Library size={14} /> {t('distribution.tabs.catalogue')}
@@ -139,7 +139,7 @@ export default function DistributionDashboard() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="p-4 md:p-8"
                             >
-                                <TabsContent value="releases" data-testid="distro-content-releases" className="mt-0 border-none outline-none focus-visible:ring-0">
+                                <TabsContent value="releases" data-testid="distro-content-new" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Releases">
                                         <ReleasesContent
                                             releases={releases}
@@ -149,7 +149,7 @@ export default function DistributionDashboard() {
                                         />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
-                                <TabsContent value="connections" data-testid="distro-content-connections" className="mt-0 border-none outline-none focus-visible:ring-0">
+                                <TabsContent value="connections" data-testid="distro-content-catalogue" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Distributors">
                                         <DistributorConnectionsPanel />
                                     </ModuleErrorBoundary>

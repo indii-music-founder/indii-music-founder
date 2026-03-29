@@ -110,8 +110,8 @@ class IdentityManager:
         self.data["isrc_count"] += 1
         sequence = str(self.data["isrc_count"]).zfill(5)
 
-        # Format: CC-XXX-YY-NNNNN
-        isrc = f"{resolved_country}-{resolved_registrant}-{year}-{sequence}"
+        # Format: CCXXXRRNNNNN (12 characters, no dashes for DDEX compliance)
+        isrc = f"{resolved_country}{resolved_registrant}{year}{sequence}"
 
         # Uniqueness check — prevent reissuing same ISRC across releases
         all_issued = {
@@ -123,7 +123,7 @@ class IdentityManager:
             # Increment and retry once (counter drift recovery)
             self.data["isrc_count"] += 1
             sequence = str(self.data["isrc_count"]).zfill(5)
-            isrc = f"{resolved_country}-{resolved_registrant}-{year}-{sequence}"
+            isrc = f"{resolved_country}{resolved_registrant}{year}{sequence}"
 
         logger.info(f"Generated ISRC: {isrc}")
         return isrc

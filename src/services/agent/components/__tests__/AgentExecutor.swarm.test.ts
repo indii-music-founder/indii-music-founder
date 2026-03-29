@@ -39,7 +39,7 @@ class MockAgent extends BaseAgent {
             tools: []
         });
     }
-     
+
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
         return { text: 'success', toolCalls: [], thoughts: [] } as any;
     }
@@ -53,7 +53,7 @@ describe('AgentExecutor Swarm Support', () => {
     });
 
     it('should initialize a new swarmId for root execution', async () => {
-        const executor = new AgentExecutor();
+        const executor = new AgentExecutor(agentRegistry as any);
         const context: any = { activeModule: 'test' };
 
         // execute(agentId, userGoal, context, ...)
@@ -74,7 +74,7 @@ describe('AgentExecutor Swarm Support', () => {
     });
 
     it('should propagate existing swarmId to child agents', async () => {
-        const executor = new AgentExecutor();
+        const executor = new AgentExecutor(agentRegistry as any);
         // Existing context from a parent
         const context: any = {
             activeModule: 'test',

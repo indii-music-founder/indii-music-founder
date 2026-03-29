@@ -70,16 +70,20 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         const releaseData: DDEXMetadata = {
             releaseId: `release-${Date.now()}`,
             title: title.trim(),
+            artist: artist.trim(),
             artists: [artist.trim()],
             label: label.trim() || 'Indii Records',
+            release_date: releaseDate || undefined,
             releaseDate: releaseDate || undefined,
+            artwork_url: artworkUrl || undefined,
             artworkUrl: artworkUrl || undefined,
+            cover_filename: 'cover.jpg', // Default for now
             tracks: [{
                 title: trackTitle.trim(),
                 isrc: isrc.trim() || undefined,
                 artist: artist.trim(),
             }],
-        } as unknown as DDEXMetadata;
+        };
 
         try {
             await distributionService.submitRelease(releaseData, (evt) => {
