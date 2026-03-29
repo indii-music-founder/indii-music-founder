@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 import { PythonBridge } from '../utils/python-bridge';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
+import { credentialService } from '../services/CredentialService';
 
 interface StagedFile {
     type: 'content' | 'path';
@@ -177,7 +178,7 @@ export const setupDistributionHandlers = () => {
             const storagePath = getStoragePath();
             const report = await AgentSupervisor.execute('distribution', 'tax_withholding_engine.py', [
                 'calculate',
-                userId,
+                userId as string,
                 String(amount),
                 '--storage-path',
                 storagePath
@@ -370,7 +371,8 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:transmit', async (event, config: Record<string, unknown>) => {
         try {
             validateSender(event);
-            const { protocol, host, port, user, password, key, localPath, remotePath } = config as Record<string, string | number | undefined>;
+            const { protocol, host, user, password, key, localPath, remotePath } = config as Record<string, string | undefined>;
+            const port = config.port as string | number | undefined;
 
             if (!host || !user || !localPath) {
                 throw new Error('Missing required transmission configuration (host, user, or localPath)');
@@ -398,14 +400,25 @@ export const setupDistributionHandlers = () => {
             const storagePath = getStoragePath();
             const scriptName = (protocol === 'ASPERA') ? 'aspera_uploader.py' : 'sftp_uploader.py';
 
-            // Security: Pass sensitive data via Environment Variables, NOT command line arguments.
+            // Security: Provide credentials dynamically from CredentialService
+            let runtimePassword = password;
+            const runtimeKey = key;
+            const distributorId = config.distributorId as string | undefined;
+
+            if (distributorId) {
+                const creds = await credentialService.getCredentials(distributorId as any);
+                if (creds) {
+                    if (!runtimePassword) runtimePassword = creds.sftpPassword || creds.password;
+                }
+            }
+
             const env: NodeJS.ProcessEnv = {};
             if (protocol === 'ASPERA') {
-                if (password) env.ASPERA_PASSWORD = password;
-                if (key) env.ASPERA_KEY_PATH = key;
+                if (runtimePassword) env.ASPERA_PASSWORD = runtimePassword;
+                if (runtimeKey) env.ASPERA_KEY_PATH = runtimeKey;
             } else {
-                if (password) env.SFTP_PASSWORD = password;
-                if (key) env.SFTP_KEY_PATH = key;
+                if (runtimePassword) env.SFTP_PASSWORD = runtimePassword;
+                if (runtimeKey) env.SFTP_KEY_PATH = runtimeKey;
             }
 
             const args = [
@@ -455,16 +468,33 @@ export const setupDistributionHandlers = () => {
 
             const storagePath = getStoragePath();
 
-            // Credentials for SFTP are injected via env vars, never CLI args
+            // Security: Resolve credentials dynamically via CredentialService
             const env: Record<string, string | undefined> = {};
-            const sftpCfg = releaseData.sftpConfig as Record<string, string | undefined> | undefined;
+            let sftpCfg = releaseData.sftpConfig as Record<string, string | undefined> | undefined;
+            const distributorId = releaseData.distributorId as string | undefined;
+
+            if (distributorId) {
+                const secureCreds = await credentialService.getCredentials(distributorId as any);
+                if (secureCreds && (secureCreds.sftpPassword || secureCreds.password)) {
+                    env.SFTP_PASSWORD = secureCreds.sftpPassword || secureCreds.password;
+                    // Inject connection meta if missing
+                    if (!sftpCfg) {
+                        sftpCfg = {};
+                        releaseData.sftpConfig = sftpCfg;
+                    }
+                    if (!sftpCfg.host) sftpCfg.host = secureCreds.sftpHost;
+                    if (!sftpCfg.user) sftpCfg.user = secureCreds.sftpUsername || secureCreds.username;
+                }
+            }
+
             if (sftpCfg?.password) {
-                env.SFTP_PASSWORD = sftpCfg.password;
-                // Redact from the payload before passing to the script
+                // If the UI still passed a password (e.g. for testing), use it but redact it
+                if (!env.SFTP_PASSWORD) env.SFTP_PASSWORD = sftpCfg.password;
                 releaseData = { ...releaseData, sftpConfig: { ...sftpCfg, password: undefined } };
             }
             if (sftpCfg?.key) {
                 env.SFTP_KEY_PATH = sftpCfg.key;
+                //@ts-ignore - safe cloning
                 releaseData = { ...releaseData, sftpConfig: { ...releaseData.sftpConfig, key: undefined } };
             }
 

@@ -1,9 +1,12 @@
 import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder, Bot, Sparkles, MessageSquare, Clock, X, History } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder, Bot, Sparkles, MessageSquare, Clock, X, History, Network, Book } from 'lucide-react';
+import { type ModuleId } from '@/core/constants';
 import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
+import WorkflowPanel from './right-panel/WorkflowPanel';
+import KnowledgePanel from './right-panel/KnowledgePanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
 import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'motion/react';
@@ -156,6 +159,10 @@ export default function RightPanel() {
                 return <CreativePanel toggleRightPanel={toggleRightPanel} />;
             case 'video':
                 return <VideoPanel toggleRightPanel={toggleRightPanel} />;
+            case 'workflow':
+                return <WorkflowPanel toggleRightPanel={toggleRightPanel} />;
+            case 'knowledge':
+                return <KnowledgePanel toggleRightPanel={toggleRightPanel} />;
             case 'files':
                 return (
                     <div className="h-full flex flex-col bg-card relative">
@@ -207,13 +214,40 @@ export default function RightPanel() {
         }
     };
 
-    const handleToolClick = (module: 'creative' | 'video' | 'files') => {
-        setModule(module);
-    };
+    const quickTools = [
+        { id: 'creative', icon: Palette, label: 'Image Studio' },
+        { id: 'video', icon: Film, label: 'Video Studio' },
+        { id: 'files', icon: Folder, label: 'Project Files' },
+        { id: 'workflow', icon: Network, label: 'Workflow Builder' },
+        { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+        { id: 'history', icon: History, label: 'Recent Activity' },
+        { id: 'agent', icon: Bot, label: 'Agent Hub' }
+    ] as const;
 
-    const creativeTheme = getColorForModule('creative');
-    const videoTheme = getColorForModule('video');
-    const filesTheme = getColorForModule('files');
+    const handleToolClick = (module: string) => {
+        if (module === 'agent') {
+            useStore.setState({
+                isAgentOpen: true,
+                isRightPanelOpen: true,
+                rightPanelView: 'messages'
+            });
+            return;
+        }
+        if (module === 'history') {
+            useStore.setState({
+                isAgentOpen: true,
+                isRightPanelOpen: true,
+                rightPanelView: 'archives'
+            });
+            return;
+        }
+
+        // For other modules, navigate to them and ensure panel opens to show their tools
+        setModule(module as ModuleId);
+        if (!isRightPanelOpen) {
+            useStore.setState({ isRightPanelOpen: true });
+        }
+    };
 
     return (
         <motion.aside
@@ -242,36 +276,32 @@ export default function RightPanel() {
                             <ChevronLeft size={16} />
                         </button>
 
-                        <div className="flex flex-col gap-4 w-full px-2">
-                            <button
-                                onClick={() => handleToolClick('creative')}
-                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'creative' ? `${creativeTheme.bg} ${creativeTheme.text} shadow-[0_0_10px_rgba(168,85,247,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                                title="Image Studio"
-                                aria-label="Image Studio"
-                            >
-                                <Palette size={20} />
-                                {currentModule === 'creative' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}
-                            </button>
+                        <div className="flex flex-col gap-4 w-full px-2 overflow-y-auto custom-scrollbar flex-1 pb-4">
+                            {quickTools.map(({ id, icon: Icon, label }) => {
+                                const theme = getColorForModule(id as ModuleId);
+                                const isActive = currentModule === id;
 
-                            <button
-                                onClick={() => handleToolClick('video')}
-                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'video' ? `${videoTheme.bg} ${videoTheme.text} shadow-[0_0_10px_rgba(59,130,246,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                                title="Video Studio"
-                                aria-label="Video Studio"
-                            >
-                                <Film size={20} />
-                                {currentModule === 'video' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}
-                            </button>
-
-                            <button
-                                onClick={() => handleToolClick('files')}
-                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'files' ? `${filesTheme.bg} ${filesTheme.text} shadow-[0_0_10px_rgba(34,197,94,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                                title="Project Files"
-                                aria-label="Project Files"
-                            >
-                                <Folder size={20} />
-                                {currentModule === 'files' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}
-                            </button>
+                                return (
+                                    <button
+                                        key={id}
+                                        onClick={() => handleToolClick(id)}
+                                        className={cn(
+                                            "p-2 rounded-xl transition-all flex items-center justify-center relative group shrink-0",
+                                            isActive
+                                                ? `${theme.bg} ${theme.text}`
+                                                : "text-gray-400 hover:text-white hover:bg-white/5"
+                                        )}
+                                        style={isActive ? { boxShadow: `0 0 10px var(${theme.cssVar}, 0.2)` } : undefined}
+                                        title={label}
+                                        aria-label={label}
+                                    >
+                                        <Icon size={20} />
+                                        {isActive && (
+                                            <div className="absolute inset-0 rounded-xl bg-current opacity-10 blur-sm" />
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </motion.div>
                 ) : (

@@ -62,7 +62,7 @@ test.describe('The Librarian: RAG Pipeline Verification (REAL DATA)', () => {
         await page.getByRole('button', { name: /sign in/i }).click();
 
         // Wait for Dashboard (Real Auth Success)
-        await expect(page.getByRole('heading', { name: /Studio Headquarters/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i })).toBeVisible({ timeout: 30000 });
         console.log('[Librarian] Dashboard Loaded. Auth Successful.');
 
         // 2. Navigate to Knowledge Base

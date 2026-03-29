@@ -122,6 +122,15 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
     test.setTimeout(90_000);
 
     test.beforeEach(async ({ authedPage: page }) => {
+        // Mock Firestore distribution collection reads
+        await page.route('**/firestore.googleapis.com/**/ddexReleases**', async route => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ documents: [] }) });
+        });
+
+        await page.route('**/firestore.googleapis.com/**/distributors**', async route => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ documents: [] }) });
+        });
+
         // Intercept Cloud Functions
         await page.route('**/cloudfunctions.net/**/initiateDelivery**', async route => {
             await route.fulfill({

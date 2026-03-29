@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-
+import { test as authedTest } from './fixtures/auth';
 // Typed window interface for Zustand store access in E2E tests
 interface TestWindow extends Window {
     useStore: {
@@ -32,21 +32,14 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.waitForLoadState('domcontentloaded');
     });
 
-    test('Scenario 1: New User "Speedrun" (Onboarding -> Project -> Agent)', async ({ page }) => {
+    authedTest('Scenario 1: New User "Speedrun" (Onboarding -> Project -> Agent)', async ({ authedPage: page }) => {
         // Enable console log proxying
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
 
-
-        // A. Handle Login (Skipped via __TEST_MODE__ bypass)
-        // MUST be called before navigation to take effect on load
-        await page.addInitScript({ content: 'window.__TEST_MODE__ = true;' });
-
         // 1. Setup: Bypass Auth & Inject Mock State
-        await page.goto('/');
-        await page.evaluate(() => localStorage.setItem('TEST_MODE', 'true'));
-        await page.reload();
-
-        await page.waitForTimeout(1000); // Small buffer for state unification
+        // Using the predefined authenticated fixture's page (`authedPage`) which already injected the bypass scripts
+        // Wait briefly for app state hook unification
+        await page.waitForTimeout(1000);
 
         // Force app state to Onboarding (SPA state takes precedence over URL)
         console.log('[Gauntlet] Forcing module state to "onboarding"...');
@@ -59,11 +52,12 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
                 isAuthenticated: true,
                 isAuthReady: true,
                 userProfile: {
+                    id: 'test-gauntlet-user',
                     uid: 'test-gauntlet-user',
                     email: 'gauntlet@test.com',
                     displayName: 'Gauntlet User',
                     bio: '',
-                    preferences: '{}',
+                    preferences: { theme: 'dark', notifications: true, observabilityEnabled: false },
                     brandKit: {
                         colors: [],
                         fonts: '',
@@ -77,6 +71,8 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
                             mood: '', themes: '', lyrics: ''
                         }
                     },
+                    careerStage: 'Producer',
+                    goals: ['Release Music'],
                     analyzedTrackIds: [],
                     knowledgeBase: [],
                     savedWorkflows: []
@@ -93,14 +89,15 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.evaluate(() => (window as unknown as TestWindow).__TEST_MODE__ = true);
 
         // 1. Send a message to the AI
-        const chatInput = page.getByPlaceholder(/Tell me about your music/i);
+        const chatInput = page.locator('[data-testid="prompt-input"]');
 
         try {
             await expect(chatInput).toBeVisible({ timeout: 5000 });
         } catch (e) {
             console.log('[Gauntlet] Chat Input NOT visible. Dumping page content...');
-            const body = await page.content();
-            console.log('PAGE CONTENT DUMP:', body.slice(0, 2000)); // Print first 2000 chars
+            const body = await page.evaluate(() => document.body.innerHTML);
+            console.log('PAGE CONTENT DUMP:', body.substring(0, 3000));
+            console.log('PAGE CONTENT DUMP (END):', body.substring(body.length - 3000));
             throw e;
         }
 
@@ -145,7 +142,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         }
 
         // Now expect Dashboard
-        await expect(page.getByRole('heading', { name: /Studio Headquarters/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i })).toBeVisible({ timeout: 15000 });
 
         // C. Create New Project (Creative Domain)
         await page.getByRole('button', { name: /new project/i }).first().click();
@@ -193,12 +190,9 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] Agent responded successfully.');
     });
 
-    test('Scenario 2: Chaos Check (Rapid Navigation)', async ({ page }) => {
-        // A. Setup: Bypass Auth & Inject Mock State
-        await page.addInitScript({ content: 'window.__TEST_MODE__ = true;' });
-        await page.goto('/');
-        await page.evaluate(() => localStorage.setItem('TEST_MODE', 'true'));
-        await page.reload();
+    authedTest('Scenario 2: Chaos Check (Rapid Navigation)', async ({ authedPage: page }) => {
+        // A. Setup: State already injected via authedPage fixture
+        // Wait briefly for state completion
         await page.waitForTimeout(1000);
 
         // Force app state to a known ready state
@@ -231,11 +225,8 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         }
     });
 
-    test('Scenario 3: Membership Limits Gauntlet', async ({ page }) => {
-        await page.addInitScript({ content: 'window.__TEST_MODE__ = true;' });
-        await page.goto('/');
-        await page.evaluate(() => localStorage.setItem('TEST_MODE', 'true'));
-        await page.reload();
+    authedTest('Scenario 3: Membership Limits Gauntlet', async ({ authedPage: page }) => {
+        // State injected by authedPage
         await page.waitForTimeout(1000);
 
         console.log('[Gauntlet] Starting Scenario 3: Membership Limits');
@@ -257,9 +248,10 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
                 userProfile: { uid: 'test-user', email: 'free@test.com', displayName: 'Free User' }
             });
 
+            const state = store.getState() as Record<string, any>;
             return {
-                org: store.getState().organizations[0],
-                plan: store.getState().organizations[0]?.plan
+                org: state.organizations ? state.organizations[0] : null,
+                plan: state.organizations && state.organizations[0] ? state.organizations[0].plan : null
             };
         });
 
@@ -279,9 +271,10 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
                 currentOrganizationId: 'org-pro'
             });
 
+            const state = store.getState() as Record<string, any>;
             return {
-                org: store.getState().organizations[0],
-                plan: store.getState().organizations[0]?.plan
+                org: state.organizations ? state.organizations[0] : null,
+                plan: state.organizations && state.organizations[0] ? state.organizations[0].plan : null
             };
         });
 
@@ -301,9 +294,10 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
                 currentOrganizationId: 'org-enterprise'
             });
 
+            const state = store.getState() as Record<string, any>;
             return {
-                org: store.getState().organizations[0],
-                plan: store.getState().organizations[0]?.plan
+                org: state.organizations ? state.organizations[0] : null,
+                plan: state.organizations && state.organizations[0] ? state.organizations[0].plan : null
             };
         });
 
@@ -334,11 +328,8 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] Membership Limits Gauntlet completed successfully.');
     });
 
-    test('Scenario 4: Tier Transition Stress Test', async ({ page }) => {
-        await page.addInitScript({ content: 'window.__TEST_MODE__ = true;' });
-        await page.goto('/');
-        await page.evaluate(() => localStorage.setItem('TEST_MODE', 'true'));
-        await page.reload();
+    authedTest('Scenario 4: Tier Transition Stress Test', async ({ authedPage: page }) => {
+        // State injected by authedPage fixture
         await page.waitForTimeout(1000);
 
         console.log('[Gauntlet] Starting Scenario 4: Tier Transition Stress Test');
@@ -367,7 +358,8 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
             const currentPlan = await page.evaluate(() => {
                 const store = (window as unknown as TestWindow).useStore;
-                return store.getState().organizations[0]?.plan;
+                const state = store.getState() as Record<string, any>;
+                return state.organizations?.[0]?.plan;
             });
 
             expect(currentPlan).toBe(tier);
@@ -378,9 +370,10 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         const finalState = await page.evaluate(() => {
             const store = (window as unknown as TestWindow).useStore;
+            const state = store.getState() as Record<string, any>;
             return {
-                isAuthenticated: store.getState().isAuthenticated,
-                hasOrg: store.getState().organizations.length > 0
+                isAuthenticated: state.isAuthenticated,
+                hasOrg: state.organizations && state.organizations.length > 0
             };
         });
 
@@ -411,7 +404,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             await page.getByRole('button', { name: /sign in/i }).click();
 
             // Wait for successful auth
-            await expect(page.getByRole('heading', { name: /Studio Headquarters/i })).toBeVisible({ timeout: 30000 });
+            await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i })).toBeVisible({ timeout: 30000 });
             console.log('[Gauntlet] Real auth successful!');
         } else {
             console.log('[Gauntlet] No login form visible, may already be authenticated');

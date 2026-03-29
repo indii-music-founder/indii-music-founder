@@ -209,7 +209,7 @@ export const MobileNav = () => {
 
                                 {/* Manager's Office */}
                                 <div className="space-y-1">
-                                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Manager's Office</h3>
+                                    <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Manager's Office</h3>
                                     {managerItems.map(item => (
                                         <MenuItem key={item.id} item={item} />
                                     ))}
@@ -217,7 +217,7 @@ export const MobileNav = () => {
 
                                 {/* Departments */}
                                 <div className="space-y-1">
-                                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Departments</h3>
+                                    <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Departments</h3>
                                     {departmentItems.map(item => (
                                         <MenuItem key={item.id} item={item} />
                                     ))}
@@ -225,7 +225,7 @@ export const MobileNav = () => {
 
                                 {/* Tools */}
                                 <div className="space-y-1">
-                                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tools</h3>
+                                    <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tools</h3>
                                     {toolItems.map(item => (
                                         <MenuItem key={item.id} item={item} />
                                     ))}

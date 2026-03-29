@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 
 import React, { useState, useEffect } from 'react';
 import { Send, Server, Shield, Loader2, CheckCircle, XCircle, Terminal, HardDrive } from 'lucide-react';
@@ -26,8 +25,10 @@ export const TransferPanel: React.FC = () => {
 
     useEffect(() => {
         // Handle progress updates from Electron
-        const removeListener = window.electronAPI?.on?.('distribution:transmit-progress', (data: any) => {
-            setProgress(data.progress);
+        const removeListener = window.electronAPI?.distribution?.onTransmitProgress?.((data) => {
+            if (data.progress !== undefined) {
+                setProgress(data.progress);
+            }
         });
         return () => removeListener?.();
     }, []);

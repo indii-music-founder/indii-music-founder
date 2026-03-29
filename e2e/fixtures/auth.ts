@@ -117,6 +117,41 @@ export const test = base.extend<AuthFixtures>({
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
 
+        // Intercept AI API calls to prevent real token spend
+        await page.route('**/firebasevertexai.googleapis.com/**', async route => {
+            const url = route.request().url();
+            console.log(`[E2E] Intercepted Vertex AI: ${url}`);
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                // Mimic Vertex AI JSON API response format
+                body: JSON.stringify({
+                    candidates: [{
+                        content: {
+                            role: "model",
+                            parts: [
+                                { text: "Awesome! I've updated your brand kit with those details. You're ready to go!" },
+                                {
+                                    functionCall: {
+                                        name: "updateProfile",
+                                        args: {
+                                            bio: "I am 22 and I make loud, distorted bubblegum bass music inspired by SOPHIE.",
+                                            colors: ["Neon Pink", "Black"],
+                                            social_instagram: "@glitched_official",
+                                            brand_description: "Loud, distorted bubblegum bass.",
+                                            career_stage: "Just starting out",
+                                            goals: ["Grow fanbase", "Get playlisted"]
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        finishReason: "STOP"
+                    }]
+                })
+            });
+        });
+
         // Inject Mocks BEFORE navigation using a typed cast to avoid `any`
         await page.addInitScript(() => {
             const w = window as unknown as E2EWindowGlobals;

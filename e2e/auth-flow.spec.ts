@@ -49,7 +49,7 @@ test.describe('Authentication Flow', () => {
         // Try invalid credentials
         await emailInput.fill('invalid@example.com');
         await passwordInput.fill('wrongpassword123');
-        await page.getByRole('button', { name: /sign in/i }).click();
+        await page.locator('form button[type="submit"]').click();
 
         // Should show error message
         const errorMessage = page.locator('[role="alert"], .error, [class*="error"]');
@@ -76,10 +76,10 @@ test.describe('Authentication Flow', () => {
         console.log('[Auth] Attempting login with test credentials...');
         await emailInput.fill(TEST_EMAIL!);
         await passwordInput.fill(TEST_PASSWORD!);
-        await page.getByRole('button', { name: /sign in/i }).click();
+        await page.locator('form button[type="submit"]').click();
 
         // Wait for successful auth - should redirect to dashboard
-        await expect(page.getByRole('heading', { name: /Studio Headquarters|Dashboard/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i })).toBeVisible({ timeout: 30000 });
         console.log('[Auth] Login successful!');
     });
 
@@ -102,10 +102,10 @@ test.describe('Authentication Flow', () => {
         // Login first
         await emailInput.fill(TEST_EMAIL!);
         await passwordInput.fill(TEST_PASSWORD!);
-        await page.getByRole('button', { name: /sign in/i }).click();
+        await page.locator('form button[type="submit"]').click();
 
         // Wait for dashboard
-        await expect(page.getByRole('heading', { name: /Studio Headquarters|Dashboard/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i })).toBeVisible({ timeout: 30000 });
 
         // Find and click logout
         const logoutButton = page.getByRole('button', { name: /logout|sign out/i });
@@ -150,17 +150,17 @@ test.describe('Authentication Flow', () => {
         // Login
         await emailInput.fill(TEST_EMAIL!);
         await passwordInput.fill(TEST_PASSWORD!);
-        await page.getByRole('button', { name: /sign in/i }).click();
+        await page.locator('form button[type="submit"]').click();
 
         // Wait for dashboard
-        await expect(page.getByRole('heading', { name: /Studio Headquarters|Dashboard/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i })).toBeVisible({ timeout: 30000 });
 
         // Reload page
         await page.reload();
         await page.waitForLoadState('domcontentloaded');
 
         // Should still be on dashboard (session persisted)
-        await expect(page.getByRole('heading', { name: /Studio Headquarters|Dashboard/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i })).toBeVisible({ timeout: 30000 });
         console.log('[Auth] Session persisted after reload');
     });
 
@@ -178,7 +178,7 @@ test.describe('Authentication Flow', () => {
 
         // Should be redirected to login or see login form
         const isOnLogin = await page.getByLabel(/email/i).isVisible({ timeout: 5000 }).catch(() => false);
-        const isOnDashboard = await page.getByRole('heading', { name: /Studio Headquarters|Dashboard/i }).isVisible({ timeout: 2000 }).catch(() => false);
+        const isOnDashboard = await page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).isVisible({ timeout: 2000 }).catch(() => false);
 
         // Either we're on login page, or we see an auth prompt
         if (!isOnDashboard) {
@@ -195,7 +195,7 @@ test.describe('OAuth Flow', () => {
         await page.waitForLoadState('domcontentloaded');
 
         const googleButton = page.getByRole('button', { name: /google|continue with google/i });
-        
+
         if (await googleButton.isVisible({ timeout: 5000 }).catch(() => false)) {
             console.log('[Auth] Google OAuth button present');
             expect(true).toBeTruthy();

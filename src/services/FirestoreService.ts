@@ -41,7 +41,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
 
     /** E2E test mode: skip real Firestore writes to avoid offline-mode hangs. */
     private get isE2EMode(): boolean {
-        if (typeof window !== 'undefined' && (window as any).FIREBASE_E2E_MOCK) return true;
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK) return true;
         try { return !!localStorage.getItem('FIREBASE_E2E_MOCK'); } catch { return false; }
     }
 
