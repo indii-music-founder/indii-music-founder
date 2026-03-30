@@ -151,7 +151,7 @@ describe('DashboardService - Sales Analytics', () => {
         const { getDoc } = await import('firebase/firestore');
 
         vi.mocked(useStore.getState).mockReturnValue({
-            userProfile: { id: 'test-user-id' } as unknown as import('@/modules/workflow/types').UserProfile
+            userProfile: null as unknown as import('@/modules/workflow/types').UserProfile
         } as unknown as import('@/core/store').StoreState);
 
         const result = await DashboardService.getSalesAnalytics();
