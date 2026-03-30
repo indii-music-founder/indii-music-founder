@@ -111,7 +111,7 @@ describe('Firebase App Check Initialization', () => {
   });
 
   it('should NOT initialize App Check in Electron environment (no debug token)', async () => {
-    window.electronAPI = {} as unknown as Window['electronAPI'];
+    Object.defineProperty(window, 'electronAPI', { value: {}, writable: true, configurable: true });
 
     vi.doMock('@/config/env', () => ({
       serverTimestamp: vi.fn(),
@@ -128,7 +128,7 @@ describe('Firebase App Check Initialization', () => {
   });
 
   it('should initialize App Check in Electron environment WITH debug token', async () => {
-    window.electronAPI = {} as unknown as Window['electronAPI'];
+    Object.defineProperty(window, 'electronAPI', { value: {}, writable: true, configurable: true });
 
     vi.doMock('@/config/env', () => ({
       serverTimestamp: vi.fn(),
