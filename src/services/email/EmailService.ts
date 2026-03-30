@@ -1,4 +1,4 @@
- 
+
 /**
  * EmailService — Unified Email Facade
  *
@@ -116,7 +116,7 @@ class EmailServiceImpl {
                         if (code) {
                             this.handleAuthCallback(provider, code)
                                 .then(resolve)
-                                .catch (reject: unknown);
+                                .catch(reject);
                         } else {
                             reject(new Error('No auth code received'));
                         }

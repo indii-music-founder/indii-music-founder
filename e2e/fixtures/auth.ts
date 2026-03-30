@@ -125,7 +125,7 @@ export const test = base.extend<AuthFixtures>({
             const postData = route.request().postData() || '';
             const hasUpdateProfileTool = postData.includes('updateProfile');
 
-            const parts: any[] = [
+            const parts: Array<{ text?: string; functionCall?: Record<string, unknown> }> = [
                 { text: "Awesome! I've updated your brand kit with those details. You're ready to go!" }
             ];
 
