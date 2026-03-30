@@ -1,19 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from '../../services/agent/AgentService';
-import { coordinator } from '../../services/agent/WorkflowCoordinator';
 
-// Mock the dependencies
-vi.mock('../../services/agent/WorkflowCoordinator', () => ({
-    coordinator: {
-        handleUserRequest: vi.fn().mockResolvedValue('DELEGATED_TO_AGENT')
-    }
+const { executeMock } = vi.hoisted(() => ({
+    executeMock: vi.fn().mockResolvedValue({ text: 'Agent Response', thoughtSignature: 'mock-sig' })
 }));
 
 // Fix for "is not a constructor" - we must provide a class or constructor function
 vi.mock('../../services/agent/components/AgentExecutor', () => {
     return {
         AgentExecutor: class {
-            execute = vi.fn().mockResolvedValue({ text: 'Agent Response' });
+            execute = executeMock;
         }
     };
 });
@@ -42,15 +38,25 @@ vi.mock('../../services/agent/components/AgentOrchestrator', () => {
 vi.mock('../../core/store', () => {
     const messages: any[] = [];
     return {
+        serverTimestamp: vi.fn(),
         useStore: {
             getState: () => ({
+                activeAgentProvider: 'agent', // Make sure Direct mode is OFF so executor runs
                 addAgentMessage: (msg: any) => messages.push(msg),
-                updateAgentMessage: () => {},
-                agentHistory: messages
+                updateAgentMessage: () => { },
+                agentHistory: messages,
+                currentProjectId: 'test-project',
+                activeSessionId: 'test-session',
+                isKnowledgeBaseEnabled: false
             })
         }
     };
 });
+
+// Mock dependencies from AgentService
+vi.mock('@/utils/logger', () => ({ logger: { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+vi.mock('../../services/agent/MemoryService', () => ({ memoryService: { saveMemory: vi.fn().mockResolvedValue(true) } }));
+vi.mock('../../services/ai/GenAI', () => ({ GenAI: { generateContentStream: vi.fn() } }));
 
 describe('🛡️ Shield: PII Redaction Security Test', () => {
     let agentService: AgentService;
@@ -62,53 +68,33 @@ describe('🛡️ Shield: PII Redaction Security Test', () => {
 
     it('should REDACT Credit Card numbers before sending to LLM', async () => {
         const sensitiveInput = "Here is my credit card: 4111 1111 1111 1111 for the payment.";
-
         await agentService.sendMessage(sensitiveInput);
 
-        // Check Coordinator (Fast Path / Decision Maker)
-        expect(coordinator.handleUserRequest).toHaveBeenCalledWith(
-            expect.stringContaining('[REDACTED_CREDIT_CARD]'),
-            expect.anything(),
-            expect.anything()
-        );
+        expect(executeMock).toHaveBeenCalled();
+        const payloadText = executeMock.mock.calls[0][1]; // 2nd argument is user text
 
-        // Ensure the raw number is NOT sent
-        expect(coordinator.handleUserRequest).not.toHaveBeenCalledWith(
-            expect.stringContaining('4111 1111 1111 1111'),
-            expect.anything(),
-            expect.anything()
-        );
+        expect(payloadText).toContain('[REDACTED_CREDIT_CARD]');
+        expect(payloadText).not.toContain('4111 1111 1111 1111');
     });
 
     it('should REDACT Passwords before sending to LLM', async () => {
         const sensitiveInput = "My password is supersecret123!";
-
         await agentService.sendMessage(sensitiveInput);
 
-        // Check Coordinator
-        expect(coordinator.handleUserRequest).toHaveBeenCalledWith(
-            expect.stringContaining('[REDACTED_PASSWORD]'),
-            expect.anything(),
-            expect.anything()
-        );
+        expect(executeMock).toHaveBeenCalled();
+        const payloadText = executeMock.mock.calls[0][1];
 
-         // Ensure the raw password is NOT sent
-         expect(coordinator.handleUserRequest).not.toHaveBeenCalledWith(
-            expect.stringContaining('supersecret123'),
-            expect.anything(),
-            expect.anything()
-        );
+        expect(payloadText).toContain('[REDACTED_PASSWORD]');
+        expect(payloadText).not.toContain('supersecret123');
     });
 
     it('should allow benign text to pass through', async () => {
         const benignInput = "Hello, can you help me write a poem?";
-
         await agentService.sendMessage(benignInput);
 
-        expect(coordinator.handleUserRequest).toHaveBeenCalledWith(
-            expect.stringContaining(benignInput),
-            expect.anything(),
-            expect.anything()
-        );
+        expect(executeMock).toHaveBeenCalled();
+        const payloadText = executeMock.mock.calls[0][1];
+
+        expect(payloadText).toContain(benignInput);
     });
 });
