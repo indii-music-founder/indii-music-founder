@@ -71,7 +71,7 @@ describe('🛡️ Shield: PII Redaction Security Test', () => {
         await agentService.sendMessage(sensitiveInput);
 
         expect(executeMock).toHaveBeenCalled();
-        const payloadText = executeMock.mock.calls[0][1]; // 2nd argument is user text
+        const payloadText = executeMock.mock.calls[0]?.[1]; // 2nd argument is user text
 
         expect(payloadText).toContain('[REDACTED_CREDIT_CARD]');
         expect(payloadText).not.toContain('4111 1111 1111 1111');
@@ -82,7 +82,7 @@ describe('🛡️ Shield: PII Redaction Security Test', () => {
         await agentService.sendMessage(sensitiveInput);
 
         expect(executeMock).toHaveBeenCalled();
-        const payloadText = executeMock.mock.calls[0][1];
+        const payloadText = executeMock.mock.calls[0]?.[1];
 
         expect(payloadText).toContain('[REDACTED_PASSWORD]');
         expect(payloadText).not.toContain('supersecret123');
@@ -93,7 +93,7 @@ describe('🛡️ Shield: PII Redaction Security Test', () => {
         await agentService.sendMessage(benignInput);
 
         expect(executeMock).toHaveBeenCalled();
-        const payloadText = executeMock.mock.calls[0][1];
+        const payloadText = executeMock.mock.calls[0]?.[1];
 
         expect(payloadText).toContain(benignInput);
     });

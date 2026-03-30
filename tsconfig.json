@@ -7,10 +7,6 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "types": [
-      "vitest/globals",
-      "google.maps"
-    ],
     "module": "ESNext",
     "skipLibCheck": true,
     /* Bundler mode */
