@@ -100,15 +100,12 @@ export const test = base.extend<AuthFixtures>({
 
             // Handle Listen/WebChannel streams (long-polling)
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                // Delay fulfillment to simulate a long-polling connection that hasn't received data yet.
-                // This prevents both infinite CPU-spinning retry loops AND immediate UI crashes (403).
-                await new Promise(resolve => setTimeout(resolve, 60000));
-                await route.fulfill({
-                    status: 200,
-                    headers: getCorsHeaders(route),
-                    contentType: 'application/json',
-                    body: JSON.stringify([])
-                });
+                // Delay fulfillment to throttle the Firebase SDK's infinite retry loop.
+                // We use 2000ms instead of 60000ms to ensure Playwright's test teardown 
+                // is not blocked for minutes waiting for route handlers to resolve,
+                // while still reducing network spam from 500 req/s to 0.5 req/s.
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                await route.abort('failed');
                 return;
             }
 
