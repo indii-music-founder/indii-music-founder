@@ -238,6 +238,24 @@ export const test = base.extend<AuthFixtures>({
             });
         });
 
+        // Intercept Firebase Installations API
+        await page.route('**/*installations.googleapis.com/**', async route => {
+            console.log(`[E2E] Intercepted Installations API: ${route.request().url()}`);
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    name: 'projects/mock-project/installations/mock-installation',
+                    fid: 'mock-installation-id',
+                    refreshToken: 'mock-refresh-token',
+                    authToken: {
+                        token: 'mock-auth-token',
+                        expiresIn: '604800s'
+                    }
+                })
+            });
+        });
+
         // Inject Mocks BEFORE navigation using a typed cast to avoid `any`
         await page.addInitScript(() => {
             const w = window as unknown as E2EWindowGlobals;
