@@ -57,13 +57,13 @@ describe('MembershipService (Ledger\'s Cost Predictor Integration)', () => {
     it('💸 "The Predictive Stop": Blocks Veo 3.1 generation if predicted cost exceeds budget', async () => {
         // 1. Setup: User has low funds remaining
         // Free Limit: $1.00. Current Spend: $0.98. Remaining: $0.02.
-        (getDoc as any).mockResolvedValue({
+        vi.mocked(getDoc).mockResolvedValue({
             exists: () => true,
             data: () => ({
                 totalSpend: 0.98,
                 updatedAt: Date.now()
             })
-        });
+        } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
         // 2. Mock Cost Predictor for Veo 3.1
         // Veo cost is typically $0.05 per generation (based on ai-models.ts or assumption)
@@ -94,13 +94,13 @@ describe('MembershipService (Ledger\'s Cost Predictor Integration)', () => {
     it('💸 allows Veo 3.1 generation if budget permits', async () => {
         // 1. Setup: User has funds
         // Current Spend: $0.50. Remaining: $0.50.
-        (getDoc as any).mockResolvedValue({
+        vi.mocked(getDoc).mockResolvedValue({
             exists: () => true,
             data: () => ({
                 totalSpend: 0.50,
                 updatedAt: Date.now()
             })
-        });
+        } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
         const VEO_COST = 0.05;
         vi.spyOn(CostPredictor, 'predictVideoCost').mockReturnValue({

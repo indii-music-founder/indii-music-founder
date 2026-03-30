@@ -60,9 +60,9 @@ describe('MembershipService (Ledger Subscription Gates)', () => {
         });
 
         // Default: No usage
-        (getDoc as any).mockResolvedValue({
+        vi.mocked(getDoc).mockResolvedValue({
             exists: () => false
-        });
+        } as Awaited<ReturnType<typeof getDoc>>);
     });
 
     it('💸 "Veo 3.1 Duration Gate": Blocks Free users from Long Form generation', async () => {
@@ -110,14 +110,14 @@ describe('MembershipService (Ledger Subscription Gates)', () => {
     });
 
     it('💸 "Upgrade Path": Provides actionable upsell message for blocked features', async () => {
-         const message = MembershipService.getUpgradeMessage('free', 'video');
-         expect(message).toContain('Upgrade to Pro');
-         expect(message).toContain('longer video durations');
+        const message = MembershipService.getUpgradeMessage('free', 'video');
+        expect(message).toContain('Upgrade to Pro');
+        expect(message).toContain('longer video durations');
     });
 
     it('💸 "Enterprise Scale": Allows Cinematic Duration (4 Hours)', async () => {
-         // Switch to Enterprise
-         mockGetState.mockReturnValue({
+        // Switch to Enterprise
+        mockGetState.mockReturnValue({
             userProfile: { id: MOCK_USER_ID },
             organizations: [{ id: 'org-1', plan: 'enterprise' }],
             currentOrganizationId: 'org-1'

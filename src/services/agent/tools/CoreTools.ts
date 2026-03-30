@@ -19,6 +19,7 @@ export const CoreTools = {
     delegate_task: wrapTool('delegate_task', async (args: {
         targetAgentId: string;
         task: string;
+        sharedContext?: string;
     }, context, toolContext) => {
         const { agentService } = await import('../AgentService');
         const { toolError } = await import('../utils/ToolUtils');
@@ -46,7 +47,13 @@ export const CoreTools = {
             );
         }
 
-        const result = await agentService.runAgent(args.targetAgentId, args.task, context, context?.traceId, context?.attachments);
+        // Inject shared inter-agent context if provided
+        const delegatedContext = {
+            ...context,
+            ...(args.sharedContext ? { sharedContext: args.sharedContext } : {})
+        };
+
+        const result = await agentService.runAgent(args.targetAgentId, args.task, delegatedContext, context?.traceId, context?.attachments);
         return {
             success: true,
             data: result,

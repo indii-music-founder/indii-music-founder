@@ -49,22 +49,22 @@ describe('MembershipService (Ledger Checks)', () => {
         });
 
         // Default: No usage recorded (New day)
-        (getDoc as any).mockResolvedValue({
+        vi.mocked(getDoc).mockResolvedValue({
             exists: () => false,
             data: () => undefined
-        });
+        } as unknown as Awaited<ReturnType<typeof getDoc>>);
     });
 
     describe('Circuit Breaker (Quota Enforcement)', () => {
         it('💸 allows generation when usage is below limit (Free Tier)', async () => {
             // Setup: Free tier allows 5 videos. User has 0.
-            (getDoc as any).mockResolvedValue({
+            vi.mocked(getDoc).mockResolvedValue({
                 exists: () => true,
                 data: () => ({
                     videosGenerated: 2, // 2/5
                     updatedAt: Date.now()
                 })
-            });
+            } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
             const result = await MembershipService.checkQuota('video', 1);
 
@@ -75,13 +75,13 @@ describe('MembershipService (Ledger Checks)', () => {
 
         it('💸 ACTIVATES STOP SWITCH when limit is reached (The "Hard Limit")', async () => {
             // Setup: Free tier limit is 5. User has 5.
-            (getDoc as any).mockResolvedValue({
+            vi.mocked(getDoc).mockResolvedValue({
                 exists: () => true,
                 data: () => ({
                     videosGenerated: 5, // 5/5
                     updatedAt: Date.now()
                 })
-            });
+            } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
             const result = await MembershipService.checkQuota('video', 1);
 
@@ -91,13 +91,13 @@ describe('MembershipService (Ledger Checks)', () => {
 
         it('💸 blocks "High Cost" operations if they would exceed quota', async () => {
             // Setup: User has 4/5 usage. Tries to make 2 videos.
-            (getDoc as any).mockResolvedValue({
+            vi.mocked(getDoc).mockResolvedValue({
                 exists: () => true,
                 data: () => ({
                     videosGenerated: 4, // 4/5
                     updatedAt: Date.now()
                 })
-            });
+            } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
             const result = await MembershipService.checkQuota('video', 2);
 
@@ -114,13 +114,13 @@ describe('MembershipService (Ledger Checks)', () => {
             });
 
             // User has 10 videos (would block Free, but allows Pro)
-            (getDoc as any).mockResolvedValue({
+            vi.mocked(getDoc).mockResolvedValue({
                 exists: () => true,
                 data: () => ({
                     videosGenerated: 10,
                     updatedAt: Date.now()
                 })
-            });
+            } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
             const result = await MembershipService.checkQuota('video', 1);
 
@@ -129,8 +129,8 @@ describe('MembershipService (Ledger Checks)', () => {
         });
 
         it('💸 handles Enterprise Unlimited logic', async () => {
-             // Setup: Upgrade user to Enterprise (Limit: 500 or -1 for projects)
-             mockGetState.mockReturnValue({
+            // Setup: Upgrade user to Enterprise (Limit: 500 or -1 for projects)
+            mockGetState.mockReturnValue({
                 userProfile: { id: MOCK_USER_ID },
                 organizations: [{ id: 'org-1', plan: 'enterprise' }],
                 currentOrganizationId: 'org-1'
@@ -146,9 +146,9 @@ describe('MembershipService (Ledger Checks)', () => {
     describe('Wallet Logic (Usage Deductions)', () => {
         it('💸 initializes "Wallet" (Usage Doc) if missing', async () => {
             // Setup: Doc does not exist
-            (getDoc as any).mockResolvedValue({
+            vi.mocked(getDoc).mockResolvedValue({
                 exists: () => false
-            });
+            } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
             await MembershipService.incrementUsage(MOCK_USER_ID, 'video', 1);
 
@@ -163,9 +163,9 @@ describe('MembershipService (Ledger Checks)', () => {
 
         it('💸 deducts credits (Increments Usage) correctly', async () => {
             // Setup: Doc exists
-            (getDoc as any).mockResolvedValue({
+            vi.mocked(getDoc).mockResolvedValue({
                 exists: () => true
-            });
+            } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
             await MembershipService.incrementUsage(MOCK_USER_ID, 'video', 1);
 
@@ -180,9 +180,9 @@ describe('MembershipService (Ledger Checks)', () => {
         });
 
         it('💸 tracks secondary costs (Video Seconds)', async () => {
-             (getDoc as any).mockResolvedValue({
+            vi.mocked(getDoc).mockResolvedValue({
                 exists: () => true
-            });
+            } as unknown as Awaited<ReturnType<typeof getDoc>>);
 
             const duration = 120; // 2 minutes
             await MembershipService.incrementUsage(MOCK_USER_ID, 'video', 1, duration);
@@ -199,13 +199,13 @@ describe('MembershipService (Ledger Checks)', () => {
 
     describe('Video Duration Gates', () => {
         it('💸 blocks "Free Tier" users from "Pro" duration jobs', async () => {
-             // Free Limit: 8 mins (480s)
-             const duration = 600; // 10 mins
+            // Free Limit: 8 mins (480s)
+            const duration = 600; // 10 mins
 
-             const result = await MembershipService.checkVideoDurationQuota(duration);
+            const result = await MembershipService.checkVideoDurationQuota(duration);
 
-             expect(result.allowed).toBe(false);
-             expect(result.maxDuration).toBe(480);
+            expect(result.allowed).toBe(false);
+            expect(result.maxDuration).toBe(480);
         });
 
         it('💸 allows "Pro" users to run longer jobs', async () => {
@@ -222,6 +222,6 @@ describe('MembershipService (Ledger Checks)', () => {
 
             expect(result.allowed).toBe(true);
             expect(result.maxDuration).toBe(3600);
-       });
+        });
     });
 });

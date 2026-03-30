@@ -44,11 +44,11 @@ vi.mock('firebase/firestore', () => ({
         const key = ref as string;
         if (options?.merge) {
             const current = MOCK_DB[key] || {};
-            const processedUpdates: any = {};
-            for (const [k, v] of Object.entries(data)) {
-                if (v && typeof v === 'object' && (v as any)._type === 'increment') {
+            const processedUpdates: Record<string, unknown> = {};
+            for (const [k, v] of Object.entries(data as Record<string, unknown>)) {
+                if (v && typeof v === 'object' && '_type' in v && v._type === 'increment') {
                     const currentVal = (current[k] || 0) as number;
-                    const newVal = currentVal + (v as any).value;
+                    const newVal = currentVal + (v as unknown as { value: number }).value;
                     processedUpdates[k] = parseFloat(newVal.toFixed(2));
                 } else {
                     processedUpdates[k] = v;
@@ -144,7 +144,7 @@ describe('MembershipService (Ledger Alerts)', () => {
 
         // In a real UI, this low remainingBudget would trigger a yellow/red alert
         if (check.remainingBudget < 0.20) {
-             console.log(`   ⚠️ BUDGET ALERT: Low Funds! Only $${check.remainingBudget.toFixed(2)} left.`);
+            console.log(`   ⚠️ BUDGET ALERT: Low Funds! Only $${check.remainingBudget.toFixed(2)} left.`);
         }
     });
 });

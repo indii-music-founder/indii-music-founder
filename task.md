@@ -50,9 +50,9 @@
 
 | ID | Task | Status | Source |
 | :--- | :--- | :--- | :--- |
-| 8.1 | Consolidate indii Conductor routing logic (`agent0`) for multi-agent delegation | [ ] | Session |
-| 8.2 | Shared Agent Memory (Inter-Agent Context) implementation | [ ] | Session |
-| 8.3 | Construct test suite for Multi-Agent flow (Conductor -> Specialist -> Action) | [ ] | Session |
+| 8.1 | Consolidate indii Conductor routing logic (`agent0`) for multi-agent delegation | [x] | Session |
+| 8.2 | Shared Agent Memory (Inter-Agent Context) implementation | [x] | Session |
+| 8.3 | Construct test suite for Multi-Agent flow (Conductor -> Specialist -> Action) | [x] | Session |
 
 ---
 *Self-managed task list for Antigravity.*

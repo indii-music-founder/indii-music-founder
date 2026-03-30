@@ -30,10 +30,10 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal() as any;
+    const actual = await importOriginal<typeof import('firebase/firestore')>();
     return {
-        serverTimestamp: vi.fn(),
         ...actual,
+        serverTimestamp: vi.fn(),
         doc: vi.fn(() => ({ id: 'mock-doc-ref', path: 'videoJobs/mock-doc-ref' })),
         setDoc: vi.fn().mockResolvedValue(undefined),
         updateDoc: vi.fn().mockResolvedValue(undefined),
@@ -134,13 +134,13 @@ describe('VideoGenerationService', () => {
             };
 
             // Mock onSnapshot to simulate job progression
-            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+            vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
                 // 1. Pending
                 callback({
                     exists: () => true,
                     id: mockJobId,
                     data: () => ({ serverTimestamp: vi.fn(), status: 'pending' })
-                } as any);
+                } as unknown as import('firebase/firestore').DocumentSnapshot);
 
                 // 2. Completed (Simulating async update)
                 setTimeout(() => {
@@ -148,24 +148,24 @@ describe('VideoGenerationService', () => {
                         exists: () => true,
                         id: mockJobId,
                         data: () => mockVeoMetadata
-                    } as any);
+                    } as unknown as import('firebase/firestore').DocumentSnapshot);
                 }, 10);
 
                 return vi.fn(); // Unsubscribe mock
-            });
+            }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
             const job = await VideoGeneration.waitForJob(mockJobId);
 
             expect(job.status).toBe('completed');
             expect(job.url).toBe(mockVeoMetadata.url);
-            expect((job.metadata as any).fps).toBe(24);
-            expect((job.metadata as any).mime_type).toBe('video/mp4');
+            expect((job.metadata as unknown as Record<string, unknown>).fps).toBe(24);
+            expect((job.metadata as unknown as Record<string, unknown>).mime_type).toBe('video/mp4');
         });
 
         it('should reject when job status is failed (SafetySettings)', async () => {
             const mockJobId = 'unsafe-job';
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+            vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
                 setTimeout(() => {
                     callback({
                         exists: () => true,
@@ -175,10 +175,10 @@ describe('VideoGenerationService', () => {
                             status: 'failed',
                             error: 'Safety violation: Content blocked by safety filters.'
                         })
-                    } as any);
+                    } as unknown as import('firebase/firestore').DocumentSnapshot);
                 }, 10);
                 return vi.fn();
-            });
+            }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
             await expect(VideoGeneration.waitForJob(mockJobId))
                 .rejects.toThrow('Safety violation');
@@ -188,14 +188,14 @@ describe('VideoGenerationService', () => {
             const mockJobId = 'slow-pro-job';
 
             // Simulate a job that never completes within the test timeout
-            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+            vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
                     data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
-                } as any);
+                } as unknown as import('firebase/firestore').DocumentSnapshot);
                 return vi.fn();
-            });
+            }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
             // Use a short timeout for the test
             const SHORT_TIMEOUT = 100;

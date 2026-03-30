@@ -72,7 +72,7 @@ describe('DSRService', () => {
             tracks: [],
             copyrightYear: '2024',
             copyrightOwner: 'Test Label'
-        } as any;
+        } as unknown as ExtendedGoldenMetadata;
 
         const catalog = new Map<string, ExtendedGoldenMetadata>();
         catalog.set('US1234567890', mockMetadata);
