@@ -67,15 +67,15 @@ describe('DashboardService - Sales Analytics', () => {
         const { getDoc } = await import('firebase/firestore');
 
         // Mock User
-        (useStore.getState as any).mockReturnValue({
+        vi.mocked(useStore.getState).mockReturnValue({
             userProfile: { id: 'test-user-id' }
         });
 
         // Mock Firestore Response
-        (getDoc as any).mockResolvedValue({
+        vi.mocked(getDoc).mockResolvedValue({
             exists: () => true,
             data: () => validSalesData
-        });
+        } as unknown as import('firebase/firestore').DocumentSnapshot<import('firebase/firestore').DocumentData>);
 
         const result = await DashboardService.getSalesAnalytics();
 
@@ -87,7 +87,7 @@ describe('DashboardService - Sales Analytics', () => {
         const { useStore } = await import('@/core/store');
         const { getDoc } = await import('firebase/firestore');
 
-        (useStore.getState as any).mockReturnValue({
+        vi.mocked(useStore.getState).mockReturnValue({
             userProfile: { id: 'test-user-id' }
         });
 
@@ -101,10 +101,10 @@ describe('DashboardService - Sales Analytics', () => {
             period: '30d'
         };
 
-        (getDoc as any).mockResolvedValue({
+        vi.mocked(getDoc).mockResolvedValue({
             exists: () => true,
             data: () => invalidData
-        });
+        } as unknown as import('firebase/firestore').DocumentSnapshot<import('firebase/firestore').DocumentData>);
 
         const result = await DashboardService.getSalesAnalytics();
 
@@ -128,11 +128,11 @@ describe('DashboardService - Sales Analytics', () => {
         const { useStore } = await import('@/core/store');
         const { getDoc } = await import('firebase/firestore');
 
-        (useStore.getState as any).mockReturnValue({
+        vi.mocked(useStore.getState).mockReturnValue({
             userProfile: { id: 'test-user-id' }
         });
 
-        (getDoc as any).mockRejectedValue(new Error("Connection failed"));
+        vi.mocked(getDoc).mockRejectedValue(new Error("Connection failed"));
 
         const result = await DashboardService.getSalesAnalytics();
 
@@ -150,9 +150,9 @@ describe('DashboardService - Sales Analytics', () => {
         const { useStore } = await import('@/core/store');
         const { getDoc } = await import('firebase/firestore');
 
-        (useStore.getState as any).mockReturnValue({
-            userProfile: null
-        });
+        vi.mocked(useStore.getState).mockReturnValue({
+            userProfile: { id: 'test-user-id' } as unknown as import('@/modules/workflow/types').UserProfile
+        } as unknown as import('@/core/store').StoreState);
 
         const result = await DashboardService.getSalesAnalytics();
 
@@ -167,7 +167,7 @@ describe('DashboardService - Sales Analytics', () => {
     it('should ensure the hardcoded fallback data itself complies with the schema', async () => {
         // Force fallback by having no user
         const { useStore } = await import('@/core/store');
-        (useStore.getState as any).mockReturnValue({ userProfile: null });
+        vi.mocked(useStore.getState).mockReturnValue({ userProfile: null } as unknown as import('@/core/store').StoreState);
 
         const result = await DashboardService.getSalesAnalytics();
 

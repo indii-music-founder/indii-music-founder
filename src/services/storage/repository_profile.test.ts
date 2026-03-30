@@ -16,7 +16,7 @@ const mockObjectStoreNames = {
 
 // Mock idb
 vi.mock('idb', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     openDB: vi.fn().mockImplementation(() => Promise.resolve({
         put: mockPut,
         get: mockGet,
@@ -27,14 +27,14 @@ vi.mock('idb', () => ({
 
 // Mock Firebase
 vi.mock('../firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     db: {},
     storage: {},
     auth: { currentUser: { uid: 'test-user-uid' } }
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     doc: vi.fn(),
     setDoc: vi.fn(),
     getDoc: vi.fn().mockResolvedValue({ exists: () => false }), // Default to not found in cloud
@@ -43,7 +43,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('firebase/storage', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     ref: vi.fn(),
     uploadBytes: vi.fn(),
     getBlob: vi.fn(),
@@ -56,9 +56,9 @@ describe('Profile Persistence', () => {
         email: 'guest@example.com',
         displayName: 'Guest User',
         photoURL: null,
-        createdAt: { seconds: 0, nanoseconds: 0 } as any,
-        updatedAt: { seconds: 0, nanoseconds: 0 } as any,
-        lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+        createdAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+        updatedAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+        lastLoginAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
         emailVerified: true,
         membership: { tier: 'free', expiresAt: null },
         accountType: 'artist',

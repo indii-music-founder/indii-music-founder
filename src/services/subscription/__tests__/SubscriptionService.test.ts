@@ -52,8 +52,8 @@ describe('SubscriptionService', () => {
         service = new SubscriptionService();
 
         // Setup generic httpsCallable mock
-        (httpsCallable as any).mockImplementation((_functions: any, name: string) => {
-            return mockFunctions[name as keyof typeof mockFunctions];
+        vi.mocked(httpsCallable).mockImplementation((_functions: any, name: string) => {
+            return mockFunctions[name as keyof typeof mockFunctions] as unknown as ReturnType<typeof httpsCallable>;
         });
     });
 
@@ -72,7 +72,7 @@ describe('SubscriptionService', () => {
             };
 
             // Inject into private cache map via type casting or just mock cacheService
-            (cacheService.get as any).mockReturnValue(mockSub);
+            vi.mocked(cacheService.get).mockReturnValue(mockSub);
 
             const result = await service.getSubscription('test-user-id');
             expect(result).toBe(mockSub);
@@ -80,7 +80,7 @@ describe('SubscriptionService', () => {
         });
 
         it('should fetch from firebase if not cached', async () => {
-            (cacheService.get as any).mockReturnValue(null);
+            vi.mocked(cacheService.get).mockReturnValue(null);
 
             const mockSub = {
                 id: 'sub_remote',
@@ -117,7 +117,7 @@ describe('SubscriptionService', () => {
                 createdAt: 1000,
                 updatedAt: 1000
             };
-            (cacheService.get as any).mockImplementation((key: string) => {
+            vi.mocked(cacheService.get).mockImplementation((key: string) => {
                 if (key.startsWith('subscription:')) return mockSub;
                 // Mock usage cache lookup failure to force "fetch" but we'll intercept the fetch
                 return null;
@@ -251,7 +251,7 @@ describe('SubscriptionService', () => {
                     maxTeamMembers: 5
                 }
             });
-            (cacheService.get as any).mockReturnValue(mockSub);
+            vi.mocked(cacheService.get).mockReturnValue(mockSub);
 
             const warnings = await service.getUsageWarnings('test-user-id');
             expect(warnings).toHaveLength(0);
@@ -264,7 +264,7 @@ describe('SubscriptionService', () => {
             const used = Math.floor(limit * 0.9); // 90%
 
             mockFunctions.getSubscription.mockResolvedValue({ data: mockSub });
-            (cacheService.get as any).mockReturnValue(mockSub);
+            vi.mocked(cacheService.get).mockReturnValue(mockSub);
 
             mockFunctions.getUsageStats.mockResolvedValue({
                 data: {
@@ -304,7 +304,7 @@ describe('SubscriptionService', () => {
             const limit = config.videoGenerations.totalDurationMinutes;
 
             mockFunctions.getSubscription.mockResolvedValue({ data: mockSub });
-            (cacheService.get as any).mockReturnValue(mockSub);
+            vi.mocked(cacheService.get).mockReturnValue(mockSub);
 
             mockFunctions.getUsageStats.mockResolvedValue({
                 data: {

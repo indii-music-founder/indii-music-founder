@@ -180,6 +180,8 @@ export interface AgentContext {
     systemPrompt?: string;
     whiskState?: WhiskState;
     livingContext?: string;
+    /** Shared memory context explicitly passed between agents during delegation */
+    sharedContext?: string;
     /** When set by ProactiveService, carries the triggering proactive task metadata */
     proactiveTask?: ProactiveTask;
     /** The trigger type that caused this agent execution (schedule, event, etc.) */
