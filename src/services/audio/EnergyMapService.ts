@@ -13,7 +13,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
-import type { AudioFeatures } from './AudioAnalysisService';
+import type { AudioFeatures } from './types';
 
 export interface EmotionalBeat {
     /** Timestamp in seconds where this emotional beat occurs */
@@ -138,7 +138,7 @@ RULES:
     private formatSegments(segments?: AudioFeatures['segments']): string {
         if (!segments?.length) return '';
         return segments
-            .map(s => `${s.start.toFixed(0)}s: ${s.label} (energy ${(s.energy * 100).toFixed(0)}%)`)
+            .map((s: { start: number; label: string; energy: number }) => `${s.start.toFixed(0)}s: ${s.label} (energy ${(s.energy * 100).toFixed(0)}%)`)
             .join(', ');
     }
 
