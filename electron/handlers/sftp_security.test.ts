@@ -53,6 +53,18 @@ vi.mock('../services/SFTPService', () => ({
     sftpService: mocks.sftpService
 }));
 
+// Mock keytar to prevent native binding requirements in CI
+vi.mock('keytar', () => ({
+    default: {
+        getPassword: vi.fn(() => Promise.resolve(null)),
+        setPassword: vi.fn(() => Promise.resolve()),
+        deletePassword: vi.fn(() => Promise.resolve())
+    },
+    getPassword: vi.fn(() => Promise.resolve(null)),
+    setPassword: vi.fn(() => Promise.resolve()),
+    deletePassword: vi.fn(() => Promise.resolve())
+}));
+
 // Import the handler registration function
 import { registerSFTPHandlers } from './sftp';
 
@@ -62,8 +74,8 @@ describe('🛡️ Shield: SFTP Security Integration Test', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Prevent ZodError formatting crash in Vitest's console serializer
-        vi.spyOn(console, 'error').mockImplementation(() => {});
-        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => { });
+        vi.spyOn(console, 'warn').mockImplementation(() => { });
         handlers = {};
 
         // Capture handlers when they are registered
