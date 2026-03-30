@@ -129,7 +129,7 @@ describe('ContextManager Stress Tests', () => {
                     role: 'model',
                     parts: [{
                         functionCall: { name: 'gen_image', args: { prompt: 'cat' } }
-                    } as any]
+                    } as unknown as Content['parts'][0]]
                 });
             }
         }

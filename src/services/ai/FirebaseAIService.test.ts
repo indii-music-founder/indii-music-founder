@@ -226,7 +226,7 @@ describe('FirebaseAIService', () => {
             response: { text: () => JSON.stringify({ test: 'success' }) }
         });
 
-        const result = await service.generateStructuredData('Prompt', schema as any);
+        const result = await service.generateStructuredData('Prompt', schema as Parameters<typeof service.generateStructuredData>[1]);
         expect(result).toEqual({ test: 'success' });
 
         const { getGenerativeModel } = await import('firebase/ai');
@@ -303,7 +303,7 @@ describe('FirebaseAIService', () => {
     it('should fall back to direct SDK on App Check failure', async () => {
         // Force primary model to fail with App Check error during bootstrap
         const { fetchAndActivate } = await import('firebase/remote-config');
-        (fetchAndActivate as any).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
+        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
         await service.bootstrap();
         expect(service['useFallbackMode']).toBe(true);
@@ -320,7 +320,7 @@ describe('FirebaseAIService', () => {
 
     it('should falling back if bootstrap fails (Resilience)', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
-        (fetchAndActivate as any).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
+        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
         // Should NOT throw, but enter fallback mode
         await service.bootstrap();
@@ -330,7 +330,7 @@ describe('FirebaseAIService', () => {
     it('should throw if BOTH primary and fallback fail', async () => {
         // Force fallback mode, but with a broken client
         const { fetchAndActivate } = await import('firebase/remote-config');
-        (fetchAndActivate as any).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
+        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
         // Corrupt the fallback client to simulate total failure
         await service.bootstrap();
@@ -417,7 +417,7 @@ describe('FirebaseAIService', () => {
         // Mock a failure that resembles the Installations error
         const errMsg = 'Installations: Create Installation request failed with error "403 PERMISSION_DENIED"';
         const { fetchAndActivate } = await import('firebase/remote-config');
-        (fetchAndActivate as any).mockRejectedValueOnce(new Error(errMsg));
+        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error(errMsg));
 
         // Should NOT throw
         await service.bootstrap();

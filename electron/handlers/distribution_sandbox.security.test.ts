@@ -65,12 +65,7 @@ vi.mock('../utils/validation', () => ({
         parse: vi.fn((data: { releaseId: string; files: Array<{ type: string; name: string; data: string }> }) => {
             for (const file of data.files) {
                 if (file.name.includes('..') || file.name.startsWith('/') || file.name.includes('\\')) {
-                    const err = new Error('Validation');
-                    Object.assign(err, {
-                        name: 'ZodError',
-                        errors: [{ message: 'File name must not contain path traversal characters' }]
-                    });
-                    throw err;
+                    throw new Error('File name must not contain path traversal characters');
                 }
             }
             return data;

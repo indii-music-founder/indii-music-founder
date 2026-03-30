@@ -11,7 +11,7 @@ import type { ReleaseAssets, DistributorAdapter } from '@/services/distribution/
 
 // Mock Electron API for distribution
 if (typeof window !== 'undefined') {
-    (window as any).electronAPI = {
+    (window as unknown as { electronAPI: any }).electronAPI = {
         sftp: {
             put: vi.fn().mockResolvedValue(true),
             disconnect: vi.fn().mockResolvedValue(true),

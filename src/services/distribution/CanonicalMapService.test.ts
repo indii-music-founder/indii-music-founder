@@ -1,7 +1,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { CanonicalMapService } from './CanonicalMapService';
-import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
+import { ExtendedGoldenMetadata, GoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 
 describe('CanonicalMapService', () => {
     it('should validate a correct hierarchy (ISWC -> ISRC -> UPC)', () => {
@@ -15,9 +15,9 @@ describe('CanonicalMapService', () => {
                     trackTitle: 'Track 1',
                     isrc: 'US-XYZ',
                     iswc: 'T-123'
-                }
+                } as GoldenMetadata
             ]
-        } as any;
+        } as ExtendedGoldenMetadata;
 
         const result = CanonicalMapService.validateHierarchy(metadata);
         expect(result.valid).toBe(true);
@@ -28,7 +28,7 @@ describe('CanonicalMapService', () => {
             ...INITIAL_METADATA,
             // No UPC
             tracks: []
-        } as any;
+        } as ExtendedGoldenMetadata;
 
         const result = CanonicalMapService.validateHierarchy(metadata);
         expect(result.valid).toBe(false);
@@ -44,9 +44,9 @@ describe('CanonicalMapService', () => {
                     ...INITIAL_METADATA,
                     trackTitle: 'No ISRC Track',
                     isrc: ''
-                }
+                } as GoldenMetadata
             ]
-        } as any;
+        } as ExtendedGoldenMetadata;
 
         const result = CanonicalMapService.validateHierarchy(metadata);
         expect(result.valid).toBe(false);
@@ -63,9 +63,9 @@ describe('CanonicalMapService', () => {
                     trackTitle: 'No ISWC Track',
                     isrc: 'US-XYZ',
                     iswc: ''
-                }
+                } as GoldenMetadata
             ]
-        } as any;
+        } as ExtendedGoldenMetadata;
 
         const result = CanonicalMapService.validateHierarchy(metadata);
         expect(result.valid).toBe(false);

@@ -17,6 +17,7 @@ import { onboardingAnalytics } from '@/services/onboarding/onboardingAnalytics';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { validateOptions, isSemanticallySimilar, OPENING_GREETINGS } from '../onboardingUtils';
+import { secureRandomPick } from '@/utils/crypto-random';
 
 export interface HistoryItem {
     role: string;
@@ -81,7 +82,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
     // Initial greeting — intentionally only fires once on mount
     useEffect(() => {
         if (history.length === 0) {
-            const randomGreeting = greetingsToUse[Math.floor(Math.random() * greetingsToUse.length)];
+            const randomGreeting = secureRandomPick(greetingsToUse);
             setHistory([{ role: 'model', parts: [{ text: randomGreeting ?? '' }] }]);
             if (shouldTrackAnalytics) {
                 onboardingAnalytics.start();
@@ -286,7 +287,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                     `Lost the thread there for a second. What were you saying?`,
                     `Connection blip. Run that by me again?`,
                 ];
-                errorText = errorResponses[Math.floor(Math.random() * errorResponses.length)] ?? '';
+                errorText = secureRandomPick(errorResponses);
             }
 
             setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorText }] }]);

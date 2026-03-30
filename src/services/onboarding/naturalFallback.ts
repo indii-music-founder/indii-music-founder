@@ -7,6 +7,8 @@
 
 export type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes' | 'distributor' | 'colorPalette' | 'typography' | 'aestheticStyle';
 
+import { secureRandomPick, secureRandomInt } from '@/utils/crypto-random';
+
 // Educational context for each topic - helps users understand WHY we need this info
 const topicContext: Record<TopicKey, { name: string; why: string; examples: string[] }> = {
     bio: {
@@ -137,7 +139,7 @@ const transitions = {
 };
 
 function randomPick<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)]!;
+    return secureRandomPick(arr);
 }
 
 export function generateNaturalFallback(
@@ -167,10 +169,10 @@ export function generateNaturalFallback(
     const transition = randomPick([...transitions.natural, ...transitions.curious]);
 
     // ~30% chance to include the "why" explanation (educational)
-    const includeWhy = Math.random() < 0.3;
+    const includeWhy = secureRandomInt(0, 100) < 30;
 
     // ~20% chance to include examples
-    const includeExamples = Math.random() < 0.2 && !includeWhy;
+    const includeExamples = secureRandomInt(0, 100) < 20 && !includeWhy;
 
     let response = ack ? `${ack} ` : '';
 

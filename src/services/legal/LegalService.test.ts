@@ -41,7 +41,7 @@ vi.mock('@/core/store', () => ({
 describe('LegalService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore.getState as any).mockReturnValue({ userProfile: { id: 'test-user-id' } });
+        vi.mocked(useStore.getState).mockReturnValue({ userProfile: { id: 'test-user-id' } } as unknown as ReturnType<typeof useStore.getState>);
     });
 
     // ── Contracts ──────────────────────────────────────────────────────────
@@ -56,22 +56,22 @@ describe('LegalService', () => {
     });
 
     it('throws when saving a contract without authentication', async () => {
-        (useStore.getState as any).mockReturnValue({ userProfile: null });
-        await expect(LegalService.saveContract({} as any)).rejects.toThrow('User not authenticated');
+        vi.mocked(useStore.getState).mockReturnValue({ userProfile: null } as unknown as ReturnType<typeof useStore.getState>);
+        await expect(LegalService.saveContract({} as unknown as Parameters<typeof LegalService.saveContract>[0])).rejects.toThrow('User not authenticated');
     });
 
     it('returns empty array for getContracts when unauthenticated', async () => {
-        (useStore.getState as any).mockReturnValue({ userProfile: null });
+        vi.mocked(useStore.getState).mockReturnValue({ userProfile: null } as unknown as ReturnType<typeof useStore.getState>);
         const result = await LegalService.getContracts();
         expect(result).toEqual([]);
     });
 
     it('returns mapped contracts from getContracts', async () => {
-        (getDocs as any).mockResolvedValueOnce({
+        vi.mocked(getDocs).mockResolvedValueOnce({
             docs: [
                 { id: 'c-1', data: () => ({ title: 'NDA', type: 'NDA', parties: [], content: '', status: 'draft' }) }
             ]
-        });
+        } as unknown as import('firebase/firestore').QuerySnapshot<import('firebase/firestore').DocumentData>);
         const contracts = await LegalService.getContracts();
         expect(contracts).toHaveLength(1);
         expect(contracts[0]!.id).toBe('c-1');
@@ -91,14 +91,14 @@ describe('LegalService', () => {
         expect(id).toBe('mock-doc-id');
         expect(addDoc).toHaveBeenCalledOnce();
         // Verify the payload includes savedAt (serverTimestamp)
-        const [, payload] = (addDoc as any).mock.calls[0];
+        const [, payload] = vi.mocked(addDoc).mock.calls[0] as unknown as [unknown, { fileName: string, score: number, savedAt: string }];
         expect(payload.fileName).toBe('contract.pdf');
         expect(payload.score).toBe(85);
         expect(payload.savedAt).toBe('mock-timestamp');
     });
 
     it('saveAnalysis silently returns empty string when unauthenticated', async () => {
-        (useStore.getState as any).mockReturnValue({ userProfile: null });
+        vi.mocked(useStore.getState).mockReturnValue({ userProfile: null } as unknown as ReturnType<typeof useStore.getState>);
         const id = await LegalService.saveAnalysis({
             fileName: 'contract.pdf', score: 50, summary: 'ok',
             risks: [], analyzedAt: new Date().toISOString(),
@@ -108,18 +108,18 @@ describe('LegalService', () => {
     });
 
     it('getAnalyses returns empty array when unauthenticated', async () => {
-        (useStore.getState as any).mockReturnValue({ userProfile: null });
+        vi.mocked(useStore.getState).mockReturnValue({ userProfile: null } as unknown as ReturnType<typeof useStore.getState>);
         const result = await LegalService.getAnalyses();
         expect(result).toEqual([]);
     });
 
     it('getAnalyses returns mapped analysis records from Firestore', async () => {
-        (getDocs as any).mockResolvedValueOnce({
+        vi.mocked(getDocs).mockResolvedValueOnce({
             docs: [
                 { id: 'a-1', data: () => ({ fileName: 'deal.pdf', score: 72, summary: 'Good deal.', risks: ['IP clause'], analyzedAt: '2026-03-10T00:00:00.000Z' }) },
                 { id: 'a-2', data: () => ({ fileName: 'mgmt.pdf', score: 90, summary: 'Excellent.', risks: [], analyzedAt: '2026-03-15T00:00:00.000Z' }) }
             ]
-        });
+        } as unknown as import('firebase/firestore').QuerySnapshot<import('firebase/firestore').DocumentData>);
         const analyses = await LegalService.getAnalyses();
         expect(analyses).toHaveLength(2);
         expect(analyses[0]!.id).toBe('a-1');

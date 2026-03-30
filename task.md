@@ -46,5 +46,13 @@
 | 7.6 | `WorkflowPanel` + `KnowledgePanel` right-panel sub-components | [x] | User request |
 | 7.7 | E2E Firestore listener hang fix (distribution-workflow.spec.ts) | [x] | CI stability |
 
+## Sprint 8 — The Multi-Agent Swarm (Indii Conductor Expansion)
+
+| ID | Task | Status | Source |
+| :--- | :--- | :--- | :--- |
+| 8.1 | Consolidate indii Conductor routing logic (`agent0`) for multi-agent delegation | [ ] | Session |
+| 8.2 | Shared Agent Memory (Inter-Agent Context) implementation | [ ] | Session |
+| 8.3 | Construct test suite for Multi-Agent flow (Conductor -> Specialist -> Action) | [ ] | Session |
+
 ---
 *Self-managed task list for Antigravity.*

@@ -24,9 +24,9 @@ describe('onboardingService', () => {
                 email: 'test@example.com',
                 displayName: 'Test User',
                 photoURL: null,
-                createdAt: { seconds: 0, nanoseconds: 0 } as any,
-                updatedAt: { seconds: 0, nanoseconds: 0 } as any,
-                lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+                createdAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+                updatedAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+                lastLoginAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
                 emailVerified: true,
                 membership: { tier: 'free', expiresAt: null },
                 accountType: 'artist',
@@ -69,9 +69,9 @@ describe('onboardingService', () => {
             email: 'test@example.com',
             displayName: 'Test User',
             photoURL: null,
-            createdAt: { seconds: 0, nanoseconds: 0 } as any,
-            updatedAt: { seconds: 0, nanoseconds: 0 } as any,
-            lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+            createdAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+            updatedAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+            lastLoginAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
             emailVerified: true,
             membership: { tier: 'free', expiresAt: null },
             accountType: 'artist',
@@ -123,9 +123,9 @@ describe('onboardingService', () => {
             email: 'test@example.com',
             displayName: 'Test User',
             photoURL: null,
-            createdAt: { seconds: 0, nanoseconds: 0 } as any,
-            updatedAt: { seconds: 0, nanoseconds: 0 } as any,
-            lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+            createdAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+            updatedAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+            lastLoginAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
             emailVerified: true,
             membership: { tier: 'free', expiresAt: null },
             accountType: 'artist',
@@ -257,8 +257,8 @@ describe('onboardingService', () => {
                     functionCalls: () => {
                         const parts = mockResponse.response.candidates[0]!.content.parts;
                         return parts
-                            .filter((p: any) => 'functionCall' in p)
-                            .map((p: any) => p.functionCall);
+                            .filter((p: import('@google/genai').Part) => 'functionCall' in p)
+                            .map((p: import('@google/genai').Part) => p.functionCall);
                     },
                     candidates: [{
                         content: {
@@ -270,11 +270,11 @@ describe('onboardingService', () => {
                     }]
                 }
             };
-            (AI.generateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
+            vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
             const result = await runOnboardingConversation(
                 [{ role: 'user', parts: [{ text: 'hi' }] }],
-                {} as UserProfile,
+                {} as unknown as UserProfile,
                 'onboarding'
             );
 

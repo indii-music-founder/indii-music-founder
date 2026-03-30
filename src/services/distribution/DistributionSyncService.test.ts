@@ -65,7 +65,7 @@ describe('DistributionSyncService', () => {
             ]
         };
 
-        (getDocs as any).mockResolvedValueOnce(mockSnapshot);
+        vi.mocked(getDocs).mockResolvedValueOnce(mockSnapshot as unknown as Awaited<ReturnType<typeof getDocs>>);
 
         const result = await DistributionSyncService.fetchReleases('org-1');
 
@@ -93,9 +93,9 @@ describe('DistributionSyncService', () => {
             distributors: []
         };
 
-        (getDocs as any).mockResolvedValueOnce({
+        vi.mocked(getDocs).mockResolvedValueOnce({
             docs: [{ id: 'doc-2', data: () => mockData }]
-        });
+        } as unknown as Awaited<ReturnType<typeof getDocs>>);
 
         const result = await DistributionSyncService.fetchReleases('org-1');
         expect(result[0]!.title).toBe('Single Title');
@@ -113,7 +113,7 @@ describe('DistributionSyncService', () => {
             data: () => mockReleaseData
         };
 
-        (getDoc as any).mockResolvedValueOnce(mockDocSnapshot);
+        vi.mocked(getDoc).mockResolvedValueOnce(mockDocSnapshot as unknown as Awaited<ReturnType<typeof getDoc>>);
 
         const result = await DistributionSyncService.getRelease('release-123');
         expect(result).toEqual(mockReleaseData);
@@ -125,7 +125,7 @@ describe('DistributionSyncService', () => {
         const mockDocSnapshot = {
             exists: () => false,
         };
-        (getDoc as any).mockResolvedValueOnce(mockDocSnapshot);
+        vi.mocked(getDoc).mockResolvedValueOnce(mockDocSnapshot as unknown as Awaited<ReturnType<typeof getDoc>>);
 
         const result = await DistributionSyncService.getRelease('non-existent');
         expect(result).toBeNull();

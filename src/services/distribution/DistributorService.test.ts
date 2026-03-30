@@ -44,7 +44,7 @@ vi.mock('@/core/store', () => ({
 const mockAdapter1: DistributorAdapter = {
   id: 'distrokid',
   name: 'DistroKid',
-  requirements: {} as any,
+  requirements: {} as unknown as DistributorAdapter['requirements'],
   isConnected: vi.fn(),
   connect: vi.fn(),
   disconnect: vi.fn(),
@@ -61,7 +61,7 @@ const mockAdapter1: DistributorAdapter = {
 const mockAdapter2: DistributorAdapter = {
   id: 'tunecore',
   name: 'TuneCore',
-  requirements: {} as any,
+  requirements: {} as unknown as DistributorAdapter['requirements'],
   isConnected: vi.fn(),
   connect: vi.fn(),
   disconnect: vi.fn(),
@@ -90,8 +90,8 @@ describe('DistributorService.getAggregatedEarnings', () => {
     const releaseId = 'release-123';
 
     // Mock isConnected to return true
-    (mockAdapter1.isConnected as any).mockResolvedValue(true);
-    (mockAdapter2.isConnected as any).mockResolvedValue(true);
+    vi.mocked(mockAdapter1.isConnected).mockResolvedValue(true);
+    vi.mocked(mockAdapter2.isConnected).mockResolvedValue(true);
 
     // Mock earnings from Adapter 1 (USD)
     const earnings1: DistributorEarnings = {
@@ -107,7 +107,7 @@ describe('DistributorService.getAggregatedEarnings', () => {
       lastUpdated: '2023-02-01T00:00:00Z',
       breakdown: []
     };
-    (mockAdapter1.getEarnings as any).mockResolvedValue(earnings1);
+    vi.mocked(mockAdapter1.getEarnings).mockResolvedValue(earnings1);
 
     // Mock earnings from Adapter 2 (EUR)
     const earnings2: DistributorEarnings = {
@@ -123,11 +123,11 @@ describe('DistributorService.getAggregatedEarnings', () => {
       lastUpdated: '2023-02-01T00:00:00Z',
       breakdown: []
     };
-    (mockAdapter2.getEarnings as any).mockResolvedValue(earnings2);
+    vi.mocked(mockAdapter2.getEarnings).mockResolvedValue(earnings2);
 
     // Mock Currency Conversion
     // 1 USD = 1 USD
-    (currencyConversionService.convert as any).mockImplementation((amount: number, from: string, to: string) => {
+    vi.mocked(currencyConversionService.convert).mockImplementation((amount: number, from: string, to?: string) => {
       if (from === to) return Promise.resolve(amount);
       if (from === 'USD' && to === 'EUR') return Promise.resolve(amount * 0.92);
       if (from === 'EUR' && to === 'USD') return Promise.resolve(amount * 1.08); // Approx
@@ -159,23 +159,23 @@ describe('DistributorService.createRelease', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     DistributorService.registerAdapter(mockAdapter1);
-    (mockAdapter1.createRelease as any).mockResolvedValue({
+    vi.mocked(mockAdapter1.createRelease).mockResolvedValue({
       success: true,
       status: 'delivered',
       distributorReleaseId: 'DIST-123'
     });
-    (mockAdapter1.validateMetadata as any).mockResolvedValue({ isValid: true, errors: [], warnings: [] });
-    (mockAdapter1.validateAssets as any).mockResolvedValue({ isValid: true, errors: [], warnings: [] });
+    vi.mocked(mockAdapter1.validateMetadata).mockResolvedValue({ isValid: true, errors: [], warnings: [] });
+    vi.mocked(mockAdapter1.validateAssets).mockResolvedValue({ isValid: true, errors: [], warnings: [] });
 
     // Mock store creation return
     const mockDeployment = { id: 'deploy-123' };
-    (distributionStore.createDeployment as any).mockResolvedValue(mockDeployment);
+    vi.mocked(distributionStore.createDeployment).mockResolvedValue(mockDeployment as any);
   });
 
   it('should pass userId and orgId to persistence service', async () => {
     // Arrange
-    const metadata = { id: 'rel-1', trackTitle: 'Test', artistName: 'Artist' } as any;
-    const assets = { coverArt: { url: 'http://test.com/img.jpg' } } as any;
+    const metadata = { id: 'rel-1', trackTitle: 'Test', artistName: 'Artist' } as unknown as Parameters<typeof DistributorService.createRelease>[1];
+    const assets = { coverArt: { url: 'http://test.com/img.jpg' } } as unknown as Parameters<typeof DistributorService.createRelease>[2];
 
     // Act
     await DistributorService.createRelease('distrokid', metadata, assets);
@@ -193,10 +193,10 @@ describe('DistributorService.createRelease', () => {
 
   it('should throw if userProfile is missing', async () => {
     // Arrange
-    (useStore.getState as any).mockReturnValueOnce({ userProfile: null, currentOrganizationId: 'test-org-id' });
+    vi.mocked(useStore.getState).mockReturnValueOnce({ userProfile: null, currentOrganizationId: 'test-org-id' } as any);
 
-    const metadata = { id: 'rel-1' } as any;
-    const assets = {} as any;
+    const metadata = { id: 'rel-1' } as unknown as Parameters<typeof DistributorService.createRelease>[1];
+    const assets = {} as unknown as Parameters<typeof DistributorService.createRelease>[2];
 
     // Act & Assert
     await expect(DistributorService.createRelease('distrokid', metadata, assets))

@@ -11,7 +11,7 @@ import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 
 // Mock Electron API
 if (typeof window !== 'undefined') {
-    (window as any).electronAPI = {
+    (window as unknown as { electronAPI: any }).electronAPI = {
         distribution: {
             stageRelease: vi.fn().mockResolvedValue({ success: true, packagePath: '/mock/staging/path' }),
         },
@@ -173,7 +173,7 @@ describe('Distribution System Verification', () => {
         });
 
         it('should create release', async () => {
-            const result = await symphonic.createRelease(mockMetadata as any, mockAssets as any);
+            const result = await symphonic.createRelease(mockMetadata as unknown as ExtendedGoldenMetadata, mockAssets as unknown as any);
             // Current stub returns success: false
             expect(result.success).toBe(false);
             expect(result!.errors?.[0]!.code).toBe('DELIVERY_UNAVAILABLE');

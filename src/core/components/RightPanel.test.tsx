@@ -3,10 +3,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import RightPanel from './RightPanel';
 import { useStore } from '../store';
 
-// Mock the store
-vi.mock('../store', () => ({
-    useStore: vi.fn(),
-}));
+vi.mock('../store', () => {
+    const mockUseStore = vi.fn();
+    (mockUseStore as any).setState = vi.fn();
+    return { useStore: mockUseStore };
+});
 
 // Mock sub-components
 vi.mock('./right-panel/CreativePanel', () => ({

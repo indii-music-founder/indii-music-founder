@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { secureRandomInt } from '@/utils/crypto-random';
 /**
  * Usage Tracker Service
  *
@@ -106,7 +107,7 @@ class UsageTracker {
       const maxAttempts = 3;
       if (attempt < maxAttempts - 1) {
         // Exponential backoff with jitter: 1s, 2s, 4s + random 0-1s
-        const backoffMs = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+        const backoffMs = Math.pow(2, attempt) * 1000 + secureRandomInt(0, 1000);
         logger.debug(`[UsageTracker] Retrying in ${Math.round(backoffMs)}ms...`);
 
         // Fire and forget the retry

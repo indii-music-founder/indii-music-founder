@@ -8,7 +8,7 @@ const mockGenerateContent = vi.fn();
 const mockRemoteConfigValue = vi.fn();
 
 vi.mock('firebase/remote-config', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: (rc: any, key: string) => ({
         asString: () => mockRemoteConfigValue(key)
@@ -16,7 +16,7 @@ vi.mock('firebase/remote-config', () => ({
 }));
 
 vi.mock('firebase/ai', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getGenerativeModel: vi.fn((ai, config) => ({
         model: config.model,
         generateContent: mockGenerateContent
@@ -29,7 +29,8 @@ vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
     remoteConfig: {},
     getFirebaseAI: () => ({
-  serverTimestamp: vi.fn(),}),
+        serverTimestamp: vi.fn(),
+    }),
     app: {},
     functions: {},
     auth: { currentUser: { uid: 'test-user' } },
@@ -41,7 +42,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     doc: vi.fn(),
     getDoc: vi.fn(),
@@ -53,7 +54,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('../billing/TokenUsageService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     TokenUsageService: {
         trackUsage: vi.fn(),
         checkQuota: vi.fn().mockResolvedValue(true),
@@ -62,7 +63,7 @@ vi.mock('../billing/TokenUsageService', () => ({
 }));
 
 vi.mock('@/config/env', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     env: { appCheckKey: 'mock-key' }
 }));
 
@@ -119,7 +120,7 @@ describe('RemoteAIConfig & Dynamic Switching', () => {
         await service.generateContent('test', APPROVED_MODELS.TEXT_AGENT);
 
         const { getGenerativeModel } = await import('firebase/ai');
-        const calls = (getGenerativeModel as any).mock.calls;
+        const calls = vi.mocked(getGenerativeModel).mock.calls;
         console.log('getGenerativeModel calls:', JSON.stringify(calls.map((c: any) => c[1]), null, 2));
 
         // Expect the overridden model name
@@ -199,7 +200,7 @@ describe('CostPredictor Dynamic Pricing', () => {
             return '';
         });
 
-        const result = CostPredictor.predictTextCost('test', 1000, swappedModel as any);
+        const result = CostPredictor.predictTextCost('test', 1000, swappedModel as unknown as Parameters<typeof CostPredictor.predictTextCost>[2]);
         expect(result.estimatedCostUsd).toBeCloseTo(0.05, 3);
     });
 });

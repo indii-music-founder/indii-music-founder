@@ -18,6 +18,7 @@
 
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
+import { secureRandomInt } from '@/utils/crypto-random';
 
 /**
  * Wraps an async function with structured error handling.
@@ -114,7 +115,7 @@ export async function retryAsync<T>(
             }
 
             const delay = Math.min(
-                baseDelayMs * Math.pow(2, attempt) + Math.random() * 100,
+                baseDelayMs * Math.pow(2, attempt) + secureRandomInt(0, 100),
                 maxDelayMs,
             );
             logger.warn(`[retry] Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${Math.round(delay)}ms`);

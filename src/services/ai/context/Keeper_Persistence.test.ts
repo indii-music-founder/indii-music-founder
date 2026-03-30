@@ -7,23 +7,26 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock Firebase Modules
 vi.mock('firebase/app', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     initializeApp: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+        serverTimestamp: vi.fn(),
+    })),
     getApp: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+        serverTimestamp: vi.fn(),
+    })),
     getApps: vi.fn(() => [])
 }));
 
 vi.mock('firebase/auth', async (importOriginal) => {
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         getAuth: vi.fn(() => ({
-  serverTimestamp: vi.fn(),
+            serverTimestamp: vi.fn(),
             currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('test-token') }
         })),
         initializeAuth: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+            serverTimestamp: vi.fn(),
+        })),
         onAuthStateChanged: vi.fn(),
         browserLocalPersistence: {},
         browserSessionPersistence: {},
@@ -33,17 +36,20 @@ vi.mock('firebase/auth', async (importOriginal) => {
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         Timestamp: {
             now: () => ({
-  serverTimestamp: vi.fn(), toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }),
+                serverTimestamp: vi.fn(), toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0
+            }),
             fromDate: (date: Date) => ({ toMillis: () => date.getTime(), seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 }),
             fromMillis: (ms: number) => ({ toMillis: () => ms, seconds: Math.floor(ms / 1000), nanoseconds: 0 })
         },
         getFirestore: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+            serverTimestamp: vi.fn(),
+        })),
         initializeFirestore: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+            serverTimestamp: vi.fn(),
+        })),
         persistentLocalCache: vi.fn(),
         persistentMultipleTabManager: vi.fn(),
         doc: vi.fn(),
@@ -52,7 +58,8 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         collection: vi.fn(),
         onSnapshot: vi.fn(),
         writeBatch: vi.fn(() => ({
-  serverTimestamp: vi.fn(), commit: vi.fn() })),
+            serverTimestamp: vi.fn(), commit: vi.fn()
+        })),
         addDoc: vi.fn(),
         updateDoc: vi.fn(),
         deleteDoc: vi.fn(),
@@ -65,39 +72,42 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 });
 
 vi.mock('firebase/storage', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getStorage: vi.fn(() => ({
-  serverTimestamp: vi.fn(),}))
+        serverTimestamp: vi.fn(),
+    }))
 }));
 
 vi.mock('firebase/functions', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFunctions: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+        serverTimestamp: vi.fn(),
+    })),
     connectFunctionsEmulator: vi.fn(),
     httpsCallable: vi.fn()
 }));
 
 vi.mock('firebase/app-check', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     initializeAppCheck: vi.fn(),
     ReCaptchaEnterpriseProvider: vi.fn()
 }));
 
 vi.mock('firebase/remote-config', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getRemoteConfig: vi.fn(() => ({
-  serverTimestamp: vi.fn(),}))
+        serverTimestamp: vi.fn(),
+    }))
 }));
 
 vi.mock('firebase/ai', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getAI: vi.fn(),
     VertexAIBackend: vi.fn()
 }));
 
 vi.mock('@/services/OrganizationService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     OrganizationService: {
         getCurrentOrgId: vi.fn(() => 'test-org')
     }
@@ -146,7 +156,7 @@ describe('📚 Keeper: Persistence (Electron Local Storage)', () => {
         };
 
         // Act
-        await sessionService.createSession(newSession as any);
+        await sessionService.createSession(newSession as unknown as Parameters<typeof sessionService.createSession>[0]);
 
         // Assert: Check if Electron API was called
         expect(mockSaveHistory).toHaveBeenCalledTimes(1);
@@ -172,7 +182,7 @@ describe('📚 Keeper: Persistence (Electron Local Storage)', () => {
         };
 
         // Act
-        await sessionService.updateSession(sessionId, updates as any);
+        await sessionService.updateSession(sessionId, updates as unknown as Parameters<typeof sessionService.updateSession>[1]);
 
         // Assert
         expect(mockSaveHistory).toHaveBeenCalledTimes(1);
