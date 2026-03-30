@@ -10,6 +10,34 @@ test.describe('Authentication Flow', () => {
         // Capture browser logs for debugging
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
         page.on('pageerror', err => console.error(`BROWSER ERROR: ${err.message}`));
+
+        // Mock Firebase Installations API to prevent 403 Permission Denied in staging
+        await page.route('**/*installations.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                headers: { 'Access-Control-Allow-Origin': '*' },
+                body: JSON.stringify({
+                    name: 'projects/mock-project/installations/mock-installation',
+                    fid: 'mock-installation-id',
+                    refreshToken: 'mock-refresh-token',
+                    authToken: { token: 'mock-auth-token', expiresIn: '604800s' }
+                })
+            });
+        });
+
+        // Mock RAG Proxy to prevent CORS errors during background initialization
+        await page.route('**/*ragProxy*/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': '*' } });
+                return;
+            }
+            await route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: '{}' });
+        });
     });
 
     test('Login page renders correctly', async ({ page }) => {
@@ -104,7 +132,7 @@ test.describe('Authentication Flow', () => {
         await page.route('**/firestore.googleapis.com/**', async route => {
             const url = route.request().url();
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+                await route.abort('failed');
                 return;
             }
             if (url.includes('/users/test-user-uid-e2e')) {
@@ -151,6 +179,11 @@ test.describe('Authentication Flow', () => {
         });
 
         await page.route('**/firestore.googleapis.com/**', async route => {
+            const url = route.request().url();
+            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
+                await route.abort('failed');
+                return;
+            }
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
 
@@ -202,6 +235,11 @@ test.describe('Authentication Flow', () => {
         });
 
         await page.route('**/firestore.googleapis.com/**', async route => {
+            const url = route.request().url();
+            if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
+                await route.abort('failed');
+                return;
+            }
             await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
 
