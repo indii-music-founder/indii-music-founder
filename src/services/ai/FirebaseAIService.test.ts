@@ -19,7 +19,7 @@ vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: vi.fn((rc, key) => ({
         asString: () => {
-            if (key === 'model_name') return 'mock-model-v1';
+            if (key === 'model_name') return 'gemini-3-mock-v1';
             // Return empty string (valid falsy) for ai_system_config to trigger default fallback
             // console.log(`[Test Debug] getValue called for ${key}`);
             return '';
@@ -43,7 +43,7 @@ vi.mock('firebase/firestore', () => ({
 // Mock firebase/ai
 vi.mock('firebase/ai', () => {
     const mockModel = {
-        model: 'mock-model-v1',
+        model: 'gemini-3-mock-v1',
         generateContent: mockGenerateContent,
         generateContentStream: vi.fn().mockResolvedValue({
             stream: (async function* () { yield { text: () => 'Stream' }; })(),
@@ -171,7 +171,7 @@ describe('FirebaseAIService', () => {
 
         expect(fetchAndActivate).toHaveBeenCalled();
         expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: 'mock-model-v1',
+            model: 'gemini-3-mock-v1',
             safetySettings: STANDARD_SAFETY_SETTINGS
         }));
     });
@@ -282,7 +282,7 @@ describe('FirebaseAIService', () => {
 
     it('should handle embedContent', async () => {
         const result = await service.embedContent({
-            model: 'mock-model-v1',
+            model: 'gemini-3-mock-v1',
             content: { role: 'user', parts: [{ text: 'Embed me' }] }
         });
 

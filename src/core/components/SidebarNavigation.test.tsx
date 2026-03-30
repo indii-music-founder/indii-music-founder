@@ -63,6 +63,7 @@ vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid=
 vi.mock('@/config/featureFlags', () => ({
     useGatedModules: vi.fn(() => new Set<string>()),
     isFeatureEnabled: vi.fn(() => true),
+    getGatedModuleIds: vi.fn(() => new Set<string>()),
 }));
 
 // Mock Sidebar sub-components added in 135633ca that bring heavy deps

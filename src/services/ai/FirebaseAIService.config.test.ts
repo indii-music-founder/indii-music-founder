@@ -38,7 +38,7 @@ vi.mock('firebase/firestore', () => ({
 // Mock firebase/ai
 vi.mock('firebase/ai', () => {
     const mockModel = {
-        model: 'mock-model-v1',
+        model: 'gemini-3-mock-v1',
         generateContent: mockGenerateContent,
     };
 
