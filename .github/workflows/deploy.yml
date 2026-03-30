@@ -120,6 +120,7 @@ jobs:
         run: pnpm run build:studio
         env:
           NODE_ENV: production
+          VITE_APP_TARGET: web
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
