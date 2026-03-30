@@ -61,7 +61,14 @@ describe('Phase 3: Architectural Improvements', () => {
 
             // Mock store state
             vi.mocked(useStore.getState).mockReturnValue({
-                projects: [{ id: 'proj-1', name: 'Test Project' }]
+                projects: [{
+                    id: 'proj-1',
+                    name: 'Test Project',
+                    type: 'creative',
+                    lastModified: Date.now(),
+                    date: Date.now(),
+                    assetCount: 0
+                } as unknown as import('@/core/store/slices/appSlice').Project]
             } as unknown as ReturnType<typeof useStore.getState>);
         });
 

@@ -49,12 +49,12 @@ describe('MemoryTools', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
-        (useStore.getState as any).mockReturnValue(mockStoreState);
+        vi.mocked(useStore.getState).mockReturnValue(mockStoreState as unknown as ReturnType<typeof useStore.getState>);
     });
 
     describe('save_memory', () => {
         it('should save memory successfully', async () => {
-            (memoryService.saveMemory as any).mockResolvedValue(undefined);
+            vi.mocked(memoryService.saveMemory).mockResolvedValue(undefined);
 
             const result = await MemoryTools.save_memory({
                 content: 'User prefers dark themes'
@@ -71,7 +71,7 @@ describe('MemoryTools', () => {
         });
 
         it('should use specified memory type', async () => {
-            (memoryService.saveMemory as any).mockResolvedValue(undefined);
+            vi.mocked(memoryService.saveMemory).mockResolvedValue(undefined);
 
             await MemoryTools.save_memory({
                 content: 'Always use formal language',
@@ -87,7 +87,7 @@ describe('MemoryTools', () => {
 
         it('should handle save errors gracefully (non-blocking)', async () => {
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-            (memoryService.saveMemory as any).mockRejectedValue(new Error('Storage full'));
+            vi.mocked(memoryService.saveMemory).mockRejectedValue(new Error('Storage full'));
 
             const result = await MemoryTools.save_memory({
                 content: 'Test memory'
@@ -104,7 +104,7 @@ describe('MemoryTools', () => {
         });
 
         it('should default to fact type', async () => {
-            (memoryService.saveMemory as any).mockResolvedValue(undefined);
+            vi.mocked(memoryService.saveMemory).mockResolvedValue(undefined);
 
             await MemoryTools.save_memory({ content: 'Some fact' });
 
@@ -123,7 +123,7 @@ describe('MemoryTools', () => {
                 'Previous project was about music',
                 'Prefers minimal design'
             ];
-            (memoryService.retrieveRelevantMemories as any).mockResolvedValue(mockMemories);
+            vi.mocked(memoryService.retrieveRelevantMemories).mockResolvedValue(mockMemories);
 
             const result = await MemoryTools.recall_memories({ query: 'user preferences' });
 
@@ -138,7 +138,7 @@ describe('MemoryTools', () => {
         });
 
         it('should handle no memories found', async () => {
-            (memoryService.retrieveRelevantMemories as any).mockResolvedValue([]);
+            vi.mocked(memoryService.retrieveRelevantMemories).mockResolvedValue([]);
 
             const result = await MemoryTools.recall_memories({ query: 'obscure topic' });
 
@@ -148,7 +148,7 @@ describe('MemoryTools', () => {
         });
 
         it('should handle recall errors', async () => {
-            (memoryService.retrieveRelevantMemories as any).mockRejectedValue(
+            vi.mocked(memoryService.retrieveRelevantMemories).mockRejectedValue(
                 new Error('Database unavailable')
             );
 
@@ -170,14 +170,14 @@ describe('MemoryTools', () => {
         });
 
         it('should truncate long messages', async () => {
-            (useStore.getState as any).mockReturnValue({
+            vi.mocked(useStore.getState).mockReturnValue({
                 agentHistory: [
                     {
                         role: 'user',
                         text: 'This is a very long message that should be truncated because it exceeds the fifty character limit that we have set'
                     }
                 ]
-            });
+            } as unknown as ReturnType<typeof useStore.getState>);
 
             const result = await MemoryTools.read_history({});
 
@@ -185,7 +185,7 @@ describe('MemoryTools', () => {
         });
 
         it('should handle empty history', async () => {
-            (useStore.getState as any).mockReturnValue({ agentHistory: [] });
+            vi.mocked(useStore.getState).mockReturnValue({ agentHistory: [] } as unknown as ReturnType<typeof useStore.getState>);
 
             const result = await MemoryTools.read_history({});
 
@@ -201,14 +201,14 @@ describe('MemoryTools', () => {
                 reason: 'Content meets the goal well',
                 pass: true
             };
-            (AI.rawGenerateContent as any).mockResolvedValue({
+            vi.mocked(AI.rawGenerateContent).mockResolvedValue({
                 getText: () => JSON.stringify(mockVerification),
                 response: {
                     text: () => JSON.stringify(mockVerification),
                     candidates: [],
-                    usageMetadata: {}
+                    usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 }
                 }
-            });
+            } as unknown as Awaited<ReturnType<typeof AI.rawGenerateContent>>);
 
             const result = await MemoryTools.verify_output({
                 goal: 'Write a compelling headline',
@@ -233,28 +233,28 @@ describe('MemoryTools', () => {
         });
 
         it('should include goal and content in prompt', async () => {
-            (AI.rawGenerateContent as any).mockResolvedValue({
+            vi.mocked(AI.rawGenerateContent).mockResolvedValue({
                 getText: () => '{"score": 7, "pass": true}',
                 response: {
                     text: () => '{"score": 7, "pass": true}',
                     candidates: [],
-                    usageMetadata: {}
+                    usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 }
                 }
-            });
+            } as unknown as Awaited<ReturnType<typeof AI.rawGenerateContent>>);
 
             await MemoryTools.verify_output({
                 goal: 'Test Goal',
                 content: 'Test Content'
             });
 
-            const callArgs = (AI.rawGenerateContent as any).mock.calls[0][0];
-            const promptText = callArgs[0].parts[0].text;
+            const callArgs = vi.mocked(AI.rawGenerateContent).mock.calls[0][0];
+            const promptText = (callArgs as { parts: { text: string }[] }[])[0]!.parts[0]!.text;
             expect(promptText).toContain('Test Goal');
             expect(promptText).toContain('Test Content');
         });
 
         it('should handle verification errors', async () => {
-            (AI.rawGenerateContent as any).mockRejectedValue(new Error('API unavailable'));
+            vi.mocked(AI.rawGenerateContent).mockRejectedValue(new Error('API unavailable'));
 
             const result = await MemoryTools.verify_output({
                 goal: 'Goal',
@@ -266,7 +266,7 @@ describe('MemoryTools', () => {
         });
 
         it('should handle unknown errors', async () => {
-            (AI.rawGenerateContent as any).mockRejectedValue('Unknown error type');
+            vi.mocked(AI.rawGenerateContent).mockRejectedValue('Unknown error type');
 
             const result = await MemoryTools.verify_output({
                 goal: 'Goal',

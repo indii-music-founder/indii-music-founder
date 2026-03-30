@@ -61,8 +61,8 @@ describe('MemoryService', () => {
         });
 
         // Mock AI embedding
-        (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
-        (AI.batchEmbedContents as any).mockResolvedValue([[0.1, 0.2, 0.3]]);
+        vi.mocked(AI.embedContent).mockResolvedValue({ values: [0.1, 0.2, 0.3] } as unknown as Awaited<ReturnType<typeof AI.embedContent>>);
+        vi.mocked(AI.batchEmbedContents).mockResolvedValue([[0.1, 0.2, 0.3]] as unknown as Awaited<ReturnType<typeof AI.batchEmbedContents>>);
     });
 
     describe('saveMemory', () => {
@@ -140,7 +140,7 @@ describe('MemoryService', () => {
         it('should rank recent high-importance memories highest', async () => {
             mockList.mockResolvedValue(mockMemories);
             // Mock query embedding to match (perfect similarity)
-            (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
+            vi.mocked(AI.embedContent).mockResolvedValue({ values: [0.1, 0.2, 0.3] } as unknown as Awaited<ReturnType<typeof AI.embedContent>>);
 
             const results = await memoryService.retrieveRelevantMemories('p1', 'query', 3);
 
@@ -169,7 +169,7 @@ describe('MemoryService', () => {
         it('should filter memories by type', async () => {
             mockList.mockResolvedValue(mockMemories);
             // Must return embedding or fallback to keywords. Mock embedding to ensure vector path is taken but irrelevant for filter test.
-            (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
+            vi.mocked(AI.embedContent).mockResolvedValue({ values: [0.1, 0.2, 0.3] } as unknown as Awaited<ReturnType<typeof AI.embedContent>>);
 
             const results = await memoryService.retrieveRelevantMemories('p1', {
                 query: 'query',
@@ -197,7 +197,7 @@ describe('MemoryService', () => {
             const oldItem = { ...mockMemories[1], timestamp: 1000 };
             const newItem = { ...mockMemories[0], timestamp: 2000 };
             mockList.mockResolvedValue([oldItem, newItem]);
-            (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
+            vi.mocked(AI.embedContent).mockResolvedValue({ values: [0.1, 0.2, 0.3] } as unknown as Awaited<ReturnType<typeof AI.embedContent>>);
 
             const results = await memoryService.retrieveRelevantMemories('p1', {
                 query: 'query',
@@ -222,14 +222,16 @@ describe('MemoryService', () => {
             mockList.mockResolvedValue(oldMemories);
 
             // Mock AI response
-            (AI.generateContent as any).mockResolvedValue({
+            vi.mocked(AI.generateContent).mockResolvedValue({
                 response: {
                     text: () => JSON.stringify({
                         consolidated: ['Summary of facts'],
                         idsToDelete: ['old-0', 'old-1']
                     }),
                     candidates: [{
+                        index: 0,
                         content: {
+                            role: 'model',
                             parts: [{
                                 text: JSON.stringify({
                                     consolidated: ['Summary of facts'],
@@ -239,7 +241,7 @@ describe('MemoryService', () => {
                         }
                     }]
                 }
-            });
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
             await memoryService.consolidateMemories('p1');
 

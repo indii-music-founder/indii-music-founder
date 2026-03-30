@@ -25,7 +25,7 @@ describe('BrandTools', () => {
             critique: "Looks good",
             score: 9
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await BrandTools.verify_output({ goal: 'Be bold', content: 'BOLD CONTENT' });
         expect(result.success).toBe(true);
@@ -39,7 +39,7 @@ describe('BrandTools', () => {
             issues: [],
             recommendations: ["Keep it up"]
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await BrandTools.analyze_brand_consistency({ content: 'test content' });
         expect(result.success).toBe(true);
@@ -53,7 +53,7 @@ describe('BrandTools', () => {
             visuals: "Blue and White",
             dos_and_donts: ["Do this", "Don't do that"]
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await BrandTools.generate_brand_guidelines({ name: 'TestBrand', values: ['Trust'] });
         expect(result.success).toBe(true);
@@ -67,7 +67,7 @@ describe('BrandTools', () => {
             flagged_assets: ["image1.jpg"],
             report: "Image 1 has wrong colors"
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await BrandTools.audit_visual_assets({ assets: ['image1.jpg'] });
         expect(result.success).toBe(true);

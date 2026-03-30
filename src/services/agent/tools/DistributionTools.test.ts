@@ -48,11 +48,11 @@ vi.mock('@/services/identity/IdentifierService', () => ({
 
 // Mock electronAPI
 if (typeof window !== 'undefined') {
-    (window as any).electronAPI = undefined; // Disable by default for tests that expect JS fallback
+    (window as unknown as { electronAPI?: unknown }).electronAPI = undefined; // Disable by default for tests that expect JS fallback
 }
 
 function enableElectron() {
-    (window as any).electronAPI = {
+    (window as unknown as { electronAPI?: unknown }).electronAPI = {
         distribution: {
             generateISRC: vi.fn().mockResolvedValue({ isrc: 'USIND2600001' }),
             registerRelease: vi.fn().mockResolvedValue({ success: true }),
@@ -69,7 +69,7 @@ function enableElectron() {
 
 function disableElectron() {
     if (typeof window !== 'undefined') {
-        (window as any).electronAPI = undefined;
+        (window as unknown as { electronAPI?: unknown }).electronAPI = undefined;
     }
 }
 
@@ -80,8 +80,8 @@ describe('DistributionTools', () => {
 
         // Reset validation mocks to pass by default
         const { IdentifierService } = await import('@/services/identity/IdentifierService');
-        (IdentifierService.validateISRC as any).mockReturnValue(true);
-        (IdentifierService.validateUPC as any).mockReturnValue(true);
+        vi.mocked(IdentifierService.validateISRC).mockReturnValue(true);
+        vi.mocked(IdentifierService.validateUPC).mockReturnValue(true);
     });
 
     describe('issue_isrc', () => {
@@ -309,7 +309,7 @@ describe('DistributionTools', () => {
         it('should reject invalid ISRC', async () => {
             const { DistributionTools } = await import('./DistributionTools');
             const { IdentifierService } = await import('@/services/identity/IdentifierService');
-            (IdentifierService.validateISRC as any).mockReturnValue(false);
+            vi.mocked(IdentifierService.validateISRC).mockReturnValue(false);
 
             const result = await DistributionTools.prepare_release({
                 title: 'Test Track',
@@ -326,7 +326,7 @@ describe('DistributionTools', () => {
         it('should reject invalid UPC', async () => {
             const { DistributionTools } = await import('./DistributionTools');
             const { IdentifierService } = await import('@/services/identity/IdentifierService');
-            (IdentifierService.validateUPC as any).mockReturnValue(false);
+            vi.mocked(IdentifierService.validateUPC).mockReturnValue(false);
 
             const result = await DistributionTools.prepare_release({
                 title: 'Test Track',

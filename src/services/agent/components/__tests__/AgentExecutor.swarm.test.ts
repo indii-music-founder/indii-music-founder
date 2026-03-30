@@ -37,7 +37,7 @@ class MockAgent extends BaseAgent {
             category: 'generalist' as unknown as string,
             systemPrompt: 'You are a mock agent.',
             tools: []
-        } as unknown as any); // Constructor arguments are untyped here
+        } as unknown as ConstructorParameters<typeof BaseAgent>[0]); // Constructor arguments are untyped here
     }
 
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
@@ -54,7 +54,7 @@ describe('AgentExecutor Swarm Support', () => {
 
     it('should initialize a new swarmId for root execution', async () => {
         const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
-        const context = { activeModule: 'test' } as unknown as any;
+        const context = { activeModule: 'test' } as unknown as Parameters<InstanceType<typeof AgentExecutor>['execute']>[2];
 
         // execute(agentId, userGoal, context, ...)
         await executor.execute('mock-agent', 'Do something', context);
@@ -79,7 +79,7 @@ describe('AgentExecutor Swarm Support', () => {
         const context = {
             activeModule: 'test',
             swarmId: 'root-swarm-123'
-        } as unknown as any;
+        } as unknown as Parameters<InstanceType<typeof AgentExecutor>['execute']>[2];
 
         // execute(agentId, userGoal, context, onProgress, signal, parentTraceId, attachments)
         await executor.execute('mock-agent', 'Sub task', context, undefined, undefined, 'parent-trace-456');

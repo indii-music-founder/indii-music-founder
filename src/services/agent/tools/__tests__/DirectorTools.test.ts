@@ -54,7 +54,7 @@ const createMockStoreState = (overrides = {}) => ({
 describe('DirectorTools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore.getState as any).mockReturnValue(createMockStoreState());
+        vi.mocked(useStore.getState).mockReturnValue(createMockStoreState() as unknown as ReturnType<typeof useStore.getState>);
     });
 
     describe('generate_image', () => {
@@ -73,7 +73,7 @@ describe('DirectorTools', () => {
 
         it('adds results to history', async () => {
             const mockAddToHistory = vi.fn();
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ addToHistory: mockAddToHistory }));
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ addToHistory: mockAddToHistory }) as unknown as ReturnType<typeof useStore.getState>);
 
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
@@ -91,12 +91,12 @@ describe('DirectorTools', () => {
 
         it('handles reference images from brand kit', async () => {
             const refImages = [{ url: 'data:image/png;base64,refdata', description: 'Reference' }];
-            (useStore.getState as any).mockReturnValue(createMockStoreState({
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({
                 userProfile: {
                     uid: 'test-user',
                     brandKit: { referenceImages: refImages }
                 }
-            }));
+            }) as unknown as ReturnType<typeof useStore.getState>);
 
             const mockResults = [{ id: 'img-1', url: 'data:image/png;base64,abc123', prompt: 'test' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
@@ -206,7 +206,7 @@ describe('DirectorTools', () => {
                 { id: 'up-1', url: 'data:image/png;base64,img1', type: 'image' },
                 { id: 'up-2', url: 'data:image/png;base64,img2', type: 'image' }
             ];
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ uploadedImages: uploads }));
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ uploadedImages: uploads }) as unknown as ReturnType<typeof useStore.getState>);
 
             const mockResults = [
                 { id: 'ed-1', url: 'data:image/png;base64,edited1', prompt: 'edited' },
@@ -229,7 +229,7 @@ describe('DirectorTools', () => {
         });
 
         it('returns error when no images uploaded', async () => {
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ uploadedImages: [] }));
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ uploadedImages: [] }) as unknown as ReturnType<typeof useStore.getState>);
 
             const result = await DirectorTools.batch_edit_images!({ prompt: 'Edit' });
 
@@ -255,7 +255,7 @@ describe('DirectorTools', () => {
 
         it('includes entity anchor as source image when set', async () => {
             const characterReferences = [{ image: { url: 'data:image/png;base64,anchor', id: 'anchor-1' }, referenceType: 'subject' }];
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ characterReferences }));
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ characterReferences }) as unknown as ReturnType<typeof useStore.getState>);
 
             const mockResults = [{ id: 'grid-1', url: 'data:image/png;base64,grid', prompt: 'grid' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
@@ -272,7 +272,7 @@ describe('DirectorTools', () => {
 
     describe('extract_grid_frame', () => {
         it('returns error when no grid image exists', async () => {
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ generatedHistory: [] }));
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ generatedHistory: [] }) as unknown as ReturnType<typeof useStore.getState>);
 
             const result = await DirectorTools.extract_grid_frame!({ gridIndex: 0 });
 
@@ -290,7 +290,7 @@ describe('DirectorTools', () => {
                 type: 'image',
                 timestamp: Date.now()
             }];
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ generatedHistory: mockHistory }));
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ generatedHistory: mockHistory }) as unknown as ReturnType<typeof useStore.getState>);
 
             const result = await DirectorTools.extract_grid_frame!({ gridIndex: 5 });
 
@@ -310,10 +310,10 @@ describe('DirectorTools', () => {
         it('sets character reference and adds to history', async () => {
             const mockAddCharacterReference = vi.fn();
             const mockAddToHistory = vi.fn();
-            (useStore.getState as any).mockReturnValue(createMockStoreState({
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({
                 addCharacterReference: mockAddCharacterReference,
                 addToHistory: mockAddToHistory
-            }));
+            }) as unknown as ReturnType<typeof useStore.getState>);
 
             const result = await DirectorTools.add_character_reference!({
                 image: 'data:image/png;base64,validdata'

@@ -31,7 +31,7 @@ describe('GeneralistAgent', () => {
                 negativePrompt: ''
             },
             addToHistory: vi.fn()
-        });
+        } as unknown as ReturnType<typeof useStore.getState>);
     });
 
     it('should include comprehensive BrandKit context in system prompt', async () => {
@@ -75,7 +75,7 @@ describe('GeneralistAgent', () => {
                 brandAssets: [],
                 referenceImages: []
             }
-        } as unknown as AgentContext;
+        } as unknown as Record<string, unknown>;
 
         // Mock AI response with native function calling format
         vi.mocked(AI.generateContentStream).mockResolvedValue({

@@ -31,10 +31,10 @@ describe('MaestroBatchingService', () => {
         // Spy on the private executeIndividualTask method via the prototype.
         // This bypasses the dynamic import('./AgentService') entirely,
         // which vi.mock can't reliably intercept for complex dependency chains.
-        vi.spyOn(service as any, 'executeIndividualTask').mockImplementation(async (task: any) => ({
+        vi.spyOn(service as unknown as { executeIndividualTask: (task: unknown) => Promise<unknown> }, 'executeIndividualTask').mockImplementation(async (task: any) => ({
             success: true,
             message: 'Mock success',
-            data: { taskId: task.id, thoughtSignature: 'mock-signature' }
+            data: { taskId: (task as { id: string }).id, thoughtSignature: 'mock-signature' }
         }));
     });
 
@@ -74,7 +74,7 @@ describe('MaestroBatchingService', () => {
         expect(updateBatchTaskMock).toHaveBeenCalled();
 
         // Verify executeIndividualTask was called for each task
-        expect((service as any).executeIndividualTask).toHaveBeenCalledTimes(2);
+        expect((service as unknown as { executeIndividualTask: unknown }).executeIndividualTask).toHaveBeenCalledTimes(2);
     });
 
     it('should sort tasks by priority before execution', async () => {
@@ -88,7 +88,7 @@ describe('MaestroBatchingService', () => {
 
         const results = await tasksPromise;
         expect(results).toHaveLength(3);
-        expect(results.every((r: any) => r.success)).toBe(true);
+        expect(results.every((r) => r.success)).toBe(true);
     });
 
     it('should handle errors in a batch gracefully', async () => {

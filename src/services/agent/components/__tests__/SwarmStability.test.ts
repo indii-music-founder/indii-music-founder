@@ -39,7 +39,7 @@ class RecursiveAgent extends BaseAgent {
             category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
             tools: []
-        } as unknown as any);
+        } as unknown as ConstructorParameters<typeof BaseAgent>[0]);
     }
 
 
@@ -60,7 +60,7 @@ class FailingAgent extends BaseAgent {
             category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
             tools: []
-        } as unknown as any);
+        } as unknown as ConstructorParameters<typeof BaseAgent>[0]);
     }
 
 
@@ -79,7 +79,7 @@ class ParentAgent extends BaseAgent {
             category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
             tools: []
-        } as unknown as any);
+        } as unknown as ConstructorParameters<typeof BaseAgent>[0]);
     }
 
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
@@ -108,7 +108,7 @@ describe('Swarm Stability Integration', () => {
             chatHistoryString: '',
             relevantMemories: [],
             memoryContext: ''
-        } as unknown as any;
+        } as unknown as Parameters<InstanceType<typeof AgentExecutor>['execute']>[2];
 
         // Expecting the promise to reject with the error from the child
         await expect(executor.execute('parent', 'Do task', context))
@@ -129,7 +129,7 @@ describe('Swarm Stability Integration', () => {
             chatHistoryString: '',
             relevantMemories: [],
             memoryContext: ''
-        } as unknown as any;
+        } as unknown as Parameters<InstanceType<typeof AgentExecutor>['execute']>[2];
 
         // If generic recursion detection isn't implemented in AgentExecutor yet,
         // this test might timeout or crash. 

@@ -262,7 +262,7 @@ describe('VideoTools', () => {
                 addToHistory: mockAddToHistory,
                 userProfile: mockUserProfile,
                 currentProjectId: 'proj-123'
-            } as any);
+            } as unknown as ReturnType<typeof mockGetState>);
 
             const result = await VideoTools.batch_edit_videos({ prompt: 'test' });
             expect(result.success).toBe(false);
@@ -277,7 +277,7 @@ describe('VideoTools', () => {
                 addToHistory: mockAddToHistory,
                 currentProjectId: 'proj-123',
                 userProfile: mockUserProfile
-            } as any);
+            } as unknown as ReturnType<typeof mockGetState>);
 
             const result = await VideoTools.batch_edit_videos({
                 prompt: 'test',

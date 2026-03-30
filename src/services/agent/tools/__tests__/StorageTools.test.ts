@@ -20,7 +20,7 @@ describe('StorageTools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default mock implementation
-        (StorageService.loadHistory as any).mockResolvedValue(mockHistoryItems);
+        vi.mocked(StorageService.loadHistory).mockResolvedValue(mockHistoryItems as unknown as Awaited<ReturnType<typeof StorageService.loadHistory>>);
     });
 
     describe('list_files', () => {
@@ -42,7 +42,7 @@ describe('StorageTools', () => {
             expect(StorageService.loadHistory).toHaveBeenCalledWith(10);
             expect(result.success).toBe(true);
             expect(result.data.files).toHaveLength(2);
-            expect(result.data.files.every((f: any) => f.type === 'image')).toBe(true);
+            expect(result.data.files.every((f: { type: string }) => f.type === 'image')).toBe(true);
             expect(result.data.count).toBe(2);
         });
 
@@ -102,7 +102,7 @@ describe('StorageTools', () => {
         });
 
         it('should handle service errors gracefully', async () => {
-            (StorageService.loadHistory as any).mockRejectedValue(new Error('Database error'));
+            vi.mocked(StorageService.loadHistory).mockRejectedValue(new Error('Database error'));
 
             const args = { query: 'test' };
             const result = await StorageTools.search_files(args);

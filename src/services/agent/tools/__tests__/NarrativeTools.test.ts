@@ -65,7 +65,7 @@ describe('Filmmaking Grammar Tools', () => {
             isSettingsOpen: false,
             isProfileOpen: false,
             isNotificationsOpen: false,
-        } as any);
+        } as unknown as ReturnType<typeof useStore.getState>);
     });
 
     describe('NarrativeTools', () => {
@@ -100,7 +100,7 @@ describe('Filmmaking Grammar Tools', () => {
                 isSettingsOpen: false,
                 isProfileOpen: false,
                 isNotificationsOpen: false,
-            } as any);
+            } as unknown as ReturnType<typeof useStore.getState>);
 
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue([{
                 id: 'grid-1',

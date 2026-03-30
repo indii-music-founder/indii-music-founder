@@ -9,10 +9,10 @@ vi.mock('@/config/env', () => ({
 }));
 
 describe('MapsTools', () => {
-    let googleMock: any;
-    let textSearchMock: any;
-    let getDetailsMock: any;
-    let getDistanceMatrixMock: any;
+    let googleMock: Record<string, unknown>;
+    let textSearchMock: import('vitest').Mock;
+    let getDetailsMock: import('vitest').Mock;
+    let getDistanceMatrixMock: import('vitest').Mock;
 
     beforeEach(() => {
         textSearchMock = vi.fn();
@@ -20,12 +20,12 @@ describe('MapsTools', () => {
         getDistanceMatrixMock = vi.fn();
 
         class MockPlacesService {
-            textSearch(req: any, cb: any) { textSearchMock(req, cb); }
-            getDetails(req: any, cb: any) { getDetailsMock(req, cb); }
+            textSearch(req: unknown, cb: (res: unknown, status: string) => void) { textSearchMock(req, cb); }
+            getDetails(req: unknown, cb: (res: unknown, status: string) => void) { getDetailsMock(req, cb); }
         }
 
         class MockDistanceMatrixService {
-            getDistanceMatrix(req: any, cb: any) { getDistanceMatrixMock(req, cb); }
+            getDistanceMatrix(req: unknown, cb: (res: unknown, status: string) => void) { getDistanceMatrixMock(req, cb); }
         }
 
         // Setup global google mock
@@ -40,17 +40,17 @@ describe('MapsTools', () => {
                 TravelMode: { DRIVING: 'DRIVING' }
             }
         };
-        (window as any).google = googleMock;
+        (window as unknown as { google: Record<string, unknown> }).google = googleMock;
 
         // Mock document.createElement to avoid script injection during test
         vi.spyOn(document, 'createElement').mockImplementation((tag) => {
-            return {} as any;
+            return {} as never;
         });
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
-        delete (window as any).google;
+        delete (window as unknown as { google?: Record<string, unknown> }).google;
     });
 
     it('search_places calls textSearch and formats results', async () => {
@@ -58,7 +58,7 @@ describe('MapsTools', () => {
             { name: 'Place A', formatted_address: '123 Main', rating: 4.5, place_id: 'p1', types: ['restaurant'], opening_hours: { isOpen: () => true } }
         ];
 
-        textSearchMock.mockImplementation((req: any, cb: any) => cb(mockResults, 'OK'));
+        textSearchMock.mockImplementation((req: unknown, cb: (res: unknown, status: string) => void) => cb(mockResults, 'OK'));
 
         const result = await MapsTools.search_places({ query: 'pizza' });
 
@@ -79,7 +79,7 @@ describe('MapsTools', () => {
             opening_hours: { weekday_text: ['Mon: 9-5'] }
         };
 
-        getDetailsMock.mockImplementation((req: any, cb: any) => cb(mockPlace, 'OK'));
+        getDetailsMock.mockImplementation((req: unknown, cb: (res: unknown, status: string) => void) => cb(mockPlace, 'OK'));
 
         const result = await MapsTools.get_place_details({ place_id: 'p1' });
 
@@ -100,7 +100,7 @@ describe('MapsTools', () => {
             ]
         };
 
-        getDistanceMatrixMock.mockImplementation((req: any, cb: any) => cb(mockResponse, 'OK'));
+        getDistanceMatrixMock.mockImplementation((req: unknown, cb: (res: unknown, status: string) => void) => cb(mockResponse, 'OK'));
 
         const result = await MapsTools.get_distance_matrix({ origins: ['A'], destinations: ['B'] });
 

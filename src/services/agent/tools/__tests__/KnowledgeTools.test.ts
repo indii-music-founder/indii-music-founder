@@ -29,7 +29,7 @@ describe('KnowledgeTools', () => {
 
     describe('search_knowledge', () => {
         it('should error if user is not logged in', async () => {
-            (useStore.getState as any).mockReturnValue({ userProfile: null });
+            vi.mocked(useStore.getState).mockReturnValue({ userProfile: null } as unknown as ReturnType<typeof useStore.getState>);
 
             const result = await KnowledgeTools.search_knowledge({ query: 'test query' });
 
@@ -39,17 +39,18 @@ describe('KnowledgeTools', () => {
         });
 
         it('should run agentic workflow and return structured data when logged in', async () => {
-            (useStore.getState as any).mockReturnValue({ userProfile: { id: 'test-user' } });
+            vi.mocked(useStore.getState).mockReturnValue({ userProfile: { id: 'test-user' } } as unknown as ReturnType<typeof useStore.getState>);
 
             const mockAsset = {
+                assetType: 'knowledge' as const,
                 content: 'Test answer',
                 sources: [
-                    { name: 'Source 1' },
-                    { name: 'Source 2' }
+                    { name: 'Source 1', content: 'c1' },
+                    { name: 'Source 2', content: 'c2' }
                 ]
             };
 
-            (runAgenticWorkflow as any).mockResolvedValue({
+            vi.mocked(runAgenticWorkflow).mockResolvedValue({
                 asset: mockAsset,
                 updatedProfile: null
             });
