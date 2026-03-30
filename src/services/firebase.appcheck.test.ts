@@ -91,7 +91,7 @@ describe('Firebase App Check Initialization', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    delete (window as Window & typeof globalThis & { electronAPI?: unknown }).electronAPI;
+    delete (window as { electronAPI?: unknown }).electronAPI;
   });
 
   it('should initialize App Check in standard web environment when key is present', async () => {
@@ -111,7 +111,7 @@ describe('Firebase App Check Initialization', () => {
   });
 
   it('should NOT initialize App Check in Electron environment (no debug token)', async () => {
-    (window as Window & typeof globalThis & { electronAPI?: unknown }).electronAPI = {};
+    window.electronAPI = {} as unknown as Window['electronAPI'];
 
     vi.doMock('@/config/env', () => ({
       serverTimestamp: vi.fn(),
@@ -128,7 +128,7 @@ describe('Firebase App Check Initialization', () => {
   });
 
   it('should initialize App Check in Electron environment WITH debug token', async () => {
-    (window as Window & typeof globalThis & { electronAPI?: unknown }).electronAPI = {};
+    window.electronAPI = {} as unknown as Window['electronAPI'];
 
     vi.doMock('@/config/env', () => ({
       serverTimestamp: vi.fn(),

@@ -16,7 +16,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
-import type { AudioFeatures } from './AudioAnalysisService';
+import type { AudioFeatures } from './types';
 
 // ─── Result Types ─────────────────────────────────────────────────────────────
 
@@ -29,15 +29,15 @@ export interface ArtifactFinding {
     durationSecs: number;
     /** Short machine-readable label */
     type:
-        | 'quantization_grid_lock'  // Every element snapped — zero human feel
-        | 'phase_perfect_loop'      // Pixel-perfect loop boundary = AI/DAW clone
-        | 'sterile_transient'       // No transient smear — mathematically clean
-        | 'robotic_phrasing'        // Vocal/melody timing that's inhuman
-        | 'frequency_void'          // Unnatural absence in a frequency band
-        | 'dc_offset'               // DC bias in the signal
-        | 'clipping'                // Digital clipping (overs)
-        | 'phase_cancellation'      // L/R destructive interference
-        | 'suspected_sample_lift';  // Pattern matches known sample territory
+    | 'quantization_grid_lock'  // Every element snapped — zero human feel
+    | 'phase_perfect_loop'      // Pixel-perfect loop boundary = AI/DAW clone
+    | 'sterile_transient'       // No transient smear — mathematically clean
+    | 'robotic_phrasing'        // Vocal/melody timing that's inhuman
+    | 'frequency_void'          // Unnatural absence in a frequency band
+    | 'dc_offset'               // DC bias in the signal
+    | 'clipping'                // Digital clipping (overs)
+    | 'phase_cancellation'      // L/R destructive interference
+    | 'suspected_sample_lift';  // Pattern matches known sample territory
     /** Human-readable description of what was heard */
     description: string;
     /** Severity of this individual finding */

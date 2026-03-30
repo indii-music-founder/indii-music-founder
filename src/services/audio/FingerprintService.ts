@@ -1,4 +1,5 @@
-import { audioAnalysisService, AudioFeatures } from './AudioAnalysisService';
+import { audioAnalysisService } from './AudioAnalysisService';
+import type { AudioFeatures } from './types';
 import { acousticFingerprintService } from './AcousticFingerprintService';
 
 export class FingerprintService {

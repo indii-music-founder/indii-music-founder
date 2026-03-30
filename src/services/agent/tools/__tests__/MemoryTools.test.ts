@@ -247,8 +247,9 @@ describe('MemoryTools', () => {
                 content: 'Test Content'
             });
 
-            const callArgs = vi.mocked(AI.rawGenerateContent).mock.calls[0][0];
-            const promptText = (callArgs as { parts: { text: string }[] }[])[0]!.parts[0]!.text;
+            const callArgs = vi.mocked(AI.rawGenerateContent).mock.calls[0]?.[0];
+            if (!callArgs) throw new Error('Expected rawGenerateContent to be called');
+            const promptText = (callArgs as { parts: { text: string }[] }[])[0]?.parts?.[0]?.text || '';
             expect(promptText).toContain('Test Goal');
             expect(promptText).toContain('Test Content');
         });
