@@ -100,11 +100,11 @@ export const test = base.extend<AuthFixtures>({
 
             // Handle Listen/WebChannel streams (long-polling)
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                // Delay fulfillment to throttle the Firebase SDK's infinite retry loop.
-                // We use 2000ms instead of 60000ms to ensure Playwright's test teardown 
-                // is not blocked for minutes waiting for route handlers to resolve,
-                // while still reducing network spam from 500 req/s to 0.5 req/s.
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Immediately abort WebChannel requests — NO delay.
+                // The previous 2s delay caused cumulative blocking:
+                // 900 retries × 2s = 30 min CI timeout.
+                // Immediate abort lets the SDK retry instantly but each
+                // retry is a no-op that doesn't block the Playwright event loop.
                 await route.abort('failed');
                 return;
             }

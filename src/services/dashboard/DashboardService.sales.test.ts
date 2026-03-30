@@ -68,8 +68,8 @@ describe('DashboardService - Sales Analytics', () => {
 
         // Mock User
         vi.mocked(useStore.getState).mockReturnValue({
-            userProfile: { id: 'test-user-id' }
-        });
+            userProfile: { id: 'test-user-id' } as unknown as import('@/modules/workflow/types').UserProfile
+        } as unknown as import('@/core/store').StoreState);
 
         // Mock Firestore Response
         vi.mocked(getDoc).mockResolvedValue({
@@ -88,8 +88,8 @@ describe('DashboardService - Sales Analytics', () => {
         const { getDoc } = await import('firebase/firestore');
 
         vi.mocked(useStore.getState).mockReturnValue({
-            userProfile: { id: 'test-user-id' }
-        });
+            userProfile: { id: 'test-user-id' } as unknown as import('@/modules/workflow/types').UserProfile
+        } as unknown as import('@/core/store').StoreState);
 
         // Invalid data: missing 'totalVisitors'
         const invalidData = {
@@ -129,8 +129,8 @@ describe('DashboardService - Sales Analytics', () => {
         const { getDoc } = await import('firebase/firestore');
 
         vi.mocked(useStore.getState).mockReturnValue({
-            userProfile: { id: 'test-user-id' }
-        });
+            userProfile: { id: 'test-user-id' } as unknown as import('@/modules/workflow/types').UserProfile
+        } as unknown as import('@/core/store').StoreState);
 
         vi.mocked(getDoc).mockRejectedValue(new Error("Connection failed"));
 
