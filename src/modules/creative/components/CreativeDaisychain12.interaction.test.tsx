@@ -89,12 +89,16 @@ const MockShowroom = () => {
 };
 
 describe('Creative Director 12-Click Daisychain', () => {
+    // Use deterministic timestamps. The gallery sorts by timestamp DESC
+    // (newest first), so Item B (newer) renders at index 0, Item A at index 1.
+    const BASE_TS = 1700000000000;
+
     const mockItemA = {
         id: 'item-a',
         url: 'data:image/png;base64,mockA',
         prompt: 'Initial Prompt A',
         type: 'image',
-        timestamp: Date.now()
+        timestamp: BASE_TS
     };
 
     const mockItemB = {
@@ -102,7 +106,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         url: 'data:image/png;base64,mockB',
         prompt: 'Initial Prompt B',
         type: 'image',
-        timestamp: Date.now()
+        timestamp: BASE_TS + 1000
     };
 
     const mockToastInfo = vi.fn();
@@ -320,8 +324,9 @@ describe('Creative Director 12-Click Daisychain', () => {
         // fireEvent.click(itemB); 
 
         // --- CLICK 14: Set Item B as Character Reference (Originally 12) ---
+        // Gallery sorts by timestamp DESC, so Item B (newer) is at index 0.
         const anchorButtons = screen.getAllByTestId('set-anchor-btn');
-        fireEvent.click(anchorButtons[1]!); // Anchor for Item B
+        fireEvent.click(anchorButtons[0]!); // Anchor for Item B (index 0 in descending sort)
         expect(mockAddCharacterReference).toHaveBeenCalledWith({ image: mockItemB, referenceType: 'subject' });
         expect(mockToastSuccess).toHaveBeenCalledWith("Character Reference Set");
     });
