@@ -17,6 +17,7 @@ if (typeof window !== 'undefined') {
             disconnect: vi.fn().mockResolvedValue(true),
             isConnected: vi.fn().mockResolvedValue(true),
             connect: vi.fn().mockResolvedValue({ success: true }),
+            connectDistributor: vi.fn().mockResolvedValue({ success: true }),
             uploadDirectory: vi.fn().mockResolvedValue({ success: true })
         },
         distribution: {

@@ -17,6 +17,7 @@ if (typeof window !== 'undefined') {
         },
         sftp: {
             connect: vi.fn().mockResolvedValue({ success: true }),
+            connectDistributor: vi.fn().mockResolvedValue({ success: true }),
             isConnected: vi.fn().mockResolvedValue(true),
             uploadDirectory: vi.fn().mockResolvedValue({ success: true }),
             disconnect: vi.fn().mockResolvedValue(undefined),
