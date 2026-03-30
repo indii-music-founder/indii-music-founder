@@ -100,17 +100,14 @@ export const test = base.extend<AuthFixtures>({
 
             // Handle Listen/WebChannel streams (long-polling)
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
+                // Delay fulfillment to simulate a long-polling connection that hasn't received data yet.
+                // This prevents both infinite CPU-spinning retry loops AND immediate UI crashes (403).
+                await new Promise(resolve => setTimeout(resolve, 60000));
                 await route.fulfill({
-                    status: 403,
+                    status: 200,
                     headers: getCorsHeaders(route),
                     contentType: 'application/json',
-                    body: JSON.stringify({
-                        error: {
-                            code: 403,
-                            message: "Permission denied (E2E Mock).",
-                            status: "PERMISSION_DENIED"
-                        }
-                    })
+                    body: JSON.stringify([])
                 });
                 return;
             }
