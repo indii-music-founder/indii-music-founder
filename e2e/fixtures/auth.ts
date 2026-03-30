@@ -322,6 +322,31 @@ export const test = base.extend<AuthFixtures>({
             });
         });
 
+        // Intercept Firebase Remote Config API (returns 500 in staging)
+        await page.route('**/*firebaseremoteconfig.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: getCorsHeaders(route) });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                headers: getCorsHeaders(route),
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    entries: {},
+                    state: 'NO_CHANGE'
+                })
+            });
+        });
+
+        // Intercept Firebase Performance Monitoring (fireperf)
+        await page.route('**/*firebaselogging*.googleapis.com/**', async route => {
+            await route.fulfill({ status: 200, headers: getCorsHeaders(route), contentType: 'application/json', body: '{}' });
+        });
+        await page.route('**/fireperf*', async route => {
+            await route.fulfill({ status: 200, headers: getCorsHeaders(route), contentType: 'application/json', body: '{}' });
+        });
+
         // Inject Mocks BEFORE navigation using a typed cast to avoid `any`
         await page.addInitScript(() => {
             const w = window as unknown as E2EWindowGlobals;
