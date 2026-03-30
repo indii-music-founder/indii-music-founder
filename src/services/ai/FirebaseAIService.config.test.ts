@@ -133,7 +133,7 @@ describe('FirebaseAIService Configuration Mapping', () => {
         });
         const schema = { type: 'object' };
 
-        await service.generateStructuredData('Prompt', schema as any, 1024);
+        await service.generateStructuredData('Prompt', schema as Parameters<typeof service.generateStructuredData>[1], 1024);
 
         expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
             generationConfig: expect.objectContaining({

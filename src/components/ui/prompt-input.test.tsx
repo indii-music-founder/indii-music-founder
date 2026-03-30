@@ -12,7 +12,7 @@ describe('PromptInput', () => {
       </PromptInput>
     )
 
-    const container = screen.getByTestId('prompt-input')
+    const container = screen.getByTestId('prompt-wrapper')
     expect(container).toHaveClass('focus-within:ring-2')
     expect(container).toHaveClass('focus-within:ring-ring')
     expect(container).toHaveClass('focus-within:ring-offset-2')
@@ -75,7 +75,7 @@ describe('PromptInput', () => {
       </PromptInput>
     )
 
-    const container = screen.getByTestId('prompt-input')
+    const container = screen.getByTestId('prompt-wrapper')
     const textarea = screen.getByRole('textbox')
 
     expect(container).toHaveClass('opacity-60')

@@ -127,7 +127,7 @@ describe("ImageGenerationService", () => {
       const results = await ImageGeneration.generateImages({
         prompt: "My album cover",
         isCoverArt: true,
-        userProfile: userProfile as any,
+        userProfile: userProfile as unknown as import('@/types/User').UserProfile,
       });
 
       expect(results).toHaveLength(1);
@@ -217,7 +217,7 @@ describe("ImageGenerationService", () => {
 
       const results = await ImageGeneration.generateCoverArt(
         "My Album Cover",
-        userProfile as any,
+        userProfile as unknown as import('@/types/User').UserProfile,
       );
 
       expect(results).toHaveLength(1);
@@ -309,7 +309,7 @@ describe("captionImage", () => {
         text: vi.fn().mockReturnValue("A glowing orb in a dark forest."),
       },
     };
-    (firebaseAI.generateContent as unknown as any).mockResolvedValue(mockResponse);
+    vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
 
     const result = await ImageGeneration.captionImage(
       { mimeType: "image/png", data: "cleanBase64Data" },
@@ -317,6 +317,6 @@ describe("captionImage", () => {
     );
 
     expect(result).toBe("A glowing orb in a dark forest.");
-    expect(firebaseAI.generateContent as unknown as any).toHaveBeenCalledOnce();
+    expect(firebaseAI.generateContent).toHaveBeenCalledOnce();
   });
 });

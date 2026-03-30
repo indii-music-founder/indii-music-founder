@@ -121,7 +121,7 @@ describe('AI Caching (Browser Environment)', () => {
 
     it('should cache structured data responses', async () => {
         const prompt = 'Extract data';
-        const schema = { type: 'object', properties: { foo: { type: 'string' } } } as any;
+        const schema = { type: 'object', properties: { foo: { type: 'string' } } } as unknown as Parameters<typeof firebaseAI.generateStructuredData>[1];
 
         // Mock returning specific JSON
         const jsonResponse = JSON.stringify({ foo: 'bar' });

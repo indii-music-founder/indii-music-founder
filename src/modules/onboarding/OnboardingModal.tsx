@@ -18,6 +18,7 @@ import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 import type { ConversationFile } from '../../modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
+import { secureRandomPick } from '@/utils/crypto-random';
 
 export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const { t } = useTranslation();
@@ -46,7 +47,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
     // Initial greeting
     useEffect(() => {
         if (isOpen && history.length === 0) {
-            const greeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
+            const greeting = secureRandomPick(OPENING_GREETINGS);
             setHistory([{ role: 'model', parts: [{ text: greeting ?? '' }] }]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -170,7 +171,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 `Lost the thread there for a second. What were you saying?`,
                 `Connection blip. Run that by me again?`,
             ];
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] ?? '' }] }]);
+            setHistory(prev => [...prev, { role: 'model', parts: [{ text: secureRandomPick(errorResponses) ?? '' }] }]);
         } finally {
             setIsProcessing(false);
         }
@@ -224,7 +225,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                         {isProcessing && (
                             <div className="flex justify-start">
                                 <div className="bg-gray-800 text-gray-400 p-3 rounded-xl rounded-tl-none animate-pulse">
-                                    {['Hang on...', 'Let me think...', 'One sec...', 'Mmm...', 'Okay...'][Math.floor(Math.random() * 5)]}
+                                    {secureRandomPick(['Hang on...', 'Let me think...', 'One sec...', 'Mmm...', 'Okay...'])}
                                 </div>
                             </div>
                         )}

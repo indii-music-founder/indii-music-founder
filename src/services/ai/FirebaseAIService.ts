@@ -54,6 +54,7 @@ import { generateSecureId } from '@/utils/security';
 import { logger } from '@/utils/logger';
 import { CachedContextService } from './context/CachedContextService';
 import { RateLimiter } from './RateLimiter';
+import { secureRandomInt } from '@/utils/crypto-random';
 
 // Extracted sub-modules
 import { isAppCheckError, isAppCheckConfigured } from './appcheck';
@@ -1056,7 +1057,7 @@ export class FirebaseAIService implements AIContext {
 
                 if (attempt < retries && isRetryable) {
                     // Exponential backoff with jitter
-                    const backoff = (initialDelay * Math.pow(2, attempt)) + (Math.random() * 200);
+                    const backoff = (initialDelay * Math.pow(2, attempt)) + secureRandomInt(0, 200);
                     const waitTime = Math.min(backoff, 15000); // Absolute cap at 15s
 
                     logger.warn(`[FirebaseAIService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);

@@ -8,7 +8,7 @@ vi.mock('../../agent/WebSocketControlPlane', () => ({
     wcpInstance: {
         connectionState: 'disconnected',
         route: vi.fn(),
-        on: vi.fn(() => () => {}),
+        on: vi.fn(() => () => { }),
         broadcast: vi.fn(),
     }
 }));
@@ -59,7 +59,7 @@ describe('ChaosVerification', () => {
     describe('FirebaseAIService Race Conditions', () => {
         it('should NOT coalesce requests with different multimodal data', async () => {
             // This test verifies if different binary payloads are correctly distinguished in the request coalescing map
-            const rawGenerateSpy = vi.spyOn(firebaseAI as any, 'rawGenerateContent');
+            const rawGenerateSpy = vi.spyOn(firebaseAI as unknown as { rawGenerateContent: any }, 'rawGenerateContent');
 
             const promptA: Content[] = [{
                 role: 'user',
@@ -76,7 +76,7 @@ describe('ChaosVerification', () => {
             // We need to mock the underlying model.generateContent or similar if possible
             // but for a quick check, we can just see if the Map 'activeRequests' handles them as different keys.
 
-            const activeRequests = (firebaseAI as any).activeRequests;
+            const activeRequests = (firebaseAI as unknown as { activeRequests: Map<any, any> }).activeRequests;
 
             // Start Request A (don't wait)
             const promiseA = firebaseAI.rawGenerateContent(promptA, undefined, {}, undefined, [], { skipCache: true });
@@ -102,10 +102,10 @@ describe('ChaosVerification', () => {
             const timeout = 100; // 100ms
 
             // Mock ensureInitialized to bypass bootstrap
-            vi.spyOn(firebaseAI as any, 'ensureInitialized').mockResolvedValue(true);
+            vi.spyOn(firebaseAI as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
 
             // Mock a long running operation (e.g. rateLimiter.acquire)
-            vi.spyOn((firebaseAI as any).rateLimiter, 'acquire').mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
+            vi.spyOn((firebaseAI as unknown as { rateLimiter: { acquire: any } }).rateLimiter, 'acquire').mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
 
             const promise = firebaseAI.rawGenerateContent('Slow request', undefined, {}, undefined, [], { timeout });
 
@@ -130,12 +130,12 @@ describe('ChaosVerification', () => {
                 });
 
             // Mock ensureInitialized to return a custom object with generateContent
-            vi.spyOn(firebaseAI as any, 'ensureInitialized').mockResolvedValue(true);
-            (firebaseAI as any).useFallbackMode = false;
+            vi.spyOn(firebaseAI as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
+            (firebaseAI as unknown as { useFallbackMode: boolean }).useFallbackMode = false;
 
             // Re-mock firebase/ai with the hoisted mock
             vi.mock('firebase/ai', async (importOriginal) => {
-                const actual = await importOriginal() as any;
+                const actual = await importOriginal() as Record<string, unknown>;
                 return {
                     ...actual,
                     getGenerativeModel: () => ({

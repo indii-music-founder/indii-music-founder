@@ -13,7 +13,7 @@ describe('AIResponseCache', () => {
                 index: 0
             }
         ]
-    } as any;
+    } as unknown as GenerateContentResponse;
 
     beforeEach(() => {
         cache = new AIResponseCache();
@@ -30,13 +30,13 @@ describe('AIResponseCache', () => {
     it('should generate a consistent key', () => {
         const options: GenerateContentOptions = {
             model: 'gemini-pro',
-            contents: { role: 'user', parts: [{ text: 'Hello' }] } as any
+            contents: [{ role: 'user', parts: [{ text: 'Hello' }] }]
         };
         const key1 = cache.generateKey(options);
 
         const options2: GenerateContentOptions = {
             model: 'gemini-pro',
-            contents: { role: 'user', parts: [{ text: 'Hello' }] } as any
+            contents: [{ role: 'user', parts: [{ text: 'Hello' }] }]
         };
         const key2 = cache.generateKey(options2);
 
@@ -44,8 +44,8 @@ describe('AIResponseCache', () => {
     });
 
     it('should differentiate keys with different models', () => {
-        const key1 = cache.generateKey({ model: 'gemini-pro', contents: [] as any });
-        const key2 = cache.generateKey({ model: 'gemini-flash', contents: [] as any });
+        const key1 = cache.generateKey({ model: 'gemini-pro', contents: [] });
+        const key2 = cache.generateKey({ model: 'gemini-flash', contents: [] });
         expect(key1).not.toBe(key2);
     });
 

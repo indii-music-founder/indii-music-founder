@@ -9,7 +9,7 @@ import { AgentMessage } from '@/core/store/slices/agent';
 
 // 1. Hoist the mock function so it can be used inside vi.mock factory
 const { mockGenerateContent } = vi.hoisted(() => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     mockGenerateContent: vi.fn().mockResolvedValue({
         response: {
             text: () => 'I remember.',
@@ -21,30 +21,32 @@ const { mockGenerateContent } = vi.hoisted(() => ({
 
 // Mock Firebase
 vi.mock('firebase/app', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     initializeApp: vi.fn(),
     getApp: vi.fn(),
     getApps: vi.fn(() => [])
 }));
 
 vi.mock('firebase/auth', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getAuth: vi.fn(() => ({
-  serverTimestamp: vi.fn(), currentUser: { uid: 'keeper-test-user' } })),
+        serverTimestamp: vi.fn(), currentUser: { uid: 'keeper-test-user' }
+    })),
     initializeAuth: vi.fn(),
     browserLocalPersistence: {},
     browserSessionPersistence: {}
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     initializeFirestore: vi.fn(),
     persistentLocalCache: vi.fn(),
     persistentMultipleTabManager: vi.fn(),
     Timestamp: {
         now: vi.fn(() => ({
-  serverTimestamp: vi.fn(), toMillis: () => Date.now() })),
+            serverTimestamp: vi.fn(), toMillis: () => Date.now()
+        })),
         fromDate: vi.fn(),
         fromMillis: vi.fn(),
     },
@@ -56,7 +58,7 @@ vi.mock('firebase/firestore', () => ({
 
 // Mock MembershipService
 vi.mock('@/services/MembershipService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     MembershipService: {
         checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
         trackUsage: vi.fn().mockResolvedValue(true),
@@ -66,11 +68,11 @@ vi.mock('@/services/MembershipService', () => ({
 
 // Mock GenAI
 vi.mock('@/services/ai/GenAI', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
-  serverTimestamp: vi.fn(),
+            serverTimestamp: vi.fn(),
             generateContent: mockGenerateContent
         })
     }
@@ -87,7 +89,7 @@ describe('📚 Keeper: Context Integrity', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Clear static execution locks to prevent inter-test timeouts
-        (BaseAgent as any).executionLocks.clear();
+        (BaseAgent as unknown as { executionLocks: Set<any> }).executionLocks.clear();
         mockSaveHistory = vi.fn().mockResolvedValue({ success: true });
 
         // 2. Mock Electron API (Persistence) - Add to existing window instead of replacing it

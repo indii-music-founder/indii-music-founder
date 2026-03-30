@@ -23,10 +23,10 @@ describe('ISRCService', () => {
     });
 
     it('should return null if ISRC record not found', async () => {
-        (getDocs as any).mockResolvedValueOnce({
+        vi.mocked(getDocs).mockResolvedValueOnce({
             empty: true,
             docs: []
-        });
+        } as unknown as Awaited<ReturnType<typeof getDocs>>);
 
         const result = await isrcService.getByIsrc('NON-EXISTENT');
 
@@ -67,7 +67,7 @@ describe('ISRCService', () => {
         };
         const mockId = 'new-record-id';
 
-        (addDoc as any).mockResolvedValueOnce({ id: mockId });
+        vi.mocked(addDoc).mockResolvedValueOnce({ id: mockId } as unknown as Awaited<ReturnType<typeof addDoc>>);
 
         const result = await isrcService.recordAssignment(mockData);
 

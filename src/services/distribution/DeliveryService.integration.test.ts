@@ -83,7 +83,7 @@ describe('DeliveryService Integration', () => {
         const assets = {
             audioFiles: [{
                 url: '/source/audio.wav',
-                format: 'wav' as any,
+                format: 'wav' as const,
                 sizeBytes: 1000,
                 mimeType: 'audio/wav',
                 sampleRate: 44100,
@@ -126,7 +126,7 @@ describe('DeliveryService Integration', () => {
         const assets = {
             audioFiles: [{
                 url: '/missing/audio.wav',
-                format: 'wav' as any,
+                format: 'wav' as const,
                 sizeBytes: 1000,
                 mimeType: 'audio/wav',
                 sampleRate: 44100,

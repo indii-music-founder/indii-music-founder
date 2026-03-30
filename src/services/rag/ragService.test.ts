@@ -65,9 +65,9 @@ describe('ragService', () => {
             displayName: 'Test User',
             email: 'test@example.com',
             photoURL: null,
-            createdAt: { seconds: 0, nanoseconds: 0 } as any,
-            updatedAt: { seconds: 0, nanoseconds: 0 } as any,
-            lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+            createdAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+            updatedAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+            lastLoginAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
             emailVerified: true,
             membership: { tier: 'free', expiresAt: null },
             accountType: 'artist',
@@ -115,10 +115,10 @@ describe('ragService', () => {
                 ]
             };
 
-            const mockFiles = [{ name: 'files/123', uri: 'gs://...', mimeType: 'text/plain' }];
+            const mockFiles = [{ name: 'files/123', uri: 'gs://...', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile];
 
-            (GeminiRetrieval.listFiles as any).mockResolvedValue({ files: mockFiles });
-            (GeminiRetrieval.query as any).mockResolvedValue(mockAnswer);
+            vi.mocked(GeminiRetrieval.listFiles).mockResolvedValue({ files: mockFiles });
+            vi.mocked(GeminiRetrieval.query).mockResolvedValue(mockAnswer);
 
             const result = await runAgenticWorkflow(
                 'What is the answer?',
@@ -136,8 +136,8 @@ describe('ragService', () => {
         });
 
         it('should handle fallback when retrieval fails', async () => {
-            (GeminiRetrieval.listFiles as any).mockRejectedValue(new Error('List failed'));
-            (AI.generateText as any).mockResolvedValue('Fallback LLM answer.');
+            vi.mocked(GeminiRetrieval.listFiles).mockRejectedValue(new Error('List failed'));
+            vi.mocked(AI.generateText).mockResolvedValue('Fallback LLM answer.');
 
             const result = await runAgenticWorkflow(
                 'Query',
@@ -154,14 +154,14 @@ describe('ragService', () => {
 
     describe('processForKnowledgeBase', () => {
         it('should extract metadata and upload file', async () => {
-            const mockFile = { name: 'files/abc', uri: 'gs://foo', mimeType: 'text/plain' };
+            const mockFile = { name: 'files/abc', uri: 'gs://foo', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile;
 
-            (AI.generateStructuredData as any).mockResolvedValue({
+            vi.mocked(AI.generateStructuredData).mockResolvedValue({
                 title: 'Extracted Title',
                 summary: 'This is the summary.'
             });
 
-            (GeminiRetrieval.uploadFile as any).mockResolvedValue(mockFile);
+            vi.mocked(GeminiRetrieval.uploadFile).mockResolvedValue(mockFile);
 
             const result = await processForKnowledgeBase(
                 'Raw content to process',
@@ -180,10 +180,10 @@ describe('ragService', () => {
         });
 
         it('should use fallback title if metadata extraction fails', async () => {
-            const mockFile = { name: 'files/abc', uri: 'gs://foo', mimeType: 'text/plain' };
+            const mockFile = { name: 'files/abc', uri: 'gs://foo', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile;
 
-            (AI.generateStructuredData as any).mockRejectedValue(new Error('Extraction failed'));
-            (GeminiRetrieval.uploadFile as any).mockResolvedValue(mockFile);
+            vi.mocked(AI.generateStructuredData).mockRejectedValue(new Error('Extraction failed'));
+            vi.mocked(GeminiRetrieval.uploadFile).mockResolvedValue(mockFile);
 
             const result = await processForKnowledgeBase(
                 'Content',
@@ -195,11 +195,11 @@ describe('ragService', () => {
         });
 
         it('should handle upload failure gracefully', async () => {
-            (AI.generateStructuredData as any).mockResolvedValue({
+            vi.mocked(AI.generateStructuredData).mockResolvedValue({
                 title: 'Title',
                 summary: 'Summary'
             });
-            (GeminiRetrieval.uploadFile as any).mockRejectedValue(new Error('Upload failed'));
+            vi.mocked(GeminiRetrieval.uploadFile).mockRejectedValue(new Error('Upload failed'));
 
             const result = await processForKnowledgeBase('Content', 'source.txt');
 
@@ -211,13 +211,13 @@ describe('ragService', () => {
         // Item 369: Chunk splitting — long content should still be processed end-to-end
         it('should process large content without truncation at the service boundary', async () => {
             const longContent = 'A'.repeat(50000); // 50KB of text
-            const mockFile = { name: 'files/large-doc', uri: 'gs://foo/large', mimeType: 'text/plain' };
+            const mockFile = { name: 'files/large-doc', uri: 'gs://foo/large', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile;
 
-            (AI.generateStructuredData as any).mockResolvedValue({
+            vi.mocked(AI.generateStructuredData).mockResolvedValue({
                 title: 'Large Document',
                 summary: 'A very large document summary.'
             });
-            (GeminiRetrieval.uploadFile as any).mockResolvedValue(mockFile);
+            vi.mocked(GeminiRetrieval.uploadFile).mockResolvedValue(mockFile);
 
             const result = await processForKnowledgeBase(longContent, 'large.txt');
 
@@ -232,14 +232,14 @@ describe('ragService', () => {
             const mockUserProfile = {
                 id: 'user-123', uid: 'user-123', displayName: 'Test User',
                 email: 'test@example.com', photoURL: null,
-                createdAt: { seconds: 0, nanoseconds: 0 } as any,
-                updatedAt: { seconds: 0, nanoseconds: 0 } as any,
-                lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+                createdAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+                updatedAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+                lastLoginAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
                 emailVerified: true, membership: { tier: 'free', expiresAt: null },
                 accountType: 'artist', bio: '', preferences: { theme: 'dark', notifications: true },
                 analyzedTrackIds: [], knowledgeBase: [], savedWorkflows: [],
                 brandKit: { colors: [], fonts: '', brandDescription: '', negativePrompt: '', socials: {}, brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' } }
-            } as any;
+            } as unknown as import('@/types/User').UserProfile;
             const mockOnUpdate = vi.fn();
             const mockUpdateDocStatus = vi.fn();
             const multiResultAnswer = {
@@ -252,8 +252,8 @@ describe('ragService', () => {
                 usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50, totalTokenCount: 150 }
             };
 
-            (GeminiRetrieval.listFiles as any).mockResolvedValue({ files: [{ name: 'files/123', uri: 'gs://test', mimeType: 'text/plain' }] });
-            (GeminiRetrieval.query as any).mockResolvedValue(multiResultAnswer);
+            vi.mocked(GeminiRetrieval.listFiles).mockResolvedValue({ files: [{ name: 'files/123', uri: 'gs://test', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile] });
+            vi.mocked(GeminiRetrieval.query).mockResolvedValue(multiResultAnswer);
 
             const result = await runAgenticWorkflow(
                 'What are the top royalty rates?',
@@ -273,14 +273,14 @@ describe('ragService', () => {
             const mockUserProfile = {
                 id: 'user-123', uid: 'user-123', displayName: 'Test User',
                 email: 'test@example.com', photoURL: null,
-                createdAt: { seconds: 0, nanoseconds: 0 } as any,
-                updatedAt: { seconds: 0, nanoseconds: 0 } as any,
-                lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+                createdAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+                updatedAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
+                lastLoginAt: { seconds: 0, nanoseconds: 0 } as unknown as import('firebase/firestore').Timestamp,
                 emailVerified: true, membership: { tier: 'free', expiresAt: null },
                 accountType: 'artist', bio: '', preferences: { theme: 'dark', notifications: true },
                 analyzedTrackIds: [], knowledgeBase: [], savedWorkflows: [],
                 brandKit: { colors: [], fonts: '', brandDescription: '', negativePrompt: '', socials: {}, brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' } }
-            } as any;
+            } as unknown as import('@/types/User').UserProfile;
             const mockOnUpdate = vi.fn();
             const mockUpdateDocStatus = vi.fn();
             const answerWithUsage = {
@@ -293,8 +293,8 @@ describe('ragService', () => {
                 usageMetadata: { promptTokenCount: 8000, candidatesTokenCount: 500, totalTokenCount: 8500 }
             };
 
-            (GeminiRetrieval.listFiles as any).mockResolvedValue({ files: [{ name: 'files/123', uri: 'gs://test', mimeType: 'text/plain' }] });
-            (GeminiRetrieval.query as any).mockResolvedValue(answerWithUsage);
+            vi.mocked(GeminiRetrieval.listFiles).mockResolvedValue({ files: [{ name: 'files/123', uri: 'gs://test', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile] });
+            vi.mocked(GeminiRetrieval.query).mockResolvedValue(answerWithUsage);
 
             const result = await runAgenticWorkflow(
                 'Query that uses most of the context window',

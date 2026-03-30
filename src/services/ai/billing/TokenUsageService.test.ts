@@ -66,7 +66,7 @@ describe('TokenUsageService', () => {
             vi.mocked(firestore.getDoc).mockResolvedValueOnce({
                 exists: () => false,
                 data: () => undefined
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof firestore.getDoc>>);
 
             const allowed = await TokenUsageService.checkQuota(mockUserId);
             expect(allowed).toBe(true);
@@ -76,7 +76,7 @@ describe('TokenUsageService', () => {
             vi.mocked(firestore.getDoc).mockResolvedValueOnce({
                 exists: () => true,
                 data: () => ({ tokensUsed: 5000 })
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof firestore.getDoc>>);
 
             const allowed = await TokenUsageService.checkQuota(mockUserId);
             expect(allowed).toBe(true);
@@ -86,7 +86,7 @@ describe('TokenUsageService', () => {
             vi.mocked(firestore.getDoc).mockResolvedValueOnce({
                 exists: () => true,
                 data: () => ({ tokensUsed: 100001 }) // Limit is 100k
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof firestore.getDoc>>);
 
             await expect(TokenUsageService.checkQuota(mockUserId))
                 .rejects.toThrow('Daily AI token limit exceeded');

@@ -25,13 +25,13 @@ const mockElectronAPI = {
 
 describe('DistributionService Integration', () => {
     beforeEach(() => {
-        (window as any).electronAPI = mockElectronAPI;
+        (window as unknown as { electronAPI: typeof mockElectronAPI }).electronAPI = mockElectronAPI;
         vi.clearAllMocks();
     });
 
     afterEach(() => {
         // Clean up Electron API mock
-        (window as any).electronAPI = undefined;
+        (window as unknown as { electronAPI: typeof mockElectronAPI | undefined }).electronAPI = undefined;
     });
 
     it('should call validateMetadata via IPC', async () => {
