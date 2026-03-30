@@ -269,8 +269,9 @@ EXECUTION RULES:
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        targetAgentId: { type: 'STRING', description: 'ID of the agent (marketing, legal, finance, director, video, social, brand, music, etc.).' },
-                        task: { type: 'STRING', description: 'The specific task to delegate.' }
+                        targetAgentId: { type: 'STRING', description: 'ID of the target agent (marketing, legal, finance, director, video, social, brand, music, etc.).' },
+                        task: { type: 'STRING', description: 'The specific task to delegate.' },
+                        sharedContext: { type: 'STRING', description: '(Optional) Specific context or memory to share with the target agent so they do not start from scratch.' }
                     },
                     required: ['targetAgentId', 'task']
                 }

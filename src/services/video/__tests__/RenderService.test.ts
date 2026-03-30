@@ -23,7 +23,7 @@ describe('RenderService', () => {
             codec: 'h264' as const,
         };
 
-        (renderMedia as any).mockResolvedValue(undefined);
+        vi.mocked(renderMedia).mockResolvedValue(undefined as unknown as never);
 
         const result = await service.renderComposition(config);
 
@@ -48,7 +48,7 @@ describe('RenderService', () => {
             inputProps: {},
         };
 
-        (renderMedia as any).mockRejectedValue(new Error('Render error'));
+        vi.mocked(renderMedia).mockRejectedValue(new Error('Render error'));
 
         await expect(service.renderComposition(config)).rejects.toThrow('Failed to render composition: Render error');
     });

@@ -10,7 +10,7 @@ import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentContext, H
 import { memoryService } from './MemoryService';
 import { agentRegistry } from './registry';
 
-import { coordinator } from './WorkflowCoordinator';
+// Workflow coordinator removed for indii Conductor standard routing
 import { orchestrationService } from './OrchestrationService';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { GenAI } from '@/services/ai/GenAI';
@@ -273,58 +273,16 @@ export class AgentService {
             return;
         }
 
-        // 1. Use Orchestration for "Master Workflows" (Multi-Agent)
-        const orchestratedResult = await orchestrationService.executeOrchestratedWorkflow(text, context);
-        if (orchestratedResult) {
-            updateAgentMessage(responseId, {
-                text: orchestratedResult,
-                thoughts: [{
-                    id: uuidv4(),
-                    text: "Executed Multi-Agent Orchestration Flow",
-                    timestamp: Date.now(),
-                    type: 'logic',
-                    toolName: 'Orchestration Service'
-                }]
-            });
-            return;
-        }
-
-        // 2. Use Coordinator for Fast Path
-        let coordinatorResult: string;
-        if (forcedAgentId) {
-            coordinatorResult = 'DELEGATED_TO_AGENT';
-        } else {
-            // Pass REDACTED text to the coordinator
-            coordinatorResult = await coordinator.handleUserRequest(text, context, (chunk: string) => {
-                // Update the UI optimistically if chunks arrive from fast path
-                updateAgentMessage(responseId, { text: chunk });
-            });
-        }
-
-        if (coordinatorResult !== 'DELEGATED_TO_AGENT') {
-            // Direct Response from GenAI
-            updateAgentMessage(responseId, {
-                text: coordinatorResult,
-                thoughts: [{
-                    id: uuidv4(),
-                    text: "Executed via Fast Path (Workflow Coordinator)",
-                    timestamp: Date.now(),
-                    type: 'logic',
-                    toolName: 'Direct Generation'
-                }]
-            });
-            return;
-        }
-
-        // 3. Fallback to Agent Orchestration (Executor)
+        // 1. Resolve Active Agent ID if not forced
         let agentId = forcedAgentId;
 
-        // Resolve Active Agent ID if not forced
         if (!agentId) {
             const state = useStore.getState();
             const session = state.sessions?.[state.activeSessionId || ''];
             agentId = session?.participants?.[0] || 'generalist';
         }
+
+        // 2. Delegate directly to the Agent Executor (indii Conductor handles routing natively)
 
         // Update agent ID in the placeholder (Native/Agent path)
         updateAgentMessage(responseId, { agentId });
