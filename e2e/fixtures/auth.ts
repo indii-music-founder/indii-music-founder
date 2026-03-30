@@ -56,15 +56,36 @@ export const test = base.extend<AuthFixtures>({
             }
         });
 
+        // Track failed/rejected requests to pinpoint 4xx/500 errors
+        page.on('response', response => {
+            if (response.status() >= 400) {
+                console.log(`[BROWSER NETWORK ERROR] ${response.status()} on ${response.url()}`);
+            }
+        });
+        page.on('requestfailed', request => {
+            console.log(`[BROWSER NETWORK FAILED] ${request.failure()?.errorText} on ${request.url()}`);
+        });
+
+        const corsHeaders = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': '*',
+            'Access-Control-Allow-Headers': '*'
+        };
+
         // Intercept ALL Firestore traffic to prevent offline hangs.
         // This covers addDoc/updateDoc writes that block the submission pipeline.
         await page.route('**/firestore.googleapis.com/**', async route => {
             const url = route.request().url();
             const method = route.request().method();
 
+            if (method === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+
             // Handle Listen/WebChannel streams (long-polling)
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+                await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '[]' });
                 return;
             }
 
@@ -72,6 +93,7 @@ export const test = base.extend<AuthFixtures>({
             if (url.includes('/users/test-user-uid-e2e')) {
                 await route.fulfill({
                     status: 200,
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({
                         name: 'projects/mock-project/databases/(default)/documents/users/test-user-uid-e2e',
@@ -90,6 +112,7 @@ export const test = base.extend<AuthFixtures>({
             if (method === 'GET') {
                 await route.fulfill({
                     status: 200,
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({ documents: [] })
                 });
@@ -102,6 +125,7 @@ export const test = base.extend<AuthFixtures>({
             if (method === 'POST' || method === 'PATCH') {
                 await route.fulfill({
                     status: 200,
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({
                         name: `projects/mock-project/databases/(default)/documents/mock-collection/mock-doc-${Date.now()}`,
@@ -114,13 +138,18 @@ export const test = base.extend<AuthFixtures>({
             }
 
             // Fallthrough: block DELETE and other methods silently
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
         });
 
         // Intercept AI API calls to prevent real token spend
         await page.route(/.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/, async route => {
             const url = route.request().url();
             console.log(`[E2E] Intercepted Vertex AI: ${url}`);
+
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
 
             const postData = route.request().postData() || '';
             const hasUpdateProfileTool = postData.includes('updateProfile');
@@ -160,6 +189,7 @@ export const test = base.extend<AuthFixtures>({
                 if (url.includes('alt=sse')) {
                     await route.fulfill({
                         status: 200,
+                        headers: corsHeaders,
                         contentType: 'text/event-stream',
                         body: `data: ${JSON.stringify(aiResponseObj)}\n\n`
                     });
@@ -168,6 +198,7 @@ export const test = base.extend<AuthFixtures>({
                     // Sometimes just a JSON array is expected for non-SSE streams in legacy Vertex
                     await route.fulfill({
                         status: 200,
+                        headers: corsHeaders,
                         contentType: 'application/json',
                         body: JSON.stringify([aiResponseObj])
                     });
@@ -178,6 +209,7 @@ export const test = base.extend<AuthFixtures>({
             // Normal generateContent
             await route.fulfill({
                 status: 200,
+                headers: corsHeaders,
                 contentType: 'application/json',
                 body: JSON.stringify(aiResponseObj)
             });
@@ -188,10 +220,16 @@ export const test = base.extend<AuthFixtures>({
             const url = route.request().url();
             console.log(`[E2E] Intercepted RAG Proxy: ${url}`);
 
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+
             if (url.includes('fileSearchStores')) {
                 if (route.request().method() === 'POST' && !url.includes(':importFile')) {
                     await route.fulfill({
                         status: 200,
+                        headers: corsHeaders,
                         contentType: 'application/json',
                         body: JSON.stringify({ name: 'fileSearchStores/mock-e2e-store' })
                     });
@@ -200,6 +238,7 @@ export const test = base.extend<AuthFixtures>({
                 if (route.request().method() === 'GET') {
                     await route.fulfill({
                         status: 200,
+                        headers: corsHeaders,
                         contentType: 'application/json',
                         body: JSON.stringify({ fileSearchStores: [{ name: 'fileSearchStores/mock-e2e-store', displayName: 'indiiOS Default Store' }] })
                     });
@@ -210,6 +249,7 @@ export const test = base.extend<AuthFixtures>({
             if (url.includes('importFile')) {
                 await route.fulfill({
                     status: 200,
+                    headers: corsHeaders,
                     contentType: 'application/json',
                     body: JSON.stringify({ name: 'operations/mock-op', done: true })
                 });
@@ -219,6 +259,7 @@ export const test = base.extend<AuthFixtures>({
             // Default success for others (e.g. generateContent)
             await route.fulfill({
                 status: 200,
+                headers: corsHeaders,
                 contentType: 'application/json',
                 body: JSON.stringify({
                     candidates: [{
@@ -231,8 +272,13 @@ export const test = base.extend<AuthFixtures>({
         // Intercept Gemini API file uploads (which go to a different path sometimes)
         await page.route('**/*upload/v1beta/files*', async route => {
             console.log(`[E2E] Intercepted RAG Upload: ${route.request().url()}`);
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
             await route.fulfill({
                 status: 200,
+                headers: corsHeaders,
                 contentType: 'application/json',
                 body: JSON.stringify({ file: { name: 'files/mock-file-123', state: 'ACTIVE' } })
             });
@@ -241,8 +287,13 @@ export const test = base.extend<AuthFixtures>({
         // Intercept Firebase Installations API
         await page.route('**/*installations.googleapis.com/**', async route => {
             console.log(`[E2E] Intercepted Installations API: ${route.request().url()}`);
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
             await route.fulfill({
                 status: 200,
+                headers: corsHeaders,
                 contentType: 'application/json',
                 body: JSON.stringify({
                     name: 'projects/mock-project/installations/mock-installation',
