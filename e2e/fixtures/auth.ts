@@ -100,7 +100,7 @@ export const test = base.extend<AuthFixtures>({
 
             // Handle Listen/WebChannel streams (long-polling)
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.fulfill({ status: 200, headers: getCorsHeaders(route), contentType: 'application/json', body: '[]' });
+                await route.abort('failed');
                 return;
             }
 
