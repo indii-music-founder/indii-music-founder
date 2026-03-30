@@ -100,7 +100,18 @@ export const test = base.extend<AuthFixtures>({
 
             // Handle Listen/WebChannel streams (long-polling)
             if (url.includes(':listen') || url.includes('/Listen/') || url.includes('channel?')) {
-                await route.abort('failed');
+                await route.fulfill({
+                    status: 403,
+                    headers: getCorsHeaders(route),
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        error: {
+                            code: 403,
+                            message: "Permission denied (E2E Mock).",
+                            status: "PERMISSION_DENIED"
+                        }
+                    })
+                });
                 return;
             }
 
