@@ -27,7 +27,7 @@ describe('PublicistTools', () => {
             contact_info: { name: 'PR', email: 'pr@example.com' },
             pdf: null
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await PublicistTools.write_press_release({ topic: 'New Album' });
 
@@ -49,7 +49,7 @@ describe('PublicistTools', () => {
             internal_talking_points: ['Point 1'],
             actions_to_take: ['Action 1']
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await PublicistTools.generate_crisis_response({ situation: 'Leak' });
 
@@ -66,7 +66,7 @@ describe('PublicistTools', () => {
             angle: 'Angle',
             target_outlets: ['Outlet 1']
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await PublicistTools.pitch_story({ story_summary: 'We cool', recipient_type: 'blog' });
 
@@ -75,7 +75,7 @@ describe('PublicistTools', () => {
     });
 
     it('handles AI failure gracefully', async () => {
-        (firebaseAI.generateStructuredData as any).mockRejectedValue(new Error("AI Down"));
+        vi.mocked(firebaseAI.generateStructuredData).mockRejectedValue(new Error("AI Down"));
         const result = await PublicistTools.write_press_release({ topic: 'Fail' });
 
         expect(result.success).toBe(false);

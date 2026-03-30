@@ -55,7 +55,7 @@ describe('SocialTools', () => {
         response: {
           text: () => mockGeneratedText,
         },
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
 
       vi.mocked(SocialService.createPost).mockResolvedValue(mockPostId);
 
@@ -90,7 +90,7 @@ describe('SocialTools', () => {
         response: {
           text: () => mockGeneratedText,
         },
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
 
       // Simulate DB Failure
       vi.mocked(SocialService.createPost).mockRejectedValue(new Error('Firestore unavailable'));

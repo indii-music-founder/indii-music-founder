@@ -34,7 +34,7 @@ describe('CoreTools', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
-        (useStore.getState as any).mockReturnValue(mockStoreState);
+        vi.mocked(useStore.getState).mockReturnValue(mockStoreState as unknown as ReturnType<typeof useStore.getState>);
     });
 
 

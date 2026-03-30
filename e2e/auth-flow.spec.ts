@@ -34,6 +34,38 @@ test.describe('Authentication Flow', () => {
     });
 
     test('Invalid credentials show error', async ({ page }) => {
+        // Mock the Firebase Identity Toolkit API to return an auth error deterministically.
+        // Without this, the test depends on network reachability to the real Firebase backend,
+        // which can hang if the API key is fake, restricted, or rate-limited.
+        await page.route('**/identitytoolkit.googleapis.com/**', async route => {
+            const url = route.request().url();
+            if (url.includes('signInWithPassword') || url.includes('signUp')) {
+                await route.fulfill({
+                    status: 400,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        error: {
+                            code: 400,
+                            message: 'INVALID_LOGIN_CREDENTIALS',
+                            errors: [{ message: 'INVALID_LOGIN_CREDENTIALS', domain: 'global', reason: 'invalid' }]
+                        }
+                    })
+                });
+                return;
+            }
+            // Allow other Identity Toolkit calls through (e.g. token refresh)
+            await route.continue();
+        });
+
+        // Also mock securetoken.googleapis.com to prevent token refresh hangs
+        await page.route('**/securetoken.googleapis.com/**', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ access_token: 'mock', expires_in: '3600', token_type: 'Bearer' })
+            });
+        });
+
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
@@ -51,8 +83,8 @@ test.describe('Authentication Flow', () => {
         await passwordInput.fill('wrongpassword123');
         await page.locator('form button[type="submit"]').first().click();
 
-        // Should show error message
-        const errorMessage = page.locator('[role="alert"], .error, [class*="error"]');
+        // Should show error message (role="alert" on the motion.p element in LoginForm)
+        const errorMessage = page.locator('[role="alert"], [data-testid="auth-error"]').first();
         await expect(errorMessage).toBeVisible({ timeout: 10000 });
         console.log('[Auth] Invalid credentials correctly rejected');
     });

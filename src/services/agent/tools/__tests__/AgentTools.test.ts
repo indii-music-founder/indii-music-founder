@@ -46,7 +46,7 @@ describe('Agent Tools Validation', () => {
                 approved: true,
                 critique: "Great job",
                 score: 9
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
             const result = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
             expect(result.data.approved).toBe(true);
@@ -79,7 +79,7 @@ describe('Agent Tools Validation', () => {
                 budget: "$1000",
                 channels: ["TikTok"],
                 kpis: ["Views"]
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
             const result = await MarketingTools.create_campaign_brief({ product: "Song", goal: "Viral" });
             expect(result.data.campaignName).toBe("Test Campaign");
@@ -94,7 +94,7 @@ describe('Agent Tools Validation', () => {
                 totalDistance: "100 miles",
                 estimatedDuration: "2 hours",
                 legs: [{ from: "NY", to: "NJ", distance: "100 miles", driveTime: "2 hours" }]
-            } as any);
+            } as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
 
             const result = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });

@@ -25,7 +25,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal();
     return {
         serverTimestamp: vi.fn(),
-        ...actual as any,
+        ...actual as Record<string, unknown>,
         getDocs: vi.fn(),
         collection: vi.fn(),
         query: vi.fn(),
@@ -53,7 +53,7 @@ vi.mock('@/services/firebase', () => ({
 
 // Mock electronAPI
 if (typeof window !== 'undefined') {
-    (window as any).electronAPI = {
+    (window as unknown as { electronAPI?: Record<string, unknown> }).electronAPI = {
         security: {
             rotateCredentials: vi.fn().mockResolvedValue({
                 success: true,
@@ -88,10 +88,10 @@ describe('SecurityTools (Mocked)', () => {
                 members: ['user-1', 'user-2', 'user-3']
             };
 
-            (getDoc as any).mockResolvedValue({
+            vi.mocked(getDoc).mockResolvedValue({
                 exists: () => true,
                 data: () => mockOrgData
-            });
+            } as unknown as import('firebase/firestore').DocumentSnapshot<import('firebase/firestore').DocumentData>);
 
             const result = await audit_permissions({ project_id: 'org-1' });
             const parsed = result.data;
@@ -102,8 +102,8 @@ describe('SecurityTools (Mocked)', () => {
             // user-1 is owner -> admin
             // user-2, user-3 -> viewer
 
-            const adminRole = parsed.roles.find((r: any) => r.role === 'admin');
-            const viewerRole = parsed.roles.find((r: any) => r.role === 'viewer');
+            const adminRole = parsed.roles.find((r: { role: string }) => r.role === 'admin');
+            const viewerRole = parsed.roles.find((r: { role: string }) => r.role === 'viewer');
 
             expect(adminRole.count).toBe(1);
             expect(viewerRole.count).toBe(2);
@@ -114,7 +114,7 @@ describe('SecurityTools (Mocked)', () => {
 
         it('should fallback to AI if Firestore returns empty/error', async () => {
             // Mock Firestore not found
-            (getDoc as any).mockResolvedValue({ exists: () => false });
+            vi.mocked(getDoc).mockResolvedValue({ exists: () => false } as unknown as import('firebase/firestore').DocumentSnapshot<import('firebase/firestore').DocumentData>);
 
             // Mock AI response
             const mockAIResponse = {
@@ -124,7 +124,7 @@ describe('SecurityTools (Mocked)', () => {
                 recommendations: []
             };
 
-            (firebaseAI.generateStructuredData as any).mockResolvedValue(mockAIResponse);
+            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockAIResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
             const result = await audit_permissions({ project_id: 'test-project' });
             const parsed = result.data;

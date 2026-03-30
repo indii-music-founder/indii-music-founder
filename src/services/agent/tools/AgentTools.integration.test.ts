@@ -89,7 +89,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
                 { text: 'Generate a hip-hop beat' },
                 {},
                 undefined
-            ) as any;
+            ) as unknown as { text: string };
             expect(result.text).toBe('Generate a hip-hop beat');
         });
 
@@ -99,7 +99,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
                 {},
                 {},
                 undefined
-            ) as any;
+            ) as unknown as { status: string; notifications: unknown[]; newNotifications: number };
             expect(result.status).toBe('checked');
             expect(result.notifications).toBeInstanceOf(Array);
             expect(result.newNotifications).toBeGreaterThanOrEqual(0);

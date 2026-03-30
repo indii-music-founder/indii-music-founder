@@ -59,7 +59,7 @@ describe('MarketingTools', () => {
             channels: [],
             kpis: []
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await MarketingTools.create_campaign_brief({ product: 'Test', goal: 'Win' });
         expect(result.success).toBe(true);

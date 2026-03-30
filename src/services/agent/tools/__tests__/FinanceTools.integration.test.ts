@@ -71,7 +71,7 @@ describe('FinanceTools', () => {
             const { httpsCallable } = await import('firebase/functions');
             vi.mocked(httpsCallable).mockReturnValue((() => {
                 throw new Error('Function not deployed');
-            }) as any);
+            }) as unknown as import('firebase/functions').HttpsCallable<unknown, unknown, unknown>);
 
             const result = await FinanceTools.initiate_split_escrow({
                 trackId: 'track-001',
@@ -82,7 +82,7 @@ describe('FinanceTools', () => {
             expect(result).toBeDefined();
             expect(isToolSuccess(result)).toBe(true);
             // Fallback produces a locally-tracked escrow
-            const data = result as any;
+            const data = result as { escrowAccount?: string; status?: string };
             expect(typeof data.escrowAccount).toBe('string');
             expect(data.status).toBe('FUNDS_TRACKED_LOCALLY');
         });
@@ -92,7 +92,7 @@ describe('FinanceTools', () => {
             vi.mocked(httpsCallable).mockReturnValue(
                 vi.fn().mockResolvedValue({
                     data: { escrowAccount: 'acct_test123', status: 'PENDING_SIGNATURES' },
-                }) as any
+                }) as unknown as import('firebase/functions').HttpsCallable<unknown, unknown, unknown>
             );
 
             const result = await FinanceTools.initiate_split_escrow({
@@ -102,7 +102,7 @@ describe('FinanceTools', () => {
             });
 
             expect(isToolSuccess(result)).toBe(true);
-            const data = result as any;
+            const data = result as { escrowAccount?: string; status?: string };
             expect(data.escrowAccount).toBe('acct_test123');
             expect(data.status).toBe('PENDING_SIGNATURES');
         });
@@ -118,7 +118,7 @@ describe('FinanceTools', () => {
             });
 
             expect(isToolSuccess(result)).toBe(true);
-            const data = result as any;
+            const data = result as { variance?: number; netPosition?: number };
             // variance = 10000 - 8500 = 1500
             expect(data.variance).toBe(1500);
             // netPosition = 5000 - 8500 = -3500

@@ -48,7 +48,7 @@ describe('Standard Grammar Tools', () => {
                 elements: [{ type: "slugline", text: "INT. TEST - DAY" }]
             });
             const mockResponse = { response: { text: () => mockJson } };
-            vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as any);
+            vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
 
             const result = await ScreenwriterTools.format_screenplay({ text: 'John is at his desk.' });
 
@@ -73,7 +73,7 @@ describe('Standard Grammar Tools', () => {
                 cast: []
             });
             const mockResponse = { response: { text: () => mockJson } };
-            vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as any);
+            vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
 
             const result = await ProducerTools.create_call_sheet({
                 date: '2025-10-27',
@@ -98,7 +98,7 @@ describe('Standard Grammar Tools', () => {
         it('draft_contract includes mandatory header', async () => {
             const mockContent = '# LEGAL AGREEMENT\n\nThis agreement...';
             const mockResponse = { response: { text: () => mockContent } };
-            vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as any);
+            vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
 
             const result = await LegalTools.draft_contract!({
                 type: 'NDA',

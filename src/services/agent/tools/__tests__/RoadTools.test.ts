@@ -41,7 +41,7 @@ describe('RoadTools', () => {
             estimatedDuration: "2 hours",
             legs: []
         };
-        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
 
         const result = await RoadTools.plan_tour_route({ locations: ["A", "B"] });
 
@@ -49,7 +49,7 @@ describe('RoadTools', () => {
         expect(result.data).toEqual(mockResponse);
 
         // Verify prompt enhancement
-        const callArgs = (firebaseAI.generateStructuredData as any).mock.calls[0];
+        const callArgs = vi.mocked(firebaseAI.generateStructuredData).mock.calls[0]!;
         expect(callArgs[0]).toEqual(expect.arrayContaining([expect.objectContaining({ text: expect.stringContaining("You are a Logistics Engine") })]));
     });
 });
