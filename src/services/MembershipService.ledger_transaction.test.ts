@@ -61,10 +61,10 @@ describe('MembershipService (Ledger Transaction Integrity)', () => {
 
     it('💸 "The Standard Transaction": Verifies correct credit deduction flow', async () => {
         // 1. Initial State: User has spent $0.50
-        vi.mocked(getDoc).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({ totalSpend: 0.50 })
-        } as unknown as Awaited<ReturnType<typeof getDoc>>);
+        });
 
         const TASK_COST = 0.20;
 
@@ -96,10 +96,10 @@ describe('MembershipService (Ledger Transaction Integrity)', () => {
 
     it('💸 "The Hard Limit Rejection": Aborts transaction when funds are insufficient', async () => {
         // 1. Initial State: User has spent $0.90
-        vi.mocked(getDoc).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({ totalSpend: 0.90 })
-        } as unknown as Awaited<ReturnType<typeof getDoc>>);
+        });
 
         const TASK_COST = 0.20; // 0.90 + 0.20 = 1.10 (Exceeds $1.00 limit)
 
@@ -130,13 +130,13 @@ describe('MembershipService (Ledger Transaction Integrity)', () => {
         // Pretend the DB returns a massive number of generated videos
         const FAKE_HIGH_USAGE = 999999;
 
-        vi.mocked(getDoc).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({
                 videosGenerated: FAKE_HIGH_USAGE,
                 updatedAt: Date.now()
             })
-        } as unknown as Awaited<ReturnType<typeof getDoc>>);
+        });
 
         // 2. Attempt to check quota
         const result = await MembershipService.checkQuota('video', 1);

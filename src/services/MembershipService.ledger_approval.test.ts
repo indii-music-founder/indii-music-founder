@@ -59,9 +59,9 @@ describe('MembershipService (Ledger Approval Gates)', () => {
         });
 
         // Default: No usage
-        vi.mocked(getDoc).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => false
-        } as Awaited<ReturnType<typeof getDoc>>);
+        });
     });
 
     it('💸 "Micro-Transaction": allows small charges without approval', async () => {

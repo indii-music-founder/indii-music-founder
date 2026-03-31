@@ -37,13 +37,14 @@ describe('DashboardService', () => {
             { prompt: 'cool amazing beautiful', type: 'image', timestamp: Date.now() },
             { prompt: 'the a an with', type: 'image', timestamp: Date.now() }, // Stop words
             { prompt: 'wow' }, // Length 3, should be ignored
-        ] as unknown as never[];
+        ] as any[];
 
         const { useStore } = await import('@/core/store');
-        vi.mocked(useStore.getState).mockReturnValue({
+        (useStore.getState as import("vitest").Mock).mockReturnValue({
             generatedHistory: mockHistory,
+            agentMessages: [],
             projects: []
-        } as unknown as import('@/core/store').StoreState);
+        });
 
         const analytics = await DashboardService.getAnalytics();
 
@@ -95,13 +96,14 @@ describe('DashboardService', () => {
             // Future - Should be ignored?
             // Math.floor((now - (now + dayMs)) / dayMs) = -1. Excluded.
             { type: 'image', timestamp: now + dayMs, prompt: 'future' },
-        ] as unknown as never[];
+        ] as any[];
 
         const { useStore } = await import('@/core/store');
-        vi.mocked(useStore.getState).mockReturnValue({
+        (useStore.getState as import("vitest").Mock).mockReturnValue({
             generatedHistory: mockHistory,
+            agentMessages: [],
             projects: []
-        } as unknown as import('@/core/store').StoreState);
+        });
 
         const analytics = await DashboardService.getAnalytics();
 
@@ -126,7 +128,7 @@ describe('DashboardService', () => {
         vi.stubEnv('VITE_API_URL', 'https://api.example.com');
 
         const { useStore } = await import('@/core/store');
-        vi.mocked(useStore.getState).mockReturnValue({ userProfile: { id: 'test-user' } } as unknown as never);
+        (useStore.getState as import("vitest").Mock).mockReturnValue({ userProfile: { id: 'test-user' } });
 
         // First call
         const result1 = await DashboardService.getSalesAnalytics('30d');
@@ -161,10 +163,10 @@ describe('DashboardService', () => {
         it('should return empty array if store is empty and loadProjects fails or returns nothing', async () => {
             const mockLoadProjects = vi.fn();
             const { useStore } = await import('@/core/store');
-            vi.mocked(useStore.getState).mockReturnValue({
+            (useStore.getState as import("vitest").Mock).mockReturnValue({
                 projects: [],
                 loadProjects: mockLoadProjects,
-            } as unknown as import('@/core/store').StoreState);
+            });
 
             const projects = await DashboardService.getProjects();
             expect(projects).toEqual([]);
@@ -176,18 +178,18 @@ describe('DashboardService', () => {
             const { useStore } = await import('@/core/store');
 
             // First call returns empty, triggers load
-            vi.mocked(useStore.getState).mockReturnValueOnce({
+            (useStore.getState as import("vitest").Mock).mockReturnValueOnce({
                 projects: [],
                 loadProjects: mockLoadProjects,
-            } as unknown as import('@/core/store').StoreState);
+            });
 
             // Second call (after await loadProjects) returns populated
-            vi.mocked(useStore.getState).mockReturnValueOnce({
+            (useStore.getState as import("vitest").Mock).mockReturnValueOnce({
                 projects: [
-                    { id: '1', name: 'Test Project', lastModified: 1000, assetCount: 5, thumbnail: 'thumb.jpg' }
+                    { id: '1', name: 'Test Project', date: 1000, assetCount: 5, thumbnail: 'thumb.jpg' }
                 ],
                 loadProjects: mockLoadProjects,
-            } as unknown as import('@/core/store').StoreState);
+            });
 
             const projects = await DashboardService.getProjects();
 
@@ -206,12 +208,12 @@ describe('DashboardService', () => {
         it('should return cached projects without calling loadProjects if they exist', async () => {
             const mockLoadProjects = vi.fn();
             const { useStore } = await import('@/core/store');
-            vi.mocked(useStore.getState).mockReturnValue({
+            (useStore.getState as import("vitest").Mock).mockReturnValue({
                 projects: [
-                    { id: '1', name: 'Cached Project', lastModified: 2000 }
+                    { id: '1', name: 'Cached Project', date: 2000 }
                 ],
                 loadProjects: mockLoadProjects,
-            } as unknown as import('@/core/store').StoreState);
+            });
 
             const projects = await DashboardService.getProjects();
 

@@ -121,7 +121,7 @@ describe('Creative Director 12-Click Daisychain', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useToast as any).mockReturnValue({
+        (useToast as unknown as import("vitest").Mock).mockReturnValue({
             info: mockToastInfo,
             success: mockToastSuccess,
             warning: vi.fn(),
@@ -151,7 +151,7 @@ describe('Creative Director 12-Click Daisychain', () => {
             const [prompt, setLocalPrompt] = useState('Initial Prompt');
             const [viewMode, setLocalViewMode] = useState('gallery');
 
-            (useStore as any).mockImplementation((selector: any) => {
+            (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
                 const state = {
                     generatedHistory: [mockItemA, mockItemB],
                     selectedItem,

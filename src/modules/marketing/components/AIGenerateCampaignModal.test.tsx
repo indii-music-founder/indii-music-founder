@@ -84,7 +84,7 @@ describe('AIGenerateCampaignModal', () => {
         const user = userEvent.setup();
 
         // Use a delayed promise to catch the loading state
-        (CampaignAI.generateCampaign as any).mockImplementation(async () => {
+        (CampaignAI.generateCampaign as import("vitest").Mock).mockImplementation(async () => {
             await new Promise(resolve => setTimeout(resolve, 100));
             return mockGeneratedPlan;
         });
@@ -111,7 +111,7 @@ describe('AIGenerateCampaignModal', () => {
 
     it('handles generation errors gracefully', async () => {
         const user = userEvent.setup();
-        (CampaignAI.generateCampaign as any).mockRejectedValue(new Error('AI overloaded'));
+        (CampaignAI.generateCampaign as import("vitest").Mock).mockRejectedValue(new Error('AI overloaded'));
 
         render(<AIGenerateCampaignModal {...defaultProps} />);
 
@@ -128,7 +128,7 @@ describe('AIGenerateCampaignModal', () => {
 
     it('allows regenerating the campaign', async () => {
         const user = userEvent.setup();
-        (CampaignAI.generateCampaign as any).mockResolvedValue(mockGeneratedPlan);
+        (CampaignAI.generateCampaign as import("vitest").Mock).mockResolvedValue(mockGeneratedPlan);
 
         render(<AIGenerateCampaignModal {...defaultProps} />);
 
@@ -147,9 +147,9 @@ describe('AIGenerateCampaignModal', () => {
 
     it('calls onSave when Create Campaign is clicked', async () => {
         const user = userEvent.setup();
-        (CampaignAI.generateCampaign as any).mockResolvedValue(mockGeneratedPlan);
+        (CampaignAI.generateCampaign as import("vitest").Mock).mockResolvedValue(mockGeneratedPlan);
         const mockCampaignAsset = { id: 'new-camp', title: 'Asset' };
-        (CampaignAI.planToCampaignAsset as any).mockReturnValue(mockCampaignAsset);
+        (CampaignAI.planToCampaignAsset as import("vitest").Mock).mockReturnValue(mockCampaignAsset);
 
         render(<AIGenerateCampaignModal {...defaultProps} />);
 

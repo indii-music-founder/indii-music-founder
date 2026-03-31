@@ -43,7 +43,7 @@ describe('BrowserAgentTester', () => {
 
     it('handles successful agent execution', async () => {
         // Mock success response
-        (browserAgentDriver.drive as any).mockResolvedValueOnce({
+        (browserAgentDriver.drive as import("vitest").Mock).mockResolvedValueOnce({
             success: true,
             logs: ['[Driver] Starting', '[Driver] Goal Achieved!']
         });
@@ -75,7 +75,7 @@ describe('BrowserAgentTester', () => {
 
     it('handles failed agent execution', async () => {
         // Mock failure response
-        (browserAgentDriver.drive as any).mockResolvedValueOnce({
+        (browserAgentDriver.drive as import("vitest").Mock).mockResolvedValueOnce({
             success: false,
             logs: ['[Driver] Starting', '[Driver] Error: Something went wrong']
         });
@@ -103,7 +103,7 @@ describe('BrowserAgentTester', () => {
 
     it('handles unexpected exceptions', async () => {
         // Mock exception
-        (browserAgentDriver.drive as any).mockRejectedValueOnce(new Error('Network Error'));
+        (browserAgentDriver.drive as import("vitest").Mock).mockRejectedValueOnce(new Error('Network Error'));
 
         render(<BrowserAgentTester />);
 

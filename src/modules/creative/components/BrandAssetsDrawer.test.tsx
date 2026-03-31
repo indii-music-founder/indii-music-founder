@@ -35,8 +35,8 @@ describe('BrandAssetsDrawer', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as any).mockReturnValue(defaultStore);
-        (useToast as any).mockReturnValue(mockToast);
+        (useStore as unknown as import("vitest").Mock).mockReturnValue(defaultStore);
+        (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
     });
 
     it('renders correctly with assets', () => {

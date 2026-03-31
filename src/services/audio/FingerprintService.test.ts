@@ -38,7 +38,7 @@ describe('FingerprintService', () => {
         vi.clearAllMocks();
 
         // Mock SHA-256 digest
-        vi.mocked(mockCrypto.subtle.digest).mockResolvedValue(new ArrayBuffer(32) as unknown as never);
+        (mockCrypto.subtle.digest as import("vitest").Mock).mockResolvedValue(new ArrayBuffer(32));
 
         // Mock getDuration via prototype spike or specialized mock if private
         // Since getDuration is private, we test observable behaviors
@@ -46,15 +46,13 @@ describe('FingerprintService', () => {
 
     it('should generate a fingerprint successfully', async () => {
         // Mock feature extraction
-        vi.mocked(audioAnalysisService.analyze).mockResolvedValue({
+        (audioAnalysisService.analyze as import("vitest").Mock).mockResolvedValue({
             features: {
                 bpm: 120,
                 key: 'C',
                 scale: 'Major',
                 energy: 0.8,
-                duration: 180,
-                danceability: 0.8,
-                loudness: -5
+                duration: 180
             },
             fromCache: false
         });
@@ -101,28 +99,26 @@ describe('FingerprintService', () => {
         // Since getDuration creates an Audio element, we mock createElement
         const mockAudio = {
             duration: 150,
-            onloadedmetadata: null as unknown as ((this: GlobalEventHandlers, ev: Event) => void) | null,
-            onerror: null as unknown as OnErrorEventHandler,
+            onloadedmetadata: null as any,
+            onerror: null as any,
             set src(v: string) {
                 // Simulate async load
                 setTimeout(() => {
-                    if (mockAudio.onloadedmetadata) {
-                        mockAudio.onloadedmetadata.call(mockAudio as unknown as GlobalEventHandlers, new Event('loadedmetadata'));
-                    }
+                    if (this.onloadedmetadata) this.onloadedmetadata();
                 }, 10);
             }
         };
 
-        vi.spyOn(document, 'createElement').mockReturnValue(mockAudio as unknown as never);
+        vi.spyOn(document, 'createElement').mockImplementation((() => mockAudio) as unknown as typeof document.createElement);
 
         // Pass undefined for filePath (2nd arg) to ensure existingFeatures (3rd arg) is used
-        const fingerprint = await service.generateFingerprint(mockFile, undefined, existingFeatures as unknown as import('./types').DeepAudioFeatures);
+        const fingerprint = await service.generateFingerprint(mockFile, undefined, existingFeatures as unknown as import('./types').AudioFeatures);
 
         expect(fingerprint).toContain('150s');
     });
 
     it('should handle errors gracefully', async () => {
-        vi.mocked(mockCrypto.subtle.digest).mockRejectedValue(new Error('Crypto failed'));
+        (mockCrypto.subtle.digest as import("vitest").Mock).mockRejectedValue(new Error('Crypto failed'));
 
         const fingerprint = await service.generateFingerprint(mockFile);
 

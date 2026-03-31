@@ -150,10 +150,10 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
         expect(updates).toHaveLength(2);
 
         expect(updates[0].output!.url).toBe('https://storage.googleapis.com/veo/video-expiring-soon.mp4');
-        expect((updates[0].output!.metadata as any)!.quality).toBe('pro');
+        expect((updates[0].output!.metadata as Record<string, unknown>)!.quality).toBe('pro');
 
         expect(updates[1].output!.url).toBe('https://storage.googleapis.com/veo/video-refreshed.mp4');
-        expect((updates[1].output!.metadata as any)!.quality).toBe('pro');
+        expect((updates[1].output!.metadata as Record<string, unknown>)!.quality).toBe('pro');
     });
 
     it('should handle massive metadata payloads without blocking (Simulated)', async () => {
@@ -187,7 +187,7 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
 
         const result = await jobPromise;
 
-        expect((result.output!.metadata as any)!.debug_logs).toHaveLength(4194304);
+        expect((result.output!.metadata as Record<string, unknown>)!.debug_logs).toHaveLength(4194304);
         expect(result.output!.metadata!.mime_type).toBe('video/mp4');
     });
 

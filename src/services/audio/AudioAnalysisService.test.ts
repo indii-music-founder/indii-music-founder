@@ -127,8 +127,8 @@ class MockOfflineAudioContext {
 
 global.AudioContext = MockAudioContext as unknown as typeof AudioContext;
 global.OfflineAudioContext = MockOfflineAudioContext as unknown as typeof OfflineAudioContext;
-(window as unknown as { AudioContext: typeof AudioContext }).AudioContext = MockAudioContext as unknown as typeof AudioContext;
-(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext = MockAudioContext as unknown as typeof AudioContext;
+(window as unknown as Record<string, unknown>).AudioContext = MockAudioContext;
+(window as unknown as Record<string, unknown>).webkitAudioContext = MockAudioContext;
 
 vi.mock('jszip', () => ({
     default: {
@@ -171,7 +171,7 @@ describe('AudioAnalysisService', () => {
 
         vi.mocked(musicLibraryService.getAnalysis).mockResolvedValueOnce({
             features: cachedFeatures
-        } as unknown as NonNullable<Awaited<ReturnType<typeof musicLibraryService.getAnalysis>>>);
+        } as unknown as import('@/services/music/MusicLibraryService').AnalyzedTrack);
 
         const result = await service.analyze(mockFile);
         expect(result.fromCache).toBe(true);
@@ -189,8 +189,8 @@ describe('AudioAnalysisService', () => {
             })),
             dispose: vi.fn()
         };
-        vi.mocked(mockTF.loadGraphModel).mockResolvedValue(mockModel as unknown as never);
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ blob: vi.fn().mockResolvedValue(new Blob([])) }));
+        vi.mocked(mockTF.loadGraphModel).mockResolvedValue(mockModel as any);
+        (global.fetch as import("vitest").Mock).mockResolvedValue({ blob: vi.fn().mockResolvedValue(new Blob([])) });
 
         const result = await service.analyze(mockFile);
         expect(result.fromCache).toBe(false);
@@ -201,8 +201,13 @@ describe('AudioAnalysisService', () => {
         const mockFile = new File(['corrupt'], 'bad.wav', { type: 'audio/wav' });
         const mockCtx = new MockAudioContext();
         mockCtx.decodeAudioData = vi.fn().mockRejectedValue(new Error('Decode failed'));
+        const originalAudioContext = global.AudioContext;
         global.AudioContext = function () { return mockCtx; } as unknown as typeof AudioContext;
 
-        await expect(service.analyzeDeep(mockFile)).rejects.toThrow('Decode failed');
+        try {
+            await expect(service.analyzeDeep(mockFile)).rejects.toThrow('Decode failed');
+        } finally {
+            global.AudioContext = originalAudioContext;
+        }
     });
 });

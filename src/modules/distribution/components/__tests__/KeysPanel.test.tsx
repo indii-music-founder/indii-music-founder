@@ -57,7 +57,7 @@ describe('KeysPanel', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (isrcService.getUserCatalog as any).mockResolvedValue(mockCatalog);
+        (isrcService.getUserCatalog as import("vitest").Mock).mockResolvedValue(mockCatalog);
     });
 
     it('should load catalog on mount', async () => {
@@ -71,7 +71,7 @@ describe('KeysPanel', () => {
     });
 
     it('should run Merlin compliance check', async () => {
-        (distributionService.checkMerlinStatus as any).mockResolvedValue({
+        (distributionService.checkMerlinStatus as import("vitest").Mock).mockResolvedValue({
             status: 'READY',
             passed_count: 1,
             failed_count: 0,
@@ -96,7 +96,7 @@ describe('KeysPanel', () => {
     });
 
     it('should generate BWARM CSV', async () => {
-        (distributionService.generateBWARM as any).mockResolvedValue('Header\nData');
+        (distributionService.generateBWARM as import("vitest").Mock).mockResolvedValue('Header\nData');
 
         render(<KeysPanel />);
         await waitFor(() => expect(screen.getByText(/Check compliance for 1 track/i)).toBeDefined());

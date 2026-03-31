@@ -60,9 +60,9 @@ describe('MembershipService (Ledger Subscription Gates)', () => {
         });
 
         // Default: No usage
-        vi.mocked(getDoc).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => false
-        } as Awaited<ReturnType<typeof getDoc>>);
+        });
     });
 
     it('💸 "Veo 3.1 Duration Gate": Blocks Free users from Long Form generation', async () => {

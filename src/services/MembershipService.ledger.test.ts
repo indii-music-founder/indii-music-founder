@@ -40,9 +40,9 @@ vi.mock('firebase/firestore', () => ({
             const current = MOCK_DB[ref as string] || {};
             const processedUpdates: any = {};
             for (const [key, value] of Object.entries(data)) {
-                if (value && typeof value === 'object' && (value as any)._type === 'increment') {
+                if (value && typeof value === 'object' && (value as Record<string, unknown>)._type === 'increment') {
                     const currentVal = (current[key] || 0) as number;
-                    const newVal = currentVal + (value as any).value;
+                    const newVal = currentVal + ((value as { _type?: string, value?: number }).value || 0);
                     processedUpdates[key] = parseFloat(newVal.toFixed(2));
                 } else {
                     processedUpdates[key] = value;
@@ -59,10 +59,10 @@ vi.mock('firebase/firestore', () => ({
         // Handle "increment" logic manually for the mock
         const processedUpdates: any = {};
         for (const [key, value] of Object.entries(updates)) {
-            if (value && typeof value === 'object' && (value as any)._type === 'increment') {
+            if (value && typeof value === 'object' && (value as Record<string, unknown>)._type === 'increment') {
                 const currentVal = (current[key] || 0) as number;
                 // Use parseFloat/toFixed to avoid floating point errors in mock
-                const newVal = currentVal + (value as any).value;
+                const newVal = currentVal + ((value as { _type?: string, value?: number }).value || 0);
                 processedUpdates[key] = parseFloat(newVal.toFixed(2));
             } else {
                 processedUpdates[key] = value;

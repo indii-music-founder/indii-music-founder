@@ -11,16 +11,16 @@ vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
 // Mock the firebase import that is causing issues
 vi.mock('@/services/firebase', () => ({
-    app: {},
+  app: {},
   db: {},
   storage: {},
   auth: {},
   functions: {},
   remoteConfig: { defaultConfig: {} },
-    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
-    getFirebaseAI: vi.fn(() => ({})),
-    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
-    messaging: { getToken: vi.fn() }
+  functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+  getFirebaseAI: vi.fn(() => ({})),
+  appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+  messaging: { getToken: vi.fn() }
 }));
 // Also mock repository since it imports firebase
 vi.mock('@/services/storage/repository', () => ({
@@ -51,11 +51,11 @@ describe('ExpenseTracker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useToast as any).mockReturnValue(mockToast);
-    (useStore as any).mockReturnValue({
+    (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
+    (useStore as unknown as import("vitest").Mock).mockReturnValue({
       userProfile: { id: 'test-user' }
     });
-    (useFinance as any).mockReturnValue({
+    (useFinance as unknown as import("vitest").Mock).mockReturnValue({
       expenses: [],
       expensesLoading: false,
       actions: {

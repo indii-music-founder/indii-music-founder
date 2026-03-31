@@ -152,7 +152,7 @@ describe('CampaignManager', () => {
     it('executes campaign when execute button is clicked', async () => {
         // Update mock to succeed
         const { httpsCallable } = await import('firebase/functions');
-        (httpsCallable as any).mockReturnValue(() => Promise.resolve({ data: { success: true, posts: mockCampaign.posts, message: "Success" } }));
+        (httpsCallable as import("vitest").Mock).mockReturnValue(() => Promise.resolve({ data: { success: true, posts: mockCampaign.posts, message: "Success" } }));
 
         render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
 

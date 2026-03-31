@@ -78,7 +78,7 @@ describe('DirectGenerationTab', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as any).mockReturnValue(mockStore);
+        (useStore as unknown as import("vitest").Mock).mockReturnValue(mockStore);
     });
 
     it('displays loading state while generating image', async () => {

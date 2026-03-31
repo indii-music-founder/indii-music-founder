@@ -21,7 +21,7 @@ describe('ZoomableTimeline Accessibility', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (videoEditorStore.useVideoEditorStore as any).mockReturnValue({
+        (videoEditorStore.useVideoEditorStore as unknown as import("vitest").Mock).mockReturnValue({
             timelineZoom: 1,
             setTimelineZoom: mockSetTimelineZoom,
             project: mockProject,

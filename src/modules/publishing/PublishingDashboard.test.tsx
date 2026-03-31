@@ -174,7 +174,7 @@ describe('PublishingDashboard', () => {
             }
         ] as any[];
 
-        (useReleases as any).mockReturnValue({
+        (useReleases as unknown as import("vitest").Mock).mockReturnValue({
             releases: mockReleases,
             loading: false,
             error: null,
@@ -243,7 +243,7 @@ describe('PublishingDashboard', () => {
             { id: '1', metadata: { trackTitle: 'Delete Me' }, status: 'draft', assets: {} }
         ] as any[];
 
-        (useReleases as any).mockReturnValue({
+        (useReleases as unknown as import("vitest").Mock).mockReturnValue({
             releases: mockReleases,
             loading: false,
             error: null,

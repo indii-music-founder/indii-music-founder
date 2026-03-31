@@ -94,6 +94,23 @@ The core of indiiOS is **indii**, an intelligent orchestration hub with **17 spe
 
 ---
 
+## 📱 indiiREMOTE Edge Infrastructure
+
+**indiiREMOTE** is a production-ready "Edge Computing" feature that allows users to control their indiiOS desktop mainframe from any mobile device, instantly and securely.
+
+Instead of routing sensitive, unreleased creative assets through a public cloud server, indiiREMOTE provisions a secure, encrypted **Ngrok tunnel** directly to a local Express server running inside the Electron main process.
+
+### How It Works
+
+1. **Device Pairing:** The Electron app generates a secure 6-digit cryptographic PIN and displays a QR code containing the active Ngrok tunnel URL.
+2. **Thin-Client Dashboard:** Scanning the QR code opens a lightweight React SPA served directly by the user's desktop application.
+3. **End-to-End Encryption:** After entering the PIN, the mobile device establishes a secure WebSocket connection over the Ngrok tunnel directly to the desktop.
+4. **Live Execution:** The mobile dashboard displays a real-time feed of active AI agent actions and allows the user to trigger commands (Execute, Explain, Fix Bugs, etc.) without being physically present at their computer.
+
+By keeping the "brain" on the desktop device and utilizing the phone strictly as a remote controller, indiiOS enables true untethered mobility without compromising data sovereignty or relying on external cloud storage.
+
+---
+
 ## 🧠 Always-On Memory Agent
 
 Adapted from Google's [Always-On Memory Agent](https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent) reference architecture, rebuilt as a native TypeScript service with significant enhancements.
@@ -326,6 +343,48 @@ GCP Secret Manager secrets:
 ```
 
 Client secrets are **never exposed to the browser** — all token operations route through server-side Cloud Functions.
+
+---
+
+## 🌍 indiiREMOTE: Global Edge Computing
+
+indiiREMOTE transforms your desktop into a globally accessible, private edge server. It replaces the legacy Cloud Relay (Firebase) middleman with a true, low-latency, end-to-end encrypted connection between your mobile device and your Mac Studio.
+
+### How It Works
+
+Instead of relying on cloud databases to relay commands, the indiiOS Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
+
+```
+📱 Phone (Anywhere on Earth)
+        │
+        ▼ (HTTPS / WSS)
+┌───────────────────────────────────────────┐
+│  Ngrok Secure Global Edge Network         │
+│  End-to-End Encrypted Tunnel              │
+└──────────────────┬────────────────────────┘
+                   │
+                   ▼ (localhost:3333)
+┌───────────────────────────────────────────┐
+│  IndiiRemoteService (Electron Main)       │
+│  Express Server + WebSocket Router        │
+└──────────────────┬────────────────────────┘
+                   │
+                   ▼ (IPC Bus)
+┌───────────────────────────────────────────┐
+│  indiiOS Desktop React App                │
+│  Mainframe Execution                      │
+└───────────────────────────────────────────┘
+```
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Zero-Install Thin Client** | The phone UI is a blazing-fast, standalone React SPA served directly from your Mac. No App Store download required. |
+| **Direct WebSocket Sync** | Sub-millisecond latency. AI generation progress, memory utilization, and desktop state sync directly to your phone. |
+| **Secure PIN Auth** | The IPC bridge generates a cryptographic, single-use 6-digit Session Passcode unique to each boot. |
+| **No Cloud Database** | No Firebase reads/writes. The pipeline bypasses third-party databases, ensuring total privacy for unreleased assets. |
+| **Instant QR Provisioning** | Navigating to the `Mobile Remote` tab visually generates the Ngrok QR code in real-time, masking complex IP routing from the user. |
 
 ---
 

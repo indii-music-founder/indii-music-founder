@@ -49,22 +49,22 @@ describe('MembershipService (Ledger Checks)', () => {
         });
 
         // Default: No usage recorded (New day)
-        vi.mocked(getDoc).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => false,
             data: () => undefined
-        } as unknown as Awaited<ReturnType<typeof getDoc>>);
+        });
     });
 
     describe('Circuit Breaker (Quota Enforcement)', () => {
         it('💸 allows generation when usage is below limit (Free Tier)', async () => {
             // Setup: Free tier allows 5 videos. User has 0.
-            vi.mocked(getDoc).mockResolvedValue({
+            (getDoc as import("vitest").Mock).mockResolvedValue({
                 exists: () => true,
                 data: () => ({
                     videosGenerated: 2, // 2/5
                     updatedAt: Date.now()
                 })
-            } as unknown as Awaited<ReturnType<typeof getDoc>>);
+            });
 
             const result = await MembershipService.checkQuota('video', 1);
 
@@ -75,13 +75,13 @@ describe('MembershipService (Ledger Checks)', () => {
 
         it('💸 ACTIVATES STOP SWITCH when limit is reached (The "Hard Limit")', async () => {
             // Setup: Free tier limit is 5. User has 5.
-            vi.mocked(getDoc).mockResolvedValue({
+            (getDoc as import("vitest").Mock).mockResolvedValue({
                 exists: () => true,
                 data: () => ({
                     videosGenerated: 5, // 5/5
                     updatedAt: Date.now()
                 })
-            } as unknown as Awaited<ReturnType<typeof getDoc>>);
+            });
 
             const result = await MembershipService.checkQuota('video', 1);
 
@@ -91,13 +91,13 @@ describe('MembershipService (Ledger Checks)', () => {
 
         it('💸 blocks "High Cost" operations if they would exceed quota', async () => {
             // Setup: User has 4/5 usage. Tries to make 2 videos.
-            vi.mocked(getDoc).mockResolvedValue({
+            (getDoc as import("vitest").Mock).mockResolvedValue({
                 exists: () => true,
                 data: () => ({
                     videosGenerated: 4, // 4/5
                     updatedAt: Date.now()
                 })
-            } as unknown as Awaited<ReturnType<typeof getDoc>>);
+            });
 
             const result = await MembershipService.checkQuota('video', 2);
 
@@ -114,13 +114,13 @@ describe('MembershipService (Ledger Checks)', () => {
             });
 
             // User has 10 videos (would block Free, but allows Pro)
-            vi.mocked(getDoc).mockResolvedValue({
+            (getDoc as import("vitest").Mock).mockResolvedValue({
                 exists: () => true,
                 data: () => ({
                     videosGenerated: 10,
                     updatedAt: Date.now()
                 })
-            } as unknown as Awaited<ReturnType<typeof getDoc>>);
+            });
 
             const result = await MembershipService.checkQuota('video', 1);
 
@@ -146,9 +146,9 @@ describe('MembershipService (Ledger Checks)', () => {
     describe('Wallet Logic (Usage Deductions)', () => {
         it('💸 initializes "Wallet" (Usage Doc) if missing', async () => {
             // Setup: Doc does not exist
-            vi.mocked(getDoc).mockResolvedValue({
+            (getDoc as import("vitest").Mock).mockResolvedValue({
                 exists: () => false
-            } as unknown as Awaited<ReturnType<typeof getDoc>>);
+            });
 
             await MembershipService.incrementUsage(MOCK_USER_ID, 'video', 1);
 
@@ -163,9 +163,9 @@ describe('MembershipService (Ledger Checks)', () => {
 
         it('💸 deducts credits (Increments Usage) correctly', async () => {
             // Setup: Doc exists
-            vi.mocked(getDoc).mockResolvedValue({
+            (getDoc as import("vitest").Mock).mockResolvedValue({
                 exists: () => true
-            } as unknown as Awaited<ReturnType<typeof getDoc>>);
+            });
 
             await MembershipService.incrementUsage(MOCK_USER_ID, 'video', 1);
 
@@ -180,9 +180,9 @@ describe('MembershipService (Ledger Checks)', () => {
         });
 
         it('💸 tracks secondary costs (Video Seconds)', async () => {
-            vi.mocked(getDoc).mockResolvedValue({
+            (getDoc as import("vitest").Mock).mockResolvedValue({
                 exists: () => true
-            } as unknown as Awaited<ReturnType<typeof getDoc>>);
+            });
 
             const duration = 120; // 2 minutes
             await MembershipService.incrementUsage(MOCK_USER_ID, 'video', 1, duration);

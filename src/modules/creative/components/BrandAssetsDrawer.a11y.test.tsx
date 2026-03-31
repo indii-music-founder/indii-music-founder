@@ -20,7 +20,7 @@ vi.mock('@/components/kokonutui/file-upload', () => ({
 
 describe('BrandAssetsDrawer Accessibility', () => {
     beforeEach(() => {
-        (useStore as any).mockReturnValue({
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
             userProfile: {
                 brandKit: {
                     brandAssets: [
@@ -34,7 +34,7 @@ describe('BrandAssetsDrawer Accessibility', () => {
             currentProjectId: 'test-project',
             setActiveReferenceImage: vi.fn()
         });
-        (useToast as any).mockReturnValue({
+        (useToast as unknown as import("vitest").Mock).mockReturnValue({
             success: vi.fn(),
             error: vi.fn()
         });

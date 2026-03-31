@@ -120,7 +120,7 @@ describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
         // Pixel Rule: "Mock the AI, verify the UI"
 
         // 1. Setup the mock AI behavior (Streaming events)
-        (VenueScoutService.searchVenues as any).mockImplementation(async (city: string, genre: string, isAuto: boolean, onProgress: any) => {
+        (VenueScoutService.searchVenues as import("vitest").Mock).mockImplementation(async (city: string, genre: string, isAuto: boolean, onProgress: any) => {
             // Simulate AI "Thinking" steps
             onProgress({ step: 'SCANNING_MAP', message: 'Scanning sector 7...' });
             await new Promise(r => setTimeout(r, 10));
@@ -177,7 +177,7 @@ describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
     it('Scenario 2: Handles Empty Results gracefully', async () => {
         // Pixel Rule: "Accessibility is functionality" - Ensure user knows what happened
 
-        (VenueScoutService.searchVenues as any).mockResolvedValue([]);
+        (VenueScoutService.searchVenues as import("vitest").Mock).mockResolvedValue([]);
 
         render(<AgentDashboard />);
         const deployBtn = screen.getByTestId('deploy-scout-btn');

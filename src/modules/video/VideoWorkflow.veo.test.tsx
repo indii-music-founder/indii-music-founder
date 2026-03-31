@@ -112,7 +112,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
         // NO fake timers
 
         // Setup User Store
-        (useStore as any).mockReturnValue({
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
             generatedHistory: [],
             selectedItem: null,
             pendingPrompt: null,
@@ -137,7 +137,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
         };
 
         // Initialize Store with Job ID
-        (useVideoEditorStore as any).mockReturnValue({
+        (useVideoEditorStore as unknown as import("vitest").Mock).mockReturnValue({
             jobId: jobId,
             status: 'queued',
             setJobId: mockSetJobId,
@@ -214,7 +214,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
 
         // Let's test "Flash" logic by manually triggering the subscription flow via store mock.
 
-        (useVideoEditorStore as any).mockReturnValue({
+        (useVideoEditorStore as unknown as import("vitest").Mock).mockReturnValue({
             jobId: flashJobId,
             status: 'processing', // Already processing
             setJobId: mockSetJobId,
@@ -259,7 +259,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
         // --- Test Part 2: Safety Violation ---
         const safetyJobId = 'job-veo-safety';
 
-        (useVideoEditorStore as any).mockReturnValue({
+        (useVideoEditorStore as unknown as import("vitest").Mock).mockReturnValue({
             jobId: safetyJobId,
             status: 'processing',
             setJobId: mockSetJobId,

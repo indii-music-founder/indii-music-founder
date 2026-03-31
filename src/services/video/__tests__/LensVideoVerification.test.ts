@@ -93,7 +93,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
+                    data: () => ({ status: 'processing' })
                 } as unknown as import('firebase/firestore').DocumentSnapshot);
 
                 setTimeout(() => {
@@ -132,7 +132,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                     callback({
                         exists: () => true,
                         id: mockJobId,
-                        data: () => ({ serverTimestamp: vi.fn(), status: 'completed', url: 'http://fast.url' })
+                        data: () => ({ status: 'completed', url: 'http://fast.url' })
                     } as unknown as import('firebase/firestore').DocumentSnapshot);
                 }, 500); // 0.5s
                 return vi.fn();
@@ -152,7 +152,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
+                    data: () => ({ status: 'processing' })
                 } as unknown as import('firebase/firestore').DocumentSnapshot);
                 return vi.fn();
             }) as unknown as typeof import('firebase/firestore').onSnapshot);

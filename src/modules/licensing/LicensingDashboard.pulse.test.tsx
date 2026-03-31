@@ -37,12 +37,12 @@ describe('LicensingDashboard Pulse Check', () => {
         let sendLicenses: (data: License[]) => void;
         let sendRequests: (data: any[]) => void;
 
-        (licensingService.subscribeToActiveLicenses as any).mockImplementation((cb: any) => {
+        (licensingService.subscribeToActiveLicenses as import("vitest").Mock).mockImplementation((cb: any) => {
             sendLicenses = cb;
             return () => {};
         });
 
-        (licensingService.subscribeToPendingRequests as any).mockImplementation((cb: any) => {
+        (licensingService.subscribeToPendingRequests as import("vitest").Mock).mockImplementation((cb: any) => {
             sendRequests = cb;
             return () => {};
         });

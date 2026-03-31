@@ -27,8 +27,6 @@ import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
 
-const store = new Store();
-
 // Configure logging
 log.transports.file.level = 'info';
 log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs/main.log');
@@ -48,10 +46,11 @@ if (app.isPackaged) {
     });
 }
 
-const createWindow = () => {
+const createWindow = async () => {
     const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
 
+    const store = new Store();
     const windowState = store.get('window-state', {
         width: 1280,
         height: 800,
@@ -59,6 +58,24 @@ const createWindow = () => {
         y: undefined,
         isMaximized: false
     }) as { width: number, height: number, x?: number, y?: number, isMaximized: boolean };
+
+    // Load .env here (after app.whenReady) to avoid esbuild hoisting issues with dotenv v17
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    try { require('dotenv').config(); } catch (_e) { /* dotenv optional */ }
+
+    try {
+        const { indiiRemoteService } = await import('./services/IndiiRemoteService');
+        const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
+        const password = Math.floor(100000 + Math.random() * 900000).toString();
+        try {
+            const url = await indiiRemoteService.start({ port: 3333, password, ngrokToken: token });
+            log.info(`[IndiiRemote READY] Ngrok Tunnel: ${url}`);
+        } catch (startErr) {
+            log.error('[Main] IndiiRemoteService startup rejected:', startErr);
+        }
+    } catch (e) {
+        log.error('[Main] Failed to start IndiiRemote subsystem:', e);
+    }
 
     // Item 325: Hard assertion — webSecurity must always be true in production
     if (app.isPackaged && isDev) {
@@ -480,7 +497,7 @@ app.on('will-quit', async () => {
         await sftpService.disconnect().catch(e => log.warn('[Main] SFTP disconnect on quit error:', e));
     }
     await SidecarService.stopSystem();
-    stopMobileRemoteServer();
+    await stopMobileRemoteServer().catch(e => log.warn('[Main] Mobile remote shutdown error:', e));
 });
 
 // Crash Handling & Observability

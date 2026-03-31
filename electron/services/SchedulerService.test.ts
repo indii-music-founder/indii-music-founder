@@ -40,7 +40,10 @@ vi.mock('electron-log', () => ({
 }));
 
 vi.mock('electron', () => ({
-    app: { getAppPath: vi.fn().mockReturnValue('/mock/app') },
+    app: {
+        getAppPath: vi.fn().mockReturnValue('/mock/app'),
+        getPath: vi.fn().mockReturnValue('/mock/user/data'),
+    },
     BrowserWindow: {
         getAllWindows: vi.fn().mockReturnValue([
             { isDestroyed: mockIsDestroyed, webContents: { send: mockSend } },

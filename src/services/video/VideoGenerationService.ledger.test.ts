@@ -64,14 +64,14 @@ describe('VideoGenerationService (Ledger Circuit Breaker)', () => {
     it('💸 "Cost Circuit Breaker": Halts generation when quota is exceeded', async () => {
         // 1. Setup: Simulate "Quota Exceeded" / "Circuit Breaker Active"
         // The Accountant says NO.
-        (subscriptionService.canPerformAction as any).mockResolvedValue({
+        (subscriptionService.canPerformAction as import("vitest").Mock).mockResolvedValue({
             allowed: false,
             reason: 'Circuit Breaker Active: Monthly limit reached.'
         });
 
         // Mock the Cloud Function (The "Spend" Button)
         const mockTriggerJob = vi.fn();
-        (httpsCallable as any).mockReturnValue(mockTriggerJob);
+        (httpsCallable as import("vitest").Mock).mockReturnValue(mockTriggerJob);
 
         // 2. Action: Attempt to generate video
         const options: any = {

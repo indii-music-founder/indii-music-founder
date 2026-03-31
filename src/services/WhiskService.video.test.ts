@@ -1,5 +1,4 @@
-
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { WhiskService } from './WhiskService';
 import { WhiskState } from '@/core/store/slices/creative';
 import { STYLE_PRESETS } from '@/modules/creative/components/whisk/WhiskPresetStyles';

@@ -133,8 +133,8 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
 
             // 🔍 Lens Audit: Metadata is the contract
             expect(job.output!.metadata).toBeDefined();
-            expect((job.output!.metadata as any).duration_seconds).toBeGreaterThan(0);
-            expect([24, 30, 60]).toContain((job.output!.metadata as any).fps);
+            expect((job.output!.metadata as Record<string, unknown>).duration_seconds).toBeGreaterThan(0);
+            expect([24, 30, 60]).toContain((job.output!.metadata as Record<string, unknown>).fps);
             expect(job.output!.metadata!.mime_type).toBe('video/mp4');
         });
 

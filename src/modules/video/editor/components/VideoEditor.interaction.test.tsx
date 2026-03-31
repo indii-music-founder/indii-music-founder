@@ -105,9 +105,9 @@ describe('VideoEditor Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useToast as any).mockReturnValue(mockToast);
+        (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
 
-        (useVideoEditorStore as any).mockReturnValue({
+        (useVideoEditorStore as unknown as import("vitest").Mock).mockReturnValue({
             project: mockProject,
             setProject: mockSetProject,
             updateClip: mockUpdateClip,
@@ -122,7 +122,7 @@ describe('VideoEditor Integration', () => {
             currentTime: 0
         });
 
-        (httpsCallable as any).mockReturnValue(vi.fn().mockResolvedValue({
+        (httpsCallable as import("vitest").Mock).mockReturnValue(vi.fn().mockResolvedValue({
             data: { success: true, renderId: 'r1' }
         }));
     });

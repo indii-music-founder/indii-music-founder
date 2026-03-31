@@ -167,7 +167,7 @@ describe('VideoWorkflow', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (extractVideoFrame as any).mockResolvedValue('data:image/jpeg;base64,extracted-frame');
+        (extractVideoFrame as import("vitest").Mock).mockResolvedValue('data:image/jpeg;base64,extracted-frame');
 
         // Reset mock states
         Object.assign(mockStoreState, {
@@ -184,7 +184,7 @@ describe('VideoWorkflow', () => {
             progress: 0
         });
 
-        (useToast as any).mockReturnValue(mockToast);
+        (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
     });
 
     it('triggers video generation and sets jobId', async () => {

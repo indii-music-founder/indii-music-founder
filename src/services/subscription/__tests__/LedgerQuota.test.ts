@@ -51,8 +51,8 @@ describe('Ledger\'s "Circuit Breaker" Test 💸', () => {
         service = new SubscriptionService();
 
         // Setup generic httpsCallable mock
-        vi.mocked(httpsCallable).mockImplementation((_functions: any, name: string) => {
-            return mockFunctions[name as keyof typeof mockFunctions] as unknown as ReturnType<typeof httpsCallable>;
+        (httpsCallable as import("vitest").Mock).mockImplementation((_functions: any, name: string) => {
+            return mockFunctions[name as keyof typeof mockFunctions];
         });
 
         // Setup base subscription (FREE Tier)
@@ -69,7 +69,7 @@ describe('Ledger\'s "Circuit Breaker" Test 💸', () => {
         };
 
         // Mock Cache to return subscription but NOT usage (forcing a "fetch" which we intercept)
-        vi.mocked(cacheService.get).mockImplementation((key: string) => {
+        (cacheService.get as import("vitest").Mock).mockImplementation((key: string) => {
             if (key.startsWith('subscription:')) return mockSub;
             return null;
         });
