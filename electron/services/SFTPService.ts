@@ -11,7 +11,7 @@ export interface SFTPConfig {
 
 // Local definition to avoid cross-project import issues in Electron main process
 export class SFTPError extends Error {
-    constructor(public code: string, message: string, public originalError?: any) {
+    constructor(public code: string, message: string, public originalError?: unknown) {
         super(message);
         this.name = 'SFTPError';
     }
@@ -37,9 +37,10 @@ class SFTPService {
             });
             this.connected = true;
             console.info('[SFTPService] Connected.');
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
             console.error('[SFTPService] Connection failed:', error);
-            throw new SFTPError('CONNECTION_FAILED', `Failed to connect to SFTP: ${error.message}`, error);
+            throw new SFTPError('CONNECTION_FAILED', `Failed to connect to SFTP: ${msg}`, error);
         }
     }
 
@@ -67,9 +68,10 @@ class SFTPService {
 
             console.info(`[SFTPService] Upload complete: ${remotePath}`);
             return uploadedFiles;
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
             console.error(`[SFTPService] Upload failed:`, error);
-            throw new SFTPError('UPLOAD_FAILED', `Failed to upload directory: ${error.message}`, error);
+            throw new SFTPError('UPLOAD_FAILED', `Failed to upload directory: ${msg}`, error);
         }
     }
 
