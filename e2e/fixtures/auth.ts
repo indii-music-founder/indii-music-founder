@@ -284,6 +284,120 @@ export const test = base.extend<AuthFixtures>({
             });
         });
 
+        // Intercept Firebase Auth (Identity Toolkit) API — prevents real auth calls hanging in CI
+        await page.route('**/identitytoolkit.googleapis.com/**', async route => {
+            const url = route.request().url();
+            console.log(`[E2E] Intercepted Identity Toolkit: ${url}`);
+
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+
+            // Mock signInWithPassword / signUp / lookup
+            if (url.includes('signInWithPassword') || url.includes('signUp')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        localId: 'test-user-uid-e2e',
+                        email: 'e2e@indiios.test',
+                        displayName: 'E2E Test User',
+                        idToken: 'mock-id-token-e2e',
+                        refreshToken: 'mock-refresh-token-e2e',
+                        expiresIn: '3600'
+                    })
+                });
+                return;
+            }
+
+            // Mock getAccountInfo (lookup)
+            if (url.includes('getAccountInfo') || url.includes('lookup')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: corsHeaders,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        users: [{
+                            localId: 'test-user-uid-e2e',
+                            email: 'e2e@indiios.test',
+                            displayName: 'E2E Test User',
+                            emailVerified: true
+                        }]
+                    })
+                });
+                return;
+            }
+
+            // Default: return empty success for any other Identity Toolkit calls
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify({})
+            });
+        });
+
+        // Intercept Secure Token API — prevents token refresh hangs
+        await page.route('**/securetoken.googleapis.com/**', async route => {
+            console.log(`[E2E] Intercepted Secure Token: ${route.request().url()}`);
+
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    access_token: 'mock-access-token-e2e',
+                    expires_in: '3600',
+                    token_type: 'Bearer',
+                    refresh_token: 'mock-refresh-token-e2e',
+                    id_token: 'mock-id-token-e2e',
+                    user_id: 'test-user-uid-e2e',
+                    project_id: 'mock-project'
+                })
+            });
+        });
+
+        // Intercept FCM Registrations API — prevents messaging registration hangs
+        await page.route('**/fcmregistrations.googleapis.com/**', async route => {
+            console.log(`[E2E] Intercepted FCM Registrations: ${route.request().url()}`);
+
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify({ token: 'mock-fcm-token-e2e' })
+            });
+        });
+
+        // Intercept Firebase Analytics / App Check APIs — prevents telemetry hangs
+        await page.route('**/firebaselogging.googleapis.com/**', async route => {
+            await route.fulfill({ status: 200, headers: corsHeaders, body: '{}' });
+        });
+        await page.route('**/firebase.googleapis.com/**', async route => {
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify({ token: 'mock-app-check-token', ttl: '3600s' })
+            });
+        });
+
         // Intercept Firebase Installations API
         await page.route('**/*installations.googleapis.com/**', async route => {
             console.log(`[E2E] Intercepted Installations API: ${route.request().url()}`);
@@ -304,6 +418,27 @@ export const test = base.extend<AuthFixtures>({
                         expiresIn: '604800s'
                     }
                 })
+            });
+        });
+
+        // 🛡️ SAFETY CATCH-ALL: Block any remaining googleapis.com traffic not caught above.
+        // In CI, leaked requests to Google APIs without valid credentials hang indefinitely.
+        // This must be registered LAST — Playwright evaluates routes in registration order,
+        // so more specific routes above take precedence.
+        await page.route('**/*.googleapis.com/**', async route => {
+            const url = route.request().url();
+            console.log(`[E2E] CATCH-ALL intercepted: ${route.request().method()} ${url}`);
+
+            if (route.request().method() === 'OPTIONS') {
+                await route.fulfill({ status: 204, headers: corsHeaders });
+                return;
+            }
+
+            await route.fulfill({
+                status: 200,
+                headers: corsHeaders,
+                contentType: 'application/json',
+                body: JSON.stringify({})
             });
         });
 
