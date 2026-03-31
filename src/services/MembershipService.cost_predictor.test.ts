@@ -69,7 +69,7 @@ describe('MembershipService (Ledger\'s Cost Predictor Integration)', () => {
         // Veo cost is typically $0.05 per generation (based on ai-models.ts or assumption)
         // We force it to return $0.05
         const VEO_COST = 0.05;
-        const spyPredict = vi.spyOn(CostPredictor, 'predictVideoCost').mockReturnValue({
+        vi.spyOn(CostPredictor, 'predictVideoCost').mockReturnValue({
             model: 'veo-3.1',
             estimatedCostUsd: VEO_COST,
             estimatedCredits: 50,

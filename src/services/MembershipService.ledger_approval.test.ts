@@ -87,8 +87,8 @@ describe('MembershipService (Ledger Approval Gates)', () => {
     });
 
     it('💸 "Ledger Logic": Ensures approval is flagged even if budget permits', async () => {
-         // Switch to Pro ($10.00 Limit) so budget is definitely not an issue
-         mockGetState.mockReturnValue({
+        // Switch to Pro ($10.00 Limit) so budget is definitely not an issue
+        mockGetState.mockReturnValue({
             userProfile: { id: MOCK_USER_ID },
             organizations: [{ id: 'org-1', plan: 'pro' }],
             currentOrganizationId: 'org-1'

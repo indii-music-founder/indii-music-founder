@@ -67,7 +67,7 @@
                     const data = await res.json();
                     if (data.success) {
                         setAuthenticated(true);
-                        connectWebSocket();
+                        connectWebSocket(data.wsToken);
                     } else {
                         setError('Invalid Connection PIN');
                     }
@@ -76,17 +76,22 @@
                 }
             };
 
-            // Setup WebSocket
-            const connectWebSocket = () => {
+            // Setup WebSocket with auth token handshake
+            const connectWebSocket = (wsToken) => {
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const ws = new WebSocket(`${protocol}//${window.location.host}`);
                 
-                ws.onopen = () => setConnected(true);
+                ws.onopen = () => {
+                    // Send auth token as first message (required by server)
+                    ws.send(JSON.stringify({ type: 'auth', token: wsToken }));
+                };
                 ws.onclose = () => setConnected(false);
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        if (data.type === 'sync' && data.payload) {
+                        if (data.type === 'auth' && data.success) {
+                            setConnected(true);
+                        } else if (data.type === 'sync' && data.payload) {
                             setDesktopState(data.payload);
                         }
                     } catch (e) { console.error('Parse error', e); }

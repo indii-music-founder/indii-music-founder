@@ -24,6 +24,7 @@ class IndiiRemoteService {
     private expressApp: ReturnType<typeof express> | null = null;
     private url: string | null = null;
     private isRunning = false;
+    private pendingStart: Promise<string> | null = null;
     private clients: Set<WebSocket> = new Set();
     private authenticatedClients: WeakSet<WebSocket> = new WeakSet();
 
@@ -39,11 +40,26 @@ class IndiiRemoteService {
             return this.url!;
         }
 
+        // Mutex: if a startup is already in progress, return the pending promise
+        if (this.pendingStart) {
+            console.info('[IndiiRemoteService] Startup already in progress, waiting...');
+            return this.pendingStart;
+        }
+
         // Fail closed: require a non-empty password
         if (!config.password?.trim()) {
             throw new IndiiRemoteError('INVALID_CONFIG', 'IndiiRemote requires a non-empty password. Refusing to start with default credentials.');
         }
 
+        this.pendingStart = this._doStart(config);
+        try {
+            return await this.pendingStart;
+        } finally {
+            this.pendingStart = null;
+        }
+    }
+
+    private async _doStart(config: RemoteConfig): Promise<string> {
         try {
             console.info('[IndiiRemoteService] Starting background infrastructure...');
             this.port = config.port || 3333;

@@ -129,8 +129,8 @@ describe('MembershipService (Ledger Checks)', () => {
         });
 
         it('💸 handles Enterprise Unlimited logic', async () => {
-             // Setup: Upgrade user to Enterprise (Limit: 500 or -1 for projects)
-             mockGetState.mockReturnValue({
+            // Setup: Upgrade user to Enterprise (Limit: 500 or -1 for projects)
+            mockGetState.mockReturnValue({
                 userProfile: { id: MOCK_USER_ID },
                 organizations: [{ id: 'org-1', plan: 'enterprise' }],
                 currentOrganizationId: 'org-1'
@@ -180,7 +180,7 @@ describe('MembershipService (Ledger Checks)', () => {
         });
 
         it('💸 tracks secondary costs (Video Seconds)', async () => {
-             (getDoc as import("vitest").Mock).mockResolvedValue({
+            (getDoc as import("vitest").Mock).mockResolvedValue({
                 exists: () => true
             });
 
@@ -199,13 +199,13 @@ describe('MembershipService (Ledger Checks)', () => {
 
     describe('Video Duration Gates', () => {
         it('💸 blocks "Free Tier" users from "Pro" duration jobs', async () => {
-             // Free Limit: 8 mins (480s)
-             const duration = 600; // 10 mins
+            // Free Limit: 8 mins (480s)
+            const duration = 600; // 10 mins
 
-             const result = await MembershipService.checkVideoDurationQuota(duration);
+            const result = await MembershipService.checkVideoDurationQuota(duration);
 
-             expect(result.allowed).toBe(false);
-             expect(result.maxDuration).toBe(480);
+            expect(result.allowed).toBe(false);
+            expect(result.maxDuration).toBe(480);
         });
 
         it('💸 allows "Pro" users to run longer jobs', async () => {
@@ -222,6 +222,6 @@ describe('MembershipService (Ledger Checks)', () => {
 
             expect(result.allowed).toBe(true);
             expect(result.maxDuration).toBe(3600);
-       });
+        });
     });
 });
