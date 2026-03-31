@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.44.3](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.2...v1.44.3) (2026-03-31)
+
+
+### Bug Fixes
+
+* **review:** address PR [#1368](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1368) Sentry & CodeRabbit review comments ([e00aa2d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e00aa2d0f3ec842a997050c7ffcae128dbf926d5))
+* **review:** address PR [#1368](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1368) Sentry & CodeRabbit review comments ([af8e3c2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/af8e3c21f4dda35bb5d5fe634f3be2d10dff40b5))
+* **security:** address all Sentry CRITICAL & CodeRabbit review findings on PR [#1370](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1370) ([0f6f0ac](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0f6f0acc5e23451e401b1483c01812cf0ba15364))
+* **security:** address Sentry CRITICAL & CodeRabbit review Round 2 ([37bf916](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/37bf916dad55fb39c6ec86ce96bb263dd9909166))
+* **security:** resolve final CodeRabbit findings on WS auth and type safety ([4920548](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/49205484179e26a6af5d6e7f7213413ddf871b27))
+* **services:** Address production security and typescript feedback ([0207c80](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0207c8059edffff7baa0a5f1b2dafc98d056d1bd)), closes [#1370](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1370)
+* **test:** mock app.getPath and correct AppCheck electron init logic ([16f365f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/16f365f6345ec4f65d7b2897422884b5d2f5e427))
+* **types:** systematically enforce vitest Mock typings and resolve final TypeScript compiler errors across all module boundaries to achieve zero-warning production build ([85d9dd2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/85d9dd26798c46abfb47b4af1b4b8fc47534951a))
+
 ## [1.44.2](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.1...v1.44.2) (2026-03-31)
 
 
