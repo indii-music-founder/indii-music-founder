@@ -192,16 +192,16 @@ if (typeof window !== 'undefined') {
     // Or skip in development for bypass
     // Initialize App Check if we have a valid key
     // ALLOW in DEV if debug token is present (Fixes localhost "Permission Denied")
-    // SKIP in Electron unless a debug token is explicitly provided
     const isElectron = !!window.electronAPI;
     const shouldInitAppCheck = env.appCheckKey && (
-        (!env.DEV && (!isElectron || env.appCheckDebugToken)) ||
-        (env.DEV && env.appCheckDebugToken)
+        !env.DEV || (env.DEV && env.appCheckDebugToken)
     );
 
     if (shouldInitAppCheck) {
         if (isElectron && env.appCheckDebugToken) {
             logger.debug('[App Check] Initializing in Electron with Debug Token');
+        } else if (isElectron) {
+            logger.debug('[App Check] Initializing in Electron for Production');
         }
 
         try {
@@ -217,8 +217,6 @@ if (typeof window !== 'undefined') {
             // JS bundle death → infinite CSS spinner on production.
             logger.error('[App Check] Initialization failed — app running without App Check:', e);
         }
-    } else if (isElectron && env.appCheckKey) {
-        logger.debug('[App Check] Skipped initialization in Electron (missing debug token)');
     }
 }
 export { appCheck };

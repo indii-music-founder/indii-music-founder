@@ -1,6 +1,4 @@
 import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter } from 'electron';
-import dotenv from 'dotenv';
-dotenv.config();
 import path from 'path';
 import log from 'electron-log';
 import { registerSystemHandlers } from './handlers/system';
@@ -60,6 +58,9 @@ const createWindow = async () => {
         y: undefined,
         isMaximized: false
     }) as { width: number, height: number, x?: number, y?: number, isMaximized: boolean };
+
+    // Load .env here (after app.whenReady) to avoid esbuild hoisting issues with dotenv v17
+    try { require('dotenv').config(); } catch (_e) { /* dotenv optional */ }
 
     try {
         const { indiiRemoteService } = await import('./services/IndiiRemoteService');

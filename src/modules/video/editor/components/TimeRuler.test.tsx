@@ -16,13 +16,22 @@ describe('TimeRuler', () => {
         onSeek: mockOnSeek,
     };
 
+    type MockVideoEditorState = { currentTime: number };
+    type MockSelector = (state: MockVideoEditorState) => unknown;
+
+    const setMockStoreState = (currentTime: number) => {
+        (useVideoEditorStore as unknown as import('vitest').Mock).mockImplementation(
+            (selector?: MockSelector) => {
+                const state: MockVideoEditorState = { currentTime };
+                return selector ? selector(state) : state;
+            }
+        );
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
         // Default store state
-        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
-            const state = { currentTime: 0 };
-            return selector ? selector(state) : state;
-        });
+        setMockStoreState(0);
     });
 
     it('renders with accessibility attributes', () => {
@@ -38,10 +47,7 @@ describe('TimeRuler', () => {
     });
 
     it('updates aria-valuenow when currentTime changes', () => {
-        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
-            const state = { currentTime: 150 };
-            return selector ? selector(state) : state;
-        });
+        setMockStoreState(150);
 
         render(<TimeRuler {...defaultProps} />);
         const slider = screen.getByRole('slider');
@@ -61,10 +67,7 @@ describe('TimeRuler', () => {
 
     it('seeks backward with Left Arrow', () => {
         // Set start time to 10
-        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
-            const state = { currentTime: 10 };
-            return selector ? selector(state) : state;
-        });
+        setMockStoreState(10);
 
         render(<TimeRuler {...defaultProps} />);
         const slider = screen.getByRole('slider');
@@ -76,10 +79,7 @@ describe('TimeRuler', () => {
 
     it('respects boundaries', () => {
         // Test lower bound
-        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
-            const state = { currentTime: 0 };
-            return selector ? selector(state) : state;
-        });
+        setMockStoreState(0);
 
         const { unmount } = render(<TimeRuler {...defaultProps} />);
         const slider = screen.getByRole('slider');
@@ -88,10 +88,7 @@ describe('TimeRuler', () => {
         unmount();
 
         // Test upper bound
-        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
-            const state = { currentTime: 300 };
-            return selector ? selector(state) : state;
-        });
+        setMockStoreState(300);
 
         render(<TimeRuler {...defaultProps} />);
         const sliderMax = screen.getByRole('slider');
