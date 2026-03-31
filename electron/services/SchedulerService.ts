@@ -27,9 +27,20 @@ interface StoreSchema {
     tasks: Record<string, ScheduledTask>;
 }
 
-const store = new Store<StoreSchema>({
-    name: 'indii-scheduler',
-    defaults: { tasks: {} },
+let _store: Store<StoreSchema> | undefined;
+
+const store: Store<StoreSchema> = new Proxy({} as Store<StoreSchema>, {
+    get(target, prop) {
+        if (!_store) {
+            _store = new Store<StoreSchema>({
+                name: 'indii-scheduler',
+                cwd: app.getPath('userData'),
+                defaults: { tasks: {} },
+            });
+        }
+        const val = (_store as Record<string, any>)[prop as string];
+        return typeof val === 'function' ? val.bind(_store) : val;
+    }
 });
 
 // In-memory timers — not persisted (rebuilt on every start)

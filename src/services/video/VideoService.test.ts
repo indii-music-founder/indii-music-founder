@@ -91,7 +91,7 @@ describe('VideoService', () => {
 
         it('should analyze image and generate motion video', async () => {
             // Mock the analysis response
-            (AI.generateContent as any).mockResolvedValue({
+            (AI.generateContent as import("vitest").Mock).mockResolvedValue({
                 response: {
                     text: () => JSON.stringify({ video_prompt: 'Animate the water flowing' }),
                     candidates: [{
@@ -101,10 +101,10 @@ describe('VideoService', () => {
                     }]
                 }
             });
-            (AI.parseJSON as any).mockReturnValue({ video_prompt: 'Animate the water flowing' });
+            (AI.parseJSON as import("vitest").Mock).mockReturnValue({ video_prompt: 'Animate the water flowing' });
 
             // Mock video generation
-            (AI.generateVideo as any).mockResolvedValue('http://video-result.mp4');
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue('http://video-result.mp4');
 
             const result = await service.generateMotionBrush(mockImage, mockMask);
 
@@ -114,7 +114,7 @@ describe('VideoService', () => {
         });
 
         it('should use default prompt if analysis fails to return video_prompt', async () => {
-            (AI.generateContent as any).mockResolvedValue({
+            (AI.generateContent as import("vitest").Mock).mockResolvedValue({
                 response: {
                     text: () => '{}',
                     candidates: [{
@@ -124,8 +124,8 @@ describe('VideoService', () => {
                     }]
                 }
             });
-            (AI.parseJSON as any).mockReturnValue({});
-            (AI.generateVideo as any).mockResolvedValue('http://video-result.mp4');
+            (AI.parseJSON as import("vitest").Mock).mockReturnValue({});
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue('http://video-result.mp4');
 
             const result = await service.generateMotionBrush(mockImage, mockMask);
 
@@ -139,7 +139,7 @@ describe('VideoService', () => {
         });
 
         it('should return null if video generation returns nothing', async () => {
-            (AI.generateContent as any).mockResolvedValue({
+            (AI.generateContent as import("vitest").Mock).mockResolvedValue({
                 response: {
                     text: () => JSON.stringify({ video_prompt: 'test' }),
                     candidates: [{
@@ -149,8 +149,8 @@ describe('VideoService', () => {
                     }]
                 }
             });
-            (AI.parseJSON as any).mockReturnValue({ video_prompt: 'test' });
-            (AI.generateVideo as any).mockResolvedValue(null);
+            (AI.parseJSON as import("vitest").Mock).mockReturnValue({ video_prompt: 'test' });
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue(null);
 
             const result = await service.generateMotionBrush(mockImage, mockMask);
 
@@ -158,14 +158,14 @@ describe('VideoService', () => {
         });
 
         it('should throw error if AI content generation fails', async () => {
-            (AI.generateContent as any).mockRejectedValue(new Error('AI service unavailable'));
+            (AI.generateContent as import("vitest").Mock).mockRejectedValue(new Error('AI service unavailable'));
 
             await expect(service.generateMotionBrush(mockImage, mockMask))
                 .rejects.toThrow('AI service unavailable');
         });
 
         it('should throw error if video generation fails', async () => {
-            (AI.generateContent as any).mockResolvedValue({
+            (AI.generateContent as import("vitest").Mock).mockResolvedValue({
                 response: {
                     text: () => JSON.stringify({ video_prompt: 'test' }),
                     candidates: [{
@@ -175,8 +175,8 @@ describe('VideoService', () => {
                     }]
                 }
             });
-            (AI.parseJSON as any).mockReturnValue({ video_prompt: 'test' });
-            (AI.generateVideo as any).mockRejectedValue(new Error('Video generation failed'));
+            (AI.parseJSON as import("vitest").Mock).mockReturnValue({ video_prompt: 'test' });
+            (AI.generateVideo as import("vitest").Mock).mockRejectedValue(new Error('Video generation failed'));
 
             await expect(service.generateMotionBrush(mockImage, mockMask))
                 .rejects.toThrow('Video generation failed');
@@ -185,7 +185,7 @@ describe('VideoService', () => {
 
     describe('generateVideo', () => {
         it('should generate video with basic options', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://video.mp4');
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue('http://video.mp4');
 
             const result = await service.generateVideo({
                 prompt: 'A sunset over the ocean'
@@ -200,7 +200,7 @@ describe('VideoService', () => {
         });
 
         it('should handle custom resolution and aspect ratio', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://video.mp4');
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue('http://video.mp4');
 
             await service.generateVideo({
                 prompt: 'test',
@@ -219,7 +219,7 @@ describe('VideoService', () => {
         });
 
         it('should include anchor images when provided', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://video.mp4');
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue('http://video.mp4');
 
             const anchors = [
                 { mimeType: 'image/png', data: 'anchorData1' },
@@ -245,7 +245,7 @@ describe('VideoService', () => {
         });
 
         it('should return null if no video generated', async () => {
-            (AI.generateVideo as any).mockResolvedValue(null);
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue(null);
 
             const result = await service.generateVideo({ prompt: 'test' });
 
@@ -253,14 +253,14 @@ describe('VideoService', () => {
         });
 
         it('should throw error on failure', async () => {
-            (AI.generateVideo as any).mockRejectedValue(new Error('Generation error'));
+            (AI.generateVideo as import("vitest").Mock).mockRejectedValue(new Error('Generation error'));
 
             await expect(service.generateVideo({ prompt: 'test' }))
                 .rejects.toThrow('Generation error');
         });
 
         it('should include input image when provided', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://video.mp4');
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue('http://video.mp4');
 
             const image = { mimeType: 'image/png', data: 'imageData' };
 
@@ -285,7 +285,7 @@ describe('VideoService', () => {
         const endImage = { mimeType: 'image/png', data: 'endData' };
 
         it('should generate transition video between two keyframes', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://transition.mp4');
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue('http://transition.mp4');
 
             const result = await service.generateKeyframeTransition(
                 startImage,
@@ -308,7 +308,7 @@ describe('VideoService', () => {
         });
 
         it('should use default prompt if not provided', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://transition.mp4');
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue('http://transition.mp4');
 
             await service.generateKeyframeTransition(startImage, endImage, '');
 
@@ -320,7 +320,7 @@ describe('VideoService', () => {
         });
 
         it('should return null if generation fails', async () => {
-            (AI.generateVideo as any).mockResolvedValue(null);
+            (AI.generateVideo as import("vitest").Mock).mockResolvedValue(null);
 
             const result = await service.generateKeyframeTransition(
                 startImage,
@@ -332,7 +332,7 @@ describe('VideoService', () => {
         });
 
         it('should throw on error', async () => {
-            (AI.generateVideo as any).mockRejectedValue(new Error('Transition failed'));
+            (AI.generateVideo as import("vitest").Mock).mockRejectedValue(new Error('Transition failed'));
 
             await expect(
                 service.generateKeyframeTransition(startImage, endImage, 'test')
@@ -348,7 +348,7 @@ describe('VideoService', () => {
 
         it('should fetch video and return blob URL', async () => {
             const mockBlob = new Blob(['video data'], { type: 'video/mp4' });
-            (global.fetch as any).mockResolvedValue({
+            (global.fetch as import("vitest").Mock).mockResolvedValue({
                 blob: () => Promise.resolve(mockBlob)
             });
 
@@ -360,7 +360,7 @@ describe('VideoService', () => {
 
         it('should append API key if not present in URI', async () => {
             const mockBlob = new Blob(['video data'], { type: 'video/mp4' });
-            (global.fetch as any).mockResolvedValue({
+            (global.fetch as import("vitest").Mock).mockResolvedValue({
                 blob: () => Promise.resolve(mockBlob)
             });
 
@@ -373,7 +373,7 @@ describe('VideoService', () => {
 
         it('should not duplicate API key if already present', async () => {
             const mockBlob = new Blob(['video data'], { type: 'video/mp4' });
-            (global.fetch as any).mockResolvedValue({
+            (global.fetch as import("vitest").Mock).mockResolvedValue({
                 blob: () => Promise.resolve(mockBlob)
             });
 
