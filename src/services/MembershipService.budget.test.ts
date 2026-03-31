@@ -146,23 +146,23 @@ describe('MembershipService (Ledger Budget Checks)', () => {
     });
 
     it('💸 verifies "Wallet" logic: Credits are deducted correctly in estimation', async () => {
-         // Verifies the math inside checkBudget matches expected wallet behavior
-         // Limit 1.00. Spent 0.50. Cost 0.25. Remaining should be 0.25.
+        // Verifies the math inside checkBudget matches expected wallet behavior
+        // Limit 1.00. Spent 0.50. Cost 0.25. Remaining should be 0.25.
 
-         (getDoc as import("vitest").Mock).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({ totalSpend: 0.50 })
-         });
+        });
 
-         const result = await MembershipService.checkBudget(0.25);
+        const result = await MembershipService.checkBudget(0.25);
 
-         expect(result.allowed).toBe(true);
-         expect(result.remainingBudget).toBe(0.50); // Remaining BEFORE the current cost is deducted from potential?
-         // Wait, checkBudget returns remaining budget based on current spend, usually used for display "You have X remaining".
-         // Let's verify what the code does:
-         // remainingBudgetFixed = maxSpendFixed - currentSpendFixed;
-         // So it returns what is available BEFORE the transaction.
+        expect(result.allowed).toBe(true);
+        expect(result.remainingBudget).toBe(0.50); // Remaining BEFORE the current cost is deducted from potential?
+        // Wait, checkBudget returns remaining budget based on current spend, usually used for display "You have X remaining".
+        // Let's verify what the code does:
+        // remainingBudgetFixed = maxSpendFixed - currentSpendFixed;
+        // So it returns what is available BEFORE the transaction.
 
-         expect(result.remainingBudget).toBe(0.50);
+        expect(result.remainingBudget).toBe(0.50);
     });
 });

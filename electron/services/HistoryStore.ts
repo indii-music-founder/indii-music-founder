@@ -54,7 +54,9 @@ export class HistoryStore {
     }
 
     delete(sessionId: string): void {
-        this.store.delete(`sessions.${sessionId}` as any);
+        const sessions = this.store.get('sessions');
+        delete sessions[sessionId];
+        this.store.set('sessions', sessions);
     }
 
     clearAll(): void {

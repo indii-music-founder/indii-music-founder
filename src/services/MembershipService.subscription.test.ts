@@ -110,14 +110,14 @@ describe('MembershipService (Ledger Subscription Gates)', () => {
     });
 
     it('💸 "Upgrade Path": Provides actionable upsell message for blocked features', async () => {
-         const message = MembershipService.getUpgradeMessage('free', 'video');
-         expect(message).toContain('Upgrade to Pro');
-         expect(message).toContain('longer video durations');
+        const message = MembershipService.getUpgradeMessage('free', 'video');
+        expect(message).toContain('Upgrade to Pro');
+        expect(message).toContain('longer video durations');
     });
 
     it('💸 "Enterprise Scale": Allows Cinematic Duration (4 Hours)', async () => {
-         // Switch to Enterprise
-         mockGetState.mockReturnValue({
+        // Switch to Enterprise
+        mockGetState.mockReturnValue({
             userProfile: { id: MOCK_USER_ID },
             organizations: [{ id: 'org-1', plan: 'enterprise' }],
             currentOrganizationId: 'org-1'

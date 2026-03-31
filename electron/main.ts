@@ -1,4 +1,6 @@
 import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter } from 'electron';
+import dotenv from 'dotenv';
+dotenv.config();
 import path from 'path';
 import log from 'electron-log';
 import { registerSystemHandlers } from './handlers/system';
@@ -61,7 +63,7 @@ const createWindow = async () => {
 
     try {
         const { indiiRemoteService } = await import('./services/IndiiRemoteService');
-        const token = process.env.NGROK_AUTHTOKEN;
+        const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
         const password = Math.floor(100000 + Math.random() * 900000).toString();
         indiiRemoteService.start({ port: 3333, password, ngrokToken: token }).then((url: string) => {
             log.info(`[IndiiRemote READY] Ngrok Tunnel: ${url}`);
