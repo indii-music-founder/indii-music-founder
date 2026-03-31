@@ -39,8 +39,8 @@ describe('TouringService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Prevent ZodError formatting crash in Vitest's console serializer
-        vi.spyOn(console, 'error').mockImplementation(() => {});
-        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => { });
+        vi.spyOn(console, 'warn').mockImplementation(() => { });
     });
 
     describe('getVehicleStats', () => {
@@ -60,7 +60,7 @@ describe('TouringService', () => {
                     id: 'doc1',
                     data: () => mockData
                 }]
-            } as any);
+            } as unknown as import('firebase/firestore').QuerySnapshot);
 
             const result = await TouringService.getVehicleStats('user1');
             expect(result).toEqual({ id: 'doc1', ...mockData });
@@ -78,7 +78,7 @@ describe('TouringService', () => {
                     id: 'doc1',
                     data: () => invalidData
                 }]
-            } as any);
+            } as unknown as import('firebase/firestore').QuerySnapshot);
 
             const result = await TouringService.getVehicleStats('user1');
             expect(result).toBeNull();
@@ -107,7 +107,7 @@ describe('TouringService', () => {
                         { id: '1', data: () => validItinerary },
                         { id: '2', data: () => invalidItinerary }
                     ]
-                } as any);
+                } as unknown as import('firebase/firestore').QuerySnapshot);
                 return () => { };
             });
 

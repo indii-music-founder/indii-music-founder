@@ -184,7 +184,7 @@ describe('VideoWorkflow', () => {
             progress: 0
         });
 
-        (useToast as import("vitest").Mock).mockReturnValue(mockToast);
+        (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
     });
 
     it('triggers video generation and sets jobId', async () => {

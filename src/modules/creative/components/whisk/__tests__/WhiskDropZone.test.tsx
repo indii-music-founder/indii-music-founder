@@ -45,7 +45,7 @@ describe('WhiskDropZone', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useToast as import("vitest").Mock).mockReturnValue({
+        (useToast as unknown as import("vitest").Mock).mockReturnValue({
             success: mockToastSuccess,
             info: mockToastInfo,
             warning: mockToastWarning,
@@ -54,7 +54,7 @@ describe('WhiskDropZone', () => {
 
         // Some logic inside WhiskDropZone (handleDrop) imports store dynamically or uses it?
         // Actually handleDrop does dynamic import.
-        (useStore as import("vitest").Mock).mockReturnValue({
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
             whiskState: {}, // Not really used directly
             generatedHistory: [],
             uploadedImages: []

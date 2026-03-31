@@ -230,7 +230,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
             }), [state, setVideoInput, setGenerationMode, setViewMode, setPrompt, addToHistory]);
 
             // Sync useStore mock to this local state
-            (useStore as import("vitest").Mock).mockImplementation((selector: any) => {
+            (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
                 return selector ? selector(storeState) : storeState;
             });
 

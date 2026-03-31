@@ -21,7 +21,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     collection: vi.fn(),
     doc: vi.fn(),
     setDoc: vi.fn(),
@@ -31,7 +31,8 @@ vi.mock('firebase/firestore', () => ({
     getDocs: vi.fn(),
     Timestamp: {
         now: () => ({
-  serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString() })
+            serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString()
+        })
     }
 }));
 
@@ -49,7 +50,7 @@ describe('MusicLibraryService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default auth state
-        (auth as any).currentUser = { uid: 'user-123' };
+        Object.assign(auth, { currentUser: { uid: 'user-123' } });
     });
 
     it('should save analysis to Firestore', async () => {
@@ -57,16 +58,16 @@ describe('MusicLibraryService', () => {
 
         expect(setDoc).toHaveBeenCalled();
         const callArgs = vi.mocked(setDoc).mock.calls[0];
-        const data = callArgs![1] as any;
+        const data = callArgs![1] as Record<string, unknown>;
 
         expect(data.id).toBe('track-1');
         expect(data.filename).toBe('test.mp3');
-        expect(data.features.bpm).toBe(125);
+        expect((data.features as Record<string, unknown>).bpm).toBe(125);
         expect(data.fileHash).toBe('hash-123');
     });
 
     it('should return null if user is not authenticated', async () => {
-        (auth as any).currentUser = null;
+        Object.assign(auth, { currentUser: null });
 
         const result = await musicLibraryService.getAnalysis('track-1');
         expect(result).toBeNull();
@@ -77,11 +78,11 @@ describe('MusicLibraryService', () => {
         vi.mocked(getDoc).mockResolvedValueOnce({
             exists: () => true,
             data: () => ({
-  serverTimestamp: vi.fn(),
+                serverTimestamp: vi.fn(),
                 id: 'track-1',
                 features: mockFeatures
             })
-        } as any);
+        } as unknown as import('firebase/firestore').DocumentSnapshot);
 
         const result = await musicLibraryService.getAnalysis('track-1');
 
@@ -93,7 +94,7 @@ describe('MusicLibraryService', () => {
     it('should return null on cache miss', async () => {
         vi.mocked(getDoc).mockResolvedValueOnce({
             exists: () => false
-        } as any);
+        } as unknown as import('firebase/firestore').DocumentSnapshot);
 
         const result = await musicLibraryService.getAnalysis('track-not-found');
         expect(result).toBeNull();
@@ -102,12 +103,18 @@ describe('MusicLibraryService', () => {
     it('should list library items', async () => {
         vi.mocked(getDocs).mockResolvedValueOnce({
             docs: [
-                { data: () => ({
-  serverTimestamp: vi.fn(), id: 'track-1', filename: 'one.mp3' }) },
-                { data: () => ({
-  serverTimestamp: vi.fn(), id: 'track-2', filename: 'two.mp3' }) }
+                {
+                    data: () => ({
+                        serverTimestamp: vi.fn(), id: 'track-1', filename: 'one.mp3'
+                    })
+                },
+                {
+                    data: () => ({
+                        serverTimestamp: vi.fn(), id: 'track-2', filename: 'two.mp3'
+                    })
+                }
             ]
-        } as any);
+        } as unknown as import('firebase/firestore').QuerySnapshot);
 
         const items = await musicLibraryService.listLibrary();
         expect(items).toHaveLength(2);

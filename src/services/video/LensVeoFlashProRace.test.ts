@@ -143,11 +143,11 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         const [flashResult, proResult] = await Promise.all([flashPromise, proPromise]);
 
         expect(flashResult.output!.url).toBe('http://veo-flash.mp4');
-        expect((flashResult.output!.metadata as any)!.duration_seconds).toBe(4.0);
+        expect((flashResult.output!.metadata as Record<string, unknown>)!.duration_seconds).toBe(4.0);
 
         expect(proResult.output!.url).toBe('http://veo-pro.mp4');
-        expect((proResult.output!.metadata as any)!.duration_seconds).toBe(10.0);
-        expect((proResult.output!.metadata as any)!.fps).toBe(60);
+        expect((proResult.output!.metadata as Record<string, unknown>)!.duration_seconds).toBe(10.0);
+        expect((proResult.output!.metadata as Record<string, unknown>)!.fps).toBe(60);
     });
 
     it('should ignore "Flash" update if "Pro" update has already been processed for the same job', () => {

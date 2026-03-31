@@ -31,7 +31,7 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(() => ({ id: 'mock-coll' })),
     serverTimestamp: vi.fn(() => new Date()),
     getFirestore: vi.fn(),
-    onSnapshot: vi.fn(() => () => {}),
+    onSnapshot: vi.fn(() => () => { }),
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -105,7 +105,7 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
                 socials: {
                     distributor: 'DistroKid'
                 }
-            } as any
+            } as unknown as NonNullable<UserProfile["brandKit"]>
         };
 
         await service.generateVideo({
@@ -127,12 +127,12 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
     });
 
     it('should respect user override (16:9) even if DistroKid is configured', async () => {
-         const userProfile: Partial<UserProfile> = {
+        const userProfile: Partial<UserProfile> = {
             brandKit: {
                 socials: {
                     distributor: 'DistroKid'
                 }
-            } as any
+            } as unknown as NonNullable<UserProfile["brandKit"]>
         };
 
         await service.generateVideo({

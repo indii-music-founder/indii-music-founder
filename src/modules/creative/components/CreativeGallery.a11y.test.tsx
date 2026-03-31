@@ -36,7 +36,7 @@ describe('CreativeGallery Accessibility', () => {
     };
 
     beforeEach(() => {
-        (useStore as import("vitest").Mock).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
     });
 
     vi.mock('@/components/kokonutui/file-upload', () => ({

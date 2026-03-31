@@ -105,9 +105,9 @@ describe('VideoEditor Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useToast as import("vitest").Mock).mockReturnValue(mockToast);
+        (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
 
-        (useVideoEditorStore as import("vitest").Mock).mockReturnValue({
+        (useVideoEditorStore as unknown as import("vitest").Mock).mockReturnValue({
             project: mockProject,
             setProject: mockSetProject,
             updateClip: mockUpdateClip,

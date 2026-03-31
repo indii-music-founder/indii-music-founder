@@ -35,7 +35,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal() as any;
+    const actual = await importOriginal() as unknown as any;
     return {
         ...actual,
         doc: vi.fn(() => ({ id: 'mock-doc-ref', path: 'videoJobs/mock-doc-ref' })),
@@ -61,6 +61,8 @@ vi.mock('@/services/ai/utils/InputSanitizer', () => ({
     }
 }));
 
+import type { UserProfile } from '@/types/User';
+
 // Helper to create mock profile with distributor
 const createMockProfile = (distributor?: string) => ({
     uid: 'test-user',
@@ -68,7 +70,7 @@ const createMockProfile = (distributor?: string) => ({
     brandKit: distributor ? {
         socials: { distributor }
     } : undefined
-} as any);
+} as unknown as UserProfile);
 
 describe('VideoGenerationService - Distributor Integration', () => {
     beforeEach(() => {

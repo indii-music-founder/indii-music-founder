@@ -193,7 +193,7 @@ describe('DistributorService.createRelease', () => {
 
   it('should throw if userProfile is missing', async () => {
     // Arrange
-    vi.mocked(useStore.getState).mockReturnValueOnce({ userProfile: null, currentOrganizationId: 'test-org-id' } as any);
+    vi.mocked(useStore.getState).mockReturnValueOnce({ userProfile: null, currentOrganizationId: 'test-org-id' } as unknown as import('@/core/store').StoreState);
 
     const metadata = { id: 'rel-1' } as unknown as Parameters<typeof DistributorService.createRelease>[1];
     const assets = {} as unknown as Parameters<typeof DistributorService.createRelease>[2];

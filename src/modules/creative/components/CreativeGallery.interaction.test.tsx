@@ -51,8 +51,8 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as import("vitest").Mock).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
-        (useToast as import("vitest").Mock).mockReturnValue({
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
+        (useToast as unknown as import("vitest").Mock).mockReturnValue({
             success: mockToastSuccess,
             error: vi.fn()
         });
@@ -86,7 +86,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
     });
 
     it('verifies the Video Set Frame lifecycle in Video Mode (Click → Action → Feedback)', async () => {
-        (useStore as import("vitest").Mock).mockReturnValue({
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
             ...mockStore,
             generationMode: 'video'
         });
@@ -108,7 +108,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
 
     it('verifies the Set as Character Reference lifecycle (Click → Action → Feedback)', async () => {
         const mockAddCharacterReference = vi.fn();
-        (useStore as import("vitest").Mock).mockReturnValue({
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
             ...mockStore,
             addCharacterReference: mockAddCharacterReference
         });

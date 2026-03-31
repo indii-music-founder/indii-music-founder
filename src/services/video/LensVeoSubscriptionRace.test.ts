@@ -209,8 +209,8 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
         const resultB = await promiseB;
         expect(resultB.output!.url).toBe('url-b');
         // Assert Veo 3.1 Metadata
-        expect((resultB.output!.metadata as any)!.fps).toBe(24);
-        expect((resultB.output!.metadata as any)!.mime_type).toBe('video/mp4');
+        expect((resultB.output!.metadata as Record<string, unknown>)!.fps).toBe(24);
+        expect((resultB.output!.metadata as Record<string, unknown>)!.mime_type).toBe('video/mp4');
 
         // Job A is still pending. Ensure B's completion didn't resolve A.
 

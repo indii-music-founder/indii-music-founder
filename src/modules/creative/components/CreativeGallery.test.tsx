@@ -35,7 +35,7 @@ describe('CreativeGallery', () => {
     };
 
     beforeEach(() => {
-        (useStore as import("vitest").Mock).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
     });
 
     vi.mock('@/components/kokonutui/file-upload', () => ({
@@ -51,7 +51,7 @@ describe('CreativeGallery', () => {
     });
 
     it('renders generated history items correctly', () => {
-        (useStore as import("vitest").Mock).mockReturnValue({
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
             ...mockStore,
             generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test prompt', timestamp: 1000, projectId: 'p1', origin: 'generated' }],
             uploadedImages: [],
@@ -66,7 +66,7 @@ describe('CreativeGallery', () => {
     });
 
     it('buttons have accessibility attributes', () => {
-        (useStore as import("vitest").Mock).mockReturnValue({
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
             ...mockStore,
             generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test prompt', timestamp: 1000, projectId: 'p1', origin: 'generated' }],
             uploadedImages: [],

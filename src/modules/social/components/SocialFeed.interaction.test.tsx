@@ -44,11 +44,11 @@ describe('SocialFeed Interaction: Send Button', () => {
         vi.clearAllMocks();
 
         // Setup default mock return values
-        (useStore as import("vitest").Mock).mockImplementation((selector: any) => selector({
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => selector({
             userProfile: mockUser
         }));
 
-        (useSocial as import("vitest").Mock).mockReturnValue({
+        (useSocial as unknown as import("vitest").Mock).mockReturnValue({
             posts: [],
             isFeedLoading: false,
             filter: 'all',
@@ -69,7 +69,7 @@ describe('SocialFeed Interaction: Send Button', () => {
         const textarea = screen.getByLabelText("What's happening in your studio?");
         const sendButton = screen.getByText((content, element) => {
             return element?.tagName.toLowerCase() === 'button' &&
-                   (content.includes('Post') || element.querySelector('[data-testid="icon-send"]') !== null);
+                (content.includes('Post') || element.querySelector('[data-testid="icon-send"]') !== null);
         });
 
         // 3. Verify initial state (Disabled because input is empty)
@@ -115,8 +115,8 @@ describe('SocialFeed Interaction: Send Button', () => {
         render(<SocialFeed userId="user-123" />);
         const textarea = screen.getByLabelText("What's happening in your studio?");
         const sendButton = screen.getByText((content, element) => {
-             return element?.tagName.toLowerCase() === 'button' &&
-                   (content.includes('Post') || element.querySelector('[data-testid="icon-send"]') !== null);
+            return element?.tagName.toLowerCase() === 'button' &&
+                (content.includes('Post') || element.querySelector('[data-testid="icon-send"]') !== null);
         });
 
         // 2. Type input

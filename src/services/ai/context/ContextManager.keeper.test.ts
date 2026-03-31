@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ContextManager } from './ContextManager';
 import { Content } from '@/shared/types/ai.dto';
 
@@ -9,12 +9,12 @@ import { Content } from '@/shared/types/ai.dto';
  * Based on ContextManager logic: tokens = ceil((len / 4) * 1.2)
  */
 const generateTokenLoad = (targetTokens: number): string => {
-  if (targetTokens <= 0) return '';
-  // len = (tokens / 1.2) * 4
-  // We add a bit of padding loop to hit exact target if needed,
-  // but for now simple math is close enough for threshold testing.
-  const targetLen = Math.ceil((targetTokens / 1.2) * 4);
-  return 'a'.repeat(targetLen);
+    if (targetTokens <= 0) return '';
+    // len = (tokens / 1.2) * 4
+    // We add a bit of padding loop to hit exact target if needed,
+    // but for now simple math is close enough for threshold testing.
+    const targetLen = Math.ceil((targetTokens / 1.2) * 4);
+    return 'a'.repeat(targetLen);
 };
 
 const createMsg = (role: 'user' | 'model' | 'system', text: string): Content => ({
@@ -119,7 +119,7 @@ describe('📚 Keeper: Context Window Integrity', () => {
         const maxTokens = 100;
 
         // Spy on console.warn to verify we're aware of the overflow
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
         const result = ContextManager.truncateContext(history, maxTokens);
 
@@ -128,28 +128,28 @@ describe('📚 Keeper: Context Window Integrity', () => {
     });
 
     it('The Impossible Squeeze: Correctly reduces to just last 2 messages if Anchor cannot fit', () => {
-         // Scenario: Even Anchor + Last 2 is too big.
-         // Strategy: It should sacrifice Anchor to save the immediate context (Recent 2).
+        // Scenario: Even Anchor + Last 2 is too big.
+        // Strategy: It should sacrifice Anchor to save the immediate context (Recent 2).
 
-         const msgText = generateTokenLoad(10);
-         const history: Content[] = [
-             createMsg('user', `ANCHOR_${msgText}`),
-             createMsg('model', `MIDDLE_${msgText}`),
-             createMsg('user', `RECENT_1_${msgText}`), // Keep
-             createMsg('model', `RECENT_2_${msgText}`)  // Keep
-         ];
+        const msgText = generateTokenLoad(10);
+        const history: Content[] = [
+            createMsg('user', `ANCHOR_${msgText}`),
+            createMsg('model', `MIDDLE_${msgText}`),
+            createMsg('user', `RECENT_1_${msgText}`), // Keep
+            createMsg('model', `RECENT_2_${msgText}`)  // Keep
+        ];
 
-         // Budget only fits 2 messages.
-         const tokensForTwo = ContextManager.estimateContextTokens(history.slice(2));
-         const maxTokens = tokensForTwo + 1;
+        // Budget only fits 2 messages.
+        const tokensForTwo = ContextManager.estimateContextTokens(history.slice(2));
+        const maxTokens = tokensForTwo + 1;
 
-         const result = ContextManager.truncateContext(history, maxTokens);
+        const result = ContextManager.truncateContext(history, maxTokens);
 
-         expect(result).toHaveLength(2);
-         expect(result[0]).toEqual(history[2]);
-         expect(result[1]).toEqual(history[3]);
-         // Anchor is gone
-         expect(result).not.toContain(history[0]);
+        expect(result).toHaveLength(2);
+        expect(result[0]).toEqual(history[2]);
+        expect(result[1]).toEqual(history[3]);
+        // Anchor is gone
+        expect(result).not.toContain(history[0]);
     });
 
 });
