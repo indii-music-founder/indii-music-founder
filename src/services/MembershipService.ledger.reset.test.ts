@@ -37,11 +37,11 @@ vi.mock('firebase/firestore', () => ({
     setDoc: vi.fn(async (ref, data, options) => {
         if (options?.merge) {
             const current = MOCK_DB[ref as string] || {};
-            const processedUpdates: any = {};
-            for (const [key, value] of Object.entries(data)) {
-                if (value && typeof value === 'object' && (value as any)._type === 'increment') {
+            const processedUpdates: Record<string, unknown> = {};
+            for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+                if (value && typeof value === 'object' && '_type' in value && value._type === 'increment') {
                     const currentVal = (current[key] || 0) as number;
-                    const newVal = currentVal + (value as any).value;
+                    const newVal = currentVal + (value as unknown as { value: number }).value;
                     processedUpdates[key] = parseFloat(newVal.toFixed(2));
                 } else {
                     processedUpdates[key] = value;
@@ -54,11 +54,11 @@ vi.mock('firebase/firestore', () => ({
     }),
     updateDoc: vi.fn(async (ref, updates) => {
         const current = MOCK_DB[ref as string] || {};
-        const processedUpdates: any = {};
-        for (const [key, value] of Object.entries(updates)) {
-            if (value && typeof value === 'object' && (value as any)._type === 'increment') {
+        const processedUpdates: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(updates as Record<string, unknown>)) {
+            if (value && typeof value === 'object' && '_type' in value && value._type === 'increment') {
                 const currentVal = (current[key] || 0) as number;
-                const newVal = currentVal + (value as any).value;
+                const newVal = currentVal + (value as unknown as { value: number }).value;
                 processedUpdates[key] = parseFloat(newVal.toFixed(2));
             } else {
                 processedUpdates[key] = value;

@@ -50,7 +50,7 @@ describe('DSRService Fee Calculation', () => {
             tracks: [],
             copyrightYear: '2024',
             copyrightOwner: 'Test Label'
-        } as any;
+        } as unknown as ExtendedGoldenMetadata;
 
         const catalog = new Map<string, ExtendedGoldenMetadata>();
         catalog.set('USSYM1234567', mockMetadata);
@@ -103,7 +103,7 @@ describe('DSRService Fee Calculation', () => {
             artist: 'Test Artist',
             isrc: 'USDK1234567',
             splits: [{ email: 'artist@test.com', percentage: 100, role: 'Main Artist', legalName: 'Artist' }]
-        } as any;
+        } as unknown as ExtendedGoldenMetadata;
 
         const catalog = new Map<string, ExtendedGoldenMetadata>();
         catalog.set('USDK1234567', mockMetadata);

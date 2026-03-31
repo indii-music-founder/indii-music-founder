@@ -17,7 +17,7 @@ const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     publisher: 'Self',
     containsSamples: false,
     isGolden: true,
-    releaseType: 'Single' as any,
+    releaseType: 'Single' as const,
     releaseDate: '2025-01-01',
     territories: ['Worldwide'],
     distributionChannels: [],

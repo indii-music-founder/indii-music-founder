@@ -41,7 +41,7 @@ vi.mock('@/services/cache/CacheService', () => ({
 
 describe('SubscriptionService (Token Circuit Breaker)', () => {
     let subscriptionService: SubscriptionService;
-    const mockHttpsCallable = httpsCallable as any;
+    const mockHttpsCallable = vi.mocked(httpsCallable);
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -81,9 +81,9 @@ describe('SubscriptionService (Token Circuit Breaker)', () => {
         let currentTokensUsed = 0;
 
         // Mock the backend to return dynamic usage
-        mockHttpsCallable.mockImplementation((functions: any, name: string) => {
+        mockHttpsCallable.mockImplementation((_functions: any, name: string) => {
             if (name === 'getSubscription') {
-                return async () => ({
+                const fn = async () => ({
                     data: {
                         id: 'sub_123',
                         userId: 'ledger-token-user',
@@ -96,13 +96,16 @@ describe('SubscriptionService (Token Circuit Breaker)', () => {
                         updatedAt: Date.now()
                     }
                 });
+                return fn as unknown as ReturnType<typeof httpsCallable>;
             }
             if (name === 'getUsageStats') {
-                return async () => ({
+                const fn = async () => ({
                     data: createUsageStats(currentTokensUsed, TOKEN_LIMIT)
                 });
+                return fn as unknown as ReturnType<typeof httpsCallable>;
             }
-            return async () => ({ data: {} });
+            const dfn = async () => ({ data: {} });
+            return dfn as unknown as ReturnType<typeof httpsCallable>;
         });
 
         // 2. Initial Check: User has 0 usage. Should be allowed.
