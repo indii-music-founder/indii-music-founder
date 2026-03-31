@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.44.2](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.1...v1.44.2) (2026-03-31)
+
+
+### Bug Fixes
+
+* **e2e:** intercept all Firebase APIs in shared auth fixture to elimi… ([9444705](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/944470548655b79b3edd124c4dee37ef288863b6))
+* **e2e:** intercept all Firebase APIs in shared auth fixture to eliminate CI timeouts ([c53b3d0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c53b3d08622bc5288ff2db3127c1e70f3dfe1c17))
+
 ## [1.44.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.0...v1.44.1) (2026-03-31)
 
 
