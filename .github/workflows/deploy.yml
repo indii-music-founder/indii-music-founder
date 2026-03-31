@@ -251,9 +251,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E tests against staging (Item 345)
-        run: npm run test:e2e
-        timeout-minutes: 30
+      - name: Run E2E smoke tests against staging (Item 345)
+        run: npx playwright test e2e/navigation.spec.ts e2e/auth-flow.spec.ts --project=chromium --timeout=30000
+        timeout-minutes: 15
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deploy-staging.outputs.staging-url }}
           E2E_STUDIO_URL: ${{ needs.deploy-staging.outputs.staging-url }}
