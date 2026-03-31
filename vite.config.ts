@@ -34,7 +34,7 @@ async function loadSentryPlugin() {
 const sentryPlugin = await loadSentryPlugin();
 
 export default defineConfig({
-  base: './',
+  base: process.env.VITE_APP_TARGET === 'web' ? '/' : './',
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
     'process.env': {},

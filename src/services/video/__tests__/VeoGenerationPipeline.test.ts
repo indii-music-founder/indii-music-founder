@@ -7,7 +7,7 @@ import { onSnapshot } from 'firebase/firestore';
 // -----------------------------------------------------------------------------
 
 vi.mock('../../ai/FirebaseAIService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result."),
         generateContentStream: vi.fn().mockResolvedValue({
@@ -41,22 +41,22 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/functions', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-veo-job-id' } }))
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal() as any;
+    const actual = await importOriginal<typeof import('firebase/firestore')>();
     return {
-    serverTimestamp: vi.fn(),
         ...actual,
+        serverTimestamp: vi.fn(),
         doc: vi.fn(),
         onSnapshot: vi.fn()
     };
 });
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: vi.fn().mockResolvedValue({ allowed: true }),
         getCurrentSubscription: vi.fn().mockResolvedValue({ tier: Promise.resolve('pro') })
@@ -95,13 +95,14 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
         };
 
         // Simulate async Firestore update
-        vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+        vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
             // 1. Initial State: Processing
             callback({
                 exists: () => true,
                 id: mockJobId,
                 data: () => ({
-  serverTimestamp: vi.fn(), status: 'processing', progress: 10 })
+                    serverTimestamp: vi.fn(), status: 'processing', progress: 10
+                })
             });
 
             // 2. Final State: Completed (after "network" delay)
@@ -114,7 +115,7 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
             }, 1000);
 
             return vi.fn(); // Unsubscribe
-        });
+        }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
         // Start the wait
         const jobPromise = VideoGeneration.waitForJob(mockJobId);
@@ -129,9 +130,9 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
         expect(result.url).toContain('signed-url.mp4'); // Mocked Signed URL
 
         // Metadata Contract
-        expect((result.metadata as any)!.duration_seconds).toBeGreaterThan(0);
-        expect((result.metadata as any)!.mime_type).toBe('video/mp4');
-        expect([24, 30, 60]).toContain((result.metadata as any)!.fps);
+        expect((result.metadata as unknown as Record<string, unknown>)!.duration_seconds).toBeGreaterThan(0);
+        expect((result.metadata as unknown as Record<string, unknown>)!.mime_type).toBe('video/mp4');
+        expect([24, 30, 60]).toContain((result.metadata as unknown as Record<string, unknown>)!.fps);
     });
 
     // ✅ Requirement: Verify the "SafetySettings" handshake
@@ -148,7 +149,7 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
             }
         };
 
-        vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+        vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
             setTimeout(() => {
                 callback({
                     exists: () => true,
@@ -157,7 +158,7 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
                 });
             }, 500);
             return vi.fn();
-        });
+        }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
         const jobPromise = VideoGeneration.waitForJob(mockJobId);
         vi.advanceTimersByTime(600);
@@ -172,12 +173,13 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
         const mockJobId = 'veo-pro-job-slow';
 
         // Simulate a very slow job (e.g., 45 seconds)
-        vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+        vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
             callback({
                 exists: () => true,
                 id: mockJobId,
                 data: () => ({
-  serverTimestamp: vi.fn(), status: 'processing', progress: 50 })
+                    serverTimestamp: vi.fn(), status: 'processing', progress: 50
+                })
             });
 
             // Finish after 45s
@@ -186,12 +188,13 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
                     exists: () => true,
                     id: mockJobId,
                     data: () => ({
-  serverTimestamp: vi.fn(), status: 'completed', url: 'valid.mp4' })
+                        serverTimestamp: vi.fn(), status: 'completed', url: 'valid.mp4'
+                    })
                 });
             }, 45000);
 
             return vi.fn();
-        });
+        }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
         // Wait with a 60s timeout (Pro setting)
         const jobPromise = VideoGeneration.waitForJob(mockJobId, 60000);
@@ -207,16 +210,17 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
         const mockJobId = 'gemini-flash-job-stuck';
 
         // Simulate a stuck job
-        vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+        vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
             callback({
                 exists: () => true,
                 id: mockJobId,
                 data: () => ({
-  serverTimestamp: vi.fn(), status: 'processing' })
+                    serverTimestamp: vi.fn(), status: 'processing'
+                })
             });
             // Never completes
             return vi.fn();
-        });
+        }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
         // Wait with a 2s timeout (Flash setting)
         const jobPromise = VideoGeneration.waitForJob(mockJobId, 2000);

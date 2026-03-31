@@ -43,7 +43,7 @@ vi.mock('@/services/cache/CacheService', () => ({
 
 describe('SubscriptionService (Ledger Checks)', () => {
     let subscriptionService: SubscriptionService;
-    const mockHttpsCallable = httpsCallable as any;
+    const mockHttpsCallable = vi.mocked(httpsCallable);
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -57,9 +57,9 @@ describe('SubscriptionService (Ledger Checks)', () => {
     // Helper to mock backend responses
     const mockBackendResponse = (tier: SubscriptionTier, usageOverrides: any = {}) => {
         // Mock Subscription
-        mockHttpsCallable.mockImplementation((functions: any, name: string) => {
+        mockHttpsCallable.mockImplementation((_functions: any, name: string) => {
             if (name === 'getSubscription') {
-                return async () => ({
+                const fn = async () => ({
                     data: {
                         id: 'sub_123',
                         userId: 'ledger-user-123',
@@ -72,10 +72,11 @@ describe('SubscriptionService (Ledger Checks)', () => {
                         updatedAt: Date.now()
                     }
                 });
+                return fn as unknown as ReturnType<typeof httpsCallable>;
             }
             if (name === 'getUsageStats') {
                 const tierConfig = getTierConfig(tier);
-                return async () => ({
+                const fn = async () => ({
                     data: {
                         tier: tier,
                         resetDate: Date.now() + 86400000,
@@ -100,8 +101,10 @@ describe('SubscriptionService (Ledger Checks)', () => {
                         maxTeamMembers: tierConfig.maxTeamMembers
                     }
                 });
+                return fn as unknown as ReturnType<typeof httpsCallable>;
             }
-            return async () => ({ data: {} });
+            const dfn = async () => ({ data: {} });
+            return dfn as unknown as ReturnType<typeof httpsCallable>;
         });
     };
 

@@ -16,7 +16,7 @@ describe('MEADService', () => {
                     lyrics: 'Verse 1: Hello World...'
                 }
             ]
-        } as any;
+        } as unknown as ExtendedGoldenMetadata;
 
         const mead = meadService.generateMEAD(richMetadata, undefined, 'TestRecipient');
 

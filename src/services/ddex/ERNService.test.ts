@@ -19,7 +19,7 @@ export const MOCK_METADATA: ExtendedGoldenMetadata = {
     publisher: 'Downtown Music',
     containsSamples: false,
     isGolden: true,
-    releaseType: 'Single' as any,
+    releaseType: 'Single' as const,
     releaseDate: '2011-10-18',
     territories: ['Worldwide'],
     distributionChannels: ['streaming', 'download'],

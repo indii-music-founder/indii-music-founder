@@ -45,7 +45,7 @@ vi.mock('@/services/distribution/adapters/CDBabyAdapter', () => {
 });
 
 import { DistributionRevenueService } from './DistributionRevenueService';
-import type { DateRange, DistributorEarnings } from '@/services/distribution/types/distributor';
+import type { DateRange, DistributorEarnings, DistributorId, DistributorCredentials } from '@/services/distribution/types/distributor';
 
 describe('DistributionRevenueService', () => {
     let service: DistributionRevenueService;
@@ -69,8 +69,8 @@ describe('DistributionRevenueService', () => {
 
         it('should aggregate earnings from a connected adapter', async () => {
             // Get DistroKid adapter and make it "connected" with earnings
-            const adapters = (service as any).adapters;
-            const dkAdapter = adapters.get('distrokid');
+            const adapters = (service as unknown as { adapters: Map<string, { isConnected: import('vitest').Mock, getAllEarnings: import('vitest').Mock, connect: import('vitest').Mock }> }).adapters;
+            const dkAdapter = adapters.get('distrokid')!;
 
             dkAdapter.isConnected.mockResolvedValue(true);
             dkAdapter.getAllEarnings.mockResolvedValue([
@@ -110,10 +110,10 @@ describe('DistributionRevenueService', () => {
         });
 
         it('should aggregate earnings from multiple distributors for the same release', async () => {
-            const adapters = (service as any).adapters;
+            const adapters = (service as unknown as { adapters: Map<string, { isConnected: import('vitest').Mock, getAllEarnings: import('vitest').Mock, connect: import('vitest').Mock }> }).adapters;
 
             // DistroKid connected with release-1 earnings
-            const dkAdapter = adapters.get('distrokid');
+            const dkAdapter = adapters.get('distrokid')!;
             dkAdapter.isConnected.mockResolvedValue(true);
             dkAdapter.getAllEarnings.mockResolvedValue([
                 {
@@ -128,7 +128,7 @@ describe('DistributionRevenueService', () => {
             ] as DistributorEarnings[]);
 
             // TuneCore connected with same release-1 earnings
-            const tcAdapter = adapters.get('tunecore');
+            const tcAdapter = adapters.get('tunecore')!;
             tcAdapter.isConnected.mockResolvedValue(true);
             tcAdapter.getAllEarnings.mockResolvedValue([
                 {
@@ -156,8 +156,8 @@ describe('DistributionRevenueService', () => {
         });
 
         it('should handle adapter errors gracefully', async () => {
-            const adapters = (service as any).adapters;
-            const dkAdapter = adapters.get('distrokid');
+            const adapters = (service as unknown as { adapters: Map<string, { isConnected: import('vitest').Mock, getAllEarnings: import('vitest').Mock, connect: import('vitest').Mock }> }).adapters;
+            const dkAdapter = adapters.get('distrokid')!;
 
             dkAdapter.isConnected.mockResolvedValue(true);
             dkAdapter.getAllEarnings.mockRejectedValue(new Error('API timeout'));
@@ -175,8 +175,8 @@ describe('DistributionRevenueService', () => {
         });
 
         it('should sum net revenue across all releases', async () => {
-            const adapters = (service as any).adapters;
-            const dkAdapter = adapters.get('distrokid');
+            const adapters = (service as unknown as { adapters: Map<string, { isConnected: import('vitest').Mock, getAllEarnings: import('vitest').Mock, connect: import('vitest').Mock }> }).adapters;
+            const dkAdapter = adapters.get('distrokid')!;
             dkAdapter.isConnected.mockResolvedValue(true);
             dkAdapter.getAllEarnings.mockResolvedValue([
                 {
@@ -206,18 +206,18 @@ describe('DistributionRevenueService', () => {
 
     describe('connectDistributor', () => {
         it('should call connect on the correct adapter', async () => {
-            const adapters = (service as any).adapters;
-            const dkAdapter = adapters.get('distrokid');
+            const adapters = (service as unknown as { adapters: Map<string, { isConnected: import('vitest').Mock, getAllEarnings: import('vitest').Mock, connect: import('vitest').Mock }> }).adapters;
+            const dkAdapter = adapters.get('distrokid')!;
 
             const creds = { apiKey: 'dk-test-key' };
-            await service.connectDistributor('distrokid' as any, creds as any);
+            await service.connectDistributor('distrokid' as DistributorId, creds as unknown as DistributorCredentials);
 
             expect(dkAdapter.connect).toHaveBeenCalledWith(creds);
         });
 
         it('should throw for unknown distributor', async () => {
             await expect(
-                service.connectDistributor('spotify' as any, {} as any)
+                service.connectDistributor('spotify' as DistributorId, {} as unknown as DistributorCredentials)
             ).rejects.toThrow('Distributor adapter not found');
         });
     });

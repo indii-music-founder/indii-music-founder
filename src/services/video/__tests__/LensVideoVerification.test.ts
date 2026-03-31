@@ -38,10 +38,10 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal() as any;
+    const actual = await importOriginal<typeof import('firebase/firestore')>();
     return {
-        serverTimestamp: vi.fn(),
         ...actual,
+        serverTimestamp: vi.fn(),
         doc: vi.fn(() => ({ id: 'mock-doc-ref', path: 'videoJobs/mock-doc-ref' })),
         setDoc: vi.fn().mockResolvedValue(undefined),
         updateDoc: vi.fn().mockResolvedValue(undefined),
@@ -88,24 +88,24 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 }
             };
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+            vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
                 // Simulate "Processing" -> "Success"
                 callback({
                     exists: () => true,
                     id: mockJobId,
                     data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
-                } as any);
+                } as unknown as import('firebase/firestore').DocumentSnapshot);
 
                 setTimeout(() => {
                     callback({
                         exists: () => true,
                         id: mockJobId,
                         data: () => mockVeoMetadata
-                    } as any);
+                    } as unknown as import('firebase/firestore').DocumentSnapshot);
                 }, 1000);
 
                 return vi.fn();
-            });
+            }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
             const jobPromise = VideoGeneration.waitForJob(mockJobId);
 
@@ -127,16 +127,16 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
         it('should handle Flash generation (< 2s)', async () => {
             const mockJobId = 'flash-job';
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+            vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
                 setTimeout(() => {
                     callback({
                         exists: () => true,
                         id: mockJobId,
                         data: () => ({ serverTimestamp: vi.fn(), status: 'completed', url: 'http://fast.url' })
-                    } as any);
+                    } as unknown as import('firebase/firestore').DocumentSnapshot);
                 }, 500); // 0.5s
                 return vi.fn();
-            });
+            }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
             const jobPromise = VideoGeneration.waitForJob(mockJobId, 2000); // 2s timeout
 
@@ -148,14 +148,14 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
         it('should handle Pro generation (< 30s) and timeout if too slow', async () => {
             const mockJobId = 'pro-job-slow';
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+            vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
                     data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
-                } as any);
+                } as unknown as import('firebase/firestore').DocumentSnapshot);
                 return vi.fn();
-            });
+            }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
             const jobPromise = VideoGeneration.waitForJob(mockJobId, 30000); // 30s timeout
 
@@ -170,7 +170,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
         it('should gracefully handle Gemini/Veo safety blocks', async () => {
             const mockJobId = 'unsafe-content';
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+            vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
                 setTimeout(() => {
                     callback({
                         exists: () => true,
@@ -180,10 +180,10 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                             status: 'failed',
                             error: 'Safety violation: Harassment filter triggered.'
                         })
-                    } as any);
+                    } as unknown as import('firebase/firestore').DocumentSnapshot);
                 }, 100);
                 return vi.fn();
-            });
+            }) as unknown as typeof import('firebase/firestore').onSnapshot);
 
             const jobPromise = VideoGeneration.waitForJob(mockJobId);
             vi.advanceTimersByTime(110);

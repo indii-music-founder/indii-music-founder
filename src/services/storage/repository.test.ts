@@ -5,19 +5,19 @@ import { setDoc } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     auth: { currentUser: { uid: 'test-user-123' } },
     storage: {},
     db: {}
 }));
 
 vi.mock('idb', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     openDB: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     doc: vi.fn().mockReturnValue({ id: 'mock-doc-ref' }),
     setDoc: vi.fn(), // We check this call
     collection: vi.fn()
@@ -46,7 +46,7 @@ describe('repository syncWorkflows', () => {
             put: mockPut,
             get: mockGet,
             getAll: mockGetAll
-        } as any);
+        } as unknown as import('idb').IDBPDatabase);
     });
 
     it('should push local workflows to cloud', async () => {
