@@ -71,7 +71,10 @@ class IndiiRemoteService {
 
             // Serve the mobile dashboard from a public directory
             const dashboardPath = path.join(electronApp.getAppPath(), 'public', 'remote');
+            const fallbackPath = path.join(__dirname, '..', 'public', 'remote');
+
             this.expressApp.use(express.static(dashboardPath));
+            this.expressApp.use(express.static(fallbackPath));
 
             // Basic auth check endpoint — returns a session token
             this.expressApp.post('/api/auth', (req, res) => {
@@ -138,15 +141,16 @@ class IndiiRemoteService {
             });
 
             // 3. Start listening
+            const listenHost = config?.ngrokToken ? '0.0.0.0' : '127.0.0.1';
             await new Promise<void>((resolve) => {
-                this.server!.listen(this.port, '0.0.0.0', () => {
+                this.server!.listen(this.port, listenHost, () => {
                     resolve();
                 });
             });
-            console.info(`[IndiiRemoteService] Local server listening on port ${this.port}`);
+            console.info(`[IndiiRemoteService] Local server listening on http://${listenHost}:${this.port}`);
 
             // 4. Start Ngrok Tunnel
-            if (config.ngrokToken) {
+            if (config?.ngrokToken) {
                 console.info(`[IndiiRemoteService] Establishing secure Ngrok tunnel...`);
                 const tunnel = await ngrok.connect({
                     addr: this.port,
@@ -155,7 +159,7 @@ class IndiiRemoteService {
                 this.url = tunnel.url();
                 console.info(`[IndiiRemoteService] GLOBAL ACCESS URL: ${this.url}`);
             } else {
-                this.url = `http://localhost:${this.port}`;
+                this.url = `http://${listenHost}:${this.port}`;
                 console.warn(`[IndiiRemoteService] No Ngrok token provided. Running locally only at ${this.url}`);
             }
 
