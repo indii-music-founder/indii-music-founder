@@ -24,7 +24,7 @@ vi.mock('motion/react', () => ({
 
 // Helper to mock hook return value
 const mockUseFinance = (overrides: any = {}) => {
-    (useFinance as any).mockReturnValue({
+    (useFinance as import("vitest").Mock).mockReturnValue({
         earningsSummary: null,
         earningsLoading: false,
         earningsError: null,

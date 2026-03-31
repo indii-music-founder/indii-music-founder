@@ -61,7 +61,7 @@ describe('RegistrationChecklistPanel', () => {
     });
 
     it('should complete ISRC verification when action button is clicked', async () => {
-        (distributionService.assignISRCs as any).mockResolvedValue('US-XXX-25-00001');
+        (distributionService.assignISRCs as import("vitest").Mock).mockResolvedValue('US-XXX-25-00001');
         render(<RegistrationChecklistPanel />);
 
         const actionBtn = screen.getByTestId('checklist-action-isrc');

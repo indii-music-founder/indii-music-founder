@@ -46,7 +46,7 @@ if (app.isPackaged) {
     });
 }
 
-const createWindow = () => {
+const createWindow = async () => {
     const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
 
@@ -60,13 +60,14 @@ const createWindow = () => {
     }) as { width: number, height: number, x?: number, y?: number, isMaximized: boolean };
 
     try {
-        const { indiiRemoteService } = require('./services/IndiiRemoteService');
-        const token = '3BiEQzXvplWKkbnHlfWjoE4bDR7_52QcY3K8jUEdEjx95UN7v';
-        indiiRemoteService.start({ port: 3333, password: '872914', ngrokToken: token }).then((url: string) => {
-            console.log(`\n\n[IndiiRemote READY] Ngrok Tunnel: ${url} | PIN: 872914\n\n`);
+        const { indiiRemoteService } = await import('./services/IndiiRemoteService');
+        const token = process.env.NGROK_AUTHTOKEN;
+        const password = Math.floor(100000 + Math.random() * 900000).toString();
+        indiiRemoteService.start({ port: 3333, password, ngrokToken: token }).then((url: string) => {
+            log.info(`[IndiiRemote READY] Ngrok Tunnel: ${url}`);
         });
     } catch (e) {
-        console.error("Failed to start subsystems:", e);
+        log.error('[Main] Failed to start IndiiRemote subsystem:', e);
     }
 
     // Item 325: Hard assertion — webSecurity must always be true in production
@@ -489,7 +490,7 @@ app.on('will-quit', async () => {
         await sftpService.disconnect().catch(e => log.warn('[Main] SFTP disconnect on quit error:', e));
     }
     await SidecarService.stopSystem();
-    stopMobileRemoteServer();
+    await stopMobileRemoteServer().catch(e => log.warn('[Main] Mobile remote shutdown error:', e));
 });
 
 // Crash Handling & Observability

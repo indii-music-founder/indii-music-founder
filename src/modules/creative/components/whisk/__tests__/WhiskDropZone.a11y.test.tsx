@@ -55,14 +55,14 @@ describe('WhiskDropZone Accessibility', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useToast as any).mockReturnValue({
+        (useToast as import("vitest").Mock).mockReturnValue({
             success: mockToastSuccess,
             info: mockToastInfo,
             warning: mockToastWarning,
             error: mockToastError
         });
 
-        (useStore as any).mockReturnValue({
+        (useStore as import("vitest").Mock).mockReturnValue({
             whiskState: {},
             generatedHistory: [],
             uploadedImages: []

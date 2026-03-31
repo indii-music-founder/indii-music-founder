@@ -65,7 +65,7 @@ describe('StorageMigrationService', () => {
       transaction: vi.fn().mockReturnValue(mockTx),
     };
 
-    (initDB as import("vitest").Mock).mockResolvedValue(mockIDB);
+    vi.mocked(initDB).mockResolvedValue(mockIDB);
   });
 
   afterEach(() => {
@@ -108,7 +108,8 @@ describe('StorageMigrationService', () => {
         if (storeName === 'assets') return mockAssetStore;
         if (storeName === 'workflows') return mockWorkflowStore;
         return {
-    serverTimestamp: vi.fn(), openCursor: vi.fn() };
+          serverTimestamp: vi.fn(), openCursor: vi.fn()
+        };
       }),
     };
 
@@ -133,13 +134,13 @@ describe('StorageMigrationService', () => {
     expect(mockWorkflowStore.openCursor).toHaveBeenCalled();
     expect(setDoc).toHaveBeenCalled();
     expect(setDoc).toHaveBeenCalledWith(
-        undefined,
-        expect.objectContaining({
-            id: 'workflow-legacy-1',
-            name: 'Legacy Workflow',
-            synced: true
-        }),
-        { merge: true }
+      undefined,
+      expect.objectContaining({
+        id: 'workflow-legacy-1',
+        name: 'Legacy Workflow',
+        synced: true
+      }),
+      { merge: true }
     );
   });
 

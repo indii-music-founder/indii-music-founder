@@ -55,7 +55,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
             yield " document...";
         };
 
-        (knowledgeBaseService.chatStream as any).mockReturnValue(mockStream());
+        (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue(mockStream());
 
         render(<KnowledgeChat {...defaultProps} />);
 
@@ -90,7 +90,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
             if (false) yield 'dummy';
             throw new Error("Neural Link Severed");
         };
-        (knowledgeBaseService.chatStream as any).mockReturnValue(mockErrorStream());
+        (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue(mockErrorStream());
 
         render(<KnowledgeChat {...defaultProps} />);
 
@@ -104,7 +104,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
     });
 
     it('supports clicking suggested questions', async () => {
-        (knowledgeBaseService.chatStream as any).mockReturnValue((async function* () { yield "Summary"; })());
+        (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue((async function* () { yield "Summary"; })());
 
         render(<KnowledgeChat {...defaultProps} />);
 
@@ -128,7 +128,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         fireEvent.click(clearButton);
 
         // Let's add a message first via interaction
-        (knowledgeBaseService.chatStream as any).mockReturnValue((async function* () { yield "Response"; })());
+        (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue((async function* () { yield "Response"; })());
         const input = screen.getByPlaceholderText(/Neural Analysis of/i);
         fireEvent.change(input, { target: { value: 'Temp Msg' } });
         fireEvent.keyDown(input, { key: 'Enter' });
@@ -154,7 +154,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
             yield "Chunk 2";
         };
 
-        (knowledgeBaseService.chatStream as any).mockReturnValue(mockStream());
+        (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue(mockStream());
 
         render(<KnowledgeChat {...defaultProps} />);
 

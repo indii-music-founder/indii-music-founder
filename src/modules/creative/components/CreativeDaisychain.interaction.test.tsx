@@ -78,7 +78,7 @@ describe('Creative Director Daisychain (6-Click Workflow)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useToast as any).mockReturnValue({
+        (useToast as import("vitest").Mock).mockReturnValue({
             info: mockToastInfo,
             success: mockToastSuccess,
             warning: vi.fn(),
@@ -90,7 +90,7 @@ describe('Creative Director Daisychain (6-Click Workflow)', () => {
         const DaisychainApp = () => {
             const [selectedItem, setSelectedItem] = useState<any>(null);
 
-            (useStore as any).mockImplementation((selector: any) => {
+            (useStore as import("vitest").Mock).mockImplementation((selector: any) => {
                 const state = {
                     generatedHistory: [mockItem],
                     selectedItem,

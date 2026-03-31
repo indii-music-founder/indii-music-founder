@@ -1,16 +1,19 @@
 import { indiiRemoteService } from './services/IndiiRemoteService';
+import crypto from 'crypto';
 
 async function bootstrap() {
-    const passcode = "872914"; // Generate a static passcode so I can send the user their login
+    // Generate a cryptographically random 6-digit passcode per session
+    const passcode = crypto.randomInt(100000, 999999).toString();
 
     try {
         const url = await indiiRemoteService.start({
             port: 3333,
             password: passcode,
-            // DO NOT provide ngrokToken so it doesn't kill the user's phone session
+            // Local-only mode: no Ngrok tunnel — avoids clobbering the user's phone session
         });
 
-        console.log(`[IndiiRemote Server Started] Connect mapping to port 3333. Passcode: ${passcode}`);
+        console.log(`[IndiiRemote Server Started] Local access at ${url}`);
+        // Passcode is displayed in the desktop UI, not logged for security
 
         // Keep process alive
         process.stdin.resume();

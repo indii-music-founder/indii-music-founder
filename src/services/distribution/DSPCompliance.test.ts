@@ -1,4 +1,4 @@
-import { validateDSPCompliance } from './types/DSPSpecs';
+import { validateDSPCompliance } from '@/services/distribution/types/DSPSpecs';
 import { describe, it, expect } from 'vitest';
 
 describe('DSP Compliance Coaching', () => {

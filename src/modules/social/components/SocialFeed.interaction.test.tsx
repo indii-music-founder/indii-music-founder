@@ -44,11 +44,11 @@ describe('SocialFeed Interaction: Send Button', () => {
         vi.clearAllMocks();
 
         // Setup default mock return values
-        (useStore as any).mockImplementation((selector: any) => selector({
+        (useStore as import("vitest").Mock).mockImplementation((selector: any) => selector({
             userProfile: mockUser
         }));
 
-        (useSocial as any).mockReturnValue({
+        (useSocial as import("vitest").Mock).mockReturnValue({
             posts: [],
             isFeedLoading: false,
             filter: 'all',
@@ -58,7 +58,7 @@ describe('SocialFeed Interaction: Send Button', () => {
             }
         });
 
-        (MarketplaceService.getProductsByArtist as any).mockResolvedValue([]);
+        (MarketplaceService.getProductsByArtist as import("vitest").Mock).mockResolvedValue([]);
     });
 
     it('lifecycle: Click -> Loading -> Success -> Reset', async () => {

@@ -125,10 +125,10 @@ class MockOfflineAudioContext {
     });
 }
 
-global.AudioContext = MockAudioContext as any;
-global.OfflineAudioContext = MockOfflineAudioContext as any;
-(window as any).AudioContext = MockAudioContext;
-(window as any).webkitAudioContext = MockAudioContext;
+global.AudioContext = MockAudioContext as unknown as typeof AudioContext;
+global.OfflineAudioContext = MockOfflineAudioContext as unknown as typeof OfflineAudioContext;
+(window as unknown as Record<string, unknown>).AudioContext = MockAudioContext;
+(window as unknown as Record<string, unknown>).webkitAudioContext = MockAudioContext;
 
 vi.mock('jszip', () => ({
     default: {
@@ -201,8 +201,13 @@ describe('AudioAnalysisService', () => {
         const mockFile = new File(['corrupt'], 'bad.wav', { type: 'audio/wav' });
         const mockCtx = new MockAudioContext();
         mockCtx.decodeAudioData = vi.fn().mockRejectedValue(new Error('Decode failed'));
-        global.AudioContext = function () { return mockCtx; } as any;
+        const originalAudioContext = global.AudioContext;
+        global.AudioContext = function () { return mockCtx; } as unknown as typeof AudioContext;
 
-        await expect(service.analyzeDeep(mockFile)).rejects.toThrow('Decode failed');
+        try {
+            await expect(service.analyzeDeep(mockFile)).rejects.toThrow('Decode failed');
+        } finally {
+            global.AudioContext = originalAudioContext;
+        }
     });
 });

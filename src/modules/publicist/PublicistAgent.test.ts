@@ -65,7 +65,7 @@ describe('PUBLICIST_TOOLS', () => {
             }
         };
 
-        (firebaseAI.generateContent as any).mockResolvedValueOnce({
+        (firebaseAI.generateContent as import("vitest").Mock).mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify(mockCampaign)
             }
