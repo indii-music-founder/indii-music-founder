@@ -60,15 +60,19 @@ const createWindow = async () => {
     }) as { width: number, height: number, x?: number, y?: number, isMaximized: boolean };
 
     // Load .env here (after app.whenReady) to avoid esbuild hoisting issues with dotenv v17
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     try { require('dotenv').config(); } catch (_e) { /* dotenv optional */ }
 
     try {
         const { indiiRemoteService } = await import('./services/IndiiRemoteService');
         const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
         const password = Math.floor(100000 + Math.random() * 900000).toString();
-        indiiRemoteService.start({ port: 3333, password, ngrokToken: token }).then((url: string) => {
+        try {
+            const url = await indiiRemoteService.start({ port: 3333, password, ngrokToken: token });
             log.info(`[IndiiRemote READY] Ngrok Tunnel: ${url}`);
-        });
+        } catch (startErr) {
+            log.error('[Main] IndiiRemoteService startup rejected:', startErr);
+        }
     } catch (e) {
         log.error('[Main] Failed to start IndiiRemote subsystem:', e);
     }

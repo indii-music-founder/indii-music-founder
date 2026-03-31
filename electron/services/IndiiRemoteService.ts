@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import ngrok from '@ngrok/ngrok';
 import { app as electronApp, BrowserWindow } from 'electron';
 import path from 'path';
+import crypto from 'crypto';
 
 export interface RemoteConfig {
     port?: number;
@@ -27,6 +28,7 @@ class IndiiRemoteService {
     private pendingStart: Promise<string> | null = null;
     private clients: Set<WebSocket> = new Set();
     private authenticatedClients: WeakSet<WebSocket> = new WeakSet();
+    private authAttempts = new Map<string, { count: number, resetAt: number }>();
 
     // Config defaults
     private port = 3333;
@@ -78,14 +80,27 @@ class IndiiRemoteService {
 
             // Basic auth check endpoint — returns a session token
             this.expressApp.post('/api/auth', (req, res) => {
+                const ip = req.ip || req.socket.remoteAddress || 'unknown';
+                const now = Date.now();
+                const attempt = this.authAttempts.get(ip);
+
+                if (attempt && attempt.count >= 5 && now < attempt.resetAt) {
+                    res.status(429).json({ success: false, error: 'Too many failed attempts. Locked out for 5 minutes.' });
+                    return;
+                }
+
                 if (req.body.password === this.password) {
+                    if (attempt) this.authAttempts.delete(ip);
                     // Generate a short-lived session token for WebSocket auth
-                    const wsToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+                    const wsToken = crypto.randomBytes(32).toString('hex');
                     this._pendingWsTokens.add(wsToken);
                     // Expire token after 30 seconds
                     setTimeout(() => this._pendingWsTokens.delete(wsToken), 30000);
                     res.json({ success: true, wsToken });
                 } else {
+                    const count = (attempt && now < attempt.resetAt ? attempt.count : 0) + 1;
+                    const resetAt = now + (count >= 5 ? 5 * 60 * 1000 : 5 * 60 * 1000); // the lockout resets after 5 min
+                    this.authAttempts.set(ip, { count, resetAt });
                     res.status(401).json({ success: false, error: 'Invalid password' });
                 }
             });
