@@ -73,9 +73,9 @@ const createMockProfile = (distributor?: string) => ({
 describe('VideoGenerationService - Distributor Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore.getState as any).mockReturnValue({ currentOrganizationId: 'org-1' });
-        (subscriptionService.canPerformAction as any).mockResolvedValue({ allowed: true });
-        (subscriptionService.getCurrentSubscription as any).mockResolvedValue({ tier: 'pro' });
+        (useStore.getState as import("vitest").Mock).mockReturnValue({ currentOrganizationId: 'org-1' });
+        (subscriptionService.canPerformAction as import("vitest").Mock).mockResolvedValue({ allowed: true });
+        (subscriptionService.getCurrentSubscription as import("vitest").Mock).mockResolvedValue({ tier: 'pro' });
     });
 
     describe('Distributors with Canvas support (9:16)', () => {
@@ -207,7 +207,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
 
     describe('Long-form video generation', () => {
         it('applies distributor constraints to long-form videos', async () => {
-            (subscriptionService.canPerformAction as any).mockResolvedValue({ allowed: true });
+            (subscriptionService.canPerformAction as import("vitest").Mock).mockResolvedValue({ allowed: true });
 
             await VideoGeneration.generateLongFormVideo({
                 prompt: 'A long video',

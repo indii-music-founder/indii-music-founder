@@ -11,7 +11,7 @@ describe('ISRCService', () => {
         const mockISRC = 'US-XXX-24-00001';
         const mockRecord = { isrc: mockISRC, releaseId: 'rel-1' };
 
-        (getDocs as any).mockResolvedValueOnce({
+        (getDocs as import("vitest").Mock).mockResolvedValueOnce({
             empty: false,
             docs: [{ id: '1', data: () => mockRecord }]
         });
@@ -40,7 +40,7 @@ describe('ISRCService', () => {
             { isrc: 'US-XXX-24-00002', releaseId: mockReleaseId }
         ];
 
-        (getDocs as any).mockResolvedValueOnce({
+        (getDocs as import("vitest").Mock).mockResolvedValueOnce({
             empty: false,
             docs: mockRecords.map((data, i) => ({ id: String(i + 1), data: () => data }))
         });

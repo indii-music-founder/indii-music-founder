@@ -53,7 +53,7 @@ describe('MechanicalRoyaltyService', () => {
         });
 
         it('should return null if API fails', async () => {
-            (global.fetch as any).mockResolvedValueOnce({ ok: false, status: 500 });
+            (global.fetch as import("vitest").Mock).mockResolvedValueOnce({ ok: false, status: 500 });
             const result = await MechanicalRoyaltyService.searchComposition('Test Song');
             expect(result).toBeNull();
         });
@@ -88,7 +88,7 @@ describe('MechanicalRoyaltyService', () => {
 
     describe('requestLicense', () => {
         it('should call the proxy API and update status', async () => {
-            (global.fetch as any).mockResolvedValueOnce({
+            (global.fetch as import("vitest").Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ result: { licenseNumber: 'HFA123' } }),
             });
@@ -109,7 +109,7 @@ describe('MechanicalRoyaltyService', () => {
 
     describe('getLicenses', () => {
         it('should return licenses from Firestore', async () => {
-            (getDocs as any).mockResolvedValueOnce({
+            (getDocs as import("vitest").Mock).mockResolvedValueOnce({
                 docs: [
                     { id: 'l1', data: () => ({ releaseId: 'r1', trackTitle: 'S1' }) }
                 ]

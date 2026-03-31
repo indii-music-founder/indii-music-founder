@@ -42,7 +42,7 @@ describe('StorageMigrationService', () => {
     vi.clearAllMocks();
 
     // Mock Auth
-    Object.defineProperty(auth, 'currentUser', { value: { uid: mockUserId }, writable: true });
+    (auth as any).currentUser = { uid: mockUserId };
 
     // Setup IDB Mock chain
     // initDB() -> db -> transaction() -> store -> openCursor() -> cursor
@@ -65,7 +65,7 @@ describe('StorageMigrationService', () => {
       transaction: vi.fn().mockReturnValue(mockTx),
     };
 
-    vi.mocked(initDB).mockResolvedValue(mockIDB);
+    (initDB as import("vitest").Mock).mockResolvedValue(mockIDB);
   });
 
   afterEach(() => {
@@ -108,8 +108,7 @@ describe('StorageMigrationService', () => {
         if (storeName === 'assets') return mockAssetStore;
         if (storeName === 'workflows') return mockWorkflowStore;
         return {
-          serverTimestamp: vi.fn(), openCursor: vi.fn()
-        };
+    serverTimestamp: vi.fn(), openCursor: vi.fn() };
       }),
     };
 
@@ -134,18 +133,18 @@ describe('StorageMigrationService', () => {
     expect(mockWorkflowStore.openCursor).toHaveBeenCalled();
     expect(setDoc).toHaveBeenCalled();
     expect(setDoc).toHaveBeenCalledWith(
-      undefined,
-      expect.objectContaining({
-        id: 'workflow-legacy-1',
-        name: 'Legacy Workflow',
-        synced: true
-      }),
-      { merge: true }
+        undefined,
+        expect.objectContaining({
+            id: 'workflow-legacy-1',
+            name: 'Legacy Workflow',
+            synced: true
+        }),
+        { merge: true }
     );
   });
 
   it('should throw error if user is not logged in', async () => {
-    Object.defineProperty(auth, 'currentUser', { value: null, writable: true });
+    (auth as any).currentUser = null;
     await expect(StorageMigrationService.getInstance().migrateAllData()).rejects.toThrow("User must be logged in");
   });
 });

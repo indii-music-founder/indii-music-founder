@@ -27,8 +27,6 @@ import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
 
-const store = new Store();
-
 // Configure logging
 log.transports.file.level = 'info';
 log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs/main.log');
@@ -52,6 +50,7 @@ const createWindow = () => {
     const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
 
+    const store = new Store();
     const windowState = store.get('window-state', {
         width: 1280,
         height: 800,
@@ -59,6 +58,16 @@ const createWindow = () => {
         y: undefined,
         isMaximized: false
     }) as { width: number, height: number, x?: number, y?: number, isMaximized: boolean };
+
+    try {
+        const { indiiRemoteService } = require('./services/IndiiRemoteService');
+        const token = '3BiEQzXvplWKkbnHlfWjoE4bDR7_52QcY3K8jUEdEjx95UN7v';
+        indiiRemoteService.start({ port: 3333, password: '872914', ngrokToken: token }).then((url: string) => {
+            console.log(`\n\n[IndiiRemote READY] Ngrok Tunnel: ${url} | PIN: 872914\n\n`);
+        });
+    } catch (e) {
+        console.error("Failed to start subsystems:", e);
+    }
 
     // Item 325: Hard assertion — webSecurity must always be true in production
     if (app.isPackaged && isDev) {

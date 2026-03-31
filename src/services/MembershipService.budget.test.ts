@@ -54,7 +54,7 @@ describe('MembershipService (Ledger Budget Checks)', () => {
         });
 
         // Default: No usage recorded (New day)
-        (getDoc as any).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => false,
             data: () => undefined
         });
@@ -70,7 +70,7 @@ describe('MembershipService (Ledger Budget Checks)', () => {
         let currentSpend = 0.0;
 
         // Task 1: Spend 0.0 -> 0.30. Should pass.
-        (getDoc as any).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({ totalSpend: currentSpend })
         });
@@ -79,7 +79,7 @@ describe('MembershipService (Ledger Budget Checks)', () => {
         currentSpend += COST_PER_TASK; // 0.30
 
         // Task 2: Spend 0.30 -> 0.60. Should pass.
-        (getDoc as any).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({ totalSpend: currentSpend })
         });
@@ -88,7 +88,7 @@ describe('MembershipService (Ledger Budget Checks)', () => {
         currentSpend += COST_PER_TASK; // 0.60
 
         // Task 3: Spend 0.60 -> 0.90. Should pass.
-        (getDoc as any).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({ totalSpend: currentSpend })
         });
@@ -98,7 +98,7 @@ describe('MembershipService (Ledger Budget Checks)', () => {
 
         // Task 4: Spend 0.90 + 0.30 = 1.20. Should FAIL.
         // Limit is 1.00.
-        (getDoc as any).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({ totalSpend: currentSpend })
         });
@@ -115,7 +115,7 @@ describe('MembershipService (Ledger Budget Checks)', () => {
         // Setup: User has spent $0.00.
         // Try to spend $1.01 (Free limit $1.00).
 
-        (getDoc as any).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => false // No prior usage
         });
 
@@ -133,7 +133,7 @@ describe('MembershipService (Ledger Budget Checks)', () => {
         // We mock getDoc returning empty, simulating that for TODAY'S date key, no doc exists.
         // This effectively tests that the service queries by TODAY's date.
 
-        (getDoc as any).mockResolvedValue({
+        (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => false, // New day, no doc for today
             data: () => undefined
         });
@@ -149,7 +149,7 @@ describe('MembershipService (Ledger Budget Checks)', () => {
          // Verifies the math inside checkBudget matches expected wallet behavior
          // Limit 1.00. Spent 0.50. Cost 0.25. Remaining should be 0.25.
 
-         (getDoc as any).mockResolvedValue({
+         (getDoc as import("vitest").Mock).mockResolvedValue({
             exists: () => true,
             data: () => ({ totalSpend: 0.50 })
          });

@@ -117,7 +117,7 @@ describe('Lens 🎥 - Veo Safety & Integrity', () => {
         const brokenUrl = 'https://storage.googleapis.com/veo-generations/ghost.mp4';
 
         // 1. Mock Fetch to return 404
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as import("vitest").Mock).mockResolvedValue({
             ok: false,
             status: 404,
             statusText: 'Not Found'
@@ -161,7 +161,7 @@ describe('Lens 🎥 - Veo Safety & Integrity', () => {
         const validUrl = 'https://storage.googleapis.com/veo-generations/valid.mp4';
 
         // 1. Mock Fetch to return 200
-        (global.fetch as any).mockResolvedValue({
+        (global.fetch as import("vitest").Mock).mockResolvedValue({
             ok: true,
             status: 200
         });
