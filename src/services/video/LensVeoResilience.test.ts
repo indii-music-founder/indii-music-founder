@@ -217,8 +217,8 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
 
         // 4. Assert: Metadata Integrity (The "Contract")
         expect(jobResult.output!.metadata!.mime_type).toBe('video/mp4');
-        expect((jobResult.output!.metadata as any)!.duration_seconds).toBe(5.0);
-        expect((jobResult.output!.metadata as any)!.fps).toBe(30);
+        expect((jobResult.output!.metadata as Record<string, unknown>)!.duration_seconds).toBe(5.0);
+        expect((jobResult.output!.metadata as Record<string, unknown>)!.fps).toBe(30);
         expect(jobResult.output!.url).toBe('https://veo.google.com/generated-video.mp4');
     });
 });

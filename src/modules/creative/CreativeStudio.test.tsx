@@ -34,7 +34,7 @@ describe('CreativeStudio', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useToast as any).mockReturnValue({
+        (useToast as unknown as import("vitest").Mock).mockReturnValue({
             info: mockToastInfo,
             success: mockToastSuccess,
             error: mockToastError
@@ -76,7 +76,7 @@ describe('CreativeStudio', () => {
             setHasUnsavedChanges: vi.fn()
         };
 
-        (useStore as any).mockImplementation((selector: any) => {
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
             if (selector && typeof selector === 'function') {
                 return selector(storeState);
             }
@@ -100,7 +100,7 @@ describe('CreativeStudio', () => {
             generationMode: 'image'
         };
 
-        (useStore as any).mockImplementation((selector: any) => {
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
             if (selector && typeof selector === 'function') {
                 return selector(updatedStore);
             }
@@ -146,7 +146,7 @@ describe('CreativeStudio', () => {
             generationMode: 'image'
         };
 
-        (useStore as any).mockImplementation((selector: any) => {
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
             if (selector && typeof selector === 'function') {
                 return selector(updatedStore);
             }

@@ -23,7 +23,7 @@ describe('SOCIAL_TOOLS', () => {
                 bios: ['Bio 1', 'Bio 2']
             };
 
-            (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
+            (AI.generateStructuredData as import("vitest").Mock).mockResolvedValue(mockResponse);
 
             const args = {
                 brand_name: 'TestBrand',
@@ -47,7 +47,7 @@ describe('SOCIAL_TOOLS', () => {
         });
 
         it('should throw error if AI fails', async () => {
-            (AI.generateStructuredData as any).mockRejectedValue(new Error('AI Error'));
+            (AI.generateStructuredData as import("vitest").Mock).mockRejectedValue(new Error('AI Error'));
 
             const args = {
                 brand_name: 'TestBrand',

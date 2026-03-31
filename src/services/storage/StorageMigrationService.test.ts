@@ -42,7 +42,8 @@ describe('StorageMigrationService', () => {
     vi.clearAllMocks();
 
     // Mock Auth
-    Object.defineProperty(auth, 'currentUser', { value: { uid: mockUserId }, writable: true });
+    const mockedAuth = auth as { currentUser: { uid: string } | null };
+    mockedAuth.currentUser = { uid: mockUserId };
 
     // Setup IDB Mock chain
     // initDB() -> db -> transaction() -> store -> openCursor() -> cursor
@@ -145,7 +146,8 @@ describe('StorageMigrationService', () => {
   });
 
   it('should throw error if user is not logged in', async () => {
-    Object.defineProperty(auth, 'currentUser', { value: null, writable: true });
+    const mockedAuth = auth as { currentUser: { uid: string } | null };
+    mockedAuth.currentUser = null;
     await expect(StorageMigrationService.getInstance().migrateAllData()).rejects.toThrow("User must be logged in");
   });
 });

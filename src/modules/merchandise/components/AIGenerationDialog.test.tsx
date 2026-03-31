@@ -54,7 +54,7 @@ describe('AIGenerationDialog', () => {
     });
 
     it('handles successful generation', async () => {
-        (ImageGeneration.generateImages as any).mockResolvedValue([
+        (ImageGeneration.generateImages as import("vitest").Mock).mockResolvedValue([
             { id: '1', url: 'http://example.com/image.png', prompt: 'test prompt' }
         ]);
 
@@ -89,7 +89,7 @@ describe('AIGenerationDialog', () => {
         const error = new QuotaExceededError(
             'images', 'free', 'Upgrade to Pro', 5, 5
         );
-        (ImageGeneration.generateImages as any).mockRejectedValue(error);
+        (ImageGeneration.generateImages as import("vitest").Mock).mockRejectedValue(error);
 
         render(
             <AIGenerationDialog
@@ -111,7 +111,7 @@ describe('AIGenerationDialog', () => {
     });
 
     it('handles generic errors correctly', async () => {
-        (ImageGeneration.generateImages as any).mockRejectedValue(new Error('Network error'));
+        (ImageGeneration.generateImages as import("vitest").Mock).mockRejectedValue(new Error('Network error'));
 
         render(
             <AIGenerationDialog
@@ -137,7 +137,7 @@ describe('AIGenerationDialog', () => {
             resolveGeneration = resolve;
         });
 
-        (ImageGeneration.generateImages as any).mockReturnValue(generatePromise);
+        (ImageGeneration.generateImages as import("vitest").Mock).mockReturnValue(generatePromise);
 
         render(
             <AIGenerationDialog

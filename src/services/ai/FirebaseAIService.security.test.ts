@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FirebaseAIService } from './FirebaseAIService';
 import { InputSanitizer } from './utils/InputSanitizer';
 import { logger } from '@/utils/logger';

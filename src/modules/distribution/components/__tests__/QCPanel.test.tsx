@@ -38,7 +38,7 @@ describe('QCPanel', () => {
             warnings: [],
             summary: 'All good'
         };
-        (distributionService.validateReleaseMetadata as any).mockResolvedValue(mockReport);
+        (distributionService.validateReleaseMetadata as import("vitest").Mock).mockResolvedValue(mockReport);
 
         render(<QCPanel />);
 
@@ -68,7 +68,7 @@ describe('QCPanel', () => {
             warnings: [],
             summary: 'Validation failed'
         };
-        (distributionService.validateReleaseMetadata as any).mockResolvedValue(mockReport);
+        (distributionService.validateReleaseMetadata as import("vitest").Mock).mockResolvedValue(mockReport);
 
         render(<QCPanel />);
 
@@ -81,7 +81,7 @@ describe('QCPanel', () => {
     });
 
     it('should call generateContentIdAssets when CID button is clicked', async () => {
-        (distributionService.generateContentIdAssets as any).mockResolvedValue('ISRC,Title\nUS123,Test');
+        (distributionService.generateContentIdAssets as import("vitest").Mock).mockResolvedValue('ISRC,Title\nUS123,Test');
 
         render(<QCPanel />);
 

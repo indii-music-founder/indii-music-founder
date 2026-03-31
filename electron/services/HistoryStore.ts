@@ -8,17 +8,24 @@ interface HistorySchema {
 }
 
 export class HistoryStore {
-    private store: Store<HistorySchema>;
+    private _store: Store<HistorySchema> | undefined;
+
+    private get store(): Store<HistorySchema> {
+        if (!this._store) {
+            this._store = new Store<HistorySchema>({
+                name: 'chat-history',
+                cwd: app.getPath('userData'), // Explicitly set path
+                defaults: {
+                    sessions: {}
+                }
+            });
+            console.log('[HistoryStore] Initialized at:', this._store.path);
+        }
+        return this._store;
+    }
 
     constructor() {
-        this.store = new Store<HistorySchema>({
-            name: 'chat-history',
-            cwd: app.getPath('userData'), // Explicitly set path
-            defaults: {
-                sessions: {}
-            }
-        });
-        console.log('[HistoryStore] Initialized at:', this.store.path);
+        // Initialization is lazy to prevent calling app.getPath before app is ready
     }
 
     get(sessionId: string): any | null {
@@ -47,7 +54,9 @@ export class HistoryStore {
     }
 
     delete(sessionId: string): void {
-        this.store.delete(`sessions.${sessionId}` as any);
+        const sessions = this.store.get('sessions');
+        delete sessions[sessionId];
+        this.store.set('sessions', sessions);
     }
 
     clearAll(): void {

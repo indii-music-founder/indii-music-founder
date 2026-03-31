@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { ExpenseItem } from './ExpenseItem';
 import { Expense } from '@/services/finance/FinanceService';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 
 // Mock Lucide icons
-vi.mock('lucide-react', async (importOriginal) => ({
+vi.mock('lucide-react', async (importOriginal: <T>() => Promise<T>) => ({
   ...(await importOriginal<typeof import('lucide-react')>()),
   CheckCircle: () => <div data-testid="check-circle-icon" />,
   Receipt: () => <div data-testid="receipt-icon" />,

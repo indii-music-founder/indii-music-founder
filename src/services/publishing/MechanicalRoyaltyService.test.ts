@@ -7,7 +7,7 @@ import { getDocs, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 // We just need to mock the specific behaviors for these tests
 
 vi.mock('firebase/firestore', async () => {
-    const actual = await vi.importActual('firebase/firestore') as any;
+    const actual = await vi.importActual<typeof import('firebase/firestore')>('firebase/firestore');
     return {
         ...actual,
         getDocs: vi.fn(),
@@ -53,7 +53,7 @@ describe('MechanicalRoyaltyService', () => {
         });
 
         it('should return null if API fails', async () => {
-            (global.fetch as any).mockResolvedValueOnce({ ok: false, status: 500 });
+            (global.fetch as import("vitest").Mock).mockResolvedValueOnce({ ok: false, status: 500 });
             const result = await MechanicalRoyaltyService.searchComposition('Test Song');
             expect(result).toBeNull();
         });
@@ -88,7 +88,7 @@ describe('MechanicalRoyaltyService', () => {
 
     describe('requestLicense', () => {
         it('should call the proxy API and update status', async () => {
-            (global.fetch as any).mockResolvedValueOnce({
+            (global.fetch as import("vitest").Mock).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ result: { licenseNumber: 'HFA123' } }),
             });
@@ -109,7 +109,7 @@ describe('MechanicalRoyaltyService', () => {
 
     describe('getLicenses', () => {
         it('should return licenses from Firestore', async () => {
-            (getDocs as any).mockResolvedValueOnce({
+            (getDocs as import("vitest").Mock).mockResolvedValueOnce({
                 docs: [
                     { id: 'l1', data: () => ({ releaseId: 'r1', trackTitle: 'S1' }) }
                 ]
@@ -124,7 +124,7 @@ describe('MechanicalRoyaltyService', () => {
     describe('isReleaseClearedForDistribution', () => {
         it('should return cleared: true if no pending tracks', async () => {
             vi.spyOn(MechanicalRoyaltyService, 'getLicenses').mockResolvedValueOnce([
-                { status: 'license_active', trackTitle: 'S1' } as any
+                { status: 'license_active', trackTitle: 'S1' } as unknown as Awaited<ReturnType<typeof MechanicalRoyaltyService.getLicenses>>[number]
             ]);
 
             const result = await MechanicalRoyaltyService.isReleaseClearedForDistribution('r1');
@@ -133,7 +133,7 @@ describe('MechanicalRoyaltyService', () => {
 
         it('should return cleared: false if tracks are pending', async () => {
             vi.spyOn(MechanicalRoyaltyService, 'getLicenses').mockResolvedValueOnce([
-                { status: 'pending_search', trackTitle: 'S1' } as any
+                { status: 'pending_search', trackTitle: 'S1' } as unknown as Awaited<ReturnType<typeof MechanicalRoyaltyService.getLicenses>>[number]
             ]);
 
             const result = await MechanicalRoyaltyService.isReleaseClearedForDistribution('r1');

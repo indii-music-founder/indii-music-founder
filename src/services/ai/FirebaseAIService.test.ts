@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseAIService } from './FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 

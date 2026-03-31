@@ -145,7 +145,7 @@ describe('AIGenerateCampaignModal Accessibility', () => {
     it('Scenario 3: Loading state should be announced', async () => {
         const user = userEvent.setup();
         // Delay the resolution to capture loading state
-        (CampaignAI.generateCampaign as any).mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
+        (CampaignAI.generateCampaign as import("vitest").Mock).mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
 
         render(<AIGenerateCampaignModal onClose={mockOnClose} onSave={mockOnSave} />);
 

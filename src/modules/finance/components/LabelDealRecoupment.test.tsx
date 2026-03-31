@@ -63,7 +63,7 @@ describe('LabelDealRecoupment', () => {
 
     it('renders a deal card when Firestore returns data', async () => {
         const { onSnapshot } = vi.mocked(await import('firebase/firestore'));
-        (onSnapshot as any).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
+        (onSnapshot as import("vitest").Mock).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
             cb({
                 docs: [{
                     id: 'deal-1',
@@ -88,7 +88,7 @@ describe('LabelDealRecoupment', () => {
 
     it('shows "Recouped" status when recoupedAmount >= advanceAmount', async () => {
         const { onSnapshot } = vi.mocked(await import('firebase/firestore'));
-        (onSnapshot as any).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
+        (onSnapshot as import("vitest").Mock).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
             cb({
                 docs: [{
                     id: 'deal-2',
@@ -111,7 +111,7 @@ describe('LabelDealRecoupment', () => {
 
     it('shows "At Risk" status when recoupedAmount < 50% of advance', async () => {
         const { onSnapshot } = vi.mocked(await import('firebase/firestore'));
-        (onSnapshot as any).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
+        (onSnapshot as import("vitest").Mock).mockImplementation((_q: unknown, cb: (...args: unknown[]) => void) => {
             cb({
                 docs: [{
                     id: 'deal-3',
