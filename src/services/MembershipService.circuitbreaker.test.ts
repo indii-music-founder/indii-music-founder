@@ -47,9 +47,9 @@ vi.mock('firebase/firestore', () => ({
         // Handle "increment" logic manually for the mock
         const processedUpdates: any = {};
         for (const [key, value] of Object.entries(updates)) {
-            if (value && typeof value === 'object' && (value as any)._type === 'increment') {
+            if (value && typeof value === 'object' && (value as Record<string, unknown>)._type === 'increment') {
                 const currentVal = (current[key] || 0) as number;
-                processedUpdates[key] = currentVal + (value as any).value;
+                processedUpdates[key] = currentVal + ((value as { _type?: string, value?: number }).value || 0);
             } else {
                 processedUpdates[key] = value;
             }

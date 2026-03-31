@@ -171,7 +171,7 @@ describe('AudioAnalysisService', () => {
 
         vi.mocked(musicLibraryService.getAnalysis).mockResolvedValueOnce({
             features: cachedFeatures
-        } as any);
+        } as unknown as import('@/services/music/MusicLibraryService').AnalyzedTrack);
 
         const result = await service.analyze(mockFile);
         expect(result.fromCache).toBe(true);

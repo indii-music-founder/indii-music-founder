@@ -60,7 +60,7 @@ describe('VideoTimeline', () => {
         };
 
         // Mock implementation to handle both direct access and selector access
-        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
+        (useVideoEditorStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
             if (selector && typeof selector === 'function') {
                 try {
                     return selector(mockState);

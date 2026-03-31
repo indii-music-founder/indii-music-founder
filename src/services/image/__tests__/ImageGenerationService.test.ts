@@ -64,7 +64,7 @@ vi.mock("@/services/CloudStorageService", () => ({
 }));
 
 describe("ImageGenerationService", () => {
-  const mockGenerateImage = vi.fn() as any;
+  const mockGenerateImage = vi.fn() as unknown as any;
 
   beforeEach(() => {
     vi.clearAllMocks();

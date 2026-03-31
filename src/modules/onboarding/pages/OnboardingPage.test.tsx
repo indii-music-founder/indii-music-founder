@@ -104,9 +104,9 @@ describe('OnboardingPage', () => {
                 expect(OnboardingService.runOnboardingConversation).toHaveBeenCalledTimes(2);
                 // Verify call args contained "Techno"
                 const calls = (OnboardingService.runOnboardingConversation as import("vitest").Mock).mock.calls;
-                const lastCallHistory = calls[1][0];
-                const lastMessage = lastCallHistory[lastCallHistory.length - 1];
-                expect(lastMessage.parts[0].text).toBe('Techno');
+                const lastCallHistory = calls[1]?.[0] || [];
+                const lastMessage = lastCallHistory?.[(lastCallHistory?.length ?? 1) - 1];
+                expect(lastMessage?.parts?.[0]?.text).toBe('Techno');
             });
         });
     });

@@ -116,9 +116,9 @@ describe('CreativeNavbar', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as import("vitest").Mock).mockReturnValue(defaultStore);
+        (useStore as unknown as import("vitest").Mock).mockReturnValue(defaultStore);
         (useStore as any).getState = () => defaultStore;
-        (useToast as import("vitest").Mock).mockReturnValue(mockToast);
+        (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
     });
 
     it('renders correctly', () => {

@@ -4,7 +4,7 @@ import * as firestore from 'firebase/firestore';
 
 // Mock Firestore
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getDoc: vi.fn(),
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
@@ -15,10 +15,10 @@ vi.mock('firebase/firestore', () => ({
 
 // Mock Store for User ID
 vi.mock('@/core/store', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     useStore: {
         getState: () => ({
-  serverTimestamp: vi.fn(),
+            serverTimestamp: vi.fn(),
             userProfile: { id: 'test-user' },
             organizations: [{ id: 'personal', plan: 'free' }],
             currentOrganizationId: 'personal'
@@ -56,14 +56,14 @@ describe('Ledger\'s Cost Circuit Breaker', () => {
         // Mock getDoc to return incrementing usage
         vi.mocked(firestore.getDoc).mockImplementation(async () => {
             return {
-    serverTimestamp: vi.fn(),
+                serverTimestamp: vi.fn(),
                 exists: () => true,
                 data: () => ({
-  serverTimestamp: vi.fn(),
+                    serverTimestamp: vi.fn(),
                     videosGenerated: currentUsage,
                     date: new Date().toISOString().split('T')[0]
                 })
-            } as any;
+            } as unknown as firestore.DocumentSnapshot;
         });
 
         // Loop 1: Run up to the limit
@@ -100,14 +100,14 @@ describe('Ledger\'s Cost Circuit Breaker', () => {
 
         vi.mocked(firestore.getDoc).mockImplementation(async () => {
             return {
-    serverTimestamp: vi.fn(),
+                serverTimestamp: vi.fn(),
                 exists: () => true,
                 data: () => ({
-  serverTimestamp: vi.fn(),
+                    serverTimestamp: vi.fn(),
                     videosGenerated: HIGH_USAGE,
                     date: new Date().toISOString().split('T')[0]
                 })
-            } as any;
+            } as unknown as firestore.DocumentSnapshot;
         });
 
         const check = await MembershipService.checkQuota('video');
@@ -127,14 +127,14 @@ describe('Ledger\'s Cost Circuit Breaker', () => {
         // Mock getDoc to return incrementing spend
         vi.mocked(firestore.getDoc).mockImplementation(async () => {
             return {
-    serverTimestamp: vi.fn(),
+                serverTimestamp: vi.fn(),
                 exists: () => true,
                 data: () => ({
-  serverTimestamp: vi.fn(),
+                    serverTimestamp: vi.fn(),
                     totalSpend: currentSpend,
                     date: new Date().toISOString().split('T')[0]
                 })
-            } as any;
+            } as unknown as firestore.DocumentSnapshot;
         });
 
         // Loop 5 times: 5 * 0.20 = 1.00
