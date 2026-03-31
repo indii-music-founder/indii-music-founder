@@ -191,11 +191,12 @@ if (typeof window !== 'undefined') {
     // SKIP in Electron unless a debug token is explicitly provided (ReCaptcha Enterprise requires web origin)
     // Or skip in development for bypass
     // Initialize App Check if we have a valid key
+    // SKIP in Electron unless a debug token is explicitly provided (ReCaptcha Enterprise requires web origin)
     // ALLOW in DEV if debug token is present (Fixes localhost "Permission Denied")
     const isElectron = !!window.electronAPI;
-    const shouldInitAppCheck = env.appCheckKey && (
-        !env.DEV || (env.DEV && env.appCheckDebugToken)
-    );
+    const shouldInitAppCheck = env.appCheckKey &&
+        (!isElectron || env.appCheckDebugToken) &&
+        (!env.DEV || env.appCheckDebugToken);
 
     if (shouldInitAppCheck) {
         if (isElectron && env.appCheckDebugToken) {
