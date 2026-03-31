@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.44.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.0...v1.44.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* **ci:** make staging E2E non-blocking to unblock production deploy ([2c5f1a0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2c5f1a090fa25a32476568b5e88c185b4f218a23))
+* **ci:** resolve staging e2e asset routing and csp violation ([85d6a4f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/85d6a4f0c5e9510403e33ec852b4580a035df24b))
+* **ci:** scope staging E2E to smoke tests only to prevent 30m timeout ([0eed1a1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0eed1a12be1f550a737466af7bb58db2366de441))
+* **e2e:** abort firestore webchannel streams instead of returning invalid chunks to prevent retry loops ([231d113](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/231d11317ec6b285a46754eb7b0a5170c5633a2d))
+* **e2e:** copy missing installations and ragProxy mocks to auth-flow.spec.ts and fix WebChannel infinite loop aborts ([e968070](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e968070b06d9ca90f4aae2cfbf5d65d060ede250))
+* **e2e:** delay Firestore stream mock to prevent CPU starvation ([38ad846](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/38ad846a685125e3b75213ecb0bd054fc1fb4c44))
+* **e2e:** eliminate WebChannel 2s delay causing CI timeout accumulation ([bbc5f38](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bbc5f3801fbe8155b42bd8f7ef00ea5c7c3fbaa4))
+* **e2e:** reduce firestore mock delay to 2s to unblock test teardown ([7343ead](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7343eadddeeb75b4b2fa952c3a8e1f362e1e707e))
+
 ## [1.44.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.43.0...v1.44.0) (2026-03-30)
 
 
