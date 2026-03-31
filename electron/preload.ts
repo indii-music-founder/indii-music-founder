@@ -130,6 +130,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
         validateXSD: (xmlContent: string) => ipcRenderer.invoke('distribution:validate-xsd', xmlContent),
     },
 
+    // IndiiRemote
+    remote: {
+        onMessageFromMobile: (callback: (data: unknown) => void) => {
+            const handler = (_event: unknown, data: unknown) => callback(data);
+            ipcRenderer.on('indii-remote:message-from-mobile', handler);
+            return () => ipcRenderer.removeListener('indii-remote:message-from-mobile', handler);
+        },
+        onStatusUpdated: (callback: (status: unknown) => void) => {
+            const handler = (_event: unknown, status: unknown) => callback(status);
+            ipcRenderer.on('indii-remote:status-updated', handler);
+            return () => ipcRenderer.removeListener('indii-remote:status-updated', handler);
+        }
+    },
+
     // Auto-Updater
     updater: {
         check: () => ipcRenderer.invoke('updater:check'),

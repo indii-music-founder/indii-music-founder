@@ -139,7 +139,7 @@ describe('VideoGenerationService', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ serverTimestamp: vi.fn(), status: 'pending' })
+                    data: () => ({ status: 'pending' })
                 } as unknown as import('firebase/firestore').DocumentSnapshot);
 
                 // 2. Completed (Simulating async update)
@@ -192,7 +192,7 @@ describe('VideoGenerationService', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ serverTimestamp: vi.fn(), status: 'processing' })
+                    data: () => ({ status: 'processing' })
                 } as unknown as import('firebase/firestore').DocumentSnapshot);
                 return vi.fn();
             }) as unknown as typeof import('firebase/firestore').onSnapshot);

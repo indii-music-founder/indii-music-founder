@@ -201,8 +201,6 @@ if (typeof window !== 'undefined') {
     if (shouldInitAppCheck) {
         if (isElectron && env.appCheckDebugToken) {
             logger.debug('[App Check] Initializing in Electron with Debug Token');
-        } else if (isElectron) {
-            logger.debug('[App Check] Initializing in Electron for Production');
         }
 
         try {
