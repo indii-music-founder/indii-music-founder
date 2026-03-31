@@ -74,7 +74,7 @@ describe('VideoNavbar Accessibility', () => {
 
     it('should update aria-selected when view mode changes', () => {
         // Override mock to 'editor'
-        (useVideoEditorStore as any).mockImplementation(() => ({
+        (useVideoEditorStore as import("vitest").Mock).mockImplementation(() => ({
             viewMode: 'editor',
             setViewMode: mockSetViewMode,
         }));

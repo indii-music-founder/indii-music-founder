@@ -36,13 +36,13 @@ describe('SalesAnalytics', () => {
 
     it('renders loading state initially', () => {
         // Subscription never calls back — loading state persists
-        (AnalyticsService.subscribeToSalesAnalytics as any).mockImplementation(() => vi.fn());
+        (AnalyticsService.subscribeToSalesAnalytics as import("vitest").Mock).mockImplementation(() => vi.fn());
         const { container } = render(<SalesAnalytics />);
         expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
     });
 
     it('renders data after fetch', async () => {
-        (AnalyticsService.subscribeToSalesAnalytics as any).mockImplementation(
+        (AnalyticsService.subscribeToSalesAnalytics as import("vitest").Mock).mockImplementation(
             (_userId: string, onData: (data: SalesAnalyticsData) => void) => {
                 onData(mockData);
                 return vi.fn();
@@ -61,7 +61,7 @@ describe('SalesAnalytics', () => {
     });
 
     it('renders error state on failure', async () => {
-        (AnalyticsService.subscribeToSalesAnalytics as any).mockImplementation(
+        (AnalyticsService.subscribeToSalesAnalytics as import("vitest").Mock).mockImplementation(
             (_userId: string, _onData: unknown, onError: (err: Error) => void) => {
                 onError(new Error('Fetch failed'));
                 return vi.fn();
@@ -76,7 +76,7 @@ describe('SalesAnalytics', () => {
 
     it('refetches on retry click', async () => {
         let callCount = 0;
-        (AnalyticsService.subscribeToSalesAnalytics as any).mockImplementation(
+        (AnalyticsService.subscribeToSalesAnalytics as import("vitest").Mock).mockImplementation(
             (_userId: string, onData: (data: SalesAnalyticsData) => void, onError: (err: Error) => void) => {
                 callCount++;
                 if (callCount === 1) {

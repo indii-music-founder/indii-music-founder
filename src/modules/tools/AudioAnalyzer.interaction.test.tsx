@@ -144,7 +144,7 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
         vi.clearAllMocks();
         window.AudioContext = vi.fn().mockImplementation(() => mockAudioContext);
         window.URL.createObjectURL = vi.fn(() => 'blob:mock');
-        (useToast as any).mockReturnValue(mockToast);
+        (useToast as import("vitest").Mock).mockReturnValue(mockToast);
 
         // Default mocks for analysis flow (MusicLibraryService removed)
     });

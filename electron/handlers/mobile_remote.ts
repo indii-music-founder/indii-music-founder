@@ -10,14 +10,13 @@
 
 import { ipcMain } from 'electron';
 import log from 'electron-log';
+import crypto from 'crypto';
 import { indiiRemoteService } from '../services/IndiiRemoteService';
 
-// Fallback logic to generate random numeric passcode if none exists
+// Generate a cryptographically random numeric passcode
 function generatePasscode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
 }
-
-const sessionPasscode = generatePasscode();
 
 export function registerMobileRemoteHandlers(): void {
   /**
@@ -29,14 +28,23 @@ export function registerMobileRemoteHandlers(): void {
       // In production, we'd grab this from Keytar or user desktop settings.
       // For now, we try to load the Ngrok token from env vars.
       const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
+      const sessionPasscode = generatePasscode();
 
-      const config = {
-        port: 3333,
-        ngrokToken: token,
-        password: sessionPasscode,
-      };
+      const status = indiiRemoteService.getStatus();
+      let url: string;
 
-      const url = await indiiRemoteService.start(config);
+      if (status.isRunning) {
+        // Service already running — update the password for the new pairing session
+        indiiRemoteService.updatePassword(sessionPasscode);
+        url = status.url!;
+      } else {
+        // Start fresh
+        url = await indiiRemoteService.start({
+          port: 3333,
+          ngrokToken: token,
+          password: sessionPasscode,
+        });
+      }
 
       return {
         success: true,

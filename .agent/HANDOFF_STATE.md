@@ -17,5 +17,5 @@
 ## Next Actions Configured for indiiOS-Clean
 
 1. Execute `npm run test:e2e` to confirm full "Green" CI status without macOS caching issues.
-2. Address the outstanding Accessiblity (A11y) `color-contrast` violation flagged in the `e2e/a11y.spec.ts` test.
+2. Address the outstanding Accessibility (A11y) `color-contrast` violation flagged in the `e2e/a11y.spec.ts` test.
 3. Advance to UX/UI refinement and autonomous distribution mechanics outlined in `docs/PRODUCTION_WORK_ORDER.md`.

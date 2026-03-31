@@ -51,11 +51,11 @@ describe('ExpenseTracker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useToast as any).mockReturnValue(mockToast);
-    (useStore as any).mockReturnValue({
+    (useToast as import("vitest").Mock).mockReturnValue(mockToast);
+    (useStore as import("vitest").Mock).mockReturnValue({
       userProfile: { id: 'test-user' }
     });
-    (useFinance as any).mockReturnValue({
+    (useFinance as import("vitest").Mock).mockReturnValue({
       expenses: [],
       expensesLoading: false,
       actions: {

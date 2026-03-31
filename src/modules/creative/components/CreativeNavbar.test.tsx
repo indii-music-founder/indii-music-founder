@@ -116,9 +116,9 @@ describe('CreativeNavbar', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as any).mockReturnValue(defaultStore);
+        (useStore as import("vitest").Mock).mockReturnValue(defaultStore);
         (useStore as any).getState = () => defaultStore;
-        (useToast as any).mockReturnValue(mockToast);
+        (useToast as import("vitest").Mock).mockReturnValue(mockToast);
     });
 
     it('renders correctly', () => {
@@ -154,7 +154,7 @@ describe('CreativeNavbar', () => {
     });
 
     it('opens projector window', async () => {
-        (ScreenControl.requestPermission as any).mockResolvedValue(true);
+        (ScreenControl.requestPermission as import("vitest").Mock).mockResolvedValue(true);
         render(
             <ToastProvider>
                 <CreativeNavbar />

@@ -19,7 +19,7 @@ describe('TimeRuler', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default store state
-        (useVideoEditorStore as any).mockImplementation((selector: any) => {
+        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
             const state = { currentTime: 0 };
             return selector ? selector(state) : state;
         });
@@ -38,7 +38,7 @@ describe('TimeRuler', () => {
     });
 
     it('updates aria-valuenow when currentTime changes', () => {
-        (useVideoEditorStore as any).mockImplementation((selector: any) => {
+        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
             const state = { currentTime: 150 };
             return selector ? selector(state) : state;
         });
@@ -61,7 +61,7 @@ describe('TimeRuler', () => {
 
     it('seeks backward with Left Arrow', () => {
         // Set start time to 10
-        (useVideoEditorStore as any).mockImplementation((selector: any) => {
+        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
             const state = { currentTime: 10 };
             return selector ? selector(state) : state;
         });
@@ -76,7 +76,7 @@ describe('TimeRuler', () => {
 
     it('respects boundaries', () => {
         // Test lower bound
-        (useVideoEditorStore as any).mockImplementation((selector: any) => {
+        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
             const state = { currentTime: 0 };
             return selector ? selector(state) : state;
         });
@@ -88,7 +88,7 @@ describe('TimeRuler', () => {
         unmount();
 
         // Test upper bound
-        (useVideoEditorStore as any).mockImplementation((selector: any) => {
+        (useVideoEditorStore as import("vitest").Mock).mockImplementation((selector: any) => {
             const state = { currentTime: 300 };
             return selector ? selector(state) : state;
         });

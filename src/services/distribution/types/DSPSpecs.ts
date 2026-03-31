@@ -191,7 +191,7 @@ export function validateDSPCompliance(
         });
     }
 
-    if (trackSpecs.sampleRate) {
+    if (trackSpecs.sampleRate !== undefined) {
         if (trackSpecs.sampleRate < spec.audio.minSampleRate) {
             issues.push({
                 category: 'audio',
@@ -202,7 +202,7 @@ export function validateDSPCompliance(
         }
     }
 
-    if (trackSpecs.bitDepth) {
+    if (trackSpecs.bitDepth !== undefined) {
         if (trackSpecs.bitDepth < spec.audio.minBitDepth) {
             issues.push({
                 category: 'audio',
@@ -238,7 +238,7 @@ export function validateDSPCompliance(
 
     // Art Validation
     if (artSpecs) {
-        if (artSpecs.width && artSpecs.width < spec.coverArt.minWidth) {
+        if (artSpecs.width !== undefined && artSpecs.width < spec.coverArt.minWidth) {
             issues.push({
                 category: 'coverArt',
                 severity: 'error',
@@ -247,7 +247,7 @@ export function validateDSPCompliance(
             });
         }
 
-        if (artSpecs.height && artSpecs.height < spec.coverArt.minHeight) {
+        if (artSpecs.height !== undefined && artSpecs.height < spec.coverArt.minHeight) {
             issues.push({
                 category: 'coverArt',
                 severity: 'error',

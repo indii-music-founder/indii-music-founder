@@ -32,7 +32,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 import { useStore } from '@/core/store';
 
 function renderWith(videoInputs: typeof baseVideoInputs) {
-    (useStore as any).mockReturnValue({
+    (useStore as import("vitest").Mock).mockReturnValue({
         videoInputs,
         setVideoInput: mockSetVideoInput,
     });
@@ -51,7 +51,7 @@ describe('DaisyChainControls', () => {
 
     it('calls onOpenFrameModal("firstFrame") when first slot is clicked', () => {
         const onOpen = vi.fn();
-        (useStore as any).mockReturnValue({
+        (useStore as import("vitest").Mock).mockReturnValue({
             videoInputs: baseVideoInputs,
             setVideoInput: mockSetVideoInput,
         });
@@ -62,7 +62,7 @@ describe('DaisyChainControls', () => {
 
     it('calls onOpenFrameModal("lastFrame") when last slot is clicked', () => {
         const onOpen = vi.fn();
-        (useStore as any).mockReturnValue({
+        (useStore as import("vitest").Mock).mockReturnValue({
             videoInputs: baseVideoInputs,
             setVideoInput: mockSetVideoInput,
         });
@@ -89,7 +89,7 @@ describe('DaisyChainControls', () => {
 
     it('clear button calls setVideoInput with null and stops modal from opening', () => {
         const onOpen = vi.fn();
-        (useStore as any).mockReturnValue({
+        (useStore as import("vitest").Mock).mockReturnValue({
             videoInputs: { ...baseVideoInputs, firstFrame: { url: 'http://example.com/a.jpg', id: '1' } as any },
             setVideoInput: mockSetVideoInput,
         });

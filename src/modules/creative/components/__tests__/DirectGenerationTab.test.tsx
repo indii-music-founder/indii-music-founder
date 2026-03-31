@@ -76,7 +76,7 @@ describe('DirectGenerationTab', () => {
 
     it('handles image generation successfully', async () => {
         const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
-        (generateImageDirectly as any).mockResolvedValue(['data:image/png;base64,test']);
+        (generateImageDirectly as import("vitest").Mock).mockResolvedValue(['data:image/png;base64,test']);
 
         render(<DirectGenerationTab />);
         const input = screen.getByTestId('direct-prompt-input');
@@ -97,7 +97,7 @@ describe('DirectGenerationTab', () => {
 
     it('handles video generation successfully', async () => {
         const mockVideoResult = [{ id: 'job-123', url: 'https://test.com/video.mp4' }];
-        (VideoGeneration.generateVideo as any).mockResolvedValue(mockVideoResult);
+        (VideoGeneration.generateVideo as import("vitest").Mock).mockResolvedValue(mockVideoResult);
 
         render(<DirectGenerationTab />);
         fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
@@ -125,7 +125,7 @@ describe('DirectGenerationTab', () => {
 
     it('displays error message when generation fails', async () => {
         const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
-        (generateImageDirectly as any).mockRejectedValue(new Error('API Timeout'));
+        (generateImageDirectly as import("vitest").Mock).mockRejectedValue(new Error('API Timeout'));
 
         const mockToast = useToast();
 

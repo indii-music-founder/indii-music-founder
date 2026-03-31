@@ -39,7 +39,7 @@ const mockRequests: LicenseRequest[] = [
 
 describe('LicensingDashboard', () => {
     it('renders loading state', () => {
-        (useLicensing as any).mockReturnValue({
+        (useLicensing as import("vitest").Mock).mockReturnValue({
             licenses: [],
             requests: [],
             projectedValue: 0,
@@ -55,7 +55,7 @@ describe('LicensingDashboard', () => {
     });
 
     it('renders dashboard content when loaded', () => {
-        (useLicensing as any).mockReturnValue({
+        (useLicensing as import("vitest").Mock).mockReturnValue({
             licenses: [],
             requests: mockRequests,
             projectedValue: 0,
@@ -73,7 +73,7 @@ describe('LicensingDashboard', () => {
 
     it('triggers draft action on button click', async () => {
         const initiateDraftingMock = vi.fn();
-        (useLicensing as any).mockReturnValue({
+        (useLicensing as import("vitest").Mock).mockReturnValue({
             licenses: [],
             requests: mockRequests,
             projectedValue: 0,

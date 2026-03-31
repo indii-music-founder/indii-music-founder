@@ -53,7 +53,7 @@ describe('AuthorityPanel', () => {
     });
 
     it('should generate ISRC when button is clicked', async () => {
-        (distributionService.assignISRCs as any).mockResolvedValue('US-XXX-25-00001');
+        (distributionService.assignISRCs as import("vitest").Mock).mockResolvedValue('US-XXX-25-00001');
         render(<AuthorityPanel />);
 
         fireEvent.click(screen.getByTestId('authority-generate-isrc'));
@@ -66,7 +66,7 @@ describe('AuthorityPanel', () => {
     });
 
     it('should generate UPC when button is clicked', async () => {
-        (distributionService.generateUPC as any).mockResolvedValue('123456789012');
+        (distributionService.generateUPC as import("vitest").Mock).mockResolvedValue('123456789012');
         render(<AuthorityPanel />);
 
         fireEvent.click(screen.getByTestId('authority-generate-upc'));
@@ -89,8 +89,8 @@ describe('AuthorityPanel', () => {
                 tracks: [{ trackTitle: 'Track 1', isrc: 'US-XXX-25-00001' }]
             }
         };
-        (DistributionSyncService.getRelease as any).mockResolvedValue(mockReleaseData);
-        (distributionService.generateDDEX as any).mockResolvedValue('<DDEX>XML Content</DDEX>');
+        (DistributionSyncService.getRelease as import("vitest").Mock).mockResolvedValue(mockReleaseData);
+        (distributionService.generateDDEX as import("vitest").Mock).mockResolvedValue('<DDEX>XML Content</DDEX>');
 
         render(<AuthorityPanel />);
 
