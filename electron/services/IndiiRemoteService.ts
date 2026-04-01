@@ -75,8 +75,8 @@ class IndiiRemoteService {
             const dashboardPath = path.join(electronApp.getAppPath(), 'public', 'remote');
             const fallbackPath = path.join(__dirname, '..', 'public', 'remote');
 
-            this.expressApp.use(express.static(dashboardPath));
-            this.expressApp.use(express.static(fallbackPath));
+            this.expressApp.use('/remote', express.static(dashboardPath));
+            this.expressApp.use('/remote', express.static(fallbackPath));
 
             // Basic auth check endpoint — returns a session token
             this.expressApp.post('/api/auth', (req, res) => {

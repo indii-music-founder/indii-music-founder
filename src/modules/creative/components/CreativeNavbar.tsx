@@ -44,7 +44,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 <div className="flex items-center gap-2 md:gap-3 min-w-0">
                     <div className="flex items-center gap-2 text-gray-400 flex-shrink-0">
                         <Palette size={16} className="text-purple-400" />
-                        <h1 className="text-sm font-bold text-gray-200 tracking-tight hidden sm:block">Creative Director</h1>
+                        <h1 className="text-sm font-bold text-gray-200 tracking-tight hidden sm:block" data-testid="creative-header">Creative Director</h1>
                     </div>
                     {/* Divider */}
                     <div className="h-4 w-px bg-white/10 mx-1"></div>
