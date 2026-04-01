@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.44.4](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.3...v1.44.4) (2026-04-01)
+
+
+### Bug Fixes
+
+* **review:** address PR [#1368](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1368) findings, harmonize locales, and harden E2E mocks ([a509d90](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a509d90641a9252bd11d9bdfed17bdd6a4fff1b8))
+
 ## [1.44.3](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.2...v1.44.3) (2026-03-31)
 
 
