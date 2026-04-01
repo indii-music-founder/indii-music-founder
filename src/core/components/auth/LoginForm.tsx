@@ -146,7 +146,7 @@ export default function LoginForm() {
                     >
                         indii<span className="text-purple-500">OS</span>
                     </motion.h1>
-                    <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Alpha Build • Studio HQ</p>
+                    <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v2.0</p>
                 </div>
 
                 {/* ── Forgot Password View ────────────────────────────────── */}
@@ -424,7 +424,7 @@ export default function LoginForm() {
 
             {/* Footer */}
             <div className="absolute bottom-8 left-0 w-full text-center text-[10px] text-gray-600 font-mono tracking-widest uppercase pointer-events-none">
-                Privacy Policy • Terms of Service • © 2026 indiiOS LLC
+                <a href="/privacy" className="hover:text-gray-400 transition-colors pointer-events-auto">Privacy Policy</a> • <a href="/terms" className="hover:text-gray-400 transition-colors pointer-events-auto">Terms of Service</a> • © 2026 indiiOS LLC
             </div>
         </div>
     );
