@@ -42,10 +42,7 @@
     "target": [
       "dmg",
       "zip"
-    ],
-    "notarize": {
-      "teamId": "${env.APPLE_TEAM_ID}"
-    }
+    ]
   },
   "dmg": {
     "backgroundColor": "#0d1117",
