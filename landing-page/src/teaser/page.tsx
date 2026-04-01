@@ -1,4 +1,4 @@
-import Scene from '../components/Scene';
+const Scene = () => null;
 
 export default function TeaserPage() {
   return (
