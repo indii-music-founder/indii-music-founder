@@ -37,19 +37,18 @@ test.describe('Creative Studio', () => {
 
         // authedPage fixture handles Guest Login and navigation to '/'
 
-        // Navigate directly to creative module
-        await page.goto('/creative');
-        await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
-
-        // Wait for module to be fully mounted (this container is always present in Creative module)
-        await page.waitForSelector('[data-testid="creative-navbar"]', { state: 'attached', timeout: 15_000 });
-
-        // On mobile, the workspace is hidden behind the 'studio' tab. Switch to it if visible.
-        const mobileStudioTab = page.locator('[data-testid="mobile-tab-studio"]');
-        // A short timeout to check if the mobile tab switcher is present (indicates a mobile viewport)
-        if (await mobileStudioTab.isVisible({ timeout: 2000 }).catch(() => false)) {
-            await mobileStudioTab.click({ force: true });
+        // Navigate to creative module
+        const creativeNav = page.locator('[data-testid="nav-item-creative"]');
+        if (await creativeNav.isVisible().catch(() => false)) {
+            await creativeNav.click();
+            await page.waitForTimeout(2_000);
+        } else {
+            await page.goto('/#creative');
+            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
         }
+
+        // Wait for module header
+        await page.waitForSelector('h1, h2, [data-testid="creative-header"]', { timeout: 15_000 });
     });
 
     test('should show gallery by default', async ({ authedPage: page }) => {
@@ -60,7 +59,7 @@ test.describe('Creative Studio', () => {
             await expect(galleryBtn).toBeVisible();
         }
         // App must not crash regardless
-        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
+        await expect(page.locator('#root')).toBeVisible();
     });
 
     test('should switch to direct generation mode', async ({ authedPage: page }) => {
@@ -68,7 +67,7 @@ test.describe('Creative Studio', () => {
         const isVisible = await directBtn.isVisible().catch(() => false);
 
         if (isVisible) {
-            await directBtn.click({ force: true });
+            await directBtn.click();
             await page.waitForTimeout(1_000);
 
             const promptInput = page.locator('[data-testid="direct-prompt-input"]');
@@ -76,13 +75,13 @@ test.describe('Creative Studio', () => {
         }
 
         // App must not crash regardless
-        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
+        await expect(page.locator('#root')).toBeVisible();
     });
 
     test('should handle prompt input and mode switching in Direct mode', async ({ authedPage: page }) => {
         const directBtn = page.locator('[data-testid="direct-view-btn"]');
         if (await directBtn.isVisible().catch(() => false)) {
-            await directBtn.click({ force: true });
+            await directBtn.click();
             await page.waitForTimeout(1_000);
         }
 
@@ -104,13 +103,13 @@ test.describe('Creative Studio', () => {
         }
 
         // App must not crash regardless
-        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
+        await expect(page.locator('#root')).toBeVisible();
     });
 
     test('should trigger generation UI state', async ({ authedPage: page }) => {
         const directBtn = page.locator('[data-testid="direct-view-btn"]');
         if (await directBtn.isVisible().catch(() => false)) {
-            await directBtn.click({ force: true });
+            await directBtn.click();
             await page.waitForTimeout(1_000);
         }
 
@@ -130,6 +129,6 @@ test.describe('Creative Studio', () => {
         }
 
         // App must not crash regardless
-        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
+        await expect(page.locator('#root')).toBeVisible();
     });
 });

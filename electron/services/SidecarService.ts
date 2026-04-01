@@ -40,6 +40,7 @@ export class SidecarService {
      */
     static async ensureStarted(): Promise<{ success: boolean; log?: string }> {
         if (!app.isPackaged) {
+            log.info('[SidecarService] Dev mode — delegating to DockerService');
             return DockerService.ensureStarted();
         }
 

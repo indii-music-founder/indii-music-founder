@@ -21,12 +21,10 @@ import {
     DistributorInfoCard
 } from '../components/GenerativeUIComponents';
 import { StepStepper } from '../components/StepStepper';
-import { useTranslation } from 'react-i18next';
 import { determinePhase } from '@/services/onboarding/onboardingService';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 export default function OnboardingPage() {
-    const { t } = useTranslation();
     const {
         userProfile,
         input,
@@ -107,12 +105,12 @@ export default function OnboardingPage() {
                         <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
                             <span className="text-black font-black text-xs">i</span>
                         </div>
-                        <span className="font-bold tracking-tight">{t('onboarding.mainTitle')}</span>
+                        <span className="font-bold tracking-tight">Onboarding</span>
                     </div>
                     <button
                         onClick={() => setShowMobileStatus(true)}
                         className="p-2 text-gray-400 hover:text-white transition-colors"
-                        aria-label={`${t('onboarding.yourProgress')}, ${profileStatus.coreProgress}% complete`}
+                        aria-label={`View profile progress, ${profileStatus.coreProgress}% complete`}
                     >
                         <Menu size={24} />
                     </button>
@@ -143,8 +141,8 @@ export default function OnboardingPage() {
                                     >
                                         <Upload size={28} className="text-purple-400" />
                                     </motion.div>
-                                    <p className="text-white font-bold text-lg mb-1">{t('onboarding.dropFilesTitle')}</p>
-                                    <p className="text-gray-400 text-sm">{t('onboarding.dropFilesDesc')}</p>
+                                    <p className="text-white font-bold text-lg mb-1">Drop files here</p>
+                                    <p className="text-gray-400 text-sm">Images, audio, documents — indii will handle them</p>
                                 </div>
                             </motion.div>
                         )}
@@ -216,7 +214,7 @@ export default function OnboardingPage() {
                                     >
                                         <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
                                             <Loader2 className="animate-spin text-purple-400" size={18} />
-                                            <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{t('onboarding.indiiThinking')}</span>
+                                            <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">indii is thinking...</span>
                                         </div>
                                     </motion.div>
                                 )}
@@ -264,7 +262,7 @@ export default function OnboardingPage() {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                    placeholder={t('onboarding.inputPlaceholder')}
+                                    placeholder="Tell indii about your music..."
                                     aria-label="Type your message"
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 pr-32 focus:outline-none focus:border-white/30 transition-all text-sm lg:text-base font-medium placeholder:text-gray-600 focus:bg-white/10"
                                 />
@@ -272,8 +270,8 @@ export default function OnboardingPage() {
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
                                         className="p-3 text-gray-500 hover:text-white transition-all hover:bg-white/5 rounded-xl border border-transparent hover:border-white/5"
-                                        title={t('onboarding.attachAssets')}
-                                        aria-label={t('onboarding.attachAssets')}
+                                        title="Attach Assets"
+                                        aria-label="Attach file"
                                     >
                                         <Paperclip size={20} />
                                     </button>
@@ -295,7 +293,7 @@ export default function OnboardingPage() {
                                 className="hidden"
                                 accept="image/*,audio/*,.mp3,.wav,.flac,.pdf,text/*"
                             />
-                            <p className="mt-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest text-center lg:text-left ml-2">{t('onboarding.secureWorkspace')}</p>
+                            <p className="mt-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest text-center lg:text-left ml-2">Secure AI Workspace • Gemini 3 Pro 2M Enabled</p>
                         </div>
                     </div>
                 </main>
@@ -345,7 +343,7 @@ export default function OnboardingPage() {
                                 className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-bg-dark border-l border-white/10 p-6 z-50 lg:hidden shadow-2xl flex flex-col"
                             >
                                 <div className="flex justify-between items-center mb-8">
-                                    <h3 className="text-white font-bold text-lg tracking-tight">{t('onboarding.yourProgress')}</h3>
+                                    <h3 className="text-white font-bold text-lg tracking-tight">Your Progress</h3>
                                     <button
                                         onClick={() => setShowMobileStatus(false)}
                                         className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/5 transition-colors"
