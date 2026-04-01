@@ -37,14 +37,23 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     class="px-4 pb-2 pt-4 border-b border-white/5 border-dashed"
   >
     <button
-      aria-label="Founders Program"
-      class="w-full flex items-center justify-center p-2 rounded-lg transition-all shadow-sm group bg-transparent hover:bg-amber-500/20 border border-transparent hover:border-amber-500/30"
-      title="Founders Program"
+      aria-label="Back the Vision — Invest"
+      class="w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden bg-gradient-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)]"
+      title="Back the Vision"
     >
+      <div
+        class="absolute inset-0 rounded-xl border border-amber-500/20 animate-pulse pointer-events-none"
+      />
       <svg
-        class="transition-transform text-amber-500/70 group-hover:text-amber-400 group-hover:scale-110"
+        class="transition-all relative z-10 text-amber-400 group-hover:text-amber-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]"
         data-testid="icon-Gem"
         size="16"
+      />
+      <span
+        class="text-[8px] font-black text-amber-400/70 uppercase tracking-widest absolute -bottom-0.5"
+      />
+      <div
+        class="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none"
       />
     </button>
   </div>
@@ -601,19 +610,25 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
     class="px-4 pb-2 pt-2"
   >
     <button
-      aria-label="Founders Program"
-      class="w-full flex items-center justify-center p-2 rounded-lg transition-all shadow-sm group bg-gradient-to-r from-amber-500/10 to-purple-900/20 border border-amber-500/20 hover:bg-amber-500/20 gap-3"
+      aria-label="Back the Vision — Invest"
+      class="w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden bg-gradient-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)] gap-3"
     >
+      <div
+        class="absolute inset-0 rounded-xl border border-amber-500/20 animate-pulse pointer-events-none"
+      />
       <svg
-        class="transition-transform text-amber-500/70 group-hover:text-amber-400 group-hover:scale-110"
+        class="transition-all relative z-10 text-amber-400 group-hover:text-amber-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]"
         data-testid="icon-Gem"
         size="16"
       />
       <span
-        class="text-sm font-semibold transition-colors text-amber-200/70 group-hover:text-amber-200"
+        class="text-sm font-bold tracking-wide transition-colors relative z-10 text-amber-300/90 group-hover:text-amber-200"
       >
-        Founders Program
+        Back the Vision
       </span>
+      <div
+        class="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none"
+      />
     </button>
   </div>
   <div
