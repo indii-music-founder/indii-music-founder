@@ -261,7 +261,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
             // Clear all active Firestore subscriptions to prevent permission errors
             import('@/core/store').then(({ useStore }) => {
-                useStore.getState().clearAllSubscriptions();
+                const state = useStore.getState() as unknown as Record<string, unknown>;
+                if (typeof state.clearAllSubscriptions === 'function') {
+                    (state.clearAllSubscriptions as () => void)();
+                }
             }).catch(err => logger.error('[Auth] Failed to clear subscriptions during logout:', err));
 
             set({ user: null, authError: null, isSignUpMode: false, passwordResetSent: false });
