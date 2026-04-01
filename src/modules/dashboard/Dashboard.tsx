@@ -6,6 +6,7 @@ import { LayoutDashboard, Bot, Gem, ArrowRight, X } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useMobile } from '@/hooks/useMobile';
 import { useStore } from '@/core/store';
+import { PlatformCard } from './components/PlatformCard';
 
 type DashboardTab = 'agent' | 'custom';
 
@@ -63,6 +64,9 @@ export default function Dashboard() {
                     </div>
                 </motion.div>
             )}
+
+            {/* Platform Info — Web vs Desktop */}
+            <PlatformCard />
 
             {/* Tab Bar */}
             <div className={`flex-shrink-0 border-b border-white/5 flex gap-6 ${isAnyPhone ? 'px-3 gap-3' : 'px-6'}`}>
