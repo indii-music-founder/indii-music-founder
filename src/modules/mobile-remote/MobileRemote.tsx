@@ -60,13 +60,23 @@ import { QRCodeSVG } from 'qrcode.react';
 // ─── Pairing Modal (Cloud Relay version) ─────────────────────────────────────
 
 function PairingModal({ onClose }: { onClose: () => void }) {
-  const [qrUrl, setQrUrl] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
-      return isDev ? window.location.origin + '/remote' : 'https://indiios-studio.web.app/remote';
+  const [qrUrl, setQrUrl] = useState<string>('https://indiios-studio.web.app/remote');
+
+  useEffect(() => {
+    // Fetch the live tunnel URL from Electron IPC
+    if (typeof window !== 'undefined' && window.electronAPI?.system?.getMobileRemoteInfo) {
+      window.electronAPI.system.getMobileRemoteInfo().then(info => {
+        if (info?.globalUrl) {
+          setQrUrl(info.globalUrl);
+        } else {
+          const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
+          setQrUrl(isDev ? window.location.origin + '/remote' : 'https://indiios-studio.web.app/remote');
+        }
+      }).catch(err => {
+        logger.error('[MobileRemote] Failed to fetch remote info:', err);
+      });
     }
-    return 'https://indiios-studio.web.app/remote';
-  });
+  }, []);
 
   useEffect(() => {
     // Only used to trigger side effects if needed, avoiding setState

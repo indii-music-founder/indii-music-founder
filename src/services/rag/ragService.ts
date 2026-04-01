@@ -136,12 +136,13 @@ export async function processForKnowledgeBase(
         const file = await GeminiRetrieval.uploadFile(displayTitle, content);
         logger.info(`[RAG] Ingested native file: ${file.name} (${file.mimeType})`);
 
+        const safeMimeType = file?.mimeType || '';
         return {
             title: displayTitle,
-            content: typeof content === 'string' ? content : `Native ${file.mimeType} file stored in Gemini.`,
+            content: typeof content === 'string' ? content : `Native ${safeMimeType || 'unknown'} file stored in Gemini.`,
             entities: [],
-            tags: ['gemini-file', file.mimeType.split('/').pop() || 'raw'],
-            embeddingId: file.name
+            tags: ['gemini-file', safeMimeType ? safeMimeType.split('/').pop() || 'raw' : 'raw'],
+            embeddingId: file?.name || 'unknown'
         };
     } catch (e: unknown) {
         logger.error("[RAG] Ingestion failed:", e);
