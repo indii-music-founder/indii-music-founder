@@ -163,12 +163,18 @@ export default function FoundersCheckout() {
                         Checkout was cancelled. The seat remains available.
                     </div>
                 )}
-                {error && <p className="text-red-400 mb-8">{error}</p>}
+                {error && (
+                    <div className="mx-auto max-w-sm text-red-400/90 bg-red-400/10 border border-red-400/20 px-6 py-3 rounded-xl mb-8 text-sm font-medium">
+                        {error === 'internal'
+                            ? "The secure payment gateway is currently offline or provisioning. Please try again later."
+                            : error}
+                    </div>
+                )}
 
                 <button
                     onClick={handleCheckout}
                     disabled={isProcessing}
-                    className="group relative px-10 py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg rounded-2xl transition-all shadow-[0_0_60px_rgba(245,158,11,0.2)] hover:shadow-[0_0_80px_rgba(245,158,11,0.4)] disabled:opacity-50"
+                    className="group relative overflow-hidden px-10 py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg rounded-2xl transition-all shadow-[0_0_60px_rgba(245,158,11,0.2)] hover:shadow-[0_0_80px_rgba(245,158,11,0.4)] disabled:opacity-50"
                 >
                     {isProcessing ? 'Connecting secured channel...' : 'Support The Vision ($2,500)'}
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
