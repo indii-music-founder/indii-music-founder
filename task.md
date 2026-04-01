@@ -82,5 +82,18 @@
 | 9.22 | Footer: Privacy/Terms as clickable links | [x] | Audit catch |
 | 9.23 | Snapshot tests updated for Sidebar CTA changes | [x] | CI fix |
 
+## Sprint 10 — Marketing Pivot (Music/OS 4.0)
+
+| ID | Task | Status | Source |
+| :--- | :--- | :--- | :--- |
+| 10.1 | Audit all repo docs for canonical copy (`PHILOSOPHY.md`, `APP_OVERVIEW.md`, `FOUNDERS_PLAN.md`) | [x] | User request |
+| 10.2 | Rewrite landing page hero with 'ii' philosophy: "Independence doesn't mean being alone" | [x] | `docs/PHILOSOPHY.md` |
+| 10.3 | Remove legacy audio visualizer chaos (LiquidOrbs, Effects, Scene 3D) | [x] | Design audit |
+| 10.4 | Implement premium Spotlight hover cards (cursor-tracking radial glow) on feature section | [x] | User request |
+| 10.5 | Inject real Studio dashboard screenshot into 3D scroll-linked product window | [x] | User request |
+| 10.6 | Add Founders Covenant section: 10 seats, $2,500, SHA-256 cryptographic proof, CTA | [x] | `docs/FOUNDERS_PLAN.md` |
+| 10.7 | Fix Tailwind v4 build infra (@tailwindcss/vite plugin, @import directive) | [x] | Build fix |
+| 10.8 | Build and deploy landing page to Firebase Hosting (landing target) | [x] | /go |
+
 ---
 *Self-managed task list for Antigravity.*
