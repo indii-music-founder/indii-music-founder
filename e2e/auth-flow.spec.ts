@@ -125,7 +125,12 @@ test.describe('Authentication Flow', () => {
                 displayName: 'E2E Test User',
                 isAnonymous: false,
             };
-            try { localStorage.setItem('FIREBASE_E2E_MOCK', '1'); } catch { /* ignore */ }
+            try {
+                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
+                localStorage.setItem('onboarding_dismissed', 'true');
+                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
+                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
+            } catch { /* ignore */ }
         });
 
         // Mock Firestore to prevent network hangs
@@ -175,7 +180,12 @@ test.describe('Authentication Flow', () => {
                 displayName: 'E2E Test User',
                 isAnonymous: false,
             };
-            try { localStorage.setItem('FIREBASE_E2E_MOCK', '1'); } catch { /* ignore */ }
+            try {
+                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
+                localStorage.setItem('onboarding_dismissed', 'true');
+                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
+                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
+            } catch { /* ignore */ }
         });
 
         await page.route('**/firestore.googleapis.com/**', async route => {
@@ -231,7 +241,12 @@ test.describe('Authentication Flow', () => {
                 displayName: 'E2E Test User',
                 isAnonymous: false,
             };
-            try { localStorage.setItem('FIREBASE_E2E_MOCK', '1'); } catch { /* ignore */ }
+            try {
+                localStorage.setItem('FIREBASE_E2E_MOCK', '1');
+                localStorage.setItem('onboarding_dismissed', 'true');
+                localStorage.setItem('indiiOS_tour_completed_v1', 'true');
+                localStorage.setItem('indiiOS_cookie_consent', JSON.stringify({ essential: true, analytics: false, errorTracking: false, marketing: false, timestamp: new Date().toISOString(), version: 1 }));
+            } catch { /* ignore */ }
         });
 
         await page.route('**/firestore.googleapis.com/**', async route => {

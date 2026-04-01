@@ -64,6 +64,13 @@ export const createOneTimeCheckout = onCall({
             cancel_url: cancelUrl,
             allow_promotion_codes: true,
             automatic_tax: { enabled: true },
+            payment_intent_data: {
+                metadata: {
+                    userId,
+                    type: 'one_time',
+                    ...metadata,
+                },
+            },
             metadata: {
                 userId,
                 type: 'one_time',

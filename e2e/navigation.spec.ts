@@ -126,19 +126,15 @@ test.describe('CommandBar', () => {
             return;
         }
 
-        // Open Command Menu by keyboard shortcut (works across all platforms securely)
-        await page.locator('body').press('Control+k').catch(() => { });
-        await page.locator('body').press('Meta+k').catch(() => { });
-
-        // Also try the button directly as fallback
+        // Open the UnifiedCommandMenu via the sidebar button (aria-label="Open Command Menu")
+        // Note: Ctrl+K / Meta+K opens the keyboard SHORTCUTS modal, not the command bar.
         const commandBarTrigger = page.locator('button[aria-label="Open Command Menu"]').first();
-        if (await commandBarTrigger.isVisible().catch(() => false)) {
-            await commandBarTrigger.click();
-        }
+        await commandBarTrigger.waitFor({ state: 'visible', timeout: 10_000 });
+        await commandBarTrigger.click();
 
-        // Wait for the modal/input to appear
+        // Wait for the command search input to appear (placeholder: "Search commands...")
         const input = page.locator('input[placeholder*="Search"], [data-testid="command-bar-input"]').first();
-        await input.waitFor({ state: 'visible', timeout: 15_000 });
+        await input.waitFor({ state: 'visible', timeout: 10_000 });
 
         await input.fill('test');
         await expect(input).toHaveValue('test');

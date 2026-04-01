@@ -608,15 +608,27 @@ export const test = base.extend<AuthFixtures>({
         // Dismiss the first-run guided tour overlay
         localStorage.setItem("indiiOS_tour_completed_v1", "true");
         // Dismiss cookie consent banner so it doesn't overlay test targets
+        // IMPORTANT: Must match ConsentPreferences interface exactly (requires version >= 1)
         localStorage.setItem("indiiOS_cookie_consent", JSON.stringify({
           essential: true,
           analytics: false,
-          errorReporting: false,
-          timestamp: Date.now(),
+          errorTracking: false,
+          marketing: false,
+          timestamp: new Date().toISOString(),
+          version: 1,
         }));
+        // Pre-populate distributor connections so fetchDistributors() skips real network calls.
+        // This prevents the 60s+ timeout from 4 distributors × 3 retry attempts.
+        localStorage.setItem("E2E_DISTRIBUTOR_CONNECTIONS", JSON.stringify([
+          { distributorId: "distrokid", isConnected: false, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
+          { distributorId: "tunecore", isConnected: false, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
+          { distributorId: "cdbaby", isConnected: false, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
+          { distributorId: "symphonic", isConnected: false, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
+        ]));
       } catch (e) {
         // Ignore if localStorage is unavailable
       }
+
     });
 
     await page.goto("/");

@@ -216,6 +216,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         accent: '#a855f7', // Purple
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(168, 85, 247, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'dots', opacity: 0.2 }
+    },
+    'founders-checkout': {
+        officeName: 'Founders Program',
+        accent: '#f59e0b', // Amber
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(245, 158, 11, 0.06), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'particles', opacity: 0.1 }
     }
 };
 

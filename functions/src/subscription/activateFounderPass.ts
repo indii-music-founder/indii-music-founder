@@ -53,7 +53,7 @@ const DISPLAY_NAME_PATTERN = /^[\p{L}\p{N}\s\-_'.]+$/u;
 
 export interface ActivateFounderPassParams {
     userId: string;
-    paymentIntentId: string;
+    sessionId: string;
     /** Founder's chosen public name or handle */
     displayName: string;
 }
@@ -209,30 +209,30 @@ export const activateFounderPass = onCall({
     memory: '256MiB',
     enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
 }, async (request): Promise<ActivateFounderPassResult> => {
-    const { userId, paymentIntentId, displayName } = request.data as ActivateFounderPassParams;
+    const { userId, sessionId, displayName } = request.data as ActivateFounderPassParams;
 
     // Auth check
     if (!request.auth?.uid || request.auth.uid !== userId) {
         throw new HttpsError('unauthenticated', 'Must be signed in as the purchasing user.');
     }
 
-    if (!paymentIntentId || !displayName?.trim()) {
-        throw new HttpsError('invalid-argument', 'paymentIntentId and displayName are required.');
+    if (!sessionId || !displayName?.trim()) {
+        throw new HttpsError('invalid-argument', 'sessionId and displayName are required.');
     }
 
     // ── Input sanitization ──────────────────────────────────────────────
     const name = sanitizeDisplayName(displayName);
 
-    // ── Idempotency guard: short-circuit if this paymentIntentId was already used ──
+    // ── Idempotency guard: short-circuit if this sessionId was already used ──
     const db = getFirestore();
-    const existingByPI = await db.collection('founders')
-        .where('paymentIntentId', '==', paymentIntentId)
+    const existingBySession = await db.collection('founders')
+        .where('sessionId', '==', sessionId)
         .limit(1)
         .get();
 
-    if (!existingByPI.empty) {
-        const existing = existingByPI.docs[0].data();
-        console.log(`[activateFounderPass] Duplicate call with paymentIntentId=${paymentIntentId}, returning existing record.`);
+    if (!existingBySession.empty) {
+        const existing = existingBySession.docs[0].data();
+        console.log(`[activateFounderPass] Duplicate call with sessionId=${sessionId}, returning existing record.`);
         return {
             seat: existing.seat,
             covenantHash: existing.covenantHash,
@@ -243,13 +243,19 @@ export const activateFounderPass = onCall({
     }
 
     // 1. Verify payment with Stripe
+    let session;
     let paymentIntent;
     try {
-        paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-            expand: ['latest_charge'],
+        session = await stripe.checkout.sessions.retrieve(sessionId, {
+            expand: ['payment_intent', 'payment_intent.latest_charge'],
         });
+        paymentIntent = session.payment_intent;
     } catch (err) {
-        throw new HttpsError('internal', `Stripe payment verification failed: ${err}`);
+        throw new HttpsError('internal', `Stripe session retrieval failed: ${err}`);
+    }
+
+    if (!paymentIntent || typeof paymentIntent === 'string') {
+        throw new HttpsError('failed-precondition', 'No payment intent associated with this session.');
     }
 
     if (paymentIntent.status !== 'succeeded') {
@@ -327,7 +333,8 @@ export const activateFounderPass = onCall({
                 joinedAt,
                 covenantHash,
                 covenantVersion: COVENANT_VERSION,
-                paymentIntentId,
+                sessionId,
+                paymentIntentId: (paymentIntent as any).id || '',
                 uid: userId,
                 createdAt: FieldValue.serverTimestamp(),
             });

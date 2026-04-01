@@ -418,6 +418,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-gray-800/20',
         cssVar: '--color-dept-default',
     },
+    'founders-checkout': {
+        // Founders Pass
+        text: 'text-amber-400',
+        bg: 'bg-amber-500/10',
+        border: 'border-amber-500/30',
+        ring: 'focus-within:ring-amber-500/50',
+        hoverText: 'hover:text-amber-300',
+        hoverBg: 'hover:bg-amber-500/20',
+        cssVar: '--color-dept-brand',
+    }
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {
