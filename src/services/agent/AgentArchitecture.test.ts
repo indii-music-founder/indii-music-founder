@@ -56,6 +56,40 @@ vi.mock('@/services/MembershipService', () => ({
     }
 }));
 
+// Mock GeminiRetrievalService
+vi.mock('@/services/rag/GeminiRetrievalService', () => ({
+    GeminiRetrievalService: vi.fn().mockImplementation(() => ({
+        ensureFileSearchStore: vi.fn().mockResolvedValue('fileSearchStores/mock-store'),
+        uploadFile: vi.fn().mockResolvedValue('files/mock-file'),
+        listFiles: vi.fn().mockResolvedValue([]),
+        deleteFile: vi.fn().mockResolvedValue({}),
+        fetch: vi.fn().mockResolvedValue({})
+    })),
+    GeminiRetrieval: {
+        ensureFileSearchStore: vi.fn().mockResolvedValue('fileSearchStores/mock-store'),
+        uploadFile: vi.fn().mockResolvedValue('files/mock-file'),
+        listFiles: vi.fn().mockResolvedValue([]),
+        deleteFile: vi.fn().mockResolvedValue({}),
+        fetch: vi.fn().mockResolvedValue({})
+    }
+}));
+vi.mock('@/services/GeminiRetrievalService', () => ({
+    GeminiRetrievalService: vi.fn().mockImplementation(() => ({
+        ensureFileSearchStore: vi.fn().mockResolvedValue('fileSearchStores/mock-store'),
+        uploadFile: vi.fn().mockResolvedValue('files/mock-file'),
+        listFiles: vi.fn().mockResolvedValue([]),
+        deleteFile: vi.fn().mockResolvedValue({}),
+        fetch: vi.fn().mockResolvedValue({})
+    })),
+    GeminiRetrieval: {
+        ensureFileSearchStore: vi.fn().mockResolvedValue('fileSearchStores/mock-store'),
+        uploadFile: vi.fn().mockResolvedValue('files/mock-file'),
+        listFiles: vi.fn().mockResolvedValue([]),
+        deleteFile: vi.fn().mockResolvedValue({}),
+        fetch: vi.fn().mockResolvedValue({})
+    }
+}));
+
 // Mock useToast - This is a new mock from the provided change
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
@@ -215,7 +249,7 @@ describe('Multi-Agent Architecture Tests', () => {
         });
 
         // Skipped: executes actual agent which triggers real network calls (GeminiRetrievalService) that timeout in CI.
-        it.skip('should pass superpower tools to AI when executing', async () => {
+        it('should pass superpower tools to AI when executing', async () => {
             const agent_marketing = agentRegistry.get('marketing');
             await agent_marketing?.execute('Research market trends');
 
@@ -241,7 +275,7 @@ describe('Multi-Agent Architecture Tests', () => {
 
     describe('6. Direct Delegation Verification', () => {
         // Skipped: sendMessage triggers real agent execution which makes network calls that timeout in CI.
-        it.skip('should bypass orchestrator when forcedAgentId is provided', async () => {
+        it('should bypass orchestrator when forcedAgentId is provided', async () => {
             const agentSvc_bypass = new AgentService(); // Instantiate service locally
             const userQuery = "Draft a contract";
             await agentSvc_bypass.sendMessage(userQuery, undefined, 'director');

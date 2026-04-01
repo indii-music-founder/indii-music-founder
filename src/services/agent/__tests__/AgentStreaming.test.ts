@@ -8,7 +8,8 @@ import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 vi.mock('../../ai/GenAI', () => ({
     GenAI: {
         generateContentStream: vi.fn(),
-        generateContent: vi.fn()
+        generateContent: vi.fn(),
+        batchEmbedContents: vi.fn().mockResolvedValue({ embeddings: [] })
     }
 }));
 
@@ -17,6 +18,22 @@ vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
         checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
         recordSpend: vi.fn().mockResolvedValue(undefined)
+    }
+}));
+
+import { GeneralistAgent } from '../specialists/GeneralistAgent';
+
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn().mockReturnValue({
+            agentHistory: [],
+            addAgentMessage: vi.fn(),
+            updateAgentMessage: vi.fn(),
+            currentOrganizationId: 'org1',
+            currentProjectId: 'proj1',
+            uploadedImages: [],
+            currentModule: 'testing'
+        })
     }
 }));
 
@@ -29,26 +46,26 @@ vi.mock('../AgentService', () => ({
 
 vi.mock('../registry', () => ({
     agentRegistry: {
-        getAsync: vi.fn()
+        getAsync: vi.fn(),
+        get: vi.fn()
     }
 }));
 
 // A dummy agent for testing
-class TestAgent extends BaseAgent {
+class TestAgent extends GeneralistAgent {
     constructor() {
-        super({
-            id: 'generalist',
-            name: 'Test Agent',
-            description: 'Agent for testing streaming',
-            systemPrompt: 'You are a test agent.',
-            color: 'bg-blue-500',
-            category: 'specialist',
-            tools: []
-        });
+        super();
+        this.id = 'generalist';
+        this.name = 'Test Agent';
+        this.description = 'Agent for testing streaming';
+        this.systemPrompt = 'You are a test agent.';
+        this.color = 'bg-blue-500';
+        this.category = 'specialist';
+        this.tools = [];
     }
 }
 
-describe.skip('Agent Streaming', () => {
+describe('Agent Streaming', () => {
     let agent: TestAgent;
 
     beforeEach(() => {
