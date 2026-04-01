@@ -34,6 +34,21 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     </button>
   </div>
   <div
+    class="px-4 pb-2 pt-4 border-b border-white/5 border-dashed"
+  >
+    <button
+      aria-label="Founders Program"
+      class="w-full flex items-center justify-center p-2 rounded-lg transition-all shadow-sm group bg-transparent hover:bg-amber-500/20 border border-transparent hover:border-amber-500/30"
+      title="Founders Program"
+    >
+      <svg
+        class="transition-transform text-amber-500/70 group-hover:text-amber-400 group-hover:scale-110"
+        data-testid="icon-Gem"
+        size="16"
+      />
+    </button>
+  </div>
+  <div
     class="flex-1 py-4 space-y-6"
   >
     <div
@@ -580,6 +595,25 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           K
         </kbd>
       </div>
+    </button>
+  </div>
+  <div
+    class="px-4 pb-2 pt-2"
+  >
+    <button
+      aria-label="Founders Program"
+      class="w-full flex items-center justify-center p-2 rounded-lg transition-all shadow-sm group bg-gradient-to-r from-amber-500/10 to-purple-900/20 border border-amber-500/20 hover:bg-amber-500/20 gap-3"
+    >
+      <svg
+        class="transition-transform text-amber-500/70 group-hover:text-amber-400 group-hover:scale-110"
+        data-testid="icon-Gem"
+        size="16"
+      />
+      <span
+        class="text-sm font-semibold transition-colors text-amber-200/70 group-hover:text-amber-200"
+      >
+        Founders Program
+      </span>
     </button>
   </div>
   <div
