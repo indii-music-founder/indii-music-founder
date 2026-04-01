@@ -31,6 +31,25 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
         error: null,
     },
     fetchDistributors: async () => {
+        // E2E Mock Bypass: use pre-populated connections from localStorage to skip network calls
+        try {
+            const e2eMock = localStorage.getItem('E2E_DISTRIBUTOR_CONNECTIONS');
+            if (e2eMock) {
+                const mockConnections = JSON.parse(e2eMock) as DistributorConnection[];
+                const available = mockConnections.map(c => c.distributorId);
+                set((state) => ({
+                    distribution: {
+                        ...state.distribution,
+                        loading: false,
+                        connections: mockConnections,
+                        availableDistributors: available,
+                        error: null
+                    }
+                }));
+                return;
+            }
+        } catch { /* ignore parse errors */ }
+
         set((state) => ({ distribution: { ...state.distribution, loading: true } }));
 
         try {

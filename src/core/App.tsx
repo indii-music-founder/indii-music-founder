@@ -95,6 +95,7 @@ const SettingsPanel = lazy(() => import('../modules/settings/SettingsPanel'));
 const MobileRemote = lazy(() => import('../modules/mobile-remote/MobileRemote'));
 const GrowthIntelligenceDashboard = lazy(() => import('../modules/analytics/GrowthIntelligenceDashboard'));
 const DesktopDashboard = lazy(() => import('../modules/desktop/DesktopDashboard'));
+const FoundersCheckout = lazy(() => import('../modules/founders/FoundersCheckout'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -136,6 +137,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'mobile-remote': MobileRemote,
     'analytics': GrowthIntelligenceDashboard,
     'desktop': DesktopDashboard,
+    'founders-checkout': FoundersCheckout,
 };
 
 // ============================================================================
