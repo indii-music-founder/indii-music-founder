@@ -336,15 +336,9 @@ export default defineConfig({
               if (packageName === 'pdfjs-dist') return 'vendor-pdf';
 
               // Map UI ecosystem into a generic UI chunk
-              if (packageName.includes('@radix-ui') || packageName === 'lucide-react' || packageName === 'framer-motion' || packageName === 'motion') {
+              if (packageName.includes('@radix-ui') || packageName === 'lucide-react' || packageName === 'framer-motion') {
                 return 'vendor-ui';
               }
-
-              // Core Ecosystem mapping to prevent index bloat (>1.5MB)
-              if (packageName.includes('sentry')) return 'vendor-sentry';
-              if (packageName === 'recharts') return 'vendor-recharts';
-              if (packageName.includes('@google/genai') || packageName.includes('genkit')) return 'vendor-ai';
-              if (packageName === 'zod' || packageName.includes('date-fns') || packageName === 'i18next') return 'vendor-utils';
             }
           }
         },

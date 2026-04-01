@@ -238,18 +238,7 @@ const checkSidecarHealth = async (window: BrowserWindow) => {
     }
 };
 
-const startHealthMonitoring = async (window: BrowserWindow) => {
-    try {
-        const result = await SidecarService.ensureStarted();
-        if (!result.success && result.log?.includes('no such file or directory')) {
-            log.warn('[Main] Dockerfile.local is missing. Disabling Sidecar Health Monitoring to prevent restart loops.');
-            window.webContents.send('sidecar:status-update', 'offline');
-            return; // ABORT health monitoring if Docker fundamentally is broken
-        }
-    } catch (err: any) {
-        log.error(`[Main] Initial Docker startup failed: ${err.message}`);
-    }
-
+const startHealthMonitoring = (window: BrowserWindow) => {
     if (healthCheckInterval) clearInterval(healthCheckInterval);
 
     // Initial check
@@ -432,8 +421,10 @@ if (!gotTheLock) {
         // Item 375: Audit session cookies for security flags on startup
         auditSessionCookies();
 
-        // Ensure AI Services are started gracefully by startHealthMonitoring inside createWindow
-
+        // Ensure AI Services are running
+        SidecarService.ensureStarted().catch(err => {
+            log.error(`[Main] Initial Docker startup failed: ${err.message}`);
+        });
         registerMobileRemoteHandlers();
 
         // Built-in Task Scheduler

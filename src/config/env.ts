@@ -153,14 +153,12 @@ const firebaseEnv = processEnv;
 // authDomain must match the hosting domain (indiios-studio.web.app) or iOS
 // Google Sign-In will cycle back to the login page due to Safari's cross-origin
 // cookie restrictions. See docs/FIREBASE_AUTH_MIGRATION_NOTES.md §1.
-const isMockKey = (key?: string) => !key || key.startsWith('mock_key') || key.includes('your_');
-
 export const firebaseConfig = {
-    apiKey: (!isMockKey(firebaseEnv.firebaseApiKey) ? firebaseEnv.firebaseApiKey : "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM") as string,
-    authDomain: (!isMockKey(firebaseEnv.firebaseAuthDomain) ? firebaseEnv.firebaseAuthDomain : "indiios-studio.web.app") as string,
-    databaseURL: (!isMockKey(firebaseEnv.firebaseDatabaseURL) ? firebaseEnv.firebaseDatabaseURL : "https://indiios-v-1-1-default-rtdb.firebaseio.com") as string,
-    projectId: (!isMockKey(firebaseEnv.firebaseProjectId) ? firebaseEnv.firebaseProjectId : "indiios-v-1-1") as string,
-    storageBucket: (!isMockKey(firebaseEnv.firebaseStorageBucket) ? firebaseEnv.firebaseStorageBucket : "indiios-alpha-electron") as string,
+    apiKey: firebaseEnv.firebaseApiKey || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
+    authDomain: firebaseEnv.firebaseAuthDomain || "indiios-studio.web.app",
+    databaseURL: firebaseEnv.firebaseDatabaseURL || "https://indiios-v-1-1-default-rtdb.firebaseio.com",
+    projectId: firebaseEnv.firebaseProjectId || "indiios-v-1-1",
+    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-alpha-electron",
     messagingSenderId: "223837784072",
     appId: "1:223837784072:web:3af738739465ea4095e9bd",
     measurementId: "G-T6V8WPE7Z7"

@@ -48,8 +48,8 @@ export function registerMobileRemoteHandlers(): void {
 
       return {
         success: true,
-        globalUrl: url,
-        localIp: url, // Keep for backward compatibility
+        // We override localIp to return the Ngrok URL so the QR code generates correctly
+        localIp: url,
         port: 3333,
         passcode: sessionPasscode
       };
