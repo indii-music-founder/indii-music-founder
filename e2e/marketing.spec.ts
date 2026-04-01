@@ -22,11 +22,10 @@ test.describe('Marketing Module', () => {
 
     test('navigates to marketing module without crash', async ({ authedPage: page }) => {
         // Check for the Campaign Dashboard h1 that MarketingToolbar renders
-        const hasHeading = await page.locator('h1').first().isVisible({ timeout: 5_000 }).catch(() => false);
-        expect(hasHeading).toBeTruthy();
+        const heading = page.getByRole('heading', { level: 1 });
+        await expect(heading).toBeVisible({ timeout: 10_000 });
 
-        // If heading reads "Campaign Dashboard", even better
-        const h1Text = await page.locator('h1').first().textContent().catch(() => '');
+        const h1Text = await heading.textContent().catch(() => '');
         console.log(`[Marketing] h1 text: "${h1Text}"`);
     });
 
@@ -36,17 +35,14 @@ test.describe('Marketing Module', () => {
             'button:has-text("New Campaign"), button:has-text("Create Campaign"), button:has-text("Campaign"), [data-testid*="campaign"]'
         ).first();
 
-        const hasActionBtn = await actionButton.isVisible({ timeout: 8_000 }).catch(() => false);
+        // Fallback: verify no crash overlay exists
+        const errorOverlay = page.locator('text=/Something went wrong|Application Error/');
+        await expect(errorOverlay).toBeHidden();
 
-        if (hasActionBtn) {
-            expect(hasActionBtn).toBeTruthy();
-        } else {
-            // Fallback: verify the module loaded without crashing
-            const noError = await page.locator('text=/Something went wrong|Application Error/').isVisible({ timeout: 2_000 }).catch(() => false);
-            expect(noError).toBeFalsy();
-            // Verify some interactive element exists
-            const hasAnyButton = await page.locator('button').first().isVisible({ timeout: 3_000 }).catch(() => false);
-            expect(hasAnyButton).toBeTruthy();
-        }
+        await expect(actionButton).toBeVisible({ timeout: 10_000 });
+
+        // Verify some interactive element exists
+        const hasAnyButton = await page.locator('button').first().isVisible({ timeout: 3_000 }).catch(() => false);
+        expect(hasAnyButton).toBeTruthy();
     });
 });

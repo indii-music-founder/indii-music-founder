@@ -41,11 +41,11 @@ test.describe('Founders Program Flow', () => {
         await page.goto('/founders-checkout');
 
         // Assert we're on the pre-checkout screen
-        const checkoutHeading = page.locator('h1:has-text("Claim Your Position")');
+        const checkoutHeading = page.locator('h1:has-text("Back The Vision")');
         await expect(checkoutHeading).toBeVisible();
 
         // Assert the checkout button is visible
-        const checkoutButton = page.locator('button:has-text("Complete Payment ($2,500)")');
+        const checkoutButton = page.locator('button:has-text("Support The Vision ($2,500)")');
         await expect(checkoutButton).toBeVisible();
 
         // Click checkout
@@ -55,7 +55,7 @@ test.describe('Founders Program Flow', () => {
         await page.waitForURL('**/founders-checkout?payment=success*');
 
         // Assert we are on the 'Sign the Covenant' step
-        const signHeading = page.locator('h1:has-text("Secure Your Seat")');
+        const signHeading = page.locator('h1:has-text("Cement Your Legacy")');
         await expect(signHeading).toBeVisible();
 
         // Fill out the display name
@@ -86,11 +86,11 @@ test.describe('Founders Program Flow', () => {
         });
 
         // Click Complete
-        const encodeButton = page.locator('button:has-text("Encode My Seat")');
+        const encodeButton = page.locator('button:has-text("Encode My Covenant")');
         await encodeButton.click();
 
         // Verify success screen
-        await expect(page.locator('h2:has-text("Welcome, Founder")')).toBeVisible();
+        await expect(page.locator('h2:has-text("Welcome to the Inner Circle, Founder")')).toBeVisible();
         await expect(page.locator('text=abcdef1234567890')).toBeVisible();
     });
 });
