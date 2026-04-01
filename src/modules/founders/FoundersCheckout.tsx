@@ -33,7 +33,7 @@ export default function FoundersCheckout() {
                 userId: user.uid,
                 items: [{
                     name: 'indiiOS Genesis Covenant',
-                    description: 'Friends & Family Genesis Seed (Permanently encoded in the codebase)',
+                    description: 'Founders Round Genesis Seed (Permanently encoded in the codebase)',
                     amount: 250000,
                     quantity: 1,
                 }],
@@ -152,7 +152,7 @@ export default function FoundersCheckout() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/10 via-background to-background pointer-events-none" />
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="z-10 text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono tracking-widest uppercase mb-8">
-                    Friends & Family Round
+                    Founders Round
                 </div>
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-6">
                     Back The <span className="text-amber-400">Vision</span>.
