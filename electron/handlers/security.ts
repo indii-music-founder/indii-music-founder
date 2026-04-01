@@ -2,11 +2,17 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
-import { db } from '../../src/services/firebase'; // Note: This mapping might need adjustment based on how it's bundled
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
-const RotationSchema = z.object({
-    serviceName: z.string()
+// ARCHITECTURE NOTE: This handler does NOT import Firebase.
+// Firebase client SDK is a browser-side module and must NEVER be loaded
+// in the Electron main process (Node.js). All Firestore reads/writes
+// are handled by the renderer. This handler receives vault data from
+// the renderer, performs external API calls (Stripe, GitHub), and
+// returns the result. The renderer writes the result back to Firestore.
+
+const RotationInputSchema = z.object({
+    serviceName: z.string(),
+    vaultData: z.record(z.unknown()),
 });
 
 const ScanSchema = z.object({
@@ -15,30 +21,24 @@ const ScanSchema = z.object({
 
 export function registerSecurityHandlers() {
     // 1. Rotate Credentials
+    // The renderer reads vault data from Firestore and passes it here.
+    // This handler calls the external provider API and returns the new key.
+    // The renderer writes the result back to Firestore.
     ipcMain.handle('security:rotate-credentials', async (event: IpcMainInvokeEvent, data: unknown) => {
         validateSender(event);
 
         try {
-            const validated = RotationSchema.parse(data);
-            const { serviceName } = validated;
+            const validated = RotationInputSchema.parse(data);
+            const { serviceName, vaultData } = validated;
 
             console.log(`[SecurityHandler] Rotating credentials for: ${serviceName}`);
 
-            // Interaction with Firestore vault
-            const docRef = doc(db, 'vault', serviceName);
-            const docSnap = await getDoc(docRef);
-
-            if (!docSnap.exists()) {
-                return { success: false, error: `Service ${serviceName} not found in vault.` };
-            }
-
-            const vaultData = docSnap.data();
             let newKey: string | null = null;
 
             // Item 334: Real key rotation via provider APIs
             if (serviceName === 'stripe') {
                 // Stripe: create a new restricted key via API
-                const stripeSecret = vaultData.api_secret;
+                const stripeSecret = vaultData.api_secret as string | undefined;
                 if (!stripeSecret) {
                     return { success: false, error: 'Stripe API secret not found in vault for rotation.' };
                 }
@@ -59,7 +59,6 @@ export function registerSecurityHandlers() {
 
             } else if (serviceName === 'github') {
                 // GitHub: update a repository secret via the Secrets API
-                // Requires: vaultData.github_token (PAT), vaultData.secret_name, vaultData.repo
                 const { github_token, secret_name, repo } = vaultData as { github_token: string; secret_name: string; repo: string };
                 if (!github_token || !secret_name || !repo) {
                     return { success: false, error: 'GitHub token, secret_name, and repo required in vault.' };
@@ -86,7 +85,7 @@ export function registerSecurityHandlers() {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            encrypted_value: vaultData.key ?? '', // caller should pre-encrypt with pubKeyData.key
+                            encrypted_value: (vaultData.key as string) ?? '', // caller should pre-encrypt with pubKeyData.key
                             key_id: pubKeyData.key_id,
                         }),
                     }
@@ -104,15 +103,11 @@ export function registerSecurityHandlers() {
                 return { success: false, error: 'Rotation succeeded but no new key was returned by provider.' };
             }
 
-            await updateDoc(docRef, {
-                key: newKey,
-                last_rotated: new Date().toISOString(),
-                rotation_count: (vaultData.rotation_count || 0) + 1
-            });
-
+            // Return the new key to the renderer — it handles the Firestore write
             return {
                 success: true,
                 service: serviceName,
+                newKey,
                 message: `Credentials for ${serviceName} rotated successfully via provider API.`
             };
 

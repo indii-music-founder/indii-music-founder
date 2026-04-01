@@ -147,21 +147,18 @@ export const firebaseDefaultConfig = {
 
 const firebaseEnv = processEnv;
 
-// Firebase API keys are identifiers, not secrets (see docs/API_CREDENTIALS_POLICY.md).
-// The active key is hardcoded as a fallback to ensure auth works even when
-// VITE_FIREBASE_API_KEY is not set in CI/CD (e.g. preview channels, forks).
-// authDomain must match the hosting domain (indiios-studio.web.app) or iOS
-// Google Sign-In will cycle back to the login page due to Safari's cross-origin
-// cookie restrictions. See docs/FIREBASE_AUTH_MIGRATION_NOTES.md §1.
+// Firebase configuration — all values sourced from .env (VITE_FIREBASE_*).
+// No hardcoded fallbacks. If keys are missing, the app will show the login
+// screen with an error rather than silently connecting to the wrong project.
 export const firebaseConfig = {
-    apiKey: firebaseEnv.firebaseApiKey || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
-    authDomain: firebaseEnv.firebaseAuthDomain || "indiios-studio.web.app",
-    databaseURL: firebaseEnv.firebaseDatabaseURL || "https://indiios-v-1-1-default-rtdb.firebaseio.com",
-    projectId: firebaseEnv.firebaseProjectId || "indiios-v-1-1",
-    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-alpha-electron",
-    messagingSenderId: "223837784072",
-    appId: "1:223837784072:web:3af738739465ea4095e9bd",
-    measurementId: "G-T6V8WPE7Z7"
+    apiKey: firebaseEnv.firebaseApiKey || "",
+    authDomain: firebaseEnv.firebaseAuthDomain || "",
+    databaseURL: firebaseEnv.firebaseDatabaseURL || "",
+    projectId: firebaseEnv.firebaseProjectId || "",
+    storageBucket: firebaseEnv.firebaseStorageBucket || "",
+    messagingSenderId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'), process.env.VITE_FIREBASE_MESSAGING_SENDER_ID) || "",
+    appId: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), process.env.VITE_FIREBASE_APP_ID) || "",
+    measurementId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MEASUREMENT_ID'), process.env.VITE_FIREBASE_MEASUREMENT_ID) || ""
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {

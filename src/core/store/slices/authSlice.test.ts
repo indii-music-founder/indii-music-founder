@@ -22,7 +22,7 @@ vi.mock('@/services/firebase', () => ({
     auth: {
         app: {
             options: {
-                apiKey: 'mock-api-key'
+                apiKey: 'AIzaSy_test_key_for_vitest_unit_tests_1'
             }
         },
         // Mutable currentUser for debounce tests — starts null
@@ -413,7 +413,7 @@ describe('AuthSlice', () => {
             unsubscribe();
 
             // Restore
-            Object.assign(auth.app.options, { apiKey: 'mock-api-key' });
+            Object.assign(auth.app.options, { apiKey: 'AIzaSy_test_key_for_vitest_unit_tests_1' });
         });
 
         it('should timeout after 10s if onAuthStateChanged never fires', async () => {

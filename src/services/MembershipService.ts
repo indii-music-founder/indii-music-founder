@@ -10,7 +10,7 @@ import { db } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
-export type MembershipTier = 'free' | 'pro' | 'enterprise';
+export type MembershipTier = 'free' | 'pro' | 'founder' | 'enterprise';
 
 /**
  * Daily usage tracking stored in Firestore
@@ -89,6 +89,22 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
         hasPriorityQueue: true,
         hasAPIAccess: false,
     },
+    founder: {
+        maxVideoDuration: 4 * 60 * 60,     // 4 hours (same as enterprise)
+        maxVideoGenerationsPerDay: 500,
+        maxImagesPerDay: 5000,
+        maxBatchSize: 64,
+        maxDesignResolution: 8192,          // 8K
+        maxExportDPI: 600,
+        hasCMYKSupport: true,
+        maxStorageMB: 10 * 1024 * 1024,    // 10 TB
+        maxProjects: -1,                    // Unlimited
+        maxDailySpend: 500.0,               // $500.00 Daily Limit (pass-through at cost)
+        hasAdvancedEditing: true,
+        hasCustomBranding: true,
+        hasPriorityQueue: true,
+        hasAPIAccess: true,
+    },
     enterprise: {
         maxVideoDuration: 4 * 60 * 60,     // 4 hours
         maxVideoGenerationsPerDay: 500,
@@ -161,11 +177,12 @@ class MembershipServiceImpl {
      * Get tier display name
      */
     getTierDisplayName(tier: MembershipTier): string {
-        return {
+        return ({
             free: 'Free',
             pro: 'Pro',
+            founder: 'Founder',
             enterprise: 'Enterprise'
-        }[tier];
+        } as Record<MembershipTier, string>)[tier];
     }
 
     /**
@@ -381,7 +398,7 @@ class MembershipServiceImpl {
             const { useStore } = await import('@/core/store');
             const email = useStore.getState().userProfile?.email;
             if (email === 'the.walking.agency.det@gmail.com') {
-                 return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
+                return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
             }
         } catch (e: unknown) {
             // Ignore
@@ -435,10 +452,10 @@ class MembershipServiceImpl {
                     const currentOrgId = state.currentOrganizationId;
 
                     if (currentOrgId) {
-                         const projectsRef = collection(db, 'projects');
-                         const q = query(projectsRef, where('orgId', '==', currentOrgId));
-                         const snapshot = await getCountFromServer(q);
-                         currentUsage = snapshot.data().count;
+                        const projectsRef = collection(db, 'projects');
+                        const q = query(projectsRef, where('orgId', '==', currentOrgId));
+                        const snapshot = await getCountFromServer(q);
+                        currentUsage = snapshot.data().count;
                     } else {
                         // Fallback to counting personal projects if no org context
                         // This might need adjustment based on exact data model

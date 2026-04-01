@@ -22,7 +22,7 @@ import {
     Briefcase, CreditCard, ShoppingBag, TrendingUp,
     DollarSign, ArrowUpRight, Wallet, Clock, Scale,
     AlertTriangle, Calendar, PiggyBank, Globe, Users,
-    FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark
+    FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark, Sparkles
 } from 'lucide-react';
 import type { EarningsSummary } from '@/services/revenue/schema';
 import type { Expense } from './schemas';
@@ -275,6 +275,10 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
     const netIncome = totalRevenue - totalExpenses;
     const pendingCount = earningsSummary?.byPlatform?.filter(p => p.revenue === 0).length ?? 0;
 
+    // indiiOS Dividend — 20% management fee saved by using indiiOS instead of an external manager
+    const MANAGEMENT_FEE_RATE = 0.20;
+    const dividendSaved = totalRevenue * MANAGEMENT_FEE_RATE;
+
     const stats = [
         { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, change: earningsSummary ? `${earningsSummary.totalStreams.toLocaleString()} streams` : 'No data', positive: totalRevenue > 0 },
         { label: 'Net Income', value: formatCurrency(netIncome), icon: ArrowUpRight, change: totalExpenses > 0 ? `${formatCurrency(totalExpenses)} expenses` : 'No expenses', positive: netIncome > 0 },
@@ -300,6 +304,24 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
                             </span>
                         </div>
                     ))}
+
+                    {/* indiiOS Dividend Widget — Fees Saved vs. External Management */}
+                    {totalRevenue > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center gap-3 p-2.5 rounded-lg bg-emerald-500/8 border border-emerald-500/20 hover:bg-emerald-500/12 transition-colors"
+                        >
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                                <Sparkles size={14} className="text-emerald-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-emerald-400 truncate">{formatCurrency(dividendSaved)}</p>
+                                <p className="text-[10px] text-gray-500">Fees Saved (indiiOS Dividend)</p>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-400/70">20% saved</span>
+                        </motion.div>
+                    )}
                 </div>
             )}
         </div>

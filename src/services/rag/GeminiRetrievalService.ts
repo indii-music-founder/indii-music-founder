@@ -33,7 +33,7 @@ export class GeminiRetrievalService {
         }
         // Default to production if not set, or update local default to correct project
         // Note: For "The Gauntlet" E2E tests which run against local frontend but expect live backend
-        const functionsUrl = env.VITE_FUNCTIONS_URL || 'https://us-central1-indiios-v-1-1.cloudfunctions.net';
+        const functionsUrl = env.VITE_FUNCTIONS_URL || '';
         this.baseUrl = `${functionsUrl}/ragProxy/v1beta`;
     }
 

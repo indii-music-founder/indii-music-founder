@@ -603,6 +603,17 @@ export const test = base.extend<AuthFixtures>({
       // Signal FirestoreService to use E2E bypass (skips addDoc/updateDoc network calls)
       try {
         localStorage.setItem("FIREBASE_E2E_MOCK", "1");
+        // Prevent onboarding wizard from hijacking navigation
+        localStorage.setItem("onboarding_dismissed", "true");
+        // Dismiss the first-run guided tour overlay
+        localStorage.setItem("indiiOS_tour_completed_v1", "true");
+        // Dismiss cookie consent banner so it doesn't overlay test targets
+        localStorage.setItem("indiiOS_cookie_consent", JSON.stringify({
+          essential: true,
+          analytics: false,
+          errorReporting: false,
+          timestamp: Date.now(),
+        }));
       } catch (e) {
         // Ignore if localStorage is unavailable
       }

@@ -253,7 +253,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         const apiKeyLower = apiKey?.toLowerCase() ?? '';
         const isE2EMock = typeof window !== 'undefined' && (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
 
-        if (!isE2EMock && (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass'))) {
+        if (!isE2EMock && (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass') || apiKeyLower.includes('mock') || apiKeyLower.includes('your_'))) {
             logger.warn('[Auth] No valid API Key found and not in E2E mode.');
             set({ authLoading: false });
             return () => { };
