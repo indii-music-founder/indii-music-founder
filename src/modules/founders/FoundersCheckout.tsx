@@ -179,7 +179,7 @@ export default function FoundersCheckout() {
                     {isProcessing ? 'Connecting secured channel...' : 'Support The Vision ($2,500)'}
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                 </button>
-                <p className="mt-8 text-gray-500 text-sm max-w-sm mx-auto leading-relaxed">
+                <p className="mt-8 text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
                     Genesis investment guarantees lifetime access and <span className="text-amber-500/80">permanently acts as a credited basis</span> toward any future investment rounds.
                 </p>
             </motion.div>

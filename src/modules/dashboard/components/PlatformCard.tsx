@@ -22,8 +22,8 @@ const features: FeatureRow[] = [
 ];
 
 function StatusDot({ status }: { status: boolean | 'limited' }) {
-    if (status === true) return <Check size={13} className="text-green-400" />;
-    if (status === 'limited') return <span className="text-[10px] font-bold text-amber-400">LITE</span>;
+    if (status === true) return <Check size={13} className="text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />;
+    if (status === 'limited') return <span className="text-[10px] font-bold text-amber-500/60 tracking-wider">LITE</span>;
     return <span className="text-[10px] text-gray-600">—</span>;
 }
 
@@ -52,10 +52,10 @@ export function PlatformCard() {
         <div className="relative overflow-hidden border-b border-white/5">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
 
-            <div className="relative z-10 px-6 py-4">
+            <div className="relative z-10 px-6 py-2.5">
                 <div className="flex items-start gap-6">
                     {/* Current platform indicator */}
-                    <div className="flex-shrink-0 flex flex-col items-center gap-1.5 pt-1">
+                    <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1 opacity-80">
                         <Globe size={20} className="text-blue-400" />
                         <span className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">Web</span>
                     </div>
@@ -70,7 +70,7 @@ export function PlatformCard() {
                                 Preview
                             </span>
                         </div>
-                        <p className="text-xs text-gray-500 mb-3 max-w-lg">
+                        <p className="text-[11px] text-gray-500 mb-2 max-w-lg leading-snug">
                             Explore every module and meet the AI agents. Founders Round investors receive full access to the Desktop Studio with local audio processing, SFTP distribution, and offline mode.
                         </p>
 
@@ -104,7 +104,7 @@ export function PlatformCard() {
                         {/* CTA */}
                         <button
                             onClick={() => setModule('founders-checkout')}
-                            className="group mt-4 flex items-center gap-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors"
+                            className="group mt-2.5 flex items-center gap-2 text-[11px] font-bold text-amber-400 hover:text-amber-300 transition-colors uppercase tracking-widest"
                         >
                             Unlock full Desktop Studio
                             <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
