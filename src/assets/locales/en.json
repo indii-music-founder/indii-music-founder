@@ -137,20 +137,12 @@
     },
     "onboarding": {
         "title": "Brand Kit Builder",
-        "mainTitle": "Onboarding",
         "placeholder": "Type your answer...",
         "profileStatus": "Profile Status",
         "artistIdentity": "Artist Identity",
         "currentRelease": "Current Release",
         "livePreview": "Live Preview",
         "bio": "Bio",
-        "activeRelease": "Active Release",
-        "dropFilesTitle": "Drop files here",
-        "dropFilesDesc": "Images, audio, documents — indii will handle them",
-        "indiiThinking": "indii is thinking...",
-        "inputPlaceholder": "Tell indii about your music...",
-        "attachAssets": "Attach Assets",
-        "secureWorkspace": "Secure AI Workspace • Gemini 3 Pro 2M Enabled",
-        "yourProgress": "Your Progress"
+        "activeRelease": "Active Release"
     }
 }

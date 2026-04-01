@@ -144,15 +144,6 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     loginWithEmail: async (email: string, pass: string) => {
         try {
             set({ authLoading: true, authError: null });
-            if (import.meta.env.DEV) {
-                set({
-                    user: { uid: 'dev-user-123', email, displayName: 'Dev User (Bypass)', photoURL: '' } as unknown as User,
-                    authLoading: false,
-                    authError: null
-                });
-                console.log('[Auth] Development mode: Mocking successful email login.');
-                return;
-            }
             await signInWithEmailAndPassword(auth, email, pass);
             // State update handled by listener
         } catch (error: unknown) {
@@ -166,15 +157,6 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     signUpWithEmail: async (email: string, pass: string) => {
         try {
             set({ authLoading: true, authError: null });
-            if (import.meta.env.DEV) {
-                set({
-                    user: { uid: 'dev-user-signup-123', email, displayName: 'Dev User (Bypass)', photoURL: '' } as unknown as User,
-                    authLoading: false,
-                    authError: null
-                });
-                console.log('[Auth] Development mode: Mocking successful email signup.');
-                return;
-            }
             await createUserWithEmailAndPassword(auth, email, pass);
             // State update handled by listener — initializeAuthListener will create the user doc
         } catch (error: unknown) {
@@ -189,16 +171,20 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         if (!import.meta.env.DEV) {
             throw new Error('Guest login is only available in development mode.');
         }
-
         try {
-            set({
-                user: { uid: 'dev-guest-123', email: 'guest@indiios.dev', displayName: 'Dev Guest (Bypass)', photoURL: '' } as unknown as User,
-                authLoading: false,
-                authError: null
-            });
-            console.log('[Auth] Development mode: Mocking successful guest login.');
+            set({ authLoading: true, authError: null });
+            await signInAnonymously(auth);
+            // State update handled by listener
         } catch (error: unknown) {
-            set({ authError: String(error), authLoading: false });
+            const firebaseError = error as FirebaseAuthError;
+            let errorMessage: string;
+            if (firebaseError.code === 'auth/admin-restricted-operation') {
+                errorMessage = 'Anonymous Auth is disabled. Enable it in Firebase Console → Authentication → Sign-in method → Anonymous.';
+            } else {
+                // Use the centralised message mapper for everything else
+                errorMessage = getAuthErrorMessage(firebaseError) ?? 'Guest login failed';
+            }
+            set({ authError: errorMessage, authLoading: false });
         }
     },
 
