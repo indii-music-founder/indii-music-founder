@@ -133,20 +133,12 @@
     },
     "onboarding": {
         "title": "Constructor de Kit de Marca",
-        "mainTitle": "Incorporación",
         "placeholder": "Escribe tu respuesta...",
         "profileStatus": "Estado del Perfil",
         "artistIdentity": "Identidad del Artista",
         "currentRelease": "Lanzamiento Actual",
         "livePreview": "Vista Previa en Vivo",
         "bio": "Biografía",
-        "activeRelease": "Lanzamiento Activo",
-        "dropFilesTitle": "Suelta los archivos aquí",
-        "dropFilesDesc": "Imágenes, audio, documentos — indii los procesará",
-        "indiiThinking": "indii está pensando...",
-        "inputPlaceholder": "Cuéntale a indii sobre tu música...",
-        "attachAssets": "Adjuntar activos",
-        "secureWorkspace": "Espacio de IA seguro • Gemini 3 Pro 2M activado",
-        "yourProgress": "Tu progreso"
+        "activeRelease": "Lanzamiento Activo"
     }
 }
