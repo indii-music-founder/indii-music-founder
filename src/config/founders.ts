@@ -40,6 +40,9 @@ export const COVENANT_TERMS = {
   features: 'all_current_and_future' as const,
   name_in_code: true,
   software_lifetime: true,
+  // Investment Rollover: The initial $2,500 acts as a credited basis for any future
+  // investment rounds. (e.g. A subsequent $5,000 investment yields a $7,500 return basis).
+  investment_rollover_basis: true,
   indiiOS_entity: 'IndiiOS LLC',
   covenant_established: '2026-03-17',
 } as const;
