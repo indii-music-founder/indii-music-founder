@@ -54,5 +54,24 @@
 | 8.2 | Shared Agent Memory (Inter-Agent Context) implementation | [x] | Session |
 | 8.3 | Construct test suite for Multi-Agent flow (Conductor -> Specialist -> Action) | [x] | Session |
 
+## Sprint 9 — Founders Release (v2.0.0-founders)
+
+| ID | Task | Status | Source |
+| :--- | :--- | :--- | :--- |
+| 9.1 | Version bump to `2.0.0-founders` | [x] | Phase 6 |
+| 9.2 | Remove 29 root junk files (logs, screenshots, test output) | [x] | Phase 5 |
+| 9.3 | Remove stale `test-results.json` / `test_list.json` | [x] | Phase 5 |
+| 9.4 | TypeScript clean (0 errors) | [x] | Phase 1 |
+| 9.5 | ESLint clean (0 warnings) | [x] | Phase 1 |
+| 9.6 | Unit tests green (2,833 pass / 10 skipped) | [x] | Phase 1 |
+| 9.7 | E2E specs stabilized (41 specs) | [x] | Phase 1 |
+| 9.8 | Security headers verified (CSP, HSTS, X-Frame, etc.) | [x] | Phase 2 |
+| 9.9 | Firestore rules audit (559 lines, deny-default) | [x] | Phase 2 |
+| 9.10 | Founders entry point: Guest → Demo → Checkout | [x] | Phase 3 |
+| 9.11 | Enable App Check enforcement in production | [ ] | Phase 2 (GCP Console) |
+| 9.12 | Strip `localhost` from CSP `connect-src` for prod | [ ] | Phase 2 |
+| 9.13 | Production deploy to Firebase Hosting | [ ] | Phase 4 |
+| 9.14 | Git tag `v2.0.0-founders` | [ ] | Phase 6 |
+
 ---
 *Self-managed task list for Antigravity.*
