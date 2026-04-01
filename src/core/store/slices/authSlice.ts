@@ -168,9 +168,6 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     },
 
     loginAsGuest: async () => {
-        if (!import.meta.env.DEV) {
-            throw new Error('Guest login is only available in development mode.');
-        }
         try {
             set({ authLoading: true, authError: null });
 
