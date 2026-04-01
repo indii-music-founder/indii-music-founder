@@ -2,7 +2,7 @@
   "name": "indii-os",
   "version": "1.44.4",
   "description": "The Operating System for Independent Artists",
-  "author": "IndiiOS LLC",
+  "author": "IndiiOS LLC <info@indiios.com>",
   "private": true,
   "type": "module",
   "main": "dist-electron/main.cjs",
