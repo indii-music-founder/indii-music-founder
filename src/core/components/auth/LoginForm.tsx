@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Loader2, Mail, Lock, LogIn, Chrome, User, UserPlus, Calendar, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Loader2, Mail, Lock, LogIn, User, UserPlus, Calendar, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 /**
@@ -24,7 +24,6 @@ type AuthView = 'signin' | 'signup' | 'forgot-password';
 
 export default function LoginForm() {
     const {
-        loginWithGoogle,
         loginWithEmail,
         signUpWithEmail,
         loginAsGuest,
@@ -36,7 +35,6 @@ export default function LoginForm() {
         setSignUpMode,
         clearAuthError,
     } = useStore(useShallow(state => ({
-        loginWithGoogle: state.loginWithGoogle,
         loginWithEmail: state.loginWithEmail,
         signUpWithEmail: state.signUpWithEmail,
         loginAsGuest: state.loginAsGuest,
@@ -410,31 +408,14 @@ export default function LoginForm() {
 
                                 <button
                                     type="button"
-                                    onClick={loginWithGoogle}
+                                    onClick={loginAsGuest}
                                     disabled={authLoading}
-                                    className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-semibold hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                    data-testid="guest-login-btn"
+                                    className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-500/20 to-purple-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                                 >
-                                    <Chrome className="w-5 h-5" />
-                                    <span>Continue with Google</span>
+                                    <User className="w-5 h-5 text-amber-400" />
+                                    <span>Explore as Guest</span>
                                 </button>
-
-                                {import.meta.env.DEV && (
-                                    <div className="pt-4 animate-fade-in-up delay-200">
-                                        <button
-                                            type="button"
-                                            onClick={loginAsGuest}
-                                            disabled={authLoading}
-                                            data-testid="guest-login-btn"
-                                            className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-500/20 to-purple-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-                                        >
-                                            <User className="w-5 h-5 text-amber-400" />
-                                            <span>Start Founders Demo</span>
-                                        </button>
-                                        <p className="text-center text-[10px] text-amber-500/50 mt-2 font-mono">
-                                            BYPASS AUTH/ONBOARDING FOR PITCH
-                                        </p>
-                                    </div>
-                                )}
                             </motion.form>
                         </motion.div>
                     )}
