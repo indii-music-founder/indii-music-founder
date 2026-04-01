@@ -15,9 +15,9 @@ export const FUNCTION_AI_MODELS = {
         PRO: 'gemini-2.5-pro',
     },
     VIDEO: {
-        GENERATION: 'veo-3-generate-preview',
-        PRO: 'veo-3-generate-preview', // Alias for internal consistency
-        FAST: 'veo-3-fast-generate-preview',
+        GENERATION: 'veo-3.1-generate-preview',
+        PRO: 'veo-3.1-generate-preview', // Alias for internal consistency
+        FAST: 'veo-3.1-fast-generate-preview',
     },
     SPEECH: {
         GENERATION: 'gemini-2.5-pro-tts',
