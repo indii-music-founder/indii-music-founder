@@ -122,9 +122,9 @@ test.describe('Chat / CommandBar Interaction', () => {
                 console.log('DelegateMenu not found in current view — skipping');
                 return;
             }
-            await altBtn.click();
+            await altBtn.click({ force: true });
         } else {
-            await delegateBtn.click();
+            await delegateBtn.click({ force: true });
         }
 
         await page.waitForTimeout(600);
