@@ -57,6 +57,9 @@ describe('AuthSlice', () => {
 
     afterEach(() => {
         vi.useRealTimers();
+        if (typeof window !== 'undefined') {
+            delete (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
+        }
     });
 
     // ============================================================================
@@ -243,14 +246,15 @@ describe('AuthSlice', () => {
             expect(signInAnonymously).toHaveBeenCalled();
         });
 
-        it('should show admin-restricted error for disabled anonymous auth', async () => {
+        it('should bypass disabled anonymous auth and mock user for founders demo', async () => {
             const error = Object.assign(new Error('restricted'), { code: 'auth/admin-restricted-operation' });
             vi.mocked(signInAnonymously).mockRejectedValueOnce(error);
             const { loginAsGuest } = useStore.getState();
 
             await loginAsGuest();
 
-            expect(useStore.getState().authError).toContain('Anonymous Auth is disabled');
+            expect(useStore.getState().user?.uid).toBe('founder-demo-uid');
+            expect(useStore.getState().authError).toBeNull();
         });
 
         it('should use centralised error mapper for other errors', async () => {
