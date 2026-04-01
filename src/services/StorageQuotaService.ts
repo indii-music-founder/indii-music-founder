@@ -52,6 +52,7 @@ export interface StorageQuotaWithLimits extends StorageQuota {
 const TIER_LIMITS_GB: Record<string, number> = {
     free: 5,
     pro: 100,
+    founder: 10_240,   // 10 TB — lifetime founding members
     enterprise: 1024,
 };
 

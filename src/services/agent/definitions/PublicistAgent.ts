@@ -487,10 +487,84 @@ When a request falls outside your scope:
             }
         };
     })
+    .withTool({
+        functionDeclarations: [{
+            name: "pitch_media",
+            description: "Generate personalized pitch emails for press outlets (blogs, magazines, podcasts) based on a press release or release info. Each outlet gets a tailored angle. Returns up to 8 ready-to-send pitches.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    artistName: { type: "STRING", description: "The artist's name." },
+                    releaseTitle: { type: "STRING", description: "Title of the release (album, single, EP)." },
+                    releaseType: { type: "STRING", description: "Type: single, EP, album, tour." },
+                    releaseDate: { type: "STRING", description: "Release date in human-readable form." },
+                    keyAngle: { type: "STRING", description: "The top-line story or hook (e.g. 'self-produced debut from Detroit')." },
+                    pressRelease: { type: "STRING", description: "Full press release text to base pitches on (optional)." },
+                    targetOutlets: {
+                        type: "ARRAY",
+                        items: { type: "STRING" },
+                        description: "List of outlet types to target (e.g. 'indie blogs', 'hip-hop podcasts', 'local press')."
+                    }
+                },
+                required: ["artistName", "releaseTitle", "keyAngle"]
+            }
+        }]
+    }, async (args: { artistName: string; releaseTitle: string; releaseType?: string; releaseDate?: string; keyAngle: string; pressRelease?: string; targetOutlets?: string[] }) => {
+        /**
+         * Pillar 3 — Hype Machine: Generates personalized media pitches.
+         * Each outlet type gets a unique angle, subject line, and email body.
+         */
+        const outlets = args.targetOutlets?.length
+            ? args.targetOutlets
+            : ['indie music blogs', 'hip-hop/R&B blogs', 'local press', 'music podcasts', 'playlist curators'];
+
+        const releaseType = args.releaseType || 'release';
+        const dateClause = args.releaseDate ? ` on ${args.releaseDate}` : '';
+
+        const prompt = `You are a veteran music publicist writing personalized media pitches for a new ${releaseType}.
+
+Artist: ${args.artistName}
+Release: "${args.releaseTitle}"${dateClause}
+Story Angle: ${args.keyAngle}
+${args.pressRelease ? `\nPress Release:\n${args.pressRelease.slice(0, 1500)}` : ''}
+
+Target outlet types: ${outlets.join(', ')}
+
+For EACH outlet type, write a SHORT personalized pitch email with:
+1. Subject line (specific to that outlet's style)
+2. Email body (3-4 sentences max — concise, punchy, no filler)
+3. A unique angle tailored to that outlet's audience
+
+Format as JSON array with keys: outlet, subject, body, angle
+Return only valid JSON, no markdown fences.`;
+
+        try {
+            const { firebaseAI } = await import('@/services/ai/FirebaseAIService');
+            const { AI_MODELS } = await import('@/core/config/ai-models');
+            const raw = await firebaseAI.generateText(prompt, AI_MODELS.TEXT.FAST);
+            // Strip any markdown wrapping
+            const cleaned = raw.replace(/```(?:json)?\n?/g, '').replace(/```$/g, '').trim();
+            const pitches: Array<{ outlet: string; subject: string; body: string; angle: string }> = JSON.parse(cleaned);
+
+            return {
+                success: true,
+                data: {
+                    artistName: args.artistName,
+                    releaseTitle: args.releaseTitle,
+                    pitchCount: pitches.length,
+                    pitches,
+                    tip: "Personalize subject lines with the outlet's specific artist name or recent coverage for best open rates."
+                }
+            };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            return { success: false, error: `Pitch generation failed: ${message}` };
+        }
+    })
     .withAuthorizedTools([
         'create_campaign', 'write_press_release', 'generate_crisis_response',
         'generate_social_post', 'indii_image_gen', 'browser_tool', 'credential_vault',
-        'generate_pdf', 'generate_live_epk'
+        'generate_pdf', 'generate_live_epk', 'pitch_media'
     ])
     .build();
 

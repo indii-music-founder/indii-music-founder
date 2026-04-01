@@ -27,10 +27,14 @@ import { SidecarService } from './services/SidecarService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
 
-// Configure logging
+// Configure logging — app.getPath may not be available in dev CJS bundles
 log.transports.file.level = 'info';
-log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs/main.log');
-
+try {
+    log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs/main.log');
+} catch {
+    // Fallback: write logs to the current working directory until app is ready
+    log.transports.file.resolvePathFn = () => path.join(process.cwd(), 'logs/main.log');
+}
 
 log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)}`);
 

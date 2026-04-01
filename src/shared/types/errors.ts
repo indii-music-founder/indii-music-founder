@@ -66,7 +66,7 @@ export class AppException extends Error {
  * Contains actionable upgrade information for UI display.
  */
 export type QuotaLimitType = 'images' | 'video' | 'video_duration' | 'storage' | 'projects' | 'resolution' | 'export';
-export type MembershipTier = 'free' | 'pro' | 'enterprise' | 'pro_monthly' | 'pro_yearly' | 'studio';
+export type MembershipTier = 'free' | 'pro' | 'enterprise' | 'pro_monthly' | 'pro_yearly' | 'studio' | 'founder';
 
 export class QuotaExceededError extends AppException {
     limitType: QuotaLimitType;

@@ -12,15 +12,13 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-ch
 import { getRemoteConfig } from 'firebase/remote-config';
 import { AI_MODELS } from '@/core/config/ai-models';
 
-// Prevent crash if config is missing (e.g. CI/Dev without env vars)
-const safeConfig = firebaseConfig.apiKey ? firebaseConfig : {
-    ...firebaseConfig,
-    apiKey: "AIzaSy_FAKE_KEY_FOR_DEV_BYPASS_00000000",
-    projectId: "demo-project",
-    authDomain: "demo-project.firebaseapp.com"
-};
+// If Firebase config is missing critical keys, log clearly and continue with empty config.
+// The app will show the login screen with an auth error rather than crashing.
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    logger.error('[Firebase] CRITICAL: Missing VITE_FIREBASE_API_KEY or VITE_FIREBASE_PROJECT_ID in .env. Auth will not work.');
+}
 
-export const app = initializeApp(safeConfig);
+export const app = initializeApp(firebaseConfig);
 
 // ============================================================================
 // LAZY Firebase AI Initialization

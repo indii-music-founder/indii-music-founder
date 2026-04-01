@@ -239,9 +239,57 @@ If a task is outside Finance, say:
                 const message = error instanceof Error ? error.message : String(error);
                 return { success: false, error: message };
             }
+        },
+        forecast_revenue: async (args: { current_monthly_streams: number; growth_rate_percent: number; months: number }) => {
+            /**
+             * Pillar 2 — Agent CFO: Proactive forecast showing revenue trajectory +
+             * the cumulative indiiOS Dividend (fees saved vs. external 20% management).
+             * Gamification: shows compound savings, not just a number.
+             */
+            const SPOTIFY_RATE = 0.004;                // avg blended per-stream rate
+            const MANAGEMENT_FEE = 0.20;               // 20% external manager fee
+            const growthFactor = 1 + (args.growth_rate_percent / 100);
+            const months = Math.min(Math.max(args.months || 12, 1), 24);
+
+            let streams = args.current_monthly_streams;
+            let cumulativeRevenue = 0;
+            let cumulativeDividend = 0;
+            const projections: Array<{ month: number; streams: number; revenue: number; dividendSaved: number; cumulative: number }> = [];
+
+            for (let m = 1; m <= months; m++) {
+                const revenue = streams * SPOTIFY_RATE;
+                const dividend = revenue * MANAGEMENT_FEE;
+                cumulativeRevenue += revenue;
+                cumulativeDividend += dividend;
+                projections.push({
+                    month: m,
+                    streams: Math.round(streams),
+                    revenue: Math.round(revenue * 100) / 100,
+                    dividendSaved: Math.round(dividend * 100) / 100,
+                    cumulative: Math.round(cumulativeRevenue * 100) / 100,
+                });
+                streams *= growthFactor;
+            }
+
+            const endStreams = projections[projections.length - 1]!.streams;
+
+            return {
+                success: true,
+                data: {
+                    summary: {
+                        totalProjectedRevenue: Math.round(cumulativeRevenue * 100) / 100,
+                        totalDividendSaved: Math.round(cumulativeDividend * 100) / 100,
+                        endMonthlyStreams: endStreams,
+                        growthRatePercent: args.growth_rate_percent,
+                        months,
+                    },
+                    projections,
+                    message: `Over ${months} months at ${args.growth_rate_percent}% monthly growth: projected revenue $${cumulativeRevenue.toFixed(2)}, with $${cumulativeDividend.toFixed(2)} saved vs. paying a 20% external manager — your indiiOS Dividend.`
+                }
+            };
         }
     },
-    authorizedTools: ['analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report'],
+    authorizedTools: ['analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue'],
     tools: [{
         functionDeclarations: [
             {
@@ -363,6 +411,19 @@ If a task is outside Finance, say:
                         }
                     },
                     required: ["year", "transactions"]
+                }
+            },
+            {
+                name: "forecast_revenue",
+                description: "Forecast revenue and the indiiOS Dividend (fees saved vs. 20% external manager) over N months given current streams and growth rate.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        current_monthly_streams: { type: "NUMBER", description: "Current monthly stream count." },
+                        growth_rate_percent: { type: "NUMBER", description: "Expected monthly growth rate as a percentage (e.g. 5 for 5%)." },
+                        months: { type: "NUMBER", description: "Number of months to project (1-24, default 12)." }
+                    },
+                    required: ["current_monthly_streams", "growth_rate_percent"]
                 }
             }
         ]

@@ -35,20 +35,14 @@ test.describe('Creative Studio', () => {
             });
         });
 
-        // authedPage fixture handles Guest Login and navigation to '/'
+        // authedPage fixture handles auth mock and navigates to '/'
 
-        // Navigate to creative module
-        const creativeNav = page.locator('[data-testid="nav-item-creative"]');
-        if (await creativeNav.isVisible().catch(() => false)) {
-            await creativeNav.click();
-            await page.waitForTimeout(2_000);
-        } else {
-            await page.goto('/#creative');
-            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10_000 });
-        }
+        // Navigate directly to creative module
+        await page.goto('/creative');
+        await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
 
-        // Wait for module header
-        await page.waitForSelector('h1, h2, [data-testid="creative-header"]', { timeout: 15_000 });
+        // Wait for the Creative module to fully mount (gallery button is always present in navbar)
+        await page.waitForSelector('[data-testid="gallery-view-btn"]', { state: 'attached', timeout: 30_000 });
     });
 
     test('should show gallery by default', async ({ authedPage: page }) => {
@@ -59,7 +53,7 @@ test.describe('Creative Studio', () => {
             await expect(galleryBtn).toBeVisible();
         }
         // App must not crash regardless
-        await expect(page.locator('#root')).toBeVisible();
+        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
     });
 
     test('should switch to direct generation mode', async ({ authedPage: page }) => {
@@ -75,7 +69,7 @@ test.describe('Creative Studio', () => {
         }
 
         // App must not crash regardless
-        await expect(page.locator('#root')).toBeVisible();
+        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
     });
 
     test('should handle prompt input and mode switching in Direct mode', async ({ authedPage: page }) => {
@@ -103,7 +97,7 @@ test.describe('Creative Studio', () => {
         }
 
         // App must not crash regardless
-        await expect(page.locator('#root')).toBeVisible();
+        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
     });
 
     test('should trigger generation UI state', async ({ authedPage: page }) => {
@@ -129,6 +123,6 @@ test.describe('Creative Studio', () => {
         }
 
         // App must not crash regardless
-        await expect(page.locator('#root')).toBeVisible();
+        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
     });
 });
