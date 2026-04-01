@@ -425,13 +425,13 @@ export default function LoginForm() {
                                             onClick={loginAsGuest}
                                             disabled={authLoading}
                                             data-testid="guest-login-btn"
-                                            className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 text-purple-200 rounded-2xl font-semibold hover:bg-purple-500/10 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                            className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-500/20 to-purple-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                                         >
-                                            <User className="w-5 h-5" />
-                                            <span>Guest Login (Dev)</span>
+                                            <User className="w-5 h-5 text-amber-400" />
+                                            <span>Start Founders Demo</span>
                                         </button>
-                                        <p className="text-center text-[10px] text-gray-500 mt-2 font-mono">
-                                            BYPASS AUTHENTICATION FOR LOCAL DEV
+                                        <p className="text-center text-[10px] text-amber-500/50 mt-2 font-mono">
+                                            BYPASS AUTH/ONBOARDING FOR PITCH
                                         </p>
                                     </div>
                                 )}

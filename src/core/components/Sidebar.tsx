@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search, Settings } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search, Settings, Gem } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
@@ -254,6 +254,37 @@ export default function Sidebar() {
                     </button>
                 </div>
             )}
+
+            {/* Founders Program Callout */}
+            <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
+                <button
+                    onClick={() => throttledSetModule('founders-checkout')}
+                    className={cn(
+                        "w-full flex items-center justify-center p-2 rounded-lg transition-all shadow-sm group",
+                        currentModule === 'founders-checkout'
+                            ? "bg-amber-500/20 border border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                            : isSidebarOpen
+                                ? "bg-gradient-to-r from-amber-500/10 to-purple-900/20 border border-amber-500/20 hover:bg-amber-500/20"
+                                : "bg-transparent hover:bg-amber-500/20 border border-transparent hover:border-amber-500/30",
+                        isSidebarOpen ? "gap-3" : ""
+                    )}
+                    aria-label="Founders Program"
+                    title={!isSidebarOpen ? "Founders Program" : undefined}
+                >
+                    <Gem size={16} className={cn(
+                        "transition-transform",
+                        currentModule === 'founders-checkout' ? "text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]" : "text-amber-500/70 group-hover:text-amber-400 group-hover:scale-110"
+                    )} />
+                    {isSidebarOpen && (
+                        <span className={cn(
+                            "text-sm font-semibold transition-colors",
+                            currentModule === 'founders-checkout' ? "text-amber-200" : "text-amber-200/70 group-hover:text-amber-200"
+                        )}>
+                            Founders Program
+                        </span>
+                    )}
+                </button>
+            </div>
 
             <div className="flex-1 py-4 space-y-6">
                 {/* Manager's Office */}

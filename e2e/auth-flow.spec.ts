@@ -48,7 +48,7 @@ test.describe('Authentication Flow', () => {
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 10000 });
 
         // Wait for at least one login button to be visible
-        const logInButton = page.getByRole('button', { name: /Sign In|Google|Guest Login/i }).first();
+        const logInButton = page.getByRole('button', { name: /Sign In|Google|Founders Demo/i }).first();
         await expect(logInButton).toBeVisible({ timeout: 5000 });
 
         console.log('[Auth] Login page rendered correctly');
