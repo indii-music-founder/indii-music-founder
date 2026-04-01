@@ -32,8 +32,8 @@ export default function FoundersCheckout() {
             const url = await createOneTimePayment({
                 userId: user.uid,
                 items: [{
-                    name: 'Founders Pass',
-                    description: 'Lifetime Genesis Access (Seat encoded in codebase)',
+                    name: 'indiiOS Genesis Covenant',
+                    description: 'Friends & Family Genesis Seed (Permanently encoded in the codebase)',
                     amount: 250000,
                     quantity: 1,
                 }],
@@ -83,7 +83,7 @@ export default function FoundersCheckout() {
             <div className="flex flex-col items-center justify-center h-full p-8 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-purple-900/10 pointer-events-none" />
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="z-10 bg-black/60 backdrop-blur-xl border border-amber-500/30 p-12 rounded-[3rem] max-w-xl text-center shadow-[0_0_100px_rgba(245,158,11,0.1)]">
-                    <h2 className="text-4xl font-black tracking-tighter text-white mb-2">Welcome, Founder <span className="text-amber-400">#{activationResult.seat}</span></h2>
+                    <h2 className="text-4xl font-black tracking-tighter text-white mb-2">Welcome to the Inner Circle, Founder <span className="text-amber-400">#{activationResult.seat}</span></h2>
                     <p className="text-gray-300 mb-8 leading-relaxed max-w-sm mx-auto">{activationResult.message}</p>
 
                     <div className="bg-black/80 rounded-2xl border border-white/5 overflow-hidden">
@@ -108,10 +108,10 @@ export default function FoundersCheckout() {
             <div className="flex flex-col items-center justify-center h-full p-8 max-w-2xl mx-auto">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
                     <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-4 text-center">
-                        Secure Your <span className="text-amber-400">Seat</span>.
+                        Cement Your <span className="text-amber-400">Legacy</span>.
                     </h1>
                     <p className="text-gray-400 mb-12 text-center text-lg max-w-md mx-auto leading-relaxed">
-                        Payment verified. Enter your preferred public name. This string, plus the timestamp, will be hashed and permanently committed.
+                        Investment verified. Enter the name you want etched into the foundation of indiiOS. This string, plus the timestamp, will be cryptographically hashed and permanently committed to the codebase.
                     </p>
 
                     {error && (
@@ -137,7 +137,7 @@ export default function FoundersCheckout() {
                             disabled={isProcessing || !displayName.trim()}
                             className="w-full py-4 bg-amber-500 text-black font-black rounded-xl hover:bg-amber-400 disabled:opacity-50 disabled:bg-gray-700 disabled:text-gray-400 transition-all flex items-center justify-center gap-2"
                         >
-                            {isProcessing ? 'Encoding to chain...' : 'Encode My Seat'}
+                            {isProcessing ? 'Encoding to chain...' : 'Encode My Covenant'}
                             {!isProcessing && <span>→</span>}
                         </button>
                     </div>
@@ -152,10 +152,10 @@ export default function FoundersCheckout() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/10 via-background to-background pointer-events-none" />
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="z-10 text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono tracking-widest uppercase mb-8">
-                    Founders Program
+                    Friends & Family Round
                 </div>
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-6">
-                    Claim Your <span className="text-amber-400">Position</span>.
+                    Back The <span className="text-amber-400">Vision</span>.
                 </h1>
 
                 {paymentStatus === 'cancelled' && (
@@ -170,7 +170,7 @@ export default function FoundersCheckout() {
                     disabled={isProcessing}
                     className="group relative px-10 py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg rounded-2xl transition-all shadow-[0_0_60px_rgba(245,158,11,0.2)] hover:shadow-[0_0_80px_rgba(245,158,11,0.4)] disabled:opacity-50"
                 >
-                    {isProcessing ? 'Connecting secured channel...' : 'Complete Payment ($2,500)'}
+                    {isProcessing ? 'Connecting secured channel...' : 'Support The Vision ($2,500)'}
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                 </button>
             </motion.div>

@@ -44,16 +44,13 @@ test.describe('Authentication Flow', () => {
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
 
-        // Check for login form elements
-        const emailInput = page.getByLabel(/email/i);
-        const passwordInput = page.getByLabel(/password/i);
-        const signInButton = page.getByRole('button', { name: /sign in/i });
+        // Wait for the main heading to ensure transitions are done
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 10000 });
 
-        // At least one auth method should be visible
-        const hasEmailLogin = await emailInput.isVisible({ timeout: 5000 }).catch(() => false);
-        const hasGoogleLogin = await page.getByRole('button', { name: /google/i }).isVisible({ timeout: 2000 }).catch(() => false);
+        // Wait for at least one login button to be visible
+        const logInButton = page.getByRole('button', { name: /Sign In|Google|Guest Login/i }).first();
+        await expect(logInButton).toBeVisible({ timeout: 5000 });
 
-        expect(hasEmailLogin || hasGoogleLogin).toBeTruthy();
         console.log('[Auth] Login page rendered correctly');
     });
 
@@ -92,9 +89,8 @@ test.describe('Authentication Flow', () => {
 
         await page.goto(BASE_URL);
         await page.waitForLoadState('domcontentloaded');
-
-        const emailInput = page.getByLabel(/email/i).first();
-        const passwordInput = page.getByLabel(/password/i).first();
+        const emailInput = page.locator('input[type="email"]').first();
+        const passwordInput = page.locator('input[type="password"]').first();
 
         // Skip if no email login form
         if (!await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -290,7 +286,7 @@ test.describe('Authentication Flow', () => {
         await page.waitForLoadState('domcontentloaded');
 
         // Should be redirected to login or see login form
-        const isOnLogin = await page.getByLabel(/email/i).isVisible({ timeout: 5000 }).catch(() => false);
+        const isOnLogin = await page.locator('input[type="email"]').isVisible({ timeout: 5000 }).catch(() => false);
         const isOnDashboard = await page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first().isVisible({ timeout: 2000 }).catch(() => false);
 
         // Either we're on login page, or we see an auth prompt
