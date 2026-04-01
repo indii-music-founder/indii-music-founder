@@ -54,11 +54,11 @@
 | 8.2 | Shared Agent Memory (Inter-Agent Context) implementation | [x] | Session |
 | 8.3 | Construct test suite for Multi-Agent flow (Conductor -> Specialist -> Action) | [x] | Session |
 
-## Sprint 9 — Founders Release (v2.0.0-founders)
+## Sprint 9 — Founders Release (v1.0.0-founders)
 
 | ID | Task | Status | Source |
 | :--- | :--- | :--- | :--- |
-| 9.1 | Version bump to `2.0.0-founders` | [x] | Phase 6 |
+| 9.1 | Version bump to `1.0.0-founders` | [x] | Phase 6 |
 | 9.2 | Remove 29 root junk files (logs, screenshots, test output) | [x] | Phase 5 |
 | 9.3 | Remove stale `test-results.json` / `test_list.json` | [x] | Phase 5 |
 | 9.4 | TypeScript clean (0 errors) | [x] | Phase 1 |
@@ -68,10 +68,19 @@
 | 9.8 | Security headers verified (CSP, HSTS, X-Frame, etc.) | [x] | Phase 2 |
 | 9.9 | Firestore rules audit (559 lines, deny-default) | [x] | Phase 2 |
 | 9.10 | Founders entry point: Guest → Demo → Checkout | [x] | Phase 3 |
-| 9.11 | Enable App Check enforcement in production | [x] | Phase 2 — enforced by default, reCAPTCHA registered |
-| 9.12 | Strip `localhost` from CSP `connect-src` for prod | [x] | Phase 2 — `bb2ffd95` |
-| 9.13 | Production deploy to Firebase Hosting | [x] | Phase 4 — live at indiios-studio.web.app |
-| 9.14 | Git tag `v2.0.0-founders` | [x] | Phase 6 — tag pushed |
+| 9.11 | Enable App Check enforcement in production | [x] | Phase 2 |
+| 9.12 | Strip `localhost` from CSP `connect-src` for prod | [x] | Phase 2 |
+| 9.13 | Production deploy to Firebase Hosting | [x] | Phase 4 |
+| 9.14 | Git tag `v1.0.0-founders` | [x] | Phase 6 |
+| 9.15 | Rebrand "Friends & Family" → "Founders Round" | [x] | User request |
+| 9.16 | Simplify auth: remove Google Sign-In, promote Guest | [x] | User request |
+| 9.17 | Enable `loginAsGuest` in production (was DEV-only) | [x] | Audit catch |
+| 9.18 | Dashboard: Founders Round investment banner + CTA | [x] | User request |
+| 9.19 | Dashboard: Platform comparison card (Web vs Desktop) | [x] | User request |
+| 9.20 | Sidebar: Upgrade Founders CTA ("Back the Vision") | [x] | User request |
+| 9.21 | Login branding: "Founders Release • v1.0" | [x] | User request |
+| 9.22 | Footer: Privacy/Terms as clickable links | [x] | Audit catch |
+| 9.23 | Snapshot tests updated for Sidebar CTA changes | [x] | CI fix |
 
 ---
 *Self-managed task list for Antigravity.*
