@@ -199,6 +199,7 @@ export async function streamWithFallback(
             tools: tools as unknown as Record<string, unknown>[],
             toolConfig: options?.toolConfig,
             systemInstruction,
+            abortSignal: options?.signal
         } as Record<string, unknown>,
     });
 
