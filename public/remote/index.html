@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>indiiREMOTE</title>
-    
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -23,22 +25,40 @@
             }
         }
     </script>
-    
+
     <!-- React & Babel (CDN) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        body { background-color: #0d1117; color: white; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(22, 27, 34, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(48, 54, 61, 0.4); }
-        .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-        ::-webkit-scrollbar { display: none; }
+        body {
+            background-color: #0d1117;
+            color: white;
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass {
+            background: rgba(22, 27, 34, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(48, 54, 61, 0.4);
+        }
+
+        .btn-active:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
     <div id="root"></div>
 
@@ -49,7 +69,7 @@
             const [authenticated, setAuthenticated] = useState(false);
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
-            
+
             const [socket, setSocket] = useState(null);
             const [desktopState, setDesktopState] = useState(null);
             const [connected, setConnected] = useState(false);
@@ -61,7 +81,10 @@
                 try {
                     const res = await fetch('/api/auth', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
                         body: JSON.stringify({ password })
                     });
                     const data = await res.json();
@@ -80,7 +103,7 @@
             const connectWebSocket = (wsToken) => {
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const ws = new WebSocket(`${protocol}//${window.location.host}`);
-                
+
                 ws.onopen = () => {
                     // Send auth token as first message (required by server)
                     ws.send(JSON.stringify({ type: 'auth', token: wsToken }));
@@ -96,7 +119,7 @@
                         }
                     } catch (e) { console.error('Parse error', e); }
                 };
-                
+
                 setSocket(ws);
             };
 
@@ -119,10 +142,10 @@
                             <i data-lucide="cpu" className="w-12 h-12 text-indii-act mb-6 opacity-80"></i>
                             <h1 className="text-2xl font-bold tracking-tight mb-2">indiiREMOTE</h1>
                             <p className="text-gray-400 text-center text-sm mb-8">Access your desktop mainframe.</p>
-                            
+
                             <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
-                                <input 
-                                    type="password" 
+                                <input
+                                    type="password"
                                     placeholder="Enter Secure PIN"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
@@ -224,4 +247,5 @@
         root.render(<App />);
     </script>
 </body>
+
 </html>

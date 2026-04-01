@@ -13,6 +13,8 @@ import { defineConfig, devices } from '@playwright/test';
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4242';
 const isLocalhost = baseURL.startsWith('http://localhost') || baseURL.startsWith('http://127.0.0.1');
 
+process.env.VITE_SKIP_ONBOARDING = 'true';
+
 export default defineConfig({
     testDir: './e2e',
     // DISABLE parallel execution to prevent E2E auth mock cross-contamination 

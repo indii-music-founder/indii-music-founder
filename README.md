@@ -100,14 +100,29 @@ The core of indiiOS is **indii**, an intelligent orchestration hub with **17 spe
 
 Instead of routing sensitive, unreleased creative assets through a public cloud server, indiiREMOTE provisions a secure, encrypted **Ngrok tunnel** directly to a local Express server running inside the Electron main process.
 
-### How It Works
+### Setup & Connection Instructions
 
-1. **Device Pairing:** The Electron app generates a secure 6-digit cryptographic PIN and displays a QR code containing the active Ngrok tunnel URL.
-2. **Thin-Client Dashboard:** Scanning the QR code opens a lightweight React SPA served directly by the user's desktop application.
-3. **End-to-End Encryption:** After entering the PIN, the mobile device establishes a secure WebSocket connection over the Ngrok tunnel directly to the desktop.
-4. **Live Execution:** The mobile dashboard displays a real-time feed of active AI agent actions and allows the user to trigger commands (Execute, Explain, Fix Bugs, etc.) without being physically present at their computer.
+To control your indiiOS studio from your phone while tracking or recording away from your desk:
 
-By keeping the "brain" on the desktop device and utilizing the phone strictly as a remote controller, indiiOS enables true untethered mobility without compromising data sovereignty or relying on external cloud storage.
+1. **Obtain an Ngrok Auth Token:**
+   - Sign up at [ngrok.com](https://ngrok.com) and get your free Authtoken.
+   - Open your `.env` file in the indiiOS root directory and add it:
+
+     ```env
+     VITE_NGROK_AUTHTOKEN=your_ngrok_token_here
+     ```
+
+2. **Start Your Studio:**
+   - Launch the desktop application normally (`npm run desktop:dev` or open the packaged app).
+3. **Open Mobile Remote:**
+   - In the indiiOS desktop sidebar, click the **Mobile Remote** device icon.
+   - The app will automatically establish a secure, encrypted tunnel using your token.
+4. **Scan & Pair:**
+   - A unique 6-digit PIN and a dynamic QR code will appear on your computer screen.
+   - Scan the QR code with your phone's camera to open the dashboard.
+   - Enter the 6-digit PIN to establish the secure WebSocket connection.
+
+Your phone is now a live remote control. You can trigger agents, approve mastering chains, or generate assets without ever leaving the vocal booth.
 
 ---
 
