@@ -68,7 +68,7 @@
 | 9.8 | Security headers verified (CSP, HSTS, X-Frame, etc.) | [x] | Phase 2 |
 | 9.9 | Firestore rules audit (559 lines, deny-default) | [x] | Phase 2 |
 | 9.10 | Founders entry point: Guest → Demo → Checkout | [x] | Phase 3 |
-| 9.11 | Enable App Check enforcement in production | [/] | Phase 2 (GCP Console — path documented) |
+| 9.11 | Enable App Check enforcement in production | [x] | Phase 2 — enforced by default, reCAPTCHA registered |
 | 9.12 | Strip `localhost` from CSP `connect-src` for prod | [x] | Phase 2 — `bb2ffd95` |
 | 9.13 | Production deploy to Firebase Hosting | [x] | Phase 4 — live at indiios-studio.web.app |
 | 9.14 | Git tag `v2.0.0-founders` | [x] | Phase 6 — tag pushed |
