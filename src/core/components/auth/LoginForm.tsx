@@ -146,7 +146,7 @@ export default function LoginForm() {
                     >
                         indii<span className="text-purple-500">OS</span>
                     </motion.h1>
-                    <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v2.0</p>
+                    <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v1.0</p>
                 </div>
 
                 {/* ── Forgot Password View ────────────────────────────────── */}
