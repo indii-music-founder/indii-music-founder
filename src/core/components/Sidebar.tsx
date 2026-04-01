@@ -255,34 +255,43 @@ export default function Sidebar() {
                 </div>
             )}
 
-            {/* Founders Program Callout */}
+            {/* Founders Round — Primary Sales CTA */}
             <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
                 <button
                     onClick={() => throttledSetModule('founders-checkout')}
                     className={cn(
-                        "w-full flex items-center justify-center p-2 rounded-lg transition-all shadow-sm group",
+                        "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
                         currentModule === 'founders-checkout'
-                            ? "bg-amber-500/20 border border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-                            : isSidebarOpen
-                                ? "bg-gradient-to-r from-amber-500/10 to-purple-900/20 border border-amber-500/20 hover:bg-amber-500/20"
-                                : "bg-transparent hover:bg-amber-500/20 border border-transparent hover:border-amber-500/30",
+                            ? "bg-amber-500/20 border border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+                            : "bg-gradient-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)]",
                         isSidebarOpen ? "gap-3" : ""
                     )}
-                    aria-label="Founders Program"
-                    title={!isSidebarOpen ? "Founders Program" : undefined}
+                    aria-label="Back the Vision — Invest"
+                    title={!isSidebarOpen ? "Back the Vision" : undefined}
                 >
+                    {/* Pulsing glow ring */}
+                    <div className="absolute inset-0 rounded-xl border border-amber-500/20 animate-pulse pointer-events-none" />
+
                     <Gem size={16} className={cn(
-                        "transition-transform",
-                        currentModule === 'founders-checkout' ? "text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]" : "text-amber-500/70 group-hover:text-amber-400 group-hover:scale-110"
+                        "transition-all relative z-10",
+                        currentModule === 'founders-checkout'
+                            ? "text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                            : "text-amber-400 group-hover:text-amber-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]"
                     )} />
-                    {isSidebarOpen && (
+                    {isSidebarOpen ? (
                         <span className={cn(
-                            "text-sm font-semibold transition-colors",
-                            currentModule === 'founders-checkout' ? "text-amber-200" : "text-amber-200/70 group-hover:text-amber-200"
+                            "text-sm font-bold tracking-wide transition-colors relative z-10",
+                            currentModule === 'founders-checkout' ? "text-amber-200" : "text-amber-300/90 group-hover:text-amber-200"
                         )}>
-                            Founders Program
+                            Back the Vision
+                        </span>
+                    ) : (
+                        <span className="text-[8px] font-black text-amber-400/70 uppercase tracking-widest absolute -bottom-0.5">
                         </span>
                     )}
+
+                    {/* Shimmer sweep */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
                 </button>
             </div>
 
