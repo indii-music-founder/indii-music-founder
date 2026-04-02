@@ -42,6 +42,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const isPopoutActive = useVideoEditorStore(state => state.isPopoutActive);
 
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
+    const handleFrameUpdate = React.useCallback((frame: number) => setCurrentTime(frame), [setCurrentTime]);
 
     return (
         <div className="flex flex-col h-full bg-[--background] text-[--foreground]">
@@ -87,7 +88,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                         <VideoPreview
                             playerRef={playerRef}
                             project={project}
-                            onFrameUpdate={(frame) => setCurrentTime(frame)}
+                            onFrameUpdate={handleFrameUpdate}
                         />
                     </div>
                 )}
