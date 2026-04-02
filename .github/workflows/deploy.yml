@@ -206,7 +206,7 @@ jobs:
           OUTPUT=$(firebase hosting:channel:deploy staging \
             --project indiios-v-1-1 \
             --expires 2h \
-            --only hosting:app \
+            --only app \
             --json 2>&1)
           EXIT_CODE=$?
           set -e
@@ -315,7 +315,7 @@ jobs:
           firebase hosting:channel:deploy pr-${{ github.event.pull_request.number }} \
             --project indiios-v-1-1 \
             --expires 7d \
-            --only hosting:app
+            --only app
         continue-on-error: true
 
       - name: Deploy landing page to Firebase Hosting
