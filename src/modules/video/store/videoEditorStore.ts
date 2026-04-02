@@ -23,6 +23,15 @@ export interface VideoClip {
     scale?: number;
     opacity?: number;
     rotation?: number;
+    anchorX?: number; // 0 to 1 (percentage)
+    anchorY?: number; // 0 to 1 (percentage)
+    borderRadius?: number;
+    volume?: number; // 0 to 1
+    // Text specific properties
+    textColor?: string;
+    fontSize?: number;
+    fontWeight?: string;
+    textAlign?: 'left' | 'center' | 'right';
     filter?: {
         type: 'blur' | 'grayscale' | 'sepia' | 'contrast' | 'brightness';
         intensity: number; // 0-100

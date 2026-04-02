@@ -26,6 +26,10 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
     let translateY = clip.y || 0;
     let scale = clip.scale ?? 1;
     let rotation = clip.rotation ?? 0;
+    let anchorX = clip.anchorX ?? 0.5;
+    let anchorY = clip.anchorY ?? 0.5;
+    let borderRadius = clip.borderRadius ?? 0;
+    let volume = clip.volume ?? 1;
 
     // Slide In
     if (transitionIn?.type === 'slide') {
@@ -94,6 +98,10 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
                 case 'rotation': rotation = value; break;
                 case 'x': translateX = value; break;
                 case 'y': translateY = value; break;
+                case 'anchorX': anchorX = value; break;
+                case 'anchorY': anchorY = value; break;
+                case 'borderRadius': borderRadius = value; break;
+                case 'volume': volume = value; break;
             }
         });
     }
@@ -124,15 +132,19 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
         width: '100%',
         height: '100%',
         display: 'flex',
-        justifyContent: 'center',
+        justifyContent: clip.type === 'text' ? (clip.textAlign === 'left' ? 'flex-start' : clip.textAlign === 'right' ? 'flex-end' : 'center') : 'center',
         alignItems: 'center',
-        fontSize: 50,
-        color: 'white',
-        textAlign: 'center',
+        fontSize: clip.fontSize ?? 50,
+        fontWeight: clip.fontWeight ?? 'bold',
+        color: clip.textColor ?? 'white',
+        textAlign: clip.textAlign ?? 'center',
         opacity,
+        transformOrigin: `${anchorX * 100}% ${anchorY * 100}%`,
         transform: `translate(${translateX}px, ${translateY}px) scale(${scale}) rotate(${rotation}deg)`,
         clipPath,
-        filter
+        filter,
+        borderRadius: `${borderRadius}px`,
+        overflow: 'hidden'
     };
 
     switch (clip.type) {
@@ -144,13 +156,13 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
             );
         case 'video':
             if (!clip.src) return null;
-            return <Video src={clip.src} style={style} crossOrigin="anonymous" />;
+            return <Video src={clip.src} style={style} crossOrigin="anonymous" volume={volume} />;
         case 'image':
             if (!clip.src) return null;
             return <Img src={clip.src} style={style} crossOrigin="anonymous" />;
         case 'audio':
             if (!clip.src) return null;
-            return <Audio src={clip.src} />;
+            return <Audio src={clip.src} volume={volume} />;
         default:
             return null;
     }
