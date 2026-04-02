@@ -55,7 +55,7 @@ export const ClipBasicsSection = memo(({ selectedClip, updateClip }: ClipBasicsS
                     onChange={handleNameChange}
                 />
             </PropertyRow>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-2 gap-1.5 mt-1.5">
                 <PropertyRow label="Start Frame">
                     <StyledInput
                         type="number"
@@ -141,7 +141,7 @@ export const TransformSection = memo(({ selectedClip, updateClip }: TransformSec
 
     return (
         <PanelSection title="Transform">
-            <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="grid grid-cols-2 gap-1.5 mb-1.5">
                 <PropertyRow label="Scale">
                     <div className="flex items-center gap-1">
                         <StyledInput
@@ -171,7 +171,7 @@ export const TransformSection = memo(({ selectedClip, updateClip }: TransformSec
                 </PropertyRow>
             </div>
             <PropertyRow label="Opacity">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     <StyledRange
                         min="0"
                         max="1"
@@ -185,7 +185,7 @@ export const TransformSection = memo(({ selectedClip, updateClip }: TransformSec
                     />
                 </div>
             </PropertyRow>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-2 gap-1.5 mt-1.5">
                 <PropertyRow label="X Position">
                     <div className="flex items-center gap-1">
                         <StyledInput
@@ -213,7 +213,7 @@ export const TransformSection = memo(({ selectedClip, updateClip }: TransformSec
                     </div>
                 </PropertyRow>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-2 gap-1.5 mt-1.5">
                 <PropertyRow label="Anchor X">
                     <div className="flex items-center gap-1">
                         <StyledInput
@@ -243,7 +243,7 @@ export const TransformSection = memo(({ selectedClip, updateClip }: TransformSec
                     </div>
                 </PropertyRow>
             </div>
-            <PropertyRow label="Border Radius" className="mt-2">
+            <PropertyRow label="Border Radius" className="mt-1.5">
                 <div className="flex items-center gap-1">
                     <StyledInput
                         type="number"

@@ -42,6 +42,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const isPopoutActive = useVideoEditorStore(state => state.isPopoutActive);
 
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
+    const handleFrameUpdate = React.useCallback((frame: number) => setCurrentTime(frame), [setCurrentTime]);
 
     return (
         <div className="flex flex-col h-full bg-[--background] text-[--foreground]">
@@ -51,12 +52,12 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => useVideoEditorStore.getState().setViewMode('director')}
-                            className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-md text-xs font-bold uppercase transition-colors"
+                            className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-colors"
                         >
                             &larr; Back to Director
                         </button>
-                        <h2 className="font-bold text-lg border-l border-gray-800 pl-4">Studio Editor</h2>
-                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">{project.width}x{project.height} @ {project.fps}fps</span>
+                        <h2 className="font-bold text-sm border-l border-gray-800 pl-4">Studio Editor</h2>
+                        <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">{project.width}x{project.height} @ {project.fps}fps</span>
                     </div>
                 }
                 right={
@@ -71,7 +72,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 }
             />
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 min-h-0 flex overflow-hidden">
                 <VideoEditorSidebar
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
@@ -87,7 +88,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                         <VideoPreview
                             playerRef={playerRef}
                             project={project}
-                            onFrameUpdate={(frame) => setCurrentTime(frame)}
+                            onFrameUpdate={handleFrameUpdate}
                         />
                     </div>
                 )}
@@ -101,7 +102,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             </div>
 
             <div
-                className="h-1/3 min-h-[220px] max-h-[350px] shrink-0 overflow-y-auto custom-scrollbar relative border-t border-[--border]"
+                className="h-[280px] flex-none shrink-0 overflow-y-auto custom-scrollbar relative border-t border-[#1a1a1a]"
                 onDrop={handleDrop}
                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
             >

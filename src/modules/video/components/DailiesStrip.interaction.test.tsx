@@ -80,7 +80,7 @@ describe('DailiesStrip Interaction', () => {
         );
 
         const vid2 = screen.getByTestId('daily-item-vid2');
-        // Check for border-yellow-500 class or similar indicating selection
-        expect(vid2.className).toContain('border-yellow-500');
+        // Check for border-purple-500/50 class or similar indicating selection
+        expect(vid2.className).toContain('border-purple-500/50');
     });
 });

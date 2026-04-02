@@ -233,256 +233,259 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     {/* Veo 3.1 Character Consistency */}
                     <CharacterLibrary />
 
-                    {/* Negative Prompt */}
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-gray-500 tracking-wider">NEGATIVE PROMPT</label>
-                        <textarea
-                            value={studioControls.negativePrompt}
-                            onChange={(e) => setStudioControls({ negativePrompt: e.target.value })}
-                            className="w-full bg-black/40 text-white text-sm p-3 rounded-xl border border-white/10 outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 transition-all h-20 resize-none placeholder:text-gray-600 shadow-inner"
-                            placeholder="Blurry, shaky, distorted, text, watermark..."
-                        />
-                    </div>
-
-                    {/* Technical Settings */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">ASPECT RATIO</label>
-                            <div className="relative group">
-                                <select
-                                    value={studioControls.aspectRatio}
-                                    onChange={(e) => setStudioControls({ aspectRatio: e.target.value as VideoAspectRatio })}
-                                    data-testid="aspect-ratio-select"
-                                    className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
-                                >
-                                    <option value="16:9" data-testid="aspect-ratio-option-16-9">16:9 Landscape</option>
-                                    <option value="1:1" data-testid="aspect-ratio-option-1-1">1:1 Square</option>
-                                    <option value="9:16" data-testid="aspect-ratio-option-9-16">9:16 Portrait</option>
-                                    <option value="4:3">4:3 Standard</option>
-                                    <option value="3:4">3:4 Vertical</option>
-                                </select>
-                                <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">RESOLUTION</label>
-                            <div className="relative group">
-                                <select
-                                    value={studioControls.resolution || '720p'}
-                                    onChange={(e) => setStudioControls({ resolution: e.target.value as VideoResolution })}
-                                    data-testid="resolution-select"
-                                    className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all font-mono"
-                                >
-                                    <option value="720p" data-testid="resolution-option-hd">HD (720p)</option>
-                                    <option value="1080p" data-testid="resolution-option-fhd">FHD (1080p)</option>
-                                    <option value="4k" data-testid="resolution-option-4k">Ultra HD (4K)</option>
-                                </select>
-                                <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">SEED</label>
-                            <input
-                                type="text"
-                                pattern="[0-9]*"
-                                value={studioControls.seed || ''}
-                                onChange={(e) => setStudioControls({ seed: e.target.value })}
-                                placeholder="Random"
-                                className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-gray-600 font-mono"
+                    {/* Advanced Controls Group */}
+                    <div className="bg-[#0a0a0a] rounded-xl border border-white/5 p-4 space-y-5">
+                        {/* Negative Prompt */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">NEGATIVE PROMPT</label>
+                            <textarea
+                                value={studioControls.negativePrompt}
+                                onChange={(e) => setStudioControls({ negativePrompt: e.target.value })}
+                                className="w-full bg-black/40 text-white text-xs p-3 rounded-xl border border-white/10 outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 transition-all h-16 resize-none placeholder:text-gray-700 shadow-inner"
+                                placeholder="Blurry, shaky, distorted, text, watermark..."
                             />
                         </div>
-                    </div>
 
-                    {/* Generation Tier & Intelligence */}
-                    <div className="space-y-4 pt-4 border-t border-white/10">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
-                                    <Sparkles size={12} className="text-purple-400" /> GENERATION TIER
-                                </label>
-                                <p className="text-[8px] text-gray-600 uppercase font-medium">FAST IS ~50% CHEAPER</p>
+                        {/* Technical Settings */}
+                        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/5">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-gray-500 tracking-wider">ASPECT RATIO</label>
+                                <div className="relative group">
+                                    <select
+                                        value={studioControls.aspectRatio}
+                                        onChange={(e) => setStudioControls({ aspectRatio: e.target.value as VideoAspectRatio })}
+                                        data-testid="aspect-ratio-select"
+                                        className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
+                                    >
+                                        <option value="16:9" data-testid="aspect-ratio-option-16-9">16:9 Landscape</option>
+                                        <option value="1:1" data-testid="aspect-ratio-option-1-1">1:1 Square</option>
+                                        <option value="9:16" data-testid="aspect-ratio-option-9-16">9:16 Portrait</option>
+                                        <option value="4:3">4:3 Standard</option>
+                                        <option value="3:4">3:4 Vertical</option>
+                                    </select>
+                                    <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
+                                </div>
                             </div>
-                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
-                                <button
-                                    onClick={() => setStudioControls({ model: 'fast' })}
-                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'fast' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
-                                >
-                                    FAST
-                                </button>
-                                <button
-                                    onClick={() => setStudioControls({ model: 'pro' })}
-                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'pro' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
-                                >
-                                    PRO
-                                </button>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-gray-500 tracking-wider">RESOLUTION</label>
+                                <div className="relative group">
+                                    <select
+                                        value={studioControls.resolution || '720p'}
+                                        onChange={(e) => setStudioControls({ resolution: e.target.value as VideoResolution })}
+                                        data-testid="resolution-select"
+                                        className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all font-mono"
+                                    >
+                                        <option value="720p" data-testid="resolution-option-hd">HD (720p)</option>
+                                        <option value="1080p" data-testid="resolution-option-fhd">FHD (1080p)</option>
+                                        <option value="4k" data-testid="resolution-option-4k">Ultra HD (4K)</option>
+                                    </select>
+                                    <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-gray-500 tracking-wider">SEED</label>
+                                <input
+                                    type="text"
+                                    pattern="[0-9]*"
+                                    value={studioControls.seed || ''}
+                                    onChange={(e) => setStudioControls({ seed: e.target.value })}
+                                    placeholder="Random"
+                                    className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-gray-600 font-mono"
+                                />
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 hover:border-dept-creative/30 transition-all">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
-                                    PERSON GENERATION
-                                </label>
+                        {/* Generation Tier & Intelligence */}
+                        <div className="space-y-4 pt-4 border-t border-white/10">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
+                                        <Sparkles size={12} className="text-purple-400" /> GENERATION TIER
+                                    </label>
+                                    <p className="text-[8px] text-gray-600 uppercase font-medium">FAST IS ~50% CHEAPER</p>
+                                </div>
+                                <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                                    <button
+                                        onClick={() => setStudioControls({ model: 'fast' })}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'fast' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                    >
+                                        FAST
+                                    </button>
+                                    <button
+                                        onClick={() => setStudioControls({ model: 'pro' })}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'pro' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                    >
+                                        PRO
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
-                                <button
-                                    onClick={() => setStudioControls({ personGeneration: 'dont_allow' })}
-                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'dont_allow' ? 'bg-red-500/20 text-red-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
-                                >
-                                    DONT ALLOW
-                                </button>
-                                <button
-                                    onClick={() => setStudioControls({ personGeneration: 'allow_adult' })}
-                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'allow_adult' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
-                                >
-                                    ALLOW ADULT
-                                </button>
-                                <button
-                                    onClick={() => setStudioControls({ personGeneration: 'allow_all' })}
-                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'allow_all' ? 'bg-green-500/20 text-green-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
-                                >
-                                    ALLOW ALL
-                                </button>
+
+                            <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 hover:border-dept-creative/30 transition-all">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
+                                        PERSON GENERATION
+                                    </label>
+                                </div>
+                                <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                                    <button
+                                        onClick={() => setStudioControls({ personGeneration: 'dont_allow' })}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'dont_allow' ? 'bg-red-500/20 text-red-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                    >
+                                        DONT ALLOW
+                                    </button>
+                                    <button
+                                        onClick={() => setStudioControls({ personGeneration: 'allow_adult' })}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'allow_adult' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                    >
+                                        ALLOW ADULT
+                                    </button>
+                                    <button
+                                        onClick={() => setStudioControls({ personGeneration: 'allow_all' })}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'allow_all' ? 'bg-green-500/20 text-green-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                    >
+                                        ALLOW ALL
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 group hover:border-dept-creative/30 transition-all cursor-pointer"
+                                onClick={() => setStudioControls({ thinking: !studioControls.thinking })}>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-dept-creative tracking-wider flex items-center gap-2">
+                                        DEEP THINKING (GEMINI 3)
+                                    </label>
+                                    <p className="text-[9px] text-gray-500 leading-tight">Apply advanced physics & continuity reasoning before rendering.</p>
+                                </div>
+                                <div className={`w-10 h-5 rounded-full relative transition-colors ${studioControls.thinking ? 'bg-dept-creative' : 'bg-white/10'}`}>
+                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${studioControls.thinking ? 'left-6' : 'left-1'}`} />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 group hover:border-dept-creative/30 transition-all cursor-pointer"
-                            onClick={() => setStudioControls({ thinking: !studioControls.thinking })}>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-dept-creative tracking-wider flex items-center gap-2">
-                                    DEEP THINKING (GEMINI 3)
-                                </label>
-                                <p className="text-[9px] text-gray-500 leading-tight">Apply advanced physics & continuity reasoning before rendering.</p>
+                        {/* Shot List */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <label className="text-[10px] font-bold text-gray-500 tracking-wider">SHOT LIST</label>
+                                <span className="text-[10px] text-gray-600 font-mono">00:00 / 00:15</span>
                             </div>
-                            <div className={`w-10 h-5 rounded-full relative transition-colors ${studioControls.thinking ? 'bg-dept-creative' : 'bg-white/10'}`}>
-                                <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${studioControls.thinking ? 'left-6' : 'left-1'}`} />
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Shot List */}
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">SHOT LIST</label>
-                            <span className="text-[10px] text-gray-600 font-mono">00:00 / 00:15</span>
-                        </div>
-
-                        <div className="space-y-2">
-                            {[1, 2].map((shot) => (
-                                <motion.div
-                                    key={shot}
-                                    whileHover={{ scale: 1.01 }}
-                                    className="group relative bg-black/40 rounded-xl border border-white/10 p-2 flex gap-3 hover:border-blue-500/30 transition-all cursor-pointer shadow-sm"
-                                >
-                                    <div className="w-16 h-16 bg-white/5 rounded-lg flex items-center justify-center flex-shrink-0 border border-white/5">
-                                        <Video size={16} className="text-gray-600" />
-                                    </div>
-                                    <div className="flex-1 min-w-0 py-1">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="text-xs font-medium text-gray-300 group-hover:text-blue-400 transition-colors">Shot {shot}</span>
-                                            <span className="text-[10px] font-mono text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">4.0s</span>
+                            <div className="space-y-2">
+                                {[1, 2].map((shot) => (
+                                    <motion.div
+                                        key={shot}
+                                        whileHover={{ scale: 1.01 }}
+                                        className="group relative bg-black/40 rounded-xl border border-white/10 p-2 flex gap-3 hover:border-blue-500/30 transition-all cursor-pointer shadow-sm"
+                                    >
+                                        <div className="w-16 h-16 bg-white/5 rounded-lg flex items-center justify-center flex-shrink-0 border border-white/5">
+                                            <Video size={16} className="text-gray-600" />
                                         </div>
-                                        <p className="text-[10px] text-gray-500 truncate">Cinematic drone shot over mountains...</p>
-                                    </div>
-                                    <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-1 hover:bg-white/10 rounded"><Settings size={10} className="text-gray-400" /></button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                            <button
-                                data-testid="add-shot-btn"
-                                className="w-full py-3 border border-dashed border-white/10 rounded-xl text-xs text-gray-500 hover:text-gray-300 hover:border-white/20 hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-                            >
-                                <Plus size={12} /> Add New Shot
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Motion Controls */}
-                    <div className="space-y-4 pt-4 border-t border-white/10">
-                        <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
-                            <Move size={12} /> CAMERA MOVEMENT
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {['Zoom In', 'Pan Left', 'Tilt Up'].map((move) => (
+                                        <div className="flex-1 min-w-0 py-1">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-xs font-medium text-gray-300 group-hover:text-blue-400 transition-colors">Shot {shot}</span>
+                                                <span className="text-[10px] font-mono text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">4.0s</span>
+                                            </div>
+                                            <p className="text-[10px] text-gray-500 truncate">Cinematic drone shot over mountains...</p>
+                                        </div>
+                                        <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button className="p-1 hover:bg-white/10 rounded"><Settings size={10} className="text-gray-400" /></button>
+                                        </div>
+                                    </motion.div>
+                                ))}
                                 <button
-                                    key={move}
-                                    data-testid={`camera-${move.toLowerCase().replace(' ', '-')}`}
-                                    className="px-2 py-2 bg-black/40 hover:bg-white/10 rounded-lg text-[10px] text-gray-300 border border-white/10 hover:border-white/20 transition-all"
+                                    data-testid="add-shot-btn"
+                                    className="w-full py-3 border border-dashed border-white/10 rounded-xl text-xs text-gray-500 hover:text-gray-300 hover:border-white/20 hover:bg-white/5 transition-all flex items-center justify-center gap-2"
                                 >
-                                    {move}
+                                    <Plus size={12} /> Add New Shot
                                 </button>
-                            ))}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Sliders */}
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <div className="flex justify-between">
-                                <label className="text-[10px] font-bold text-gray-500 tracking-wider">MOTION STRENGTH</label>
-                                <span className="text-[10px] text-gray-500 font-mono">{studioControls.motionStrength || 0.5}</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                step="1"
-                                value={(studioControls.motionStrength || 0.5) * 100}
-                                onChange={(e) => setStudioControls({ motionStrength: parseInt(e.target.value) / 100 })}
-                                data-testid="motion-slider"
-                                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between">
-                                <label className="text-[10px] font-bold text-gray-500 tracking-wider">FPS</label>
-                                <span className="text-[10px] text-gray-500 font-mono">24</span>
-                            </div>
-                            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full w-[40%] bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                        {/* Motion Controls */}
+                        <div className="space-y-4 pt-4 border-t border-white/10">
+                            <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
+                                <Move size={12} /> CAMERA MOVEMENT
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['Zoom In', 'Pan Left', 'Tilt Up'].map((move) => (
+                                    <button
+                                        key={move}
+                                        data-testid={`camera-${move.toLowerCase().replace(' ', '-')}`}
+                                        className="px-2 py-2 bg-black/40 hover:bg-white/10 rounded-lg text-[10px] text-gray-300 border border-white/10 hover:border-white/20 transition-all"
+                                    >
+                                        {move}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between">
-                                <label className="text-[10px] font-bold text-gray-500 tracking-wider">DURATION</label>
-                                <span className="text-[10px] text-gray-500 font-mono">{studioControls.duration}s</span>
+
+                        {/* Sliders */}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <label className="text-[10px] font-bold text-gray-500 tracking-wider">MOTION STRENGTH</label>
+                                    <span className="text-[10px] text-gray-500 font-mono">{studioControls.motionStrength || 0.5}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={(studioControls.motionStrength || 0.5) * 100}
+                                    onChange={(e) => setStudioControls({ motionStrength: parseInt(e.target.value) / 100 })}
+                                    data-testid="motion-slider"
+                                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                                />
                             </div>
-                            <input
-                                type="range"
-                                min="5"
-                                max="60"
-                                step="1"
-                                value={studioControls.duration}
-                                onChange={(e) => setStudioControls({ duration: parseInt(e.target.value) })}
-                                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
-                            />
-                            <div className="flex justify-between items-center mt-1">
-                                {studioControls.duration > 8 ? (
-                                    <p className="text-[10px] text-purple-400 flex items-center gap-1">
-                                        <Sparkles size={10} /> Long-form generation enabled
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <label className="text-[10px] font-bold text-gray-500 tracking-wider">FPS</label>
+                                    <span className="text-[10px] text-gray-500 font-mono">24</span>
+                                </div>
+                                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                                    <div className="h-full w-[40%] bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <label className="text-[10px] font-bold text-gray-500 tracking-wider">DURATION</label>
+                                    <span className="text-[10px] text-gray-500 font-mono">{studioControls.duration}s</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="5"
+                                    max="60"
+                                    step="1"
+                                    value={studioControls.duration}
+                                    onChange={(e) => setStudioControls({ duration: parseInt(e.target.value) })}
+                                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                                />
+                                <div className="flex justify-between items-center mt-1">
+                                    {studioControls.duration > 8 ? (
+                                        <p className="text-[10px] text-purple-400 flex items-center gap-1">
+                                            <Sparkles size={10} /> Long-form generation enabled
+                                        </p>
+                                    ) : <div />}
+                                    <p className="text-[10px] text-green-400 font-mono">
+                                        Est: ${getEstimatedCost()}
                                     </p>
-                                ) : <div />}
-                                <p className="text-[10px] text-green-400 font-mono">
-                                    Est: ${getEstimatedCost()}
-                                </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Render Button */}
-                    <div className="pt-4 border-t border-white/10">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleRender}
-                            disabled={isGenerating || !prompt.trim()}
-                            data-testid="render-sequence-btn"
-                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                        >
-                            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />}
-                            {isGenerating ? 'Rendering...' : 'Render Sequence'}
-                        </motion.button>
+                        {/* Render Button */}
+                        <div className="pt-4 border-t border-white/10">
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleRender}
+                                disabled={isGenerating || !prompt.trim()}
+                                data-testid="render-sequence-btn"
+                                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                            >
+                                {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />}
+                                {isGenerating ? 'Rendering...' : 'Render Sequence'}
+                            </motion.button>
+                        </div>
                     </div>
                 </div>
             )}
