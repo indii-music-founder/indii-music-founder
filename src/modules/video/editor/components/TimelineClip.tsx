@@ -85,7 +85,7 @@ export const TimelineClip = memo(({
             {(clip.type === 'video' || clip.type === 'image') && clip.src && (
                 <div className="absolute inset-0 z-0 opacity-70 pointer-events-none overflow-hidden rounded bg-black/50">
                     {clip.type === 'video' ? (
-                        <video src={clip.src} className="w-full h-full object-cover" muted />
+                        <video src={clip.src} className="w-full h-full object-cover" muted preload="none" />
                     ) : (
                         <img src={clip.src} className="w-full h-full object-cover" alt="" />
                     )}

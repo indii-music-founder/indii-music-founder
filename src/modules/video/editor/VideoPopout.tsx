@@ -9,6 +9,7 @@ import { MyComposition } from '../remotion/MyComposition';
  */
 export default function VideoPopout() {
     const { project, setProject } = useVideoEditorStore();
+    const playerRef = React.useRef<import('@remotion/player').PlayerRef>(null);
 
     useEffect(() => {
         // Only set up BroadcastChannel in the browser environment
@@ -26,7 +27,7 @@ export default function VideoPopout() {
                     playerRef.current.play();
                 } else if (action === 'pause') {
                     playerRef.current.pause();
-                } else if (action === 'seek') {
+                } else if (action === 'seek' && typeof event.data.frame === 'number') {
                     playerRef.current.seekTo(event.data.frame);
                 }
             }
@@ -48,7 +49,6 @@ export default function VideoPopout() {
 
     // Use the actual aspect ratio from the project settings
     const aspectRatio = project.width / project.height;
-    const playerRef = React.useRef<import('@remotion/player').PlayerRef>(null);
 
     return (
         <div className="w-screen h-screen bg-black flex flex-col items-center justify-center p-8 overflow-hidden select-none">
