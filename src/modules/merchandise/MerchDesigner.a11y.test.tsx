@@ -13,6 +13,7 @@ vi.mock('fabric', () => {
       sendObjectToBack = vi.fn();
       renderAll = vi.fn();
       on = vi.fn();
+      off = vi.fn();
       dispose = vi.fn();
       getObjects = vi.fn().mockReturnValue([]);
       toJSON = vi.fn();
@@ -23,6 +24,7 @@ vi.mock('fabric', () => {
     IText: vi.fn(),
     Textbox: vi.fn(),
     Image: { fromURL: vi.fn().mockResolvedValue({ scaleToWidth: vi.fn(), set: vi.fn() }) },
+    FabricObject: class { set = vi.fn() },
   };
 });
 

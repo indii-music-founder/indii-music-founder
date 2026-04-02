@@ -13,6 +13,8 @@ vi.mock('@/core/store', () => {
         updateJobStatus: vi.fn(),
         addJob: vi.fn(),
         setHasUnsavedChanges: vi.fn(),
+        isRightPanelOpen: false,
+        toggleRightPanel: vi.fn(),
     };
     const useStoreMock: any = vi.fn((selector?: any) => selector ? selector(mockState) : mockState);
     useStoreMock.getState = vi.fn(() => mockState);
@@ -124,6 +126,8 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
             setVideoInput: vi.fn(),
             currentOrganizationId: 'org-lens',
             currentProjectId: 'proj-veo',
+            isRightPanelOpen: false,
+            toggleRightPanel: vi.fn(),
         });
     });
 
