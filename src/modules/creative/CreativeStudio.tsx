@@ -1,6 +1,5 @@
 import React, { useEffect, lazy, Suspense } from 'react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-import CreativeGallery from './components/CreativeGallery';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
 import AILab from './components/AILab';
@@ -177,12 +176,10 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                     {/* Main Workspace - Studio Tab on Mobile, always visible on desktop */}
                     <div className={`${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0 bg-[#0f0f0f]`}>
-                        {viewMode === 'gallery' && <CreativeGallery />}
+                        {viewMode === 'direct' && <DirectGenerationTab />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
-                        {viewMode === 'direct' && <DirectGenerationTab />}
                         {viewMode === 'lab' && <AILab />}
-                        {viewMode === 'release' && <div className="text-white p-8 text-center">Use the Distribution module for release management.</div>}
                         {viewMode === 'editor' && selectedItem && (
                             <CreativeCanvas
                                 item={selectedItem}
