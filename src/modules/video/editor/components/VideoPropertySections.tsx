@@ -130,6 +130,15 @@ export const TransformSection = memo(({ selectedClip, updateClip }: TransformSec
     const handleYChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) =>
         updateClip(selectedClip.id, { y: parseFloat(e.target.value) }), [selectedClip.id, updateClip]);
 
+    const handleAnchorXChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) =>
+        updateClip(selectedClip.id, { anchorX: parseFloat(e.target.value) }), [selectedClip.id, updateClip]);
+
+    const handleAnchorYChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) =>
+        updateClip(selectedClip.id, { anchorY: parseFloat(e.target.value) }), [selectedClip.id, updateClip]);
+
+    const handleBorderRadiusChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) =>
+        updateClip(selectedClip.id, { borderRadius: parseFloat(e.target.value) }), [selectedClip.id, updateClip]);
+
     return (
         <PanelSection title="Transform">
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -204,6 +213,50 @@ export const TransformSection = memo(({ selectedClip, updateClip }: TransformSec
                     </div>
                 </PropertyRow>
             </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+                <PropertyRow label="Anchor X">
+                    <div className="flex items-center gap-1">
+                        <StyledInput
+                            type="number"
+                            step="0.1"
+                            value={selectedClip.anchorX ?? 0.5}
+                            onChange={handleAnchorXChange}
+                        />
+                        <KeyframeButton
+                            onClick={() => handleAddKeyframe('anchorX', selectedClip.anchorX ?? 0.5)}
+                            active={hasKeyframeAtCurrentTime("anchorX")}
+                        />
+                    </div>
+                </PropertyRow>
+                <PropertyRow label="Anchor Y">
+                    <div className="flex items-center gap-1">
+                        <StyledInput
+                            type="number"
+                            step="0.1"
+                            value={selectedClip.anchorY ?? 0.5}
+                            onChange={handleAnchorYChange}
+                        />
+                        <KeyframeButton
+                            onClick={() => handleAddKeyframe('anchorY', selectedClip.anchorY ?? 0.5)}
+                            active={hasKeyframeAtCurrentTime("anchorY")}
+                        />
+                    </div>
+                </PropertyRow>
+            </div>
+            <PropertyRow label="Border Radius" className="mt-2">
+                <div className="flex items-center gap-1">
+                    <StyledInput
+                        type="number"
+                        min="0"
+                        value={selectedClip.borderRadius ?? 0}
+                        onChange={handleBorderRadiusChange}
+                    />
+                    <KeyframeButton
+                        onClick={() => handleAddKeyframe('borderRadius', selectedClip.borderRadius ?? 0)}
+                        active={hasKeyframeAtCurrentTime("borderRadius")}
+                    />
+                </div>
+            </PropertyRow>
         </PanelSection>
     );
 });
@@ -366,19 +419,122 @@ export const ContentSection = memo(({ selectedClip, updateClip }: ContentSection
         updateClip(selectedClip.id, { text: e.target.value });
     }, [selectedClip.id, updateClip]);
 
+    const handleFontSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, { fontSize: parseInt(e.target.value) });
+    }, [selectedClip.id, updateClip]);
+
+    const handleColorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, { textColor: e.target.value });
+    }, [selectedClip.id, updateClip]);
+
+    const handleWeightChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        updateClip(selectedClip.id, { fontWeight: e.target.value });
+    }, [selectedClip.id, updateClip]);
+
+    const handleAlignChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        updateClip(selectedClip.id, { textAlign: e.target.value as 'left' | 'center' | 'right' });
+    }, [selectedClip.id, updateClip]);
+
     return (
-        <PanelSection title="Content">
-            <PropertyRow label="Text Content">
+        <PanelSection title="Text Content">
+            <PropertyRow label="Text">
                 <StyledTextArea
                     className="w-full min-h-[60px]"
                     value={selectedClip.text || ''}
                     onChange={handleTextChange}
                 />
             </PropertyRow>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+                <PropertyRow label="Font Size">
+                    <StyledInput
+                        type="number"
+                        min="8"
+                        max="800"
+                        value={selectedClip.fontSize ?? 50}
+                        onChange={handleFontSizeChange}
+                    />
+                </PropertyRow>
+                <PropertyRow label="Color">
+                    <StyledInput
+                        type="color"
+                        value={selectedClip.textColor ?? '#ffffff'}
+                        onChange={handleColorChange}
+                    />
+                </PropertyRow>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+                <PropertyRow label="Weight">
+                    <StyledSelect value={selectedClip.fontWeight ?? 'bold'} onChange={handleWeightChange}>
+                        <option value="normal">Normal</option>
+                        <option value="500">Medium</option>
+                        <option value="bold">Bold</option>
+                        <option value="900">Black</option>
+                    </StyledSelect>
+                </PropertyRow>
+                <PropertyRow label="Align">
+                    <StyledSelect value={selectedClip.textAlign ?? 'center'} onChange={handleAlignChange}>
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                    </StyledSelect>
+                </PropertyRow>
+            </div>
         </PanelSection>
     );
 });
 ContentSection.displayName = 'ContentSection';
+
+// --- Audio Section ---
+
+interface AudioSectionProps {
+    selectedClip: VideoClip;
+    updateClip: (id: string, updates: Partial<VideoClip>) => void;
+}
+
+export const AudioSection = memo(({ selectedClip, updateClip }: AudioSectionProps) => {
+    const ObjectCurrentTime = useVideoEditorStore(state => state.currentTime);
+    const currentTime = ObjectCurrentTime;
+
+    const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, { volume: parseFloat(e.target.value) });
+    }, [selectedClip.id, updateClip]);
+
+    const handleAddKeyframe = useCallback((property: string, value: number) => {
+        const relativeFrame = Math.max(0, currentTime - selectedClip.startFrame);
+        if (relativeFrame > selectedClip.durationInFrames) return;
+        const currentKeyframes = selectedClip.keyframes?.[property] || [];
+        const filteredKeyframes = currentKeyframes.filter(k => k.frame !== relativeFrame);
+        const newKeyframes = [...filteredKeyframes, { frame: relativeFrame, value }].sort((a, b) => a.frame - b.frame);
+        updateClip(selectedClip.id, { keyframes: { ...selectedClip.keyframes, [property]: newKeyframes } });
+    }, [selectedClip, currentTime, updateClip]);
+
+    const hasKeyframeAtCurrentTime = (property: string) => {
+        if (!selectedClip.keyframes?.[property]) return false;
+        const relativeFrame = currentTime - selectedClip.startFrame;
+        return selectedClip.keyframes[property].some(k => Math.abs(k.frame - relativeFrame) < 1);
+    };
+
+    return (
+        <PanelSection title="Audio Configuration">
+            <PropertyRow label="Volume">
+                <div className="flex items-center gap-2">
+                    <StyledRange
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={selectedClip.volume ?? 1}
+                        onChange={handleVolumeChange}
+                    />
+                    <KeyframeButton
+                        onClick={() => handleAddKeyframe('volume', selectedClip.volume ?? 1)}
+                        active={hasKeyframeAtCurrentTime("volume")}
+                    />
+                </div>
+            </PropertyRow>
+        </PanelSection>
+    );
+});
+AudioSection.displayName = 'AudioSection';
 
 // --- Source Section ---
 

@@ -10,7 +10,8 @@ import {
     FiltersSection,
     TransitionsSection,
     ContentSection,
-    SourceSection
+    SourceSection,
+    AudioSection
 } from './VideoPropertySections';
 
 interface VideoPropertiesPanelProps {
@@ -67,6 +68,12 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                         {selectedClip.type === 'text' && (
                             <div className={isPopoutActive ? "bg-gray-900/40 rounded-xl border border-white/5 overflow-hidden shadow-2xl" : ""}>
                                 <ContentSection selectedClip={selectedClip} updateClip={updateClip} />
+                            </div>
+                        )}
+
+                        {(selectedClip.type === 'video' || selectedClip.type === 'audio') && (
+                            <div className={isPopoutActive ? "bg-gray-900/40 rounded-xl border border-white/5 overflow-hidden shadow-2xl" : ""}>
+                                <AudioSection selectedClip={selectedClip} updateClip={updateClip} />
                             </div>
                         )}
 
