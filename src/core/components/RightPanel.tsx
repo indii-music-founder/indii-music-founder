@@ -1,12 +1,13 @@
 import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder, Bot, Sparkles, MessageSquare, Clock, X, History, Network, Book } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder, Bot, Sparkles, MessageSquare, Clock, X, History, Network, Book, SlidersHorizontal } from 'lucide-react';
 import { type ModuleId } from '@/core/constants';
 import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
 import WorkflowPanel from './right-panel/WorkflowPanel';
 import KnowledgePanel from './right-panel/KnowledgePanel';
+import AssetsPanel from './right-panel/AssetsPanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
 import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'motion/react';
@@ -25,7 +26,8 @@ export default function RightPanel() {
         setModule,
         isRightPanelOpen,
         toggleRightPanel,
-        isAgentOpen,
+        rightPanelTab,
+        setRightPanelTab,
         toggleAgentWindow,
         agentHistory,
         userProfile,
@@ -38,7 +40,8 @@ export default function RightPanel() {
             setModule: state.setModule,
             isRightPanelOpen: state.isRightPanelOpen,
             toggleRightPanel: state.toggleRightPanel,
-            isAgentOpen: state.isAgentOpen,
+            rightPanelTab: state.rightPanelTab,
+            setRightPanelTab: state.setRightPanelTab,
             toggleAgentWindow: state.toggleAgentWindow,
             agentHistory: state.agentHistory,
             userProfile: state.userProfile,
@@ -56,10 +59,10 @@ export default function RightPanel() {
         }
     }, [agentHistory.length, view]);
 
-    // Placeholder content based on module
+    // Render content based on the active Omni-Panel tab
     const renderContent = () => {
-        // High priority: if the agent is open, show the chat overlay inside the right panel
-        if (isAgentOpen) {
+        // TAB 3: AGENT
+        if (rightPanelTab === 'agent') {
             return (
                 <div className="flex flex-col h-full bg-card border-l border-border relative overflow-hidden">
                     <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
@@ -154,6 +157,12 @@ export default function RightPanel() {
             );
         }
 
+        // TAB 2: ASSETS
+        if (rightPanelTab === 'assets') {
+            return <AssetsPanel toggleRightPanel={toggleRightPanel} />;
+        }
+
+        // TAB 1: CONTEXT
         switch (currentModule) {
             case 'creative':
                 return <CreativePanel toggleRightPanel={toggleRightPanel} />;
@@ -163,23 +172,6 @@ export default function RightPanel() {
                 return <WorkflowPanel toggleRightPanel={toggleRightPanel} />;
             case 'knowledge':
                 return <KnowledgePanel toggleRightPanel={toggleRightPanel} />;
-            case 'files':
-                return (
-                    <div className="h-full flex flex-col bg-card relative">
-                        <div className="absolute top-2 right-2 z-10">
-                            <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-foreground transition-colors" aria-label="Close Panel">
-                                <ChevronRight size={16} />
-                            </button>
-                        </div>
-                        <div className="flex-1 flex flex-col overflow-hidden">
-                            <ResourceTree className="flex-1 p-2 overflow-y-auto custom-scrollbar" />
-                            <div className="h-px bg-white/5 mx-2" />
-                            <div className="h-48 flex-shrink-0 bg-black/20">
-                                <FilePreview variant="compact" />
-                            </div>
-                        </div>
-                    </div>
-                );
             default:
                 return (
                     <div className="flex flex-col h-full">
@@ -214,40 +206,11 @@ export default function RightPanel() {
         }
     };
 
-    const quickTools = [
-        { id: 'creative', icon: Palette, label: 'Image Studio' },
-        { id: 'video', icon: Film, label: 'Video Studio' },
-        { id: 'files', icon: Folder, label: 'Project Files' },
-        { id: 'workflow', icon: Network, label: 'Workflow Builder' },
-        { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
-        { id: 'history', icon: History, label: 'Recent Activity' },
-        { id: 'agent', icon: Bot, label: 'Agent Hub' }
+    const tabs = [
+        { id: 'context', icon: SlidersHorizontal, label: 'Context Controls' },
+        { id: 'assets', icon: Folder, label: 'Project Assets' },
+        { id: 'agent', icon: Bot, label: 'Omni Agent' }
     ] as const;
-
-    const handleToolClick = (module: string) => {
-        if (module === 'agent') {
-            useStore.setState({
-                isAgentOpen: true,
-                isRightPanelOpen: true,
-                rightPanelView: 'messages'
-            });
-            return;
-        }
-        if (module === 'history') {
-            useStore.setState({
-                isAgentOpen: true,
-                isRightPanelOpen: true,
-                rightPanelView: 'archives'
-            });
-            return;
-        }
-
-        // For other modules, navigate to them and ensure panel opens to show their tools
-        setModule(module as ModuleId);
-        if (!isRightPanelOpen) {
-            useStore.setState({ isRightPanelOpen: true });
-        }
-    };
 
     return (
         <motion.aside
@@ -277,27 +240,25 @@ export default function RightPanel() {
                         </button>
 
                         <div className="flex flex-col gap-4 w-full px-2 overflow-y-auto custom-scrollbar flex-1 pb-4">
-                            {quickTools.map(({ id, icon: Icon, label }) => {
-                                const theme = getColorForModule(id as ModuleId);
-                                const isActive = currentModule === id;
+                            {tabs.map(({ id, icon: Icon, label }) => {
+                                const isActive = rightPanelTab === id;
 
                                 return (
                                     <button
                                         key={id}
-                                        onClick={() => handleToolClick(id)}
+                                        onClick={() => setRightPanelTab(id as any)}
                                         className={cn(
                                             "p-2 rounded-xl transition-all flex items-center justify-center relative group shrink-0",
                                             isActive
-                                                ? `${theme.bg} ${theme.text}`
+                                                ? "bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                                                 : "text-gray-400 hover:text-white hover:bg-white/5"
                                         )}
-                                        style={isActive ? { boxShadow: `0 0 10px var(${theme.cssVar}, 0.2)` } : undefined}
                                         title={label}
                                         aria-label={label}
                                     >
                                         <Icon size={20} />
                                         {isActive && (
-                                            <div className="absolute inset-0 rounded-xl bg-current opacity-10 blur-sm" />
+                                            <div className="absolute inset-0 rounded-xl bg-white/5 blur-sm" />
                                         )}
                                     </button>
                                 );
