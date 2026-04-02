@@ -251,11 +251,15 @@ export default function VideoWorkflow() {
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video, strictly prioritizing durable https URLs over ephemeral blobs
             // to prevent console transport errors when initializing with dead blobs from past sessions.
-            const validRecent = generatedHistory.find(h => h.type === 'video' && !h.url.startsWith('blob:'));
+            const validRecent = generatedHistory.find(
+                h => h.type === 'video' &&
+                    (!currentProjectId || h.projectId === currentProjectId) &&
+                    !h.url.startsWith('blob:')
+            );
 
             if (validRecent) setActiveVideo(validRecent);
         }
-    }, [selectedItem, generatedHistory, activeVideo]);
+    }, [selectedItem, generatedHistory, activeVideo, currentProjectId]);
 
     // Job Listener
     useEffect(() => {

@@ -158,24 +158,25 @@ const INITIAL_PROJECT: VideoProject = {
 // Setup BroadcastChannel for sync to popout window
 // Exported so hooks can reuse the same singleton instead of creating fire-and-forget channels.
 export let syncChannel: BroadcastChannel | null = null;
-let _lastPopoutHeartbeat = 0;
-let _heartbeatCheckTimer: ReturnType<typeof setInterval> | null = null;
+let _heartbeatExpiryTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Resets (or starts) the 5-second crash-detection window.
+// Called on POPOUT_OPENED and every HEARTBEAT — so the popout is declared dead
+// exactly 5 s after the last sign of life, regardless of polling interval.
+const resetHeartbeatExpiry = () => {
+    if (_heartbeatExpiryTimer) clearTimeout(_heartbeatExpiryTimer);
+    _heartbeatExpiryTimer = setTimeout(() => {
+        useVideoEditorStore.getState().setIsPopoutActive(false);
+        _heartbeatExpiryTimer = null;
+    }, 5000);
+};
 
 if (typeof window !== 'undefined') {
     syncChannel = new BroadcastChannel('indiiOS-video-editor-sync');
     syncChannel.onmessage = (event) => {
         if (event.data?.type === 'POPOUT_OPENED') {
             useVideoEditorStore.getState().setIsPopoutActive(true);
-            _lastPopoutHeartbeat = Date.now();
-            // Start crash-detection: if no heartbeat for 5 s, assume popout died
-            if (_heartbeatCheckTimer) clearInterval(_heartbeatCheckTimer);
-            _heartbeatCheckTimer = setInterval(() => {
-                if (Date.now() - _lastPopoutHeartbeat > 5000) {
-                    useVideoEditorStore.getState().setIsPopoutActive(false);
-                    clearInterval(_heartbeatCheckTimer!);
-                    _heartbeatCheckTimer = null;
-                }
-            }, 3000);
+            resetHeartbeatExpiry();
             // Give it the latest state immediately
             syncChannel?.postMessage({
                 type: 'SYNC_PROJECT',
@@ -183,12 +184,12 @@ if (typeof window !== 'undefined') {
             });
         } else if (event.data?.type === 'POPOUT_CLOSED') {
             useVideoEditorStore.getState().setIsPopoutActive(false);
-            if (_heartbeatCheckTimer) {
-                clearInterval(_heartbeatCheckTimer);
-                _heartbeatCheckTimer = null;
+            if (_heartbeatExpiryTimer) {
+                clearTimeout(_heartbeatExpiryTimer);
+                _heartbeatExpiryTimer = null;
             }
         } else if (event.data?.type === 'HEARTBEAT') {
-            _lastPopoutHeartbeat = Date.now();
+            resetHeartbeatExpiry();
         }
     };
 }
