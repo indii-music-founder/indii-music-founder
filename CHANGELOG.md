@@ -2,6 +2,38 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.45.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.4...v1.45.0) (2026-04-02)
+
+
+### Features
+
+* **auth:** transition guest login to founders demo with onboarding bypass ([41fe783](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/41fe7836f91de1ed887e2d6cdb88e41d95948246))
+* **dashboard:** add platform comparison card — Web vs Desktop ([60ae101](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/60ae101f44820f8bff9fe4ecb207bebd0d66891c))
+* **founders:** add investment CTA to dashboard + upgrade sidebar button ([0401866](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0401866ea08057ff24d65508170b5ad7c112f54b))
+* **founders:** add investment rollover basis perk to checkout UI and covenant terms ([f06108e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f06108e2f34c2e601986daf0f9b645277ea87fc6))
+* **founders:** enhance UI error state styling in checkout ([e5a5432](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e5a54323309fe8ed4e32e4a0109dcd1fbdc47a6a))
+* **founders:** update UI copy to reflect friends & family investment round ([d5ce83a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d5ce83aaae4bd86e60f6c17c04f5038c0df1a432))
+* **founders:** version bump to 2.0.0-founders and root cleanup ([505c76b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/505c76bdb542c92147b1b65c35dc40f525bb7de0))
+* implement Veo 3.1 video generation pipeline, add video-popout theme, and update video editor store and test mocks. ([1e2ade3](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/1e2ade3df104fcdf1b70f041bdd70ea37a7ee80f))
+* **marketing:** transition landing page to Bento Box layout for Founders pitch ([2df1241](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2df1241ae99b29afcc32b6ca8ff5bb6f345dd2f3))
+* **platform:** Founders Program hardening & Dividend Protocol completion ([946c230](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/946c2303c251078500569089df49b3c8b82fbebb))
+* **video:** implement multi-window popout viewer and dynamic dashboard layout ([0bcd15d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0bcd15d807299fff8672ae919d60ea3d68916dc9))
+* **video:** implement robust motion editing system with anchor points, border radius, text styling, and volume controls ([7faf401](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7faf4010ccbb52f486a50be6e18b5e5d861acaa9))
+
+
+### Bug Fixes
+
+* **auth:** enable guest login in production + update branding ([6337f80](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6337f8033c015bac553a0bdc09c037496e73dfcf))
+* **auth:** simplify login — remove Google Sign-In, promote guest explore ([cea82d3](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cea82d30ab0d501f09f75fb36398131344312d70))
+* **dashboard:** tie Desktop Studio access to Founders Round investment ([b866ea7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b866ea7a29ff9cf5cc8596842e2933a9ad642d2a))
+* **founders:** rebrand 'Friends & Family' to 'Founders Round' ([d2f35d7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d2f35d707923fbd0d29c4788bd08bebe989cd27f))
+* resolve electron-builder strict schema and author email constraints ([07efc35](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/07efc3533b8774e3706f23bed9f3c56188525624))
+* **security:** strip localhost from production CSP connect-src ([bb2ffd9](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bb2ffd95ff0789ae4fd28cf55b7d1b78302da679))
+* **test:** resolve memory leak in authSlice tests and prevent clearAllSubscriptions type error on logout ([8661d7c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8661d7c7ed62908c72dc5ec60efdf696dd9c9e28))
+* **test:** stabilize ChaosVerification 503 retry test for CI determinism ([eb7a181](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/eb7a18144a95bc4909b23446cb489778a73bec3b))
+* **video:** resolve VideoWorkflow and MerchDesigner UI test failures ([39a5e65](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/39a5e655124e186a7152ae1f68c6445bcb8f9fe8))
+* **video:** upgrade Cloud Functions video model IDs to Veo 3.1 ([2f36704](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2f3670467a75803815701d32905f575b88342ef7))
+
 ## [1.44.4](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.3...v1.44.4) (2026-04-01)
 
 
