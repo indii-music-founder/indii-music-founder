@@ -171,11 +171,11 @@ export const VideoStage = React.memo<VideoStageProps>(({
     }, [activeVideo]);
 
     return (
-        <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
+        <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
             {/* Background Grid Ambience */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-            <div className="relative w-full max-w-5xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/5 ring-1 ring-white/10 group">
+            <div className="relative w-full h-full bg-[#0a0a0a] rounded-xl overflow-hidden shadow-2xl border border-white/5 ring-1 ring-white/10 group flex items-center justify-center">
                 {jobStatus === 'processing' || jobStatus === 'queued' || jobStatus === 'stitching' ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-20">
                         <div className="w-24 h-24 relative mb-4">
@@ -203,12 +203,12 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         </div>
                     </div>
                 ) : videoError ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-20">
-                        <div className="bg-red-500/10 p-4 rounded-full mb-4">
-                            <Video size={48} className="text-red-500" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0a0a] z-20">
+                        <div className="p-4 rounded-full mb-2 bg-white/5 border border-white/10 shadow-lg">
+                            <Video size={24} className="text-gray-500" />
                         </div>
-                        <h3 className="text-xl font-bold text-red-500 mb-2">Playback Error</h3>
-                        <p className="text-gray-400 text-center max-w-sm px-4">{videoError}</p>
+                        <h3 className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Preview Unavailable</h3>
+                        <p className="text-gray-600 text-[10px] text-center max-w-xs">{videoError}</p>
                     </div>
                 ) : activeVideo ? (
                     <div className="relative w-full h-full flex items-center justify-center group/stage">

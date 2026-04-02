@@ -37,18 +37,18 @@ export function PanelSection({ title, children, defaultOpen = true, actions }: P
     const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
     return (
-        <div className="border-b border-gray-800">
-            <div className="flex items-center bg-gray-900/30 hover:bg-gray-900/50 transition-colors group">
+        <div className="border-b border-[#1a1a1a]">
+            <div className="flex items-center bg-[#0a0a0a] hover:bg-[#111] transition-colors group">
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-2 flex-1 p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                    className="flex items-center gap-1.5 flex-1 p-2 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-blue-500"
                     aria-expanded={isOpen}
                 >
-                    {isOpen ? <ChevronDown size={12} className="text-gray-500" /> : <ChevronRight size={12} className="text-gray-500" />}
-                    <span className="text-xs font-semibold text-gray-300 group-hover:text-white transition-colors">{title}</span>
+                    {isOpen ? <ChevronDown size={10} className="text-gray-500" /> : <ChevronRight size={10} className="text-gray-500" />}
+                    <span className="text-[10px] font-semibold text-gray-300 group-hover:text-white transition-colors">{title}</span>
                 </button>
-                {actions && <div className="pr-3 flex items-center">{actions}</div>}
+                {actions && <div className="pr-2 flex items-center">{actions}</div>}
             </div>
             <AnimatePresence initial={false}>
                 {isOpen && (
@@ -56,10 +56,10 @@ export function PanelSection({ title, children, defaultOpen = true, actions }: P
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        transition={{ duration: 0.15, ease: "easeInOut" }}
                         className="overflow-hidden"
                     >
-                        <div className="p-3 bg-bg-dark">
+                        <div className="p-2.5 bg-bg-dark">
                             {children}
                         </div>
                     </motion.div>
@@ -79,8 +79,8 @@ interface PropertyRowProps {
 
 export function PropertyRow({ label, children, className = "" }: PropertyRowProps) {
     return (
-        <div className={`mb-3 last:mb-0 ${className}`}>
-            <label className="block text-[10px] font-medium text-gray-500 mb-1.5 uppercase tracking-wide">{label}</label>
+        <div className={`mb-2.5 last:mb-0 ${className}`}>
+            <label className="block text-[8px] font-bold text-gray-500 mb-1 uppercase tracking-widest">{label}</label>
             {children}
         </div>
     );

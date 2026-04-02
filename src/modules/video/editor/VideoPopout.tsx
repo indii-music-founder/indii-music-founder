@@ -18,6 +18,17 @@ export default function VideoPopout() {
         channel.onmessage = (event) => {
             if (event.data?.type === 'SYNC_PROJECT') {
                 setProject(event.data.project);
+            } else if (event.data?.type === 'SYNC_ACTION') {
+                const action = event.data.action;
+                if (!playerRef.current) return;
+
+                if (action === 'play') {
+                    playerRef.current.play();
+                } else if (action === 'pause') {
+                    playerRef.current.pause();
+                } else if (action === 'seek') {
+                    playerRef.current.seekTo(event.data.frame);
+                }
             }
         };
 
@@ -37,6 +48,7 @@ export default function VideoPopout() {
 
     // Use the actual aspect ratio from the project settings
     const aspectRatio = project.width / project.height;
+    const playerRef = React.useRef<import('@remotion/player').PlayerRef>(null);
 
     return (
         <div className="w-screen h-screen bg-black flex flex-col items-center justify-center p-8 overflow-hidden select-none">
@@ -53,6 +65,7 @@ export default function VideoPopout() {
                 </div>
 
                 <Player
+                    ref={playerRef}
                     component={MyComposition}
                     inputProps={{ project }}
                     durationInFrames={Math.max(1, project.durationInFrames)}

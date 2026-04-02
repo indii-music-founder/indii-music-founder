@@ -422,38 +422,42 @@ export default function VideoWorkflow() {
                 className={`flex-1 flex flex-col relative transition-all duration-500 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 hidden'}`}
             >
 
-                {/* Director Prompt Bar (Top Overlay) */}
-                <div className="relative z-50">
-                    <DirectorPromptBar
-                        prompt={localPrompt}
-                        onPromptChange={(val) => {
-                            setLocalPrompt(val);
-                            setPrompt(val); // Sync real-time
-                        }}
-                        onGenerate={handleGenerate}
-                        isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
-                    />
-                    {useVideoEditorStore.getState().inputAudio && (
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-purple-500/90 backdrop-blur-md rounded-full border border-purple-400/50 shadow-lg shadow-purple-500/20 animate-in fade-in zoom-in duration-300">
-                            <Music className="w-3 h-3 text-white animate-pulse" />
-                            <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Custom Audio Attached</span>
-                            <button
-                                onClick={() => useVideoEditorStore.getState().setInputAudio(null)}
-                                className="ml-1 hover:text-red-200 transition-colors"
-                            >
-                                <Trash2 className="w-3 h-3" />
-                            </button>
-                        </div>
-                    )}
+                {/* Director Prompt Bar Container */}
+                <div className="w-full pt-8 pb-6 px-8 flex-shrink-0 z-20">
+                    <div className="relative">
+                        <DirectorPromptBar
+                            prompt={localPrompt}
+                            onPromptChange={(val) => {
+                                setLocalPrompt(val);
+                                setPrompt(val); // Sync real-time
+                            }}
+                            onGenerate={handleGenerate}
+                            isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
+                        />
+                        {useVideoEditorStore.getState().inputAudio && (
+                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-purple-500/90 backdrop-blur-md rounded-full border border-purple-400/50 shadow-lg shadow-purple-500/20 animate-in fade-in zoom-in duration-300">
+                                <Music className="w-3 h-3 text-white animate-pulse" />
+                                <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Custom Audio Attached</span>
+                                <button
+                                    onClick={() => useVideoEditorStore.getState().setInputAudio(null)}
+                                    className="ml-1 hover:text-red-200 transition-colors"
+                                >
+                                    <Trash2 className="w-3 h-3" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Central Preview Stage (Memoized) */}
-                <VideoStage
-                    jobStatus={jobStatus}
-                    jobProgress={jobProgress}
-                    activeVideo={activeVideo}
-                    setVideoInputs={setVideoInputs}
-                />
+                <div className="flex-1 overflow-hidden px-8 pb-32">
+                    <VideoStage
+                        jobStatus={jobStatus}
+                        jobProgress={jobProgress}
+                        activeVideo={activeVideo}
+                        setVideoInputs={setVideoInputs}
+                    />
+                </div>
 
                 {/* Mode Switcher Shortcut buttons (Overlay) */}
                 <div className="absolute top-24 left-4 z-40 flex flex-col gap-2">
@@ -584,7 +588,7 @@ export default function VideoWorkflow() {
                         <React.Suspense fallback={<div className="flex items-center justify-center h-full text-yellow-500">Loading Cutting Room...</div>}>
                             <div className="h-full flex flex-col">
                                 {/* Editor Header Removed - using Global Navbar */}
-                                <div className="flex-1 relative">
+                                <div className="flex-1 relative overflow-hidden">
                                     <VideoEditor initialVideo={activeVideo || undefined} />
                                 </div>
                             </div>

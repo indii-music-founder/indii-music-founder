@@ -76,15 +76,15 @@ export const VideoTimeline = memo(({
     return (
         <div className="h-full border-t border-[--border] bg-[--card] flex flex-col">
             {/* Timeline Controls */}
-            <div className="h-12 border-b border-[--border] flex items-center px-4 gap-4 bg-[--card] z-10">
-                <div className="flex items-center gap-2">
-                    <button onClick={() => handleSeek(0)} data-testid="timeline-skip-start" className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label="Skip to start"><SkipBack size={16} /></button>
-                    <button onClick={handlePlayPause} data-testid="timeline-play-pause" className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label={isPlaying ? "Pause" : "Play"}>
-                        {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+            <div className="h-10 border-b border-[--border] flex items-center px-4 gap-3 bg-[--card] z-10">
+                <div className="flex items-center gap-1.5">
+                    <button onClick={() => handleSeek(0)} data-testid="timeline-skip-start" className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label="Skip to start"><SkipBack size={14} /></button>
+                    <button onClick={handlePlayPause} data-testid="timeline-play-pause" className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label={isPlaying ? "Pause" : "Play"}>
+                        {isPlaying ? <Pause size={14} /> : <Play size={14} />}
                     </button>
-                    <button onClick={() => handleSeek(project.durationInFrames)} data-testid="timeline-skip-end" className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label="Skip to end"><SkipForward size={16} /></button>
+                    <button onClick={() => handleSeek(project.durationInFrames)} data-testid="timeline-skip-end" className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label="Skip to end"><SkipForward size={14} /></button>
                 </div>
-                <div className="h-6 w-px bg-gray-700 mx-2"></div>
+                <div className="h-4 w-px bg-gray-700 mx-1"></div>
                 {/* Use formatTime from props, but pass 0 for start or use a store-connected time display if needed.
                     Since this is a control bar, showing current time might be needed.
                     However, passing currentTime re-renders the whole component.
@@ -93,10 +93,10 @@ export const VideoTimeline = memo(({
                     Wait, the original code showed `formatTime(0)`. That is static!
                     It shows "00:00:00". So it's fine.
                 */}
-                <span className="text-xs text-[--primary] font-mono font-bold">{formatTime(0)}</span>
+                <span className="text-[10px] text-[--primary] font-mono font-bold">{formatTime(0)}</span>
                 <div className="flex-1"></div>
-                <button onClick={handleAddTrack} data-testid="timeline-add-track-top" className="flex items-center gap-1 text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded text-gray-300 transition-colors">
-                    <Plus size={14} /> Add Track
+                <button onClick={handleAddTrack} data-testid="timeline-add-track-top" className="flex items-center gap-1 text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-300 transition-colors">
+                    <Plus size={12} /> Add Track
                 </button>
             </div>
 
