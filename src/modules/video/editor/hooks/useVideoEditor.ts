@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { PlayerRef } from '@remotion/player';
 import { httpsCallable } from 'firebase/functions';
 import { functionsWest1 } from '@/services/firebase';
-import { useVideoEditorStore, VideoProject, VideoClip } from '../../store/videoEditorStore';
+import { useVideoEditorStore, VideoProject, VideoClip, syncChannel } from '../../store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { useToast } from '@/core/context/ToastContext';
 import { PIXELS_PER_FRAME } from '../constants';
@@ -73,9 +73,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                         playerRef.current.pause();
                     }
                 } else if (state.isPopoutActive) {
-                    const channel = new BroadcastChannel('indiiOS-video-editor-sync');
-                    channel.postMessage({ type: 'SYNC_ACTION', action: state.isPlaying ? 'play' : 'pause' });
-                    channel.close();
+                    syncChannel?.postMessage({ type: 'SYNC_ACTION', action: state.isPlaying ? 'play' : 'pause' });
                 }
             }
         });
@@ -89,9 +87,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             playerRef.current.seekTo(frame);
             setCurrentTime(frame);
         } else if (useVideoEditorStore.getState().isPopoutActive) {
-            const channel = new BroadcastChannel('indiiOS-video-editor-sync');
-            channel.postMessage({ type: 'SYNC_ACTION', action: 'seek', frame });
-            channel.close();
+            syncChannel?.postMessage({ type: 'SYNC_ACTION', action: 'seek', frame });
             setCurrentTime(frame);
         }
     }, [setCurrentTime]);

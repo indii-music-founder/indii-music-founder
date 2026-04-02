@@ -476,6 +476,7 @@ vi.mock('@/modules/video/store/videoEditorStore', () => {
         selectedClipId: null,
         selectedTrackId: null,
         viewMode: 'timeline' as const,
+        setProject: vi.fn(),
         addClip: vi.fn(),
         updateClip: vi.fn(),
         removeClip: vi.fn(),
@@ -487,6 +488,7 @@ vi.mock('@/modules/video/store/videoEditorStore', () => {
         setSelectedClipId: vi.fn(),
         setSelectedTrackId: vi.fn(),
         setViewMode: vi.fn(),
+        setIsPopoutActive: vi.fn(),
         exportProject: vi.fn()
     };
     const useVideoEditorStoreMock = Object.assign(

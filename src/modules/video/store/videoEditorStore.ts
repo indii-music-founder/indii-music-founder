@@ -156,12 +156,26 @@ const INITIAL_PROJECT: VideoProject = {
 };
 
 // Setup BroadcastChannel for sync to popout window
-let syncChannel: BroadcastChannel | null = null;
+// Exported so hooks can reuse the same singleton instead of creating fire-and-forget channels.
+export let syncChannel: BroadcastChannel | null = null;
+let _lastPopoutHeartbeat = 0;
+let _heartbeatCheckTimer: ReturnType<typeof setInterval> | null = null;
+
 if (typeof window !== 'undefined') {
     syncChannel = new BroadcastChannel('indiiOS-video-editor-sync');
     syncChannel.onmessage = (event) => {
         if (event.data?.type === 'POPOUT_OPENED') {
             useVideoEditorStore.getState().setIsPopoutActive(true);
+            _lastPopoutHeartbeat = Date.now();
+            // Start crash-detection: if no heartbeat for 5 s, assume popout died
+            if (_heartbeatCheckTimer) clearInterval(_heartbeatCheckTimer);
+            _heartbeatCheckTimer = setInterval(() => {
+                if (Date.now() - _lastPopoutHeartbeat > 5000) {
+                    useVideoEditorStore.getState().setIsPopoutActive(false);
+                    clearInterval(_heartbeatCheckTimer!);
+                    _heartbeatCheckTimer = null;
+                }
+            }, 3000);
             // Give it the latest state immediately
             syncChannel?.postMessage({
                 type: 'SYNC_PROJECT',
@@ -169,6 +183,12 @@ if (typeof window !== 'undefined') {
             });
         } else if (event.data?.type === 'POPOUT_CLOSED') {
             useVideoEditorStore.getState().setIsPopoutActive(false);
+            if (_heartbeatCheckTimer) {
+                clearInterval(_heartbeatCheckTimer);
+                _heartbeatCheckTimer = null;
+            }
+        } else if (event.data?.type === 'HEARTBEAT') {
+            _lastPopoutHeartbeat = Date.now();
         }
     };
 }
