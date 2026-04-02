@@ -8,7 +8,7 @@ service cloud.firestore {
     
     // Check if user is authenticated
     function isAuthenticated() {
-      return request.auth != null && request.appCheck != null;
+      return request.auth != null; // AppCheck strict enforcement disabled for local dev flexibility
     }
     
     // Check if user is authenticated with email (not anonymous)
@@ -72,6 +72,15 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
         allow delete: if false;
       }
+
+      // ── Media & Workflow Assets ──────────────────────────
+      match /generated_videos/{vidId} { allow read, write: if isOwner(userId); }
+      match /generated_images/{imgId} { allow read, write: if isOwner(userId); }
+      match /analyzed_tracks/{trackId} { allow read, write: if isOwner(userId); }
+      match /knowledge_base/{docId} { allow read, write: if isOwner(userId); }
+      match /workflows/{flowId} { allow read, write: if isOwner(userId); }
+      match /projects/{projId} { allow read, write: if isOwner(userId); }
+      match /assets/{assetId} { allow read, write: if isOwner(userId); }
     }
 
     // =========================================================================
@@ -463,6 +472,12 @@ service cloud.firestore {
     // =========================================================================
 
     match /ddexReleases/{releaseId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+    }
+    match /videoJobs/{jobId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
       allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
       allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));

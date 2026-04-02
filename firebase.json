@@ -157,7 +157,10 @@
       "target": "app"
     }
   ],
-  "storage": {
-    "rules": "storage.rules"
-  }
+  "storage": [
+    {
+      "target": "alpha",
+      "rules": "storage.rules"
+    }
+  ]
 }

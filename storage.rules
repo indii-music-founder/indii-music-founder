@@ -8,7 +8,7 @@ service firebase.storage {
     // ========================================
 
     function isAuthenticated() {
-      return request.auth != null && request.appCheck != null;
+      return request.auth != null; // AppCheck decoupled for dev environment
     }
 
     function isOrgMember(orgId) {

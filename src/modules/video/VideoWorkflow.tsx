@@ -231,6 +231,16 @@ export default function VideoWorkflow() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [viewMode, setViewMode, toast]);
 
+    // Optimize screen real-estate based on mode
+    useEffect(() => {
+        const { isRightPanelOpen, toggleRightPanel } = useStore.getState();
+        if (viewMode === 'editor' && isRightPanelOpen) {
+            toggleRightPanel(); // Close right panel in editor mode to prevent squishing
+        } else if (viewMode === 'director' && !isRightPanelOpen) {
+            toggleRightPanel(); // Re-open in director mode for VEO controls
+        }
+    }, [viewMode]);
+
     // Set initial active video
     useEffect(() => {
         if (selectedItem?.type === 'video') {

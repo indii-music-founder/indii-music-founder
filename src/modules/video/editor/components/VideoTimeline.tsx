@@ -101,7 +101,7 @@ export const VideoTimeline = memo(({
             </div>
 
             {/* Tracks Container */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-[--background] relative">
+            <div className="flex-1 overflow-y-auto p-2 pb-24 space-y-2 bg-[--background] relative">
                 {/* Time Ruler (Optimized) */}
                 <TimeRuler
                     durationInFrames={project.durationInFrames}

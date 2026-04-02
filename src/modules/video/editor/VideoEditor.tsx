@@ -39,6 +39,8 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
     const { handleDragStart } = useTimelineDrag();
 
+    const isPopoutActive = useVideoEditorStore(state => state.isPopoutActive);
+
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
 
     return (
@@ -47,7 +49,13 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 className="bg-gray-900 border-gray-800"
                 left={
                     <div className="flex items-center gap-4">
-                        <h2 className="font-bold text-lg">Studio Editor</h2>
+                        <button
+                            onClick={() => useVideoEditorStore.getState().setViewMode('director')}
+                            className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-md text-xs font-bold uppercase transition-colors"
+                        >
+                            &larr; Back to Director
+                        </button>
+                        <h2 className="font-bold text-lg border-l border-gray-800 pl-4">Studio Editor</h2>
                         <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">{project.width}x{project.height} @ {project.fps}fps</span>
                     </div>
                 }
@@ -74,23 +82,26 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     onLibraryDragStart={handleLibraryDragStart}
                 />
 
-                <div className="flex-1 flex items-center justify-center bg-black relative">
-                    <VideoPreview
-                        playerRef={playerRef}
-                        project={project}
-                        onFrameUpdate={(frame) => setCurrentTime(frame)}
-                    />
-                </div>
+                {!isPopoutActive && (
+                    <div className="flex-1 flex items-center justify-center bg-black relative transition-all duration-300">
+                        <VideoPreview
+                            playerRef={playerRef}
+                            project={project}
+                            onFrameUpdate={(frame) => setCurrentTime(frame)}
+                        />
+                    </div>
+                )}
 
                 <VideoPropertiesPanel
                     project={project}
                     selectedClip={selectedClip}
                     updateClip={updateClip}
+                    isPopoutActive={isPopoutActive}
                 />
             </div>
 
             <div
-                className="h-[400px] overflow-y-auto custom-scrollbar relative border-t border-[--border]"
+                className="h-1/3 min-h-[220px] max-h-[350px] shrink-0 overflow-y-auto custom-scrollbar relative border-t border-[--border]"
                 onDrop={handleDrop}
                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
             >

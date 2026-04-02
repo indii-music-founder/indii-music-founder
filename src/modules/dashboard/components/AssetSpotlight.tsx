@@ -12,7 +12,7 @@ const BADGE: Record<string, { icon: React.ElementType; label: string; cls: strin
     image: { icon: Image, label: 'Image', cls: 'text-blue-400 bg-blue-500/15' },
     video: { icon: Film, label: 'Video', cls: 'text-purple-400 bg-purple-500/15' },
     music: { icon: Music, label: 'Audio', cls: 'text-amber-400 bg-amber-500/15' },
-    text:  { icon: Sparkles, label: 'Text', cls: 'text-emerald-400 bg-emerald-500/15' },
+    text: { icon: Sparkles, label: 'Text', cls: 'text-emerald-400 bg-emerald-500/15' },
 };
 
 function relTime(ts: number) {
@@ -61,7 +61,11 @@ export default function AssetSpotlight() {
 
     const openInStudio = (asset: (typeof assets)[0]) => {
         setSelectedItem(asset);
-        setModule('creative');
+        if (asset.type === 'video') {
+            setModule('video');
+        } else {
+            setModule('creative');
+        }
     };
 
     /* ── empty state ─────────────────────────────────────────────── */
@@ -106,18 +110,28 @@ export default function AssetSpotlight() {
                         <motion.button
                             key={asset.id}
                             onClick={() => setSelIdx(isSelected ? null : i)}
-                            className={`rounded-lg overflow-hidden border transition-all text-left ${
-                                isSelected
+                            className={`rounded-lg overflow-hidden border transition-all text-left flex flex-col ${isSelected
                                     ? 'border-purple-500/50 ring-1 ring-purple-500/20'
                                     : 'border-white/5 hover:border-white/15'
-                            }`}
+                                }`}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: i * 0.02 }}
                         >
                             {/* Thumbnail */}
-                            <div className="aspect-square bg-gray-900 relative overflow-hidden">
-                                {asset.type === 'image' || asset.type === 'video' ? (
+                            <div className="aspect-square bg-gray-900 relative overflow-hidden w-full">
+                                {asset.type === 'video' ? (
+                                    <video
+                                        src={asset.url}
+                                        className="w-full h-full object-cover"
+                                        preload="metadata"
+                                        muted
+                                        loop
+                                        playsInline
+                                        onMouseEnter={(e) => e.currentTarget.play().catch(() => { })}
+                                        onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                                    />
+                                ) : asset.type === 'image' ? (
                                     <img
                                         src={asset.thumbnailUrl || asset.url}
                                         alt={asset.prompt}
@@ -137,7 +151,7 @@ export default function AssetSpotlight() {
                                 </div>
                             </div>
                             {/* Caption */}
-                            <div className="p-1.5 bg-[#0d1117]">
+                            <div className="p-1.5 bg-[#0d1117] w-full flex-1">
                                 <p className="text-[10px] text-gray-400 line-clamp-1 leading-tight">
                                     {asset.prompt || 'Untitled'}
                                 </p>
@@ -162,9 +176,11 @@ export default function AssetSpotlight() {
                     >
                         <div className="mt-2.5 p-2.5 rounded-lg bg-black/30 border border-white/5">
                             {/* Preview */}
-                            <div className="w-full aspect-video rounded-md overflow-hidden bg-gray-900 mb-2">
-                                {(sel.type === 'image' || sel.type === 'video') ? (
-                                    <img src={sel.url} alt="" className="w-full h-full object-cover" />
+                            <div className="w-full aspect-video rounded-md overflow-hidden bg-gray-900 mb-2 relative">
+                                {sel.type === 'video' ? (
+                                    <video src={sel.url} className="w-full h-full object-cover" controls playsInline />
+                                ) : sel.type === 'image' ? (
+                                    <img src={sel.url} alt="" className="w-full h-full object-contain bg-black" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
                                         {React.createElement(BADGE[sel.type]?.icon || Image, { size: 28, className: 'text-gray-600' })}
@@ -205,3 +221,4 @@ export default function AssetSpotlight() {
         </div>
     );
 }
+

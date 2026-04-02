@@ -96,6 +96,7 @@ const MobileRemote = lazy(() => import('../modules/mobile-remote/MobileRemote'))
 const GrowthIntelligenceDashboard = lazy(() => import('../modules/analytics/GrowthIntelligenceDashboard'));
 const DesktopDashboard = lazy(() => import('../modules/desktop/DesktopDashboard'));
 const FoundersCheckout = lazy(() => import('../modules/founders/FoundersCheckout'));
+const VideoPopout = lazy(() => import('../modules/video/editor/VideoPopout'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -138,6 +139,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'analytics': GrowthIntelligenceDashboard,
     'desktop': DesktopDashboard,
     'founders-checkout': FoundersCheckout,
+    'video-popout': VideoPopout,
 };
 
 // ============================================================================
