@@ -4,16 +4,22 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
+// Controls whether the Player forwards its ref (toggled per test).
+let shouldInstallRef = true;
+// Latest player instance — set by useImperativeHandle so guard tests can spy on seekTo.
+let lastPlayerInstance: { play: ReturnType<typeof vi.fn>; pause: ReturnType<typeof vi.fn>; seekTo: ReturnType<typeof vi.fn> } | null = null;
+
 vi.mock('@remotion/player', () => {
     const MockPlayer = React.forwardRef<
         { play: () => void; pause: () => void; seekTo: (f: number) => void },
         Record<string, unknown>
     >((_props, ref) => {
-        React.useImperativeHandle(ref, () => ({
-            play: vi.fn(),
-            pause: vi.fn(),
-            seekTo: vi.fn(),
-        }));
+        React.useImperativeHandle(ref, () => {
+            if (!shouldInstallRef) return null as unknown as { play: () => void; pause: () => void; seekTo: (f: number) => void };
+            const instance = { play: vi.fn(), pause: vi.fn(), seekTo: vi.fn() };
+            lastPlayerInstance = instance;
+            return instance;
+        });
         return React.createElement('div', { 'data-testid': 'mock-player' });
     });
     MockPlayer.displayName = 'MockPlayer';
@@ -25,8 +31,8 @@ vi.mock('../remotion/MyComposition', () => ({
 }));
 
 // ── Static imports ────────────────────────────────────────────────────────
-import VideoPopout from './VideoPopout';
-import { useVideoEditorStore } from '../store/videoEditorStore';
+import VideoPopout from '@/modules/video/editor/VideoPopout';
+import { useVideoEditorStore } from '@/modules/video/store/videoEditorStore';
 
 // ── BroadcastChannel mock ──────────────────────────────────────────────────
 
@@ -41,13 +47,18 @@ interface ChannelInstance {
 let channelInstance: ChannelInstance;
 
 beforeEach(() => {
-    // Use a regular function (not arrow) so `new BroadcastChannel()` works.
-    // We capture `this` to get the instance after it's created by the component.
-    const MockBC = vi.fn(function (this: ChannelInstance) {
-        this.postMessage = vi.fn();
-        this.close = vi.fn();
-        this.onmessage = null;
-        channelInstance = this;
+    shouldInstallRef = true;
+    lastPlayerInstance = null;
+    // Regular function (not arrow) so `new BroadcastChannel()` works.
+    // Return an explicit object to avoid the no-this-alias lint rule.
+    const MockBC = vi.fn(function () {
+        const instance: ChannelInstance = {
+            postMessage: vi.fn(),
+            close: vi.fn(),
+            onmessage: null,
+        };
+        channelInstance = instance;
+        return instance;
     });
     vi.stubGlobal('BroadcastChannel', MockBC);
     vi.useFakeTimers();
@@ -120,22 +131,30 @@ describe('VideoPopout — SYNC_PROJECT handling', () => {
 });
 
 describe('VideoPopout — SYNC_ACTION guard tests', () => {
-    it('does not throw when playerRef is null and SYNC_ACTION arrives', () => {
+    it('silently ignores SYNC_ACTION when playerRef is null', () => {
+        // Prevent the Player from setting the ref — exercises the !playerRef.current guard.
+        shouldInstallRef = false;
         render(<VideoPopout />);
+
         expect(() => {
             act(() => {
                 channelInstance.onmessage?.({ data: { type: 'SYNC_ACTION', action: 'play' } });
             });
         }).not.toThrow();
+        // Nothing was installed, so lastPlayerInstance should be null.
+        expect(lastPlayerInstance).toBeNull();
     });
 
-    it('does not call seekTo when frame is missing from seek action', () => {
+    it('does not call seekTo when frame is absent from seek action', () => {
         render(<VideoPopout />);
-        expect(() => {
-            act(() => {
-                // No `frame` field — the typeof guard must block seekTo(undefined)
-                channelInstance.onmessage?.({ data: { type: 'SYNC_ACTION', action: 'seek' } });
-            });
-        }).not.toThrow();
+        // lastPlayerInstance is set by useImperativeHandle after mount.
+        expect(lastPlayerInstance).not.toBeNull();
+
+        act(() => {
+            // Missing `frame` field — the typeof guard must block seekTo(undefined).
+            channelInstance.onmessage?.({ data: { type: 'SYNC_ACTION', action: 'seek' } });
+        });
+
+        expect(lastPlayerInstance!.seekTo).not.toHaveBeenCalled();
     });
 });
