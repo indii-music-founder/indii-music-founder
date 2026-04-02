@@ -427,6 +427,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-amber-300',
         hoverBg: 'hover:bg-amber-500/20',
         cssVar: '--color-dept-brand',
+    },
+    'video-popout': {
+        text: 'text-gray-300',
+        bg: 'bg-black',
+        border: 'border-gray-800',
+        ring: 'focus-within:ring-gray-600/50',
+        hoverText: 'hover:text-white',
+        hoverBg: 'hover:bg-gray-800/20',
+        cssVar: '--color-dept-creative',
     }
 };
 

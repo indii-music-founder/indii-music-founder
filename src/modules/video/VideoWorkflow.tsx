@@ -139,7 +139,9 @@ export default function VideoWorkflow() {
         setVideoInputs,
         whiskState,
         characterReferences,
-        setStudioControls
+        setStudioControls,
+        isRightPanelOpen,
+        toggleRightPanel
     } = useStore(useShallow((state: import('@/core/store').StoreState) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
@@ -155,7 +157,9 @@ export default function VideoWorkflow() {
         setVideoInputs: state.setVideoInputs,
         whiskState: state.whiskState,
         characterReferences: state.characterReferences,
-        setStudioControls: state.setStudioControls
+        setStudioControls: state.setStudioControls,
+        isRightPanelOpen: state.isRightPanelOpen,
+        toggleRightPanel: state.toggleRightPanel
     })));
 
     // Editor Store
@@ -233,13 +237,12 @@ export default function VideoWorkflow() {
 
     // Optimize screen real-estate based on mode
     useEffect(() => {
-        const { isRightPanelOpen, toggleRightPanel } = useStore.getState();
         if (viewMode === 'editor' && isRightPanelOpen) {
             toggleRightPanel(); // Close right panel in editor mode to prevent squishing
         } else if (viewMode === 'director' && !isRightPanelOpen) {
             toggleRightPanel(); // Re-open in director mode for VEO controls
         }
-    }, [viewMode]);
+    }, [viewMode, isRightPanelOpen, toggleRightPanel]);
 
     // Set initial active video
     useEffect(() => {
