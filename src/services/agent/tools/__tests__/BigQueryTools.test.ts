@@ -26,8 +26,6 @@ import { httpsCallable } from 'firebase/functions';
 import { BigQueryTools } from '../BigQueryTools';
 
 // No need to cast again since we defined mockHttpsCallable above
-// const mockHttpsCallable = httpsCallable as ReturnType<typeof vi.fn>;
-
 describe('BigQueryTools (Real BigQuery via Cloud Functions)', () => {
     beforeEach(() => {
         vi.clearAllMocks();

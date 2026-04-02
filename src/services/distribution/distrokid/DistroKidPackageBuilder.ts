@@ -1,5 +1,3 @@
-// import * as fs from 'fs';
-// import * as path from 'path';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';

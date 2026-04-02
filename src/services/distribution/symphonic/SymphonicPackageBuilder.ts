@@ -1,5 +1,3 @@
-// import * as fs from 'fs';
-// import * as path from 'path';
 import { ernService } from '@/services/ddex/ERNService';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
