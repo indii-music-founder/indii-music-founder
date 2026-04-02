@@ -12,12 +12,33 @@ interface VideoPreviewProps {
 export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, onFrameUpdate }) => {
     const aspectRatio = project.width / project.height;
 
+    React.useEffect(() => {
+        if (!playerRef.current || !onFrameUpdate) return;
+
+        const { current } = playerRef;
+        const callback = (e: { detail: { frame: number } }) => {
+            if (typeof e.detail?.frame === 'number') {
+                onFrameUpdate(e.detail.frame);
+            }
+        };
+
+        // @ts-ignore - The remotion typings might complain but this is the valid API
+        current.addEventListener('frameupdate', callback);
+
+        return () => {
+            if (typeof current.removeEventListener === 'function') {
+                // @ts-ignore
+                current.removeEventListener('frameupdate', callback);
+            }
+        };
+    }, [playerRef, onFrameUpdate]);
+
     return (
         <div className="flex-1 flex flex-col items-center justify-center bg-[#050505] p-12 relative overflow-hidden">
             {/* Ambient Background Glow */}
             <div className="absolute inset-0 bg-blue-500/5 blur-[120px] pointer-events-none" />
 
-            <div className="relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-xl overflow-hidden border border-white/10 bg-black group w-full max-w-4xl aspect-video flex">
+            <div className="relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-xl overflow-hidden border border-white/10 bg-black group w-full max-w-4xl aspect-video flex items-center justify-center">
                 <Player
                     ref={playerRef}
                     component={MyComposition}
@@ -29,11 +50,11 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, 
                     style={{
                         width: '100%',
                         maxWidth: '800px',
+                        maxHeight: '100%',
                         aspectRatio: `${aspectRatio}`,
                     }}
-                    controls
                     loop
-
+                // No native controls, we use the timeline transport
                 />
 
                 {/* Glassmorphic Overlay Border */}

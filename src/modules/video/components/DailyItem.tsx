@@ -48,16 +48,16 @@ export const DailyItem = React.memo<DailyItemProps>(({
             onDragStart={(e) => onDragStart(e, video)}
             data-testid={`daily-item-${video.id}`}
             className={`
-                relative h-20 aspect-video rounded-lg overflow-hidden cursor-pointer group flex-shrink-0 transition-all border-2
-                focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:outline-none
+                relative h-20 aspect-video rounded-lg overflow-hidden cursor-pointer group flex-shrink-0 transition-all border
+                focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:outline-none bg-[#0a0a0a]
                 ${isSelected
-                    ? 'border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105 z-10'
-                    : 'border-transparent hover:border-white/20 hover:scale-105'
+                    ? 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)] scale-105 z-10'
+                    : 'border-white/5 hover:border-white/20 hover:scale-105'
                 }
             `}
         >
             {video.url.startsWith('data:image') || video.url.includes('placehold') ? (
-                <img src={video.url} alt={video.prompt} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                <img src={video.url} alt={video.prompt} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
             ) : (
                 // ⚡ Bolt Optimization: Use preload="metadata" to avoid downloading full video until needed
                 <video

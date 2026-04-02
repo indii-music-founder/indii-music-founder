@@ -72,6 +72,10 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                     } else {
                         playerRef.current.pause();
                     }
+                } else if (state.isPopoutActive) {
+                    const channel = new BroadcastChannel('indiiOS-video-editor-sync');
+                    channel.postMessage({ type: 'SYNC_ACTION', action: state.isPlaying ? 'play' : 'pause' });
+                    channel.close();
                 }
             }
         });
@@ -83,6 +87,11 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     const handleSeek = useCallback((frame: number) => {
         if (playerRef.current) {
             playerRef.current.seekTo(frame);
+            setCurrentTime(frame);
+        } else if (useVideoEditorStore.getState().isPopoutActive) {
+            const channel = new BroadcastChannel('indiiOS-video-editor-sync');
+            channel.postMessage({ type: 'SYNC_ACTION', action: 'seek', frame });
+            channel.close();
             setCurrentTime(frame);
         }
     }, [setCurrentTime]);

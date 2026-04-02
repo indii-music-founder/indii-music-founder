@@ -26,27 +26,27 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
     return (
         <div className="flex h-full border-r border-[--border]">
             {/* Sidebar Tabs */}
-            <div className="w-16 bg-[--card] flex flex-col items-center py-4 border-r border-[--border] gap-4">
+            <div className="w-12 bg-gray-950 flex flex-col items-center py-4 border-r border-[#1a1a1a] gap-3">
                 <button
                     onClick={() => setActiveTab('project')}
-                    className={`p-2 rounded-lg transition-colors ${activeTab === 'project' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                    className={`p-1 rounded-lg transition-colors ${activeTab === 'project' ? 'bg-purple-600/20 text-purple-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
                     title="Project Settings"
                 >
-                    <Settings size={20} />
+                    <Settings size={16} />
                 </button>
                 <button
                     onClick={() => setActiveTab('tracks')}
-                    className={`p-2 rounded-lg transition-colors ${activeTab === 'tracks' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                    className={`p-1 rounded-lg transition-colors ${activeTab === 'tracks' ? 'bg-purple-600/20 text-purple-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
                     title="Tracks"
                 >
-                    <Layers size={20} />
+                    <Layers size={16} />
                 </button>
                 <button
                     onClick={() => setActiveTab('assets')}
-                    className={`p-2 rounded-lg transition-colors ${activeTab === 'assets' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                    className={`p-1 rounded-lg transition-colors ${activeTab === 'assets' ? 'bg-purple-600/20 text-purple-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
                     title="Assets Library"
                 >
-                    <ImageIcon size={20} />
+                    <ImageIcon size={16} />
                 </button>
             </div>
 
