@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '@/lib/utils';
 
 // --- Generic Properties Panel Container ---
 
@@ -12,7 +13,7 @@ interface PropertiesPanelProps {
 
 export function PropertiesPanel({ title = "Properties", children, className = "" }: PropertiesPanelProps) {
     return (
-        <div className={`w-80 h-full bg-bg-dark border-l border-gray-800 flex flex-col overflow-hidden ${className}`}>
+        <div className={cn("w-64 shrink-0 h-full bg-bg-dark border-l border-gray-800 flex flex-col overflow-hidden", className)}>
             <div className="h-10 border-b border-gray-800 flex items-center px-4 shrink-0 bg-bg-dark">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{title}</span>
             </div>

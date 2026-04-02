@@ -51,7 +51,7 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
             </div>
 
             {/* Sidebar Content */}
-            <div className="w-64 bg-[--card] overflow-y-auto custom-scrollbar">
+            <div className="w-56 shrink-0 bg-[--card] overflow-y-auto custom-scrollbar">
                 {activeTab === 'assets' && (
                     <EditorAssetLibrary onDragStart={onLibraryDragStart} />
                 )}

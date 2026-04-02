@@ -144,10 +144,10 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
             );
         case 'video':
             if (!clip.src) return null;
-            return <Video src={clip.src} style={style} />;
+            return <Video src={clip.src} style={style} crossOrigin="anonymous" />;
         case 'image':
             if (!clip.src) return null;
-            return <Img src={clip.src} style={style} />;
+            return <Img src={clip.src} style={style} crossOrigin="anonymous" />;
         case 'audio':
             if (!clip.src) return null;
             return <Audio src={clip.src} />;

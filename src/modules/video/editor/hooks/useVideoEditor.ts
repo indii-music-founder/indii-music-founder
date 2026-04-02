@@ -14,7 +14,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
         project, setProject, updateClip, addClip, removeClip,
         addTrack, removeTrack, setIsPlaying, setCurrentTime,
-        setSelectedClipId
+        setSelectedClipId, selectedClipId
     } = useVideoEditorStore(useShallow(state => ({
         project: state.project,
         setProject: state.setProject,
@@ -25,7 +25,8 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         removeTrack: state.removeTrack,
         setIsPlaying: state.setIsPlaying,
         setCurrentTime: state.setCurrentTime,
-        setSelectedClipId: state.setSelectedClipId
+        setSelectedClipId: state.setSelectedClipId,
+        selectedClipId: state.selectedClipId
     })));
 
     const playerRef = useRef<PlayerRef>(null);
@@ -33,19 +34,13 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     const toast = useToast();
 
     // Local State
-    const [activeTab, setActiveTab] = useState<'project' | 'tracks' | 'assets'>('project');
-    const [selectedClipIdState, setSelectedClipIdState] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'project' | 'tracks' | 'assets'>('assets');
     const [isExporting, setIsExporting] = useState(false);
-
-    // Sync local selection with store
-    useEffect(() => {
-        setSelectedClipId(selectedClipIdState);
-    }, [selectedClipIdState, setSelectedClipId]);
 
     // Memoize selected clip lookup
     const selectedClip = useMemo(() =>
-        project.clips.find((c: VideoClip) => c.id === selectedClipIdState),
-        [project.clips, selectedClipIdState]
+        project.clips.find((c: VideoClip) => c.id === selectedClipId),
+        [project.clips, selectedClipId]
     );
 
     useEffect(() => {
@@ -171,8 +166,8 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         playerRef,
         activeTab,
         setActiveTab,
-        selectedClipIdState,
-        setSelectedClipIdState,
+        selectedClipIdState: selectedClipId,
+        setSelectedClipIdState: setSelectedClipId,
         selectedClip,
         isExporting,
         handlePlayPause,
