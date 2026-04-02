@@ -17,6 +17,7 @@ All notable changes to indiiOS are documented in this file.
 * implement Veo 3.1 video generation pipeline, add video-popout theme, and update video editor store and test mocks. ([1e2ade3](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/1e2ade3df104fcdf1b70f041bdd70ea37a7ee80f))
 * **marketing:** transition landing page to Bento Box layout for Founders pitch ([2df1241](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2df1241ae99b29afcc32b6ca8ff5bb6f345dd2f3))
 * **platform:** Founders Program hardening & Dividend Protocol completion ([946c230](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/946c2303c251078500569089df49b3c8b82fbebb))
+* **video:** finalize studio editor layout and player stabilization ([4895253](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4895253c860290bde699d100efbf70deea485592))
 * **video:** implement multi-window popout viewer and dynamic dashboard layout ([0bcd15d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0bcd15d807299fff8672ae919d60ea3d68916dc9))
 * **video:** implement robust motion editing system with anchor points, border radius, text styling, and volume controls ([7faf401](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7faf4010ccbb52f486a50be6e18b5e5d861acaa9))
 
