@@ -62,6 +62,7 @@
     "@react-three/fiber": "8.18.0",
     "@reduxjs/toolkit": "2.11.2",
     "@remotion/bundler": "4.0.382",
+    "@remotion/cloudrun": "4.0.382",
     "@remotion/lambda": "4.0.382",
     "@remotion/media-utils": "4.0.382",
     "@remotion/player": "4.0.382",

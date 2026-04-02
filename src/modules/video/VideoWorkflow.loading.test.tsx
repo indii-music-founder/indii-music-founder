@@ -21,6 +21,8 @@ const { mockStoreStateData, mockVideoEditorState, mockUseStore, mockUseVideoEdit
         videoInputs: {},
         currentOrganizationId: 'org-123',
         currentProjectId: 'proj-123',
+        isRightPanelOpen: false,
+        toggleRightPanel: vi.fn(),
         addJob: vi.fn(),
         updateJobProgress: vi.fn(),
         updateJobStatus: vi.fn()
