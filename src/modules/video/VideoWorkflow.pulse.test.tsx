@@ -33,6 +33,8 @@ const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorSt
         },
         characterReferences: [],
         setStudioControls: vi.fn(),
+        isRightPanelOpen: false,
+        toggleRightPanel: vi.fn(),
         addJob: vi.fn(),
         updateJobProgress: vi.fn(),
         updateJobStatus: vi.fn()

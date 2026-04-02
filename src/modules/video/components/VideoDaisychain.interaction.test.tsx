@@ -64,6 +64,8 @@ vi.mock('@/core/store', () => {
         addToHistory: vi.fn(),
         setIsGenerating: vi.fn(),
         setHasUnsavedChanges: vi.fn(),
+        isRightPanelOpen: false,
+        toggleRightPanel: vi.fn(),
         generatedHistory: [],
         whiskState: {
             subjects: [],
@@ -226,6 +228,8 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 videoInputs: state.videoInputs,
                 setIsGenerating: vi.fn(),
                 setHasUnsavedChanges: vi.fn(),
+                isRightPanelOpen: false,
+                toggleRightPanel: vi.fn(),
                 whiskState: state.whiskState
             }), [state, setVideoInput, setGenerationMode, setViewMode, setPrompt, addToHistory]);
 

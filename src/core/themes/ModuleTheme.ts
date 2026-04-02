@@ -222,6 +222,11 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         accent: '#f59e0b', // Amber
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(245, 158, 11, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'particles', opacity: 0.1 }
+    },
+    'video-popout': {
+        officeName: 'Video Ext. Display',
+        accent: '#0d1117',
+        backgroundGradient: 'none',
     }
 };
 
