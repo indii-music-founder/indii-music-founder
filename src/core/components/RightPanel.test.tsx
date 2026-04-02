@@ -10,6 +10,15 @@ vi.mock('../store', () => {
 });
 
 // Mock sub-components
+vi.mock('./right-panel/AssetsPanel', () => ({
+    default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
+        <div data-testid="assets-panel">
+            Assets Panel Content
+            <button onClick={toggleRightPanel} data-testid="close-assets">Close</button>
+        </div>
+    ),
+}));
+
 vi.mock('./right-panel/CreativePanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="creative-panel">
@@ -28,7 +37,6 @@ vi.mock('./right-panel/VideoPanel', () => ({
     ),
 }));
 
-// Mock remaining sub-components used by RightPanel
 vi.mock('./right-panel/WorkflowPanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="workflow-panel">
@@ -47,21 +55,17 @@ vi.mock('./right-panel/KnowledgePanel', () => ({
     ),
 }));
 
-vi.mock('./agent/BatchingStatus', () => ({
-    BatchingStatus: () => null,
+vi.mock('./agent/AgentChat', () => ({
+    AgentChat: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
+        <div data-testid="agent-chat">
+            Agent Chat Content
+            <button onClick={toggleRightPanel} data-testid="close-agent">Close</button>
+        </div>
+    ),
 }));
 
-vi.mock('@/components/project/ResourceTree', () => ({
-    ResourceTree: () => <div data-testid="resource-tree" />,
-}));
-vi.mock('@/modules/files/FilePreview', () => ({
-    default: () => <div data-testid="file-preview" />,
-}));
-vi.mock('@/core/theme/moduleColors', () => ({
-    getColorForModule: () => ({ bg: 'bg-gray-500', text: 'text-white', border: 'border-gray-700', ring: 'ring-gray-700', cssVar: '--color-dept-default' }),
-}));
-vi.mock('./command-bar/PromptArea', () => ({
-    PromptArea: () => <div data-testid="prompt-area" />,
+vi.mock('./agent/BatchingStatus', () => ({
+    BatchingStatus: () => <div data-testid="batching-status" />,
 }));
 vi.mock('./ConversationHistoryList', () => ({
     ConversationHistoryList: () => <div data-testid="conversation-history" />,
@@ -72,112 +76,113 @@ vi.mock('@/core/components/chat/ChatMessage', () => ({
 vi.mock('@/modules/dashboard/components/AssetSpotlight', () => ({
     default: () => <div data-testid="asset-spotlight" />,
 }));
+vi.mock('./command-bar/PromptArea', () => ({
+    PromptArea: () => <div data-testid="prompt-area" />,
+}));
+
 vi.mock('motion/react', () => ({
     motion: {
         aside: ({ children, className, ...props }: any) => <aside className={className} {...props}>{children}</aside>,
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
+        button: ({ children, className, ...props }: any) => <button className={className} {...props}>{children}</button>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
 describe('RightPanel', () => {
-    const mockSetModule = vi.fn();
+    const mockSetRightPanelTab = vi.fn();
     const mockToggleRightPanel = vi.fn();
-
+    const mockSetRightPanelView = vi.fn();
     const mockToggleAgentWindow = vi.fn();
-    const mockSetView = vi.fn();
 
     const defaultState = {
-        currentModule: 'dashboard',
-        setModule: mockSetModule,
+        rightPanelTab: 'context',
+        setRightPanelTab: mockSetRightPanelTab,
         isRightPanelOpen: false,
         toggleRightPanel: mockToggleRightPanel,
         isAgentOpen: false,
         toggleAgentWindow: mockToggleAgentWindow,
         agentHistory: [],
-        userProfile: null,
-        isAgentProcessing: false,
+        currentModule: 'dashboard',
         rightPanelView: 'messages' as const,
-        setRightPanelView: mockSetView,
+        setRightPanelView: mockSetRightPanelView,
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        // Default store state
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue(defaultState);
     });
 
-    it('renders collapsed state correctly', () => {
+    it('renders collapsed state with tab buttons', () => {
         render(<RightPanel />);
 
-        // Should show expand button
         expect(screen.getByTitle('Expand Panel')).toBeInTheDocument();
+        expect(screen.getByTitle('Context Controls')).toBeInTheDocument();
+        expect(screen.getByTitle('Project Assets')).toBeInTheDocument();
+        expect(screen.getByTitle('Omni Agent')).toBeInTheDocument();
 
-        // Should show module shortcuts
-        expect(screen.getByTitle('Image Studio')).toBeInTheDocument();
-        expect(screen.getByTitle('Video Studio')).toBeInTheDocument();
-
-        // Should NOT show panels
         expect(screen.queryByTestId('creative-panel')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('video-panel')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('assets-panel')).not.toBeInTheDocument();
     });
 
     it('toggles panel when expand button is clicked', () => {
         render(<RightPanel />);
-
         fireEvent.click(screen.getByTitle('Expand Panel'));
         expect(mockToggleRightPanel).toHaveBeenCalled();
     });
 
-    it('switches to Creative module when Image Studio icon is clicked', () => {
+    it('switches to Assets tab when Assets icon is clicked', () => {
         render(<RightPanel />);
-
-        fireEvent.click(screen.getByTitle('Image Studio'));
-        expect(mockSetModule).toHaveBeenCalledWith('creative');
+        fireEvent.click(screen.getByTitle('Project Assets'));
+        expect(mockSetRightPanelTab).toHaveBeenCalledWith('assets');
     });
 
-    it('switches to Video module when Video Studio icon is clicked', () => {
+    it('switches to Agent tab when Agent icon is clicked', () => {
         render(<RightPanel />);
-
-        fireEvent.click(screen.getByTitle('Video Studio'));
-        expect(mockSetModule).toHaveBeenCalledWith('video');
+        fireEvent.click(screen.getByTitle('Omni Agent'));
+        expect(mockSetRightPanelTab).toHaveBeenCalledWith('agent');
     });
 
-    it('renders CreativePanel when open and module is creative', () => {
+    it('renders CreativePanel when open and tab is context and module is creative', () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             ...defaultState,
+            rightPanelTab: 'context',
             currentModule: 'creative',
             isRightPanelOpen: true,
         });
-
         render(<RightPanel />);
-
         expect(screen.getByTestId('creative-panel')).toBeInTheDocument();
-        expect(screen.queryByTitle('Expand Panel')).not.toBeInTheDocument();
     });
 
-    it('renders VideoPanel when open and module is video', () => {
+    it('renders fallback when open and tab is context and module has no panel', () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             ...defaultState,
-            currentModule: 'video',
-            isRightPanelOpen: true,
-        });
-
-        render(<RightPanel />);
-
-        expect(screen.getByTestId('video-panel')).toBeInTheDocument();
-    });
-
-    it('renders placeholder when open but no tool selected', () => {
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            ...defaultState,
+            rightPanelTab: 'context',
             currentModule: 'dashboard',
             isRightPanelOpen: true,
         });
-
         render(<RightPanel />);
-
         expect(screen.getByText('No Tool Selected')).toBeInTheDocument();
-        expect(screen.getByText(/Select a tool from the sidebar/)).toBeInTheDocument();
+    });
+
+    it('renders AssetsPanel when open and tab is assets', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            rightPanelTab: 'assets',
+            isRightPanelOpen: true,
+        });
+        render(<RightPanel />);
+        expect(screen.getByTestId('assets-panel')).toBeInTheDocument();
+    });
+
+    it('renders Agent content when open and tab is agent', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            rightPanelTab: 'agent',
+            isRightPanelOpen: true,
+        });
+        render(<RightPanel />);
+        expect(screen.getByText('Messages')).toBeInTheDocument();
+        expect(screen.getByTestId('batching-status')).toBeInTheDocument();
     });
 });
