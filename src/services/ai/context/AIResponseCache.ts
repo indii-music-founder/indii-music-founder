@@ -1,6 +1,4 @@
 import { GenerateContentResponse, GenerateContentOptions } from '@/shared/types/ai.dto';
-// import { GenerateContentOptions } from '../AIService';
-
 interface CachedResponse {
     response: GenerateContentResponse;
     timestamp: number;

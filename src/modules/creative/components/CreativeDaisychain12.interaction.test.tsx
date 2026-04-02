@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import CreativeGallery from './CreativeGallery';
 import CreativeNavbar from './CreativeNavbar';
 import CreativeCanvas from './CreativeCanvas';
-// import Showroom from './Showroom'; // Removed broken import
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -320,7 +319,6 @@ describe('Creative Director 12-Click Daisychain', () => {
         // --- CLICK 13: Select Item B (Originally 11) ---
         // Skipped: Clicking the item triggers viewMode='editor' in the real component, unmounting the gallery.
         // We want to click the anchor button (Step 14) which is on the gallery card.
-        // const itemB = screen.getByTestId('gallery-item-item-b');
         // fireEvent.click(itemB); 
 
         // --- CLICK 14: Set Item B as Character Reference (Originally 12) ---

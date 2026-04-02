@@ -3,7 +3,6 @@ import { onSnapshot } from 'firebase/firestore';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SwarmGraph } from '@/components/studio/observability/SwarmGraph';
-// import ChatOverlay from '@/core/components/ChatOverlay';
 import { TraceService } from '@/services/agent/observability/TraceService';
 import { useStore } from '@/core/store';
 import { ReactFlowProvider } from 'reactflow';

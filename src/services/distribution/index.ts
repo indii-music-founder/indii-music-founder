@@ -13,6 +13,3 @@ export { DistributorService } from './DistributorService';
 export { BaseDistributorAdapter } from './adapters/BaseDistributorAdapter';
 
 // Individual distributor adapters (to be added as implemented)
-// export { DistroKidAdapter } from './adapters/DistroKidAdapter';
-// export { TuneCoreAdapter } from './adapters/TuneCoreAdapter';
-// export { CDBabyAdapter } from './adapters/CDBabyAdapter';

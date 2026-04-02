@@ -47,7 +47,6 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
 // The service implementation generates a UUID *before* calling the function in some paths,
 // or the function returns it.
 // Looking at the implementation of `triggerVideoGeneration`:
-// const jobId = uuidv4();
 // await triggerVideoJob({ ...options, jobId });
 // return { jobId };
 // So the Service generates the ID. We should mock uuid.

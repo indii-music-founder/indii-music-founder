@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AIResponseCache } from './AIResponseCache';
 import { GenerateContentResponse, GenerateContentOptions } from '@/shared/types/ai.dto';
-// import { GenerateContentOptions } from '../AIService';
-
 describe('AIResponseCache', () => {
     let cache: AIResponseCache;
     const mockResponse: GenerateContentResponse = {

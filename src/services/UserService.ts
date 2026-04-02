@@ -1,7 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { UserProfile } from '@/types/User';
-// import { User } from 'firebase/auth'; // REMOVED
 import { BrandKit } from '@/modules/workflow/types';
 
 // Default initial state for a new user's app profile

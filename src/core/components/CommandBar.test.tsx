@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommandBar from './CommandBar';
-// import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { create } from 'zustand';
@@ -304,12 +303,7 @@ describe('CommandBar', () => {
     // Camera button is currently removed from PromptArea
     // it('triggers camera input when camera button is clicked', () => {
     //     render(<CommandBar />);
-    //     const cameraButton = screen.getByTitle('Take a picture');
-    //     const cameraInput = document.querySelector('input[capture="environment"]');
-
     //     // Mock click on input
-    //     const clickSpy = vi.spyOn(cameraInput as HTMLInputElement, 'click');
-
     //     fireEvent.click(cameraButton);
     //     expect(clickSpy).toHaveBeenCalled();
     // });
