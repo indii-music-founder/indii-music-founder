@@ -165,6 +165,10 @@ export const VideoStage = React.memo<VideoStageProps>(({
             } catch (e: unknown) {
                 logger.warn('[VideoStage] Blob URL recovery attempt failed:', e);
             }
+
+            // If recovery fails and we are still a blob: 
+            setVideoError("Playback Error: Local asset missing. This video was from a previous session and is no longer available offline.");
+            return;
         }
 
         setVideoError("Playback Error: Video source unavailable or corrupted.");
