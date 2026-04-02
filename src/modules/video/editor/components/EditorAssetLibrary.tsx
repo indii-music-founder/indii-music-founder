@@ -29,23 +29,23 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'video': return <Film size={16} />;
-            case 'audio': return <Music size={16} />;
-            case 'image': return <Image size={16} />;
-            default: return <FileText size={16} />;
+            case 'video': return <Film size={12} />;
+            case 'audio': return <Music size={12} />;
+            case 'image': return <Image size={12} />;
+            default: return <FileText size={12} />;
         }
     };
 
 
 
     return (
-        <div className="h-full flex flex-col bg-gray-900 border-r border-gray-800 w-full">
-            <div className="p-4 border-b border-gray-800">
-                <h3 className="text-[11px] font-bold text-gray-200 uppercase tracking-wider">Asset Library</h3>
-                <p className="text-[10px] text-gray-500 mt-1">Drag items to the timeline</p>
+        <div className="h-full flex flex-col bg-[#050505] border-r border-[#1a1a1a] w-full">
+            <div className="p-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
+                <h3 className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Asset Library</h3>
+                <p className="text-[9px] text-gray-500 mt-0.5">Drag to timeline</p>
             </div>
 
-            <div className="flex-1 p-2">
+            <div className="flex-1 p-2 overflow-y-auto">
                 {assets.length === 0 ? (
                     <EmptyState />
                 ) : (
@@ -57,13 +57,13 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                                 key={item.id}
                                 draggable
                                 onDragStart={(e) => onDragStart(e, item)}
-                                className="group relative bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-purple-500 cursor-grab active:cursor-grabbing transition-all mb-2"
+                                className="group relative bg-[#0a0a0a] rounded-md overflow-hidden border border-white/5 hover:border-blue-500/50 cursor-grab active:cursor-grabbing transition-all mb-2 flex flex-col"
                             >
-                                <div className="aspect-video bg-gray-950 relative">
+                                <div className="aspect-video relative">
                                     {item.type === 'video' ? (
                                         <video
                                             src={item.url}
-                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
                                             preload="metadata"
                                             muted
                                             loop
@@ -75,22 +75,22 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                                         <img
                                             src={item.thumbnailUrl || item.url}
                                             alt={item.prompt}
-                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
                                         />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-600">
-                                            <Music size={24} />
+                                        <div className="w-full h-full flex items-center justify-center text-gray-600 bg-gray-900/50">
+                                            <Music size={14} />
                                         </div>
                                     )}
-                                    <div className="absolute top-1 right-1 bg-black/60 p-1 rounded text-white">
+                                    <div className="absolute top-1 right-1 bg-black/80 px-1 py-0.5 rounded text-white flex items-center justify-center">
                                         {getIcon(item.type)}
                                     </div>
                                 </div>
-                                <div className="p-2">
-                                    <p className="text-xs text-gray-300 truncate" title={item.prompt}>
+                                <div className="px-2 py-1.5 bg-[#0a0a0a]">
+                                    <p className="text-[10px] font-medium text-gray-300 truncate leading-tight" title={item.prompt}>
                                         {item.prompt || 'Untitled Asset'}
                                     </p>
-                                    <p className="text-[10px] text-gray-500 mt-0.5">
+                                    <p className="text-[9px] text-gray-600 mt-0.5">
                                         {new Date(item.timestamp).toLocaleDateString()}
                                     </p>
                                 </div>

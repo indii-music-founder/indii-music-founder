@@ -28,7 +28,7 @@ interface StyledInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEleme
 
 export const StyledInput = memo(({ className = "", ...props }: StyledInputProps) => (
     <input
-        className={`w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none ${className}`}
+        className={`w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded px-1.5 py-1 text-[10px] text-gray-300 focus:border-blue-500/50 outline-none transition-colors ${className}`}
         {...props}
     />
 ));
@@ -41,7 +41,7 @@ interface StyledRangeProps extends Omit<React.InputHTMLAttributes<HTMLInputEleme
 export const StyledRange = memo(({ className = "", ...props }: StyledRangeProps) => (
     <input
         type="range"
-        className={`w-full ${className}`}
+        className={`w-full accent-blue-500 ${className}`}
         {...props}
     />
 ));
@@ -53,7 +53,7 @@ interface StyledSelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectEl
 
 export const StyledSelect = memo(({ className = "", children, ...props }: StyledSelectProps) => (
     <select
-        className={`bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none ${className}`}
+        className={`bg-[#0a0a0a] border border-[#1a1a1a] rounded px-1.5 py-1 text-[10px] text-gray-300 focus:border-blue-500/50 outline-none transition-colors appearance-none ${className}`}
         {...props}
     >
         {children}
@@ -67,7 +67,7 @@ interface StyledTextAreaProps extends Omit<React.TextareaHTMLAttributes<HTMLText
 
 export const StyledTextArea = memo(({ className = "", ...props }: StyledTextAreaProps) => (
     <textarea
-        className={`bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none ${className}`}
+        className={`bg-[#0a0a0a] border border-[#1a1a1a] rounded px-1.5 py-1 text-[10px] text-gray-300 focus:border-blue-500/50 outline-none transition-colors resize-none ${className}`}
         {...props}
     />
 ));

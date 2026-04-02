@@ -26,25 +26,25 @@ export const TimelineTrack = memo(({
     onToggleExpand, onRemoveClip, onDragStart, onAddKeyframe, onKeyframeClick
 }: TimelineTrackProps) => {
     return (
-        <div className="bg-gray-900 rounded flex flex-col relative group border border-gray-800 hover:border-gray-700 transition-colors">
-            <div className="flex h-20">
+        <div className="bg-gray-900 rounded flex flex-col relative group border border-gray-800 hover:border-gray-700 transition-colors mb-1">
+            <div className="flex h-16">
                 {/* Track Header */}
                 <div className="w-48 border-r border-gray-800 p-2 flex flex-col justify-between bg-gray-900 shrink-0 z-10">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-300 truncate" title={track.name}>{track.name}</span>
+                        <span className="text-[10px] font-medium text-gray-300 truncate" title={track.name}>{track.name}</span>
                         <div className="flex gap-1">
                             <button data-testid={`track-toggle-visibility-${track.id}`} className="text-gray-600 hover:text-gray-400" aria-label={`Toggle visibility for track ${track.name}`}><Eye size={12} /></button>
                             <button data-testid={`track-toggle-mute-${track.id}`} className="text-gray-600 hover:text-gray-400" aria-label={`Toggle mute for track ${track.name}`}><Volume2 size={12} /></button>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => onAddSampleClip(track.id, 'text')} data-testid={`track-add-text-${track.id}`} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Text" aria-label="Add text clip">
+                    <div className="flex gap-1.5">
+                        <button onClick={() => onAddSampleClip(track.id, 'text')} data-testid={`track-add-text-${track.id}`} className="text-[9px] bg-gray-800 hover:bg-gray-700 px-1 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Text" aria-label="Add text clip">
                             <Plus size={10} /> Txt
                         </button>
-                        <button onClick={() => onAddSampleClip(track.id, 'video')} data-testid={`track-add-video-${track.id}`} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Video" aria-label="Add video clip">
+                        <button onClick={() => onAddSampleClip(track.id, 'video')} data-testid={`track-add-video-${track.id}`} className="text-[9px] bg-gray-800 hover:bg-gray-700 px-1 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Video" aria-label="Add video clip">
                             <Plus size={10} /> Vid
                         </button>
-                        <button onClick={() => onAddSampleClip(track.id, 'audio')} data-testid={`track-add-audio-${track.id}`} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Audio" aria-label="Add audio clip">
+                        <button onClick={() => onAddSampleClip(track.id, 'audio')} data-testid={`track-add-audio-${track.id}`} className="text-[9px] bg-gray-800 hover:bg-gray-700 px-1 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Audio" aria-label="Add audio clip">
                             <Plus size={10} /> Aud
                         </button>
                         <button onClick={() => onRemoveTrack(track.id)} data-testid={`track-delete-${track.id}`} className="text-gray-600 hover:text-red-400 ml-auto" aria-label={`Delete track ${track.name}`}>
@@ -53,7 +53,6 @@ export const TimelineTrack = memo(({
                     </div>
                 </div>
 
-                {/* Track Timeline */}
                 <div
                     className="flex-1 relative overflow-hidden bg-gray-900/50"
                     onDragOver={(e) => {
@@ -62,12 +61,13 @@ export const TimelineTrack = memo(({
                     }}
                     onDrop={(e) => {
                         e.preventDefault();
+
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
+
                         const files = Array.from(e.dataTransfer.files);
                         if (files.length > 0) {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const x = e.clientX - rect.left;
-                            const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
-
                             const file = files[0]!;
                             const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'image' : 'video';
                             const url = URL.createObjectURL(file);
@@ -86,6 +86,32 @@ export const TimelineTrack = memo(({
                                     y: 0
                                 });
                             });
+                        } else {
+                            try {
+                                const dataString = e.dataTransfer.getData('application/json');
+                                if (dataString) {
+                                    const data = JSON.parse(dataString);
+                                    if (data.type === 'asset' && data.asset) {
+                                        const mediaType = data.asset.type === 'image' ? 'image' : data.asset.type === 'audio' ? 'audio' : 'video';
+                                        import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
+                                            useVideoEditorStore.getState().addClip({
+                                                type: mediaType,
+                                                trackId: track.id,
+                                                name: data.asset.name,
+                                                startFrame: frame,
+                                                durationInFrames: data.asset.durationInSeconds ? Math.floor(data.asset.durationInSeconds * 30) : 300,
+                                                src: data.asset.url,
+                                                opacity: 1,
+                                                scale: 1,
+                                                x: 0,
+                                                y: 0
+                                            });
+                                        });
+                                    }
+                                }
+                            } catch (err) {
+                                console.error('Failed to parse dropped asset data:', err);
+                            }
                         }
                     }}
                 >

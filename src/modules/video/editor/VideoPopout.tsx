@@ -9,6 +9,7 @@ import { MyComposition } from '../remotion/MyComposition';
  */
 export default function VideoPopout() {
     const { project, setProject } = useVideoEditorStore();
+    const playerRef = React.useRef<import('@remotion/player').PlayerRef>(null);
 
     useEffect(() => {
         // Only set up BroadcastChannel in the browser environment
@@ -18,6 +19,17 @@ export default function VideoPopout() {
         channel.onmessage = (event) => {
             if (event.data?.type === 'SYNC_PROJECT') {
                 setProject(event.data.project);
+            } else if (event.data?.type === 'SYNC_ACTION') {
+                const action = event.data.action;
+                if (!playerRef.current) return;
+
+                if (action === 'play') {
+                    playerRef.current.play();
+                } else if (action === 'pause') {
+                    playerRef.current.pause();
+                } else if (action === 'seek' && typeof event.data.frame === 'number') {
+                    playerRef.current.seekTo(event.data.frame);
+                }
             }
         };
 
@@ -53,6 +65,7 @@ export default function VideoPopout() {
                 </div>
 
                 <Player
+                    ref={playerRef}
                     component={MyComposition}
                     inputProps={{ project }}
                     durationInFrames={Math.max(1, project.durationInFrames)}

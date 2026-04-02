@@ -88,9 +88,8 @@ function VoiceInputButton({ onTranscript }: VoiceInputButtonProps) {
     return (
         <button
             onClick={isListening ? stopListening : startListening}
-            className={`p-2 transition-colors rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-dept-creative/50 outline-none ${
-                isListening ? 'text-red-400 animate-pulse' : 'text-gray-500 hover:text-white'
-            }`}
+            className={`p-2 transition-colors rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-dept-creative/50 outline-none ${isListening ? 'text-red-400 animate-pulse' : 'text-gray-500 hover:text-white'
+                }`}
             title={isListening ? 'Stop listening' : 'Voice input'}
             aria-label={isListening ? 'Stop listening' : 'Voice input'}
             type="button"
@@ -144,7 +143,7 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
     };
 
     return (
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-20">
+        <div className="w-full max-w-2xl mx-auto z-20 relative">
             {/* Glass Container */}
             <div className="glass rounded-xl p-1.5 flex items-center gap-2 shadow-2xl shadow-black/50 border border-white/10 transition-all hover:border-white/20 hover:bg-black/50">
                 {/* Icon */}
