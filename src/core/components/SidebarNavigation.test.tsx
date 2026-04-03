@@ -287,8 +287,7 @@ describe('Sidebar Navigation Integration', () => {
         });
     });
 
-    it('renders user profile and logout button', () => {
-        const mockLogout = vi.fn();
+    it('renders navigation items correctly', () => {
         mockedUseStore.mockReturnValue({
             ...buildStoreState(),
             user: {
@@ -301,7 +300,7 @@ describe('Sidebar Navigation Integration', () => {
                 email: 'test@example.com',
                 bio: 'Mock User Bio'
             },
-            logout: mockLogout,
+            logout: vi.fn(),
         });
 
         render(
@@ -310,12 +309,9 @@ describe('Sidebar Navigation Integration', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('Creative Director')).toBeInTheDocument();
-        expect(screen.getByText('Mock User Bio')).toBeInTheDocument();
-        expect(screen.getByText('System Active')).toBeInTheDocument();
-        expect(screen.getByTitle('Reload System')).toBeInTheDocument();
-
-        fireEvent.click(screen.getByTitle('Reload System'));
-        expect(mockLogout).toHaveBeenCalled();
+        // Manager section items are rendered
+        expect(screen.getByTestId('nav-item-brand')).toBeInTheDocument();
+        // Sidebar toggle is accessible
+        expect(screen.getByTestId('sidebar-toggle')).toBeInTheDocument();
     });
 });

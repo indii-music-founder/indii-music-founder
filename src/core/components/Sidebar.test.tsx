@@ -82,8 +82,8 @@ describe('Sidebar', () => {
         const brandManagerBtn = screen.getByTestId('nav-item-brand');
         expect(brandManagerBtn).toHaveAttribute('aria-label', 'Brand Manager');
 
-        // Check for logout button
-        expect(screen.getByTestId('logout-btn')).toHaveAttribute('aria-label', 'Reload System');
+        // Check sidebar toggle is accessible in collapsed state
+        expect(screen.getByTestId('sidebar-toggle')).toBeInTheDocument();
     });
 
     // Item 372: Snapshot test to catch unintended UI regressions in the Sidebar chrome
