@@ -64,13 +64,13 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     useEffect(() => {
         useStore.setState({ isAgentOpen: false });
         if (generationMode === 'video') {
-            // Allow navigating to gallery or editor to pick assets even while in video mode
-            if (viewMode !== 'gallery' && viewMode !== 'editor' && viewMode !== 'video_production') {
+            // Allow navigating to editor to pick assets even while in video mode
+            if (viewMode !== 'editor' && viewMode !== 'video_production') {
                 setViewMode('video_production');
             }
         } else if (viewMode === 'video_production') {
-            // If we switched OUT of video mode, go back to gallery (or canvas/showroom)
-            setViewMode('gallery');
+            // If we switched OUT of video mode, go back to direct generation
+            setViewMode('direct');
         }
     }, [generationMode, viewMode, setViewMode]);
 
@@ -188,7 +188,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 item={selectedItem}
                                 onClose={() => {
                                     setSelectedItem(null);
-                                    setViewMode('gallery');
+                                    setViewMode('direct');
                                 }}
                                 onSendToWorkflow={(type, item) => {
                                     const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();
