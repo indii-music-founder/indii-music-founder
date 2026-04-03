@@ -156,12 +156,27 @@ const INITIAL_PROJECT: VideoProject = {
 };
 
 // Setup BroadcastChannel for sync to popout window
-let syncChannel: BroadcastChannel | null = null;
+// Exported so hooks can reuse the same singleton instead of creating fire-and-forget channels.
+export let syncChannel: BroadcastChannel | null = null;
+let _heartbeatExpiryTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Resets (or starts) the 5-second crash-detection window.
+// Called on POPOUT_OPENED and every HEARTBEAT — so the popout is declared dead
+// exactly 5 s after the last sign of life, regardless of polling interval.
+const resetHeartbeatExpiry = () => {
+    if (_heartbeatExpiryTimer) clearTimeout(_heartbeatExpiryTimer);
+    _heartbeatExpiryTimer = setTimeout(() => {
+        useVideoEditorStore.getState().setIsPopoutActive(false);
+        _heartbeatExpiryTimer = null;
+    }, 5000);
+};
+
 if (typeof window !== 'undefined') {
     syncChannel = new BroadcastChannel('indiiOS-video-editor-sync');
     syncChannel.onmessage = (event) => {
         if (event.data?.type === 'POPOUT_OPENED') {
             useVideoEditorStore.getState().setIsPopoutActive(true);
+            resetHeartbeatExpiry();
             // Give it the latest state immediately
             syncChannel?.postMessage({
                 type: 'SYNC_PROJECT',
@@ -169,6 +184,12 @@ if (typeof window !== 'undefined') {
             });
         } else if (event.data?.type === 'POPOUT_CLOSED') {
             useVideoEditorStore.getState().setIsPopoutActive(false);
+            if (_heartbeatExpiryTimer) {
+                clearTimeout(_heartbeatExpiryTimer);
+                _heartbeatExpiryTimer = null;
+            }
+        } else if (event.data?.type === 'HEARTBEAT') {
+            resetHeartbeatExpiry();
         }
     };
 }
