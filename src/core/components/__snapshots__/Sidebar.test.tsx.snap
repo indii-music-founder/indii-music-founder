@@ -20,6 +20,20 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     </button>
   </div>
   <div
+    class="px-4 pt-4 pb-2 w-full border-b border-white/5 border-dashed"
+  >
+    <div
+      class="flex items-center justify-center p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
+      data-state="closed"
+    >
+      <svg
+        class="text-gray-500"
+        data-testid="icon-Fingerprint"
+        size="16"
+      />
+    </div>
+  </div>
+  <div
     class="flex items-center justify-center pt-4 pb-2 border-b border-white/5 border-dashed"
   >
     <button
@@ -58,13 +72,15 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     </button>
   </div>
   <div
-    class="flex-1 py-4 space-y-6"
+    class="flex-1 py-4 space-y-2"
   >
     <div
+      class="mb-2"
       data-testid="manager-section"
     >
       <div
-        class="space-y-0.5"
+        class="space-y-0.5 overflow-hidden"
+        style="height: auto; opacity: 1;"
       >
         <button
           aria-label="Brand Manager"
@@ -130,7 +146,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Network"
+            data-testid="icon-CalendarDays"
             size="18"
           />
         </button>
@@ -187,9 +203,12 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
       </div>
     </div>
-    <div>
+    <div
+      class="mb-2"
+    >
       <div
-        class="space-y-0.5"
+        class="space-y-0.5 overflow-hidden"
+        style="height: auto; opacity: 1;"
       >
         <button
           aria-label="Marketing Department"
@@ -204,7 +223,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Megaphone"
+            data-testid="icon-Target"
             size="18"
           />
         </button>
@@ -221,7 +240,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Network"
+            data-testid="icon-Share2"
             size="18"
           />
         </button>
@@ -255,7 +274,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Book"
+            data-testid="icon-Library"
             size="18"
           />
         </button>
@@ -310,14 +329,8 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
             size="18"
           />
         </button>
-      </div>
-    </div>
-    <div>
-      <div
-        class="space-y-0.5"
-      >
         <button
-          aria-label="Merch Tool"
+          aria-label="Art & Merch Dept"
           class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-merch"
@@ -333,6 +346,15 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
             size="18"
           />
         </button>
+      </div>
+    </div>
+    <div
+      class="mb-2"
+    >
+      <div
+        class="space-y-0.5 overflow-hidden"
+        style="height: auto; opacity: 1;"
+      >
         <button
           aria-label="Audio Analyzer"
           class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
@@ -363,7 +385,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Network"
+            data-testid="icon-GitBranch"
             size="18"
           />
         </button>
@@ -402,10 +424,10 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
         </button>
         <button
-          aria-label="History"
+          aria-label="Observability"
           class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
-          data-testid="nav-item-history"
+          data-testid="nav-item-observability"
           style="--dept-color: var(--color-test);"
         >
           <div
@@ -414,7 +436,24 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Clock"
+            data-testid="icon-Activity"
+            size="18"
+          />
+        </button>
+        <button
+          aria-label="Settings"
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-settings"
+          style="--dept-color: var(--color-test);"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-Settings"
             size="18"
           />
         </button>
@@ -423,114 +462,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
   </div>
   <div
     class="p-4 border-t border-white/5 mt-auto flex flex-col gap-2 items-center"
-  >
-    <div
-      class="mb-2 w-full flex flex-col gap-2"
-    />
-    <div
-      class="flex flex-col justify-center gap-3"
-    >
-      <div
-        class="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden"
-      >
-        <span
-          class="text-xs font-bold text-white"
-        >
-          S
-        </span>
-      </div>
-      <button
-        aria-label="Reload System"
-        class="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors mt-1"
-        data-testid="logout-btn"
-        title="Reload System"
-      >
-        <svg
-          data-testid="icon-LogOut"
-          size="14"
-        />
-      </button>
-    </div>
-    <div
-      class="mt-4 flex flex-col gap-2 rounded-lg bg-black/20 py-2 gap-3"
-    >
-      <div
-        class="flex items-center justify-center"
-      >
-        <div
-          class="flex items-center gap-1 p-1 bg-secondary/50 rounded-full border border-white/10 flex-col"
-        >
-          <button
-            class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
-            title="Light Mode"
-          >
-            <svg
-              class="w-4 h-4"
-              data-testid="icon-Sun"
-            />
-          </button>
-          <button
-            class="p-1.5 rounded-full transition-all duration-200 bg-white text-purple-600 shadow-sm"
-            title="System Preference"
-          >
-            <svg
-              class="w-4 h-4"
-              data-testid="icon-Monitor"
-            />
-          </button>
-          <button
-            class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
-            title="Dark Mode"
-          >
-            <svg
-              class="w-4 h-4"
-              data-testid="icon-Moon"
-            />
-          </button>
-        </div>
-      </div>
-      <div
-        class="pt-2 border-t border-white/5 px-1"
-      >
-        <div
-          class="flex items-center justify-center p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
-          data-state="closed"
-        >
-          <svg
-            class="text-gray-500"
-            data-testid="icon-Fingerprint"
-            size="16"
-          />
-        </div>
-      </div>
-      <div
-        class="pt-2 border-t border-white/5 flex flex-col items-center gap-3"
-      >
-        <button
-          aria-label="System Observability"
-          class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
-          data-state="closed"
-          data-testid="observability-footer-btn"
-        >
-          <svg
-            data-testid="icon-Activity"
-            size="16"
-          />
-        </button>
-        <button
-          aria-label="Settings"
-          class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
-          data-state="closed"
-          data-testid="settings-footer-btn"
-        >
-          <svg
-            data-testid="icon-Settings"
-            size="16"
-          />
-        </button>
-      </div>
-    </div>
-  </div>
+  />
 </nav>
 `;
 
@@ -572,6 +504,25 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         size="16"
       />
     </button>
+  </div>
+  <div
+    class="px-4 pt-4 pb-2 w-full border-b border-white/5 border-dashed"
+  >
+    <div
+      class="flex items-center gap-2 p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
+      data-state="closed"
+    >
+      <svg
+        class="text-gray-500"
+        data-testid="icon-Fingerprint"
+        size="16"
+      />
+      <span
+        class="text-xs text-gray-500 font-medium"
+      >
+        Biometrics Unavailable
+      </span>
+    </div>
   </div>
   <div
     class="px-4 pt-4 pb-2"
@@ -632,18 +583,29 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
     </button>
   </div>
   <div
-    class="flex-1 py-4 space-y-6"
+    class="flex-1 py-4 space-y-2"
   >
     <div
+      class="mb-2"
       data-testid="manager-section"
     >
-      <h3
-        class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap"
+      <button
+        class="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
       >
-        Manager's Office
-      </h3>
+        <span
+          class="whitespace-nowrap"
+        >
+          Manager's Office
+        </span>
+        <svg
+          class="transition-transform duration-200 rotate-180"
+          data-testid="icon-ChevronDown"
+          size="14"
+        />
+      </button>
       <div
-        class="space-y-0.5"
+        class="space-y-0.5 overflow-hidden"
+        style="height: auto; opacity: 1;"
       >
         <button
           class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
@@ -720,7 +682,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Network"
+            data-testid="icon-CalendarDays"
             size="18"
           />
           <span
@@ -794,14 +756,26 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         </button>
       </div>
     </div>
-    <div>
-      <h3
-        class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap"
+    <div
+      class="mb-2"
+    >
+      <button
+        class="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
       >
-        Departments
-      </h3>
+        <span
+          class="whitespace-nowrap"
+        >
+          Departments
+        </span>
+        <svg
+          class="transition-transform duration-200 rotate-180"
+          data-testid="icon-ChevronDown"
+          size="14"
+        />
+      </button>
       <div
-        class="space-y-0.5"
+        class="space-y-0.5 overflow-hidden"
+        style="height: auto; opacity: 1;"
       >
         <button
           class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
@@ -815,7 +789,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Megaphone"
+            data-testid="icon-Target"
             size="18"
           />
           <span
@@ -836,7 +810,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Network"
+            data-testid="icon-Share2"
             size="18"
           />
           <span
@@ -878,7 +852,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Book"
+            data-testid="icon-Library"
             size="18"
           />
           <span
@@ -950,17 +924,6 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
             Licensing Department
           </span>
         </button>
-      </div>
-    </div>
-    <div>
-      <h3
-        class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap"
-      >
-        Tools
-      </h3>
-      <div
-        class="space-y-0.5"
-      >
         <button
           class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
@@ -979,9 +942,32 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           <span
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
-            Merch Tool
+            Art & Merch Dept
           </span>
         </button>
+      </div>
+    </div>
+    <div
+      class="mb-2"
+    >
+      <button
+        class="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
+      >
+        <span
+          class="whitespace-nowrap"
+        >
+          Tools
+        </span>
+        <svg
+          class="transition-transform duration-200 rotate-180"
+          data-testid="icon-ChevronDown"
+          size="14"
+        />
+      </button>
+      <div
+        class="space-y-0.5 overflow-hidden"
+        style="height: auto; opacity: 1;"
+      >
         <button
           class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
@@ -1015,7 +1001,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Network"
+            data-testid="icon-GitBranch"
             size="18"
           />
           <span
@@ -1069,7 +1055,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         <button
           class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
-          data-testid="nav-item-history"
+          data-testid="nav-item-observability"
           style="--dept-color: var(--color-test);"
         >
           <div
@@ -1078,13 +1064,34 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           />
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Clock"
+            data-testid="icon-Activity"
             size="18"
           />
           <span
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
-            History
+            Observability
+          </span>
+        </button>
+        <button
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-settings"
+          style="--dept-color: var(--color-test);"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-Settings"
+            size="18"
+          />
+          <span
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
+          >
+            Settings
           </span>
         </button>
       </div>
@@ -1093,141 +1100,8 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
   <div
     class="p-4 border-t border-white/5 mt-auto flex flex-col gap-2 "
   >
-    <div
-      class="flex items-center gap-3"
-    >
-      <div
-        class="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden"
-      >
-        <span
-          class="text-xs font-bold text-white"
-        >
-          S
-        </span>
-      </div>
-      <div
-        class="flex-1 min-w-0"
-      >
-        <p
-          class="text-sm font-medium text-gray-200 truncate"
-        >
-          Test User
-        </p>
-        <p
-          class="text-xs text-gray-500 truncate"
-          data-testid="user-profile-info"
-        >
-          System Active
-        </p>
-      </div>
-      <button
-        aria-label="Reload System"
-        class="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors "
-        data-testid="logout-btn"
-        title="Reload System"
-      >
-        <svg
-          data-testid="icon-LogOut"
-          size="14"
-        />
-      </button>
-    </div>
-    <div
-      class="mt-4 flex flex-col gap-2 rounded-lg bg-black/20 p-2 border border-white/5"
-    >
-      <div
-        class="flex items-center justify-center"
-      >
-        <div
-          class="flex items-center gap-1 p-1 bg-secondary/50 rounded-full border border-white/10"
-        >
-          <button
-            class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
-            title="Light Mode"
-          >
-            <svg
-              class="w-4 h-4"
-              data-testid="icon-Sun"
-            />
-          </button>
-          <button
-            class="p-1.5 rounded-full transition-all duration-200 bg-white text-purple-600 shadow-sm"
-            title="System Preference"
-          >
-            <svg
-              class="w-4 h-4"
-              data-testid="icon-Monitor"
-            />
-          </button>
-          <button
-            class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
-            title="Dark Mode"
-          >
-            <svg
-              class="w-4 h-4"
-              data-testid="icon-Moon"
-            />
-          </button>
-        </div>
-      </div>
-      <div
-        class="pt-2 border-t border-white/5 px-2"
-      >
-        <div
-          class="flex items-center gap-2 p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
-          data-state="closed"
-        >
-          <svg
-            class="text-gray-500"
-            data-testid="icon-Fingerprint"
-            size="16"
-          />
-          <span
-            class="text-xs text-gray-500 font-medium"
-          >
-            Biometrics Unavailable
-          </span>
-        </div>
-      </div>
-      <div
-        class="pt-2 border-t border-white/5 flex items-center justify-center gap-3"
-      >
-        <button
-          aria-label="System Observability"
-          class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
-          data-state="closed"
-          data-testid="observability-footer-btn"
-        >
-          <span
-            class="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider"
-          >
-            <svg
-              data-testid="icon-Activity"
-              size="14"
-            />
-             Observability
-          </span>
-        </button>
-        <button
-          aria-label="Settings"
-          class="p-1.5 rounded transition-transform hover:scale-110 text-gray-500 hover:text-gray-300"
-          data-state="closed"
-          data-testid="settings-footer-btn"
-        >
-          <span
-            class="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider"
-          >
-            <svg
-              data-testid="icon-Settings"
-              size="14"
-            />
-             Settings
-          </span>
-        </button>
-      </div>
-    </div>
     <p
-      class="mt-4 text-[10px] text-gray-600 text-center italic"
+      class="text-[10px] text-gray-600 text-center italic"
     >
       made by Detroit, for the world.
     </p>
