@@ -100,6 +100,34 @@ const BrandManager: React.FC = () => {
                         <span className="text-xs font-bold text-white tracking-widest uppercase">Brand HQ</span>
                     </div>
 
+                    {/* Navigation Menu — top of sidebar for visibility */}
+                    <div className="px-3 py-3 border-b border-white/5 space-y-0.5">
+                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Manager Menu</div>
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`
+                                    w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group relative
+                                    ${activeTab === tab.id
+                                        ? 'bg-dept-marketing/10 text-white border border-dept-marketing/30'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                                    }
+                                `}
+                            >
+                                <tab.icon
+                                    size={14}
+                                    className={`transition-colors ${activeTab === tab.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'}`}
+                                />
+                                <span>{tab.label}</span>
+                                {tab.id === 'interview' && profileIncomplete && activeTab !== 'interview' && (
+                                    <span className="ml-auto w-2 h-2 rounded-full bg-dept-marketing animate-pulse" />
+                                )}
+                                {activeTab === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-dept-marketing rounded-r-full" />}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="p-4 overflow-y-auto custom-scrollbar flex-1">
                         {/* Quick Stats / Info */}
                         <div className="mb-6 p-4 rounded-xl bg-[#111] border border-gray-800 space-y-4 shadow-lg shadow-black/20">
@@ -124,34 +152,6 @@ const BrandManager: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Navigation Menu */}
-                    <div className="space-y-1">
-                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 px-2">Manager Menu</div>
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`
-                                    w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group relative
-                                    ${activeTab === tab.id
-                                        ? 'bg-dept-marketing/10 text-white border border-dept-marketing/30'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                                    }
-                                `}
-                            >
-                                <tab.icon
-                                    size={14}
-                                    className={`transition-colors ${activeTab === tab.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'}`}
-                                />
-                                <span>{tab.label}</span>
-                                {tab.id === 'interview' && profileIncomplete && activeTab !== 'interview' && (
-                                    <span className="ml-auto w-2 h-2 rounded-full bg-dept-marketing animate-pulse" />
-                                )}
-                                {activeTab === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-dept-marketing rounded-r-full" />}
-                            </button>
-                        ))}
                     </div>
                 </aside>
 
