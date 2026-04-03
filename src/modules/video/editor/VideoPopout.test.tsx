@@ -122,8 +122,9 @@ describe('VideoPopout — SYNC_PROJECT handling', () => {
             tracks: [], clips: [],
         };
 
+        expect(channelInstance.onmessage).toBeDefined();
         act(() => {
-            channelInstance.onmessage?.({ data: { type: 'SYNC_PROJECT', project: incomingProject } });
+            channelInstance.onmessage!({ data: { type: 'SYNC_PROJECT', project: incomingProject } });
         });
 
         expect(setProject).toHaveBeenCalledWith(incomingProject);
@@ -136,9 +137,10 @@ describe('VideoPopout — SYNC_ACTION guard tests', () => {
         shouldInstallRef = false;
         render(<VideoPopout />);
 
+        expect(channelInstance.onmessage).toBeDefined();
         expect(() => {
             act(() => {
-                channelInstance.onmessage?.({ data: { type: 'SYNC_ACTION', action: 'play' } });
+                channelInstance.onmessage!({ data: { type: 'SYNC_ACTION', action: 'play' } });
             });
         }).not.toThrow();
         // Nothing was installed, so lastPlayerInstance should be null.
@@ -150,9 +152,10 @@ describe('VideoPopout — SYNC_ACTION guard tests', () => {
         // lastPlayerInstance is set by useImperativeHandle after mount.
         expect(lastPlayerInstance).not.toBeNull();
 
+        expect(channelInstance.onmessage).toBeDefined();
         act(() => {
             // Missing `frame` field — the typeof guard must block seekTo(undefined).
-            channelInstance.onmessage?.({ data: { type: 'SYNC_ACTION', action: 'seek' } });
+            channelInstance.onmessage!({ data: { type: 'SYNC_ACTION', action: 'seek' } });
         });
 
         expect(lastPlayerInstance!.seekTo).not.toHaveBeenCalled();

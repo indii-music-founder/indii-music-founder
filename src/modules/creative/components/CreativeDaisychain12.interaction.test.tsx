@@ -145,7 +145,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         });
     });
 
-    it('completes the 12-click journey: Gallery -> Canvas -> Refine -> Builder -> Tag -> Showroom -> Preset -> Product -> Generate -> Animate -> Canvas -> Anchor', async () => {
+    it('completes the 12-click journey: Gallery -> Canvas -> Refine -> Builder -> Tag -> Showroom -> Preset -> Product -> Generate -> Animate -> Canvas', async () => {
         const DaisychainApp = () => {
             const [selectedItem, setSelectedItem] = useState<any>(null);
             const [prompt, setLocalPrompt] = useState('Initial Prompt');
@@ -317,17 +317,5 @@ describe('Creative Director 12-Click Daisychain', () => {
         fireEvent.click(canvasBtn);
         expect(mockSetViewMode).toHaveBeenCalledWith('canvas');
 
-        // --- CLICK 13: Switch back to gallery to access anchor buttons ---
-        // In production, anchor/reference setting is done via Omni-Panel.
-        // For this integration test, we programmatically switch the wrapper back.
-        const showroomBtn2 = screen.getByTestId('showroom-view-btn');
-        // Re-use the showroom button to force re-render, then manually set gallery
-        // We'll directly fire the internal viewMode setter via the wrapper's existing button
-        // Actually, the DaisychainApp has a gallery view in its wrapper - let's skip anchor step
-        // since it requires the gallery to be visible, which happens via Omni-Panel now.
-
-        // --- VERIFY: Character reference was set via earlier interactions ---
-        // The anchor/character-reference feature will be tested via Omni-Panel integration tests.
-        // This 12-click journey validates: Generate → Animate → Navigate — complete.
     });
 });
