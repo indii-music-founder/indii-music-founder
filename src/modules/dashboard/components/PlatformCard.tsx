@@ -1,6 +1,7 @@
-import React from 'react';
-import { Monitor, Globe, Check, Lock, Cpu, HardDrive, Radio, Upload, Headphones, Zap, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Monitor, Globe, Check, Lock, Cpu, HardDrive, Radio, Upload, Headphones, Zap, ArrowRight, X } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { motion, AnimatePresence } from 'motion/react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>).electronAPI;
 
@@ -29,6 +30,7 @@ function StatusDot({ status }: { status: boolean | 'limited' }) {
 
 export function PlatformCard() {
     const setModule = useStore(state => state.setModule);
+    const [dismissed, setDismissed] = useState(false);
 
     // If already running in Electron, show a confirmation card instead
     if (isElectron) {
@@ -49,69 +51,87 @@ export function PlatformCard() {
     }
 
     return (
-        <div className="relative overflow-hidden border-b border-white/5">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
+        <AnimatePresence>
+            {!dismissed && (
+                <motion.div
+                    initial={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="relative overflow-hidden border-b border-white/5"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
 
-            <div className="relative z-10 px-6 py-2.5">
-                <div className="flex items-start gap-6">
-                    {/* Current platform indicator */}
-                    <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1 opacity-80">
-                        <Globe size={20} className="text-blue-400" />
-                        <span className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">Web</span>
-                    </div>
+                    {/* Dismiss button — top right */}
+                    <button
+                        onClick={() => setDismissed(true)}
+                        className="absolute top-2.5 right-3 z-20 p-1.5 text-gray-500 hover:text-gray-200 transition-colors rounded-lg hover:bg-white/10"
+                        aria-label="Dismiss Web Preview card"
+                    >
+                        <X size={14} />
+                    </button>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-sm font-bold text-gray-200">
-                                Web Preview
-                            </h3>
-                            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30 uppercase tracking-wider">
-                                Preview
-                            </span>
-                        </div>
-                        <p className="text-[11px] text-gray-500 mb-2 max-w-lg leading-snug">
-                            Explore every module and meet the AI agents. Founders Round investors receive full access to the Desktop Studio with local audio processing, SFTP distribution, and offline mode.
-                        </p>
-
-                        {/* Feature comparison grid */}
-                        <div className="grid grid-cols-7 gap-x-3 gap-y-1.5 max-w-md">
-                            {/* Column headers */}
-                            <div className="col-span-5" />
-                            <div className="flex items-center justify-center">
-                                <span className="text-[8px] font-mono text-gray-600 uppercase">Web</span>
-                            </div>
-                            <div className="flex items-center justify-center">
-                                <span className="text-[8px] font-mono text-amber-500/70 uppercase">Founders</span>
+                    <div className="relative z-10 px-6 py-2.5 pr-10">
+                        <div className="flex items-start gap-6">
+                            {/* Current platform indicator */}
+                            <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1 opacity-80">
+                                <Globe size={20} className="text-blue-400" />
+                                <span className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">Web</span>
                             </div>
 
-                            {features.map(f => (
-                                <React.Fragment key={f.label}>
-                                    <div className="col-span-5 flex items-center gap-2">
-                                        <f.icon size={12} className="text-gray-500 flex-shrink-0" />
-                                        <span className="text-[11px] text-gray-400 truncate">{f.label}</span>
-                                    </div>
-                                    <div className="flex items-center justify-center">
-                                        <StatusDot status={f.web} />
-                                    </div>
-                                    <div className="flex items-center justify-center">
-                                        <StatusDot status={f.desktop} />
-                                    </div>
-                                </React.Fragment>
-                            ))}
-                        </div>
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="text-sm font-bold text-gray-200">
+                                        Web Preview
+                                    </h3>
+                                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30 uppercase tracking-wider">
+                                        Preview
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-gray-500 mb-2 max-w-lg leading-snug">
+                                    Explore every module and meet the AI agents. Founders Round investors receive full access to the Desktop Studio with local audio processing, SFTP distribution, and offline mode.
+                                </p>
 
-                        {/* CTA */}
-                        <button
-                            onClick={() => setModule('founders-checkout')}
-                            className="group mt-2.5 flex items-center gap-2 text-[11px] font-bold text-amber-400 hover:text-amber-300 transition-colors uppercase tracking-widest"
-                        >
-                            Unlock full Desktop Studio
-                            <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-                        </button>
+                                {/* Feature comparison grid */}
+                                <div className="grid grid-cols-7 gap-x-3 gap-y-1.5 max-w-md">
+                                    {/* Column headers */}
+                                    <div className="col-span-5" />
+                                    <div className="flex items-center justify-center">
+                                        <span className="text-[8px] font-mono text-gray-600 uppercase">Web</span>
+                                    </div>
+                                    <div className="flex items-center justify-center">
+                                        <span className="text-[8px] font-mono text-amber-500/70 uppercase">Founders</span>
+                                    </div>
+
+                                    {features.map(f => (
+                                        <React.Fragment key={f.label}>
+                                            <div className="col-span-5 flex items-center gap-2">
+                                                <f.icon size={12} className="text-gray-500 flex-shrink-0" />
+                                                <span className="text-[11px] text-gray-400 truncate">{f.label}</span>
+                                            </div>
+                                            <div className="flex items-center justify-center">
+                                                <StatusDot status={f.web} />
+                                            </div>
+                                            <div className="flex items-center justify-center">
+                                                <StatusDot status={f.desktop} />
+                                            </div>
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+
+                                {/* CTA */}
+                                <button
+                                    onClick={() => setModule('founders-checkout')}
+                                    className="group mt-2.5 flex items-center gap-2 text-[11px] font-bold text-amber-400 hover:text-amber-300 transition-colors uppercase tracking-widest"
+                                >
+                                    Unlock full Desktop Studio
+                                    <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }

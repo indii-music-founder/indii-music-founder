@@ -5,6 +5,7 @@ import { useStore } from '@/core/store';
 import { createOneTimePayment } from '@/services/payment/PaymentService';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
+import { ArrowLeft } from 'lucide-react';
 
 interface ActivateResult {
     seat: number;
@@ -14,6 +15,7 @@ interface ActivateResult {
 
 export default function FoundersCheckout() {
     const user = useStore(state => state.user);
+    const setModule = useStore(state => state.setModule);
     const [searchParams] = useSearchParams();
     const sessionId = searchParams.get('session_id');
     const paymentStatus = searchParams.get('payment'); // 'success' or 'cancelled'
@@ -82,6 +84,13 @@ export default function FoundersCheckout() {
         return (
             <div className="flex flex-col items-center justify-center h-full p-8 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-purple-900/10 pointer-events-none" />
+                <button
+                    onClick={() => setModule('dashboard')}
+                    className="absolute top-6 left-6 z-20 flex items-center gap-2 text-xs text-gray-500 hover:text-gray-200 transition-colors group"
+                >
+                    <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+                    Return to Studio
+                </button>
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="z-10 bg-black/60 backdrop-blur-xl border border-amber-500/30 p-12 rounded-[3rem] max-w-xl text-center shadow-[0_0_100px_rgba(245,158,11,0.1)]">
                     <h2 className="text-4xl font-black tracking-tighter text-white mb-2">Welcome to the Inner Circle, Founder <span className="text-amber-400">#{activationResult.seat}</span></h2>
                     <p className="text-gray-300 mb-8 leading-relaxed max-w-sm mx-auto">{activationResult.message}</p>
@@ -105,7 +114,14 @@ export default function FoundersCheckout() {
     // View 2: Post-checkout (Sign the Covenant)
     if (paymentStatus === 'success' && sessionId) {
         return (
-            <div className="flex flex-col items-center justify-center h-full p-8 max-w-2xl mx-auto">
+            <div className="flex flex-col items-center justify-center h-full p-8 max-w-2xl mx-auto relative">
+                <button
+                    onClick={() => setModule('dashboard')}
+                    className="absolute top-6 left-6 z-20 flex items-center gap-2 text-xs text-gray-500 hover:text-gray-200 transition-colors group"
+                >
+                    <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+                    Return to Studio
+                </button>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
                     <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-4 text-center">
                         Cement Your <span className="text-amber-400">Legacy</span>.
@@ -150,6 +166,13 @@ export default function FoundersCheckout() {
     return (
         <div className="flex flex-col items-center justify-center h-full p-8 relative">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/10 via-background to-background pointer-events-none" />
+            <button
+                onClick={() => setModule('dashboard')}
+                className="absolute top-6 left-6 z-20 flex items-center gap-2 text-xs text-gray-500 hover:text-gray-200 transition-colors group"
+            >
+                <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+                Return to Studio
+            </button>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="z-10 text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono tracking-widest uppercase mb-8">
                     Founders Round
