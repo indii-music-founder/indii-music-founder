@@ -121,9 +121,16 @@ vi.mock('../../creative/components/CreativeGallery', () => ({
 vi.mock('../../creative/components/CreativeNavbar', () => ({
     default: () => (
         <div data-testid="creative-navbar">
-            <button data-testid="gallery-view-btn" onClick={() => mockSetViewMode('gallery')}>Gallery</button>
             <button data-testid="director-view-btn" onClick={() => mockSetViewMode('video_production')}>Director</button>
             <button data-testid="daisy-chain-toggle" onClick={() => mockSetVideoInput('isDaisyChain', true)}>Daisy Chain</button>
+            <button data-testid="set-first-frame-btn" onClick={() => {
+                mockSetVideoInput('firstFrame', { id: 'img-1', url: 'img1.jpg' });
+                mockToastSuccess('Set as First Frame');
+            }}>First Frame</button>
+            <button data-testid="set-last-frame-btn" onClick={() => {
+                mockSetVideoInput('lastFrame', { id: 'img-2', url: 'img2.jpg' });
+                mockToastSuccess('Set as Last Frame');
+            }}>Last Frame</button>
         </div>
     )
 }));
@@ -161,7 +168,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         // We need a wrapper to manage the store state transitions during the test
         const DaisychainApp = () => {
             const [state, setState] = useState({
-                viewMode: 'gallery' as const,
+                viewMode: 'video_production' as const,
                 generationMode: 'video' as const,
                 videoInputs: { isDaisyChain: false, firstFrame: null, lastFrame: null, timeOffset: 0, ingredients: [] },
                 generatedHistory: mockItems,
@@ -246,17 +253,8 @@ describe('🖱️ Click: Video Production Daisychain', () => {
 
         render(<DaisychainApp />);
 
-        // Ensure we are in Video Generation Mode but need to switch to Gallery to pick assets
-        // Initial state logic in CreativeStudio might force us to video_production view
-
-        // --- STEP 0: Switch to Gallery View ---
-        // const galleryTab = screen.getByTestId('gallery-view-btn');
-        // fireEvent.click(galleryTab); // Removed as initial viewMode is now 'gallery'
-
-        await waitFor(() => {
-            expect(screen.getByTestId('creative-gallery')).toBeInTheDocument();
-        });
-
+        // --- STEP 1: Select first and last frames via navbar controls ---
+        // (Gallery view is not accessible in video mode; frames are picked via navbar controls)
         const firstFrameBtn = screen.getByTestId('set-first-frame-btn');
         fireEvent.click(firstFrameBtn);
 

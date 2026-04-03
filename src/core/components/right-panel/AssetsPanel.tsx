@@ -360,12 +360,31 @@ export default function AssetsPanel({ toggleRightPanel }: { toggleRightPanel: ()
                                 >
                                     <div className="aspect-square bg-[#0d1117] relative overflow-hidden w-full flex items-center justify-center group">
                                         {asset.type === 'video' ? (
-                                            <video src={asset.url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" muted loop playsInline onMouseEnter={e => e.currentTarget.play().catch(() => { })} onMouseLeave={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
+                                            <video
+                                                src={asset.url}
+                                                poster={asset.thumbnailUrl}
+                                                preload="metadata"
+                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                                muted
+                                                loop
+                                                playsInline
+                                                onMouseEnter={e => e.currentTarget.play().catch(() => { })}
+                                                onMouseLeave={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                                                onError={e => { (e.currentTarget as HTMLVideoElement).style.display = 'none'; }}
+                                            />
                                         ) : asset.type === 'image' ? (
-                                            <img src={asset.thumbnailUrl || asset.url} alt={asset.name} loading="lazy" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                                            <img
+                                                src={asset.thumbnailUrl || asset.url}
+                                                alt={asset.name}
+                                                loading="lazy"
+                                                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                                                onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                            />
                                         ) : (
                                             <BadgeIcon size={28} className="text-gray-600 group-hover:text-gray-400 transition-colors" />
                                         )}
+                                        {/* Fallback icon visible when media fails to load */}
+                                        <BadgeIcon size={24} className="absolute text-gray-700 -z-0" />
 
                                         <div className={cn("absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium backdrop-blur-md border border-white/5", badge.cls)}>
                                             <BadgeIcon size={10} />

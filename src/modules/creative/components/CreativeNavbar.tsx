@@ -52,14 +52,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     {/* View Mode Switcher (Compact Segmented Control) */}
                     <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5 overflow-x-auto no-scrollbar">
                         <button
-                            onClick={() => setViewMode('gallery')}
-                            data-testid="gallery-view-btn"
-                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'gallery' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            Gallery
-                        </button>
-                        <button
                             onClick={() => setViewMode('canvas')}
                             data-testid="canvas-view-btn"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'canvas' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
