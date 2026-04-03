@@ -61,10 +61,10 @@ export function PlatformCard() {
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
 
-                    {/* Dismiss button */}
+                    {/* Dismiss button — top right */}
                     <button
                         onClick={() => setDismissed(true)}
-                        className="absolute top-2 right-2 z-20 p-1 text-gray-600 hover:text-gray-300 transition-colors rounded-lg hover:bg-white/5"
+                        className="absolute top-2.5 right-3 z-20 p-1.5 text-gray-500 hover:text-gray-200 transition-colors rounded-lg hover:bg-white/10"
                         aria-label="Dismiss Web Preview card"
                     >
                         <X size={14} />

@@ -144,7 +144,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         });
     });
 
-    it('completes the 12-click journey: Gallery -> Canvas -> Refine -> Builder -> Tag -> Showroom -> Preset -> Product -> Generate -> Animate -> Canvas -> Anchor', async () => {
+    it('completes the 12-click journey: Gallery -> Canvas -> Refine -> Builder -> Tag -> Showroom -> Preset -> Product -> Generate -> Animate -> Canvas', async () => {
         const DaisychainApp = () => {
             const [selectedItem, setSelectedItem] = useState<any>(null);
             const [prompt, setLocalPrompt] = useState('Initial Prompt');
