@@ -1,485 +1,354 @@
-import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { motion, AnimatePresence } from 'motion/react';
-import { StorageService } from '@/services/StorageService';
-import { processForKnowledgeBase } from '@/services/rag/ragService';
-import { logger } from '@/utils/logger';
-import { useToast } from '@/core/context/ToastContext';
+import { HistoryItem } from '@/core/types/history';
 import {
-    ChevronRight, Folder, Image as ImageIcon, Film, Music, FileText,
-    Sparkles, Clock, Upload, Trash2, Maximize2, Download, Search, X, MessageCircle
+    ChevronRight, Image as ImageIcon, Video, Music,
+    FileText, Search, Eye, Grid3X3, List
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 
-type AssetType = 'image' | 'video' | 'audio' | 'document';
+type AssetFilter = 'all' | 'images' | 'videos' | 'audio' | 'files';
+type ViewStyle = 'grid' | 'list';
 
-interface UnifiedAsset {
-    id: string; // prefixed composite ID
-    type: AssetType;
-    url: string;
-    thumbnailUrl?: string;
-    name: string;
-    timestamp: number;
-    source: 'generated' | 'uploaded' | 'file';
-    originalId: string;
+interface AssetsPanelProps {
+    toggleRightPanel: () => void;
 }
 
-const BADGE: Record<AssetType, { icon: React.ElementType; label: string; cls: string }> = {
-    image: { icon: ImageIcon, label: 'Image', cls: 'text-blue-400 bg-blue-500/15' },
-    video: { icon: Film, label: 'Video', cls: 'text-purple-400 bg-purple-500/15' },
-    audio: { icon: Music, label: 'Audio', cls: 'text-amber-400 bg-amber-500/15' },
-    document: { icon: FileText, label: 'Doc', cls: 'text-emerald-400 bg-emerald-500/15' },
-};
-
-function relTime(ts: number) {
-    if (!ts) return '';
-    const d = Date.now() - ts;
-    const m = Math.floor(d / 60000);
-    if (m < 1) return 'Just now';
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h ago`;
-    const days = Math.floor(h / 24);
-    if (days < 7) return `${days}d ago`;
-    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-export default function AssetsPanel({ toggleRightPanel }: { toggleRightPanel: () => void }) {
-    const toast = useToast();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const [activeFilter, setActiveFilter] = useState<'all' | AssetType>('all');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [isSearching, setIsSearching] = useState(false);
-    const searchInputRef = useRef<HTMLInputElement>(null);
-    const [selIdx, setSelIdx] = useState<number | null>(null);
-
+export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
     const {
-        currentProjectId,
-        userProfile,
         generatedHistory,
         uploadedImages,
         uploadedAudio,
         fileNodes,
-        removeFromHistory,
-        removeUploadedImage,
-        removeUploadedAudio,
-        deleteNode,
-        fetchFileNodes,
-        createFileNode,
         setSelectedItem,
-        setModule,
-        toggleAgentWindow,
-        isAgentOpen
+        setViewMode,
+        setModule
     } = useStore(useShallow(state => ({
-        currentProjectId: state.currentProjectId,
-        userProfile: state.userProfile,
         generatedHistory: state.generatedHistory,
         uploadedImages: state.uploadedImages,
         uploadedAudio: state.uploadedAudio,
         fileNodes: state.fileNodes,
-        removeFromHistory: state.removeFromHistory,
-        removeUploadedImage: state.removeUploadedImage,
-        removeUploadedAudio: state.removeUploadedAudio,
-        deleteNode: state.deleteNode,
-        fetchFileNodes: state.fetchFileNodes,
-        createFileNode: state.createFileNode,
         setSelectedItem: state.setSelectedItem,
-        setModule: state.setModule,
-        toggleAgentWindow: state.toggleAgentWindow,
-        isAgentOpen: state.isAgentOpen
+        setViewMode: state.setViewMode,
+        setModule: state.setModule
     })));
 
-    useEffect(() => {
-        if (currentProjectId) {
-            fetchFileNodes(currentProjectId);
-        }
-    }, [currentProjectId, fetchFileNodes]);
+    const [filter, setFilter] = useState<AssetFilter>('all');
+    const [viewStyle, setViewStyle] = useState<ViewStyle>('grid');
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const allItems: UnifiedAsset[] = useMemo(() => {
-        const items: UnifiedAsset[] = [];
+    // Aggregate all assets into a single sorted list
+    const allAssets = useMemo(() => {
+        const assets: HistoryItem[] = [];
 
-        const historySource = [...(generatedHistory || []), ...(uploadedImages || []), ...(uploadedAudio || [])];
-        historySource.forEach(h => {
-            if (h.projectId !== currentProjectId) return;
-            items.push({
-                id: `hist-${h.id}`,
-                type: h.type === 'music' ? 'audio' : (h.type as AssetType),
-                url: h.url,
-                thumbnailUrl: h.thumbnailUrl,
-                name: h.prompt || 'Untitled',
-                timestamp: h.timestamp,
-                source: h.origin === 'uploaded' ? 'uploaded' : 'generated',
-                originalId: h.id
-            });
+        // Generated images/videos
+        generatedHistory.forEach(item => assets.push(item));
+
+        // Uploaded images (deduplicate)
+        uploadedImages.forEach(item => {
+            if (!assets.find(a => a.id === item.id)) {
+                assets.push(item);
+            }
         });
 
-        fileNodes.forEach(f => {
-            if (f.type === 'folder') return;
-            items.push({
-                id: `file-${f.id}`,
-                type: f.fileType as AssetType,
-                url: f.data?.url || '',
-                name: f.name,
-                timestamp: f.createdAt,
-                source: 'file',
-                originalId: f.id
-            });
+        // Uploaded audio (deduplicate)
+        uploadedAudio.forEach(item => {
+            if (!assets.find(a => a.id === item.id)) {
+                assets.push(item);
+            }
         });
 
-        return items.sort((a, b) => b.timestamp - a.timestamp);
-    }, [generatedHistory, uploadedImages, uploadedAudio, fileNodes, currentProjectId]);
+        // File nodes → convert to pseudo-HistoryItem for display
+        fileNodes.forEach(node => {
+            if (!assets.find(a => a.id === node.id)) {
+                const mime = node.data?.mimeType || '';
+                const nodeType = node.type === 'folder' ? 'text' : (
+                    mime.startsWith('image') ? 'image' :
+                        mime.startsWith('video') ? 'video' :
+                            mime.startsWith('audio') ? 'music' : 'text'
+                );
+                assets.push({
+                    id: node.id,
+                    type: nodeType as HistoryItem['type'],
+                    url: node.data?.url || '',
+                    thumbnailUrl: node.data?.url || '',
+                    prompt: node.name,
+                    timestamp: node.updatedAt || 0,
+                    projectId: node.projectId || '',
+                    origin: 'uploaded'
+                });
+            }
+        });
 
-    const filteredItems = useMemo(() => {
-        let items = allItems;
-        if (activeFilter !== 'all') {
-            items = items.filter(img => img.type === activeFilter);
+        // Sort newest first
+        return assets.sort((a, b) => b.timestamp - a.timestamp);
+    }, [generatedHistory, uploadedImages, uploadedAudio, fileNodes]);
+
+    // Filter assets
+    const filteredAssets = useMemo(() => {
+        let filtered = allAssets;
+
+        switch (filter) {
+            case 'images':
+                filtered = filtered.filter(a => a.type === 'image');
+                break;
+            case 'videos':
+                filtered = filtered.filter(a => a.type === 'video');
+                break;
+            case 'audio':
+                filtered = filtered.filter(a => a.type === 'music');
+                break;
+            case 'files':
+                filtered = filtered.filter(a => a.type === 'text');
+                break;
         }
-        if (searchQuery) {
+
+        if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
-            items = items.filter(img => img.name.toLowerCase().includes(q));
+            filtered = filtered.filter(a =>
+                a.prompt?.toLowerCase().includes(q) ||
+                a.tags?.some(t => t.toLowerCase().includes(q))
+            );
         }
-        return items;
-    }, [allItems, activeFilter, searchQuery]);
 
-    const getFileTypeFromMime = useCallback((mime: string): 'image' | 'video' | 'audio' | 'document' => {
-        if (mime.startsWith('image/')) return 'image';
-        if (mime.startsWith('video/')) return 'video';
-        if (mime.startsWith('audio/')) return 'audio';
-        return 'document';
-    }, []);
+        return filtered;
+    }, [allAssets, filter, searchQuery]);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0 || !currentProjectId || !userProfile?.id) return;
+    // Counts for filter badges
+    const counts = useMemo(() => ({
+        all: allAssets.length,
+        images: allAssets.filter(a => a.type === 'image').length,
+        videos: allAssets.filter(a => a.type === 'video').length,
+        audio: allAssets.filter(a => a.type === 'music').length,
+        files: allAssets.filter(a => a.type === 'text').length,
+    }), [allAssets]);
 
-        let uploadedCount = 0;
-        const toastId = toast.loading(`Uploading ${files.length} asset(s)...`);
+    const filterButtons: { id: AssetFilter; label: string; icon: React.ElementType; count: number }[] = [
+        { id: 'all', label: 'All', icon: Grid3X3, count: counts.all },
+        { id: 'images', label: 'Images', icon: ImageIcon, count: counts.images },
+        { id: 'videos', label: 'Videos', icon: Video, count: counts.videos },
+        { id: 'audio', label: 'Audio', icon: Music, count: counts.audio },
+        { id: 'files', label: 'Files', icon: FileText, count: counts.files },
+    ];
 
-        try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i]!;
-                const fileType = getFileTypeFromMime(file.type);
-                const timestamp = Date.now();
-                const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-                const storagePath = `projects/${currentProjectId}/${userProfile.id}/${timestamp}_${sanitizedName}`;
-
-                try {
-                    const downloadUrl = await StorageService.uploadFile(file, storagePath);
-
-                    processForKnowledgeBase(file, file.name, {
-                        projectId: currentProjectId,
-                        type: file.type,
-                        size: file.size.toString()
-                    }).then(() => {
-                        toast.success(`Indexed ${file.name} for AI search`);
-                    }).catch(err => {
-                        logger.error("Indexing failed for", file.name, err);
-                    });
-
-                    await createFileNode(
-                        file.name,
-                        null,
-                        currentProjectId,
-                        userProfile.id,
-                        fileType,
-                        {
-                            url: downloadUrl,
-                            storagePath,
-                            size: file.size,
-                            mimeType: file.type
-                        }
-                    );
-                    uploadedCount++;
-                } catch (error: any) {
-                    logger.error(`Failed to upload ${file.name}:`, error);
-                    toast.error(`Failed: ${file.name}`);
-                }
-            }
-
-            if (uploadedCount > 0) {
-                toast.success(`Successfully uploaded ${uploadedCount} asset(s)`);
-            }
-        } finally {
-            toast.dismiss(toastId);
-            if (e.target) e.target.value = '';
+    const handleAssetClick = (asset: HistoryItem) => {
+        if (asset.type === 'image' || asset.type === 'video') {
+            setSelectedItem(asset);
+            setModule('creative');
+            setViewMode('editor');
         }
     };
 
-    const handleDelete = async (asset: UnifiedAsset) => {
-        if (asset.source === 'file') {
-            await deleteNode(asset.originalId);
-            toast.success('Asset deleted');
-        } else if (asset.source === 'uploaded') {
-            if (asset.type === 'audio') removeUploadedAudio(asset.originalId);
-            else removeUploadedImage(asset.originalId);
-            toast.success('Asset removed');
-        } else {
-            removeFromHistory(asset.originalId);
-            toast.success('Creation removed from history');
+    const getTypeIcon = (type: string) => {
+        switch (type) {
+            case 'image': return <ImageIcon size={10} />;
+            case 'video': return <Video size={10} />;
+            case 'music': return <Music size={10} />;
+            default: return <FileText size={10} />;
         }
-        setSelIdx(null);
     };
 
-    const openInStudio = (asset: UnifiedAsset) => {
-        // If it's a history item, we can set it so Studio picks it up
-        if (asset.source !== 'file') {
-            const rawItem = [...(generatedHistory || []), ...(uploadedImages || []), ...(uploadedAudio || [])]
-                .find(h => h.id === asset.originalId);
-            if (rawItem) setSelectedItem(rawItem);
+    const getTypeColor = (type: string) => {
+        switch (type) {
+            case 'image': return 'text-purple-400 bg-purple-500/15';
+            case 'video': return 'text-blue-400 bg-blue-500/15';
+            case 'music': return 'text-amber-400 bg-amber-500/15';
+            default: return 'text-gray-400 bg-white/10';
         }
-
-        if (asset.type === 'video') setModule('video');
-        else if (asset.type === 'image') setModule('creative');
-        else toast.info('Preview only supported for images and videos currently');
     };
-
-    const handleDiscuss = (asset: UnifiedAsset) => {
-        useStore.setState({
-            commandBarInput: `Let's discuss this ${asset.type}: "${asset.name}"`,
-        });
-        useStore.setState({ rightPanelTab: 'agent', isRightPanelOpen: true });
-        if (!isAgentOpen) toggleAgentWindow();
-    };
-
-    const sel = selIdx !== null ? filteredItems[selIdx] : null;
 
     return (
-        <div className="flex flex-col h-full bg-card relative">
-            <div className="absolute top-2 right-2 z-10">
-                <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors" aria-label="Close Panel">
-                    <ChevronRight size={16} />
-                </button>
-            </div>
-
-            {/* Header & Filters */}
-            <div className="p-4 pb-2 border-b border-white/5 bg-black/20 shrink-0">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-semibold flex items-center gap-2">
-                        <Folder size={16} className="text-blue-400" />
-                        Project Assets
-                    </h2>
+        <div className="flex flex-col h-full bg-[#080809]">
+            {/* Header */}
+            <div className="p-3 border-b border-white/[0.06] flex items-center justify-between bg-[#060608]/80 backdrop-blur-md shrink-0">
+                <div className="flex items-center gap-2">
+                    <div className="p-1 bg-amber-500/10 rounded-md">
+                        <Grid3X3 size={13} className="text-amber-400" />
+                    </div>
+                    <h3 className="text-xs font-bold text-gray-200 tracking-tight">Project Assets</h3>
+                    <span className="text-[9px] font-mono text-gray-600 bg-white/[0.04] px-1.5 py-0.5 rounded">
+                        {counts.all}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1">
                     <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="text-xs flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg transition-colors"
-                        title="Upload new assets"
+                        onClick={() => setViewStyle(viewStyle === 'grid' ? 'list' : 'grid')}
+                        className="p-1 text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] rounded transition-colors"
+                        title={viewStyle === 'grid' ? 'List view' : 'Grid view'}
                     >
-                        <Upload size={12} />
-                        Upload
+                        {viewStyle === 'grid' ? <List size={13} /> : <Grid3X3 size={13} />}
+                    </button>
+                    <button
+                        onClick={toggleRightPanel}
+                        className="p-1 hover:bg-white/[0.06] rounded text-gray-500 hover:text-gray-300 transition-colors"
+                        aria-label="Close Panel"
+                    >
+                        <ChevronRight size={14} />
                     </button>
                 </div>
-
-                {isSearching ? (
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="relative flex-1">
-                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                            <input
-                                ref={searchInputRef}
-                                type="text"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="Search assets..."
-                                className="w-full bg-black/30 border border-white/10 rounded-md py-1.5 pl-7 pr-2 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all"
-                                autoFocus
-                            />
-                        </div>
-                        <button onClick={() => { setIsSearching(false); setSearchQuery(''); }} className="p-1.5 text-gray-500 hover:text-gray-300">
-                            <X size={14} />
-                        </button>
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex flex-wrap gap-1 text-[10px] font-medium">
-                            {(['all', 'image', 'video', 'audio', 'document'] as const).map(f => (
-                                <button
-                                    key={f}
-                                    onClick={() => { setActiveFilter(f); setSelIdx(null); }}
-                                    className={cn(
-                                        "px-2.5 py-1 rounded-md transition-colors capitalize",
-                                        activeFilter === f
-                                            ? "bg-white text-black"
-                                            : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-200"
-                                    )}
-                                >
-                                    {f === 'document' ? 'Docs' : f}
-                                </button>
-                            ))}
-                        </div>
-                        <button onClick={() => setIsSearching(true)} className="p-1.5 text-gray-400 hover:text-white rounded-md hover:bg-white/5">
-                            <Search size={12} />
-                        </button>
-                    </div>
-                )}
             </div>
 
-            {/* Hidden Input */}
-            <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={handleFileUpload}
-                multiple
-            />
+            {/* Search */}
+            <div className="px-3 py-2 border-b border-white/[0.04] shrink-0">
+                <div className="relative">
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search assets..."
+                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-md pl-8 pr-3 py-1.5 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-white/[0.12] focus:bg-white/[0.05] transition-all"
+                    />
+                </div>
+            </div>
 
-            {/* Grid Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 relative">
-                {filteredItems.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500">
-                        <Folder size={32} className="opacity-20 mb-3" />
-                        <p className="text-sm font-medium text-gray-400">No assets found</p>
-                        <p className="text-xs mt-1 text-gray-500">Upload files or generate media to fill your project.</p>
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="mt-4 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-medium rounded-lg transition-colors border border-white/10"
-                        >
-                            Upload Files
-                        </button>
+            {/* Filter Bar */}
+            <div className="px-3 py-2 flex gap-1 overflow-x-auto no-scrollbar border-b border-white/[0.04] shrink-0">
+                {filterButtons.map(({ id, label, icon: Icon, count }) => (
+                    <button
+                        key={id}
+                        onClick={() => setFilter(id)}
+                        className={cn(
+                            "flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all whitespace-nowrap",
+                            filter === id
+                                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
+                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.04] border border-transparent'
+                        )}
+                    >
+                        <Icon size={10} />
+                        {label}
+                        {count > 0 && (
+                            <span className={cn(
+                                "text-[8px] font-mono px-1 rounded",
+                                filter === id ? 'text-amber-400' : 'text-gray-600'
+                            )}>
+                                {count}
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
+
+            {/* Asset Grid / List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                {filteredAssets.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                        <div className="w-12 h-12 rounded-xl bg-white/[0.03] flex items-center justify-center mb-3">
+                            <ImageIcon size={20} className="text-gray-600" />
+                        </div>
+                        <p className="text-xs font-medium text-gray-400">No assets yet</p>
+                        <p className="text-[10px] text-gray-600 mt-1 max-w-[180px]">
+                            Generate images, upload files, or record audio to see them here.
+                        </p>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                        {filteredItems.map((asset, i) => {
-                            const badge = BADGE[asset.type] || BADGE['document'];
-                            const BadgeIcon = badge.icon;
-                            const isSelected = selIdx === i;
-
-                            return (
+                ) : viewStyle === 'grid' ? (
+                    <div className="grid grid-cols-3 gap-1.5">
+                        <AnimatePresence>
+                            {filteredAssets.map((asset) => (
                                 <motion.button
                                     key={asset.id}
-                                    onClick={() => setSelIdx(isSelected ? null : i)}
-                                    className={cn(
-                                        "rounded-lg overflow-hidden border transition-all text-left flex flex-col relative",
-                                        isSelected
-                                            ? "border-blue-500/50 ring-1 ring-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                                            : "border-white/5 hover:border-white/15"
-                                    )}
-                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: Math.min(i * 0.02, 0.2) }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    onClick={() => handleAssetClick(asset)}
+                                    className="group relative aspect-square bg-white/[0.03] rounded-lg overflow-hidden border border-white/[0.06] hover:border-white/[0.15] transition-all cursor-pointer"
                                 >
-                                    <div className="aspect-square bg-[#0d1117] relative overflow-hidden w-full flex items-center justify-center group">
-                                        {asset.type === 'video' ? (
-                                            <video
-                                                src={asset.url}
-                                                poster={asset.thumbnailUrl}
-                                                preload="metadata"
-                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                                                muted
-                                                loop
-                                                playsInline
-                                                onMouseEnter={e => e.currentTarget.play().catch(() => { })}
-                                                onMouseLeave={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                                                onError={e => { (e.currentTarget as HTMLVideoElement).style.display = 'none'; }}
-                                            />
-                                        ) : asset.type === 'image' ? (
-                                            <img
-                                                src={asset.thumbnailUrl || asset.url}
-                                                alt={asset.name}
-                                                loading="lazy"
-                                                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                                                onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                                            />
-                                        ) : (
-                                            <BadgeIcon size={28} className="text-gray-600 group-hover:text-gray-400 transition-colors" />
-                                        )}
-                                        {/* Fallback icon visible when media fails to load */}
-                                        <BadgeIcon size={24} className="absolute text-gray-700 -z-0" />
+                                    {/* Thumbnail */}
+                                    {asset.type === 'video' ? (
+                                        <video
+                                            src={asset.thumbnailUrl || asset.url}
+                                            preload="metadata"
+                                            muted
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }}
+                                        />
+                                    ) : asset.type === 'image' ? (
+                                        <img
+                                            src={asset.thumbnailUrl || asset.url}
+                                            alt={asset.prompt || ''}
+                                            className="w-full h-full object-cover"
+                                            loading="lazy"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                        />
+                                    ) : null}
 
-                                        <div className={cn("absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium backdrop-blur-md border border-white/5", badge.cls)}>
-                                            <BadgeIcon size={10} />
+                                    {/* Fallback icon for non-visual or broken media */}
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-0">
+                                        <div className={cn("p-2 rounded-lg", getTypeColor(asset.type))}>
+                                            {getTypeIcon(asset.type)}
                                         </div>
                                     </div>
 
-                                    <div className="p-2 bg-[#161b22] border-t border-white/5 w-full">
-                                        <p className="text-[10px] text-gray-300 font-medium line-clamp-1 mb-0.5" title={asset.name}>
-                                            {asset.name}
-                                        </p>
-                                        <div className="flex items-center gap-1 text-[8px] text-gray-500">
-                                            <Clock size={8} />
-                                            {relTime(asset.timestamp)}
+                                    {/* Type badge */}
+                                    <div className="absolute top-1 right-1 z-10">
+                                        <div className={cn("p-0.5 rounded", getTypeColor(asset.type))}>
+                                            {getTypeIcon(asset.type)}
                                         </div>
+                                    </div>
+
+                                    {/* Hover overlay */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-end p-1.5">
+                                        <p className="text-[9px] text-white/80 line-clamp-2 leading-tight">
+                                            {asset.prompt || 'Untitled'}
+                                        </p>
                                     </div>
                                 </motion.button>
-                            );
-                        })}
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-1">
+                        <AnimatePresence>
+                            {filteredAssets.map((asset) => (
+                                <motion.button
+                                    key={asset.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    onClick={() => handleAssetClick(asset)}
+                                    className="flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] transition-all cursor-pointer group text-left"
+                                >
+                                    {/* Mini thumbnail */}
+                                    <div className="w-10 h-10 rounded-md overflow-hidden bg-white/[0.04] flex-shrink-0 flex items-center justify-center">
+                                        {asset.type === 'image' && asset.url ? (
+                                            <img src={asset.thumbnailUrl || asset.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                        ) : (
+                                            <div className={cn("p-1.5 rounded", getTypeColor(asset.type))}>
+                                                {getTypeIcon(asset.type)}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[11px] text-gray-300 font-medium truncate">
+                                            {asset.prompt || 'Untitled'}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className={cn("text-[8px] font-bold uppercase tracking-wider", getTypeColor(asset.type).split(' ')[0])}>
+                                                {asset.type}
+                                            </span>
+                                            <span className="text-[8px] text-gray-600 font-mono">
+                                                {new Date(asset.timestamp).toLocaleDateString()}
+                                            </span>
+                                            {asset.origin && (
+                                                <span className="text-[8px] text-gray-600 capitalize">
+                                                    {asset.origin}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Action */}
+                                    <Eye size={12} className="text-gray-600 group-hover:text-gray-300 transition-colors flex-shrink-0" />
+                                </motion.button>
+                            ))}
+                        </AnimatePresence>
                     </div>
                 )}
             </div>
-
-            {/* Detail Overlay */}
-            <AnimatePresence>
-                {sel && (
-                    <motion.div
-                        initial={{ y: '100%' }}
-                        animate={{ y: 0 }}
-                        exit={{ y: '100%' }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="absolute bottom-0 left-0 right-0 bg-[#0d1117] border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-20 max-h-[70%] flex flex-col"
-                    >
-                        <div className="p-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                            <h3 className="text-xs font-bold text-gray-200 line-clamp-1 pr-4">{sel.name}</h3>
-                            <button onClick={() => setSelIdx(null)} className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white transition-colors shrink-0">
-                                <X size={14} />
-                            </button>
-                        </div>
-
-                        <div className="p-4 overflow-y-auto custom-scrollbar">
-                            <div className="w-full aspect-video rounded-lg overflow-hidden bg-black/50 border border-white/5 mb-4 relative flex items-center justify-center">
-                                {sel.type === 'video' ? (
-                                    <video src={sel.url} className="w-full h-full object-contain" controls playsInline />
-                                ) : sel.type === 'image' ? (
-                                    <img src={sel.url} alt="" className="w-full h-full object-contain" />
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center">
-                                        {React.createElement(BADGE[sel.type]?.icon || ImageIcon, { size: 32, className: 'text-gray-500 mb-2' })}
-                                        <span className="text-xs text-gray-500 font-mono tracking-wider">{sel.type.toUpperCase()}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="space-y-3">
-                                <div className="flex flex-wrap gap-2 text-[10px] text-gray-400 bg-white/5 p-2 rounded-md border border-white/5">
-                                    <span className="flex items-center gap-1"><Clock size={10} /> Added {new Date(sel.timestamp).toLocaleString()}</span>
-                                    <span className="flex items-center gap-1"><Folder size={10} /> Source: <span className="capitalize text-gray-300">{sel.source}</span></span>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        onClick={() => openInStudio(sel)}
-                                        className="flex items-center justify-center gap-1.5 p-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-medium transition-colors border border-white/5"
-                                    >
-                                        <Maximize2 size={12} /> View in Studio
-                                    </button>
-                                    <button
-                                        onClick={() => handleDiscuss(sel)}
-                                        className="flex items-center justify-center gap-1.5 p-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg text-xs font-medium transition-colors border border-purple-500/20"
-                                    >
-                                        <MessageCircle size={12} /> Discuss
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            const a = document.createElement('a');
-                                            a.href = sel.url;
-                                            a.download = sel.name;
-                                            a.click();
-                                        }}
-                                        className="flex items-center justify-center gap-1.5 p-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-medium transition-colors border border-white/5"
-                                    >
-                                        <Download size={12} /> Download
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(sel)}
-                                        className="flex items-center justify-center gap-1.5 p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-colors border border-red-500/20"
-                                    >
-                                        <Trash2 size={12} /> Delete
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }
