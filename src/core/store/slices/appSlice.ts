@@ -40,8 +40,10 @@ export interface AppSlice {
     setApiKeyError: (error: boolean) => void;
     isSidebarOpen: boolean;
     isRightPanelOpen: boolean;
+    rightPanelTab: 'context' | 'assets' | 'agent';
     toggleSidebar: () => void;
     toggleRightPanel: () => void;
+    setRightPanelTab: (tab: 'context' | 'assets' | 'agent') => void;
     isCommandMenuOpen: boolean;
     setCommandMenuOpen: (open: boolean) => void;
     hasUnsavedChanges: boolean;
@@ -93,7 +95,6 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
 
         set({
             currentModule: module,
-            isRightPanelOpen: module === 'creative' || module === 'video' || module === 'files'
         });
     },
     setProject: (id) => set({ currentProjectId: id }),
@@ -120,7 +121,6 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
             projects: [metadata, ...state.projects],
             currentProjectId: newProject.id,
             currentModule: type,
-            isRightPanelOpen: type === 'creative' || type === 'video'
         }));
         return newProject.id;
     },
@@ -130,6 +130,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     setApiKeyError: (error) => set({ apiKeyError: error }),
     isSidebarOpen: typeof window !== 'undefined' ? localStorage.getItem('indiiOS_sidebarOpen') !== 'false' : true,
     isRightPanelOpen: false,
+    rightPanelTab: 'context',
     toggleSidebar: () => set((state) => {
         const newState = !state.isSidebarOpen;
         if (typeof window !== 'undefined') {
@@ -148,6 +149,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
         set({ isRightPanelOpen: !state.isRightPanelOpen, _lastRightPanelToggle: now });
     },
+    setRightPanelTab: (tab) => set({ rightPanelTab: tab, isRightPanelOpen: true }),
     isCommandMenuOpen: false,
     setCommandMenuOpen: (open) => set({ isCommandMenuOpen: open }),
 });

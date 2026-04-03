@@ -9,6 +9,7 @@ vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
 vi.mock('./components/CreativeNavbar', () => ({ default: () => <div data-testid="creative-navbar" /> }));
 vi.mock('./components/CreativeGallery', () => ({ default: () => <div data-testid="creative-gallery" /> }));
+vi.mock('./components/DirectGenerationTab', () => ({ default: () => <div data-testid="direct-generation-tab" /> }));
 vi.mock('../../core/components/AgentWindow', () => ({ default: () => <div data-testid="agent-window" /> }));
 vi.mock('./components/InfiniteCanvas', () => ({ default: () => <div data-testid="infinite-canvas" /> }));
 vi.mock('./components/Showroom', () => ({ default: () => <div data-testid="showroom" /> }));
@@ -41,7 +42,7 @@ describe('CreativeStudio', () => {
         });
 
         const storeState = {
-            viewMode: 'gallery',
+            viewMode: 'direct',
             setViewMode: vi.fn(),
             selectedItem: null,
             setSelectedItem: vi.fn(),
@@ -89,7 +90,7 @@ describe('CreativeStudio', () => {
     it('renders correctly', () => {
         render(<CreativeStudio />);
         expect(screen.getByTestId('creative-navbar')).toBeInTheDocument();
-        expect(screen.getByTestId('creative-gallery')).toBeInTheDocument();
+        expect(screen.getByTestId('direct-generation-tab')).toBeInTheDocument();
     });
 
     it('triggers image generation when pendingPrompt is set', async () => {
