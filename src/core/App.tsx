@@ -54,8 +54,6 @@ import '@/core/i18n'; // Initialize i18next — must run before any component re
 import { FirstRunTour } from '@/components/shared/FirstRunTour';
 import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 
-cleanupLocalStorage();
-
 // ============================================================================
 // Lazy-loaded Module Components
 // ============================================================================
@@ -462,6 +460,9 @@ export default function App() {
             toggleAgentWindow: state.toggleAgentWindow,
         }))
     );
+
+    // Defer non-critical startup work to avoid blocking FCP
+    useEffect(() => { cleanupLocalStorage(); }, []);
 
     // Initialize app
     useAppInitialization();
