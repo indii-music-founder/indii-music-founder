@@ -10,12 +10,11 @@ import * as Sentry from '@sentry/react';
 export function initSentry(): void {
     // Only initialize in production builds unless debug flag is set
     if (import.meta.env.DEV && !import.meta.env.VITE_DEBUG_SENTRY) {
-        logger.warn('[Sentry] Skipped in Development Mode. Set VITE_DEBUG_SENTRY=true to enable.');
         return;
     }
 
     if (import.meta.env.DEV) {
-        logger.warn('[Sentry] Initializing in Development Mode for testing purposes.');
+        logger.debug('[Sentry] Initializing in Development Mode for testing purposes.');
     }
 
     const dsn = import.meta.env.VITE_SENTRY_DSN;
@@ -23,7 +22,9 @@ export function initSentry(): void {
     // SECURITY (Item 246): DSN must come from environment — no hardcoded fallback.
     // In CI, set VITE_SENTRY_DSN. If missing, Sentry is silently disabled.
     if (!dsn) {
-        logger.error('[Sentry] VITE_SENTRY_DSN is not set. Sentry will NOT initialize. Set it in .env or CI secrets.');
+        if (import.meta.env.PROD) {
+            logger.error('[Sentry] VITE_SENTRY_DSN is not set. Sentry will NOT initialize. Set it in .env or CI secrets.');
+        }
         return;
     }
 
