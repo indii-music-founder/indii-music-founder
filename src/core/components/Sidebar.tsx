@@ -1,15 +1,15 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePowerState } from '@/core/hooks/usePowerState';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search, Settings, Gem } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useGatedModules } from '@/config/featureFlags';
 
@@ -124,6 +124,14 @@ const NavItem = React.memo(function NavItem({
 export default function Sidebar() {
     const { t } = useTranslation();
     const { isThrottled } = usePowerState();
+
+    // UI state for collapsible sections
+    const [sectionsOpen, setSectionsOpen] = useState({
+        managers: true,
+        departments: true,
+        tools: true,
+    });
+
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, updatePreferences, logout } = useStore(
         useShallow((state) => ({
@@ -151,29 +159,30 @@ export default function Sidebar() {
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road Manager' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
-        { id: 'agent', icon: Network, label: 'Booking Agent' },
+        { id: 'agent', icon: CalendarDays, label: 'Booking Agent' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
     ];
 
     const departmentItems: SidebarItem[] = [
-        { id: 'marketing', icon: Megaphone, label: 'Marketing Department' }, // Duplicate icon, maybe different in real app
-        { id: 'social', icon: Network, label: 'Social Media Department' },
+        { id: 'marketing', icon: Target, label: 'Marketing Department' },
+        { id: 'social', icon: Share2, label: 'Social Media Department' },
         { id: 'legal', icon: Scale, label: 'Legal Department' },
-        { id: 'publishing', icon: Book, label: 'Publishing Department' },
+        { id: 'publishing', icon: Library, label: 'Publishing Department' },
         { id: 'finance', icon: DollarSign, label: 'Finance Department' },
         { id: 'distribution', icon: Music, label: 'Distribution Department' },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
+        { id: 'merch', icon: ShoppingBag, label: 'Art & Merch Dept' },
     ];
 
     const toolItems: SidebarItem[] = [
-        { id: 'merch', icon: ShoppingBag, label: 'Merch Tool' },
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
-        { id: 'workflow', icon: Network, label: 'Workflow Builder' },
+        { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
         { id: 'memory', icon: AudioLines, label: 'Memory Agent' },
-        { id: 'history', icon: Clock, label: 'History' },
+        { id: 'observability', icon: Activity, label: 'Observability' },
+        { id: 'settings', icon: Settings, label: 'Settings' },
     ];
 
     // Pre-launch feature gating — filter out modules that are behind disabled flags
@@ -295,35 +304,86 @@ export default function Sidebar() {
                 </button>
             </div>
 
-            <div className="flex-1 py-4 space-y-6">
+            <div className="flex-1 py-4 space-y-2">
                 {/* Manager's Office */}
-                <div data-testid="manager-section">
-                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap">Manager's Office</h3>}
-                    <div className="space-y-0.5">
-                        {visibleManagerItems.map(item => (
-                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
-                        ))}
-                    </div>
+                <div data-testid="manager-section" className="mb-2">
+                    {isSidebarOpen && (
+                        <button
+                            onClick={() => setSectionsOpen(s => ({ ...s, managers: !s.managers }))}
+                            className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
+                        >
+                            <span className="whitespace-nowrap">Manager's Office</span>
+                            <ChevronDown size={14} className={cn("transition-transform duration-200", sectionsOpen.managers ? "rotate-180" : "")} />
+                        </button>
+                    )}
+                    <AnimatePresence initial={false}>
+                        {(!isSidebarOpen || sectionsOpen.managers) && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="space-y-0.5 overflow-hidden"
+                            >
+                                {visibleManagerItems.map(item => (
+                                    <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Departments */}
-                <div>
-                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap">Departments</h3>}
-                    <div className="space-y-0.5">
-                        {visibleDepartmentItems.map(item => (
-                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
-                        ))}
-                    </div>
+                <div className="mb-2">
+                    {isSidebarOpen && (
+                        <button
+                            onClick={() => setSectionsOpen(s => ({ ...s, departments: !s.departments }))}
+                            className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
+                        >
+                            <span className="whitespace-nowrap">Departments</span>
+                            <ChevronDown size={14} className={cn("transition-transform duration-200", sectionsOpen.departments ? "rotate-180" : "")} />
+                        </button>
+                    )}
+                    <AnimatePresence initial={false}>
+                        {(!isSidebarOpen || sectionsOpen.departments) && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="space-y-0.5 overflow-hidden"
+                            >
+                                {visibleDepartmentItems.map(item => (
+                                    <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Tools */}
-                <div>
-                    {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 whitespace-nowrap">Tools</h3>}
-                    <div className="space-y-0.5">
-                        {visibleToolItems.map(item => (
-                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
-                        ))}
-                    </div>
+                <div className="mb-2">
+                    {isSidebarOpen && (
+                        <button
+                            onClick={() => setSectionsOpen(s => ({ ...s, tools: !s.tools }))}
+                            className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
+                        >
+                            <span className="whitespace-nowrap">Tools</span>
+                            <ChevronDown size={14} className={cn("transition-transform duration-200", sectionsOpen.tools ? "rotate-180" : "")} />
+                        </button>
+                    )}
+                    <AnimatePresence initial={false}>
+                        {(!isSidebarOpen || sectionsOpen.tools) && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="space-y-0.5 overflow-hidden"
+                            >
+                                {visibleToolItems.map(item => (
+                                    <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
             {/* User Profile Section */}
@@ -364,72 +424,10 @@ export default function Sidebar() {
                     </button>
                 </div>
 
-                {/* Theme Selector & Actions */}
-                <div className={`mt-4 flex flex-col gap-2 rounded-lg bg-black/20 ${isSidebarOpen ? 'p-2 border border-white/5' : 'py-2 gap-3'}`}>
-                    <div className="flex items-center justify-center">
-                        <ThemeToggle isMinimized={!isSidebarOpen} />
-                    </div>
-                    <div className={`pt-2 border-t border-white/5 ${isSidebarOpen ? 'px-2' : 'px-1'}`}>
-                        <BiometricToggle isMinimized={!isSidebarOpen} />
-                    </div>
-
-                    <div className={`pt-2 border-t border-white/5 flex ${isSidebarOpen ? 'items-center justify-center gap-3' : 'flex-col items-center gap-3'}`}>
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <button
-                                        onClick={() => {
-                                            const isEnabled = userProfile?.preferences?.observabilityEnabled ?? false;
-                                            updatePreferences({ observabilityEnabled: !isEnabled });
-                                            setModule('observability');
-                                        }}
-                                        className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.observabilityEnabled ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
-                                        aria-label="System Observability"
-                                        data-testid="observability-footer-btn"
-                                    >
-                                        {isSidebarOpen ? (
-                                            <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
-                                                <Activity size={14} /> Observability
-                                            </span>
-                                        ) : (
-                                            <Activity size={16} />
-                                        )}
-                                    </button>
-                                </TooltipTrigger>
-                                {!isSidebarOpen && (
-                                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 font-medium">
-                                        System Observability
-                                    </TooltipContent>
-                                )}
-                            </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <button
-                                        onClick={() => throttledSetModule('settings')}
-                                        className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'settings' ? 'text-cyan-400 bg-white/5 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
-                                        aria-label="Settings"
-                                        data-testid="settings-footer-btn"
-                                    >
-                                        {isSidebarOpen ? (
-                                            <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
-                                                <Settings size={14} /> Settings
-                                            </span>
-                                        ) : (
-                                            <Settings size={16} />
-                                        )}
-                                    </button>
-                                </TooltipTrigger>
-                                {!isSidebarOpen && (
-                                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 font-medium">
-                                        Settings
-                                    </TooltipContent>
-                                )}
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
+                {/* System Controls */}
+                <div className={`mt-3 flex flex-col gap-1.5 ${isSidebarOpen ? '' : ''}`}>
+                    <ThemeToggle isMinimized={!isSidebarOpen} />
+                    <BiometricToggle isMinimized={!isSidebarOpen} />
                 </div>
 
                 {isSidebarOpen && (

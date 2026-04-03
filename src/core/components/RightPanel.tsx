@@ -59,6 +59,13 @@ export default function RightPanel() {
         }
     }, [agentHistory.length, view]);
 
+    React.useEffect(() => {
+        const MODULES_WITH_CONTEXT = ['creative', 'video', 'workflow', 'knowledge'];
+        if (isRightPanelOpen && rightPanelTab === 'context' && !MODULES_WITH_CONTEXT.includes(currentModule)) {
+            setRightPanelTab('agent');
+        }
+    }, [isRightPanelOpen, rightPanelTab, currentModule, setRightPanelTab]);
+
     // Render content based on the active Omni-Panel tab
     const renderContent = () => {
         // TAB 3: AGENT
@@ -66,12 +73,21 @@ export default function RightPanel() {
             return (
                 <div className="flex flex-col h-full bg-card border-l border-border relative overflow-hidden">
                     <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-                        <div className="flex gap-4">
+                        <div className="flex bg-black/20 p-1 rounded-lg border border-white/5 relative w-[180px]">
+                            <motion.div
+                                className="absolute inset-y-1 rounded-md bg-white/10 shadow-sm"
+                                initial={false}
+                                animate={{
+                                    left: view === 'messages' ? 4 : '50%',
+                                    width: 'calc(50% - 4px)'
+                                }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            />
                             <button
                                 onClick={() => setView('messages')}
                                 className={cn(
-                                    "text-xs font-bold uppercase tracking-wider transition-colors",
-                                    view === 'messages' ? "text-purple-400" : "text-gray-500 hover:text-gray-300"
+                                    "flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-md transition-colors relative z-10 outline-none",
+                                    view === 'messages' ? "text-white" : "text-gray-500 hover:text-gray-300"
                                 )}
                                 aria-label="View Messages"
                             >
@@ -80,8 +96,8 @@ export default function RightPanel() {
                             <button
                                 onClick={() => setView('archives')}
                                 className={cn(
-                                    "text-xs font-bold uppercase tracking-wider transition-colors",
-                                    view === 'archives' ? "text-purple-400" : "text-gray-500 hover:text-gray-300"
+                                    "flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-md transition-colors relative z-10 outline-none",
+                                    view === 'archives' ? "text-white" : "text-gray-500 hover:text-gray-300"
                                 )}
                                 aria-label="View Archives"
                             >
@@ -198,7 +214,12 @@ export default function RightPanel() {
                             </motion.div>
                             <div>
                                 <h3 className="text-sm font-medium text-gray-300">No Tool Selected</h3>
-                                <p className="text-xs text-gray-500 mt-1 max-w-[200px]">Select a tool from the sidebar to view its controls and settings.</p>
+                                <p className="text-xs text-gray-500 mt-1 max-w-[200px] mx-auto">Select a tool from the sidebar to view its controls.</p>
+                                <div className="mt-4 flex items-center justify-center text-[10px] text-gray-500 font-medium">
+                                    <kbd className="px-1.5 py-[1px] bg-white/5 border border-white/10 rounded font-mono mr-1">⌘</kbd>
+                                    <kbd className="px-1.5 py-[1px] bg-white/5 border border-white/10 rounded font-mono mr-2 text-gray-400">K</kbd>
+                                    Quick Search / Commands
+                                </div>
                             </div>
                         </div>
                     </div>
