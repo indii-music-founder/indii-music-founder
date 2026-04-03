@@ -36,12 +36,18 @@ export default function VideoPopout() {
         // Let the main window know the popout just opened to request current state
         channel.postMessage({ type: 'POPOUT_OPENED' });
 
+        // Send a heartbeat every 2 s so the main window can detect a crash
+        const heartbeatTimer = setInterval(() => {
+            channel.postMessage({ type: 'HEARTBEAT' });
+        }, 2000);
+
         const handleUnload = () => {
             channel.postMessage({ type: 'POPOUT_CLOSED' });
         };
         window.addEventListener('beforeunload', handleUnload);
 
         return () => {
+            clearInterval(heartbeatTimer);
             window.removeEventListener('beforeunload', handleUnload);
             channel.close();
         };

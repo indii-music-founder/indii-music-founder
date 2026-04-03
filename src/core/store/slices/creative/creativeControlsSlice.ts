@@ -204,7 +204,7 @@ export function buildCreativeControlsState(
             characterReferences: state.characterReferences.map(r => r.image.id === id ? { ...r, ...updates } : r)
         })),
 
-        viewMode: 'gallery',
+        viewMode: 'direct',
         setViewMode: (mode) => set({ viewMode: mode }),
 
         prompt: '',
