@@ -197,6 +197,16 @@ describe('Creative Director 12-Click Daisychain', () => {
                 <div>
                     <CreativeNavbar />
                     <button
+                        data-testid="gallery-view-btn"
+                        onClick={() => {
+                            setLocalViewMode('gallery');
+                            mockSetViewMode('gallery');
+                        }}
+                        style={{ display: 'none' }}
+                    >
+                        Go to Gallery
+                    </button>
+                    <button
                         data-testid="showroom-view-btn"
                         onClick={() => {
                             setLocalViewMode('showroom');
