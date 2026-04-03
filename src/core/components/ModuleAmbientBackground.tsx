@@ -70,21 +70,13 @@ export const ModuleAmbientBackground = () => {
                         mixBlendMode: (theme.ambientConfig?.blendMode || 'normal') as React.CSSProperties['mixBlendMode']
                     }}
                 >
-                    {/* SVG Pattern Layer with Drift */}
+                    {/* SVG Pattern Layer */}
                     {theme.ambientConfig && (
                         <motion.div
                             initial={{ opacity: 0 }}
-                            animate={{
-                                opacity: 0.3,
-                                x: [0, 10, 0, -10, 0],
-                                y: [0, -5, 0, 5, 0]
-                            }}
-                            transition={{
-                                opacity: { delay: 0.5, duration: 2 },
-                                x: { duration: 30, repeat: Infinity, ease: "linear" },
-                                y: { duration: 25, repeat: Infinity, ease: "linear" }
-                            }}
-                            className="absolute inset-[-5%] pointer-events-none"
+                            animate={{ opacity: 0.3 }}
+                            transition={{ delay: 0.5, duration: 2 }}
+                            className="absolute inset-0 pointer-events-none"
                             style={{
                                 backgroundImage: getAmbientPattern(theme.ambientConfig.type, theme.ambientConfig.opacity),
                                 backgroundSize: theme.ambientConfig.type === 'waves' ? '400px 80px' : 'auto',
@@ -116,22 +108,6 @@ export const ModuleAmbientBackground = () => {
                             {theme.officeName}
                         </span>
                     </motion.div>
-
-                    {/* Scanner Beam Effect */}
-                    <motion.div
-                        className="absolute inset-0 h-[1px] w-full"
-                        style={{
-                            background: `linear-gradient(90deg, transparent, ${theme.accent}44, transparent)`,
-                            top: '-5%'
-                        }}
-                        animate={{ top: ['-5%', '105%'] }}
-                        transition={{
-                            duration: 20,
-                            repeat: Infinity,
-                            ease: "linear",
-                            delay: 2
-                        }}
-                    />
 
                     {/* Subtle vignette for focus */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
