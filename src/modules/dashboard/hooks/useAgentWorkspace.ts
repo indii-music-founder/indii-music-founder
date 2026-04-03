@@ -53,14 +53,6 @@ export function useAgentWorkspace() {
         useStore.setState({ commandBarInput: text });
     };
 
-    /**
-     * Immediately dispatches the command to the agent — no input-box required.
-     * Used by the quick-action shortcut buttons on the empty state.
-     *
-     * Mobile: Navigates to the Agent module (where chat is inline) instead of
-     * opening the ChatOverlay, which would block the entire mobile screen.
-     * Desktop: Opens the floating ChatOverlay as before.
-     */
     const submitCommand = useCallback(async (cmd: string) => {
         if (!cmd.trim()) return;
 
@@ -69,15 +61,10 @@ export function useAgentWorkspace() {
 
         if (isMobileViewport) {
             // On mobile, navigate to the Agent module where chat is inline.
-            // This avoids the ChatOverlay blocking the screen.
             useStore.setState({ currentModule: 'agent' as import('@/core/constants').ModuleId });
         } else {
-            // Desktop: open the floating ChatOverlay
-            if (!isAgentOpen) {
-                toggleAgentWindow();
-            } else if (!isRightPanelOpen) {
-                toggleRightPanel();
-            }
+            // Desktop: open the Right Panel to the Omni Agent tab
+            useStore.setState({ isRightPanelOpen: true, rightPanelTab: 'agent', rightPanelView: 'messages' });
         }
 
         // Clear any lingering text in the command bar
@@ -88,7 +75,7 @@ export function useAgentWorkspace() {
         } catch (error: unknown) {
             logger.error('useAgentWorkspace: submitCommand failed', error);
         }
-    }, [isAgentOpen, isRightPanelOpen, toggleAgentWindow, toggleRightPanel]);
+    }, []);
 
     return {
         agentHistory,

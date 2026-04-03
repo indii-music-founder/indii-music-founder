@@ -32,11 +32,9 @@ interface QuickAction {
 }
 
 export default function CommandPad({ onSendCommand }: CommandPadProps) {
-    const { setModule, toggleAgentWindow, isAgentOpen } = useStore(
+    const { setModule } = useStore(
         useShallow(state => ({
             setModule: state.setModule,
-            toggleAgentWindow: state.toggleAgentWindow,
-            isAgentOpen: state.isAgentOpen,
         }))
     );
 
@@ -68,9 +66,7 @@ export default function CommandPad({ onSendCommand }: CommandPadProps) {
             color: 'from-fuchsia-600/40 to-fuchsia-800/20 border-fuchsia-500/40 text-fuchsia-300',
             action: () => {
                 // Open the agent chat panel on desktop via relay
-                if (!isAgentOpen) {
-                    toggleAgentWindow();
-                }
+                // (Desktop handles RightPanel logic in the listener)
                 onSendCommand({ type: 'agent_action', payload: { action: 'open_chat' } });
             },
         },
@@ -94,9 +90,6 @@ export default function CommandPad({ onSendCommand }: CommandPadProps) {
                 remoteRelayService.sendCommand(
                     'Let\'s brainstorm. Give me 5 creative ideas for my next project based on my profile and recent work.'
                 ).catch(err => logger.error('[CommandPad] Brainstorm failed:', err));
-                if (!isAgentOpen) {
-                    toggleAgentWindow();
-                }
             },
         },
     ];
