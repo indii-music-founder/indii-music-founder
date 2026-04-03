@@ -21,8 +21,8 @@ export default function Dashboard() {
             {/* Founders Round Investment Banner */}
             {!bannerDismissed && (
                 <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{ opacity: 0, height: 0 }}
                     className="relative overflow-hidden border-b border-amber-500/20"
                 >
