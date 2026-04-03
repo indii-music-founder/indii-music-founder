@@ -1,5 +1,5 @@
 ---
-name: agentic-harness-architect
+name: claude
 version: 1.0.0
 description: |
   Design or evaluate AI agent harnesses against 12 production-grade primitives
