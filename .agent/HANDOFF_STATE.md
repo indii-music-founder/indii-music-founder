@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-04-04 15:38 UTC
+**Updated:** 2026-04-04 15:41 UTC
 **Branch:** `claude/build-insights-dashboard-NZ1np`
 
 ## Recent Commits
 ```
+ce08d8d feat: add hooks skill — full-spectrum hooks management for all agents
+e729926 chore: session checkpoint [15:38]
 923e0a5 feat: auto-checkpoint hooks — zero-effort session handoff
 0d6fe45 chore: session checkpoint [15:37]
 6ec263b feat: fully actualize skill routing for Claude and Gemini agents
@@ -12,8 +14,6 @@ dd00e7e Merge remote-tracking branch 'origin/claude/agentic-harness-architect-E2
 89681e9 fix(coderabbit): add tier field to TOOL_REGISTRY example entries
 f8d1663 fix(coderabbit): address all 3 review issues from PR #1382
 59ca851 chore(main): release 1.46.0
-77a0173 fix(tests): update Sidebar snapshots after CodeRabbit fixes
-22b1964 fix(coderabbit): address all 5 review issues from PR #1381
 ```
 
 ## Working State
