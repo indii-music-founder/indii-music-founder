@@ -348,9 +348,11 @@ function useFirestoreRelay(enabled: boolean) {
                     writeDiagnostic('agent_action_started', { action });
 
                     if (action === 'open_chat') {
-                        if (!useStore.getState().isAgentOpen) {
-                            useStore.getState().toggleAgentWindow();
-                        }
+                        useStore.setState({
+                            isRightPanelOpen: true,
+                            rightPanelTab: 'agent',
+                            rightPanelView: 'messages'
+                        });
                     }
 
                     await remoteRelayService.sendResponse(
