@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-04-04 15:37 UTC
+**Updated:** 2026-04-04 15:38 UTC
 **Branch:** `claude/build-insights-dashboard-NZ1np`
 
 ## Recent Commits
 ```
+923e0a5 feat: auto-checkpoint hooks — zero-effort session handoff
+0d6fe45 chore: session checkpoint [15:37]
 6ec263b feat: fully actualize skill routing for Claude and Gemini agents
 7cd1d1c Merge remote-tracking branch 'origin/release-please--branches--main--components--indii-os'
 dd00e7e Merge remote-tracking branch 'origin/claude/agentic-harness-architect-E2X3p'
@@ -12,13 +14,11 @@ f8d1663 fix(coderabbit): address all 3 review issues from PR #1382
 59ca851 chore(main): release 1.46.0
 77a0173 fix(tests): update Sidebar snapshots after CodeRabbit fixes
 22b1964 fix(coderabbit): address all 5 review issues from PR #1381
-c994f37 fix(tests): harden CommandBar tests for CI forked pool + add agentic state machine
-40c57f5 Merge pull request #1381 from the-walking-agency-det/narrowchannel/ref/sidebar-and-panel-cleanup
 ```
 
 ## Working State
 ```
-?? .claude/scripts/
+clean working tree
 ```
 
 ---
