@@ -110,7 +110,7 @@ export const TimelineTrack = memo(({
                                     }
                                 }
                             } catch (err) {
-                                console.error('Failed to parse dropped asset data:', err);
+                                // Silent catch for invalid dropped JSON
                             }
                         }
                     }}
