@@ -1,18 +1,16 @@
 # /walk — Mobile Session Resume & Drive to Prime
 
-You just got home from walking the dog. Your phone had a Claude Code session running.
-Now pick up everything from that session and drive it to verified completion.
+Read `.agent/skills/walk/SKILL.md` and execute the full protocol.
 
-Read `.agent/skills/walk/SKILL.md` and follow the protocol exactly.
+You were out walking the dog. The user just got home and opened their IDE.
+Pick up everything from the mobile session and drive it to verified completion.
 
-Execute all 8 phases:
-1. Handoff triage — read HANDOFF_STATE.md, display what was done and what's pending
-2. Environment bootstrap — npm install if needed, pull latest
-3. Execute all pending P0 items from the mobile handoff
-4. Test suite — loop until green
+Execute all 8 phases without waiting to be asked:
+1. Triage — read HANDOFF_STATE.md, summarize what was built and what's pending
+2. Bootstrap — npm install if needed, git pull, install git hooks
+3. P0 items — execute every pending P0 from the mobile handoff
+4. Tests — run and loop until green
 5. Prime check — typecheck + lint + build + audit
-6. Manual steps — print exact commands for anything requiring external access
-7. Final commit and push
-8. Walk report — clear verdict: READY TO DEPLOY or BLOCKED BY <reason>
-
-Do not stop until Prime is achieved or you've documented exactly why you can't get there.
+6. Manual steps — print exact commands for anything needing external access
+7. Commit + push + checkpoint
+8. Walk report — clear READY TO DEPLOY or BLOCKED BY verdict

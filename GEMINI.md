@@ -6,6 +6,48 @@
 
 ---
 
+## MANDATORY SESSION BOOTSTRAP
+
+> This section is non-negotiable. There are no lifecycle hooks in this environment —
+> **you must execute this manually at the start of every session, before anything else.**
+
+### Step 1 — Read the handoff
+
+```bash
+cat .agent/HANDOFF_STATE.md
+```
+
+Summarize what was last built, what branch you're on, and what's pending.
+
+### Step 2 — Detect machine state
+
+```bash
+echo "node_modules: $(ls node_modules 2>/dev/null | wc -l) packages"
+git status --short
+git branch --show-current
+```
+
+### Step 3 — Route accordingly
+
+**If `node_modules` is empty or absent** (fresh machine, likely just got home from a mobile session):
+
+> Read `.agent/skills/walk/SKILL.md` and execute the full protocol immediately.
+> Do not wait to be asked. The user is home. Drive to prime.
+
+**Otherwise:**
+
+> Brief the user: "Last session was on [date/branch]. You built [X]. Still pending: [Y]. How do you want to proceed?"
+
+### Step 4 — Session end (before every sign-off)
+
+Always run this before ending a session so the next machine picks up cleanly:
+
+```bash
+bash .claude/scripts/checkpoint.sh
+```
+
+---
+
 ## Project Overview
 
 **indiiOS** is a multi-tenant, AI-native creative platform for independent music producers, visual artists, and creators. It provides a unified workspace combining AI-powered image generation, video production, audio DNA extraction (analyzing finished tracks for BPM, key, mood, energy, genre), distribution, and business operations.
