@@ -2,6 +2,42 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.46.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.45.0...v1.46.0) (2026-04-04)
+
+
+### Features
+
+* **assets:** rebuild AssetsPanel with unified asset aggregation ([2ec1c62](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2ec1c6266f61e17361a3510ab4d939581bacb03e))
+* **dashboard:** add dismiss X button to Web Preview PlatformCard ([5b4c7cb](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5b4c7cbfc71814003cc88e1313adf374362f2643))
+* **dashboard:** make Web Preview card dismissable with X button ([551e7d4](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/551e7d4a82ffec4241a422378b2385dd454863f7))
+* **omni-panel:** collapsible sidebar sections and RightPanel polish ([48fe9ce](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/48fe9ce50c88707b61b329898cb3ccb29a3ea3aa))
+* **ui:** Redesign Right Panel into Omni-Panel Quick Access Hub ([8725fee](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8725fee3c8ecf366761eea5f9c0f20c1a17992e9))
+
+
+### Bug Fixes
+
+* **brand-manager:** move Manager Menu to top of sidebar ([dcdefa7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/dcdefa7eb5c857a1432a335dc2b33607ad10c657))
+* **ci:** fix deploy-staging silent failure and invalid hosting target ([d314fb8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d314fb884462e939b5dd0a687738ad001bda337a))
+* **ci:** make Cloud Functions deploy non-blocking while billing account is closed ([baf7d8b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/baf7d8b079813ea5c3a1e3f844edb515d1e06087))
+* **ci:** make Cloud Functions deploy non-blocking while billing account is closed ([e5fa2fe](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e5fa2fe6ae771dbb9ba59263871bcb26ef9aa36c))
+* **ci:** make Cloud Functions deploy non-blocking while billing account is closed ([b8f47ab](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b8f47abc13f9f82a97b4cdd748d6abde97046dcd))
+* **ci:** restore original preview channel target with error logging ([0a6c7b9](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0a6c7b97dcda607f4cdfb71ee733a058b23855f6))
+* **coderabbit:** address all 5 review issues from PR [#1381](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1381) ([22b1964](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/22b196471aa7b3baeea7d9a3793b6be300f99f18))
+* **creative:** remove Gallery tab, fix asset thumbnails with preload and fallbacks ([a1acb6d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a1acb6db13c641615886395273dd3ecb983336cb))
+* **creative:** remove gallery view from video mode, fix assets panel error handling ([59a8fdc](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/59a8fdc63a85a9fab4da11cfa8ad9c49079bbdf3))
+* **hunter:** scrub zombie code across 13 files ([83c30aa](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/83c30aa562c9d8fd720089ec0a3f972f934f52e3))
+* **qa:** ISSUE-001 — defer cleanupLocalStorage to useEffect to unblock FCP ([5a0a9f0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5a0a9f0d7462dbc2a151947dbe679ed248fb157a))
+* **qa:** ISSUE-002 — remove y-translation from founders banner to eliminate CLS ([f620ee7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f620ee727c24c7f93d10a5390c1fc76e6ade5594))
+* **qa:** ISSUE-003 — gate Sentry console warnings to production only ([eca801c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/eca801cea1732521b068cac17feda16fb20414b0))
+* **tests:** harden CommandBar tests for CI forked pool + add agentic state machine ([c994f37](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c994f37071e739191857b7a95d4db63c66280ad1))
+* **tests:** regenerate Sidebar snapshots for collapsible section redesign ([c8d6845](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c8d6845a4cb7b75988d386629c5b468a86c45bcd))
+* **tests:** update Sidebar snapshots after CodeRabbit fixes ([77a0173](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/77a017329641ad93a692952ad4f9a84b53cf171a))
+* **tests:** update Sidebar tests for omni-panel redesign ([3b4d7e3](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3b4d7e39aebbbce7534fdeb5339ed2f1cd032b35))
+* **ui:** remove scanner beam and pattern drift from ambient background ([f0f1ad8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f0f1ad81a35f7cdfb898980318fea39b61de19c9))
+* **video:** address CodeRabbit review findings on PR [#1379](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1379) ([7d9306e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7d9306e69f35ffaf8d22591e2c97f629d0ced7e6))
+* **video:** address second CodeRabbit review round on PR [#1379](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1379) ([e7eabba](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e7eabba939bd82b1fe52e987d56b76dea51f328a))
+* **video:** eliminate BroadcastChannel thrash and add popout crash recovery ([54db240](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/54db2408cd56609cab7e292d5630e5163f0aa23a))
+
 ## [1.45.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.44.4...v1.45.0) (2026-04-02)
 
 
