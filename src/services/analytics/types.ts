@@ -22,7 +22,10 @@ export type GrowthPatternName =
 export type AlertType =
     | 'breakout_candidate'
     | 'rapid_velocity_growth'
-    | 'creator_trend_detected';
+    | 'creator_trend_detected'
+    | 'popularity_milestone_reached'
+    | 'popularity_score_tapering'
+    | 'spike_72h_sustain_needed';
 
 export type BreakoutProbability = 'Low' | 'Moderate' | 'High' | 'Breakout!';
 
@@ -146,3 +149,47 @@ export interface TrackReport {
     forecast: GrowthForecast;
     generatedAt: string;
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// indii Growth Protocol — Popularity Score Tracking
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Spotify popularity scores for artist and track.
+ * Range: 0–100, where 100 is the most popular.
+ * Updated daily by Spotify based on recent streaming activity.
+ */
+export interface PopularityScores {
+    /** Spotify Track Popularity Score (0–100) */
+    trackPopularity: number;
+    /** Spotify Artist Popularity Score (0–100) */
+    artistPopularity: number;
+    /** Timestamp of the last fetch */
+    fetchedAt: string;
+    /** Previous track popularity (for delta calculation) */
+    previousTrackPopularity?: number;
+    /** Previous artist popularity (for delta calculation) */
+    previousArtistPopularity?: number;
+}
+
+/**
+ * Popularity score milestones that trigger major Spotify algorithmic boosts.
+ * Crossing these thresholds unlocks Discover Weekly, Radio, and Autoplay placements.
+ */
+export interface PopularityMilestone {
+    threshold: number;              // 20, 30, 40, 50, 60, 70
+    label: string;                  // Human-readable label
+    algorithmicEffect: string;      // What unlocks at this threshold
+}
+
+/**
+ * The defined milestones for the indii Growth Protocol.
+ */
+export const POPULARITY_MILESTONES: PopularityMilestone[] = [
+    { threshold: 20, label: 'Emerging', algorithmicEffect: 'Eligible for algorithmic playlist consideration and Radio seeding.' },
+    { threshold: 30, label: 'Rising', algorithmicEffect: 'Discover Weekly inclusion begins. Autoplay candidate in related artist sessions.' },
+    { threshold: 40, label: 'Momentum', algorithmicEffect: 'Increased Radio rotation. Daily Mix inclusion. Release Radar boost.' },
+    { threshold: 50, label: 'Breakout', algorithmicEffect: 'Editorial playlist consideration. Top-of-genre algorithmic placements.' },
+    { threshold: 60, label: 'Mainstream', algorithmicEffect: 'Cross-genre algorithmic exposure. High-traffic editorial playlist eligible.' },
+    { threshold: 70, label: 'Major', algorithmicEffect: 'Maximum algorithmic amplification. Featured artist recommendations.' },
+];

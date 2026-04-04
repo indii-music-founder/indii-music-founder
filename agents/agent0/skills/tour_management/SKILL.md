@@ -3,7 +3,7 @@ name: tour_management
 description: Comprehensive knowledge base for tour routing, budgeting, advancing shows, talent buying, and road management.
 ---
 
-# Tour Management & Live Operations (Agent Zero Skill)
+# Tour Management & Live Operations (indii Conductor Skill)
 
 **Domain Expert:** Tour Manager / Booking Agent  
 **Goal:** Optimize tour routing, ensure profitable margins, manage logistics, and interface with venues/promoters.

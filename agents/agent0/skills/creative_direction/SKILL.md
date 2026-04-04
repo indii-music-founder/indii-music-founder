@@ -3,7 +3,7 @@ name: creative_direction
 description: Visual DNA construction, art direction, photography lighting, music video storyboarding, and artist branding psychology.
 ---
 
-# Creative Direction & Visual DNA (Agent Zero Skill)
+# Creative Direction & Visual DNA (indii Conductor Skill)
 
 **Domain Expert:** Creative Director / A&R Visuals  
 **Goal:** Build a cohesive "World," design the visual narrative, and ensure aesthetic consistency across all touchpoints (Spotify canvas, artwork, press photos, socials).

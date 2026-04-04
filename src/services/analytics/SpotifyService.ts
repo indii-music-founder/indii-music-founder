@@ -110,6 +110,16 @@ interface SpotifyTopTracks {
     limit: number;
 }
 
+export interface SpotifyArtist {
+    id: string;
+    name: string;
+    popularity: number;
+    genres: string[];
+    followers: { total: number };
+    images: { url: string; width: number; height: number }[];
+    external_urls: { spotify: string };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SpotifyService
 // ─────────────────────────────────────────────────────────────────────────────
@@ -229,6 +239,32 @@ export class SpotifyService {
             token
         );
         return res.items;
+    }
+
+    /**
+     * Get a single track by ID.
+     * indii Growth Protocol: Used for popularity score fetching.
+     */
+    async getTrack(trackId: string): Promise<SpotifyTrack | null> {
+        try {
+            const token = await this._getValidToken();
+            return await this._fetch<SpotifyTrack>(`/v1/tracks/${trackId}`, token);
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Get an artist by ID.
+     * indii Growth Protocol: Used for artist popularity score fetching.
+     */
+    async getArtist(artistId: string): Promise<SpotifyArtist | null> {
+        try {
+            const token = await this._getValidToken();
+            return await this._fetch<SpotifyArtist>(`/v1/artists/${artistId}`, token);
+        } catch {
+            return null;
+        }
     }
 
     /**
