@@ -492,3 +492,65 @@ mcp_mem0_add-memory(
 | Desktop (Windows) | Electron | NSIS installer |
 | Desktop (Linux) | Electron | AppImage |
 | Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
+
+## Skill Routing
+
+When a user request matches a skill pattern below, **READ the referenced skill file first and follow its instructions exactly**. Do not answer ad hoc when a skill exists — the skill provides a proven, structured workflow.
+
+**How to invoke a skill:** Read the file at the listed path, internalize the protocol, then execute it step-by-step. Do not summarize — execute.
+
+### Agent Skills (`.agent/skills/`)
+
+| Trigger | Skill File |
+|---------|-----------|
+| Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
+| Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
+| Scaffold a new specialist agent | `.agent/skills/better_agents/SKILL.md` |
+| Brand kit setup, onboarding artist identity | `.agent/skills/brand_kit/SKILL.md` |
+| Direct file upload, bypass file picker for testing | `.agent/skills/direct_upload/SKILL.md` |
+| Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
+| Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
+| Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
+| Stress test image generation pipeline | `.agent/skills/live_test_creative_director/SKILL.md` |
+| Session start, operator bootstrap, context scan | `.agent/skills/opp/SKILL.md` |
+| Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
+| **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
+
+### Jules Tools (`.jules/`)
+
+| Trigger | Tool File |
+|---------|----------|
+| Access control, auth flows | `.jules/access.md` |
+| Rapid task execution | `.jules/bolt.md` |
+| UI component building | `.jules/bolt_ui.md` |
+| Click path testing | `.jules/click.md` |
+| Workflow / flow execution | `.jules/flow.md` |
+| Build and forge operations | `.jules/forge.md` |
+| Automation sequences, complex orchestration | `.jules/helix.md` |
+| State and data persistence | `.jules/keeper.md` |
+| Visual inspection, UI review | `.jules/lens.md` |
+| Multi-agent orchestration | `.jules/maestro.md` |
+| Design system, styling, color palette | `.jules/palette.md` |
+| Pixel-level UI adjustments | `.jules/pixel.md` |
+| Quick health pulse check | `.jules/pulse.md` |
+| Monitoring, alerting, system sentinel | `.jules/sentinel.md` |
+| Viewport, responsive design testing | `.jules/viewport.md` |
+
+### Gemini-Native Equivalents for Claude Code Skills
+
+When Claude would invoke a named Skill tool, use the following Gemini-native approach:
+
+| Claude Skill | Gemini Approach |
+|-------------|-----------------|
+| `office-hours` | Apply extended reasoning to surface tradeoffs, risks, and a concrete recommendation |
+| `investigate` | Trace root cause systematically: read logs → search codebase → form hypothesis → verify before touching code |
+| `ship` | Stage changes → commit with conventional message → push branch → confirm CI green |
+| `qa` | Use `.agent/skills/auto_qa/SKILL.md` for visual QA; run `npm test -- --run` for unit coverage |
+| `review` | Read the full diff, check against architecture standards in this file, report issues by P0/P1/P2 severity |
+| `document-release` | Update CHANGELOG, relevant module docs, and root README after shipping |
+| `retro` | Summarize: what was built, what broke, root causes, and concrete next steps |
+| `design-consultation` | Read `.jules/palette.md` + brand kit; provide design system recommendations grounded in existing tokens |
+| `design-review` | Use `.agent/skills/auto_qa/SKILL.md` for screenshots + `.jules/lens.md` for visual inspection |
+| `plan-eng-review` | Use `.agent/skills/agentic-harness-architect/SKILL.md`; apply all 12 architecture primitives |
+| `checkpoint` | Write current session state to `.agent/HANDOFF_STATE.md` with completed work, decisions, and next steps |
+| `health` | Use `.agent/skills/health_audit/SKILL.md` for full spectrum audit |
