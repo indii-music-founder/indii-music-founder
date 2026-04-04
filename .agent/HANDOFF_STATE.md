@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-04-04 15:54 UTC
+**Updated:** 2026-04-04 15:59 UTC
 **Branch:** `claude/build-insights-dashboard-NZ1np`
 
 ## Recent Commits
 ```
+bd96c65 chore: health audit report + skill self-upgrade
+a1bc1a4 chore: session checkpoint [15:54]
 39c8f1c chore: final session handoff — full context for home machine
 36a50a5 fix(hooks): implement all P1/P2/P3 audit recommendations
 21ff0b1 chore: session checkpoint [15:46]
@@ -12,8 +14,6 @@
 ce08d8d feat: add hooks skill — full-spectrum hooks management for all agents
 e729926 chore: session checkpoint [15:38]
 923e0a5 feat: auto-checkpoint hooks — zero-effort session handoff
-0d6fe45 chore: session checkpoint [15:37]
-6ec263b feat: fully actualize skill routing for Claude and Gemini agents
 ```
 
 ## Working State
