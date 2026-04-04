@@ -93,7 +93,7 @@ Use this heuristic:
 
 Output a sequenced implementation plan:
 
-```
+```text
 Phase 0 — Foundation (must ship before anything else)
   [ ] Tool Registry schema defined (Primitive 1)
   [ ] Permission tiers classified (Primitive 2)
@@ -154,7 +154,7 @@ For each primitive, assign a status:
 
 Output a scorecard table:
 
-```
+```markdown
 | # | Primitive                    | Status | Evidence |
 |---|------------------------------|--------|----------|
 | 1 | Tool Registry                | ❌     | No registry found; tools called directly |
@@ -194,7 +194,7 @@ Avoid recommending multi-agent coordination until all P0 and P1 items are resolv
 
 For each recommended fix, specify a test that proves it works:
 
-```
+```text
 Fix: Add permission tier to shell tools
 Test: Call shell tool without approval → expect blocked + audit log entry
 ```
