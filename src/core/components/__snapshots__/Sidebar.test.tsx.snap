@@ -20,20 +20,6 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     </button>
   </div>
   <div
-    class="px-4 pt-4 pb-2 w-full border-b border-white/5 border-dashed"
-  >
-    <div
-      class="flex items-center justify-center p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
-      data-state="closed"
-    >
-      <svg
-        class="text-gray-500"
-        data-testid="icon-Fingerprint"
-        size="16"
-      />
-    </div>
-  </div>
-  <div
     class="flex items-center justify-center pt-4 pb-2 border-b border-white/5 border-dashed"
   >
     <button
@@ -462,7 +448,80 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
   </div>
   <div
     class="p-4 border-t border-white/5 mt-auto flex flex-col gap-2 items-center"
-  />
+  >
+    <div
+      class="mb-2 w-full flex flex-col gap-2"
+    />
+    <div
+      class="flex flex-col justify-center gap-3"
+    >
+      <div
+        class="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden"
+      >
+        <span
+          class="text-xs font-bold text-white"
+        >
+          S
+        </span>
+      </div>
+      <button
+        aria-label="Reload System"
+        class="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors mt-1"
+        data-testid="logout-btn"
+        title="Reload System"
+      >
+        <svg
+          data-testid="icon-LogOut"
+          size="14"
+        />
+      </button>
+    </div>
+    <div
+      class="mt-3 flex flex-col gap-1.5 "
+    >
+      <div
+        class="flex items-center gap-1 p-1 bg-secondary/50 rounded-full border border-white/10 flex-col"
+      >
+        <button
+          class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
+          title="Light Mode"
+        >
+          <svg
+            class="w-4 h-4"
+            data-testid="icon-Sun"
+          />
+        </button>
+        <button
+          class="p-1.5 rounded-full transition-all duration-200 bg-white text-purple-600 shadow-sm"
+          title="System Preference"
+        >
+          <svg
+            class="w-4 h-4"
+            data-testid="icon-Monitor"
+          />
+        </button>
+        <button
+          class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
+          title="Dark Mode"
+        >
+          <svg
+            class="w-4 h-4"
+            data-testid="icon-Moon"
+          />
+        </button>
+      </div>
+      <div
+        class="flex items-center justify-center p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
+        data-state="closed"
+      >
+        <svg
+          class="text-gray-500"
+          data-testid="icon-Fingerprint"
+          size="16"
+        />
+      </div>
+    </div>
+  </div>
 </nav>
 `;
 
@@ -504,25 +563,6 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         size="16"
       />
     </button>
-  </div>
-  <div
-    class="px-4 pt-4 pb-2 w-full border-b border-white/5 border-dashed"
-  >
-    <div
-      class="flex items-center gap-2 p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
-      data-state="closed"
-    >
-      <svg
-        class="text-gray-500"
-        data-testid="icon-Fingerprint"
-        size="16"
-      />
-      <span
-        class="text-xs text-gray-500 font-medium"
-      >
-        Biometrics Unavailable
-      </span>
-    </div>
   </div>
   <div
     class="px-4 pt-4 pb-2"
@@ -1100,8 +1140,97 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
   <div
     class="p-4 border-t border-white/5 mt-auto flex flex-col gap-2 "
   >
+    <div
+      class="flex items-center gap-3"
+    >
+      <div
+        class="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden"
+      >
+        <span
+          class="text-xs font-bold text-white"
+        >
+          S
+        </span>
+      </div>
+      <div
+        class="flex-1 min-w-0"
+      >
+        <p
+          class="text-sm font-medium text-gray-200 truncate"
+        >
+          Test User
+        </p>
+        <p
+          class="text-xs text-gray-500 truncate"
+          data-testid="user-profile-info"
+        >
+          System Active
+        </p>
+      </div>
+      <button
+        aria-label="Reload System"
+        class="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors "
+        data-testid="logout-btn"
+        title="Reload System"
+      >
+        <svg
+          data-testid="icon-LogOut"
+          size="14"
+        />
+      </button>
+    </div>
+    <div
+      class="mt-3 flex flex-col gap-1.5 "
+    >
+      <div
+        class="flex items-center gap-1 p-1 bg-secondary/50 rounded-full border border-white/10"
+      >
+        <button
+          class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
+          title="Light Mode"
+        >
+          <svg
+            class="w-4 h-4"
+            data-testid="icon-Sun"
+          />
+        </button>
+        <button
+          class="p-1.5 rounded-full transition-all duration-200 bg-white text-purple-600 shadow-sm"
+          title="System Preference"
+        >
+          <svg
+            class="w-4 h-4"
+            data-testid="icon-Monitor"
+          />
+        </button>
+        <button
+          class="p-1.5 rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5"
+          title="Dark Mode"
+        >
+          <svg
+            class="w-4 h-4"
+            data-testid="icon-Moon"
+          />
+        </button>
+      </div>
+      <div
+        class="flex items-center gap-2 p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
+        data-state="closed"
+      >
+        <svg
+          class="text-gray-500"
+          data-testid="icon-Fingerprint"
+          size="16"
+        />
+        <span
+          class="text-xs text-gray-500 font-medium"
+        >
+          Biometrics Unavailable
+        </span>
+      </div>
+    </div>
     <p
-      class="text-[10px] text-gray-600 text-center italic"
+      class="mt-4 text-[10px] text-gray-600 text-center italic"
     >
       made by Detroit, for the world.
     </p>
