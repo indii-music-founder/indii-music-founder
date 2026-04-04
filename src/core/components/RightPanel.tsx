@@ -267,7 +267,7 @@ export default function RightPanel() {
                                 return (
                                     <button
                                         key={id}
-                                        onClick={() => setRightPanelTab(id as any)}
+                                        onClick={() => setRightPanelTab(id)}
                                         className={cn(
                                             "p-2 rounded-xl transition-all flex items-center justify-center relative group shrink-0",
                                             isActive

@@ -451,13 +451,11 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
 
 export default function App() {
     // ⚡ Bolt Optimization: useShallow
-    const { currentModule, user, authLoading, isAgentOpen, toggleAgentWindow } = useStore(
+    const { currentModule, user, authLoading } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
             user: state.user,
             authLoading: state.authLoading,
-            isAgentOpen: state.isAgentOpen,
-            toggleAgentWindow: state.toggleAgentWindow,
         }))
     );
 

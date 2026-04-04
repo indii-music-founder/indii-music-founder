@@ -34,17 +34,17 @@ function relTime(ts: number) {
 export default function AssetSpotlight() {
     const {
         generatedHistory,
-        toggleAgentWindow,
-        isAgentOpen,
         setModule,
         setSelectedItem,
+        setRightPanelTab,
+        setRightPanelView,
     } = useStore(
         useShallow((s) => ({
             generatedHistory: s.generatedHistory,
-            toggleAgentWindow: s.toggleAgentWindow,
-            isAgentOpen: s.isAgentOpen,
             setModule: s.setModule,
             setSelectedItem: s.setSelectedItem,
+            setRightPanelTab: s.setRightPanelTab,
+            setRightPanelView: s.setRightPanelView,
         }))
     );
 
@@ -56,7 +56,8 @@ export default function AssetSpotlight() {
         useStore.setState({
             commandBarInput: `Let's discuss this ${label} I created: "${asset.prompt?.slice(0, 80) ?? ''}"`,
         });
-        if (!isAgentOpen) toggleAgentWindow();
+        setRightPanelTab('agent');
+        setRightPanelView('messages');
     };
 
     const openInStudio = (asset: (typeof assets)[0]) => {
@@ -66,6 +67,7 @@ export default function AssetSpotlight() {
         } else {
             setModule('creative');
         }
+        setRightPanelTab('context');
     };
 
     /* ── empty state ─────────────────────────────────────────────── */
@@ -111,8 +113,8 @@ export default function AssetSpotlight() {
                             key={asset.id}
                             onClick={() => setSelIdx(isSelected ? null : i)}
                             className={`rounded-lg overflow-hidden border transition-all text-left flex flex-col ${isSelected
-                                    ? 'border-purple-500/50 ring-1 ring-purple-500/20'
-                                    : 'border-white/5 hover:border-white/15'
+                                ? 'border-purple-500/50 ring-1 ring-purple-500/20'
+                                : 'border-white/5 hover:border-white/15'
                                 }`}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}

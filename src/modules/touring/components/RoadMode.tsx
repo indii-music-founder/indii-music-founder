@@ -159,8 +159,8 @@ const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, 
                         >
                             {/* Rank badge */}
                             <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${idx === 0
-                                    ? 'bg-amber-500/20 text-amber-400'
-                                    : 'bg-white/5 text-slate-500'
+                                ? 'bg-amber-500/20 text-amber-400'
+                                : 'bg-white/5 text-slate-500'
                                 }`}>
                                 {idx + 1}
                             </div>
@@ -222,12 +222,6 @@ const NearbyResultsView: React.FC<NearbyResultsViewProps> = ({ results, action, 
 export const RoadMode: React.FC = () => {
     const { isListening, toggleListening, transcript } = useVoice();
     const { currentItinerary: itinerary } = useTouring();
-    const { isAgentOpen, toggleAgentWindow } = useStore(
-        useShallow(s => ({
-            isAgentOpen: s.isAgentOpen,
-            toggleAgentWindow: s.toggleAgentWindow,
-        }))
-    );
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lastAction, setLastAction] = useState<string | null>(null);
@@ -286,10 +280,8 @@ export const RoadMode: React.FC = () => {
                 useStore.setState({ activeAgentProvider: 'native' });
             }
 
-            // Open the agent chat panel so the response is visible
-            if (!isAgentOpen) {
-                toggleAgentWindow();
-            }
+            // Open the agent module so the response is visible
+            useStore.setState({ currentModule: 'agent' as import('@/core/constants').ModuleId });
 
             // Clear any lingering text in the command bar
             useStore.setState({ commandBarInput: '' });
@@ -306,7 +298,7 @@ export const RoadMode: React.FC = () => {
         } finally {
             setIsSubmitting(false);
         }
-    }, [currentLocationText, isSubmitting, isAgentOpen, toggleAgentWindow]);
+    }, [currentLocationText, isSubmitting]);
 
     // Handle quick action tap — either Places API or Agent
     const handleQuickAction = async (action: QuickAction) => {
@@ -447,8 +439,8 @@ export const RoadMode: React.FC = () => {
                                     onClick={() => handleQuickAction(action)}
                                     disabled={isSubmitting && lastAction === action.id}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all active:shadow-lg ${action.bgColor} ${isSubmitting && lastAction === action.id
-                                            ? 'opacity-50'
-                                            : ''
+                                        ? 'opacity-50'
+                                        : ''
                                         }`}
                                 >
                                     {isSubmitting && lastAction === action.id ? (
@@ -550,8 +542,8 @@ export const RoadMode: React.FC = () => {
                         whileTap={{ scale: 0.9 }}
                         onClick={toggleListening}
                         className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm transition-all ${isListening
-                                ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
-                                : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
+                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
+                            : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
                             }`}
                     >
                         {isListening ? (

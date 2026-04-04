@@ -50,9 +50,9 @@ function CommandBar() {
         }))
     );
 
-    // HQ page (agent module) has its own inline PromptArea — hide this global one
-    // Also hide if RightPanel (isAgentOpen) is showing its own unified prompt
-    if (currentModule === 'agent' || isAgentOpen) return null;
+    // Hide the floating command bar globally for now as requested.
+    // It has been replaced by the Right Panel's unified prompt area.
+    return null;
 
     const shouldShow = true;
     const posStyle = getPositionStyle(commandBarPosition, isCommandBarCollapsed);
