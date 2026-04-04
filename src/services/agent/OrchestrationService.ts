@@ -174,6 +174,12 @@ export class OrchestrationService {
             return this.executeWorkflow('AI_MERCH_DROP', context);
         }
 
+        // indii Growth Protocol
+        if (lower.includes('growth protocol') || (lower.includes('28-day') && lower.includes('frontloaded')) || lower.includes('deploy protocol')) {
+            if (!context.projectId) throw new Error("A project must be active to launch the Growth Protocol.");
+            return this.executeWorkflow('INDII_GROWTH_PROTOCOL', context);
+        }
+
         return null;
     }
 }

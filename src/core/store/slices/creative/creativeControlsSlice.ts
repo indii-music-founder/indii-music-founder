@@ -62,10 +62,13 @@ export interface CreativeControlsSlice {
         useGrounding: boolean;
         personGeneration: 'allow_adult' | 'dont_allow' | 'allow_all';
         isTransitionMode: boolean;
+        isAndromedaMode: boolean;
     };
     setStudioControls: (controls: Partial<CreativeControlsSlice['studioControls']>) => void;
     enableCoverArtMode: () => void;
     disableCoverArtMode: () => void;
+    enableAndromedaMode: () => void;
+    disableAndromedaMode: () => void;
 
     // Mode & Inputs
     generationMode: 'image' | 'video';
@@ -153,7 +156,8 @@ export function buildCreativeControlsState(
             generateAudio: true,
             useGrounding: false,
             personGeneration: 'allow_adult',
-            isTransitionMode: false
+            isTransitionMode: false,
+            isAndromedaMode: false
         },
         setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
         enableCoverArtMode: () => set((state) => ({
@@ -168,6 +172,18 @@ export function buildCreativeControlsState(
                 ...state.studioControls,
                 aspectRatio: '16:9',
                 isCoverArtMode: false
+            }
+        })),
+        enableAndromedaMode: () => set((state) => ({
+            studioControls: {
+                ...state.studioControls,
+                isAndromedaMode: true
+            }
+        })),
+        disableAndromedaMode: () => set((state) => ({
+            studioControls: {
+                ...state.studioControls,
+                isAndromedaMode: false
             }
         })),
 

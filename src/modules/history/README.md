@@ -15,5 +15,5 @@ The History module serves as the central directory of past interactions, agents'
 
 ## 🔗 Integrations
 
-- Relies heavily on **Agent Zero** and the **Dashboard** for cross-module context switching.
+- Relies heavily on the **indii Conductor** and the **Dashboard** for cross-module context switching.
 - Persistent histories backed by **Firestore** documents under the user's root scope.

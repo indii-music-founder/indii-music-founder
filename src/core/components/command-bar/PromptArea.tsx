@@ -212,6 +212,27 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             const currentInput = input;
             const currentAttachments = [...(commandBarAttachments || [])];
 
+            if (currentInput.trim() === '/deploy-andromeda') {
+                const state = useStore.getState();
+                state.setModule('creative');
+                state.enableAndromedaMode();
+                toast.success('Andromeda Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
+                setCommandBarInput('');
+                setCommandBarAttachments([]);
+                setIsProcessing(false);
+                return;
+            }
+
+            if (currentInput.trim() === '/status-blitz') {
+                const state = useStore.getState();
+                state.setModule('dashboard');
+                toast.success('System Status: Viral Velocity Active, CPS Kill-switches Armed.');
+                setCommandBarInput('');
+                setCommandBarAttachments([]);
+                setIsProcessing(false);
+                return;
+            }
+
             setCommandBarInput('');
             setCommandBarAttachments([]);
 

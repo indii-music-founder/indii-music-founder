@@ -28,6 +28,14 @@ export interface ToolParameters {
 import { ZodType } from 'zod';
 
 export type ToolRiskTier = 'read' | 'write' | 'destructive';
+export type PermissionTier = 'builtin' | 'core' | 'plugin';
+
+export interface ToolRiskMetadata {
+    riskTier: ToolRiskTier;
+    permissionTier: PermissionTier;
+    requiresApproval: boolean;
+    description: string;
+}
 
 export interface FunctionDeclaration {
     name: string;
@@ -400,6 +408,7 @@ export interface WorkflowStepExecution {
     agentId: string;
     prompt: string;
     status: WorkflowExecutionStatus;
+    idempotencyKey: string;
     result?: string;
     error?: string;
     startedAt?: number;

@@ -42,6 +42,7 @@ class WorkflowStateServiceImpl {
             agentId: step.agentId,
             prompt: step.prompt,
             status: 'planned' as WorkflowExecutionStatus,
+            idempotencyKey: uuidv4(),
         }));
 
         const execution: WorkflowExecution = {
@@ -78,6 +79,10 @@ class WorkflowStateServiceImpl {
         const step = execution.steps[stepIndex];
         if (!step) {
             throw new Error(`Step ${stepIndex} not found in execution ${executionId}`);
+        }
+
+        if (step.status !== 'planned' && step.status !== 'failed') {
+            throw new Error(`Step ${stepIndex} cannot be executed - currently ${step.status} (Idempotency Lock)`);
         }
 
         step.status = 'executing';

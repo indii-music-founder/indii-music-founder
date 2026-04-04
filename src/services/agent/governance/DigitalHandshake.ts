@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import { Directive } from '../../directive/DirectiveTypes';
 import { DirectiveService } from '../../directive/DirectiveService';
 import type { ToolRiskTier } from '../types';
+import { getToolRiskMetadata } from '../ToolRiskRegistry';
 
 export interface HandshakeRequest {
     directiveId: string;
@@ -29,39 +30,49 @@ export class DigitalHandshake {
      * @param directive - The active directive governing this execution scope
      * @param actionDescription - Human-readable description of the action
      * @param isDestructive - Legacy boolean for destructiveness (deprecated — use riskTier)
-     * @param riskTier - Tool risk classification from FunctionDeclaration metadata
+     * @param toolName - The name of the tool attempting execution
      * @returns boolean - true if execution can proceed, false if Handshake is required (execution paused).
      */
     static async require(
         directive: Directive,
         actionDescription: string,
         isDestructive: boolean = false,
-        riskTier?: ToolRiskTier
+        toolName?: string
     ): Promise<boolean> {
         const { computeAllocation } = directive;
 
         const computeExceeded = computeAllocation.tokensUsed >= computeAllocation.maxTokens;
 
+        const meta = toolName ? getToolRiskMetadata(toolName) : null;
+        const resolvedRiskTier = meta?.riskTier;
+        const requiresApproval = meta?.requiresApproval ?? false;
+
         // Resolve destructiveness: riskTier metadata takes precedence over legacy boolean
-        const effectivelyDestructive = riskTier
-            ? riskTier === 'destructive'
-            : isDestructive;
+        const effectivelyDestructive = requiresApproval || isDestructive || (resolvedRiskTier === 'destructive');
 
         // Read-only tools never require a handshake (unless compute is exceeded)
-        if (riskTier === 'read' && !computeExceeded) {
+        if (resolvedRiskTier === 'read' && !computeExceeded) {
+            if (toolName) await this.logAuditTrail(directive.userId, 'TOOL_AUTO_APPROVED', { toolName, riskTier: resolvedRiskTier });
             return true;
         }
 
         if ((computeExceeded && !computeAllocation.isMaximizerModeActive) || effectivelyDestructive) {
             logger.warn(`[DigitalHandshake] Action Paused: ${actionDescription}`);
-            logger.warn(`[DigitalHandshake] Compute Exceeded: ${computeExceeded}, RiskTier: ${riskTier || 'unset'}, Destructive: ${effectivelyDestructive}`);
+            logger.warn(`[DigitalHandshake] Compute Exceeded: ${computeExceeded}, RiskTier: ${resolvedRiskTier || 'unset'}, Destructive: ${effectivelyDestructive}`);
 
             await this.pingMemoryInbox(directive.userId, {
                 directiveId: directive.id,
                 actionDescription,
                 isDestructive: effectivelyDestructive,
                 computeExceeded,
-                riskTier,
+                riskTier: resolvedRiskTier,
+            });
+
+            await this.logAuditTrail(directive.userId, 'HANDSHAKE_REQUESTED', {
+                directiveId: directive.id,
+                toolName,
+                actionDescription,
+                riskTier: resolvedRiskTier
             });
 
             // Update Directive Status to WAITING_ON_HANDSHAKE
@@ -70,7 +81,16 @@ export class DigitalHandshake {
             return false; // Handshake required, execution paused
         }
 
+        if (toolName) {
+            await this.logAuditTrail(directive.userId, 'TOOL_AUTO_APPROVED', { actionDescription, toolName, riskTier: resolvedRiskTier });
+        }
+
         return true; // Approved to proceed
+    }
+
+    public static async logAuditTrail(userId: string, action: string, details: Record<string, unknown>): Promise<void> {
+        const auditRef = collection(db, `users/${userId}/agentAuditTrails`);
+        await addDoc(auditRef, { action, details, timestamp: Timestamp.now() });
     }
 
     /**

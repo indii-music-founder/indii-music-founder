@@ -83,8 +83,10 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             // Trigger Image Generation
             const generateImage = async () => {
                 const isCoverArt = studioControls.isCoverArtMode;
+                const isAndromeda = studioControls.isAndromedaMode;
+
                 setIsGenerating(true);
-                toast.info(isCoverArt ? "Generating cover art..." : "Generating image...");
+                toast.info(isAndromeda ? "Deploying Andromeda 15-Variant Pipeline..." : isCoverArt ? "Generating cover art..." : "Generating image...");
 
                 try {
                     const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
@@ -93,38 +95,127 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     const finalPrompt = WhiskService.synthesizeWhiskPrompt(pendingPrompt, whiskState);
                     const sourceImages = WhiskService.getSourceImages(whiskState);
 
-                    const results = await ImageGeneration.generateImages({
-                        prompt: finalPrompt,
-                        count: 1,
-                        resolution: studioControls.resolution,
-                        aspectRatio: isCoverArt ? '1:1' : studioControls.aspectRatio,
-                        negativePrompt: studioControls.negativePrompt,
-                        seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                        sourceImages: sourceImages,
-                        // Pass distributor context for cover art mode
-                        userProfile: isCoverArt ? userProfile : undefined,
-                        isCoverArt,
-                        // Gemini 3 Params
-                        model: studioControls.model,
-                        thinking: studioControls.thinking,
-                        useGrounding: studioControls.useGrounding
-                    });
+                    if (isAndromeda) {
+                        const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
+                        const { adAutomationService } = await import('@/services/marketing/AdAutomationService');
 
-                    if (results.length > 0) {
-                        results.forEach(res => {
-                            addToHistory({
-                                id: res.id,
-                                url: res.url,
-                                prompt: pendingPrompt, // Store user's original prompt in history for clarity
-                                type: 'image',
-                                timestamp: Date.now(),
-                                projectId: currentProjectId,
-                                origin: 'generated'
-                            });
+                        // 1. Generate 10 Image Variants
+                        const imagePromises = Array(10).fill(0).map((_, i) =>
+                            ImageGeneration.generateImages({
+                                prompt: `${finalPrompt}, variant iteration ${i + 1}, varied composition`,
+                                count: 1,
+                                resolution: studioControls.resolution,
+                                aspectRatio: studioControls.aspectRatio,
+                                negativePrompt: studioControls.negativePrompt,
+                                seed: undefined, // Force random seeds for variety
+                                sourceImages: sourceImages,
+                                model: studioControls.model,
+                                thinking: studioControls.thinking,
+                                useGrounding: studioControls.useGrounding
+                            })
+                        );
+
+                        // 2. Generate 5 Video Variants (Veo 3.1)
+                        const videoPromises = Array(5).fill(0).map((_, i) =>
+                            VideoGeneration.generateVideo({
+                                prompt: `${finalPrompt}, cinematic motion variant ${i + 1}`,
+                                resolution: studioControls.resolution,
+                                aspectRatio: studioControls.aspectRatio,
+                                duration: 4,
+                                cameraMovement: 'Dynamic',
+                                motionStrength: 0.8,
+                                model: 'pro'
+                            })
+                        );
+
+                        const allPromises = [...imagePromises, ...videoPromises];
+                        const results = await Promise.allSettled(allPromises);
+
+                        let successCount = 0;
+                        const adCreatives: { creativeId: string; postId: string; headline: string; body: string; callToAction: 'LEARN_MORE' | 'SHOP_NOW' | 'LISTEN_NOW' }[] = [];
+
+                        results.forEach((res, index) => {
+                            if (res.status === 'fulfilled' && res.value.length > 0) {
+                                successCount++;
+                                const item = res.value[0]!;
+                                const isVideo = index >= 10;
+
+                                addToHistory({
+                                    id: item.id,
+                                    url: item.url,
+                                    prompt: pendingPrompt,
+                                    type: isVideo ? 'video' : 'image',
+                                    timestamp: Date.now(),
+                                    projectId: currentProjectId,
+                                    origin: 'generated'
+                                });
+
+                                adCreatives.push({
+                                    creativeId: item.id,
+                                    postId: `post_${Date.now()}_${index}`,
+                                    headline: isVideo ? `Experience the Vision ${index + 1}` : `Discover the Magic ${index + 1}`,
+                                    body: pendingPrompt.slice(0, 80) + "...",
+                                    callToAction: isVideo ? 'LEARN_MORE' : 'SHOP_NOW'
+                                });
+                            } else if (res.status === 'rejected') {
+                                logger.warn(`[Andromeda] Variant ${index + 1} failed:`, res.reason);
+                            }
                         });
-                        toast.success("Image generated!");
+
+                        if (successCount > 0) {
+                            toast.success(`Andromeda: ${successCount}/15 Variants generated.`);
+                            try {
+                                await adAutomationService.deployAndromedaPipeline(adCreatives, {
+                                    platform: 'meta',
+                                    dailyBudget: 10.00,
+                                    totalDays: 28,
+                                    targetAgeRange: [18, 35],
+                                    targetInterests: ['music', 'creativity', 'art']
+                                });
+                                toast.success("Campaign deployed to Marketing Protocol.");
+                            } catch (e) {
+                                logger.error("[Andromeda] Failed to deploy marketing pipeline", e);
+                                toast.error("Assets generated, but marketing deployment failed.");
+                            }
+                        } else {
+                            toast.error("Andromeda pipeline failed: 0 variants generated.");
+                        }
+
                     } else {
-                        toast.error("Generation returned no images. Please try again.");
+                        // Original Single Generation
+                        const results = await ImageGeneration.generateImages({
+                            prompt: finalPrompt,
+                            count: 1,
+                            resolution: studioControls.resolution,
+                            aspectRatio: isCoverArt ? '1:1' : studioControls.aspectRatio,
+                            negativePrompt: studioControls.negativePrompt,
+                            seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                            sourceImages: sourceImages,
+                            // Pass distributor context for cover art mode
+                            userProfile: isCoverArt ? userProfile : undefined,
+                            isCoverArt,
+                            // Gemini 3 Params
+                            model: studioControls.model,
+                            thinking: studioControls.thinking,
+                            useGrounding: studioControls.useGrounding
+                        });
+
+                        if (results.length > 0) {
+                            results.forEach(res => {
+                                addToHistory({
+                                    id: res.id,
+                                    url: res.url,
+                                    prompt: pendingPrompt, // Store user's original prompt in history for clarity
+                                    type: 'image',
+                                    timestamp: Date.now(),
+                                    projectId: currentProjectId,
+                                    origin: 'generated'
+                                });
+                            });
+                            toast.success("Image generated!");
+                        } else {
+                            toast.error("Generation returned no images. Please try again.");
+                        }
                     }
                 } catch (e: unknown) {
                     logger.error("[CreativeStudio] Image generation error:", e);
