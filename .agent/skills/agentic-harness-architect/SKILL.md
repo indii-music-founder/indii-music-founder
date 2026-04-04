@@ -36,12 +36,14 @@ const TOOL_REGISTRY: ToolDefinition[] = [
     description: 'Read file contents at a given path',
     riskLevel: 'read',
     requiresApproval: false,
+    tier: 'builtin',
   },
   {
     name: 'delete_file',
     description: 'Permanently delete a file',
     riskLevel: 'destructive',
     requiresApproval: true,
+    tier: 'user_skill',
   },
 ];
 
