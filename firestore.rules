@@ -408,6 +408,10 @@ service cloud.firestore {
     }
 
     // AlwaysOnMemoryEngine — Always-on memory ingestion & consolidation
+    match /users/{userId}/knowledge_wiki/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
     match /users/{userId}/alwaysOnMemories/{memoryId} {
       allow read, write: if isOwner(userId);
     }
