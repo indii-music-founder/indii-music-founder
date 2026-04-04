@@ -19,7 +19,7 @@ import { FUNCTION_AI_MODELS } from "./config/models";
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
-// import { generateThumbnail } from "./lib/image_resizing";
+import { generateThumbnail } from "./lib/image_resizing";
 
 // Vertex AI SDK
 // import { VertexAI } from "@google-cloud/vertexai";
@@ -972,9 +972,9 @@ import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
 import * as marketingService from './lib/marketing';
 
-// export const imageResizing = {
-//     generateThumbnail
-// };
+export const imageResizing = {
+    generateThumbnail
+};
 
 /**
  * List GKE Clusters
