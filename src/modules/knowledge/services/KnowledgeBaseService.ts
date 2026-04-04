@@ -1,6 +1,8 @@
 import { GeminiRetrieval, GeminiFile } from '@/services/rag/GeminiRetrievalService';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
 import { logger } from '@/utils/logger';
+import { WikiStorageAdapter } from '@/services/agent/memory/WikiStorageAdapter';
+import { auth } from '@/services/firebase';
 
 export interface KnowledgeDoc {
     id: string; // The file URI or embedding ID
@@ -11,6 +13,7 @@ export interface KnowledgeDoc {
     status: 'indexed' | 'processing' | 'error';
     rawName: string; // The full files/URI
     mimeType: string;
+    content?: string; // Optional: raw content if it's a Wiki
 }
 
 export interface ChatMessage {
@@ -22,21 +25,44 @@ export interface ChatMessage {
 }
 
 class KnowledgeBaseService {
+    private wikiStorage = new WikiStorageAdapter();
+
     async getDocuments(projectId?: string): Promise<KnowledgeDoc[]> {
         try {
-            const { files } = await GeminiRetrieval.listFiles();
-            const docs = (files || []).map(this.mapGeminiFileToDoc);
+            let docs: KnowledgeDoc[] = [];
 
-            // Filter by project ID if provided (relies on metadata or naming convention)
-            // For now, we assume strict isolation is enforced by the RAG service returning only relevant files
-            // or we filter client-side if we store projectId in display name like "pid:name"
+            // 1. Fetch RAG Files (Safe wrapped, as it might fail on CORS/Network)
+            try {
+                const { files } = await GeminiRetrieval.listFiles();
+                docs = (files || []).map(f => this.mapGeminiFileToDoc(f));
+            } catch (ragError) {
+                logger.warn("KnowledgeBaseService: Failed to load RAG files from proxy, continuing with Wiki only...", ragError);
+            }
+
+            // 2. Fetch Wiki Documents
+            if (auth.currentUser) {
+                const wikiDocs = await this.wikiStorage.listWikiDocs(auth.currentUser.uid);
+                const mappedWikiDocs = wikiDocs.map(w => ({
+                    id: w.id,
+                    title: w.title,
+                    type: 'WIKI',
+                    size: `${(w.content.length / 1024).toFixed(1)} KB`,
+                    date: w.updatedAt.toDate().toLocaleDateString(),
+                    status: 'indexed' as const,
+                    rawName: w.id,
+                    mimeType: 'text/markdown',
+                    content: w.content
+                }));
+                docs.push(...mappedWikiDocs);
+            }
+
+            // Filter by project ID if provided
             if (projectId) {
-                // Temporary: Filter logic if we adopted a naming convention
                 // docs = docs.filter(prev => prev.rawName.includes(projectId)); 
             }
             return docs;
         } catch (error: unknown) {
-            logger.error("KnowledgeBaseService: Failed to load docs", error);
+            logger.error("KnowledgeBaseService: Failed to load docs completely", error);
             throw error;
         }
     }
