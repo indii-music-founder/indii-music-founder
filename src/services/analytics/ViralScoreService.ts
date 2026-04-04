@@ -1,12 +1,14 @@
 /**
  * ViralScoreService — Music Growth Intelligence Engine
  *
- * Implements the viral score formula defined in the IndiiOS Growth Intelligence spec:
- *   score = 0.35*save_rate + 0.25*completion_rate + 0.20*repeat_listener_ratio
- *         + 0.10*playlist_velocity + 0.10*share_rate
+ * Implements the viral score formula defined in the IndiiOS Growth Intelligence spec.
  *
- * All raw rates are normalized to 0-1 before applying weights, producing a final
- * 0-100 score comparable across tracks and time periods.
+ * indii Growth Protocol v2.0 — Save Rate is the DOMINANT KPI.
+ * Updated weights (v2.0): 0.45*save_rate + 0.20*completion_rate + 0.15*repeat_listener_ratio
+ *                       + 0.10*playlist_velocity + 0.10*share_rate
+ *
+ * GUARDRAIL: If save rate drops below 5%, the campaign is causing algorithmic damage
+ * and a pause command is dispatched immediately.
  */
 
 import type {
@@ -23,13 +25,13 @@ import type {
 // ──────────────────────────────────────────────────────────────────────────────
 
 const BENCHMARKS = {
-    saveRate:            { low: 0.01, high: 0.15 },  // 1% baseline → 15% exceptional
-    completionRate:      { low: 0.30, high: 0.85 },  // 30% baseline → 85% exceptional
-    repeatListenerRatio: { low: 1.0,  high: 3.5  },  // 1x baseline → 3.5x exceptional
-    shareRate:           { low: 0.005,high: 0.05 },  // 0.5% baseline → 5% exceptional
-    followerConversion:  { low: 0.001,high: 0.02 },
-    velocity:            { low: 0.9,  high: 2.5  },  // 0.9x decline → 2.5x surge
-    playlistVelocity:    { low: 0,    high: 20   },  // 0 → 20 new playlists/day exceptional
+    saveRate: { low: 0.01, high: 0.15 },  // 1% baseline → 15% exceptional
+    completionRate: { low: 0.30, high: 0.85 },  // 30% baseline → 85% exceptional
+    repeatListenerRatio: { low: 1.0, high: 3.5 },  // 1x baseline → 3.5x exceptional
+    shareRate: { low: 0.005, high: 0.05 },  // 0.5% baseline → 5% exceptional
+    followerConversion: { low: 0.001, high: 0.02 },
+    velocity: { low: 0.9, high: 2.5 },  // 0.9x decline → 2.5x surge
+    playlistVelocity: { low: 0, high: 20 },  // 0 → 20 new playlists/day exceptional
 };
 
 function normalize(value: number, low: number, high: number): number {
@@ -101,8 +103,10 @@ export class ViralScoreService {
 
     /**
      * Calculate the composite viral score (0-100) using the weighted formula.
-     * Formula: 0.35*save_rate + 0.25*completion_rate + 0.20*repeat_listener_ratio
-     *        + 0.10*playlist_velocity + 0.10*share_rate
+     *
+     * indii Growth Protocol v2.0 — Save Rate dominant weights:
+     *   0.45*save_rate + 0.20*completion_rate + 0.15*repeat_listener_ratio
+     * + 0.10*playlist_velocity + 0.10*share_rate
      */
     calculateViralScore(metrics: ComputedMetrics, history: StreamDataPoint[]): ViralScore {
         // Normalize each metric to 0-1
@@ -112,13 +116,13 @@ export class ViralScoreService {
         const nPlaylist = normalize(metrics.playlistVelocity, BENCHMARKS.playlistVelocity.low, BENCHMARKS.playlistVelocity.high);
         const nShare = normalize(metrics.shareRate, BENCHMARKS.shareRate.low, BENCHMARKS.shareRate.high);
 
-        // Apply weights (per spec)
+        // Apply weights (indii Growth Protocol v2.0 — save-rate dominant)
         const breakdown: ViralScoreBreakdown = {
-            saveRate:        +(nSaveRate   * 35).toFixed(1),
-            completionRate:  +(nCompletion * 25).toFixed(1),
-            repeatListeners: +(nRepeat     * 20).toFixed(1),
-            playlistVelocity:+(nPlaylist   * 10).toFixed(1),
-            shareRate:       +(nShare      * 10).toFixed(1),
+            saveRate: +(nSaveRate * 45).toFixed(1),   // 0.45 weight (up from 0.35)
+            completionRate: +(nCompletion * 20).toFixed(1),   // 0.20 weight (down from 0.25)
+            repeatListeners: +(nRepeat * 15).toFixed(1),   // 0.15 weight (down from 0.20)
+            playlistVelocity: +(nPlaylist * 10).toFixed(1),   // 0.10 weight (unchanged)
+            shareRate: +(nShare * 10).toFixed(1),   // 0.10 weight (unchanged)
         };
 
         const score = Math.round(
@@ -138,9 +142,54 @@ export class ViralScoreService {
      */
     detectMomentumSignal(momentumRatio: number): { label: string; color: string } {
         if (momentumRatio >= 2.0) return { label: 'Potential Breakout', color: 'text-yellow-400' };
-        if (momentumRatio >= 1.5) return { label: 'Accelerating',       color: 'text-emerald-400' };
-        if (momentumRatio >= 1.0) return { label: 'Stable Interest',    color: 'text-blue-400'    };
-        return                           { label: 'Declining',           color: 'text-red-400'     };
+        if (momentumRatio >= 1.5) return { label: 'Accelerating', color: 'text-emerald-400' };
+        if (momentumRatio >= 1.0) return { label: 'Stable Interest', color: 'text-blue-400' };
+        return { label: 'Declining', color: 'text-red-400' };
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // indii Growth Protocol — Cost-Per-Save Guardrail
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Evaluate the health of a campaign's save rate.
+     *
+     * indii Growth Protocol v2.0 GUARDRAIL:
+     * - Save Rate ≥ 8%  →  HEALTHY (strong algorithmic lift)
+     * - Save Rate 5-8%  →  WARNING (below optimal, needs creative refresh)
+     * - Save Rate < 5%  →  CRITICAL + AUTO-PAUSE (causing algorithmic damage)
+     *
+     * Returns an action recommendation that the indii Conductor or Marketing
+     * Agent should execute immediately.
+     */
+    evaluateSaveRateHealth(saveRate: number): {
+        status: 'healthy' | 'warning' | 'critical';
+        message: string;
+        action: 'continue' | 'refresh_creatives' | 'pause_campaign';
+    } {
+        if (saveRate >= 0.08) {
+            return {
+                status: 'healthy',
+                message: `Save rate ${(saveRate * 100).toFixed(1)}% is above the 8% threshold. Strong algorithmic growth signal.`,
+                action: 'continue',
+            };
+        }
+
+        if (saveRate >= 0.05) {
+            return {
+                status: 'warning',
+                message: `Save rate ${(saveRate * 100).toFixed(1)}% is below the 8% target but above the 5% safety floor. Refresh ad creatives and tighten audience targeting.`,
+                action: 'refresh_creatives',
+            };
+        }
+
+        // CRITICAL: Below 5% save rate = algorithmic damage
+        return {
+            status: 'critical',
+            message: `CRITICAL: Save rate ${(saveRate * 100).toFixed(1)}% is below the 5% floor. This campaign is causing algorithmic damage. ` +
+                `IMMEDIATE ACTION: Pause this ad set to prevent further score tapering. Do NOT resume until creatives are refreshed and audience is retargeted.`,
+            action: 'pause_campaign',
+        };
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -171,7 +220,7 @@ export class ViralScoreService {
     private _computeTrend(history: StreamDataPoint[]): ViralScore['trend'] {
         if (history.length < 7) return 'stable';
         const first3 = history.slice(0, 3).reduce((s, d) => s + d.streams, 0) / 3;
-        const last3  = history.slice(-3).reduce((s, d) => s + d.streams, 0) / 3;
+        const last3 = history.slice(-3).reduce((s, d) => s + d.streams, 0) / 3;
         const ratio = first3 > 0 ? last3 / first3 : 1;
         if (ratio >= 2.0) return 'accelerating';
         if (ratio >= 1.2) return 'growing';

@@ -1,0 +1,99 @@
+{
+    "system_directive": "indii_Growth_Protocol",
+    "version": "2.0.0",
+    "layer_target": "Layer 1: DIRECTIVE (Managerial)",
+    "file_path": "directives/indii_growth_protocol.json",
+    "objective": "Implement the indii-native Meta-to-Spotify growth loop using front-loaded ad spend, algorithmic threshold triggers, and strict Cost-Per-Save optimization.",
+    "orchestrator": "indii Conductor (Hub)",
+    "description": "The indii Growth Protocol defines a 28-day front-loaded campaign cycle optimized for triggering Spotify's algorithmic thresholds. Each cycle concentrates Meta ad spend in the first 72 hours to create stream velocity spikes, then sustains momentum through the remaining days. The protocol enforces Cost-Per-Save as the primary KPI, Instagram-Only placement delivery, Meta Andromeda 15-variant creative testing, and Saver Lookalike audience evolution.",
+    "tasks": [
+        {
+            "target_service": "Timeline Orchestrator",
+            "file_to_modify": "src/services/timeline/TimelinePhaseTemplates.ts",
+            "action": "Add autonomous campaign templates",
+            "templates": [
+                {
+                    "templateId": "indii_28_day_frontloaded",
+                    "duration": "4 weeks (28-day cycle)",
+                    "goal": "Hook algorithmic triggers via stream velocity spikes",
+                    "intensity_curve": "Front-loaded massive spend on days 1-3, followed by sustained threshold maintenance",
+                    "assetStrategy": "create_new"
+                },
+                {
+                    "templateId": "indii_curator_playlist_builder",
+                    "duration": "Ongoing (between releases)",
+                    "goal": "Build owned algorithmic authority by promoting 60-100 song genre playlists",
+                    "intensity_curve": "Low-budget, steady-state campaign for long-term follower growth",
+                    "assetStrategy": "use_existing"
+                }
+            ]
+        },
+        {
+            "target_service": "Growth Intelligence Engine",
+            "files_to_modify": [
+                "src/services/analytics/PlatformDataService.ts",
+                "src/services/analytics/ViralScoreService.ts",
+                "src/services/analytics/GrowthPatternService.ts"
+            ],
+            "actions": [
+                {
+                    "step": "Shift Primary KPI to Cost-Per-Save",
+                    "instruction": "Recalibrate the ViralScoreService to weigh Save Rate as the dominant metric. A Save Rate of 8%+ signals strong algorithmic growth.",
+                    "guardrail": "If the 14-day forecast or real-time data detects a campaign dipping below a 5% Save Rate, instantly dispatch a command to the Executor Agent to pause the ad set to prevent algorithmic damage."
+                },
+                {
+                    "step": "Threshold Milestone Tracking",
+                    "instruction": "Fetch 'Artist Popularity Score' and 'Track Popularity Score' via Spotify Web API. Trigger push notifications via indiiREMOTE when tracks approach 10-point milestones (20, 30, 40, 50, 60, 70).",
+                    "security_requirement": "Ensure SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET remain secured via GCP Secret Manager and are never exposed to the browser."
+                },
+                {
+                    "step": "Wire the 72_hour_spike Archetype",
+                    "instruction": "When the '72_hour_spike' growth pattern is triggered, automatically dispatch an alert to the Marketing Agent to sustain ad spend and prevent score tapering."
+                }
+            ]
+        },
+        {
+            "target_agents": [
+                "Marketing Agent",
+                "Always-On Memory Agent"
+            ],
+            "action": "Hardcode Platform and Targeting Guardrails",
+            "workflow_steps": [
+                {
+                    "agent": "Marketing Agent",
+                    "instruction": "Strictly ban 'Advantage+ Placements', Facebook Feed, Audience Network, and Messenger. Enforce an 'Instagram-Only' delivery matrix (Stories, Feed, Reels).",
+                    "rationale": "Instagram Stories yield the highest Save Rates (11-16%). Audience Network yields cheap clicks but <2% Save Rates, causing algorithmic damage."
+                },
+                {
+                    "agent": "Always-On Memory Agent",
+                    "instruction": "Monitor Meta Pixel event history across campaigns. Once 2,000+ conversion events are logged (approx. 4-5 campaigns), automatically instruct the Marketing Agent to transition from interest-based targeting to 'Saver Lookalike Audiences'."
+                }
+            ]
+        },
+        {
+            "target_agents": [
+                "Creative Director",
+                "Video Agent",
+                "Workflow Lab"
+            ],
+            "action": "Automate Meta Andromeda Creative Pipeline",
+            "workflow_steps": [
+                {
+                    "agent": "Workflow Lab",
+                    "instruction": "When a new release is detected, trigger a Node recipe that instructs the Video Agent (using 'veo-3.1-generate-preview') to mass-generate 6 to 15 unique 9:16 vertical video variations.",
+                    "constraint": "Enforce the '3-Second Hook' rule. Visuals and audio hooks must arrest scroll momentum immediately."
+                },
+                {
+                    "agent": "Marketing Agent",
+                    "instruction": "Deploy all 6-15 variations simultaneously with a $5-$10 daily budget. Monitor CTR and Save Rates, autonomously kill losing creatives by Day 3, and scale the winners."
+                }
+            ]
+        }
+    ],
+    "testing_and_deployment": {
+        "validation": "Ensure zero-regression policy. Run 'npm run typecheck' + 'npm run lint' to pass the pre-push git hook.",
+        "durability": "Ensure daily ad budget adjustments and kill-switches are routed through Inngest background tasks for crash recovery.",
+        "e2e_testing": "Write Playwright E2E specs for the new 'indii_28_day_frontloaded' and 'indii_curator_playlist_builder' timeline creation."
+    },
+    "branding_note": "All references to 'Agent Zero' have been deprecated. The hub orchestrator is exclusively branded as 'indii Conductor' across the entire platform."
+}

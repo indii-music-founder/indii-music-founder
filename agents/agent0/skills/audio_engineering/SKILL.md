@@ -3,7 +3,7 @@ name: audio_engineering
 description: Mastering specs, mixing critiques, frequency analysis, LUFS targeting, and technical audio assessment.
 ---
 
-# Audio Engineering & Fidelity Audits (Agent Zero Skill)
+# Audio Engineering & Fidelity Audits (indii Conductor Skill)
 
 **Domain Expert:** Mastering Engineer / technical A&R  
 **Goal:** Ensure commercial competitiveness, fix mix imbalances, hit DSP loudness targets, and analyze audio fidelity.

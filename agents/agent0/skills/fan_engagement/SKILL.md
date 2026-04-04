@@ -3,7 +3,7 @@ name: fan_engagement
 description: Community building, Discord/Telegram moderation, Patreon tiers, direct-to-fan marketing, and VIP experiences.
 ---
 
-# Fan Engagement & Community Management (Agent Zero Skill)
+# Fan Engagement & Community Management (indii Conductor Skill)
 
 **Domain Expert:** Community Manager / Digital Strategist  
 **Goal:** Convert passive listeners into active participants, build a self-sustaining community, and monetize the most loyal 1% of the audience.

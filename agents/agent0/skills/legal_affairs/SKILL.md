@@ -3,7 +3,7 @@ name: legal_affairs
 description: Music industry contracts, 360 deals, management agreements, splits, and copyright clearance.
 ---
 
-# Legal Affairs & Contract Strategy (Agent Zero Skill)
+# Legal Affairs & Contract Strategy (indii Conductor Skill)
 
 **Domain Expert:** Music Entertainment Attorney  
 **Goal:** Protect the artist's IP, decipher dense contract terminology, and prevent predatory deal structures.

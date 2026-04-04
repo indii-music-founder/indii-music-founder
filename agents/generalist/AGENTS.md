@@ -1,4 +1,4 @@
-# Agent Charter: Agent Zero (Generalist)
+# Agent Charter: indii Conductor (Generalist)
 
 ## Identity
 

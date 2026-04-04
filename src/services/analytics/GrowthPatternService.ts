@@ -12,7 +12,9 @@ import type {
     GrowthPatternName,
     BreakoutAlert,
     AlertType,
+    PopularityScores,
 } from './types';
+import { POPULARITY_MILESTONES } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -90,8 +92,16 @@ export class GrowthPatternService {
 
     /**
      * Generate breakout alerts based on metrics thresholds.
+     *
+     * indii Growth Protocol: Also generates alerts for popularity score milestones,
+     * score tapering, and 72-hour spike → sustain signals.
      */
-    generateAlerts(track: TrackAnalytics, metrics: ComputedMetrics, viralScore: number): BreakoutAlert[] {
+    generateAlerts(
+        track: TrackAnalytics,
+        metrics: ComputedMetrics,
+        viralScore: number,
+        popularityScores?: PopularityScores,
+    ): BreakoutAlert[] {
         const alerts: BreakoutAlert[] = [];
         const now = new Date().toISOString();
 
@@ -137,7 +147,76 @@ export class GrowthPatternService {
             });
         }
 
+        // ── indii Growth Protocol: Popularity Score Milestones ────────────
+        if (popularityScores) {
+            const { trackPopularity, previousTrackPopularity } = popularityScores;
+
+            // Alert 4: Popularity milestone reached (10-point thresholds)
+            if (previousTrackPopularity !== undefined) {
+                for (const milestone of POPULARITY_MILESTONES) {
+                    const crossedUp = previousTrackPopularity < milestone.threshold
+                        && trackPopularity >= milestone.threshold;
+
+                    if (crossedUp) {
+                        alerts.push({
+                            id: uuidv4(),
+                            type: 'popularity_milestone_reached' as AlertType,
+                            title: `Popularity ${milestone.label}: Score ${milestone.threshold}+`,
+                            message: `"${track.trackName}" crossed the ${milestone.threshold}-point popularity threshold! ${milestone.algorithmicEffect}`,
+                            severity: milestone.threshold >= 50 ? 'critical' : 'warning',
+                            timestamp: now,
+                            trackId: track.trackId,
+                            trackName: track.trackName,
+                        });
+                    }
+                }
+
+                // Alert 5: Popularity score tapering (declining > 3 points)
+                const delta = trackPopularity - previousTrackPopularity;
+                if (delta <= -3) {
+                    alerts.push({
+                        id: uuidv4(),
+                        type: 'popularity_score_tapering' as AlertType,
+                        title: 'Popularity Score Tapering',
+                        message: `"${track.trackName}" popularity dropped ${Math.abs(delta)} points (${previousTrackPopularity} → ${trackPopularity}). Increase ad spend or organic push to prevent further decline.`,
+                        severity: 'warning',
+                        timestamp: now,
+                        trackId: track.trackId,
+                        trackName: track.trackName,
+                    });
+                }
+            }
+        }
+
         return alerts;
+    }
+
+    /**
+     * indii Growth Protocol: Check if the 72-hour spike pattern was detected
+     * and generate an auto-dispatch alert to the Marketing Agent to sustain
+     * ad spend and prevent score tapering.
+     *
+     * This should be called after `detectPatterns()` returns results.
+     */
+    generate72HourSpikeDispatch(
+        track: TrackAnalytics,
+        detectedPatterns: DetectedPattern[],
+    ): BreakoutAlert | null {
+        const spikePattern = detectedPatterns.find(p => p.name === '72_hour_spike');
+        if (!spikePattern) return null;
+
+        return {
+            id: uuidv4(),
+            type: 'spike_72h_sustain_needed' as AlertType,
+            title: '72-Hour Spike Detected — Sustain Required',
+            message: `"${track.trackName}" triggered the 72-hour spike pattern (confidence: ${(spikePattern.confidence * 100).toFixed(0)}%). ` +
+                `DISPATCH TO MARKETING AGENT: Sustain ad spend at minimum viable floor for the next 7 days to prevent popularity score tapering. ` +
+                `Do NOT cut spend abruptly — taper gradually while monitoring daily velocity.`,
+            severity: 'critical',
+            timestamp: new Date().toISOString(),
+            trackId: track.trackId,
+            trackName: track.trackName,
+        };
     }
 
     // ──────────────────────────────────────────────────────────────────────────
