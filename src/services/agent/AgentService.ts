@@ -273,6 +273,15 @@ export class AgentService {
             return;
         }
 
+        const state = useStore.getState();
+        const isBoardroomMode = state.isBoardroomMode;
+
+        // Boardroom Multi-Dispatch
+        if (isBoardroomMode) {
+            await this.handleBoardroomMultiDispatchFlow(text, attachments, context, responseId);
+            return;
+        }
+
         // 1. Resolve Active Agent ID if not forced
         let agentId = forcedAgentId;
 
@@ -348,6 +357,112 @@ export class AgentService {
                 thoughtSignature: result?.thoughtSignature
             });
         }
+    }
+
+    /**
+     * Boardroom Multi-Dispatch Flow: Dispatches the user's prompt to all active agents simultaneously.
+     */
+    private async handleBoardroomMultiDispatchFlow(
+        text: string,
+        attachments: { mimeType: string; base64: string }[] | undefined,
+        context: AgentContext,
+        initialResponseId: string
+    ): Promise<void> {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const activeAgents = state.activeAgents || ['orchestrator'];
+        const referencedAssets = state.referencedAssets || [];
+
+        // Inject asset context into the prompt
+        let assetContext = '';
+        if (referencedAssets.length > 0) {
+            assetContext = '\n\n[BOARDROOM REFERENCED ASSETS]\n' + referencedAssets.map(a => `- ${a.name} (${a.type}): ${a.value}`).join('\n');
+        }
+
+        const enhancedText = text + assetContext + '\n\n[SYSTEM]: You are in a Boardroom meeting with other agents. Only respond from your specific department\'s perspective. Extract and execute any tasks relevant to your domain.';
+
+        const dispatchPromises = activeAgents.map(async (agentId, index) => {
+            // Re-use the initial placeholder for the first agent, create new ones for the rest
+            const resId = index === 0 ? initialResponseId : uuidv4();
+
+            if (index > 0) {
+                useStore.getState().addAgentMessage({
+                    id: resId,
+                    role: 'model',
+                    text: '',
+                    timestamp: Date.now() + index, // slight offset to maintain order
+                    isStreaming: true,
+                    thoughts: [],
+                    agentId: agentId
+                });
+            } else {
+                useStore.getState().updateAgentMessage(resId, { agentId });
+            }
+
+            let currentStreamedText = '';
+
+            try {
+                const result = await this.executor.execute(
+                    agentId,
+                    enhancedText,
+                    context as PipelineContext,
+                    (event) => {
+                        if (event.type === 'token') {
+                            currentStreamedText += event.content;
+                            useStore.getState().updateAgentMessage(resId, { text: currentStreamedText });
+                        }
+                        if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
+                            const currentMsg = useStore.getState().agentHistory.find(m => m.id === resId);
+                            const newThought: AgentThought = {
+                                id: uuidv4(),
+                                text: event.content || '',
+                                timestamp: Date.now(),
+                                type: event.type as AgentThought["type"],
+                            };
+                            if (event.type === 'tool' || event.type === 'tool_result') {
+                                if (event.toolName) newThought.toolName = event.toolName;
+                            }
+
+                            if (currentMsg) {
+                                useStore.getState().updateAgentMessage(resId, {
+                                    thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
+                                });
+                            }
+                        }
+                    },
+                    undefined,
+                    undefined,
+                    attachments
+                );
+
+                if (result && result.text) {
+                    useStore.getState().updateAgentMessage(resId, {
+                        text: result.text,
+                        thoughtSignature: result.thoughtSignature,
+                        isStreaming: false
+                    });
+                } else {
+                    useStore.getState().updateAgentMessage(resId, {
+                        thoughtSignature: result?.thoughtSignature,
+                        isStreaming: false
+                    });
+                }
+            } catch (err) {
+                logger.error(`[AgentService] Boardroom dispatch failed for agent ${agentId}:`, err);
+                useStore.getState().updateAgentMessage(resId, {
+                    text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
+                    isStreaming: false,
+                    thoughts: [{
+                        id: uuidv4(),
+                        text: 'Execution failed in boardroom dispatch',
+                        timestamp: Date.now(),
+                        type: 'error'
+                    }]
+                });
+            }
+        });
+
+        await Promise.allSettled(dispatchPromises);
     }
 
     /**

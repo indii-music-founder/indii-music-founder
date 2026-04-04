@@ -132,12 +132,14 @@ export default function Sidebar() {
     });
 
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar } = useStore(
+    const { currentModule, setModule, isSidebarOpen, toggleSidebar, isBoardroomMode, toggleBoardroomMode } = useStore(
         useShallow((state) => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
             isSidebarOpen: state.isSidebarOpen,
             toggleSidebar: state.toggleSidebar,
+            isBoardroomMode: state.isBoardroomMode,
+            toggleBoardroomMode: state.toggleBoardroomMode,
         }))
     );
 
@@ -264,6 +266,43 @@ export default function Sidebar() {
                     </button>
                 </div>
             )}
+
+            {/* Boardroom Zen Mode Toggle */}
+            <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
+                <button
+                    onClick={toggleBoardroomMode}
+                    className={cn(
+                        "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
+                        isBoardroomMode
+                            ? "bg-indigo-500/20 border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+                            : "bg-gradient-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)]",
+                        isSidebarOpen ? "gap-3" : ""
+                    )}
+                    aria-label="Enter Boardroom"
+                    title={!isSidebarOpen ? "Enter Boardroom" : undefined}
+                >
+                    {isBoardroomMode && (
+                        <div className="absolute inset-0 rounded-xl border border-indigo-500/20 animate-pulse pointer-events-none" />
+                    )}
+                    <Network size={16} className={cn(
+                        "transition-all relative z-10",
+                        isBoardroomMode
+                            ? "text-indigo-300 drop-shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+                            : "text-indigo-400 group-hover:text-indigo-300 group-hover:scale-110"
+                    )} />
+                    {isSidebarOpen ? (
+                        <span className={cn(
+                            "text-sm font-bold tracking-wide transition-colors relative z-10",
+                            isBoardroomMode ? "text-indigo-200" : "text-indigo-300/90 group-hover:text-indigo-200"
+                        )}>
+                            Boardroom
+                        </span>
+                    ) : null}
+
+                    {/* Shimmer sweep */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-indigo-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                </button>
+            </div>
 
             {/* Founders Round — Primary Sales CTA */}
             <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
