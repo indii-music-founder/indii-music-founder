@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-04-04 16:04 UTC
+**Updated:** 2026-04-04 16:06 UTC
 **Branch:** `claude/build-insights-dashboard-NZ1np`
 
 ## Recent Commits
 ```
+8244947 fix(walk): make fully IDE-agnostic for antigravity home machine
+8b83f32 chore: session checkpoint [16:04]
 d596aff chore: session checkpoint [16:04]
 3f3a555 feat: /walk skill — mobile session resume & drive to prime
 165772e chore: session checkpoint [15:59]
@@ -12,8 +14,6 @@ a1bc1a4 chore: session checkpoint [15:54]
 39c8f1c chore: final session handoff — full context for home machine
 36a50a5 fix(hooks): implement all P1/P2/P3 audit recommendations
 21ff0b1 chore: session checkpoint [15:46]
-527efe6 chore: session checkpoint [15:43]
-1d4d064 chore: session checkpoint [15:41]
 ```
 
 ## Working State
