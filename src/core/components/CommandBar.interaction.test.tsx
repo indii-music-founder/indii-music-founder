@@ -17,8 +17,12 @@ vi.mock('@/core/store', async () => {
         isAgentOpen: false,
         chatChannel: 'indii',
         setChatChannel: vi.fn((c) => set({ chatChannel: c })),
-        isCommandBarDetached: false,
+        isCommandBarDetached: true,
         setCommandBarDetached: vi.fn((d) => set({ isCommandBarDetached: d })),
+        isCommandBarCollapsed: false,
+        setCommandBarCollapsed: vi.fn((c) => set({ isCommandBarCollapsed: c })),
+        commandBarPosition: 'center' as const,
+        setCommandBarPosition: vi.fn((p) => set({ commandBarPosition: p })),
         commandBarInput: '',
         setCommandBarInput: vi.fn((i) => set({ commandBarInput: i })),
         commandBarAttachments: [] as File[],
@@ -35,10 +39,22 @@ vi.mock('@/core/store', async () => {
         isLoadingAgents: false,
         agentsError: null,
         availableAgents: [],
+        // PromptArea dependencies — required for handleSubmit and module switching
+        isRightPanelOpen: false,
+        toggleRightPanel: vi.fn(),
+        rightPanelTab: 'agent',
+        rightPanelView: 'messages',
     }));
     return {
         serverTimestamp: vi.fn(),
-        useStore: (selector: any) => store(selector),
+        useStore: Object.assign(
+            (selector: any) => store(selector),
+            {
+                getState: store.getState,
+                setState: store.setState,
+                subscribe: store.subscribe,
+            }
+        ),
         store
     };
 });
@@ -86,6 +102,15 @@ vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),
     getDoc: vi.fn(),
     setDoc: vi.fn(),
+    getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+    query: vi.fn(),
+    where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn(),
+    onSnapshot: vi.fn(),
+    addDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    deleteDoc: vi.fn(),
 }));
 
 vi.mock('@/services/agent/AgentService', () => ({
@@ -171,7 +196,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
                 isAgentProcessing: false,
                 currentModule: 'dashboard',
                 chatChannel: 'indii',
-                isCommandBarDetached: false,
+                isCommandBarDetached: true,
                 isAgentOpen: false
             });
         });
