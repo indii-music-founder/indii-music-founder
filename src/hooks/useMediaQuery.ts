@@ -9,15 +9,8 @@ export function useMediaQuery(query: string): boolean {
     const subscribe = useCallback(
         (callback: () => void) => {
             const mediaQuery = window.matchMedia(query);
-            // Modern API (addEventListener) with fallback
-            if (mediaQuery.addEventListener) {
-                mediaQuery.addEventListener('change', callback);
-                return () => mediaQuery.removeEventListener('change', callback);
-            } else {
-                // Legacy Safari
-                mediaQuery.addListener(callback);
-                return () => mediaQuery.removeListener(callback);
-            }
+            mediaQuery.addEventListener('change', callback);
+            return () => mediaQuery.removeEventListener('change', callback);
         },
         [query]
     );
