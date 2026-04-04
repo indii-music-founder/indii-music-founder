@@ -26,7 +26,8 @@ interface ToolDefinition {
   description: string;          // Short, scannable
   riskLevel: 'read' | 'write' | 'destructive';
   requiresApproval: boolean;
-  implementation?: () => Promise<unknown>; // Added later, optional
+  tier: PermissionTier;
+  implementation?: (args: unknown) => Promise<unknown>; // Added later, optional
 }
 
 const TOOL_REGISTRY: ToolDefinition[] = [
@@ -269,7 +270,7 @@ interface ActionLogEntry {
 }
 
 // Append-only log
-async function logAction(entry: Omit<ActionLogEntry, 'timestamp'>) {
+async function logAction(sessionId: string, entry: Omit<ActionLogEntry, 'timestamp'>) {
   const log: ActionLogEntry = {
     timestamp: new Date().toISOString(),
     ...entry,
