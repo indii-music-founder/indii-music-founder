@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.47.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.46.0...v1.47.0) (2026-04-04)
+
+
+### Features
+
+* agent infrastructure — skill routing, hooks, walk skill, session handoff ([#1383](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1383)) ([3aa759d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3aa759d5270a18f6429276870ea75dfcbcb8450d))
+
 ## [1.46.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.45.0...v1.46.0) (2026-04-04)
 
 
