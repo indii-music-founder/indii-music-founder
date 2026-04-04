@@ -29,6 +29,8 @@ import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentE
 import { ToolExecutionContext } from './ToolExecutionContext';
 import { wrapTool, toolError } from './utils/ToolUtils';
 import { SUPERPOWER_TOOLS } from './definitions/SuperpowerTools';
+import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
+import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
 
 
@@ -373,21 +375,26 @@ export class BaseAgent implements SpecializedAgent {
             (context as Record<string, unknown> | undefined)?.autoRecallBlock as string | undefined
         );
 
-        // Tool gathering logic
-        const specialistToolNames = new Set(
-            (this.tools || []).flatMap(t => t.functionDeclarations || []).map(f => f.name)
-        );
-        const filteredSuperpowers = SUPERPOWER_TOOLS.filter(tool => !specialistToolNames.has(tool.name));
-        const collaborationToolNames = ['delegate_task', 'consult_experts'];
-        const collaborationTools = filteredSuperpowers.filter(t => collaborationToolNames.includes(t.name));
-        const otherSuperpowers = filteredSuperpowers.filter(t => !collaborationToolNames.includes(t.name));
+        // Tool gathering logic via ToolPoolAssembler
+        const specialistTools = (this.tools || []).flatMap(t => t.functionDeclarations || []);
 
-        const MAX_TOOLS_PER_AGENT = 24;
-        const allFunctions: FunctionDeclaration[] = ([
-            ...collaborationTools,
-            ...(this.tools || []).flatMap(t => t.functionDeclarations || []),
-            ...otherSuperpowers
-        ]).slice(0, MAX_TOOLS_PER_AGENT);
+        // Ensure context has needed module properties, dynamically trying to get currentModule
+        let activeModule = 'unknown';
+        if (context) {
+            const ctxRecord = context as Record<string, unknown>;
+            activeModule = (ctxRecord.currentModule as string | undefined)
+                || (ctxRecord.route as string | undefined)
+                || 'unknown';
+        }
+
+        const allFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
+            specialistTools,
+            {
+                agentId: this.id,
+                moduleContext: activeModule,
+                isReadOnly: false // Reserved for future strict read-only execution modes
+            }
+        );
 
         const allTools: ToolDefinition[] = allFunctions.length > 0
             ? [{
@@ -441,6 +448,37 @@ export class BaseAgent implements SpecializedAgent {
                 iterations++;
                 onProgress?.({ type: 'thought', content: iterations === 1 ? 'Generating response...' : 'Processing tool result...' });
 
+                // Prepare request contents
+                const requestContents = [{
+                    role: 'user' as const,
+                    parts: [
+                        { text: fullPrompt },
+                        ...(attachments || []).map(a => ({
+                            inlineData: { mimeType: a.mimeType, data: a.base64 }
+                        }))
+                    ]
+                }];
+
+                // Pre-flight Token Estimation (Primitive #5)
+                const { TokenEstimator } = await import('./governance/TokenEstimator');
+                const tokenEstimate = TokenEstimator.estimate(
+                    requestContents,
+                    undefined,
+                    allFunctions,
+                    1500000, // Safe ceiling for 2M token context window (leaves room for 500K output)
+                    1000     // Expected output tokens
+                );
+
+                if (tokenEstimate.willExceed) {
+                    logger.warn(`[BaseAgent] Token Estimator halted execution in ${this.id}. Projected: ${tokenEstimate.totalProjected}`);
+                    executionContext.rollback();
+                    return {
+                        text: 'Task halted: Pre-flight token projection exceeded safe budget (1.5M tokens limit). Context compaction required.',
+                        error: 'Projected Budget Exceeded',
+                        toolCalls
+                    };
+                }
+
                 // Resolve model: fine-tuned endpoint > default base model
                 const resolvedModel = this.modelId || AI_MODELS.TEXT.AGENT;
                 if (iterations === 1 && this.modelId) {
@@ -448,15 +486,7 @@ export class BaseAgent implements SpecializedAgent {
                 }
 
                 const result = await GenAI.generateContent(
-                    [{ // contents
-                        role: 'user' as const,
-                        parts: [
-                            { text: fullPrompt },
-                            ...(attachments || []).map(a => ({
-                                inlineData: { mimeType: a.mimeType, data: a.base64 }
-                            }))
-                        ]
-                    }],
+                    requestContents,
                     resolvedModel, // modelOverride — fine-tuned or base
                     { ...AI_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
@@ -558,6 +588,14 @@ export class BaseAgent implements SpecializedAgent {
                     const argsStr = JSON.stringify(args);
                     onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
 
+                    // EVENT: Tool Execution Start
+                    const startTime = Date.now();
+                    AgentEventBus.emitToolEvent('TOOL_EXECUTION_START', {
+                        agentId: this.id,
+                        toolName: name,
+                        timestamp: startTime
+                    });
+
                     let result: ToolFunctionResult;
                     if (this.functions[name]) {
                         try {
@@ -565,17 +603,59 @@ export class BaseAgent implements SpecializedAgent {
                             if (schema) schema.parse(args);
                             // Phase 3.5: Pass execution context to tools for isolated state access
                             result = await this.functions[name](args, enrichedContext, toolContext);
+
+                            AgentEventBus.emitToolEvent('TOOL_EXECUTION_COMPLETE', {
+                                agentId: this.id,
+                                toolName: name,
+                                timestamp: Date.now(),
+                                durationMs: Date.now() - startTime
+                            });
                         } catch (err: unknown) {
                             const msg = err instanceof Error ? err.message : String(err);
                             result = { success: false, error: msg };
+
+                            AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
+                                agentId: this.id,
+                                toolName: name,
+                                timestamp: Date.now(),
+                                durationMs: Date.now() - startTime,
+                                errorMessage: msg
+                            });
                         }
                     } else {
                         const { TOOL_REGISTRY } = await import('./tools');
                         if (TOOL_REGISTRY[name]) {
-                            // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
-                            result = await (TOOL_REGISTRY[name] as AnyToolFunction)(args, enrichedContext, toolContext);
+                            try {
+                                // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
+                                result = await (TOOL_REGISTRY[name] as AnyToolFunction)(args, enrichedContext, toolContext);
+
+                                AgentEventBus.emitToolEvent('TOOL_EXECUTION_COMPLETE', {
+                                    agentId: this.id,
+                                    toolName: name,
+                                    timestamp: Date.now(),
+                                    durationMs: Date.now() - startTime
+                                });
+                            } catch (err: unknown) {
+                                const msg = err instanceof Error ? err.message : String(err);
+                                result = { success: false, error: msg };
+
+                                AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
+                                    agentId: this.id,
+                                    toolName: name,
+                                    timestamp: Date.now(),
+                                    durationMs: Date.now() - startTime,
+                                    errorMessage: msg
+                                });
+                            }
                         } else {
                             result = { success: false, error: `Tool '${name}' not found.` };
+                            AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
+                                agentId: this.id,
+                                toolName: name,
+                                timestamp: Date.now(),
+                                durationMs: Date.now() - startTime,
+                                errorMessage: `Tool '${name}' not found.`
+                            });
                         }
                     }
 
