@@ -81,7 +81,7 @@ export const SchedulerClientService = {
      * Returns an unsubscribe fn — call it in `useEffect` cleanup.
      *
      * @example
-     *   useEffect(() => SchedulerClientService.onTick((e) => console.log(e)), []);
+     *   useEffect(() => SchedulerClientService.onTick((e) => Logger.info('Ticked', e)), []);
      */
     onTick(callback: (event: SchedulerTickEvent) => void): () => void {
         if (!isElectron()) return () => void 0;
