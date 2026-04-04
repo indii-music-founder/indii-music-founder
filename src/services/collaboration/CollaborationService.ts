@@ -42,7 +42,7 @@ export class CollaborationService {
         try {
             // In a production environment, this URL points to your custom y-websocket server
             // For example: wss://collab.indii.os
-            const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:1234';
+            const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://127.0.0.1:1234';
 
             logger.info(`[CollaborationService] Connecting to room ${roomId} at ${wsUrl}`);
 
