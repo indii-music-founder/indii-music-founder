@@ -27,6 +27,7 @@ import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { delay } from '@/utils/async';
 import type { ModuleId } from '@/core/constants';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
@@ -67,6 +68,8 @@ function useHttpRelayFallback(enabled: boolean) {
     // Push state via HTTP
     useEffect(() => {
         if (!enabled) return;
+        let active = true;
+
         const pushState = async () => {
             try {
                 const recentMessages = agentHistory.slice(-5).map(m => ({
@@ -93,9 +96,16 @@ function useHttpRelayFallback(enabled: boolean) {
             }
         };
 
-        const interval = setInterval(pushState, 3000);
-        pushState();
-        return () => clearInterval(interval);
+        const loop = async () => {
+            pushState();
+            while (active) {
+                await delay(3000);
+                if (active) pushState();
+            }
+        };
+        loop();
+
+        return () => { active = false; };
     }, [enabled, currentModule, isAgentProcessing, isGenerating, agentHistory]);
 
     // Poll for commands via HTTP
@@ -172,8 +182,16 @@ function useHttpRelayFallback(enabled: boolean) {
             }
         };
 
-        const interval = setInterval(pollAndProcess, POLL_INTERVAL);
-        return () => clearInterval(interval);
+        let active = true;
+        const loop = async () => {
+            while (active) {
+                await pollAndProcess();
+                await delay(POLL_INTERVAL);
+            }
+        };
+        loop();
+
+        return () => { active = false; };
     }, [enabled]);
 }
 
@@ -200,6 +218,7 @@ function useFirestoreRelay(enabled: boolean) {
     // Push desktop state to Firestore
     useEffect(() => {
         if (!enabled) return;
+        let active = true;
 
         const pushState = async () => {
             try {
@@ -214,12 +233,18 @@ function useFirestoreRelay(enabled: boolean) {
             }
         };
 
-        pushState();
-        const interval = setInterval(pushState, 5000);
+        const loop = async () => {
+            pushState();
+            while (active) {
+                await delay(5000);
+                if (active) pushState();
+            }
+        };
+        loop();
 
         // Mark offline on unmount
         return () => {
-            clearInterval(interval);
+            active = false;
             remoteRelayService.pushDesktopState({
                 currentModule: currentModule || 'dashboard',
                 isAgentProcessing: false,
@@ -398,12 +423,16 @@ function useFirestoreRelay(enabled: boolean) {
                 try {
                     // Race the agent call against a 45s timeout
                     // If Gemini API or warmup hangs, we abort and tell the phone
+                    let callTimeoutId: ReturnType<typeof setTimeout>;
+                    const timeoutPromise = new Promise((_, reject) => {
+                        callTimeoutId = setTimeout(() => reject(new Error('Agent call timed out after 45s')), 45_000);
+                    });
+
                     await Promise.race([
                         agentService.sendMessage(command.text, undefined, targetAgent, { source: 'mobile-remote' }),
-                        new Promise((_, reject) =>
-                            setTimeout(() => reject(new Error('Agent call timed out after 45s')), 45_000)
-                        )
+                        timeoutPromise
                     ]);
+                    clearTimeout(callTimeoutId!);
                 } catch (sendErr: unknown) {
                     writeDiagnostic('agent_send_error', { commandId: command.id, error: String(sendErr) });
                     // Send error response to phone so user isn't stuck forever
@@ -439,7 +468,7 @@ function useFirestoreRelay(enabled: boolean) {
                             totalHistory: state.agentHistory.length
                         });
                     }
-                    await new Promise(r => setTimeout(r, 1000));
+                    await delay(1000);
                 }
 
                 if (lastResponse) {
@@ -486,11 +515,20 @@ function useFirestoreRelay(enabled: boolean) {
     // Periodic cleanup of old relay data (every 30 min)
     useEffect(() => {
         if (!enabled) return;
+        let active = true;
 
         const cleanup = () => remoteRelayService.cleanupOld(24).catch(() => { });
-        cleanup();
-        const interval = setInterval(cleanup, 30 * 60 * 1000);
-        return () => clearInterval(interval);
+
+        const loop = async () => {
+            cleanup();
+            while (active) {
+                await delay(30 * 60 * 1000);
+                if (active) cleanup();
+            }
+        };
+        loop();
+
+        return () => { active = false; };
     }, [enabled]);
 }
 

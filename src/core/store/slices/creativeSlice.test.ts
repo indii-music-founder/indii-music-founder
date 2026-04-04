@@ -12,6 +12,16 @@ vi.mock('@/services/StorageService', () => ({
     }
 }));
 
+// Mock Root Store to prevent dangling dynamic imports during teardown
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(() => ({
+            currentOrganizationId: 'test-org',
+            registerSubscription: vi.fn()
+        }))
+    }
+}));
+
 describe('CreativeSlice - initializeHistory', () => {
     let mockSet: any;
     let mockGet: any;

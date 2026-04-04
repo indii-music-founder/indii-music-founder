@@ -196,9 +196,13 @@ export default function VideoWorkflow() {
     const [activeVideo, setActiveVideo] = useState<HistoryItem | null>(null);
     const [showSettings, setShowSettings] = useState(false);
 
-    /** Generate a random 32-bit seed value */
     const randomizeSeed = useCallback(() => {
-        const newSeed = Math.floor(Math.random() * 2147483647).toString();
+        const rand = () => {
+            const randValues = new Uint32Array(1);
+            crypto.getRandomValues(randValues);
+            return (randValues[0] ?? 0) / 4294967295;
+        };
+        const newSeed = Math.floor(rand() * 2147483647).toString();
         setStudioControls({ seed: newSeed });
     }, [setStudioControls]);
 
