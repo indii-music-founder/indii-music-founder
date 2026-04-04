@@ -11,8 +11,10 @@
  * Endpoint: POST /pandadocWebhook
  * PandaDoc webhooks: https://developers.pandadoc.com/docs/webhooks
  */
+import * as crypto from "crypto";
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { pandadocWebhookSecret } from "../config/secrets";
 
 const REGION = "us-west1";
 
@@ -42,7 +44,8 @@ interface PandaDocWebhookEvent {
  */
 export const pandadocWebhook = functions
     .region(REGION)
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
+    .runWith({
+        secrets: [pandadocWebhookSecret],
         timeoutSeconds: 60,
         memory: "256MB",
      })
@@ -51,6 +54,29 @@ export const pandadocWebhook = functions
         if (req.method !== "POST") {
             res.status(405).send("Method Not Allowed");
             return;
+        }
+
+        // Verify PandaDoc HMAC-SHA256 signature
+        // Configure shared secret in PandaDoc Dashboard → Webhooks → Shared Key
+        const secret = process.env.PANDADOC_WEBHOOK_SECRET || (() => {
+            try { return pandadocWebhookSecret.value(); } catch { return ""; }
+        })();
+        if (secret) {
+            const signature = req.headers['x-signature'] as string | undefined;
+            if (!signature) {
+                console.warn('[PandaDoc] Rejected request: missing x-signature header');
+                res.status(401).send("Unauthorized");
+                return;
+            }
+            const expected = crypto
+                .createHmac('sha256', secret)
+                .update(JSON.stringify(req.body))
+                .digest('hex');
+            if (signature !== expected) {
+                console.warn('[PandaDoc] Rejected request: invalid signature');
+                res.status(401).send("Unauthorized");
+                return;
+            }
         }
 
         try {

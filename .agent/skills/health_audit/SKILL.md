@@ -87,7 +87,8 @@ echo "Total exports: $(grep -rn '^export ' src/services/ --include='*.ts' 2>/dev
 echo "=== AGENTS ==="
 for dir in agents/*/; do
   agent=$(basename "$dir")
-  has_prompt=$([ -f "$dir/prompt.md" ] && echo "Y" || echo "N")
+  # Accept prompt.md OR AGENTS.md as valid agent definition files
+  has_prompt=$(( [ -f "$dir/prompt.md" ] || [ -f "$dir/AGENTS.md" ] ) && echo "Y" || echo "N")
   echo "$agent: prompt=$has_prompt"
 done
 echo "=== TRAINING DATA ==="

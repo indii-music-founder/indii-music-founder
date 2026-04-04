@@ -11,6 +11,8 @@ export const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 export const pandaDocApiKey = defineSecret("PANDADOC_API_KEY");
 export const telegramBotToken = defineSecret("TELEGRAM_BOT_TOKEN");
+export const telegramWebhookSecret = defineSecret("TELEGRAM_WEBHOOK_SECRET");
+export const pandadocWebhookSecret = defineSecret("PANDADOC_WEBHOOK_SECRET");
 
 // ---------------------------------------------------------------------------
 // Founders Program
