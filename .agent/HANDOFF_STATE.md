@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+d596aff chore: session checkpoint [16:04]
 3f3a555 feat: /walk skill — mobile session resume & drive to prime
 165772e chore: session checkpoint [15:59]
 bd96c65 chore: health audit report + skill self-upgrade
@@ -13,7 +14,6 @@ a1bc1a4 chore: session checkpoint [15:54]
 21ff0b1 chore: session checkpoint [15:46]
 527efe6 chore: session checkpoint [15:43]
 1d4d064 chore: session checkpoint [15:41]
-ce08d8d feat: add hooks skill — full-spectrum hooks management for all agents
 ```
 
 ## Working State
