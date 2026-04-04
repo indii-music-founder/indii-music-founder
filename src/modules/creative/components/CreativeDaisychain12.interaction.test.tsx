@@ -171,6 +171,9 @@ describe('Creative Director 12-Click Daisychain', () => {
                         setLocalPrompt(newPrompt);
                         mockSetPrompt(newPrompt);
                     },
+                    studioControls: { isAndromedaMode: false },
+                    enableAndromedaMode: vi.fn(),
+                    disableAndromedaMode: vi.fn(),
                     addCharacterReference: mockAddCharacterReference,
                     userProfile: {
                         brandKit: {

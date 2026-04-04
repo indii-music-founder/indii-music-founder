@@ -106,5 +106,22 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
                 priority: 'LOW'
             }
         ]
+    },
+    'INDII_GROWTH_PROTOCOL': {
+        id: 'INDII_GROWTH_PROTOCOL',
+        name: 'indii Growth Protocol',
+        description: 'Automated Meta Andromeda creative pipeline and 28-day algorithmic spike campaign.',
+        steps: [
+            {
+                agentId: 'workflow',
+                prompt: 'Trigger a Node recipe instructing the Video Agent (using veo-3.1-generate-preview) to mass-generate 6 to 15 unique 9:16 vertical video variations. Enforce the 3-Second Hook rule.',
+                priority: 'URGENT'
+            },
+            {
+                agentId: 'marketing',
+                prompt: 'Deploy all creative variations simultaneously with a $5-$10 daily budget. Enforce strict Instagram-Only placements. Monitor CTR and Save Rates, autonomously kill losing creatives by Day 3, and scale the winners.',
+                priority: 'HIGH'
+            }
+        ]
     }
 };

@@ -50,9 +50,14 @@ function CommandBar() {
         }))
     );
 
-    // CommandBar is disabled — replaced by the Right Panel's unified prompt area.
-    // Kept mounted so App.tsx and AgentWorkspace don't need to be updated,
-    // but renders nothing.
+    // CommandBar is currently disabled in standard views — recent agentic prompt interactions
+    // have been migrated to the Right Panel's unified prompt area.
+    // 
+    // FUTURE FEATURE: "The Boardroom" / "Office Hours" 
+    // This component will be reactivated for a full-page, ChatGPT-style interface where 
+    // users can have focused ongoing conversations with single or multiple agents simultaneously 
+    // (a virtual boardroom). 
+    // See docs/architecture/command_bar_boardroom.md for the full specification.
     if (!isCommandBarDetached) return null;
 
     const shouldShow = true;

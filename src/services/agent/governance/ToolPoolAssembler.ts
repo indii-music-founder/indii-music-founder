@@ -49,7 +49,7 @@ export class ToolPoolAssembler {
         // 2. Filter out destructive tools if in read-only mode
         if (context.isReadOnly) {
             pool = pool.filter(tool => {
-                const riskTier = TOOL_RISK_REGISTRY[tool.name] || 'write'; // Defaults to write if unknown
+                const riskTier = TOOL_RISK_REGISTRY[tool.name]?.riskTier || 'write'; // Defaults to write if unknown
                 return riskTier === 'read';
             });
         }

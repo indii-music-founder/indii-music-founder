@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Monitor, Globe, Check, Lock, Cpu, HardDrive, Radio, Upload, Headphones, Zap, ArrowRight, X } from 'lucide-react';
+import { Monitor, Globe, Check, Lock, Cpu, HardDrive, Radio, Upload, Headphones, Zap, ArrowRight, X, Flame, ShieldAlert, Activity } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -35,16 +35,49 @@ export function PlatformCard() {
     // If already running in Electron, show a confirmation card instead
     if (isElectron) {
         return (
-            <div className="relative overflow-hidden border-b border-white/5">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 via-transparent to-indigo-900/10 pointer-events-none" />
-                <div className="relative z-10 px-6 py-3 flex items-center gap-3">
-                    <Monitor size={16} className="text-purple-400 flex-shrink-0" />
-                    <p className="text-xs text-gray-400">
-                        <span className="font-bold text-purple-300">Desktop Studio</span> — All capabilities unlocked. Local audio, SFTP, offline mode active.
-                    </p>
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-500/20 text-purple-400 rounded-full border border-purple-500/30 uppercase tracking-wider flex-shrink-0">
-                        Full Access
-                    </span>
+            <div className="relative overflow-hidden border-b border-white/5 bg-[#050505]">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-900/10 via-transparent to-orange-900/5 pointer-events-none" />
+                <div className="relative z-10 px-6 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <Monitor size={16} className="text-amber-500 flex-shrink-0" />
+                        <p className="text-xs text-gray-400">
+                            <span className="font-bold text-amber-400">Desktop Studio</span> — Growth Protocol Active.
+                        </p>
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-500 rounded-full border border-amber-500/20 uppercase tracking-wider flex-shrink-0 animate-pulse">
+                            Live
+                        </span>
+                    </div>
+
+                    {/* Indii Growth Protocol Metrics - Space Black & Amber Theme */}
+                    <div className="flex items-center gap-4 bg-black/60 border border-amber-500/20 rounded-md px-3 py-1.5 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-sm">
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-mono text-amber-500/60 uppercase tracking-widest">Viral Score</span>
+                            <div className="flex items-center gap-1.5">
+                                <Flame size={12} className="text-amber-400" />
+                                <span className="text-sm font-bold text-amber-100">84.5</span>
+                            </div>
+                        </div>
+
+                        <div className="w-px h-6 bg-white/10" />
+
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-mono text-amber-500/60 uppercase tracking-widest">Velocity</span>
+                            <div className="flex items-center gap-1.5">
+                                <Activity size={12} className="text-emerald-400" />
+                                <span className="text-sm font-bold text-emerald-100">+12.4%</span>
+                            </div>
+                        </div>
+
+                        <div className="w-px h-6 bg-white/10" />
+
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-mono text-amber-500/60 uppercase tracking-widest">CPS Kill-Switch</span>
+                            <div className="flex items-center gap-1.5">
+                                <ShieldAlert size={12} className="text-amber-500" />
+                                <span className="text-xs font-bold text-amber-500 tracking-wider">STANDBY</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );

@@ -130,6 +130,42 @@ describe('OrchestrationService', () => {
         expect(result).toBeNull();
     });
 
+    it('should route "deploy protocol" to INDII_GROWTH_PROTOCOL', async () => {
+        const mockExecution: WorkflowExecution = {
+            id: 'exec-3',
+            workflowId: 'INDII_GROWTH_PROTOCOL',
+            userId: 'test-user',
+            status: 'planned',
+            currentStepIndex: 0,
+            steps: [
+                { stepIndex: 0, agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'planned' } as WorkflowStepExecution,
+            ],
+            createdAt: 1000,
+            updatedAt: 1000,
+        };
+
+        vi.mocked(workflowStateService.createExecution).mockResolvedValue(mockExecution);
+        vi.mocked(workflowStateService.getExecution).mockResolvedValue(mockExecution);
+        vi.mocked(workflowStateService.advanceStep).mockResolvedValue(mockExecution);
+
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValue([
+            { success: true, text: 'Step result' },
+        ]);
+
+        const result = await orchestrationService.executeOrchestratedWorkflow(
+            'Deploy protocol for my new track',
+            mockContext as unknown as Parameters<typeof orchestrationService.executeOrchestratedWorkflow>[1]
+        );
+
+        expect(result).toContain('Workflow Report: indii Growth Protocol');
+        expect(workflowStateService.createExecution).toHaveBeenCalledWith(
+            'test-user',
+            'INDII_GROWTH_PROTOCOL',
+            expect.any(Array),
+            'test-project'
+        );
+    });
+
     it('should require userId for workflow execution', async () => {
         await expect(orchestrationService.executeWorkflow(
             'CAMPAIGN_LAUNCH',
