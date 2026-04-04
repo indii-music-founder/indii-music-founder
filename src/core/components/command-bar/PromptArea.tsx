@@ -149,6 +149,16 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setOpenDelegate(false);
     }, [isRightPanelOpen, toggleRightPanel, setModule, setActiveAgentProvider]);
 
+    const handleSelectIndii = useCallback(() => {
+        setChatChannel('indii');
+        setModule('dashboard' as ModuleId);
+        setActiveAgentProvider('native');
+        if (!useStore.getState().isRightPanelOpen) {
+            useStore.getState().toggleRightPanel();
+        }
+        useStore.setState({ rightPanelTab: 'agent', rightPanelView: 'messages' });
+    }, [setChatChannel, setModule, setActiveAgentProvider]);
+
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             setCommandBarAttachments([...(commandBarAttachments || []), ...Array.from(e.target.files!)]);
@@ -351,18 +361,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     managerAgents={managerAgents}
                                     departmentAgents={departmentAgents}
                                     onSelect={handleDelegate}
-                                    onSelectIndii={() => {
-                                        setChatChannel('indii');
-                                        setModule('dashboard' as ModuleId);
-                                        setActiveAgentProvider('native');
-                                        if (!useStore.getState().isRightPanelOpen) {
-                                            useStore.getState().toggleRightPanel();
-                                        }
-                                        useStore.setState({
-                                            rightPanelTab: 'agent',
-                                            rightPanelView: 'messages'
-                                        });
-                                    }}
+                                    onSelectIndii={handleSelectIndii}
                                     onClose={handleCloseDelegate}
                                 />
                             </div>
