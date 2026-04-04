@@ -56,8 +56,8 @@ export function useAgentWorkspace() {
     const submitCommand = useCallback(async (cmd: string) => {
         if (!cmd.trim()) return;
 
-        // Detect mobile viewport (matches useMobile's isAnyPhone breakpoint)
-        const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 640;
+        // Detect mobile viewport — aligns with App's 768px RightPanel mount threshold
+        const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 768;
 
         if (isMobileViewport) {
             // On mobile, navigate to the Agent module where chat is inline.
