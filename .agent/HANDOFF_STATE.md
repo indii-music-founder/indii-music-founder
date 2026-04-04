@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-04-04 14:08 EDT
+**Updated:** 2026-04-04 14:26 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ade740c5 chore: session checkpoint [14:08]
 90abcb63 feat(agent): implement production-grade primitives 5, 6, and 9
 7c7307fd chore(audit): fix remaining P2 health audit tasks
 93ab95b4 test: fix TS2532 Object is possibly undefined in TimelinePhaseTemplates.test.ts
@@ -13,12 +14,29 @@ e67873bf fix(deps): resolve 2 critical npm vulns + activate image resizing funct
 21cb450b Merge remote-tracking branch 'origin/claude/build-insights-dashboard-NZ1np'
 2be17188 chore(main): release 1.47.0
 59df3897 chore: session checkpoint [16:10]
-3aa759d5 feat: agent infrastructure — skill routing, hooks, walk skill, session handoff (#1383)
 ```
 
 ## Working State
 ```
+ M agents/agent0/settings.json
+ M src/agents/legal/prompt.md
+ M src/core/components/RightPanel.tsx
+ M src/modules/history/README.md
+ M src/modules/observability/README.md
+ M src/services/agent/OrchestrationService.test.ts
+ M src/services/agent/OrchestrationService.ts
+ M src/services/agent/ToolRiskRegistry.ts
+ M src/services/agent/WorkflowRegistry.ts
+ M src/services/agent/WorkflowStateService.ts
+ M src/services/agent/governance/DigitalHandshake.ts
+ D src/services/agent/hybrid/agent_zero_logic.py
+ M src/services/agent/memory/BigBrainEngine.ts
+ M src/services/agent/types.ts
+ M src/services/marketing/AdAutomationService.ts
 ?? docs/INDII_GROWTH_PROTOCOL.md
+?? src/core/components/right-panel/MarketingPanel.tsx
+?? src/services/agent/hybrid/conductor_logic.py
+?? tools_refactor.js
 ```
 
 ---
