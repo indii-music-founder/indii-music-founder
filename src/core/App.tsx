@@ -26,6 +26,7 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
+import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
@@ -591,6 +592,9 @@ export default function App() {
 
                                 {/* Global Command Menu (CMD+K) */}
                                 <UnifiedCommandMenu />
+
+                                {/* The Boardroom (Zen Mode) */}
+                                <BoardroomModule />
 
                                 {/* Global Upload Manager Queue */}
                                 <UploadQueueMonitor />

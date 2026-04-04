@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/prompt-input';
 import { DelegateMenu } from './DelegateMenu';
 import { AttachmentList } from './AttachmentList';
+import { TypeaheadMenu, type TypeaheadContext } from './TypeaheadMenu';
 import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
@@ -107,6 +108,34 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const managerAgents = useMemo(() => allAgents.filter(a => a.category === 'manager' || a.category === 'specialist'), [allAgents]);
     const departmentAgents = useMemo(() => allAgents.filter(a => a.category === 'department'), [allAgents]);
     const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
+
+    const [typeaheadContext, setTypeaheadContext] = useState<TypeaheadContext>(null);
+
+    const handleInputValueChange = useCallback((value: string) => {
+        setCommandBarInput(value);
+
+        // Find last word matching @ or #
+        const match = value.match(/(?:^|\s)([@#])([\w-]*)$/);
+        if (match && match.index !== undefined) {
+            setTypeaheadContext({
+                type: match[1] as '@' | '#',
+                query: match[2] || '',
+                position: match.index + (value[match.index] === ' ' ? 1 : 0)
+            });
+        } else {
+            setTypeaheadContext(null);
+        }
+    }, [setCommandBarInput]);
+
+    const handleTypeaheadSelect = useCallback((id: string, name: string) => {
+        if (!typeaheadContext) return;
+        const prefix = commandBarInput.substring(0, typeaheadContext.position);
+        const suffix = commandBarInput.substring(typeaheadContext.position + typeaheadContext.query.length + 1);
+
+        const newValue = `${prefix}${typeaheadContext.type}${name} ${suffix}`;
+        setCommandBarInput(newValue);
+        setTypeaheadContext(null);
+    }, [commandBarInput, typeaheadContext, setCommandBarInput]);
 
     const handleCloseDelegate = useCallback(() => setOpenDelegate(false), []);
 
@@ -298,9 +327,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 )}
             </AnimatePresence>
 
+            <TypeaheadMenu context={typeaheadContext} onSelect={handleTypeaheadSelect} />
+
             <PromptInput
                 value={commandBarInput}
-                onValueChange={setCommandBarInput}
+                onValueChange={handleInputValueChange}
                 onSubmit={() => handleSubmit()}
                 className="bg-transparent border-none shadow-none py-1"
                 disabled={isProcessing}

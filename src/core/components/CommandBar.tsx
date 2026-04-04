@@ -38,7 +38,8 @@ function CommandBar() {
         setCommandBarCollapsed,
         isAgentOpen,
         currentModule,
-        commandBarPosition
+        commandBarPosition,
+        isBoardroomMode
     } = useStore(
         useShallow(state => ({
             isCommandBarDetached: state.isCommandBarDetached,
@@ -47,6 +48,7 @@ function CommandBar() {
             isAgentOpen: state.isAgentOpen,
             currentModule: state.currentModule,
             commandBarPosition: state.commandBarPosition,
+            isBoardroomMode: state.isBoardroomMode,
         }))
     );
 
@@ -58,10 +60,13 @@ function CommandBar() {
     // users can have focused ongoing conversations with single or multiple agents simultaneously 
     // (a virtual boardroom). 
     // See docs/architecture/command_bar_boardroom.md for the full specification.
-    if (!isCommandBarDetached) return null;
+    if (!isCommandBarDetached && !isBoardroomMode) return null;
 
     const shouldShow = true;
-    const posStyle = getPositionStyle(commandBarPosition, isCommandBarCollapsed);
+
+    // Force center position if in boardroom mode
+    const activePosition = isBoardroomMode ? 'center' : commandBarPosition;
+    const posStyle = getPositionStyle(activePosition, isCommandBarCollapsed);
 
     // Module-aware orb color: use CSS variable from the department color system
     const orbColor = getDepartmentCssVar(currentModule);
