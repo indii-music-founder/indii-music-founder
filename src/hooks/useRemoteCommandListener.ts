@@ -348,11 +348,17 @@ function useFirestoreRelay(enabled: boolean) {
                     writeDiagnostic('agent_action_started', { action });
 
                     if (action === 'open_chat') {
-                        useStore.setState({
-                            isRightPanelOpen: true,
-                            rightPanelTab: 'agent',
-                            rightPanelView: 'messages'
-                        });
+                        // RightPanel only mounts at ≥768px — fall back to agent module on narrow viewports
+                        const canMountPanel = typeof window !== 'undefined' && window.innerWidth >= 768;
+                        if (canMountPanel) {
+                            useStore.setState({
+                                isRightPanelOpen: true,
+                                rightPanelTab: 'agent',
+                                rightPanelView: 'messages'
+                            });
+                        } else {
+                            useStore.setState({ currentModule: 'agent' as import('@/core/constants').ModuleId });
+                        }
                     }
 
                     await remoteRelayService.sendResponse(

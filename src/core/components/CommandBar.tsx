@@ -50,9 +50,10 @@ function CommandBar() {
         }))
     );
 
-    // Hide the floating command bar globally for now as requested.
-    // It has been replaced by the Right Panel's unified prompt area.
-    return null;
+    // CommandBar is disabled — replaced by the Right Panel's unified prompt area.
+    // Kept mounted so App.tsx and AgentWorkspace don't need to be updated,
+    // but renders nothing.
+    if (!isCommandBarDetached) return null;
 
     const shouldShow = true;
     const posStyle = getPositionStyle(commandBarPosition, isCommandBarCollapsed);
