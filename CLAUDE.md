@@ -518,6 +518,7 @@ The skill has specialized workflows that produce better results than ad-hoc answ
 
 - Design or evaluate an AI agent harness → `/claude`
 - Known issues audit, error pattern check → `/broken`
+- Resume mobile session, drive codebase to prime → `/walk`
 
 ### Agent Skills (read `.agent/skills/<name>/SKILL.md` and follow exactly)
 
