@@ -503,6 +503,7 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 
 | Trigger | Skill File |
 |---------|-----------|
+| Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
 | Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
 | Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
 | Scaffold a new specialist agent | `.agent/skills/better_agents/SKILL.md` |
