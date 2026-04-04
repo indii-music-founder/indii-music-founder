@@ -3,7 +3,13 @@ import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { FileUp, FileAudio, FileImage, FileText, AlertTriangle } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { delay } from '@/utils/async';
 
+const rand = () => {
+    const randValues = new Uint32Array(1);
+    crypto.getRandomValues(randValues);
+    return (randValues[0] ?? 0) / 4294967295;
+};
 async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?: string }> {
     if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
         return new Promise((resolve) => {
@@ -43,6 +49,13 @@ async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?
 }
 
 export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const generateFileId = (file: File) => {
+        const randValues = new Uint32Array(1);
+        crypto.getRandomValues(randValues);
+        const randomId = (randValues[0] ?? 0).toString(16);
+        return `file_${file.name.replace(/[^a-zA-Z0-9]/g, '_')}_${randomId}`;
+    };
+
     const [isDragging, setIsDragging] = useState(false);
     const toast = useToast();
 
@@ -131,79 +144,82 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                         type: itemType
                     }]);
 
-                    // Simulate upload delay and progress
-                    setTimeout(() => {
+                    // Simulate upload delay and progress using async delay to avoid unmanaged intervals
+                    (async () => {
+                        await delay(rand() * 1000);
                         updateUploadStatus(queueId, 'uploading');
+
                         let currentProgress = 0;
-                        const interval = setInterval(() => {
-                            currentProgress += Math.floor(Math.random() * 20) + 10;
+                        while (currentProgress < 100) {
+                            currentProgress += Math.floor(rand() * 20) + 10;
                             if (currentProgress >= 100) {
                                 currentProgress = 100;
-                                clearInterval(interval);
-                                updateUploadProgress(queueId, 100);
+                            }
+                            updateUploadProgress(queueId, currentProgress);
 
-                                // Actually read the file when "upload" finishes
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                    const result = e.target?.result as string;
-                                    if (!result) {
-                                        updateUploadStatus(queueId, 'error', 'Failed to read file');
-                                        return;
-                                    }
+                            if (currentProgress < 100) {
+                                await delay(200 + rand() * 300);
+                            }
+                        }
 
-                                    if (isAudio || isImage || isVideo) {
-                                        const newItem = {
-                                            id: crypto.randomUUID(),
-                                            type: (isAudio ? 'music' : isVideo ? 'video' : 'image') as 'music' | 'video' | 'image',
-                                            url: result,
-                                            prompt: file.name,
-                                            timestamp: Date.now(),
-                                            projectId: currentProjectId,
-                                            origin: 'uploaded' as const
-                                        };
+                        // Actually read the file when "upload" finishes
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const result = e.target?.result as string;
+                            if (!result) {
+                                updateUploadStatus(queueId, 'error', 'Failed to read file');
+                                return;
+                            }
 
-                                        if (isAudio) {
-                                            addUploadedAudio(newItem);
-                                            audioCount++;
-                                        } else {
-                                            addUploadedImage(newItem);
-                                            imagesVideoCount++;
-                                        }
-                                    } else if (isDocument) {
-                                        addKnowledgeDocument({
-                                            id: crypto.randomUUID(),
-                                            name: file.name,
-                                            content: result,
-                                            type: file.type || 'document',
-                                            indexingStatus: 'pending',
-                                            createdAt: Date.now()
-                                        });
-                                        docCount++;
-                                    }
-
-                                    updateUploadStatus(queueId, 'success');
+                            if (isAudio || isImage || isVideo) {
+                                const newItem = {
+                                    id: crypto.randomUUID(),
+                                    type: (isAudio ? 'music' : isVideo ? 'video' : 'image') as 'music' | 'video' | 'image',
+                                    url: result,
+                                    prompt: file.name,
+                                    timestamp: Date.now(),
+                                    projectId: currentProjectId,
+                                    origin: 'uploaded' as const
                                 };
 
-                                if (isDocument && file.type.startsWith('text/')) {
-                                    reader.readAsText(file);
+                                if (isAudio) {
+                                    addUploadedAudio(newItem);
+                                    audioCount++;
                                 } else {
-                                    reader.readAsDataURL(file);
+                                    addUploadedImage(newItem);
+                                    imagesVideoCount++;
                                 }
-                            } else {
-                                updateUploadProgress(queueId, currentProgress);
+                            } else if (isDocument) {
+                                addKnowledgeDocument({
+                                    id: crypto.randomUUID(),
+                                    name: file.name,
+                                    content: result,
+                                    type: file.type || 'document',
+                                    indexingStatus: 'pending',
+                                    createdAt: Date.now()
+                                });
+                                docCount++;
                             }
-                        }, 200 + Math.random() * 300); // Random chunk delay
-                    }, Math.random() * 1000); // Random start delay
+
+                            updateUploadStatus(queueId, 'success');
+                        };
+
+                        if (isDocument && file.type.startsWith('text/')) {
+                            reader.readAsText(file);
+                        } else {
+                            reader.readAsDataURL(file);
+                        }
+                    })();
                 }
             }
 
-            // The toast behavior is less predictable now with simulated async processing,
-            // we could remove it or leave it. We'll show a quick generic toast.
-            setTimeout(() => {
+            // Show a generic toast after a short non-blocking delay
+            (async () => {
+                await delay(500);
                 if (files.length > 0) {
                     toast.success(`Queued ${files.length} file(s) for upload...`);
                 }
-            }, 500);
+            })();
         };
 
         window.addEventListener('dragenter', handleDragEnter);

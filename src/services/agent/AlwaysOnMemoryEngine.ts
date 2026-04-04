@@ -16,12 +16,13 @@
 
 import { FirestoreService } from '../FirestoreService';
 import { FirebaseAIService } from '../ai/FirebaseAIService';
-import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
 import type { GenerationConfig, ContentPart } from '@/shared/types/ai.dto';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
+import { delay } from '@/utils/async';
 import { Timestamp } from 'firebase/firestore';
 import { MemorySummarizer } from './memory/MemorySummarizer';
+import { WikiCompiler } from './memory/WikiCompiler';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryCategory,
@@ -43,6 +44,8 @@ import {
     DEFAULT_TIER_CONFIG,
     DEFAULT_ENGINE_CONFIG,
 } from '@/types/AlwaysOnMemory';
+
+import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -79,14 +82,13 @@ function ingestionEventsPath(userId: string): string {
 export class AlwaysOnMemoryEngine {
     private userId: string | null = null;
     private config: Omit<AlwaysOnMemoryConfig, 'userId'> = { ...DEFAULT_ENGINE_CONFIG };
-    private consolidationTimer: ReturnType<typeof setInterval> | null = null;
-    private decayTimer: ReturnType<typeof setInterval> | null = null;
     private isRunning = false;
     private startedAt: Date | null = null;
     private lastConsolidatedAt: Date | null = null;
     private lastIngestedAt: Date | null = null;
     private isConsolidating = false;
     private isIngesting = false;
+    private wikiCompiler = new WikiCompiler();
 
     // ─── Cached FirestoreService Instances ─────────────────────
     // Reuse service instances per userId to prevent Firestore SDK
@@ -172,39 +174,42 @@ export class AlwaysOnMemoryEngine {
         this.isRunning = true;
         this.startedAt = new Date();
 
-        // Consolidation timer and indiiOD Neural Sync
         const consolidationMs = this.config.consolidation.intervalMs;
-        this.consolidationTimer = setInterval(() => {
-            this.runConsolidation(userId).catch((e) =>
-                logger.error('[AlwaysOnMemoryEngine] Background consolidation error:', e)
-            );
 
-            // indiiOD Neural Sync (Heartbeat)
-            this.runNeuralSync(userId).catch((e) =>
-                logger.error('[AlwaysOnMemoryEngine] Neural Sync error for indiiOD:', e)
-            );
-        }, consolidationMs);
+        // Consolidation timer and indiiOD Neural Sync
+        (async () => {
+            while (this.isRunning && this.userId === userId) {
+                await delay(consolidationMs);
+                if (!this.isRunning || this.userId !== userId) break;
+
+                await this.runConsolidation(userId).catch((e) =>
+                    logger.error('[AlwaysOnMemoryEngine] Background consolidation error:', e)
+                );
+
+                // indiiOD Neural Sync (Heartbeat)
+                await this.runNeuralSync(userId).catch((e) =>
+                    logger.error('[AlwaysOnMemoryEngine] Neural Sync error for indiiOD:', e)
+                );
+            }
+        })();
 
         // Importance decay timer (once per day)
-        this.decayTimer = setInterval(() => {
-            this.applyImportanceDecay(userId).catch((e) =>
-                logger.error('[AlwaysOnMemoryEngine] Importance decay error:', e)
-            );
-        }, 1000 * 60 * 60 * 24); // 24 hours
+        (async () => {
+            while (this.isRunning && this.userId === userId) {
+                await delay(1000 * 60 * 60 * 24); // 24 hours
+                if (!this.isRunning || this.userId !== userId) break;
+
+                await this.applyImportanceDecay(userId).catch((e) =>
+                    logger.error('[AlwaysOnMemoryEngine] Importance decay error:', e)
+                );
+            }
+        })();
 
         logger.info(`[AlwaysOnMemoryEngine] Started for user ${userId}. Consolidation every ${consolidationMs / 60000}m.`);
     }
 
     /** Stop the memory engine and clear all timers. */
     stop(): void {
-        if (this.consolidationTimer) {
-            clearInterval(this.consolidationTimer);
-            this.consolidationTimer = null;
-        }
-        if (this.decayTimer) {
-            clearInterval(this.decayTimer);
-            this.decayTimer = null;
-        }
         this.isRunning = false;
         this.userId = null;
 
@@ -521,6 +526,13 @@ Be thorough but concise. Always cite your sources.`;
 
             // Mark source memories as consolidated
             await this.markConsolidated(userId, batch);
+
+            // Compile the insight into the Wiki Knowledge Store
+            await this.wikiCompiler.compileInteraction(userId, {
+                rawInput: `Insight: ${insightData.insight}\nContext: ${insightData.summary}`,
+                source: 'AlwaysOnMemoryEngine Consolidation',
+                topicHint: 'insight'
+            });
 
             // Also store the insight as a memory of type 'insight'
             await this.ingestText(
