@@ -56,8 +56,14 @@ export default function AssetSpotlight() {
         useStore.setState({
             commandBarInput: `Let's discuss this ${label} I created: "${asset.prompt?.slice(0, 80) ?? ''}"`,
         });
-        setRightPanelTab('agent');
-        setRightPanelView('messages');
+        const canMountPanel = typeof window !== 'undefined' && window.innerWidth >= 768;
+        if (canMountPanel) {
+            useStore.setState({ isRightPanelOpen: true });
+            setRightPanelTab('agent');
+            setRightPanelView('messages');
+        } else {
+            useStore.setState({ currentModule: 'agent' as import('@/core/constants').ModuleId });
+        }
     };
 
     const openInStudio = (asset: (typeof assets)[0]) => {
