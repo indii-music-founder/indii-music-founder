@@ -521,6 +521,7 @@ The skill has specialized workflows that produce better results than ad-hoc answ
 
 ### Agent Skills (read `.agent/skills/<name>/SKILL.md` and follow exactly)
 
+- Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) → `.agent/skills/hooks/SKILL.md`
 - Design or evaluate an agent harness → `.agent/skills/agentic-harness-architect/SKILL.md`
 - Visual QA, screenshot testing, UI validation → `.agent/skills/auto_qa/SKILL.md`
 - Scaffold a new specialist agent → `.agent/skills/better_agents/SKILL.md`
