@@ -48,20 +48,35 @@ const storeState = vi.hoisted(() => ({
   setChatChannel: vi.fn(),
   isCommandBarDetached: false,
   setCommandBarDetached: vi.fn(),
+  isCommandBarCollapsed: false,
+  setCommandBarCollapsed: vi.fn(),
+  commandBarPosition: 'center' as const,
+  setCommandBarPosition: vi.fn(),
   commandBarInput: 'test command',
   setCommandBarInput: vi.fn(),
   commandBarAttachments: [] as any[],
   setCommandBarAttachments: vi.fn(),
-  activeAgentProvider: undefined,
+  activeAgentProvider: undefined as string | undefined,
   setActiveAgentProvider: vi.fn(),
   isRightPanelOpen: false,
   toggleRightPanel: vi.fn(),
   isKnowledgeBaseEnabled: false,
   setKnowledgeBaseEnabled: vi.fn(),
+  agentMode: 'assistant',
+  isAgentProcessing: false,
+  rightPanelTab: 'agent',
+  rightPanelView: 'messages',
 }));
 
 vi.mock('@/core/store', () => ({
-  useStore: (selector: any) => selector(storeState),
+  useStore: Object.assign(
+    (selector: any) => selector(storeState),
+    {
+      getState: () => storeState,
+      setState: (partial: any) => Object.assign(storeState, typeof partial === 'function' ? partial(storeState) : partial),
+      subscribe: vi.fn(),
+    }
+  ),
 }));
 
 vi.mock('zustand/react/shallow', () => ({

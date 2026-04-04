@@ -1,17 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommandBar from './CommandBar';
-import { useStore } from '@/core/store';
-import { useToast } from '@/core/context/ToastContext';
-
-// Mock dependencies
-vi.mock('@/core/store');
-vi.mock('@/core/context/ToastContext');
-vi.mock('@/services/agent/AgentService', () => ({
-    agentService: {
-        sendMessage: vi.fn(),
-    },
-}));
 
 // Use vi.hoisted for mocked functions accessed in mock factory
 const { mockStartListening, mockStopListening } = vi.hoisted(() => ({
@@ -19,15 +8,102 @@ const { mockStartListening, mockStopListening } = vi.hoisted(() => ({
     mockStopListening: vi.fn(),
 }));
 
+// --- REACTIVE STORE MOCK ---
+vi.mock('@/core/store', async () => {
+    const { create } = await import('zustand');
+    const store = create((set: any) => ({
+        currentModule: 'dashboard',
+        setModule: vi.fn((m) => set({ currentModule: m })),
+        toggleAgentWindow: vi.fn(),
+        isAgentOpen: false,
+        chatChannel: 'agent',
+        setChatChannel: vi.fn((c) => set({ chatChannel: c })),
+        isCommandBarDetached: true,
+        setCommandBarDetached: vi.fn((d) => set({ isCommandBarDetached: d })),
+        isCommandBarCollapsed: false,
+        setCommandBarCollapsed: vi.fn((c) => set({ isCommandBarCollapsed: c })),
+        commandBarPosition: 'center' as const,
+        setCommandBarPosition: vi.fn((p) => set({ commandBarPosition: p })),
+        commandBarInput: '',
+        setCommandBarInput: vi.fn((i) => set({ commandBarInput: i })),
+        commandBarAttachments: [] as File[],
+        setCommandBarAttachments: vi.fn((a) => set({ commandBarAttachments: a })),
+        isAgentProcessing: false,
+        agentMode: 'assistant',
+        isKnowledgeBaseEnabled: false,
+        setKnowledgeBaseEnabled: vi.fn((k) => set({ isKnowledgeBaseEnabled: k })),
+        activeAgentProvider: 'native',
+        setActiveAgentProvider: vi.fn((p) => set({ activeAgentProvider: p })),
+        isRightPanelOpen: false,
+        toggleRightPanel: vi.fn(),
+        rightPanelTab: 'agent',
+        rightPanelView: 'messages',
+    }));
+    return {
+        serverTimestamp: vi.fn(),
+        useStore: Object.assign(
+            (selector: any) => store(selector),
+            {
+                getState: store.getState,
+                setState: store.setState,
+                subscribe: store.subscribe,
+            }
+        ),
+        store
+    };
+});
+
+vi.mock('zustand/react/shallow', async () => {
+    const actual = await vi.importActual('zustand/react/shallow') as any;
+    return actual;
+});
+
+vi.mock('@/core/context/ToastContext', () => {
+    const mockToast = { success: vi.fn(), error: vi.fn() };
+    return { useToast: () => mockToast, mockToast };
+});
+
+vi.mock('firebase/firestore', () => ({
+    serverTimestamp: vi.fn(),
+    Timestamp: {
+        now: () => ({ serverTimestamp: vi.fn(), toMillis: () => Date.now() }),
+        fromDate: (date: Date) => ({ toMillis: () => date.getTime() }),
+    },
+    getFirestore: vi.fn(),
+    initializeFirestore: vi.fn(() => ({ serverTimestamp: vi.fn() })),
+    persistentLocalCache: vi.fn(),
+    persistentMultipleTabManager: vi.fn(),
+    collection: vi.fn(),
+    doc: vi.fn(),
+    getDoc: vi.fn(),
+    setDoc: vi.fn(),
+    getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+    query: vi.fn(),
+    where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn(),
+    onSnapshot: vi.fn(),
+    addDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    deleteDoc: vi.fn(),
+}));
+
+vi.mock('@/services/agent/AgentService', () => ({
+    serverTimestamp: vi.fn(),
+    agentService: { sendMessage: vi.fn() },
+}));
+
 vi.mock('@/services/ai/VoiceService', () => ({
+    serverTimestamp: vi.fn(),
     voiceService: {
-        isSupported: vi.fn(() => true), // Enable voice support for test
+        isSupported: vi.fn(() => true),
         startListening: mockStartListening,
         stopListening: mockStopListening,
     }
 }));
 
 vi.mock('@/services/agent/registry', () => ({
+    serverTimestamp: vi.fn(),
     agentRegistry: {
         getAll: () => [],
         register: vi.fn(),
@@ -44,6 +120,7 @@ vi.mock('../theme/moduleColors', () => ({
 }));
 
 vi.mock('motion/react', () => ({
+    serverTimestamp: vi.fn(),
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>
     },
@@ -51,31 +128,23 @@ vi.mock('motion/react', () => ({
 }));
 
 describe('📱 Viewport: CommandBar Responsiveness', () => {
-    const mockSetModule = vi.fn();
-    const mockToggleAgentWindow = vi.fn();
-    const mockToast = { success: vi.fn(), error: vi.fn() };
-
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
-
-        // Mock useStore
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'dashboard',
-            setModule: mockSetModule,
-            toggleAgentWindow: mockToggleAgentWindow,
-            isAgentOpen: false,
-            chatChannel: 'agent',
-            setChatChannel: vi.fn(),
-            isCommandBarDetached: false,
-            setCommandBarDetached: vi.fn(),
-            commandBarInput: '',
-            setCommandBarInput: vi.fn(),
-            commandBarAttachments: [],
-            setCommandBarAttachments: vi.fn(),
+        const { act } = await import('@testing-library/react');
+        const storeModule = await import('@/core/store') as any;
+        const store = storeModule.store;
+        act(() => {
+            store.setState({
+                currentModule: 'dashboard',
+                chatChannel: 'agent',
+                isCommandBarDetached: true,
+                isCommandBarCollapsed: false,
+                commandBarInput: '',
+                commandBarAttachments: [],
+                isAgentProcessing: false,
+                isAgentOpen: false,
+            });
         });
-
-        // Mock useToast
-        (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockToast);
 
         // Set Viewport to Mobile (iPhone SE: 375px)
         Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 });
@@ -94,7 +163,6 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         expect(runButton).toBeVisible();
 
         // 3. Verify Desktop-only features are hidden via JS logic
-        // Agent selector button is now always visible (even on mobile)
         const delegateButton = screen.queryByRole('button', { name: /select active agent/i });
         expect(delegateButton).toBeInTheDocument();
 
