@@ -1,7 +1,7 @@
 import { renderMedia, RenderMediaOptions } from '@remotion/renderer';
 import { logger } from '@/utils/logger';
 import { renderMediaOnLambda, getRenderProgress } from '@remotion/lambda/client';
-import { RemotionLambdaConfig } from '../../../remotion.lambda';
+import { RemotionLambdaConfig } from '../../../../../remotion.lambda';
 
 export interface RenderConfig {
     compositionId: string;
