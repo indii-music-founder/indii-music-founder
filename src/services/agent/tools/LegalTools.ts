@@ -210,6 +210,51 @@ Signature: ____________________________
         }, `DMCA Takedown Notice generated for "${args.originalWorkTitle}" against URL ${args.infringingUrl}. Full statutory language included. Draft ready for review and sending.`);
     }),
 
+    register_copyright: wrapTool('register_copyright', async (args: {
+        trackId?: string;
+        trackTitle?: string;
+    }) => {
+        // Navigate to Registration Center focused on Library of Congress
+        const { useStore } = await import('@/core/store');
+        const store = useStore.getState();
+        store.setModule('registration');
+        store.setRegistrationFocus({ orgId: 'loc', trackId: args.trackId ?? null });
+        store.setRegistrationAIActive(true);
+        store.setRegistrationAIMessage(
+            `Opening Library of Congress (eCO) copyright registration${args.trackTitle ? ` for "${args.trackTitle}"` : ''}. I'll pre-fill everything I know from your catalog — you'll only need to confirm a couple of details.`
+        );
+
+        return toolSuccess({
+            module: 'registration',
+            orgId: 'loc',
+            trackId: args.trackId ?? null,
+        }, `Opened Registration Center for Library of Congress copyright registration${args.trackTitle ? ` of "${args.trackTitle}"` : ''}. The AI co-pilot is pre-filling your catalog data now.`);
+    }),
+
+    start_pro_registration: wrapTool('start_pro_registration', async (args: {
+        orgId: 'ascap' | 'bmi' | 'sesac';
+        trackId?: string;
+        trackTitle?: string;
+    }) => {
+        const orgNames: Record<string, string> = { ascap: 'ASCAP', bmi: 'BMI', sesac: 'SESAC' };
+        const orgName = orgNames[args.orgId] ?? args.orgId.toUpperCase();
+
+        const { useStore } = await import('@/core/store');
+        const store = useStore.getState();
+        store.setModule('registration');
+        store.setRegistrationFocus({ orgId: args.orgId, trackId: args.trackId ?? null });
+        store.setRegistrationAIActive(true);
+        store.setRegistrationAIMessage(
+            `Opening ${orgName} work registration${args.trackTitle ? ` for "${args.trackTitle}"` : ''}. I'll pre-fill your contributor splits and metadata — just confirm your IPI number.`
+        );
+
+        return toolSuccess({
+            module: 'registration',
+            orgId: args.orgId,
+            trackId: args.trackId ?? null,
+        }, `Opened Registration Center for ${orgName} work registration${args.trackTitle ? ` of "${args.trackTitle}"` : ''}.`);
+    }),
+
     verify_mechanical_license: wrapTool('verify_mechanical_license', async (args: { trackTitle: string; originalArtist: string }) => {
         // Item 177: Mechanical License Verification via HFA/MusicReports
         // Calls Cloud Function that interfaces with HFA/MusicReports API,

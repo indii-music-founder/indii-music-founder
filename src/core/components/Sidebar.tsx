@@ -172,6 +172,7 @@ export default function Sidebar() {
         { id: 'distribution', icon: Music, label: 'Distribution Department' },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
         { id: 'merch', icon: ShoppingBag, label: 'Art & Merch Dept' },
+        { id: 'registration', icon: FileText, label: 'Registration Center' },
     ];
 
     const toolItems: SidebarItem[] = [

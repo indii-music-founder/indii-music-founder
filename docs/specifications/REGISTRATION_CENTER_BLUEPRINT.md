@@ -1,6 +1,6 @@
 # Registration Center — Blueprint
 
-> **Status:** Planned — Not yet built
+> **Status:** Built — Phase 1–6 complete as of 2026-04-05
 > **Branch to create when ready:** `feat/registration-center`
 > **Spec author:** Claude (session 2026-04-05)
 > **Pick up by reading:** This file top to bottom. Everything needed to build is here.

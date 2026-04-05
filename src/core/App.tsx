@@ -96,6 +96,7 @@ const GrowthIntelligenceDashboard = lazy(() => import('../modules/analytics/Grow
 const DesktopDashboard = lazy(() => import('../modules/desktop/DesktopDashboard'));
 const FoundersCheckout = lazy(() => import('../modules/founders/FoundersCheckout'));
 const VideoPopout = lazy(() => import('../modules/video/editor/VideoPopout'));
+const RegistrationCenter = lazy(() => import('../modules/registration/RegistrationCenter'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -139,6 +140,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'desktop': DesktopDashboard,
     'founders-checkout': FoundersCheckout,
     'video-popout': VideoPopout,
+    'registration': RegistrationCenter,
 };
 
 // ============================================================================
