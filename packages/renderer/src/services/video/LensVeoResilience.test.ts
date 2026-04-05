@@ -133,11 +133,15 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
             prompt: 'A calm ocean view'
         };
 
-        // Execute — should fail when quota check completely fails on network
-        await expect(service.generateVideo(options)).rejects.toThrow('Network Error');
+        // Execute — should proceed gracefully and generate video when quota check fails with network error
+        const result = await service.generateVideo(options);
 
-        // generateVideo should NOT be called
-        expect(mocks.generateVideo).not.toHaveBeenCalled();
+        // Assert: Video was still generated
+        expect(result).toHaveLength(1);
+        expect(result[0]!.id).toBe('mock-job-id');
+
+        // generateVideo SHOULD be called as a fallback
+        expect(mocks.generateVideo).toHaveBeenCalledTimes(1);
     });
 
     it('should BLOCK generation when Quota is strictly exceeded', async () => {
