@@ -1,4 +1,5 @@
 # Handoff State
+<<<<<<< HEAD
 **Updated:** 2026-04-04 19:46 EDT
 **Branch:** `feat/wiki-knowledge-store`
 
@@ -14,10 +15,28 @@ ade740c5 chore: session checkpoint [14:08]
 90abcb63 feat(agent): implement production-grade primitives 5, 6, and 9
 7c7307fd chore(audit): fix remaining P2 health audit tasks
 93ab95b4 test: fix TS2532 Object is possibly undefined in TimelinePhaseTemplates.test.ts
+=======
+**Updated:** 2026-04-04 22:22 UTC
+**Branch:** `claude/update-agent-docs-zX9nL`
+
+## Recent Commits
+```
+3842d0a feat(agents): add Gemini API Docs MCP + purge Agent Zero branding
+23efc73 chore: remediate health audit issues (zombie code, TS errors, localhost refs)
+91edcb2 test: update sidebar snapshots and fix lint warning
+75c865d docs: finalize architecture blueprints and command bar specs
+c1aa853 feat(agent): Upgrade indii Conductor harness and Growth Protocol
+7f34641 chore: session checkpoint [14:26]
+ade740c chore: session checkpoint [14:08]
+90abcb6 feat(agent): implement production-grade primitives 5, 6, and 9
+7c7307f chore(audit): fix remaining P2 health audit tasks
+93ab95b test: fix TS2532 Object is possibly undefined in TimelinePhaseTemplates.test.ts
+>>>>>>> origin/claude/update-agent-docs-zX9nL
 ```
 
 ## Working State
 ```
+<<<<<<< HEAD
  M AGENT_BRIDGE.md
  M firestore.rules
  M src/modules/knowledge/KnowledgeBase.tsx
@@ -25,6 +44,9 @@ ade740c5 chore: session checkpoint [14:08]
  M src/modules/knowledge/services/KnowledgeBaseService.ts
 ?? .mcp.json
 ?? scripts/seed_wiki.cjs
+=======
+clean working tree
+>>>>>>> origin/claude/update-agent-docs-zX9nL
 ```
 
 ---

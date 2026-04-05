@@ -366,7 +366,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 - Environment: jsdom with `@testing-library/jest-dom`
 - Co-locate tests with source: `*.test.ts` / `*.test.tsx`
 - Firebase services are fully mocked (auth, firestore, storage, functions, messaging, app-check, AI)
-- AgentZeroService is retired (tombstone export) — mock prevents test hangs
+- indii Conductor replaced AgentZeroService (tombstone export retained in `src/services/agent/AgentZeroService.ts`) — mock in `src/test/setup.ts` prevents import errors
 - Run: `npm test` (watch) or `npm test -- --run` (CI)
 
 ### E2E Tests (Playwright)
