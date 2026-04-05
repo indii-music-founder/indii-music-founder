@@ -21,6 +21,14 @@ export default defineConfig({
                 input: {
                     index: resolve(__dirname, 'packages/main/src/main.ts'),
                 },
+                external: [
+                    // Native .node addons cannot be bundled by Rollup
+                    /\.node$/,
+                    'cpu-features',
+                    'ssh2',
+                    'keytar',
+                    'canvas',
+                ],
             },
         },
         resolve: {
