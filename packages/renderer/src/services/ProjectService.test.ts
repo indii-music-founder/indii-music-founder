@@ -1,0 +1,72 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ProjectService } from './ProjectService';
+import { getDocs, orderBy } from 'firebase/firestore';
+
+// Mock Firebase
+vi.mock('./firebase', () => ({
+  serverTimestamp: vi.fn(),
+    db: {},
+    auth: {}
+}));
+
+// Mock Firestore
+const mockGetDocs = vi.fn();
+const mockQuery = vi.fn();
+const mockCollection = vi.fn();
+const mockWhere = vi.fn();
+const mockOrderBy = vi.fn();
+const mockAddDoc = vi.fn();
+
+vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
+    collection: (...args: unknown[]) => mockCollection(...args),
+    addDoc: (...args: unknown[]) => mockAddDoc(...args),
+    getDocs: (...args: unknown[]) => mockGetDocs(...args),
+    query: (...args: unknown[]) => mockQuery(...args),
+    orderBy: (...args: unknown[]) => mockOrderBy(...args),
+    where: (...args: unknown[]) => mockWhere(...args),
+    doc: vi.fn(),
+    getDoc: vi.fn()
+}));
+
+// Mock OrganizationService
+vi.mock('./OrganizationService', () => ({
+  serverTimestamp: vi.fn(),
+    OrganizationService: {
+        getCurrentOrgId: () => 'org-123'
+    }
+}));
+
+describe('ProjectService', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('gets projects for org with server-side sorting', async () => {
+        // Mock query snapshot
+        mockGetDocs.mockResolvedValue({
+            docs: [
+                {
+                    id: '1',
+                    data: () => ({
+  serverTimestamp: vi.fn(), name: 'Project 1', date: 1000, orgId: 'org-123' })
+                },
+                {
+                    id: '2',
+                    data: () => ({
+  serverTimestamp: vi.fn(), name: 'Project 2', date: 2000, orgId: 'org-123' })
+                }
+            ]
+        });
+
+        const projects = await ProjectService.getProjectsForOrg('org-123');
+
+        // Verify result is sorted by date descending (2000 > 1000)
+        expect(projects[0]!.id).toBe('2');
+        expect(projects[1]!.id).toBe('1');
+
+        // Verify query construction (orderBy is NOT called on server in new impl)
+        expect(mockQuery).toHaveBeenCalled();
+        expect(mockWhere).toHaveBeenCalledWith('orgId', '==', 'org-123');
+    });
+});

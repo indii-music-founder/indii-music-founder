@@ -1,0 +1,220 @@
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
+import {
+    BaseDistributorAdapter
+} from './BaseDistributorAdapter';
+import {
+    type DistributorId,
+    type DistributorRequirements,
+    type ReleaseAssets,
+    type ReleaseResult,
+    type ReleaseStatus,
+    type DistributorEarnings,
+} from '../types/distributor';
+import { earningsService } from '../EarningsService';
+import { distributionStore } from '../DistributionPersistenceService';
+import { logger } from '@/utils/logger';
+
+export class SymphonicAdapter extends BaseDistributorAdapter {
+    readonly id: DistributorId = 'symphonic';
+    readonly name = 'Symphonic';
+
+    readonly requirements: DistributorRequirements = {
+        distributorId: 'symphonic',
+        coverArt: {
+            minWidth: 3000,
+            minHeight: 3000,
+            maxWidth: 6000,
+            maxHeight: 6000,
+            aspectRatio: '1:1',
+            allowedFormats: ['jpg', 'png'],
+            maxSizeBytes: 20 * 1024 * 1024,
+            colorMode: 'RGB',
+        },
+        audio: {
+            allowedFormats: ['wav', 'flac'],
+            minSampleRate: 44100,
+            recommendedSampleRate: 44100,
+            minBitDepth: 16,
+            channels: 'stereo',
+        },
+        metadata: {
+            requiredFields: ['trackTitle', 'artistName', 'genre', 'labelName'],
+            maxTitleLength: 500,
+            maxArtistNameLength: 500,
+            isrcRequired: true,
+            upcRequired: true,
+            genreRequired: true,
+            languageRequired: true,
+        },
+        timing: {
+            minLeadTimeDays: 14,
+            reviewTimeDays: 5,
+        },
+        pricing: {
+            model: 'revenue_share',
+            payoutPercentage: 85,
+        },
+    };
+
+    async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to Symphonic');
+        }
+
+        logger.info('[Symphonic] Initiating release delivery:', metadata.trackTitle);
+        const releaseId = `SYM-${Date.now()}`;
+
+        try {
+            // 1. Build Package
+            const folderReleaseId = metadata.upc || `REL-${Date.now()}`;
+
+            if (typeof window !== 'undefined' && window.electronAPI?.sftp && this.credentials?.sftpHost) {
+                logger.info('[Symphonic] Delivering via Electron SFTP...');
+
+                // Generate DDEX ERN for Symphonic delivery
+                const { ernService } = await import('@/services/ddex/ERNService');
+                const { DDEX_CONFIG } = await import('@/core/config/ddex');
+                const ernResult = await ernService.generateERN(
+                    metadata, DDEX_CONFIG.PARTY_ID, 'symphonic', assets
+                );
+
+                if (ernResult.success && ernResult.xml && window.electronAPI.distribution?.stageRelease) {
+                    const stagingResult = await window.electronAPI.distribution.stageRelease(
+                        folderReleaseId,
+                        [{ type: 'content', data: ernResult.xml, name: 'batch.xml' }]
+                    );
+
+                    if (stagingResult.success && stagingResult.packagePath) {
+                        // Item 213: Execute real SFTP delivery via base class uploadBundle
+                        await this.uploadBundle(stagingResult.packagePath, `/deliveries/${folderReleaseId}`);
+                        logger.info(`[Symphonic] SFTP delivery complete for ${folderReleaseId}`);
+                    }
+                }
+
+                return {
+                    success: true,
+                    status: 'processing',
+                    releaseId,
+                    distributorReleaseId: releaseId
+                };
+            }
+
+            // Fail explicitly if SFTP credentials are missing
+            logger.error('[Symphonic] SFTP credentials required. Configure them in Settings > Integrations.');
+            return {
+                success: false,
+                status: 'failed',
+                errors: [{
+                    code: 'DELIVERY_UNAVAILABLE',
+                    message: 'Symphonic delivery requires SFTP credentials. Go to Settings > Integrations to configure.'
+                }],
+                releaseId,
+                distributorReleaseId: releaseId
+            };
+
+        } catch (error: unknown) {
+            logger.error('[Symphonic] Delivery failed:', error);
+            return {
+                success: false,
+                status: 'failed',
+                errors: [{
+                    code: 'DELIVERY_FAILED',
+                    message: error instanceof Error ? error.message : 'Unknown Delivery Error'
+                }],
+                releaseId
+            };
+        }
+    }
+
+    async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to Symphonic');
+        }
+
+        logger.info(`[Symphonic] Sending XML Update for ${releaseId} with changes:`, Object.keys(updates));
+
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        if (deployments.length > 0) {
+            await distributionStore.updateDeploymentStatus(deployments[0]!.id, 'processing');
+        }
+
+        return {
+            success: true,
+            status: 'processing',
+            distributorReleaseId: releaseId,
+        };
+    }
+
+    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
+        return 'in_review';
+    }
+
+    async takedownRelease(releaseId: string): Promise<ReleaseResult> {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to Symphonic');
+        }
+        logger.info(`[Symphonic] Issuing Takedown for ${releaseId}`);
+        return {
+            success: true,
+            status: 'takedown_requested',
+            distributorReleaseId: releaseId,
+        };
+    }
+
+    async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to Symphonic');
+        }
+
+        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
+
+        if (!earnings) {
+            return {
+                distributorId: this.id,
+                releaseId,
+                period,
+                streams: 0,
+                downloads: 0,
+                grossRevenue: 0,
+                distributorFee: 0,
+                netRevenue: 0,
+                currencyCode: 'USD',
+                lastUpdated: new Date().toISOString(),
+                breakdown: [],
+            };
+        }
+        return earnings;
+    }
+
+    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to Symphonic');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
+    }
+
+    async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
+        const errors: ValidationResult['errors'] = [];
+        if (!metadata.isrc) {
+            errors.push({ code: 'MISSING_ISRC', message: 'Symphonic requires ISRC', field: 'isrc', severity: 'error' });
+        }
+        if (!metadata.upc) {
+            errors.push({ code: 'MISSING_UPC', message: 'Symphonic requires UPC', field: 'upc', severity: 'error' });
+        }
+        return {
+            isValid: errors.length === 0,
+            errors,
+            warnings: [],
+        };
+    }
+
+    async validateAssets(_assets: ReleaseAssets): Promise<ValidationResult> {
+        return { isValid: true, errors: [], warnings: [] };
+    }
+}

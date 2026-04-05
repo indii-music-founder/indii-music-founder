@@ -1,0 +1,143 @@
+import React, { memo } from 'react';
+import { Eye, Volume2, Plus, Trash2 } from 'lucide-react';
+import { VideoTrack, VideoClip } from '../../store/videoEditorStore';
+import { TimelineClip } from './TimelineClip';
+import { PIXELS_PER_FRAME } from '../constants';
+
+export interface TimelineTrackProps {
+    track: VideoTrack;
+    clips: VideoClip[];
+    selectedClipId: string | null;
+    expandedClipIds: Set<string>;
+    onRemoveTrack: (id: string) => void;
+    onAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image' | 'audio') => void;
+
+    // Passthrough props for clip
+    onToggleExpand: (id: string) => void;
+    onRemoveClip: (id: string) => void;
+    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize') => void;
+    onAddKeyframe: (e: React.MouseEvent, clip: VideoClip, property: string, defaultValue: number) => void;
+    onKeyframeClick: (e: React.MouseEvent, clipId: string, property: string, frame: number, easing?: string) => void;
+}
+
+export const TimelineTrack = memo(({
+    track, clips, selectedClipId, expandedClipIds,
+    onRemoveTrack, onAddSampleClip,
+    onToggleExpand, onRemoveClip, onDragStart, onAddKeyframe, onKeyframeClick
+}: TimelineTrackProps) => {
+    return (
+        <div className="bg-gray-900 rounded flex flex-col relative group border border-gray-800 hover:border-gray-700 transition-colors mb-1">
+            <div className="flex h-16">
+                {/* Track Header */}
+                <div className="w-48 border-r border-gray-800 p-2 flex flex-col justify-between bg-gray-900 shrink-0 z-10">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-medium text-gray-300 truncate" title={track.name}>{track.name}</span>
+                        <div className="flex gap-1">
+                            <button data-testid={`track-toggle-visibility-${track.id}`} className="text-gray-600 hover:text-gray-400" aria-label={`Toggle visibility for track ${track.name}`}><Eye size={12} /></button>
+                            <button data-testid={`track-toggle-mute-${track.id}`} className="text-gray-600 hover:text-gray-400" aria-label={`Toggle mute for track ${track.name}`}><Volume2 size={12} /></button>
+                        </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                        <button onClick={() => onAddSampleClip(track.id, 'text')} data-testid={`track-add-text-${track.id}`} className="text-[9px] bg-gray-800 hover:bg-gray-700 px-1 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Text" aria-label="Add text clip">
+                            <Plus size={10} /> Txt
+                        </button>
+                        <button onClick={() => onAddSampleClip(track.id, 'video')} data-testid={`track-add-video-${track.id}`} className="text-[9px] bg-gray-800 hover:bg-gray-700 px-1 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Video" aria-label="Add video clip">
+                            <Plus size={10} /> Vid
+                        </button>
+                        <button onClick={() => onAddSampleClip(track.id, 'audio')} data-testid={`track-add-audio-${track.id}`} className="text-[9px] bg-gray-800 hover:bg-gray-700 px-1 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Audio" aria-label="Add audio clip">
+                            <Plus size={10} /> Aud
+                        </button>
+                        <button onClick={() => onRemoveTrack(track.id)} data-testid={`track-delete-${track.id}`} className="text-gray-600 hover:text-red-400 ml-auto" aria-label={`Delete track ${track.name}`}>
+                            <Trash2 size={12} />
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    className="flex-1 relative overflow-hidden bg-gray-900/50"
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
+
+                        const files = Array.from(e.dataTransfer.files);
+                        if (files.length > 0) {
+                            const file = files[0]!;
+                            const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'image' : 'video';
+                            const url = URL.createObjectURL(file);
+
+                            import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
+                                useVideoEditorStore.getState().addClip({
+                                    type,
+                                    trackId: track.id,
+                                    name: file.name,
+                                    startFrame: frame,
+                                    durationInFrames: 300,
+                                    src: url,
+                                    opacity: 1,
+                                    scale: 1,
+                                    x: 0,
+                                    y: 0
+                                });
+                            });
+                        } else {
+                            try {
+                                const dataString = e.dataTransfer.getData('application/json');
+                                if (dataString) {
+                                    const data = JSON.parse(dataString);
+                                    if (data.type === 'asset' && data.asset) {
+                                        const mediaType = data.asset.type === 'image' ? 'image' : data.asset.type === 'audio' ? 'audio' : 'video';
+                                        import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
+                                            useVideoEditorStore.getState().addClip({
+                                                type: mediaType,
+                                                trackId: track.id,
+                                                name: data.asset.name,
+                                                startFrame: frame,
+                                                durationInFrames: data.asset.durationInSeconds ? Math.floor(data.asset.durationInSeconds * 30) : 300,
+                                                src: data.asset.url,
+                                                opacity: 1,
+                                                scale: 1,
+                                                x: 0,
+                                                y: 0
+                                            });
+                                        });
+                                    }
+                                }
+                            } catch (err) {
+                                // Silent catch for invalid dropped JSON
+                            }
+                        }
+                    }}
+                >
+                    {/* Grid lines */}
+                    <div className="absolute inset-0 pointer-events-none"
+                        style={{
+                            backgroundImage: 'linear-gradient(to right, #1f2937 1px, transparent 1px)',
+                            backgroundSize: `${30 * PIXELS_PER_FRAME}px 100%`
+                        }}
+                    />
+
+                    {clips.map(clip => (
+                        <TimelineClip
+                            key={clip.id}
+                            clip={clip}
+                            isSelected={selectedClipId === clip.id}
+                            isExpanded={expandedClipIds.has(clip.id)}
+                            onToggleExpand={onToggleExpand}
+                            onRemove={onRemoveClip}
+                            onDragStart={onDragStart}
+                            onAddKeyframe={onAddKeyframe}
+                            onKeyframeClick={onKeyframeClick}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+});

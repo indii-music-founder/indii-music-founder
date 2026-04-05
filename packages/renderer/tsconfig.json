@@ -1,0 +1,49 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "useDefineForClassFields": true,
+        "lib": [
+            "ES2022",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "strict": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ],
+            "@agents/*": [
+                "../../agents/*"
+            ],
+            "@shared/*": [
+                "../shared/src/*"
+            ]
+        }
+    },
+    "include": [
+        "src",
+        "src/**/*.d.ts"
+    ],
+    "exclude": [
+        "src/_archive_legacy",
+        "src/service-worker.ts"
+    ],
+    "references": [
+        {
+            "path": "../shared"
+        }
+    ]
+}

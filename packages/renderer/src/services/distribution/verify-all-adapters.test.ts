@@ -1,0 +1,169 @@
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { SymphonicAdapter } from '@/services/distribution/adapters/SymphonicAdapter';
+import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdapter';
+import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
+import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import type { ReleaseAssets, DistributorAdapter } from '@/services/distribution/types/distributor';
+
+// Mock Electron API for distribution
+if (typeof window !== 'undefined') {
+    (window as unknown as { electronAPI: any }).electronAPI = {
+        sftp: {
+            put: vi.fn().mockResolvedValue(true),
+            disconnect: vi.fn().mockResolvedValue(true),
+            isConnected: vi.fn().mockResolvedValue(true),
+            connect: vi.fn().mockResolvedValue({ success: true }),
+            connectDistributor: vi.fn().mockResolvedValue({ success: true }),
+            uploadDirectory: vi.fn().mockResolvedValue({ success: true })
+        },
+        distribution: {
+            stageRelease: vi.fn().mockResolvedValue({ success: true, packagePath: '/mock/package' })
+        }
+    };
+}
+
+// Mock dependencies to prevent permission errors
+vi.mock('@/services/distribution/DistributionPersistenceService', () => ({
+    distributionStore: {
+        createDeployment: vi.fn().mockResolvedValue({ id: 'mock-deployment-id' }),
+        getDeploymentsForRelease: vi.fn().mockResolvedValue([]),
+        updateDeploymentStatus: vi.fn(),
+    }
+}));
+
+vi.mock('../EarningsService', () => ({
+    earningsService: {
+        getEarnings: vi.fn().mockResolvedValue(null),
+        getAllEarnings: vi.fn().mockResolvedValue([]),
+    }
+}));
+
+vi.mock('@/services/ddex/ERNService', () => ({
+    ernService: {
+        generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<ERN/>' }),
+    }
+}));
+
+vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network unavailable in tests')));
+
+describe('All Distribution Adapters Integration', () => {
+    let tempDir: string;
+    let audioPath: string;
+    let coverPath: string;
+    let mockAssets: ReleaseAssets;
+
+    const mockMetadata: ExtendedGoldenMetadata = {
+        trackTitle: 'Universal Harmony',
+        artistName: 'The Generic Band',
+        releaseDate: '2025-02-01',
+        releaseType: 'Single',
+        genre: 'Pop',
+        pLineYear: 2025,
+        cLineText: 'The Generic Band',
+        language: 'en',
+        isrc: 'US-GEN-25-00001',
+        upc: '123456789012',
+        catalogNumber: 'GEN-001',
+        dpid: 'PADPIDA2014040101U',
+        labelName: 'Generic Records',
+        marketingComment: 'A test release for adapter verification.',
+        originalReleaseDate: '2025-02-01',
+        pLineText: 'The Generic Band',
+        cLineYear: 2025,
+        explicit: false,
+        splits: [],
+        pro: 'ASCAP',
+        publisher: 'Generic Records',
+        containsSamples: false,
+        isGolden: true,
+        territories: ['Worldwide'],
+        distributionChannels: ['streaming', 'download'],
+        aiGeneratedContent: {
+            isFullyAIGenerated: false,
+            isPartiallyAIGenerated: false
+        }
+    } as ExtendedGoldenMetadata;
+
+    beforeAll(() => {
+        // Setup Mock Assets
+        tempDir = path.join(os.tmpdir(), 'indiiOS_verify_assets');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+        audioPath = path.join(tempDir, 'test_audio.wav');
+        coverPath = path.join(tempDir, 'test_cover.jpg');
+
+        fs.writeFileSync(audioPath, 'MOCK AUDIO DATA');
+        fs.writeFileSync(coverPath, 'MOCK IMAGE DATA');
+
+        mockAssets = {
+            audioFiles: [{
+                url: `file://${audioPath}`,
+                mimeType: 'audio/wav',
+                format: 'wav',
+                sizeBytes: 1024,
+                sampleRate: 44100,
+                bitDepth: 16
+            }],
+            coverArt: {
+                url: `file://${coverPath}`,
+                mimeType: 'image/jpeg',
+                width: 3000,
+                height: 3000,
+                sizeBytes: 2048
+            }
+        };
+    });
+
+    afterAll(() => {
+        // Cleanup
+        if (fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
+
+    const adapters: DistributorAdapter[] = [
+        new SymphonicAdapter(),
+        new DistroKidAdapter(),
+        new TuneCoreAdapter(),
+        new CDBabyAdapter()
+    ];
+
+    describe.each(adapters.map(a => [a.name, a]))('%s Adapter', (name, adapter) => {
+        it('should connect successfully', async () => {
+            await expect(adapter.connect({
+                apiKey: 'test-api-key',
+                accessToken: 'test-access-token',
+                accountId: 'test-account',
+                sftpHost: 'sftp.example.com'
+            })).resolves.not.toThrow();
+        });
+
+        it('should create release successfully', async () => {
+            const result = await adapter.createRelease(mockMetadata, mockAssets);
+            expect(result.success).toBe(true);
+
+            // Each adapter returns a different status
+            if (adapter.name === 'DistroKid') {
+                expect(result.status).toBe('in_review');
+            } else if (adapter.name === 'TuneCore') {
+                expect(result.status).toBe('pending_review');
+            } else if (adapter.name === 'CDBaby') {
+                expect(result.status).toBe('validating');
+            } else if (adapter.name === 'Symphonic') {
+                expect(result.status).toBe('processing');
+            } else {
+                expect(result.status).toBe('delivered');
+            }
+
+            expect(result.distributorReleaseId).toBeDefined();
+        });
+
+        it('should disconnect successfully', async () => {
+            await expect(adapter.disconnect()).resolves.not.toThrow();
+        });
+    });
+});

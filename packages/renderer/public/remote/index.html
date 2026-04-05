@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>indiiREMOTE</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        indii: { bg: '#0d1117', pnl: '#161b22', brd: '#30363d', act: '#38bdf8' }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- React & Babel (CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { background-color: #0d1117; color: white; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(22, 27, 34, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(48, 54, 61, 0.4); }
+        .btn-active:active { transform: scale(0.95); opacity: 0.8; }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        function App() {
+            const [authenticated, setAuthenticated] = useState(false);
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            
+            const [socket, setSocket] = useState(null);
+            const [desktopState, setDesktopState] = useState(null);
+            const [connected, setConnected] = useState(false);
+
+            // Handle Authentication
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setError('');
+                try {
+                    const res = await fetch('/api/auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setAuthenticated(true);
+                        connectWebSocket(data.wsToken);
+                    } else {
+                        setError('Invalid Connection PIN');
+                    }
+                } catch (err) {
+                    setError('Connection to host failed.');
+                }
+            };
+
+            // Setup WebSocket with auth token handshake
+            const connectWebSocket = (wsToken) => {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const ws = new WebSocket(`${protocol}//${window.location.host}`);
+                
+                ws.onopen = () => {
+                    // Send auth token as first message (required by server)
+                    ws.send(JSON.stringify({ type: 'auth', token: wsToken }));
+                };
+                ws.onclose = () => setConnected(false);
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'auth' && data.success) {
+                            setConnected(true);
+                        } else if (data.type === 'sync' && data.payload) {
+                            setDesktopState(data.payload);
+                        }
+                    } catch (e) { console.error('Parse error', e); }
+                };
+                
+                setSocket(ws);
+            };
+
+            // Send Command to Desktop
+            const sendCommand = (action, payload = {}) => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ type: 'agent_action', payload: { action, ...payload } }));
+                }
+            };
+
+            useEffect(() => {
+                lucide.createIcons();
+            });
+
+            // ─── Render: Login ───
+            if (!authenticated) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+                        <div className="glass w-full max-w-sm rounded-[2rem] p-8 flex flex-col items-center shadow-2xl">
+                            <i data-lucide="cpu" className="w-12 h-12 text-indii-act mb-6 opacity-80"></i>
+                            <h1 className="text-2xl font-bold tracking-tight mb-2">indiiREMOTE</h1>
+                            <p className="text-gray-400 text-center text-sm mb-8">Access your desktop mainframe.</p>
+                            
+                            <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
+                                <input 
+                                    type="password" 
+                                    placeholder="Enter Secure PIN"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    className="w-full bg-[#0d1117] border border-indii-brd rounded-xl px-4 py-4 text-center font-mono tracking-widest focus:outline-none focus:border-indii-act"
+                                />
+                                {error && <p className="text-red-400 text-xs text-center font-semibold">{error}</p>}
+                                <button type="submit" className="btn-active w-full bg-indii-act text-black font-bold py-4 rounded-xl mt-2">
+                                    Authenticate Connection
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            // ─── Render: Dashboard ───
+            return (
+                <div className="min-h-screen flex flex-col pt-12 pb-safe bg-indii-bg">
+                    {/* Header */}
+                    <header className="px-6 mb-8 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-xl font-bold tracking-tight">Mainframe</h1>
+                            <div className="flex items-center gap-2 mt-1">
+                                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+                                <span className="text-xs text-gray-400 uppercase tracking-widest font-semibold">
+                                    {connected ? 'Connected to Mac' : 'Disconnected'}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="w-10 h-10 rounded-full glass flex items-center justify-center">
+                            <i data-lucide="activity" className={`w-5 h-5 ${connected ? 'text-indii-act' : 'text-gray-500'}`}></i>
+                        </div>
+                    </header>
+
+                    {/* Quick Stats Grid */}
+                    <div className="px-6 grid grid-cols-2 gap-4 mb-8">
+                        <div className="glass rounded-2xl p-5 flex flex-col gap-2">
+                            <i data-lucide="zap" className="w-5 h-5 text-yellow-400"></i>
+                            <span className="text-xs text-gray-400 uppercase font-semibold">GPU Status</span>
+                            <span className="text-lg font-bold">Idling</span>
+                        </div>
+                        <div className="glass rounded-2xl p-5 flex flex-col gap-2">
+                            <i data-lucide="server" className="w-5 h-5 text-purple-400"></i>
+                            <span className="text-xs text-gray-400 uppercase font-semibold">Memory</span>
+                            <span className="text-lg font-bold">1.2 GB</span>
+                        </div>
+                    </div>
+
+                    {/* Command Center */}
+                    <div className="px-6 flex-1">
+                        <h2 className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-4">Command Center</h2>
+                        <div className="flex flex-col gap-3">
+                            <button onClick={() => sendCommand('generate_video')} className="btn-active w-full glass rounded-2xl p-4 flex items-center gap-4 text-left">
+                                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                    <i data-lucide="video" className="w-5 h-5 text-blue-400"></i>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-semibold">Generate Video</h3>
+                                    <p className="text-xs text-gray-400">Wake up Veo 3.1 rendering engine</p>
+                                </div>
+                            </button>
+                            <button onClick={() => sendCommand('start_agent')} className="btn-active w-full glass rounded-2xl p-4 flex items-center gap-4 text-left">
+                                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                                    <i data-lucide="bot" className="w-5 h-5 text-green-400"></i>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-semibold">Start Agent Zero</h3>
+                                    <p className="text-xs text-gray-400">Deploy general intelligence</p>
+                                </div>
+                            </button>
+                            <button onClick={() => sendCommand('sync_distribution')} className="btn-active w-full glass rounded-2xl p-4 flex items-center gap-4 text-left">
+                                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                                    <i data-lucide="upload-cloud" className="w-5 h-5 text-orange-400"></i>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-semibold">Deploy Distribution</h3>
+                                    <p className="text-xs text-gray-400">Push track updates via SFTP</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Live Desktop State Overlay (Raw) */}
+                    {desktopState && (
+                        <div className="px-6 mt-8">
+                            <div className="glass rounded-xl p-4 border-indii-act/30">
+                                <p className="text-[10px] text-indii-act font-mono uppercase mb-2">Live Desktop Sync payload:</p>
+                                <pre className="text-[10px] text-gray-400 font-mono overflow-auto max-h-32">
+                                    {JSON.stringify(desktopState, null, 2)}
+                                </pre>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

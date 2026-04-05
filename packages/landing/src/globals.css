@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+:root {
+  --background: #030303;
+  --foreground: #F0F0F0;
+
+  /* Subliminal Theme Colors */
+  /* Subliminal Theme Colors */
+  --void: #030303;
+  --true-black: #000000;
+  --resonance-blue: #2E2EFE;
+  --electric-blue: #00F0FF;
+  --frequency-pink: #FE2E9A;
+  --dopamine-pink: #FF0099;
+  --signal-white: #F0F0F0;
+
+  /* Machine Experience (MX) Gradients */
+  --gradient-tech-bro: linear-gradient(135deg, #2E2EFE 0%, #00F0FF 100%);
+  --gradient-dopamine: linear-gradient(135deg, #FF0099 0%, #FE2E9A 100%);
+
+  /* Font Mappings (Vite Migration) */
+  --font-geist-sans: 'Inter', sans-serif;
+  --font-geist-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-geist-sans);
+  overflow-x: hidden;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+  mix-blend-mode: overlay;
+  filter: contrast(120%) brightness(120%);
+}
+
+/* Custom Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, 0.36),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  /* Inner rim light */
+}
+
+.human-scribble {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+  transform: rotate(-2deg);
+}
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.glow-text-blue {
+  text-shadow: 0 0 15px rgba(46, 46, 254, 0.6);
+}
+
+.glow-text-pink {
+  text-shadow: 0 0 15px rgba(254, 46, 154, 0.6);
+}
+
+/* 3D Utilities for 2026 Interactions */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Animations */
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes throb-light {
+
+  0%,
+  100% {
+    filter: brightness(1);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  }
+
+  50% {
+    filter: brightness(1.2);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-throb-light {
+  animation: throb-light 4s ease-in-out infinite;
+}
