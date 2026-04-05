@@ -26,6 +26,7 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
+import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
@@ -95,6 +96,7 @@ const GrowthIntelligenceDashboard = lazy(() => import('../modules/analytics/Grow
 const DesktopDashboard = lazy(() => import('../modules/desktop/DesktopDashboard'));
 const FoundersCheckout = lazy(() => import('../modules/founders/FoundersCheckout'));
 const VideoPopout = lazy(() => import('../modules/video/editor/VideoPopout'));
+const RegistrationCenter = lazy(() => import('../modules/registration/RegistrationCenter'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -138,6 +140,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'desktop': DesktopDashboard,
     'founders-checkout': FoundersCheckout,
     'video-popout': VideoPopout,
+    'registration': RegistrationCenter,
 };
 
 // ============================================================================
@@ -451,13 +454,11 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
 
 export default function App() {
     // ⚡ Bolt Optimization: useShallow
-    const { currentModule, user, authLoading, isAgentOpen, toggleAgentWindow } = useStore(
+    const { currentModule, user, authLoading } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
             user: state.user,
             authLoading: state.authLoading,
-            isAgentOpen: state.isAgentOpen,
-            toggleAgentWindow: state.toggleAgentWindow,
         }))
     );
 
@@ -593,6 +594,9 @@ export default function App() {
 
                                 {/* Global Command Menu (CMD+K) */}
                                 <UnifiedCommandMenu />
+
+                                {/* The Boardroom (Zen Mode) */}
+                                <BoardroomModule />
 
                                 {/* Global Upload Manager Queue */}
                                 <UploadQueueMonitor />

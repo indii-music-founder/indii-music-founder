@@ -27,11 +27,29 @@ export interface ToolParameters {
 
 import { ZodType } from 'zod';
 
+export type ToolRiskTier = 'read' | 'write' | 'destructive';
+export type PermissionTier = 'builtin' | 'core' | 'plugin';
+
+export interface ToolRiskMetadata {
+    riskTier: ToolRiskTier;
+    permissionTier: PermissionTier;
+    requiresApproval: boolean;
+    description: string;
+}
+
 export interface FunctionDeclaration {
     name: string;
     description: string;
     parameters: ToolParameters;
     schema?: ZodType;
+    /**
+     * Risk classification for governance and permission gating.
+     * - 'read': Safe, no side effects (e.g., list_projects, recall_memories)
+     * - 'write': Creates or mutates data (e.g., create_project, save_memory)
+     * - 'destructive': Irreversible or high-impact (e.g., rotate_credentials, deploy)
+     * Defaults to 'write' at runtime if not specified.
+     */
+    riskTier?: ToolRiskTier;
 }
 
 export interface ToolDefinition {
@@ -362,4 +380,53 @@ export interface AgentRegistryProvider {
     getAsync(id: string, retryCount?: number): Promise<SpecializedAgent | undefined>;
     getLoadError(id: string): { error: Error; timestamp: number; attempts: number } | undefined;
     getAll(): SpecializedAgent[];
+}
+
+// ============================================================================
+// Workflow Execution State Machine (Priority 1: Agentic Harness Primitive #4)
+// ============================================================================
+
+/**
+ * Lifecycle status for a workflow execution or individual step.
+ * Transitions: planned → executing → step_complete | failed | cancelled
+ * Terminal states: completed, failed, cancelled
+ */
+export type WorkflowExecutionStatus =
+    | 'planned'
+    | 'executing'
+    | 'step_complete'
+    | 'awaiting_approval'
+    | 'completed'
+    | 'failed'
+    | 'cancelled';
+
+/**
+ * Persisted state for a single step within a workflow execution.
+ */
+export interface WorkflowStepExecution {
+    stepIndex: number;
+    agentId: string;
+    prompt: string;
+    status: WorkflowExecutionStatus;
+    idempotencyKey: string;
+    result?: string;
+    error?: string;
+    startedAt?: number;
+    completedAt?: number;
+}
+
+/**
+ * Persisted state for an entire workflow run.
+ * Stored in Firestore under `users/{userId}/workflowExecutions/{id}`.
+ */
+export interface WorkflowExecution {
+    id: string;
+    workflowId: string;
+    sessionId?: string;
+    userId: string;
+    status: WorkflowExecutionStatus;
+    steps: WorkflowStepExecution[];
+    currentStepIndex: number;
+    createdAt: number;
+    updatedAt: number;
 }

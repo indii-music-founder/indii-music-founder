@@ -26,6 +26,8 @@ import { MarketplaceSlice, createMarketplaceSlice } from './slices/marketplaceSl
 import { EmailSlice, createEmailSlice } from './slices/emailSlice';
 import { AnalyticsSlice, createAnalyticsSlice } from './slices/analyticsSlice';
 import { AgentFeedbackSlice, createAgentFeedbackSlice } from './slices/agentFeedbackSlice';
+import { BoardroomSlice, createBoardroomSlice } from './slices/boardroomSlice';
+import { RegistrationSlice, createRegistrationSlice } from './slices/registrationSlice';
 
 
 export type { AgentMessage, AgentThought } from './slices/agent';
@@ -53,7 +55,9 @@ export interface StoreState extends
     MarketplaceSlice,
     EmailSlice,
     AnalyticsSlice,
-    AgentFeedbackSlice { }
+    BoardroomSlice,
+    AgentFeedbackSlice,
+    RegistrationSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -87,6 +91,8 @@ export const useStore = create<StoreState>()(
                 ...createEmailSlice(...a),
                 ...createAnalyticsSlice(...a),
                 ...createAgentFeedbackSlice(...a),
+                ...createBoardroomSlice(...a),
+                ...createRegistrationSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access
@@ -101,6 +107,7 @@ export const useStore = create<StoreState>()(
                 isSidebarOpen: state.isSidebarOpen,
                 // Add currentModule if we want to remember the last tab
                 currentModule: state.currentModule,
+                isBoardroomMode: state.isBoardroomMode,
             }),
         }
     )

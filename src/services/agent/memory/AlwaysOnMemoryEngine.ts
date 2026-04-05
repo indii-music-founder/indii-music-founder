@@ -370,6 +370,26 @@ ANSWER:`;
     // ========================================================================
 
     /**
+     * INDII GROWTH PROTOCOL
+     * Monitor Meta Pixel event history. Once 2,000+ conversion events are logged,
+     * instruct the Marketing Agent to transition to Saver Lookalike Audiences.
+     */
+    public async evaluateMarketingLookalikeThreshold(totalPixelEvents: number): Promise<void> {
+        if (!this.userId) return;
+
+        if (totalPixelEvents >= 2000) {
+            logger.info(`[AlwaysOnMemoryEngine] 2,000+ conversion events detected (${totalPixelEvents}). Triggering Saver Lookalike transition.`);
+
+            // Inject a high-priority system memory insight
+            await this.ingest(
+                '2,000+ conversion events logged. Shift all target audiences from interest-based targeting to Saver Lookalike Audiences.',
+                'system_trigger',
+                'marketing' as AlwaysOnMemoryCategory
+            );
+        }
+    }
+
+    /**
      * Get the current status of the engine.
      */
     public async getStatus(): Promise<AlwaysOnEngineStatus> {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { auth } from '@/services/firebase';
 import { Logger } from '@/core/logger/Logger';
+import { delay } from '@/utils/async';
 
 const IDLE_WARNING_MS = 55 * 60 * 1000;  // 55 minutes - warn before Firebase token expires (60 min)
 const IDLE_LOGOUT_MS = 60 * 60 * 1000;   // 60 minutes - force token refresh or logout
@@ -38,35 +39,43 @@ export function useSessionTimeout(options?: {
             window.addEventListener(event, resetActivity, { passive: true });
         }
 
-        const interval = setInterval(async () => {
-            const idle = Date.now() - lastActivity.current;
+        let active = true;
+        const checkSession = async () => {
+            while (active) {
+                await delay(60_000); // Check every minute
+                if (!active) break;
 
-            // Proactive token refresh - if user is active and approaching expiry
-            if (idle < IDLE_WARNING_MS && auth.currentUser) {
-                try {
-                    await auth.currentUser.getIdToken(true);
-                } catch {
-                    Logger.warn('Session', 'Token refresh failed');
+                const idle = Date.now() - lastActivity.current;
+
+                // Proactive token refresh - if user is active and approaching expiry
+                if (idle < IDLE_WARNING_MS && auth.currentUser) {
+                    try {
+                        await auth.currentUser.getIdToken(true);
+                    } catch {
+                        Logger.warn('Session', 'Token refresh failed');
+                    }
+                    continue;
                 }
-                return;
-            }
 
-            // Idle warning
-            if (idle >= IDLE_WARNING_MS && !warningFired.current) {
-                warningFired.current = true;
-                Logger.info('Session', 'User idle, approaching timeout');
-                options?.onWarning?.();
-            }
+                // Idle warning
+                if (idle >= IDLE_WARNING_MS && !warningFired.current) {
+                    warningFired.current = true;
+                    Logger.info('Session', 'User idle, approaching timeout');
+                    options?.onWarning?.();
+                }
 
-            // Idle timeout
-            if (idle >= IDLE_LOGOUT_MS) {
-                Logger.warn('Session', 'Session timed out due to inactivity');
-                options?.onTimeout?.();
+                // Idle timeout
+                if (idle >= IDLE_LOGOUT_MS) {
+                    Logger.warn('Session', 'Session timed out due to inactivity');
+                    options?.onTimeout?.();
+                }
             }
-        }, 60_000); // Check every minute
+        };
+
+        checkSession();
 
         return () => {
-            clearInterval(interval);
+            active = false;
             for (const event of ACTIVITY_EVENTS) {
                 window.removeEventListener(event, resetActivity);
             }

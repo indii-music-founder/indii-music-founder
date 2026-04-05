@@ -3,7 +3,7 @@ name: digital_distribution
 description: DSP ingestion, DDEX standards, ISRC/UPC management, metadata formatting, and platform pitching.
 ---
 
-# Digital Distribution & DSP Ingestion (Agent Zero Skill)
+# Digital Distribution & DSP Ingestion (indii Conductor Skill)
 
 **Domain Expert:** Distribution Operations Manager  
 **Goal:** Ensure flawless metadata delivery, rapid ingestion to global DSPs, and strategic playlist pitching.

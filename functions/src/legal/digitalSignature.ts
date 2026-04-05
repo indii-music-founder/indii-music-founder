@@ -24,8 +24,8 @@ export const sendForDigitalSignature = functions
             );
         }
 
-        console.log(`[sendForDigitalSignature] Initiating signature request via ${provider} for contract ${contractId}`);
-        const providerName = provider || "PandaDoc"; // Defaulting or mock implementation
+        const providerName = provider || "PandaDoc";
+        console.log(`[sendForDigitalSignature] Initiating signature request via ${providerName} for contract ${contractId}`);
 
         // Note: In a true production environment, this would call PandaDoc/DocuSign API
         // Here we mock the integration to satisfy the UI tool expectations that the function exists.

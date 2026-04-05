@@ -91,7 +91,20 @@ interface TestStoreState {
     setCommandBarAttachments: (attachments: any[]) => void;
     isCommandBarDetached: boolean;
     setCommandBarDetached: (detached: boolean) => void;
+    isCommandBarCollapsed: boolean;
+    setCommandBarCollapsed: (collapsed: boolean) => void;
+    commandBarPosition: 'left' | 'center' | 'right';
+    setCommandBarPosition: (position: 'left' | 'center' | 'right') => void;
     setActiveAgentProvider: (agentId: string) => void;
+    isKnowledgeBaseEnabled: boolean;
+    setKnowledgeBaseEnabled: (enabled: boolean) => void;
+    activeAgentProvider: string;
+    isRightPanelOpen: boolean;
+    toggleRightPanel: () => void;
+    rightPanelTab: string;
+    rightPanelView: string;
+    agentMode: string;
+    isAgentProcessing: boolean;
 }
 
 // Create a real store for testing
@@ -106,18 +119,38 @@ const useTestStore = create<TestStoreState>((set) => ({
     setCommandBarInput: (input) => set({ commandBarInput: input }),
     commandBarAttachments: [],
     setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
-    isCommandBarDetached: false,
+    isCommandBarDetached: true,
     setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
+    isCommandBarCollapsed: false,
+    setCommandBarCollapsed: (collapsed) => set({ isCommandBarCollapsed: collapsed }),
+    commandBarPosition: 'center',
+    setCommandBarPosition: (position) => set({ commandBarPosition: position }),
     setActiveAgentProvider: vi.fn(),
+    isKnowledgeBaseEnabled: false,
+    setKnowledgeBaseEnabled: (enabled) => set({ isKnowledgeBaseEnabled: enabled }),
+    activeAgentProvider: 'native',
+    isRightPanelOpen: false,
+    toggleRightPanel: vi.fn(),
+    rightPanelTab: 'agent',
+    rightPanelView: 'messages',
+    agentMode: 'assistant',
+    isAgentProcessing: false,
 }));
 
 // Mock the useStore hook to use our real test store
 vi.mock('@/core/store', () => ({
     serverTimestamp: vi.fn(),
-    useStore: (selector?: (state: TestStoreState) => any) => {
-        const state = useTestStore();
-        return selector ? selector(state) : state;
-    }
+    useStore: Object.assign(
+        (selector?: (state: TestStoreState) => any) => {
+            const state = useTestStore();
+            return selector ? selector(state) : state;
+        },
+        {
+            getState: () => useTestStore.getState(),
+            setState: (partial: any) => useTestStore.setState(partial),
+            subscribe: (listener: any) => useTestStore.subscribe(listener),
+        }
+    )
 }));
 
 describe('CommandBar', () => {
@@ -132,7 +165,8 @@ describe('CommandBar', () => {
             chatChannel: 'indii',
             commandBarInput: '',
             commandBarAttachments: [],
-            isCommandBarDetached: false,
+            isCommandBarDetached: true,
+            isCommandBarCollapsed: false,
         });
 
         // Spy on methods we want to assert
@@ -163,7 +197,7 @@ describe('CommandBar', () => {
     });
 
     it('switches module and opens agent window when a manager is selected', () => {
-        const toggleSpy = vi.spyOn(useTestStore.getState(), 'toggleAgentWindow');
+        const toggleRightPanelSpy = vi.spyOn(useTestStore.getState(), 'toggleRightPanel');
         const setModuleSpy = vi.spyOn(useTestStore.getState(), 'setModule');
 
         render(<CommandBar />);
@@ -174,11 +208,11 @@ describe('CommandBar', () => {
         fireEvent.click(roadManagerOption);
 
         expect(setModuleSpy).toHaveBeenCalledWith('road');
-        expect(toggleSpy).toHaveBeenCalled(); // Note: toggleAgentWindow is just a spy function in initial state, but we spied on it
+        expect(toggleRightPanelSpy).toHaveBeenCalled();
     });
 
     it('switches module and opens agent window when a department is selected', () => {
-        const toggleSpy = vi.spyOn(useTestStore.getState(), 'toggleAgentWindow');
+        const toggleRightPanelSpy = vi.spyOn(useTestStore.getState(), 'toggleRightPanel');
         const setModuleSpy = vi.spyOn(useTestStore.getState(), 'setModule');
 
         render(<CommandBar />);
@@ -189,7 +223,7 @@ describe('CommandBar', () => {
         fireEvent.click(marketingOption);
 
         expect(setModuleSpy).toHaveBeenCalledWith('marketing');
-        expect(toggleSpy).toHaveBeenCalled();
+        expect(toggleRightPanelSpy).toHaveBeenCalled();
     });
 
     // ... existing metadata tests ...

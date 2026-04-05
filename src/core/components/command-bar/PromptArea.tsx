@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/prompt-input';
 import { DelegateMenu } from './DelegateMenu';
 import { AttachmentList } from './AttachmentList';
+import { TypeaheadMenu, type TypeaheadContext } from './TypeaheadMenu';
 import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
@@ -41,8 +42,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const {
         currentModule,
         setModule,
-        toggleAgentWindow,
-        isAgentOpen,
         isRightPanelOpen,
         toggleRightPanel,
         chatChannel,
@@ -60,13 +59,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isCommandBarCollapsed,
         setCommandBarCollapsed,
         commandBarPosition,
-        setCommandBarPosition
+        setCommandBarPosition,
+        isBoardroomMode
     } = useStore(useShallow(state => ({
         // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
         currentModule: state.currentModule,
         setModule: state.setModule,
-        toggleAgentWindow: state.toggleAgentWindow,
-        isAgentOpen: state.isAgentOpen,
         isRightPanelOpen: state.isRightPanelOpen,
         toggleRightPanel: state.toggleRightPanel,
         chatChannel: state.chatChannel,
@@ -84,7 +82,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isCommandBarCollapsed: state.isCommandBarCollapsed,
         setCommandBarCollapsed: state.setCommandBarCollapsed,
         commandBarPosition: state.commandBarPosition,
-        setCommandBarPosition: state.setCommandBarPosition
+        setCommandBarPosition: state.setCommandBarPosition,
+        isBoardroomMode: state.isBoardroomMode
     })));
 
     const isIndiiMode = chatChannel === 'indii';
@@ -111,6 +110,34 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const managerAgents = useMemo(() => allAgents.filter(a => a.category === 'manager' || a.category === 'specialist'), [allAgents]);
     const departmentAgents = useMemo(() => allAgents.filter(a => a.category === 'department'), [allAgents]);
     const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
+
+    const [typeaheadContext, setTypeaheadContext] = useState<TypeaheadContext>(null);
+
+    const handleInputValueChange = useCallback((value: string) => {
+        setCommandBarInput(value);
+
+        // Find last word matching @ or #
+        const match = value.match(/(?:^|\s)([@#])([\w-]*)$/);
+        if (match && match.index !== undefined) {
+            setTypeaheadContext({
+                type: match[1] as '@' | '#',
+                query: match[2] || '',
+                position: match.index + (value[match.index] === ' ' ? 1 : 0)
+            });
+        } else {
+            setTypeaheadContext(null);
+        }
+    }, [setCommandBarInput]);
+
+    const handleTypeaheadSelect = useCallback((id: string, name: string) => {
+        if (!typeaheadContext) return;
+        const prefix = commandBarInput.substring(0, typeaheadContext.position);
+        const suffix = commandBarInput.substring(typeaheadContext.position + typeaheadContext.query.length + 1);
+
+        const newValue = `${prefix}${typeaheadContext.type}${name} ${suffix}`;
+        setCommandBarInput(newValue);
+        setTypeaheadContext(null);
+    }, [commandBarInput, typeaheadContext, setCommandBarInput]);
 
     const handleCloseDelegate = useCallback(() => setOpenDelegate(false), []);
 
@@ -142,12 +169,26 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         if (moduleId !== 'dashboard') {
             setModule(moduleId as ModuleId);
         }
-        if (!isAgentOpen) {
-            toggleAgentWindow();
+        if (!isRightPanelOpen) {
+            toggleRightPanel();
         }
+        useStore.setState({
+            rightPanelTab: 'agent',
+            rightPanelView: 'messages'
+        });
         setActiveAgentProvider('native'); // Switch back to Native for specific agents
         setOpenDelegate(false);
-    }, [isAgentOpen, setModule, toggleAgentWindow, setActiveAgentProvider]);
+    }, [isRightPanelOpen, toggleRightPanel, setModule, setActiveAgentProvider]);
+
+    const handleSelectIndii = useCallback(() => {
+        setChatChannel('indii');
+        setModule('dashboard' as ModuleId);
+        setActiveAgentProvider('native');
+        if (!useStore.getState().isRightPanelOpen) {
+            useStore.getState().toggleRightPanel();
+        }
+        useStore.setState({ rightPanelTab: 'agent', rightPanelView: 'messages' });
+    }, [setChatChannel, setModule, setActiveAgentProvider]);
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -202,17 +243,40 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             const currentInput = input;
             const currentAttachments = [...(commandBarAttachments || [])];
 
+            if (currentInput.trim() === '/deploy-andromeda') {
+                const state = useStore.getState();
+                state.setModule('creative');
+                state.enableAndromedaMode();
+                toast.success('Andromeda Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
+                setCommandBarInput('');
+                setCommandBarAttachments([]);
+                setIsProcessing(false);
+                return;
+            }
+
+            if (currentInput.trim() === '/status-blitz') {
+                const state = useStore.getState();
+                state.setModule('dashboard');
+                toast.success('System Status: Viral Velocity Active, CPS Kill-switches Armed.');
+                setCommandBarInput('');
+                setCommandBarAttachments([]);
+                setIsProcessing(false);
+                return;
+            }
+
             setCommandBarInput('');
             setCommandBarAttachments([]);
 
             // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top
             const isOnAgentModule = currentModule === 'agent';
             if (!isOnAgentModule) {
-                if (!isAgentOpen) {
-                    toggleAgentWindow();
-                } else if (!isRightPanelOpen) {
+                if (!isRightPanelOpen) {
                     toggleRightPanel();
                 }
+                useStore.setState({
+                    rightPanelTab: 'agent',
+                    rightPanelView: 'messages'
+                });
             }
 
             try {
@@ -231,7 +295,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             logger.error("PromptArea: Fatal crash", fatalError);
             setIsProcessing(false);
         }
-    }, [commandBarInput, commandBarAttachments, isAgentOpen, isRightPanelOpen, toggleAgentWindow, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, setCommandBarInput, setCommandBarAttachments]);
+    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, setCommandBarInput, setCommandBarAttachments]);
 
     return (
         <div
@@ -265,9 +329,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 )}
             </AnimatePresence>
 
+            <TypeaheadMenu context={typeaheadContext} onSelect={handleTypeaheadSelect} />
+
             <PromptInput
                 value={commandBarInput}
-                onValueChange={setCommandBarInput}
+                onValueChange={handleInputValueChange}
                 onSubmit={() => handleSubmit()}
                 className="bg-transparent border-none shadow-none py-1"
                 disabled={isProcessing}
@@ -297,9 +363,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 <PromptInputAction tooltip="Attach files">
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="flex items-center justify-center p-2 rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                        className={cn(
+                                            "flex items-center justify-center rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                            isDocked ? "p-1.5" : "p-2"
+                                        )}
                                     >
-                                        <Paperclip size={18} />
+                                        <Paperclip size={isDocked ? 16 : 18} />
                                     </button>
                                 </PromptInputAction>
                             </div>
@@ -309,14 +378,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <button
                                 onClick={handleMicClick}
                                 className={cn(
-                                    "flex items-center justify-center p-2 rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    "flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    isDocked ? "p-1.5" : "p-2",
                                     isListening
                                         ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
                                         : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
                                 )}
                                 aria-label={isListening ? "Stop listening" : "Voice Input"}
                             >
-                                <Mic size={18} className={isListening ? "animate-pulse" : ""} />
+                                <Mic size={isDocked ? 16 : 18} className={isListening ? "animate-pulse" : ""} />
                             </button>
                         </PromptInputAction>
 
@@ -331,11 +401,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     aria-expanded={openDelegate}
                                     aria-label="Select active agent"
                                     className={cn(
-                                        "flex items-center justify-center w-9 h-9 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                        "flex items-center justify-center rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                        isDocked ? "w-7 h-7" : "w-9 h-9",
                                         !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
                                     )}
                                 >
-                                    <div className={cn("w-1.5 h-1.5 rounded-full", !isIndiiMode ? "bg-cyan-400 animate-pulse" : "bg-gray-600")} />
+                                    <div className={cn("rounded-full", isDocked ? "w-1 h-1" : "w-1.5 h-1.5", !isIndiiMode ? "bg-cyan-400 animate-pulse" : "bg-gray-600")} />
                                 </button>
                                 <DelegateMenu
                                     isOpen={openDelegate}
@@ -344,13 +415,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     managerAgents={managerAgents}
                                     departmentAgents={departmentAgents}
                                     onSelect={handleDelegate}
-                                    onSelectIndii={() => {
-                                        setChatChannel('indii');
-                                        setModule('dashboard' as ModuleId);
-                                        setActiveAgentProvider('native');
-                                        setOpenDelegate(false);
-                                        if (!isAgentOpen) toggleAgentWindow();
-                                    }}
+                                    onSelectIndii={handleSelectIndii}
                                     onClose={handleCloseDelegate}
                                 />
                             </div>
@@ -373,7 +438,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     "flex items-center justify-center gap-1 transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                                     isMobile
                                         ? "px-2.5 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wide"
-                                        : "w-8 h-8 rounded-full",
+                                        : isDocked ? "w-7 h-7 rounded-full" : "w-8 h-8 rounded-full",
                                     isKnowledgeBaseEnabled
                                         ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
                                         : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
@@ -381,15 +446,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
                                 aria-pressed={isKnowledgeBaseEnabled}
                             >
-                                <Database size={12} />
+                                <Database size={isDocked ? 10 : 12} />
                                 {isMobile && <span>KB</span>}
                             </button>
                         </PromptInputAction>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Dock Position Toggle — desktop only, irrelevant on phone */}
-                        {!isMobile && (
+                        {/* Dock Position Toggle — desktop only, irrelevant on phone or when docked */}
+                        {!isMobile && !isDocked && (
                             <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/10">
                                 <button
                                     onClick={() => setCommandBarPosition('left')}
@@ -437,7 +502,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         <button
                             onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
                             className={cn(
-                                "w-8 h-8 rounded-lg transition-all border flex items-center justify-center overflow-hidden",
+                                "rounded-lg transition-all border flex items-center justify-center overflow-hidden",
+                                isDocked ? "w-7 h-7" : "w-8 h-8",
                                 isIndiiMode
                                     ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50"
                                     : "bg-cyan-600/30 border-cyan-500/40 hover:bg-cyan-600/50"
@@ -445,7 +511,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             aria-label={isIndiiMode ? "Switch to Agent mode" : "Switch to indii mode"}
                             title={isIndiiMode ? "indii mode — click for Agent" : "Agent mode — click for indii"}
                         >
-                            <IndiiFavicon size={18} />
+                            <IndiiFavicon size={isDocked ? 14 : 18} />
                         </button>
 
                         {!isDocked && !isMobile && (
@@ -484,7 +550,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0) || isProcessing}
                                 aria-label="Run command"
                                 className={cn(
-                                    "flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-white text-xs font-bold transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white",
+                                    (!isMobile && !isDocked) ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0"),
                                     isIndiiMode
                                         ? "bg-purple-600 hover:bg-purple-500 shadow-purple-500/20"
                                         : "bg-white/20 hover:bg-white/30 border border-white/10"
@@ -492,11 +559,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 data-testid="command-bar-run-btn"
                             >
                                 {isProcessing ? (
-                                    <Loader2 size={16} className="animate-spin" data-testid="run-loader" />
+                                    <Loader2 size={isDocked ? 14 : 16} className="animate-spin" data-testid="run-loader" />
                                 ) : (
-                                    <ArrowRight size={16} />
+                                    <ArrowRight size={isDocked ? 14 : 16} />
                                 )}
-                                {!isMobile && <span className="ml-0.5">Run</span>}
+                                {(!isMobile && !isDocked) && <span className="ml-0.5">Run</span>}
                             </button>
                         </PromptInputAction>
                     </div>

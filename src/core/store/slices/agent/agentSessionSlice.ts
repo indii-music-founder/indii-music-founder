@@ -46,6 +46,11 @@ export interface AgentSessionSlice {
     // Legacy mapping (computed/synced from activeSession)
     agentHistory: AgentMessage[];
 
+    // Boardroom
+    boardroomMessages: AgentMessage[];
+    addBoardroomMessage: (msg: AgentMessage) => void;
+    updateBoardroomMessage: (id: string, updates: Partial<AgentMessage>) => void;
+
     // Session State
     sessions: Record<string, ConversationSession>;
     activeSessionId: string | null;
@@ -77,8 +82,19 @@ export function buildAgentSessionState(
 ): AgentSessionSlice {
     return {
         agentHistory: [],
+        boardroomMessages: [],
         sessions: {},
         activeSessionId: null,
+
+        addBoardroomMessage: (msg) => set(state => ({
+            boardroomMessages: [...state.boardroomMessages, msg]
+        })),
+
+        updateBoardroomMessage: (id, updates) => set(state => ({
+            boardroomMessages: state.boardroomMessages.map(msg =>
+                msg.id === id ? { ...msg, ...updates } : msg
+            )
+        })),
 
         createSession: (title = 'New Conversation', initialAgents = ['indii'], namespace?: string) => {
             const id = crypto.randomUUID();
