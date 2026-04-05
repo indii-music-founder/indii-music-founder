@@ -59,13 +59,13 @@ export class AudioFidelityFeature {
     const path = await import('path');
     // NOTE: In a hybrid app, we import from the electron utils if in Node context
     // This assumes the feature is executing in the main process as per its design note.
-    const { AgentSupervisor } = await import('../../../electron/utils/AgentSupervisor');
+    const { AgentSupervisor } = await import('../../../../main/src/utils/AgentSupervisor');
 
     const scriptName = 'audio_fidelity_audit.py';
 
     // 3. Execution via AgentSupervisor
     try {
-      const result = await AgentSupervisor.runScript<any>(
+      const result: any = await AgentSupervisor.runScript(
         'audio',
         scriptName,
         [filePath, targetStandard],

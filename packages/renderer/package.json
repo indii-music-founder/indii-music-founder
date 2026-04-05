@@ -11,6 +11,7 @@
         "@emotion/is-prop-valid": "1.4.0",
         "@google/genai": "^1.48.0",
         "@googlemaps/react-wrapper": "1.2.0",
+        "@indiios/shared": "*",
         "@radix-ui/react-context-menu": "^2.2.16",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-dropdown-menu": "2.1.16",
@@ -79,30 +80,33 @@
         "yjs": "^13.6.29",
         "zod": "3.25.76",
         "zod-to-json-schema": "3.25.1",
-        "zustand": "5.0.8",
-        "@indiios/shared": "*"
+        "zustand": "5.0.8"
     },
     "devDependencies": {
-        "@vitejs/plugin-react": "4.7.0",
         "@tailwindcss/vite": "4.1.17",
         "@testing-library/dom": "10.4.1",
         "@testing-library/jest-dom": "6.9.1",
         "@testing-library/react": "16.3.0",
         "@testing-library/user-event": "14.6.1",
         "@types/google.maps": "3.58.1",
+        "@types/jest-axe": "^3.5.9",
         "@types/node": "22.19.1",
         "@types/react": "18.3.3",
         "@types/react-dom": "18.3.0",
         "@types/three": "^0.183.1",
+        "@vitejs/plugin-react": "4.7.0",
         "@vitest/ui": "4.0.18",
         "autoprefixer": "10.4.22",
+        "jest-axe": "^10.0.0",
         "jsdom": "26.1.0",
+        "msw": "^2.12.14",
         "postcss": "8.5.6",
         "rollup-plugin-visualizer": "^7.0.1",
         "tailwindcss": "4.1.17",
         "typescript": "5.8.2",
         "vite": "6.4.1",
         "vite-plugin-pwa": "^0.19.8",
-        "vitest": "4.0.18"
+        "vitest": "4.0.18",
+        "vitest-axe": "^0.1.0"
     }
 }
