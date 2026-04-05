@@ -2,6 +2,23 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.48.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.47.0...v1.48.0) (2026-04-05)
+
+
+### Features
+
+* **agent:** implement production-grade primitives 5, 6, and 9 ([90abcb6](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/90abcb6376ddffa3f08129238e62bf62fa875e90))
+* **agent:** Implement Wiki-Based Knowledge Store pipeline ([bc048d8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bc048d871e388ef83fc83c1a1801ab0590910a48))
+* **agent:** Upgrade indii Conductor harness and Growth Protocol ([c1aa853](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c1aa853007920e3325761cc81da28cf4dddf503f))
+* **boardroom:** Implement zero-API offline mode interface ([11b4c04](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/11b4c048d5dd5926683830e95e218f8e04729881))
+* **boardroom:** Integrate real multi-agent API calls via Conductor ([bd9187f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bd9187f68b646e704cc06db745ce6eea77f31724))
+* **knowledge:** finalize wiki knowledge store integration ([22bfdb0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/22bfdb0bf7dcdd69915255f7225bf7aca77a6a6a))
+
+
+### Bug Fixes
+
+* **deps:** resolve 2 critical npm vulns + activate image resizing function ([e67873b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e67873bf2078f7030cbecc7f030f974dd983be15))
+
 ## [1.47.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.46.0...v1.47.0) (2026-04-04)
 
 
