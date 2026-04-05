@@ -84,3 +84,5 @@ __pycache__/
 # Agent skill tooling (external, not app code)
 .agent/antigravity-awesome-skills/
 _archive_pre_monorepo/
+packages/firebase/lib/
+dist/
