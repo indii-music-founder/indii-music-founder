@@ -364,6 +364,23 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
             size="18"
           />
         </button>
+        <button
+          aria-label="Registration Center"
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-registration"
+          style="--dept-color: var(--color-test);"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-FileText"
+            size="18"
+          />
+        </button>
       </div>
     </div>
     <div
@@ -983,6 +1000,27 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Art & Merch Dept
+          </span>
+        </button>
+        <button
+          class="w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1 text-gray-400 hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-registration"
+          style="--dept-color: var(--color-test);"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-FileText"
+            size="18"
+          />
+          <span
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
+          >
+            Registration Center
           </span>
         </button>
       </div>
