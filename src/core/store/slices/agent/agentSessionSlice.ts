@@ -46,6 +46,10 @@ export interface AgentSessionSlice {
     // Legacy mapping (computed/synced from activeSession)
     agentHistory: AgentMessage[];
 
+    // Boardroom
+    boardroomMessages: AgentMessage[];
+    dispatchBoardroomMessage: (text: string) => void;
+
     // Session State
     sessions: Record<string, ConversationSession>;
     activeSessionId: string | null;
@@ -77,8 +81,41 @@ export function buildAgentSessionState(
 ): AgentSessionSlice {
     return {
         agentHistory: [],
+        boardroomMessages: [],
         sessions: {},
         activeSessionId: null,
+
+        dispatchBoardroomMessage: (text: string) => {
+            const userMsg: AgentMessage = {
+                id: crypto.randomUUID(),
+                role: 'user',
+                text,
+                timestamp: Date.now()
+            };
+
+            set(state => ({
+                boardroomMessages: [...state.boardroomMessages, userMsg]
+            }));
+
+            // Simulate API delay for offline mode
+            setTimeout(() => {
+                const globalState = get() as { activeAgents?: string[] };
+                const active = globalState.activeAgents || [];
+                const responders = active.length > 0 ? active.join(', ') : 'Conductor';
+
+                const modelMsg: AgentMessage = {
+                    id: crypto.randomUUID(),
+                    role: 'model',
+                    text: `**[Mock Response from ${responders}]**\n\nI have received your directive regarding: "${text}". \n\n*Note: We are operating in offline Boardroom Mode, simulating this strategic analysis without incurring API calls.*`,
+                    timestamp: Date.now(),
+                    agentId: active[0] || 'system'
+                };
+
+                set(state => ({
+                    boardroomMessages: [...state.boardroomMessages, modelMsg]
+                }));
+            }, 2000);
+        },
 
         createSession: (title = 'New Conversation', initialAgents = ['indii'], namespace?: string) => {
             const id = crypto.randomUUID();
