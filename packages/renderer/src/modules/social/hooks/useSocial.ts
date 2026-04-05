@@ -1,0 +1,206 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { onSnapshot, doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
+import { db } from '@/services/firebase';
+import { SocialService } from '@/services/social/SocialService';
+import { SocialStats, ScheduledPost, SocialPost } from '@/services/social/types';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import { useToast } from '@/core/context/ToastContext';
+import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
+
+export function useSocial(userId?: string) {
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile
+    })));
+    const toast = useToast();
+
+    // State
+    const [stats, setStats] = useState<SocialStats>({ followers: 0, following: 0, posts: 0, drops: 0 });
+    const [posts, setPosts] = useState<SocialPost[]>([]);
+    const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
+
+    // Loading States
+    const [isLoading, setIsLoading] = useState(true);
+    const [isFeedLoading, setIsFeedLoading] = useState(true);
+
+    // Filters
+    const [filter, setFilter] = useState<'all' | 'following' | 'mine'>('all');
+    const [error, setError] = useState<string | null>(null);
+
+    const loadDashboardData = useCallback(async () => {
+        if (!userProfile?.id) return;
+
+        try {
+            // Seed if empty
+            await SocialService.seedDatabase(userProfile.id);
+
+            const [fetchedStats, fetchedScheduled] = await Promise.all([
+                SocialService.getDashboardStats(),
+                SocialService.getScheduledPosts(userProfile.id)
+            ]);
+
+            setStats(fetchedStats);
+            setScheduledPosts(fetchedScheduled);
+        } catch (err: unknown) {
+            // BUG-004 FIX: Don't show a disruptive toast for expected failures.
+            // Guest/anonymous users may not have social collections seeded,
+            // and permission errors are expected during onboarding.
+            // Use quiet logging instead of user-facing toast.
+            logger.warn("[Social] Failed to load dashboard stats (non-critical):", err);
+            // Fallback to default stats — don't block the UI
+            setStats({ followers: 0, following: 0, posts: 0, drops: 0 });
+        }
+    }, [userProfile?.id]);
+
+    const loadFeed = useCallback(async () => {
+        setIsFeedLoading(true);
+        try {
+            const targetId = filter === 'mine' ? userProfile?.id : userId;
+            const fetchedPosts = await SocialService.getFeed(targetId, filter);
+            setPosts(fetchedPosts);
+        } catch (err: unknown) {
+            logger.error("Failed to load feed:", err);
+            Sentry.captureException(err);
+            toast.error("Failed to refresh feed.");
+        } finally {
+            setIsFeedLoading(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filter, userId, userProfile?.id]);
+
+    // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
+    // Real-time Data Sync
+    useEffect(() => {
+        if (!userProfile?.id) return;
+        const targetId = filter === 'mine' ? userProfile.id : userId;
+
+        // 1. Stats Listener (User Document)
+        const userUnsub = onSnapshot(doc(db, "users", userProfile.id), (doc) => {
+            if (!isMountedRef.current) return;
+            if (doc.exists() && doc.data().socialStats) {
+                setStats(doc.data().socialStats as SocialStats);
+            }
+        });
+
+        // 2. Scheduled Posts Listener
+        const scheduledQuery = query(
+            collection(db, "scheduled_posts"),
+            where("authorId", "==", userProfile.id),
+            where("status", "==", "PENDING"),
+            orderBy("scheduledTime", "asc")
+        );
+
+        const scheduledUnsub = onSnapshot(scheduledQuery, (snapshot) => {
+            if (!isMountedRef.current) return;
+            const data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as ScheduledPost[];
+            setScheduledPosts(data);
+        });
+
+        // 3. Feed Listener
+        const postsRef = collection(db, "posts");
+        let postsQuery;
+
+        if (targetId) {
+            postsQuery = query(postsRef, where("authorId", "==", targetId), orderBy("timestamp", "desc"), limit(50));
+        } else {
+            // Fallback/All query
+            postsQuery = query(postsRef, orderBy("timestamp", "desc"), limit(50));
+        }
+
+        const feedUnsub = onSnapshot(postsQuery, (snapshot) => {
+            if (!isMountedRef.current) return;
+            const data = snapshot.docs.map(doc => {
+                const d = doc.data();
+                return {
+                    id: doc.id,
+                    ...d,
+                    timestamp: d.timestamp?.toMillis ? d.timestamp.toMillis() : Date.now()
+                };
+            }) as SocialPost[];
+            setPosts(data);
+            setIsFeedLoading(false);
+            setIsLoading(false);
+        }, (err) => {
+            logger.error("Feed error:", err);
+            Sentry.captureException(err);
+            setError("Failed to stream feed.");
+            setIsFeedLoading(false);
+        });
+
+        return () => {
+            safeUnsubscribe(userUnsub);
+            safeUnsubscribe(scheduledUnsub);
+            safeUnsubscribe(feedUnsub);
+        };
+    }, [userProfile?.id, userId, filter]);
+
+    // Actions
+    const schedulePost = useCallback(async (post: Omit<ScheduledPost, 'id' | 'status' | 'authorId'>) => {
+        if (!userProfile?.id) {
+            toast.error("You must be logged in to schedule posts.");
+            return false;
+        }
+
+        try {
+            await SocialService.schedulePost(post);
+            toast.success("Post scheduled successfully!");
+            loadDashboardData(); // Refresh calendar data
+            return true;
+        } catch (err: unknown) {
+            logger.error("Error scheduling post:", err);
+            Sentry.captureException(err);
+            toast.error("Failed to schedule post.");
+            return false;
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userProfile?.id, loadDashboardData]);
+
+    const createPost = useCallback(async (content: string, mediaUrls: string[] = [], productId?: string) => {
+        try {
+            await SocialService.createPost(content, mediaUrls, productId);
+            toast.success("Post published!");
+            loadFeed(); // Refresh feed immediately
+            loadDashboardData(); // Update stats
+            return true;
+        } catch (err: unknown) {
+            logger.error("Failed to create post:", err);
+            Sentry.captureException(err);
+            toast.error("Failed to publish post.");
+            return false;
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loadFeed, loadDashboardData]);
+
+    return {
+        // Data
+        stats,
+        posts,
+        scheduledPosts,
+
+        // UI State
+        isLoading, // Global initial load
+        isFeedLoading, // Specific feed updates
+        error,
+        filter,
+        setFilter,
+
+        // Actions
+        actions: {
+            schedulePost,
+            createPost,
+            refreshDashboard: loadDashboardData,
+            refreshFeed: loadFeed
+        }
+    };
+}

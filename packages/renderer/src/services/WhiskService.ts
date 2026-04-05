@@ -1,0 +1,262 @@
+import { WhiskState, WhiskItem } from '@/core/store/slices/creative';
+import { ImageGeneration } from './image/ImageGenerationService';
+import { AI_MODELS } from '@/core/config/ai-models';
+import { logger } from '@/utils/logger';
+
+// Inspiration prompts for each category
+const INSPIRATION_SYSTEM_PROMPTS: Record<'subject' | 'scene' | 'style' | 'motion', string> = {
+    subject: `You are a creative director for music artists. Generate 4 unique, evocative subject ideas for AI image generation. Focus on:
+- Characters (singers, musicians, abstract figures)
+- Objects (instruments, microphones, vinyl records, headphones)
+- Animals with personality (fox with golden fur, raven in moonlight)
+- Symbolic elements (masks, crowns, wings)
+Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`,
+
+    scene: `You are a creative director for music artists. Generate 4 unique, atmospheric scene/background ideas for AI image generation. Focus on:
+- Concert venues (neon-lit stage, intimate jazz club, festival crowd)
+- Urban environments (rooftop at sunset, graffiti alley, rainy city street)
+- Nature settings (misty forest, desert under stars, ocean waves)
+- Abstract/surreal spaces (floating platforms, geometric dreamscape)
+Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`,
+
+    style: `You are a creative director for music artists. Generate 4 unique artistic style ideas for AI image generation. Focus on:
+- Art movements (vaporwave, synthwave, gothic, baroque, minimalist)
+- Techniques (double exposure, glitch art, pointillism, watercolor)
+- Media types (vintage film grain, polaroid, 3D render, vector art)
+- Moods (dreamlike, gritty, nostalgic, futuristic)
+Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`,
+
+    motion: `You are a creative director for music videos. Generate 4 unique camera movement and motion ideas for AI video generation. Focus on:
+- Camera movements (slow orbit, dramatic push-in, fluid tracking shot, aerial sweep)
+- Motion intensities (serene and hypnotic, energetic and dynamic, subtle breathing motion)
+- Speed variations (slow motion dreamscape, quick cuts, time-lapse transition)
+- Visual effects (particles flowing, light rays streaming, atmospheric haze drifting)
+Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`
+};
+
+export class WhiskService {
+    /**
+     * Synthesizes a complex prompt from the user's action prompt and locked Whisk references.
+     */
+    static synthesizeWhiskPrompt(actionPrompt: string, whiskState: WhiskState): string {
+        const { subjects, scenes, styles } = whiskState;
+
+        const activeSubjects = subjects.filter(i => i.checked);
+        const activeScenes = scenes.filter(i => i.checked);
+        const activeStyles = styles.filter(i => i.checked);
+
+        let finalPrompt = actionPrompt;
+
+        // 1. Subject Injection
+        if (activeSubjects.length > 0) {
+            const subjectDescs = activeSubjects.map(s => s.aiCaption || s.content);
+            if (activeSubjects.length === 1) {
+                finalPrompt = `${subjectDescs[0]}, ${finalPrompt}`;
+            } else {
+                finalPrompt = `A group featuring ${subjectDescs.join(' and ')}, ${finalPrompt}`;
+            }
+        }
+
+        // 2. Scene Injection
+        if (activeScenes.length > 0) {
+            const sceneDescs = activeScenes.map(s => s.aiCaption || s.content);
+            finalPrompt = `${finalPrompt} in a setting described as: ${sceneDescs.join(', ')}`;
+        }
+
+        // 3. Style Injection
+        if (activeStyles.length > 0) {
+            const styleDescs = activeStyles.map(s => s.aiCaption || s.content);
+            const styleString = styleDescs.join(', ');
+
+            if (activeScenes.length === 0) {
+                // If no scene, apply style to background
+                finalPrompt = `${finalPrompt}, with a background in the style of ${styleString}`;
+            } else {
+                finalPrompt = `${finalPrompt}, overall style: ${styleString}`;
+            }
+
+            // Add style keywords commonly used for technical rendering
+            finalPrompt = `${finalPrompt} --stylized: ${styleString}`;
+        }
+
+        return finalPrompt;
+    }
+
+    /**
+     * Prepares source images for the generation request based on the "Precise" toggle.
+     */
+    static getSourceImages(whiskState: WhiskState): { mimeType: string; data: string }[] | undefined {
+        if (!whiskState.preciseReference) return undefined;
+
+        const allActiveRefs = [
+            ...whiskState.subjects.filter(i => i.checked),
+            ...whiskState.scenes.filter(i => i.checked),
+            ...whiskState.styles.filter(i => i.checked)
+        ];
+
+        const imageRefs = allActiveRefs.filter(i => i.type === 'image');
+
+        if (imageRefs.length === 0) return undefined;
+
+        return imageRefs.map(item => {
+            const [mimeType, b64] = item.content.split(',');
+            const pureMime = mimeType!.split(':')[1]!.split(';')[0]!;
+            return { mimeType: pureMime, data: b64! };
+        });
+    }
+
+    /**
+     * Gets the aspect ratio from any locked style preset.
+     * Returns undefined if no style preset is locked, allowing the default to be used.
+     */
+    static async getLockedAspectRatio(whiskState: WhiskState): Promise<string | undefined> {
+        // Dynamically import to avoid circular dependencies
+        const { STYLE_PRESETS } = await import('@/modules/creative/components/whisk/WhiskPresetStyles');
+
+        const activeStyles = whiskState.styles.filter(i => i.checked);
+
+        for (const style of activeStyles) {
+            // Check if this style matches a preset
+            const matchingPreset = STYLE_PRESETS.find(p => p.prompt === style.content);
+            if (matchingPreset && matchingPreset.aspectRatio) {
+                return matchingPreset.aspectRatio;
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Synthesizes a video-optimized prompt from the user's action prompt and locked Whisk references.
+     * Includes motion descriptors for camera movement and temporal flow.
+     */
+    static synthesizeVideoPrompt(actionPrompt: string, whiskState: WhiskState): string {
+        // Start with the image-based synthesis
+        let finalPrompt = this.synthesizeWhiskPrompt(actionPrompt, whiskState);
+
+        // Add motion context if available
+        const activeMotion = whiskState.motion.filter(i => i.checked);
+        if (activeMotion.length > 0) {
+            const motionDescs = activeMotion.map(m => m.aiCaption || m.content);
+            finalPrompt = `${finalPrompt}. Camera and motion: ${motionDescs.join(', ')}`;
+        }
+
+        // Add video-specific keywords for better generation
+        finalPrompt = `${finalPrompt}. Cinematic quality, smooth motion, professional video aesthetic`;
+
+        return finalPrompt;
+    }
+
+    /**
+     * Extracts video generation parameters from locked presets.
+     * Returns aspectRatio, duration, and motionIntensity if available.
+     */
+    static async getVideoParameters(whiskState: WhiskState): Promise<{
+        aspectRatio?: string;
+        duration?: number;
+        motionIntensity?: string;
+    }> {
+        const { STYLE_PRESETS } = await import('@/modules/creative/components/whisk/WhiskPresetStyles');
+
+        const params: { aspectRatio?: string; duration?: number; motionIntensity?: string } = {};
+
+        // Check styles for video parameters
+        const activeStyles = whiskState.styles.filter(i => i.checked);
+        for (const style of activeStyles) {
+            const matchingPreset = STYLE_PRESETS.find(p => p.prompt === style.content);
+            if (matchingPreset) {
+                if (matchingPreset.aspectRatio) params.aspectRatio = matchingPreset.aspectRatio;
+                if (matchingPreset.duration) params.duration = matchingPreset.duration;
+                if (matchingPreset.motionIntensity) params.motionIntensity = matchingPreset.motionIntensity;
+            }
+        }
+
+        // Check motion category for intensity hints
+        const activeMotion = whiskState.motion.filter(i => i.checked);
+        for (const motion of activeMotion) {
+            const content = (motion.aiCaption || motion.content).toLowerCase();
+            if (content.includes('slow') || content.includes('calm') || content.includes('serene')) {
+                params.motionIntensity = 'low';
+            } else if (content.includes('dynamic') || content.includes('energetic') || content.includes('fast')) {
+                params.motionIntensity = 'high';
+            } else if (!params.motionIntensity) {
+                params.motionIntensity = 'medium';
+            }
+        }
+
+        return params;
+    }
+
+    /**
+     * Gets the duration from any locked video preset.
+     * Returns undefined if no duration preset is locked.
+     */
+    static async getLockedDuration(whiskState: WhiskState): Promise<number | undefined> {
+        const params = await this.getVideoParameters(whiskState);
+        return params.duration;
+    }
+
+    /**
+     * Generates creative text suggestions for a given category using the AI service.
+     */
+    static async generateInspiration(category: 'subject' | 'scene' | 'style' | 'motion'): Promise<string[]> {
+        try {
+            const { GenAI: AI } = await import('@/services/ai/GenAI');
+
+            const { stream } = await AI.generateContentStream(
+                [{ role: 'user', parts: [{ text: 'Generate inspiration ideas now.' }] }],
+                undefined, // Default model configuration will be applied by GenAI facade
+                {
+                    temperature: 1.0,
+                    maxOutputTokens: 500,
+                },
+                INSPIRATION_SYSTEM_PROMPTS[category]
+            );
+
+            // Consume stream to get full response
+            let fullText = '';
+            const reader = stream.getReader();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value?.text) fullText += value.text;
+            }
+
+            const text = fullText.trim() || '[]';
+            // Parse JSON array from response
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            return [];
+        } catch (error: unknown) {
+            logger.error('[WHISK_DEBUG] WhiskService.generateInspiration error:', JSON.stringify(error, null, 2));
+            logger.error('[WHISK_DEBUG] Error message:', error instanceof Error ? error.message : String(error));
+            // Strict No Mock policy: Return empty array on failure
+            return [];
+        }
+    }
+
+    /**
+     * Generates an inspiration sample image for a category.
+     */
+    static async generateInspirationImage(category: 'subject' | 'scene' | 'style', prompt: string): Promise<string | null> {
+        try {
+            const results = await ImageGeneration.generateImages({
+                prompt: `${prompt}, high quality, artistic, music industry aesthetic`,
+                count: 1,
+                aspectRatio: '1:1',
+                resolution: '1024x1024'
+            });
+
+            if (results.length > 0) {
+                return results[0]!.url;
+            }
+            return null;
+        } catch (error: unknown) {
+            logger.error('WhiskService.generateInspirationImage error:', error);
+            return null;
+        }
+    }
+}
+

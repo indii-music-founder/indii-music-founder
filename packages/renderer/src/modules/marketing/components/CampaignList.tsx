@@ -1,0 +1,120 @@
+import React from 'react';
+import { CampaignAsset } from '../types';
+import CampaignCard from './CampaignCard';
+import { Plus, Sparkles } from 'lucide-react';
+import { motion } from 'motion/react';
+import { EmptyState } from '@/components/shared/EmptyState';
+
+// Fix for React 19 type mismatch - using components directly
+
+interface CampaignListProps {
+    campaigns: CampaignAsset[];
+    onSelectCampaign: (campaign: CampaignAsset) => void;
+    onCreateNew: () => void;
+    onAIGenerate?: () => void;
+}
+
+const containerVars = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVars = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+};
+
+const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign, onCreateNew, onAIGenerate }) => {
+    return (
+        <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-8">
+            {/* Section Header */}
+            <div className="flex justify-between items-end">
+                <div>
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                        Active Campaigns <span className="text-sm font-normal text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full border border-gray-700">{campaigns.length}</span>
+                    </h2>
+                    <p className="text-gray-400 mt-1">Manage and track your ongoing marketing efforts.</p>
+                </div>
+            </div>
+
+            {/* Grid */}
+            <motion.div
+                variants={containerVars}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20"
+            >
+                {/* AI Generate Card */}
+                {onAIGenerate && (
+                    <motion.div variants={itemVars}>
+                        <button
+                            onClick={onAIGenerate}
+                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-dept-marketing/30 bg-dept-marketing/5 hover:bg-dept-marketing/10 hover:border-dept-marketing/60 transition-all duration-300"
+                        >
+                            <div className="h-16 w-16 rounded-full bg-dept-marketing/10 flex items-center justify-center group-hover:bg-dept-marketing/20 group-hover:scale-110 transition-all duration-300">
+                                <Sparkles size={32} className="text-dept-marketing group-hover:text-white" />
+                            </div>
+                            <div className="text-center">
+                                <h3 className="font-semibold text-white group-hover:text-dept-marketing transition-colors">Generate with AI</h3>
+                                <p className="text-sm text-gray-500 mt-1 max-w-[200px]">Create a complete campaign from a brief</p>
+                            </div>
+
+                            {/* Decorative Sparkles */}
+                            <div className="absolute top-4 right-4">
+                                <Sparkles size={16} className="text-dept-marketing/50 animate-pulse" />
+                            </div>
+                        </button>
+                    </motion.div>
+                )}
+
+                {/* Create New Card */}
+                <motion.div variants={itemVars}>
+                    <button
+                        onClick={onCreateNew}
+                        className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-gray-800 bg-black/20 hover:bg-black/40 hover:border-dept-creative/50 transition-all duration-300"
+                    >
+                        <div className="h-16 w-16 rounded-full bg-gray-900 flex items-center justify-center group-hover:bg-dept-creative/30 group-hover:scale-110 transition-all duration-300">
+                            <Plus size={32} className="text-gray-600 group-hover:text-dept-creative" />
+                        </div>
+                        <div className="text-center">
+                            <h3 className="font-semibold text-gray-300 group-hover:text-dept-creative transition-colors">New Campaign</h3>
+                            <p className="text-sm text-gray-600 group-hover:text-gray-500 mt-1 max-w-[200px]">Create manually from scratch</p>
+                        </div>
+
+                        {/* Decorative AI Sparkles */}
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <Plus size={16} className="text-dept-creative" />
+                        </div>
+                    </button>
+                </motion.div>
+
+                {/* Campaign Cards */}
+                {campaigns.length === 0 ? (
+                    <EmptyState
+                        icon="megaphone"
+                        title="No active campaigns"
+                        description="Create your first campaign to start reaching fans and tracking performance."
+                        action={{ label: 'Create Campaign', onClick: onCreateNew }}
+                        secondaryAction={onAIGenerate ? { label: 'Generate with AI', onClick: onAIGenerate, variant: 'secondary' } : undefined}
+                        compact
+                    />
+                ) : campaigns.map(campaign => (
+                    <motion.div key={campaign.id} variants={itemVars}>
+                        <CampaignCard
+                            campaign={campaign}
+                            onSelect={onSelectCampaign}
+                        />
+                    </motion.div>
+                ))}
+            </motion.div>
+        </div>
+    );
+};
+
+// Memoize the component to prevent re-renders when parent state changes but props remain the same
+export default React.memo(CampaignList);

@@ -1,0 +1,164 @@
+import type {
+  DistributorAdapter,
+  DistributorId,
+  DistributorRequirements,
+  DistributorCredentials,
+  ReleaseStatus,
+  ReleaseResult,
+  DistributorEarnings,
+  ValidationResult,
+  ReleaseAssets,
+  ExtendedGoldenMetadata,
+  DateRange
+} from '../types/distributor';
+import { logger } from '@/utils/logger';
+
+export abstract class BaseDistributorAdapter implements DistributorAdapter {
+  abstract readonly id: DistributorId;
+  abstract readonly name: string;
+  abstract readonly requirements: DistributorRequirements;
+
+  protected connected = false;
+  protected credentials?: DistributorCredentials;
+
+  async isConnected(): Promise<boolean> {
+    // If we're in Electron, we can also check the actual SFTP connection status
+    if (typeof window !== 'undefined' && window.electronAPI?.sftp) {
+      const isSftpConnected = await window.electronAPI.sftp.isConnected();
+      return this.connected && (this.credentials?.sftpHost ? isSftpConnected : true);
+    }
+    return this.connected;
+  }
+
+  async connect(credentials: DistributorCredentials): Promise<void> {
+    logger.info(`[${this.name}Adapter] Attempting real connection...`);
+
+    try {
+      // 1. If SFTP credentials provided, try to establish a real connection
+      if (credentials.sftpHost && window.electronAPI?.sftp) {
+        const result = await window.electronAPI.sftp.connectDistributor(this.id);
+
+        if (!result.success) {
+          throw new Error(`Failed to establish SFTP connection to ${credentials.sftpHost}`);
+        }
+        logger.info(`[${this.name}Adapter] SFTP Connection Verified.`);
+      }
+
+      // 2. If API Key provided, we'd ideally verify it here via fetch
+      // For now, if either SFTP or basic creds are present, we count as connected
+      if (credentials.apiKey || credentials.username || credentials.sftpHost) {
+        this.credentials = credentials;
+        this.connected = true;
+        logger.info(`[${this.name}Adapter] Connected successfully.`);
+      } else {
+        throw new Error(`Missing required credentials for ${this.name}`);
+      }
+    } catch (error: unknown) {
+      this.connected = false;
+      this.credentials = undefined;
+      throw error;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    if (typeof window !== 'undefined' && window.electronAPI?.sftp) {
+      await window.electronAPI.sftp.disconnect();
+    }
+    this.connected = false;
+    this.credentials = undefined;
+  }
+
+  /**
+   * Uploads a directory of files to the connected SFTP server.
+   * @param localPath The absolute path to the local directory containing the bundle.
+   * @param remotePath The destination directory on the SFTP server.
+   */
+  protected async uploadBundle(localPath: string, remotePath: string): Promise<void> {
+    if (!this.connected || !this.credentials) {
+      throw new Error('Distributor not connected');
+    }
+
+    if (typeof window === 'undefined' || !window.electronAPI?.sftp) {
+      logger.warn('[BaseDistributorAdapter] SFTP upload skipped (not running in Electron)');
+      return;
+    }
+
+    logger.info(`[${this.name}] Starting SFTP upload: ${localPath} -> ${remotePath}`);
+
+    try {
+      // ensure remote directory exists (naive approach, assumes implementation handles mkdir -p)
+      // In a real implementation we might need a specifically exposed mkdir command, 
+      // but usually uploadDirectory handles it or we assume root.
+
+      const result = await window.electronAPI.sftp.uploadDirectory(localPath, remotePath);
+      if (!result.success) {
+        throw new Error(`SFTP Upload Failed: ${result.error}`);
+      }
+      logger.info(`[${this.name}] Upload complete.`);
+    } catch (error: unknown) {
+      logger.error(`[${this.name}] Upload error:`, error);
+      throw error;
+    }
+  }
+
+  abstract createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult>;
+  abstract updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult>;
+  abstract getReleaseStatus(releaseId: string): Promise<ReleaseStatus>;
+  abstract takedownRelease(releaseId: string): Promise<ReleaseResult>;
+  abstract getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings>;
+  abstract getAllEarnings(period: DateRange): Promise<DistributorEarnings[]>;
+  abstract validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult>;
+  abstract validateAssets(assets: ReleaseAssets): Promise<ValidationResult>;
+
+  // Item 413: Distributor API Version Pinning
+  // Subclasses declare their pinned API version; startup probe validates compatibility
+  protected readonly apiVersion: string = 'v1';
+  protected apiBaseUrl?: string;
+
+  /**
+   * Version-check startup probe.
+   * Verifies the distributor API responds with a compatible version before delivery.
+   * Call this during connect() or before the first API request.
+   */
+  protected async checkApiVersion(): Promise<void> {
+    if (!this.apiBaseUrl || !this.credentials?.apiKey) return;
+
+    const versionUrl = `${this.apiBaseUrl.replace(/\/$/, '')}/version`;
+    try {
+      const response = await fetch(versionUrl, {
+        headers: {
+          'Authorization': `Bearer ${this.credentials.apiKey}`,
+          'Accept': 'application/json',
+          'X-Client-Api-Version': this.apiVersion,
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (response.ok) {
+        const data = await response.json() as { version?: string; api_version?: string };
+        const remoteVersion = data.version || data.api_version;
+        if (remoteVersion && !remoteVersion.startsWith(this.apiVersion.replace('v', ''))) {
+          logger.warn(
+            `[${this.name}] API version mismatch: pinned=${this.apiVersion}, remote=${remoteVersion}. ` +
+            'Delivery may fail — check for breaking changes.'
+          );
+        } else {
+          logger.info(`[${this.name}] API version check passed (${this.apiVersion})`);
+        }
+      }
+    } catch {
+      // Version probe is best-effort; don't block delivery if endpoint doesn't exist
+      logger.info(`[${this.name}] API version probe skipped (endpoint not available)`);
+    }
+  }
+
+  /**
+   * Returns standard API headers including the pinned version identifier.
+   */
+  protected getVersionedHeaders(): Record<string, string> {
+    return {
+      'X-Client-Api-Version': this.apiVersion,
+      'X-indiiOS-Client': `indiiOS/${this.apiVersion}`,
+    };
+  }
+}

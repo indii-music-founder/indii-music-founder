@@ -1,0 +1,91 @@
+import type { StoreState } from '@/core/store';
+import { logger } from '@/utils/logger';
+
+/**
+ * Manages state snapshots for rollback capabilities.
+ * Uses JSON serialization for deep cloning state slices.
+ */
+export class StateManager {
+    private snapshots: Map<string, Partial<StoreState>> = new Map();
+
+    /**
+     * Captures a snapshot of the current store state.
+     * @param transactionId Unique ID for the transaction
+     * @param slices Optional list of specific slices to capture (defaults to all safe slices)
+     */
+    async captureSnapshot(transactionId: string, slices: (keyof StoreState)[] = []) {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const snapshot: Partial<StoreState> = {};
+
+        const keysToCapture = slices.length > 0
+            ? slices
+            : Object.keys(state) as (keyof StoreState)[];
+
+        // Type-safe helper for setting snapshot keys
+        const setKey = <K extends keyof StoreState>(s: Partial<StoreState>, k: K, v: StoreState[K]) => {
+            s[k] = v;
+        };
+
+        keysToCapture.forEach(key => {
+            const value = state[key];
+            // Skip functions and internal Zustand methods
+            if (typeof value === 'function') return;
+
+            try {
+                // Phase 3 Improvement: Use structuredClone for true deep cloning
+                // Falls back to JSON if structuredClone isn't available or fails
+                if (typeof structuredClone === 'function') {
+                    setKey(snapshot, key, structuredClone(value));
+                } else {
+                    setKey(snapshot, key, JSON.parse(JSON.stringify(value)));
+                }
+            } catch (e: unknown) {
+                logger.warn(`[StateManager] Failed to deep clone slice ${String(key)}. Falling back to JSON/shallow.`, e);
+                try {
+                    setKey(snapshot, key, JSON.parse(JSON.stringify(value)));
+                } catch (jsonErr: unknown) {
+                    // Final fallback to shallow copy if all else fails
+                    setKey(snapshot, key, value);
+                }
+            }
+        });
+
+        // Prevent unintentional mutations of the snapshot
+        const frozenSnapshot = Object.freeze(snapshot);
+        this.snapshots.set(transactionId, frozenSnapshot);
+        logger.debug(`[StateManager] Snapshot captured for ${transactionId}`);
+    }
+
+    /**
+     * Restores state from a snapshot.
+     */
+    async restoreSnapshot(transactionId: string) {
+        const snapshot = this.snapshots.get(transactionId);
+        if (snapshot) {
+            logger.warn(`[StateManager] Restoring snapshot for ${transactionId}`);
+            const { useStore } = await import('@/core/store');
+            useStore.setState(snapshot);
+            this.snapshots.delete(transactionId);
+        } else {
+            logger.warn(`[StateManager] No snapshot found for ${transactionId}`);
+        }
+    }
+
+    /**
+     * Discards a snapshot (commit).
+     */
+    discardSnapshot(transactionId: string) {
+        if (this.snapshots.has(transactionId)) {
+            this.snapshots.delete(transactionId);
+            logger.debug(`[StateManager] Snapshot discarded (committed) for ${transactionId}`);
+        }
+    }
+
+    /**
+     * Checks if a snapshot exists (for testing).
+     */
+    hasSnapshot(transactionId: string): boolean {
+        return this.snapshots.has(transactionId);
+    }
+}

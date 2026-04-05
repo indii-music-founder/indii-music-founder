@@ -1,0 +1,76 @@
+import { useEffect, useRef, useCallback } from "react";
+import { debounce } from "@/lib/debounce";
+
+interface UseAutoResizeTextareaProps {
+    minHeight: number;
+    maxHeight?: number;
+}
+
+export function useAutoResizeTextarea({
+    minHeight,
+    maxHeight,
+}: UseAutoResizeTextareaProps) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const frameId = useRef<number>(0);
+
+    const adjustHeight = useCallback(
+        (reset?: boolean) => {
+            const textarea = textareaRef.current;
+            if (!textarea) return;
+
+            if (frameId.current) {
+                cancelAnimationFrame(frameId.current);
+            }
+
+            if (reset) {
+                textarea.style.height = `${minHeight}px`;
+                return;
+            }
+
+            // Use requestAnimationFrame to batch DOM reads/writes and prevent layout thrashing
+            // during high-frequency events (like typing)
+            frameId.current = requestAnimationFrame(() => {
+                // Temporarily shrink to get the right scrollHeight
+                textarea.style.height = `${minHeight}px`;
+
+                // Calculate new height
+                const newHeight = Math.max(
+                    minHeight,
+                    Math.min(
+                        textarea.scrollHeight,
+                        maxHeight ?? Number.POSITIVE_INFINITY
+                    )
+                );
+
+                textarea.style.height = `${newHeight}px`;
+            });
+        },
+        [minHeight, maxHeight]
+    );
+
+    useEffect(() => {
+        return () => {
+            if (frameId.current) {
+                cancelAnimationFrame(frameId.current);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        // Set initial height
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = `${minHeight}px`;
+        }
+    }, [minHeight]);
+
+    // Adjust height on window resize
+    useEffect(() => {
+        // Debounce resize to prevent layout thrashing
+        const handleResize = debounce(() => adjustHeight(), 100);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [adjustHeight]);
+
+    return { textareaRef, adjustHeight };
+}

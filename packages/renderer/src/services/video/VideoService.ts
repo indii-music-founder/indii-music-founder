@@ -1,0 +1,214 @@
+import { GenAI as AI } from '../ai/GenAI';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { env } from '@/config/env';
+import { MembershipService } from '@/services/MembershipService';
+import { QuotaExceededError } from '@/shared/types/errors';
+import { logger } from '@/utils/logger';
+
+export interface VideoGenerationOptions {
+    prompt: string;
+    image?: { mimeType: string; data: string }; // Base64 data - used as first frame
+    mask?: { mimeType: string; data: string }; // Base64 data
+    anchors?: { mimeType: string; data: string }[];
+    resolution?: '720p' | '1080p';
+    aspectRatio?: '16:9' | '9:16' | '1:1';
+    durationSeconds?: number;
+    // Veo 3.1 enhanced options
+    firstFrame?: { mimeType: string; data: string }; // Explicit first frame control
+    lastFrame?: { mimeType: string; data: string }; // Explicit last frame control
+    referenceImages?: { mimeType: string; data: string }[]; // Up to 3 reference images
+    generateAudio?: boolean; // Enable native audio generation
+}
+
+
+
+
+export class VideoService {
+
+    /**
+     * FIX #8: Retry logic with exponential backoff for rate-limited requests.
+     */
+    private async withRetry<T>(
+        operation: () => Promise<T>,
+        retries = 3,
+        delay = 1000
+    ): Promise<T> {
+        try {
+            return await operation();
+        } catch (error: unknown) {
+            const errObj = error as Record<string, unknown> | null;
+            const errMessage = error instanceof Error ? error.message : String(error);
+            const isRetryable =
+                errObj?.code === 'resource-exhausted' ||
+                errMessage?.includes('429') ||
+                errMessage?.includes('quota') ||
+                errMessage?.includes('rate') ||
+                errMessage?.includes('RESOURCE_EXHAUSTED');
+
+            if (retries > 0 && isRetryable) {
+                logger.warn(`[VideoService] Rate limited, retrying in ${delay}ms... (${retries} retries left)`);
+                await new Promise(r => setTimeout(r, delay));
+                return this.withRetry(operation, retries - 1, delay * 2);
+            }
+            throw error;
+        }
+    }
+
+    async generateMotionBrush(image: { mimeType: string; data: string }, mask: { mimeType: string; data: string }): Promise<string | null> {
+        try {
+            // Step 1: Plan Motion
+            const analysisRes = await AI.generateContent(
+                [
+                    {
+                        role: 'user',
+                        parts: [
+                            { inlineData: { mimeType: image.mimeType, data: image.data } },
+                            { inlineData: { mimeType: 'image/png', data: mask.data } },
+                            { text: "Describe masked area motion prompt. JSON: {video_prompt}" }
+                        ]
+                    }
+                ],
+                AI_MODELS.TEXT.AGENT,
+                { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
+            );
+            const plan = AI.parseJSON(analysisRes.response.text());
+
+            // Step 2: Generate Video (with retry for rate limiting)
+            const videoPrompt = typeof plan.video_prompt === 'string' ? plan.video_prompt : "Animate";
+            const uri = await this.withRetry(() => AI.generateVideo({
+                model: AI_MODELS.VIDEO.GENERATION,
+                prompt: videoPrompt,
+                image: { imageBytes: image.data, mimeType: image.mimeType },
+                config: { aspectRatio: '16:9', durationSeconds: 4 }
+            }));
+
+            return uri || null;
+        } catch (e: unknown) {
+            logger.error("Motion Brush Error:", e);
+            throw e;
+        }
+    }
+
+    async generateVideo(options: VideoGenerationOptions): Promise<string | null> {
+        // Pre-flight quota checks (Section 8 compliance)
+        const durationSeconds = options.durationSeconds || 5;
+
+        // Check daily generation limit
+        const quotaCheck = await MembershipService.checkQuota('video', 1);
+        if (!quotaCheck.allowed) {
+            const tier = await MembershipService.getCurrentTier();
+            throw new QuotaExceededError(
+                'video',
+                tier,
+                MembershipService.getUpgradeMessage(tier, 'video'),
+                quotaCheck.currentUsage,
+                quotaCheck.maxAllowed
+            );
+        }
+
+        // Check video duration limit
+        const durationCheck = await MembershipService.checkVideoDurationQuota(durationSeconds);
+        if (!durationCheck.allowed) {
+            const tier = await MembershipService.getCurrentTier();
+            throw new QuotaExceededError(
+                'video',
+                tier,
+                `Video duration exceeds ${MembershipService.formatDuration(durationCheck.maxDuration)} limit for ${durationCheck.tierName} tier. ${MembershipService.getUpgradeMessage(tier, 'video')}`,
+                durationSeconds,
+                durationCheck.maxDuration
+            );
+        }
+
+        try {
+            const model = AI_MODELS.VIDEO.GENERATION;
+
+            // Build reference images (up to 3 per Veo 3.1 limit)
+            const refImages = options.referenceImages || options.anchors;
+            const referenceImages = refImages && refImages.length > 0
+                ? refImages.slice(0, 3).map((img, index) => ({
+                    image: { imageBytes: img.data, mimeType: img.mimeType },
+                    referenceType: (index === 0 ? 'STYLE' : 'ASSET') as 'STYLE' | 'ASSET',
+                }))
+                : undefined;
+
+            // Build last frame config
+            const lastFrame = options.lastFrame
+                ? `data:${options.lastFrame.mimeType};base64,${options.lastFrame.data}`
+                : undefined;
+
+            // Determine input image (firstFrame takes priority over image)
+            const firstFrameSource = options.firstFrame || options.image;
+            const inputImage = firstFrameSource
+                ? { imageBytes: firstFrameSource.data, mimeType: firstFrameSource.mimeType }
+                : undefined;
+
+            // Generate with retry for rate limiting — direct SDK call through GenAI alias
+            const uri = await this.withRetry(() => AI.generateVideo({
+                model,
+                prompt: options.prompt,
+                image: inputImage,
+                config: {
+                    numberOfVideos: 1,
+                    resolution: options.resolution || '720p',
+                    aspectRatio: options.aspectRatio || '16:9',
+                    durationSeconds,
+                    referenceImages,
+                    lastFrame,
+                    generateAudio: options.generateAudio || false,
+                },
+            }));
+
+            // Increment usage counter after successful generation
+            if (uri) {
+                try {
+                    const { useStore } = await import('@/core/store');
+                    const userId = useStore.getState().userProfile?.id;
+                    if (userId) {
+                        await MembershipService.incrementUsage(userId, 'video', 1, durationSeconds);
+                    }
+                } catch (e: unknown) {
+                    logger.warn('[VideoService] Failed to track usage:', e);
+                }
+            }
+
+            return uri || null;
+        } catch (e: unknown) {
+            logger.error("Video Generation Error:", e);
+            throw e;
+        }
+    }
+
+    async generateKeyframeTransition(startImage: { mimeType: string; data: string }, endImage: { mimeType: string; data: string }, prompt: string): Promise<string | null> {
+        try {
+            // FIX #8: Wrap with retry logic
+            const uri = await this.withRetry(() => AI.generateVideo({
+                model: AI_MODELS.VIDEO.GENERATION,
+                prompt: prompt || "Transition",
+                image: { imageBytes: startImage.data, mimeType: startImage.mimeType },
+                config: {
+                    aspectRatio: '16:9',
+                    durationSeconds: 4,
+                    lastFrame: `data:${endImage.mimeType};base64,${endImage.data}`
+                }
+            }));
+            return uri || null;
+        } catch (e: unknown) {
+            logger.error("Keyframe Transition Error:", e);
+            throw e;
+        }
+    }
+
+    // Helper to fetch the video blob from the URI (which might be a signed URL or API endpoint)
+    async fetchVideoBlob(uri: string): Promise<string> {
+
+        // We need to handle the API key injection if it's not already in the URI
+        const apiKey = env.apiKey;
+        const fetchUrl = uri.includes('key=') ? uri : `${uri}&key=${apiKey}`;
+
+        const res = await fetch(fetchUrl);
+        const blob = await res.blob();
+        return URL.createObjectURL(blob);
+    }
+}
+
+export const Video = new VideoService();

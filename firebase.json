@@ -9,11 +9,15 @@
     }
   },
   "firestore": {
-    "indexes": "firestore.indexes.json",
-    "rules": "firestore.rules"
+    "indexes": "packages/firebase/firestore.indexes.json",
+    "rules": "packages/firebase/firestore.rules"
   },
   "functions": {
-    "source": "functions"
+    "source": "packages/firebase",
+    "predeploy": [
+      "npm run lint --prefix packages/firebase",
+      "npm run build --prefix packages/firebase"
+    ]
   },
   "hosting": [
     {
@@ -160,7 +164,7 @@
   "storage": [
     {
       "target": "alpha",
-      "rules": "storage.rules"
+      "rules": "packages/firebase/storage.rules"
     }
   ]
 }

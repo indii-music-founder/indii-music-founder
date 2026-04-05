@@ -1,0 +1,488 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./styles/scrollbar.css";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * INDIIOS DESIGN SYSTEM - Single Source of Truth
+   * Last Updated: 2025-12 | Bolt UI Architect
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * TYPOGRAPHY - Global Brand Fonts
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-display: 'Geist', var(--font-main);
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * SPACING & BORDERS - Consistent rhythm
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --radius-standard: 12px;
+  --radius-sharp: 4px;
+  --radius-pill: 9999px;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * MOTION - Unified timing for "snappy" feel
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --transition-speed: 0.25s;
+  --transition-speed-fast: 0.15s;
+  --transition-speed-slow: 0.4s;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * STATUS & ACTION COLORS - Universal feedback
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --color-success: #4CAF50;
+  --color-success-muted: #4CAF5033;
+  --color-error: #F44336;
+  --color-error-muted: #F4433633;
+  --color-warning: #FF9800;
+  --color-warning-muted: #FF980033;
+  --color-info: #2196F3;
+  --color-info-muted: #2196F333;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * SURFACE COLORS - Professional dark palette
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --color-bg-dark: #0d1117;
+  --color-surface: #1E293B;
+  --color-surface-elevated: #334155;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * DEPARTMENT COLOR SYSTEM
+   * These colors represent the "vibe" of each department in indiiOS.
+   * Update ONLY here when rebranding. All components derive from these tokens.
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Finance & Royalties - Gold/Amber: Wealth, precision, "Gold Standard" */
+  --color-dept-royalties: #FFC107;
+  --color-dept-royalties-muted: #FFC10733;
+  --color-dept-royalties-glow: #FFC10780;
+
+  /* Distribution - Electric Blue: Data flow, logistics, global reach */
+  --color-dept-distribution: #2196F3;
+  --color-dept-distribution-muted: #2196F333;
+  --color-dept-distribution-glow: #2196F380;
+
+  /* Marketing & PR - Vibrant Magenta: Energy, attention-grabbing, loud */
+  --color-dept-marketing: #E91E63;
+  --color-dept-marketing-muted: #E91E6333;
+  --color-dept-marketing-glow: #E91E6380;
+
+  /* Legal & Contracts - Slate: Stability, "ink on paper", serious protection */
+  --color-dept-legal: #455A64;
+  --color-dept-legal-muted: #455A6433;
+  --color-dept-legal-glow: #455A6480;
+
+  /* A&R / Creative - Purple: Magic, passion + stability intersection */
+  --color-dept-creative: #9C27B0;
+  --color-dept-creative-muted: #9C27B033;
+  --color-dept-creative-glow: #9C27B080;
+
+  /* Touring & Live (Road Manager) - Deep Orange: Road heat, stage lights */
+  --color-dept-touring: #FF5722;
+  --color-dept-touring-muted: #FF572233;
+  --color-dept-touring-glow: #FF572280;
+
+  /* Publishing - Lime: Growth, fresh output, catalog expansion */
+  --color-dept-publishing: #8BC34A;
+  --color-dept-publishing-muted: #8BC34A33;
+  --color-dept-publishing-glow: #8BC34A80;
+
+  /* Social Media - Cyan: Digital presence, viral connectivity */
+  --color-dept-social: #00BCD4;
+  --color-dept-social-muted: #00BCD433;
+  --color-dept-social-glow: #00BCD480;
+
+  /* Licensing - Teal: Sync deals, secondary revenue streams */
+  --color-dept-licensing: #009688;
+  --color-dept-licensing-muted: #00968833;
+  --color-dept-licensing-glow: #00968880;
+
+  /* Brand - Amber: Identity, consistency, golden standard */
+  --color-dept-brand: #FFB300;
+  --color-dept-brand-muted: #FFB30033;
+  --color-dept-brand-glow: #FFB30080;
+
+  /* Campaign - Coral: Active promotions, urgency, call-to-action */
+  --color-dept-campaign: #FF7043;
+  --color-dept-campaign-muted: #FF704333;
+  --color-dept-campaign-glow: #FF704380;
+
+  /* Neutral Fallback - indiiOS Grey */
+  --color-dept-default: #78909C;
+  --color-dept-default-muted: #78909C33;
+
+  /* Sonic OS Identity */
+  --sonic-purple: 270 100% 60%;
+  --sonic-blue: 190 100% 50%;
+  --sonic-yellow: 50 100% 50%;
+  --sonic-glass: 240 10% 3.9% / 0.7;
+  --sonic-glass-border: 240 10% 10%;
+
+  /* Default Variables */
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 10% 3.9%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 2%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 270 100% 60%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 5% 10%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 190 100% 50%;
+  --accent-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 5% 65%;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * DEPARTMENT COLORS - Tailwind Utilities
+   * Usage: text-dept-royalties, bg-dept-marketing, border-dept-legal, etc.
+   * These mirror the :root variables for Tailwind utility generation
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-dept-royalties: var(--color-dept-royalties);
+  --color-dept-distribution: var(--color-dept-distribution);
+  --color-dept-marketing: var(--color-dept-marketing);
+  --color-dept-legal: var(--color-dept-legal);
+  --color-dept-creative: var(--color-dept-creative);
+  --color-dept-touring: var(--color-dept-touring);
+  --color-dept-publishing: var(--color-dept-publishing);
+  --color-dept-social: var(--color-dept-social);
+  --color-dept-licensing: var(--color-dept-licensing);
+  --color-dept-brand: var(--color-dept-brand);
+  --color-dept-campaign: var(--color-dept-campaign);
+  --color-dept-default: var(--color-dept-default);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * SYSTEM COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-bg-dark: #0d1117;
+  /* GitHub Dark - Standard App Background */
+
+  --color-sonic-purple: var(--sonic-purple);
+  --color-sonic-blue: var(--sonic-blue);
+  --color-sonic-yellow: var(--sonic-yellow);
+  --color-sonic-glass: var(--sonic-glass);
+  --color-sonic-glass-border: var(--sonic-glass-border);
+
+  /* Typography Mapping - Tailwind v4 CSS-first */
+  --font-sans: var(--font-main);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  .glass {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg;
+  }
+
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-md border border-border/50;
+  }
+
+  /* Neon Glow Utilities */
+  .glow-text {
+    text-shadow: 0 0 10px hsl(var(--sonic-purple) / 0.5);
+  }
+
+  .glow-border {
+    box-shadow: 0 0 15px hsl(var(--sonic-purple) / 0.3);
+  }
+
+  html {
+    /* Prevent IOS bounce and ensure full height */
+    height: 100%;
+    overflow-x: hidden;
+    /* Prevent text zooming on orientation change */
+    -webkit-text-size-adjust: 100%;
+    transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-main);
+    min-height: 100dvh;
+    /* Dynamic viewport height for modern mobile browsers */
+    overscroll-behavior-y: none;
+    /* Prevent pull-to-refresh on web app */
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+  }
+
+  /* Anti-Pixel Thief Hardening */
+  img {
+    filter: none !important;
+    mask: none !important;
+    clip-path: none !important;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * MOBILE FONT SCALE — reduce base size to prevent bloating on small screens
+   * Desktop base is 16px; mobile reduces to ~14px via font-size on html.
+   * All rem-based sizes scale proportionally.
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  html {
+    font-size: 14px;
+  }
+
+  /* Clamp heading sizes for mobile — prevents oversized h1/h2 */
+  h1 {
+    font-size: clamp(1.125rem, 4vw, 1.5rem) !important;
+  }
+
+  h2 {
+    font-size: clamp(1rem, 3.5vw, 1.25rem) !important;
+  }
+
+  h3 {
+    font-size: clamp(0.875rem, 3vw, 1.125rem) !important;
+  }
+
+  /* Prevent iOS zoom on focus */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+
+  /* Ensure adequate touch targets (only for standalone interactive elements) */
+  button:not(.inline-btn),
+  a:not(.inline-link),
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+}
+
+/* Phone-specific optimizations (≤ 430px — iPhone Pro Max class) */
+@media (max-width: 430px) {
+
+  /* Even tighter font scale on small phones */
+  html {
+    font-size: 13px;
+  }
+
+  /* Reduce generous paddings on phone */
+  .responsive-padding {
+    padding: 0.75rem !important;
+  }
+
+  /* Force single-column on phone for grids that don't have explicit mobile breakpoints */
+  .mobile-single-col {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure tab bar safe area bottom padding */
+  .mobile-safe-bottom {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Sonic Brand Animations */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * BOLT UI ANIMATIONS - Unified dynamics for AI-driven updates
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Standard animation for AI/automation updates - applies department color */
+.indii-auto-update {
+  animation: bolt-pulse 1.5s var(--transition-timing);
+  border: 1px solid transparent;
+}
+
+@keyframes bolt-pulse {
+  0% {
+    border-color: transparent;
+    background-color: rgba(255, 255, 255, 0);
+  }
+
+  50% {
+    border-color: var(--dept-color, var(--color-dept-default));
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  100% {
+    border-color: transparent;
+    background-color: rgba(255, 255, 255, 0);
+  }
+}
+
+/* Subtle glow effect for department-tinted elements */
+.dept-glow {
+  box-shadow: 0 0 20px var(--dept-color, var(--color-dept-default));
+  transition: box-shadow var(--transition-speed) var(--transition-timing);
+}
+
+/* Department-aware border accent (top border only for cards) */
+.dept-border-top {
+  border-top: 2px solid var(--dept-color, var(--color-dept-default));
+}
+
+/* Snappy hover transition for interactive elements */
+.bolt-interactive {
+  transition: all var(--transition-speed-fast) var(--transition-timing);
+}
+
+.bolt-interactive:hover {
+  transform: translateY(-1px);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Items 270 & 273: Global Keyboard Focus Rings & Contrast Helpers
+ *
+ * 270: Ensure keyboard-visible focus rings on all interactive elements.
+ *      Uses :focus-visible so mouse clicks do NOT show the ring.
+ *
+ * 273: Lifted text contrast — replace text-gray-500 with text-gray-400
+ *      for body copy on dark surfaces to meet WCAG AA 4.5:1 minimum.
+ * ──────────────────────────────────────────────────────────────────────────*/
+
+/* Global focus ring — applies to all interactive elements not already styled */
+:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default outlines that browsers add (we use the rule above) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Sidebar & nav items — tighter ring on pill-shaped buttons */
+[data-testid^="nav-item"]:focus-visible,
+.bolt-interactive:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+/* Skip-to-main link — visually hidden until focused (Item 274 already done, keep here for reference) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: #000;
+  font-weight: bold;
+  border-radius: 6px;
+  outline: 2px solid #000;
+}
+
+/* Typography utilities */
+.font-main {
+  font-family: var(--font-main);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Shimmer animation for skeleton loaders */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shine {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shine-text {
+  background: linear-gradient(90deg, transparent, hsl(var(--sonic-purple) / 0.5), transparent);
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shine 3s infinite linear;
+}

@@ -1,0 +1,17 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="50%" stop-color="#FDB931" />
+      <stop offset="100%" stop-color="#9E7F06" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <path d="M380.5 96C380.5 96 359.5 73 325 73C290.5 73 219 123.5 178 206.5C137 289.5 149.5 379.5 186 418.5C222.5 457.5 320 449.5 380.5 369.5" stroke="url(#gold-grad)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M325 73C325 73 331 46 362 34" stroke="url(#gold-grad)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M280 200L350 150" stroke="url(#gold-grad)" stroke-width="10" stroke-linecap="round" opacity="0.6"/>
+  <text x="350" y="450" font-family="Arial, sans-serif" font-size="60" fill="url(#gold-grad)" font-weight="bold" letter-spacing="4">PRO</text>
+</svg>

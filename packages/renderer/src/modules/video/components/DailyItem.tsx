@@ -1,0 +1,85 @@
+import React, { useRef } from 'react';
+import { DailyItemProps, arePropsEqual } from './DailyItem.utils';
+
+export const DailyItem = React.memo<DailyItemProps>(({
+    video,
+    isSelected,
+    onSelect,
+    onDragStart,
+    duration = 4
+}) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(video);
+        }
+    };
+
+    const handleMouseEnter = () => {
+        // ⚡ Bolt Optimization: Only play video on hover to save resources
+        videoRef.current?.play().catch(() => {
+            // Ignore auto-play errors (e.g. if user hasn't interacted with document yet)
+        });
+    };
+
+    const handleMouseLeave = () => {
+        if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0; // Reset to start
+        }
+    };
+
+    const formattedDuration = `00:${duration.toString().padStart(2, '0')}`;
+    const durationLabel = `${duration} seconds`;
+
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            aria-label={`Select video: ${video.prompt || 'Untitled video'}, Duration: ${durationLabel}`}
+            aria-pressed={isSelected}
+            onKeyDown={handleKeyDown}
+            onClick={() => onSelect(video)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            draggable
+            onDragStart={(e) => onDragStart(e, video)}
+            data-testid={`daily-item-${video.id}`}
+            className={`
+                relative h-20 aspect-video rounded-lg overflow-hidden cursor-pointer group flex-shrink-0 transition-all border
+                focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:outline-none bg-[#0a0a0a]
+                ${isSelected
+                    ? 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)] scale-105 z-10'
+                    : 'border-white/5 hover:border-white/20 hover:scale-105'
+                }
+            `}
+        >
+            {video.url.startsWith('data:image') || video.url.includes('placehold') ? (
+                <img src={video.url} alt={video.prompt} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+            ) : (
+                // ⚡ Bolt Optimization: Use preload="metadata" to avoid downloading full video until needed
+                <video
+                    ref={videoRef}
+                    src={video.url}
+                    className="w-full h-full object-cover"
+                    preload="metadata"
+                    muted
+                    playsInline
+                    loop
+                />
+            )}
+
+            {/* Duration Badge */}
+            <div
+                className="absolute bottom-1 right-1 bg-black/80 text-[8px] text-white px-1 rounded pointer-events-none"
+                aria-hidden="true"
+            >
+                {formattedDuration}
+            </div>
+        </div>
+    );
+}, arePropsEqual);
+
+DailyItem.displayName = 'DailyItem';

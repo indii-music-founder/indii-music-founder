@@ -1,0 +1,432 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
+import type { WhiskState } from '@/core/store/slices/creative';
+export type { WhiskState };
+
+import type { AgentMessage } from '@/core/store/slices/agent';
+export type { AgentMessage };
+import { UserProfile, BrandKit } from '@/modules/workflow/types';
+import { INDII_MESSAGES } from './constants';
+
+export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
+
+export interface ToolParameterSchema {
+    type: SchemaType;
+    description?: string;
+    enum?: string[];
+    default?: string | number | boolean;
+    items?: ToolParameterSchema;
+    properties?: Record<string, ToolParameterSchema>;
+    required?: string[];
+}
+
+export interface ToolParameters {
+    type: 'OBJECT' | 'object';
+    properties: Record<string, ToolParameterSchema>;
+    required?: string[];
+}
+
+import { ZodType } from 'zod';
+
+export type ToolRiskTier = 'read' | 'write' | 'destructive';
+export type PermissionTier = 'builtin' | 'core' | 'plugin';
+
+export interface ToolRiskMetadata {
+    riskTier: ToolRiskTier;
+    permissionTier: PermissionTier;
+    requiresApproval: boolean;
+    description: string;
+}
+
+export interface FunctionDeclaration {
+    name: string;
+    description: string;
+    parameters: ToolParameters;
+    schema?: ZodType;
+    /**
+     * Risk classification for governance and permission gating.
+     * - 'read': Safe, no side effects (e.g., list_projects, recall_memories)
+     * - 'write': Creates or mutates data (e.g., create_project, save_memory)
+     * - 'destructive': Irreversible or high-impact (e.g., rotate_credentials, deploy)
+     * Defaults to 'write' at runtime if not specified.
+     */
+    riskTier?: ToolRiskTier;
+}
+
+export interface ToolDefinition {
+    functionDeclarations: FunctionDeclaration[];
+}
+
+// ============================================================================
+// Agent Identification
+// ============================================================================
+
+
+/**
+ * All valid agent IDs that can be used with delegate_task.
+ * This is the single source of truth for agent ID validation.
+ *
+ * IMPORTANT: Keep this in sync when adding new agents.
+ * Used to prevent AI hallucination of non-existent agent IDs.
+ */
+export const VALID_AGENT_IDS = [
+    'marketing',
+    'legal',
+    'finance',
+    'producer',
+    'director',
+    'screenwriter',
+    'video',
+    'social',
+    'publicist',
+    'road',
+    'road-manager', // Alias for road
+    'publishing',
+    'licensing',
+    'brand',
+    'devops',
+    'security',
+    'merchandise',  // Merchandise creation & production
+    'distribution', // Industrial Direct-to-DSP Engine
+    'music',        // Sonic Director - Audio Analysis & Metadata
+    'curriculum',   // Music Education Specialist
+    'keeper',       // Context Integrity Guardian
+    'generalist'  // indii Conductor (Hub)
+] as const;
+
+export type ValidAgentId = typeof VALID_AGENT_IDS[number];
+
+/**
+ * Comma-separated list of valid agent IDs for use in tool descriptions.
+ * Prevents AI from hallucinating non-existent agent names.
+ */
+export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
+
+export type AgentCategory = 'manager' | 'department' | 'specialist';
+
+// ============================================================================
+// Hub-and-Spoke Architecture (Phase 4)
+// ============================================================================
+
+/**
+ * The hub agent in the hub-and-spoke architecture.
+ * All specialist agents must delegate through the hub.
+ */
+export const HUB_AGENT_ID = 'generalist';
+
+/**
+ * Specialist agents (spokes) that can only delegate to the hub.
+ * These agents represent domain expertise and should not delegate to each other directly.
+ */
+export const SPOKE_AGENT_IDS = VALID_AGENT_IDS.filter(id => id !== HUB_AGENT_ID);
+
+/**
+ * Checks if an agent is the hub (generalist / indii Conductor).
+ */
+export function isHubAgent(agentId: string): boolean {
+    return agentId === HUB_AGENT_ID;
+}
+
+/**
+ * Checks if an agent is a spoke (specialist).
+ */
+export function isSpokeAgent(agentId: string): boolean {
+    return (SPOKE_AGENT_IDS as readonly string[]).includes(agentId);
+}
+
+/**
+ * Validates hub-and-spoke architecture rules.
+ * Returns null if valid, or an error message if invalid.
+ *
+ * Rules:
+ * - Hub can delegate to any spoke
+ * - Spokes can only delegate to hub
+ * - Spokes CANNOT delegate to other spokes
+ */
+export function validateHubAndSpoke(sourceAgentId: string, targetAgentId: string): string | null {
+    // Hub can delegate to anyone
+    if (isHubAgent(sourceAgentId)) {
+        return null;
+    }
+
+    // Spokes can only delegate to hub
+    if (isSpokeAgent(sourceAgentId)) {
+        if (isHubAgent(targetAgentId)) {
+            return null; // Spoke -> Hub is allowed
+        }
+        return INDII_MESSAGES.hubSpokeViolation(sourceAgentId, targetAgentId);
+    }
+
+    // Unknown agent (shouldn't happen due to earlier validation)
+    return `Unknown source agent: ${sourceAgentId}`;
+}
+
+// ============================================================================
+// Agent Context Types
+// ============================================================================
+
+export interface ProjectHandle {
+    id: string;
+    name: string;
+    type: string;
+}
+
+export interface DistributorInfo {
+    name: string | null;
+    isConfigured: boolean;
+    coverArtSize: { width: number; height: number };
+    audioFormat: string[];
+    promptContext: string;
+}
+
+export interface AgentContext {
+    userId?: string;
+    orgId?: string;
+    projectId?: string;
+    projectHandle?: ProjectHandle;
+    chatHistory?: AgentMessage[];
+    chatHistoryString?: string;
+    brandKit?: BrandKit;
+    memoryContext?: string;
+    relevantMemories?: string[];
+    userAlignmentRules?: string[]; // Injected strategic alignment rules
+    ragCorpus?: string;
+    activeModule?: string;
+    userProfile?: UserProfile;
+    distributor?: DistributorInfo;
+    traceId?: string;
+    attachments?: { mimeType: string; base64: string }[];
+    systemPrompt?: string;
+    whiskState?: WhiskState;
+    livingContext?: string;
+    /** Shared memory context explicitly passed between agents during delegation */
+    sharedContext?: string;
+    /** When set by ProactiveService, carries the triggering proactive task metadata */
+    proactiveTask?: ProactiveTask;
+    /** The trigger type that caused this agent execution (schedule, event, etc.) */
+    triggerType?: ProactiveTriggerType;
+    /** Breaking circular dependency: Runner provided at runtime */
+    runAgent?: AgentRunner;
+}
+
+export type AgentRunner = (
+    agentId: string,
+    task: string,
+    context?: AgentContext,
+    traceId?: string,
+    attachments?: { mimeType: string; base64: string }[]
+) => Promise<{ text: string; thoughtSignature?: string }>;
+
+export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';
+
+export interface ProactiveTask {
+    id: string;
+    agentId: string;
+    task: string;
+    triggerType: ProactiveTriggerType;
+    executeAt?: number; // timestamp
+    eventPattern?: string; // e.g. 'TASK_COMPLETED' or regex
+    status: 'pending' | 'executing' | 'completed' | 'failed';
+    createdAt: number;
+    lastError?: string;
+    userId: string;
+}
+
+// Using types from @/modules/workflow/types via imports above
+
+// ============================================================================
+// Memory & Knowledge Types
+// ============================================================================
+
+export interface UserMemory {
+    id: string;
+    content: string;
+    type: 'fact' | 'preference' | 'rule' | 'summary';
+    timestamp: any; // Firestore Timestamp
+    metadata?: Record<string, any>;
+    important?: boolean;
+    consolidated?: boolean;
+    sourceIds?: string[];
+}
+
+export interface KnowledgeItem {
+    id: string;
+    title: string;
+    content: string;
+    type: string;
+}
+
+// ============================================================================
+// Tool Function Types
+// ============================================================================
+
+export type ToolFunctionArgs = Record<string, unknown>;
+
+export interface ToolFunctionResult {
+    success: boolean;
+    data?: any;
+    error?: string;
+    message?: string;
+    /** Metadata for tracing and debugging (e.g. latency, model version used) */
+    metadata?: Record<string, unknown>;
+}
+
+import type { ToolExecutionContext } from './ToolExecutionContext';
+
+export interface DelegateTaskArgs extends ToolFunctionArgs {
+    targetAgentId: ValidAgentId;
+    task: string;
+}
+
+export interface ExpertConsultation {
+    targetAgentId: ValidAgentId;
+    task: string;
+}
+
+export interface ConsultExpertsArgs extends ToolFunctionArgs {
+    consultations: ExpertConsultation[];
+}
+
+/**
+ * Tool function type - accepts any args that extend ToolFunctionArgs
+ * The runtime will validate args against the tool schema.
+ * All tools MUST return a ToolFunctionResult for standardization.
+ *
+ * Phase 3: Added ToolExecutionContext for isolated state management.
+ */
+export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
+    args: TArgs,
+    context?: AgentContext,
+    toolContext?: ToolExecutionContext
+) => Promise<ToolFunctionResult>;
+
+/**
+ * Generic tool function type for agent configs
+ * Uses contravariance to accept more specific arg types
+ */
+
+export type AnyToolFunction = (
+    args: any,
+    context?: AgentContext,
+    toolContext?: ToolExecutionContext
+) => Promise<ToolFunctionResult>;
+
+// ============================================================================
+// Agent Configuration Types
+// ============================================================================
+
+export interface AgentConfig {
+    // ValidAgentId provides strict typing while allowing legacy agents via the union
+    id: ValidAgentId;
+    name: string;
+    description: string;
+    color: string;
+    category: AgentCategory;
+    systemPrompt: string;
+    tools: ToolDefinition[];
+    functions?: Record<string, AnyToolFunction>;
+    /** Explicit allowlist of tool names this agent may invoke at runtime.
+     *  If omitted, defaults to the names declared in tools[0].functionDeclarations.
+     *  An empty array [] means the agent has NO tool access at runtime.
+     */
+    authorizedTools?: string[];
+    /** Optional fine-tuned model endpoint. When set and the feature flag
+     *  VITE_USE_FINE_TUNED_AGENTS is enabled, BaseAgent will use this model
+     *  instead of the default AI_MODELS.TEXT.AGENT. Format:
+     *  "tunedModels/{tunedModelName}" or full Vertex endpoint URI.
+     */
+    modelId?: string;
+}
+
+export interface AgentResponse {
+    text: string;
+    data?: unknown;
+    toolCalls?: Array<{
+        name: string;
+        args: ToolFunctionArgs;
+        result: ToolFunctionResult | string;
+    }>;
+    thoughts?: string[];
+    thoughtSignature?: string;
+    error?: string;
+    usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+    };
+}
+
+export type AgentProgressCallback = (event: {
+    type: 'thought' | 'tool' | 'token' | 'usage' | 'tool_result' | 'instrument execution';
+    content: string;
+    toolName?: string;
+    usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+        estimatedCost?: number;
+    }
+}) => void;
+
+export interface SpecializedAgent {
+    id: string;
+    name: string;
+    description: string;
+    color: string;
+    category: AgentCategory;
+    execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse>;
+}
+
+export interface AgentRegistryProvider {
+    getAsync(id: string, retryCount?: number): Promise<SpecializedAgent | undefined>;
+    getLoadError(id: string): { error: Error; timestamp: number; attempts: number } | undefined;
+    getAll(): SpecializedAgent[];
+}
+
+// ============================================================================
+// Workflow Execution State Machine (Priority 1: Agentic Harness Primitive #4)
+// ============================================================================
+
+/**
+ * Lifecycle status for a workflow execution or individual step.
+ * Transitions: planned → executing → step_complete | failed | cancelled
+ * Terminal states: completed, failed, cancelled
+ */
+export type WorkflowExecutionStatus =
+    | 'planned'
+    | 'executing'
+    | 'step_complete'
+    | 'awaiting_approval'
+    | 'completed'
+    | 'failed'
+    | 'cancelled';
+
+/**
+ * Persisted state for a single step within a workflow execution.
+ */
+export interface WorkflowStepExecution {
+    stepIndex: number;
+    agentId: string;
+    prompt: string;
+    status: WorkflowExecutionStatus;
+    idempotencyKey: string;
+    result?: string;
+    error?: string;
+    startedAt?: number;
+    completedAt?: number;
+}
+
+/**
+ * Persisted state for an entire workflow run.
+ * Stored in Firestore under `users/{userId}/workflowExecutions/{id}`.
+ */
+export interface WorkflowExecution {
+    id: string;
+    workflowId: string;
+    sessionId?: string;
+    userId: string;
+    status: WorkflowExecutionStatus;
+    steps: WorkflowStepExecution[];
+    currentStepIndex: number;
+    createdAt: number;
+    updatedAt: number;
+}

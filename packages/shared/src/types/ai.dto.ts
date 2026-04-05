@@ -1,0 +1,427 @@
+// ============================================================================
+// Content Part Types (Gemini SDK compatible)
+// ============================================================================
+
+export interface TextPart {
+    text: string;
+    thoughtSignature?: string;
+}
+
+export interface InlineDataPart {
+    inlineData: {
+        mimeType: string;
+        data: string;
+    };
+    thoughtSignature?: string;
+}
+
+export interface FunctionCallPart {
+    functionCall: {
+        name: string;
+        args: Record<string, unknown>;
+    };
+    thoughtSignature?: string;
+}
+
+export interface FunctionResponsePart {
+    functionResponse: {
+        name: string;
+        response: Record<string, unknown>;
+    };
+    thoughtSignature?: string;
+}
+
+export type ContentPart = TextPart | InlineDataPart | FunctionCallPart | FunctionResponsePart;
+
+export interface Content {
+    role: 'user' | 'model' | 'system' | 'function';
+    parts: ContentPart[];
+}
+
+// ============================================================================
+// Tool/Function Declaration Types
+// ============================================================================
+
+export interface FunctionDeclarationSchema {
+    type: 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT';
+    description?: string;
+    enum?: string[];
+    items?: FunctionDeclarationSchema;
+    properties?: Record<string, FunctionDeclarationSchema>;
+    required?: string[];
+}
+
+export interface FunctionDeclaration {
+    name: string;
+    description?: string;
+    parameters?: FunctionDeclarationSchema;
+}
+
+export interface DynamicRetrievalConfig {
+    mode?: 'MODE_UNSPECIFIED' | 'MODE_DYNAMIC';
+    dynamicThreshold?: number;
+}
+
+export interface GoogleSearchRetrieval {
+    dynamicRetrievalConfig?: DynamicRetrievalConfig;
+}
+
+export type CodeExecution = Record<string, never>;
+
+export interface FunctionCallingConfig {
+    mode?: 'MODE_UNSPECIFIED' | 'AUTO' | 'ANY' | 'NONE';
+    allowedFunctionNames?: string[];
+}
+
+export interface Tool {
+    functionDeclarations?: FunctionDeclaration[];
+    googleSearch?: Record<string, never>;
+    googleSearchRetrieval?: GoogleSearchRetrieval;
+    codeExecution?: CodeExecution;
+}
+
+export interface ToolConfig {
+    functionCallingConfig?: FunctionCallingConfig;
+    functionDeclarations?: FunctionDeclaration[];
+    googleSearch?: Record<string, never>;
+    googleSearchRetrieval?: GoogleSearchRetrieval;
+    codeExecution?: CodeExecution;
+}
+
+// ============================================================================
+// Generation Config Types
+// ============================================================================
+
+export interface ThinkingConfig {
+    thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | (string & {});
+    includeThoughts?: boolean;
+    thinkingBudget?: number;
+}
+
+export interface PersonGenerationConfig {
+    dontAllowPeople?: boolean;
+    allowAdult?: boolean;
+    allowAll?: boolean;
+}
+
+export interface ImageConfig {
+    imageSize?: '1K' | '2K' | '4K' | string;
+    aspectRatio?: string;
+    personGenerationConfig?: PersonGenerationConfig;
+}
+
+export interface PrebuiltVoiceConfig {
+    voiceName: string;
+}
+
+export interface VoiceConfig {
+    prebuiltVoiceConfig?: PrebuiltVoiceConfig;
+}
+
+export interface SpeechConfig {
+    voiceConfig?: VoiceConfig;
+}
+
+export interface GenerationConfig {
+    temperature?: number;
+    topP?: number;
+    topK?: number;
+    maxOutputTokens?: number;
+    stopSequences?: string[];
+    candidateCount?: number;
+    responseMimeType?: string;
+    responseSchema?: Record<string, unknown>;
+    responseLogprobs?: boolean;
+    logprobs?: number;
+    audioTimestamp?: boolean;
+    // Extended SDK properties
+    thinkingConfig?: ThinkingConfig;
+    imageConfig?: ImageConfig;
+    speechConfig?: SpeechConfig;
+    mediaResolution?: 'MEDIA_RESOLUTION_UNSPECIFIED' | 'MEDIA_RESOLUTION_LOW' | 'MEDIA_RESOLUTION_MEDIUM' | 'MEDIA_RESOLUTION_HIGH' | 'MEDIA_RESOLUTION_ULTRA_HIGH';
+    responseModalities?: ('TEXT' | 'IMAGE' | 'AUDIO')[];
+    systemInstruction?: string;
+    tools?: Tool[];
+    toolConfig?: ToolConfig;
+    // Image generation specific
+    sampleCount?: number;
+    numberOfImages?: number;
+    aspectRatio?: string;
+    negativePrompt?: string;
+    // Video generation specific
+    numberOfVideos?: number;
+    durationSeconds?: number;
+    lastFrame?: string | { mimeType: string; imageBytes: string };
+}
+
+export interface SafetySetting {
+    category: string;
+    threshold: string;
+}
+
+// ============================================================================
+// Request Types
+// ============================================================================
+
+export interface GenerateContentRequest {
+    model: string;
+    contents: Content | Content[];
+    config?: GenerationConfig;
+    systemInstruction?: string;
+    tools?: Tool[];
+    toolConfig?: ToolConfig;
+    safetySettings?: SafetySetting[];
+    apiKey?: string;
+}
+
+export interface GenerateVideoRequest {
+    model?: string;
+    prompt: string;
+    image?: { imageBytes?: string; data?: string; mimeType: string };
+    config?: GenerationConfig & VideoGenerationConfig;
+    apiKey?: string;
+    jobId?: string;
+    generateAudio?: boolean;
+}
+
+/** Veo SDK-compatible video generation config fields */
+export interface VideoGenerationConfig {
+    aspectRatio?: string;
+    durationSeconds?: number;
+    resolution?: string;
+    personGeneration?: string;
+    negativePrompt?: string;
+    generateAudio?: boolean;
+    enhancePrompt?: boolean;
+    fps?: number;
+    seed?: number;
+    numberOfVideos?: number;
+    outputGcsUri?: string;
+    pubsubTopic?: string;
+    referenceImages?: Array<{
+        image?: { uri?: string; imageBytes?: string; mimeType?: string };
+        referenceType: 'ASSET' | 'STYLE';
+    }>;
+    lastFrame?: string | { mimeType: string; imageBytes: string };
+}
+
+export interface GenerateImageRequest {
+    model: string;
+    prompt: string;
+    config?: GenerationConfig & {
+        numberOfImages?: number;
+        aspectRatio?: string;
+        negativePrompt?: string;
+    };
+    apiKey?: string;
+}
+
+export interface EmbedContentRequest {
+    model: string;
+    content: Content;
+    apiKey?: string;
+}
+
+// ============================================================================
+// Response Types
+// ============================================================================
+
+export interface SafetyRating {
+    category: string;
+    probability: string;
+    blocked?: boolean;
+}
+
+export interface CitationSource {
+    startIndex?: number;
+    endIndex?: number;
+    uri?: string;
+    license?: string;
+}
+
+export interface CitationMetadata {
+    citationSources: CitationSource[];
+}
+
+export interface LogprobsResult {
+    // Basic structure for logprobs (can be expanded)
+    topCandidates: {
+        candidates: {
+            token: string;
+            logProbability: number;
+        }[];
+    }[];
+    chosenCandidates: {
+        token: string;
+        logProbability: number;
+    }[];
+}
+
+export interface Candidate {
+    content: {
+        role: string;
+        parts: ContentPart[];
+    };
+    finishReason?: 'STOP' | 'MAX_TOKENS' | 'SAFETY' | 'RECITATION' | 'OTHER';
+    safetyRatings?: SafetyRating[];
+    citationMetadata?: CitationMetadata;
+    logprobsResult?: LogprobsResult;
+    index?: number;
+}
+
+export interface PromptFeedback {
+    blockReason?: string;
+    safetyRatings?: SafetyRating[];
+}
+
+export interface UsageMetadata {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+}
+
+export interface GenerateContentResponse {
+    candidates?: Candidate[];
+    promptFeedback?: PromptFeedback;
+    usageMetadata?: UsageMetadata;
+}
+
+export interface VideoPrediction {
+    video?: string;
+    mimeType?: string;
+    bytesBase64Encoded?: string;
+}
+
+export interface GenerateVideoResponse {
+    predictions?: VideoPrediction[];
+    metadata?: {
+        operationName?: string;
+    };
+}
+
+export interface GeneratedImage {
+    bytesBase64Encoded: string;
+    mimeType: string;
+}
+
+export interface GenerateImageResponse {
+    images: GeneratedImage[];
+    metadata?: {
+        modelVersion?: string;
+    };
+}
+
+export interface AudioPart {
+    inlineData: {
+        mimeType: string;
+        data: string; // base64
+    };
+}
+
+export interface GenerateSpeechResponse {
+    audio: AudioPart;
+}
+
+export interface EmbedContentResponse {
+    embedding: {
+        values: number[];
+    };
+}
+
+// ============================================================================
+// Wrapped Response Type (for SDK compatibility layer)
+// ============================================================================
+
+export interface WrappedResponse {
+    response: GenerateContentResponse;
+    text: () => string;
+    functionCalls: () => FunctionCallPart['functionCall'][];
+    usage: () => UsageMetadata | undefined;
+    thoughtSignature?: string;
+}
+
+// ============================================================================
+// Type Guards for ContentPart Union
+// ============================================================================
+
+export function isTextPart(part: ContentPart): part is TextPart {
+    return 'text' in part;
+}
+
+export function isInlineDataPart(part: ContentPart): part is InlineDataPart {
+    return 'inlineData' in part;
+}
+
+export function isFunctionCallPart(part: ContentPart): part is FunctionCallPart {
+    return 'functionCall' in part;
+}
+
+
+export function isFunctionResponsePart(part: ContentPart): part is FunctionResponsePart {
+    return 'functionResponse' in part;
+}
+
+// ============================================================================
+// Service Options (Moved from AIService to prevent cycles)
+// ============================================================================
+
+export interface GenerateContentOptions {
+    model?: string;
+    contents?: Content | Content[];
+    config?: GenerationConfig;
+    systemInstruction?: string;
+    tools?: Tool[];
+    toolConfig?: ToolConfig;
+    thoughtSignature?: string;
+    safetySettings?: SafetySetting[];
+    signal?: AbortSignal;
+    timeout?: number;
+    // Caching options
+    skipCache?: boolean;
+    cache?: boolean;
+    cacheTTL?: number;
+}
+
+export interface GenerateStreamOptions {
+    model: string;
+    contents: Content[];
+    config?: GenerationConfig;
+    systemInstruction?: string;
+    tools?: Tool[];
+    toolConfig?: ToolConfig;
+    safetySettings?: SafetySetting[];
+}
+
+export interface GenerateVideoOptions {
+    model?: string;
+    prompt: string;
+    image?: { imageBytes?: string; data?: string; mimeType: string };
+    config?: GenerationConfig & VideoGenerationConfig;
+    /** Custom timeout in milliseconds. Defaults to calculated based on durationSeconds or 2 minutes minimum. */
+    timeoutMs?: number;
+}
+
+export interface GenerateImageOptions {
+    model: string;
+    prompt: string;
+    config?: GenerationConfig & {
+        numberOfImages?: number;
+        aspectRatio?: string;
+        negativePrompt?: string;
+    };
+}
+
+export interface EmbedContentOptions {
+    model: string;
+    content: Content;
+}
+
+export interface StreamChunk {
+    text: () => string;
+    functionCalls: () => FunctionCallPart['functionCall'][];
+    thoughtSignature?: string;
+}
+
+export interface RetryableError extends Error {
+    code?: string;
+}

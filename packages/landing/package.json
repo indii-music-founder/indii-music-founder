@@ -1,0 +1,53 @@
+{
+    "name": "@indiios/landing",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "build": "tsc && vite build",
+        "dev": "vite",
+        "lint": "eslint",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@pixi/filter-kawase-blur": "5.1.1",
+        "@react-three/drei": "10.7.7",
+        "@react-three/fiber": "9.5.0",
+        "@react-three/postprocessing": "3.0.4",
+        "@tailwindcss/vite": "^4.2.2",
+        "@types/three": "0.181.0",
+        "autoprefixer": "10.4.22",
+        "clsx": "2.1.1",
+        "debounce": "3.0.0",
+        "firebase": "12.6.0",
+        "framer-motion": "12.23.26",
+        "hsl-to-hex": "1.0.0",
+        "leva": "0.10.1",
+        "lucide-react": "0.555.0",
+        "pixi.js": "8.14.3",
+        "r3f-perf": "7.2.3",
+        "react": "18.3.1",
+        "react-dom": "18.3.1",
+        "react-router-dom": "7.11.0",
+        "simplex-noise": "4.0.3",
+        "tailwind-merge": "3.4.0",
+        "tailwindcss": "^4.2.2",
+        "three": "0.181.2"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4.2.2",
+        "@testing-library/dom": "10.4.1",
+        "@testing-library/react": "16.3.0",
+        "@types/hsl-to-hex": "1.0.2",
+        "@types/node": "22.0.0",
+        "@types/react": "18.3.3",
+        "@types/react-dom": "18.3.0",
+        "@types/testing-library__jest-dom": "5.14.9",
+        "@vitejs/plugin-react": "5.1.2",
+        "eslint": "9",
+        "jsdom": "27.2.0",
+        "postcss": "8.5.6",
+        "typescript": "5",
+        "vite": "6.2.0",
+        "vitest": "4.0.15"
+    }
+}
