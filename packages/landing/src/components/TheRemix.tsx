@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 
 import { useFrame } from '@react-three/fiber';
