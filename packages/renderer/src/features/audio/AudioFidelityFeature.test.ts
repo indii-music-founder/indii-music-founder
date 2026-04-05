@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock AgentSupervisor instead of child_process
 const mockRunScript = vi.fn();
-vi.mock('../../../electron/utils/AgentSupervisor', () => ({
+vi.mock('../../../../main/src/utils/AgentSupervisor', () => ({
     AgentSupervisor: {
         runScript: mockRunScript
     }
