@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { logger } from '@/utils/logger';
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 /**
@@ -168,7 +169,7 @@ class PrintfulProvider implements PODProviderAdapter {
         let attempt = 0;
 
         while (attempt < maxRetries) {
-            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            const response = await fetchWithTimeout(`${this.baseUrl}${endpoint}`, {
                 ...options,
                 headers: {
                     'Authorization': `Bearer ${this.apiKey}`,
