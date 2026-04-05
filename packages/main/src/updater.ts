@@ -50,7 +50,7 @@ export function setupAutoUpdater(): void {
         sendToRenderer('updater:checking');
     });
 
-    autoUpdater.on('update-available', (info) => {
+    autoUpdater.on('update-available', (info: any) => {
         log.info(`[Updater] Update available: ${info.version}`);
         sendToRenderer('updater:available', { version: info.version });
     });
@@ -60,7 +60,7 @@ export function setupAutoUpdater(): void {
         sendToRenderer('updater:not-available');
     });
 
-    autoUpdater.on('download-progress', (progress) => {
+    autoUpdater.on('download-progress', (progress: any) => {
         log.info(`[Updater] Download: ${progress.percent.toFixed(1)}%`);
         sendToRenderer('updater:progress', {
             percent: progress.percent,
@@ -70,12 +70,12 @@ export function setupAutoUpdater(): void {
         });
     });
 
-    autoUpdater.on('update-downloaded', (info) => {
+    autoUpdater.on('update-downloaded', (info: any) => {
         log.info(`[Updater] Update downloaded: ${info.version}`);
         sendToRenderer('updater:downloaded', { version: info.version });
     });
 
-    autoUpdater.on('error', (err) => {
+    autoUpdater.on('error', (err: any) => {
         log.error('[Updater] Error:', err.message);
         sendToRenderer('updater:error', { message: err.message });
     });

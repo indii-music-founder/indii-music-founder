@@ -1,6 +1,6 @@
 import { safeStorage } from 'electron';
 import keytar from 'keytar';
-import { DistributorId } from '../../src/services/distribution/types/distributor';
+type DistributorId = string;
 
 const SERVICE_NAME = 'IndiiOS_Distribution';
 
@@ -21,7 +21,7 @@ export class CredentialService {
     async saveCredentials(distributorId: DistributorId, credentials: Credentials): Promise<void> {
         try {
             const secretSerialized = JSON.stringify(credentials);
-            
+
             // Phase 2 Security Enhancement: Encrypt the payload before keychain storage
             let payloadToStore: string;
             if (safeStorage.isEncryptionAvailable()) {
@@ -50,7 +50,7 @@ export class CredentialService {
             if (!storedPayload) return null;
 
             let decryptedPayload: string;
-            
+
             // Check if it's likely a base64 encrypted string or the old JSON
             if (storedPayload.trim().startsWith('{')) {
                 // Legacy plain JSON

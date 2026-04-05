@@ -55,7 +55,7 @@ const createWindow = async () => {
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
 
     const store = new Store();
-    const windowState = store.get('window-state', {
+    const windowState = (store as any).get('window-state', {
         width: 1280,
         height: 800,
         x: undefined,
@@ -114,7 +114,7 @@ const createWindow = async () => {
 
     const saveWindowState = () => {
         const bounds = win.getBounds();
-        store.set('window-state', {
+        (store as any).set('window-state', {
             x: bounds.x,
             y: bounds.y,
             width: bounds.width,
@@ -136,7 +136,7 @@ const createWindow = async () => {
             event.preventDefault();
             win.hide();
             if (process.platform === 'darwin') {
-                app.dock.hide();
+                app.dock?.hide();
             }
             return false;
         }
@@ -268,7 +268,7 @@ const createTray = () => {
             click: () => {
                 mainWindow?.show();
                 if (process.platform === 'darwin') {
-                    app.dock.show();
+                    app.dock?.show();
                 }
             }
         },
@@ -288,7 +288,7 @@ const createTray = () => {
     tray.on('double-click', () => {
         mainWindow?.show();
         if (process.platform === 'darwin') {
-            app.dock.show();
+            app.dock?.show();
         }
     });
 };
@@ -309,7 +309,7 @@ const showNotification = (title: string, body: string) => {
         notification.on('click', () => {
             mainWindow?.show();
             if (process.platform === 'darwin') {
-                app.dock.show();
+                app.dock?.show();
             }
         });
     }

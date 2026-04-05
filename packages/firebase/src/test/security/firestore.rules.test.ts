@@ -148,7 +148,7 @@ describe('Firestore Security Rules', () => {
 
         beforeEach(async () => {
             if (requireEmulator()) return;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'users', ALICE_UID), aliceUserDoc);
             });
         });
@@ -205,7 +205,7 @@ describe('Firestore Security Rules', () => {
 
         beforeEach(async () => {
             if (requireEmulator()) return;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'analyzed_tracks', 'track-1'), trackData);
             });
         });
@@ -236,7 +236,7 @@ describe('Firestore Security Rules', () => {
     describe('organizations/{orgId}', () => {
         beforeEach(async () => {
             if (requireEmulator()) return;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'organizations', ORG_ID), orgDoc(ALICE_UID));
             });
         });
@@ -291,7 +291,7 @@ describe('Firestore Security Rules', () => {
     describe('licenses/{licenseId}', () => {
         beforeEach(async () => {
             if (requireEmulator()) return;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'licenses', 'lic-1'), { userId: ALICE_UID, title: 'Beat License' });
             });
         });
@@ -340,7 +340,7 @@ describe('Firestore Security Rules', () => {
     describe('ddexReleases/{releaseId}', () => {
         beforeEach(async () => {
             if (requireEmulator()) return;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'organizations', ORG_ID), orgDoc(ALICE_UID));
                 await setDoc(doc(ctx.firestore(), 'ddexReleases', 'rel-1'), {
                     orgId: ORG_ID,
@@ -401,7 +401,7 @@ describe('Firestore Security Rules', () => {
 
         beforeEach(async () => {
             if (requireEmulator()) return;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'tax_profiles', 'tp-alice'), validTaxProfile);
             });
         });
@@ -467,7 +467,7 @@ describe('Firestore Security Rules', () => {
 
         beforeEach(async () => {
             if (requireEmulator()) return;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'isrc_registry', 'isrc-1'), validISRC);
             });
         });
@@ -526,7 +526,7 @@ describe('Firestore Security Rules', () => {
         it('correct format (userId_timestamp): read allowed', async () => {
             if (requireEmulator()) return;
             const docId = `${ALICE_UID}_1700000000000`;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'user_rate_limits', docId), rateData);
             });
             const db = verifiedCtx(ALICE_UID).firestore();
@@ -536,7 +536,7 @@ describe('Firestore Security Rules', () => {
         it('wrong user prefix: read denied', async () => {
             if (requireEmulator()) return;
             const docId = `${ALICE_UID}_1700000000000`;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'user_rate_limits', docId), rateData);
             });
             const db = verifiedCtx(BOB_UID).firestore();
@@ -567,7 +567,7 @@ describe('Firestore Security Rules', () => {
 
         beforeEach(async () => {
             if (requireEmulator()) return;
-            await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
                 await setDoc(doc(ctx.firestore(), 'revenue', 'rev-1'), revenueData);
             });
         });

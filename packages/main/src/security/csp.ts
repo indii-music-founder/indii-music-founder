@@ -17,7 +17,7 @@ import crypto from 'node:crypto';
 // Configuration
 // ============================================================================
 
-const isDev = process.env.NODE_ENV === 'development' || !import.meta.env?.PROD;
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Allowed external origins for various CSP directives.
@@ -180,7 +180,7 @@ export function applyCSP(): void {
     });
 
     console.log(`[Security] CSP applied (${isDev ? 'development' : 'production'} mode)`);
-    
+
     if (isDev) {
         console.log('[Security] WARNING: Development CSP allows unsafe-eval for HMR');
     }

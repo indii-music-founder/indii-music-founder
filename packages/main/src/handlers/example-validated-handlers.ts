@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Example: Refactored IPC Handlers with Validation
  * 
@@ -57,7 +58,7 @@ registerValidatedHandler(
         // Additional security: resolve to absolute and check it's in allowed directory
         const resolvedPath = path.resolve(filePath);
         const allowedBase = path.resolve(process.cwd(), 'user-data');
-        
+
         if (!resolvedPath.startsWith(allowedBase)) {
             throw new Error('Access denied: Path outside allowed directory');
         }
@@ -80,7 +81,7 @@ registerRateLimitedHandler(
     async (event, { filePath, content }) => {
         const resolvedPath = path.resolve(filePath);
         const allowedBase = path.resolve(process.cwd(), 'user-data');
-        
+
         if (!resolvedPath.startsWith(allowedBase)) {
             throw new Error('Access denied: Path outside allowed directory');
         }
@@ -102,7 +103,7 @@ registerValidatedHandler(
     async (event, { directory }) => {
         const resolvedPath = path.resolve(directory);
         const allowedBase = path.resolve(process.cwd(), 'user-data');
-        
+
         if (!resolvedPath.startsWith(allowedBase)) {
             throw new Error('Access denied: Path outside allowed directory');
         }
@@ -127,7 +128,7 @@ registerValidatedHandler(
     validators.object({
         userId: commonValidators.userId,
     }),
-    async (event, { userId }) => {
+    async (event: any, { userId }: any) => {
         // Your user profile fetching logic
         // The userId is guaranteed to be a valid format
         console.log(`Fetching profile for validated userId: ${userId}`);
@@ -149,7 +150,7 @@ registerValidatedHandler(
             notifications: validators.optional(validators.boolean()),
         }, { strict: false }), // Allow extra preferences
     }),
-    async (event, { userId, preferences }) => {
+    async (event: any, { userId, preferences }: any) => {
         console.log(`Updating preferences for ${userId}:`, preferences);
         return { success: true };
     }
@@ -165,7 +166,7 @@ registerValidatedHandler(
         limit: validators.optional(commonValidators.paginationLimit, 20),
         offset: validators.optional(commonValidators.paginationOffset, 0),
     }),
-    async (event, { orgId, limit, offset }) => {
+    async (event: any, { orgId, limit, offset }: any) => {
         console.log(`Fetching members for org ${orgId}, limit: ${limit}, offset: ${offset}`);
         return { members: [], total: 0 };
     }
@@ -188,7 +189,7 @@ registerRateLimitedHandler(
         ),
         maxTokens: validators.optional(validators.number({ min: 1, max: 4096 }), 1024),
     }),
-    async (event, { prompt, model, maxTokens }) => {
+    async (event: any, { prompt, model, maxTokens }: any) => {
         console.log(`Generating with ${model}, prompt length: ${prompt.length}`);
         return { content: 'Generated content here' };
     },
@@ -209,7 +210,7 @@ registerRateLimitedHandler(
         ] as const),
         size: validators.number({ min: 1, max: 20_000_000 }), // 20MB max
     }),
-    async (event, { fileName, mimeType, size }) => {
+    async (event: any, { fileName, mimeType, size }: any) => {
         console.log(`Uploading ${fileName} (${mimeType}, ${size} bytes)`);
         return { uploadId: 'upload-123' };
     },
@@ -235,7 +236,7 @@ registerValidatedHandler(
             ],
         }),
     }),
-    async (event, { url }) => {
+    async (event: any, { url }: any) => {
         // Safe to fetch - URL is validated and host is whitelisted
         console.log(`Fetching validated URL: ${url}`);
         return { data: 'Response data' };
@@ -254,7 +255,7 @@ registerValidatedHandler(
     validators.object({
         email: validators.email(),
     }),
-    async (event, { email }) => {
+    async (event: any, { email }: any) => {
         // Email is guaranteed to be valid format
         return { valid: true, email };
     }
