@@ -56,10 +56,13 @@ describe('ProjectTools', () => {
         it('should handle creation errors', async () => {
             mockStoreState.createNewProject.mockRejectedValue(new Error('Database error'));
 
-            await expect(ProjectTools.create_project({
+            const result = await ProjectTools.create_project({
                 name: 'Test',
                 type: 'creative'
-            })).rejects.toThrow('Database error');
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.message).toContain('Database error');
         });
     });
 
