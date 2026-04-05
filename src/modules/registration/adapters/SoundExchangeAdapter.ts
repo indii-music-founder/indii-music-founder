@@ -53,19 +53,21 @@ export const SoundExchangeAdapter: OrgAdapter = {
     logger.info('[SoundExchangeAdapter] Enrolling ISRC with SoundExchange', { trackId: track.id, isrc: data.isrc });
 
     try {
-      const { PRORightsService } = await import('@/services/rights/PRORightsService');
-      const service = new PRORightsService();
+      const { enrollWithSoundExchange } = await import('@/services/rights/PRORightsService');
 
-      const result = await service.enrollWithSoundExchange({
+      // enrollWithSoundExchange expects (uid, ExtendedGoldenMetadata).
+      // Build a compatible metadata object from the form data and track.
+      const metadata = {
         isrc: String(data.isrc),
-        performerName: String(data.performerName),
-        recordingTitle: String(data.recordingTitle),
-        ownershipPercentage: Number(data.ownershipPercentage) || 100,
-      });
+        artistName: String(data.performerName),
+        trackTitle: String(data.recordingTitle),
+      };
 
-      await persistOrgRecord(userId, track.id, 'soundexchange', data, result.confirmationId);
+      const result = await enrollWithSoundExchange(userId, metadata as Parameters<typeof enrollWithSoundExchange>[1]);
 
-      return { success: true, confirmationNumber: result.confirmationId, submittedAt: new Date() };
+      await persistOrgRecord(userId, track.id, 'soundexchange', data, result.enrollmentId);
+
+      return { success: true, confirmationNumber: result.enrollmentId, submittedAt: new Date() };
     } catch (err: unknown) {
       logger.error('[SoundExchangeAdapter] Enrollment failed:', err);
       await persistOrgRecord(userId, track.id, 'soundexchange', data, undefined);

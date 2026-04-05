@@ -87,28 +87,27 @@ export const LocAdapter: OrgAdapter = {
       const { BrowserAgentService } = await import('@/services/agent/BrowserAgentService');
       const browserService = new BrowserAgentService();
 
-      const task = `
-        Navigate to https://eco.copyright.gov and register a copyright for the following work:
-        - Title: ${data.workTitle}
-        - Year of Creation: ${data.yearOfCreation}
-        - Author/Claimant: ${data.authorName}
-        - Published: ${data.isPublished ? 'Yes' : 'No'}
-        - Country of First Publication: ${data.countryOfFirstPublication || 'United States'}
-        - Work for Hire: ${data.workForHire ? 'Yes' : 'No'}
-        - Copyright Claimant: ${data.copyrightClaimant}
+      const result = await browserService.executeTask(
+        'Library of Congress',
+        `Register a copyright for the following work:
+          - Title: ${data.workTitle}
+          - Year of Creation: ${data.yearOfCreation}
+          - Author/Claimant: ${data.authorName}
+          - Published: ${data.isPublished ? 'Yes' : 'No'}
+          - Country of First Publication: ${data.countryOfFirstPublication || 'United States'}
+          - Work for Hire: ${data.workForHire ? 'Yes' : 'No'}
+          - Copyright Claimant: ${data.copyrightClaimant}
+          Fill out the eCO registration form, submit it, and return the confirmation/case number.
+          If login is required, stop and report back that credentials are needed.`,
+        'https://eco.copyright.gov'
+      );
 
-        Fill out the eCO registration form, submit it, and return the confirmation/case number.
-        If login is required, stop and report back that credentials are needed.
-      `;
-
-      const result = await browserService.executeTask(task);
-
-      // Persist record to Firestore
-      await persistOrgRecord(userId, track.id, 'loc', data, result.confirmationNumber);
+      const confirmationNumber = result.result ?? result.id;
+      await persistOrgRecord(userId, track.id, 'loc', data, confirmationNumber);
 
       return {
         success: true,
-        confirmationNumber: result.confirmationNumber,
+        confirmationNumber,
         submittedAt: new Date(),
       };
     } catch (err: unknown) {

@@ -55,21 +55,20 @@ export const MlcAdapter: OrgAdapter = {
       const { BrowserAgentService } = await import('@/services/agent/BrowserAgentService');
       const browserService = new BrowserAgentService();
 
-      const task = `
-        Navigate to the MLC member portal at https://portal.themlc.com and register the following musical work:
-        - Title: ${data.workTitle}
-        - ISWC: ${data.iswc || 'N/A'}
-        - IPI: ${data.ipiNumber}
-        - Writers: ${JSON.stringify(track.writersAndContributors)}
+      const result = await browserService.executeTask(
+        'MLC',
+        `Register the following musical work:
+          - Title: ${data.workTitle}
+          - ISWC: ${data.iswc || 'N/A'}
+          - IPI: ${data.ipiNumber}
+          - Writers: ${JSON.stringify(track.writersAndContributors)}
+          Complete the work registration form and return the MLC work registration ID.`,
+        'https://portal.themlc.com'
+      );
+      const confirmationNumber = result.result ?? result.id;
+      await persistOrgRecord(userId, track.id, 'mlc', data, confirmationNumber);
 
-        Log in if necessary (stop and report if credentials are needed).
-        Complete the work registration form and return the MLC work registration ID.
-      `;
-
-      const result = await browserService.executeTask(task);
-      await persistOrgRecord(userId, track.id, 'mlc', data, result.confirmationNumber);
-
-      return { success: true, confirmationNumber: result.confirmationNumber, submittedAt: new Date() };
+      return { success: true, confirmationNumber, submittedAt: new Date() };
     } catch (err: unknown) {
       const isWebSession = typeof window !== 'undefined' && !window.electronAPI;
       logger.warn('[MlcAdapter] Submission failed:', err);

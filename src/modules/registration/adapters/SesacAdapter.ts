@@ -45,20 +45,20 @@ export const SesacAdapter: OrgAdapter = {
       const { BrowserAgentService } = await import('@/services/agent/BrowserAgentService');
       const browserService = new BrowserAgentService();
 
-      const task = `
-        Navigate to the SESAC member portal at https://www.sesac.com and register the following work:
-        - Title: ${data.workTitle}
-        - Writers: ${JSON.stringify(track.writersAndContributors)}
-        - ISWC: ${data.iswc || 'N/A'}
+      const result = await browserService.executeTask(
+        'SESAC',
+        `Register the following work:
+          - Title: ${data.workTitle}
+          - Writers: ${JSON.stringify(track.writersAndContributors)}
+          - ISWC: ${data.iswc || 'N/A'}
+          If login is required, stop and report that SESAC credentials are needed.
+          Return the work registration confirmation number.`,
+        'https://www.sesac.com'
+      );
+      const confirmationNumber = result.result ?? result.id;
+      await persistOrgRecord(userId, track.id, 'sesac', data, confirmationNumber);
 
-        If login is required, stop and report that SESAC credentials are needed.
-        Return the work registration confirmation number.
-      `;
-
-      const result = await browserService.executeTask(task);
-      await persistOrgRecord(userId, track.id, 'sesac', data, result.confirmationNumber);
-
-      return { success: true, confirmationNumber: result.confirmationNumber, submittedAt: new Date() };
+      return { success: true, confirmationNumber, submittedAt: new Date() };
     } catch (err: unknown) {
       const isWebSession = typeof window !== 'undefined' && !window.electronAPI;
       logger.warn('[SesacAdapter] Submission failed:', err);

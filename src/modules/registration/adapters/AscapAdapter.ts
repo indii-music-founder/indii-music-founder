@@ -64,29 +64,24 @@ export const AscapAdapter: OrgAdapter = {
 
     try {
       // Wrap existing PRORightsService for ASCAP API call
-      const { PRORightsService } = await import('@/services/rights/PRORightsService');
-      const service = new PRORightsService();
+      const { registerWithASCAP } = await import('@/services/rights/PRORightsService');
 
-      const writers = track.writersAndContributors.map(w => ({
-        name: w.name,
-        role: w.role,
-        percentage: w.percentage,
-        ipiNumber: w.ipiNumber,
-      }));
-
-      const result = await service.registerWithASCAP({
-        title: String(data.workTitle),
+      // Build a compatible metadata object for the PRO registration function
+      const metadata = {
+        trackTitle: String(data.workTitle),
         iswc: data.iswc ? String(data.iswc) : undefined,
-        writers,
-        genre: data.genre ? String(data.genre) : undefined,
         isrc: track.isrc,
-      });
+        composerName: track.writersAndContributors[0]?.name ?? String(data.writers),
+        artistName: track.artistName,
+      };
 
-      await persistOrgRecord(userId, track.id, 'ascap', data, result.confirmationId);
+      const result = await registerWithASCAP(userId, metadata as Parameters<typeof registerWithASCAP>[1]);
+
+      await persistOrgRecord(userId, track.id, 'ascap', data, result.workId);
 
       return {
         success: true,
-        confirmationNumber: result.confirmationId,
+        confirmationNumber: result.workId,
         submittedAt: new Date(),
       };
     } catch (err: unknown) {

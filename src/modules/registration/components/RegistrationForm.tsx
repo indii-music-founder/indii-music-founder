@@ -56,10 +56,12 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmissionResult | null>(null);
 
-  // Re-fill if track or adapter changes
+  // Re-fill if track or adapter changes — keyed by .id to avoid
+  // unnecessary re-fills on shallow prop reference changes.
   useEffect(() => {
     setValues(autoFillFromTrack(adapter.fields, track));
     setResult(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adapter.id, track.id]);
 
   // Determine which fields are gap fields (not auto-filled + required)
@@ -103,7 +105,7 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
             I need {gapFields.length} thing{gapFields.length > 1 ? 's' : ''} from you
           </p>
           {gapFields.map(field => (
-            <FormField key={field.id} field={field} value={values[field.id]} onChange={handleChange} highlight />
+            <FormField key={field.id} field={field} value={values[field.id] ?? ''} onChange={handleChange} highlight />
           ))}
         </div>
       )}
@@ -118,7 +120,7 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
           </summary>
           <div className="mt-3 space-y-3 pl-3 border-l border-white/[0.06]">
             {autoFilledFields.map(field => (
-              <FormField key={field.id} field={field} value={values[field.id]} onChange={handleChange} />
+              <FormField key={field.id} field={field} value={values[field.id] ?? ''} onChange={handleChange} />
             ))}
           </div>
         </details>

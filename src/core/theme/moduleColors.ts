@@ -70,6 +70,7 @@ export const departmentCssVars = {
     debug: '--color-dept-default',
     investor: '--color-dept-distribution', // Investor portal shares Distribution
     settings: '--color-dept-social',       // Settings uses Social cyan
+    registration: '--color-dept-licensing', // Registration uses Licensing teal
 } as const;
 
 /**
@@ -436,7 +437,17 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-white',
         hoverBg: 'hover:bg-gray-800/20',
         cssVar: '--color-dept-creative',
-    }
+    },
+    'registration': {
+        // Registration Center — Teal for filing/compliance flows
+        text: 'text-dept-licensing',
+        bg: 'bg-dept-licensing/10',
+        border: 'border-dept-licensing',
+        ring: 'focus-within:ring-dept-licensing/50',
+        hoverText: 'hover:text-dept-licensing',
+        hoverBg: 'hover:bg-dept-licensing/5',
+        cssVar: '--color-dept-licensing',
+    },
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {
