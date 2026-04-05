@@ -101,7 +101,13 @@ export class AgentService {
         };
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
-        useStore.getState().addAgentMessage(userMsg);
+        const isBoardroomMode = state.isBoardroomMode;
+
+        if (isBoardroomMode) {
+            useStore.getState().addBoardroomMessage(userMsg);
+        } else {
+            useStore.getState().addAgentMessage(userMsg);
+        }
 
         // Tier 2: Index user message for semantic recall (Episodic Indexing)
         if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
@@ -122,7 +128,7 @@ export class AgentService {
             logger.debug(`[AgentService] ⚡ Cache Hit: ${cacheKey}`);
 
             const responseId = uuidv4();
-            useStore.getState().addAgentMessage({
+            const msgPayload: AgentMessage = {
                 id: responseId,
                 role: 'model',
                 text: cached.text,
@@ -130,7 +136,13 @@ export class AgentService {
                 timestamp: Date.now(),
                 isStreaming: false,
                 agentId: cached.agentId
-            });
+            };
+
+            if (isBoardroomMode) {
+                useStore.getState().addBoardroomMessage(msgPayload);
+            } else {
+                useStore.getState().addAgentMessage(msgPayload);
+            }
             this.isProcessing = false;
             return;
         }
@@ -141,10 +153,7 @@ export class AgentService {
 
             // 2. Workflow Coordination (The Brain)
             const responseId = uuidv4();
-            const { addAgentMessage, updateAgentMessage } = useStore.getState();
-
-            // Create placeholder for the response
-            addAgentMessage({
+            const msgPayload: AgentMessage = {
                 id: responseId,
                 role: 'model',
                 text: '',
@@ -152,7 +161,13 @@ export class AgentService {
                 isStreaming: true,
                 thoughts: [],
                 agentId: 'generalist' // Default initially
-            });
+            };
+
+            if (isBoardroomMode) {
+                useStore.getState().addBoardroomMessage(msgPayload);
+            } else {
+                useStore.getState().addAgentMessage(msgPayload);
+            }
 
             // Create a timeout controller
             const timeoutMs = isGenerationRequest ? 600000 : 300000; // 10 min for generation, 5 min otherwise
@@ -193,11 +208,18 @@ export class AgentService {
                 const newItemsGenerated = galleryCountAfter > galleryCountBefore;
 
                 const errorMessage = err instanceof Error ? err.message : String(err);
+
+                const { updateAgentMessage, updateBoardroomMessage } = useStore.getState();
+                const updateMsg = (id: string, updates: Partial<AgentMessage>) => {
+                    if (isBoardroomMode) updateBoardroomMessage(id, updates);
+                    else updateAgentMessage(id, updates);
+                };
+
                 if (errorMessage.includes('Timeout')) {
                     if (newItemsGenerated) {
                         // Case A: Items were found in gallery (already handled by logic above, but keeping for clarity)
                         logger.debug('[AgentService] Timeout grace: Generation detected in gallery');
-                        updateAgentMessage(responseId, {
+                        updateMsg(responseId, {
                             text: `✅ **Generation Complete!** ${galleryCountAfter - galleryCountBefore} new item(s) added to your Gallery.`,
                             thoughts: [{
                                 id: uuidv4(),
@@ -209,7 +231,7 @@ export class AgentService {
                     } else if (isGenerationRequest) {
                         // Case B: Generation request but no items yet - show "Taking longer" message
                         logger.debug('[AgentService] Timeout nudge: Showing "taking longer" message');
-                        updateAgentMessage(responseId, {
+                        updateMsg(responseId, {
                             text: `⏳ **Still working on it...** The synthesis is taking a bit longer than expected, but I'm still processing your request in the background. Keep an eye on your Gallery - your assets will appear there shortly!`,
                             thoughts: [{
                                 id: uuidv4(),
@@ -220,7 +242,7 @@ export class AgentService {
                         });
                     } else {
                         // Case C: Standard timeout
-                        updateAgentMessage(responseId, {
+                        updateMsg(responseId, {
                             text: `❌ **Timeout:** The request is taking longer than expected (${timeoutMs / 1000}s). If you're generating high-res assets, they may still appear in your Gallery soon.`,
                             thoughts: [{
                                 id: uuidv4(),
@@ -232,7 +254,7 @@ export class AgentService {
                     }
                 } else {
                     // Non-timeout error (API failure, etc)
-                    updateAgentMessage(responseId, {
+                    updateMsg(responseId, {
                         text: `❌ **Error:** ${(err as Error).message || 'The request failed.'}`,
                         thoughts: [{
                             id: uuidv4(),
@@ -244,7 +266,9 @@ export class AgentService {
                 }
             } finally {
                 // CRITICAL: Always clear streaming state to avoid stuck "..." loading
-                updateAgentMessage(responseId, { isStreaming: false });
+                const { updateAgentMessage, updateBoardroomMessage } = useStore.getState();
+                if (isBoardroomMode) updateBoardroomMessage(responseId, { isStreaming: false });
+                else updateAgentMessage(responseId, { isStreaming: false });
             }
         } catch (e: unknown) {
             const errObj = e instanceof Error ? e : new Error(String(e));
@@ -386,7 +410,7 @@ export class AgentService {
             const resId = index === 0 ? initialResponseId : uuidv4();
 
             if (index > 0) {
-                useStore.getState().addAgentMessage({
+                useStore.getState().addBoardroomMessage({
                     id: resId,
                     role: 'model',
                     text: '',
@@ -396,7 +420,7 @@ export class AgentService {
                     agentId: agentId
                 });
             } else {
-                useStore.getState().updateAgentMessage(resId, { agentId });
+                useStore.getState().updateBoardroomMessage(resId, { agentId });
             }
 
             let currentStreamedText = '';
@@ -409,10 +433,10 @@ export class AgentService {
                     (event) => {
                         if (event.type === 'token') {
                             currentStreamedText += event.content;
-                            useStore.getState().updateAgentMessage(resId, { text: currentStreamedText });
+                            useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
                         }
                         if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
-                            const currentMsg = useStore.getState().agentHistory.find(m => m.id === resId);
+                            const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
                             const newThought: AgentThought = {
                                 id: uuidv4(),
                                 text: event.content || '',
@@ -424,7 +448,7 @@ export class AgentService {
                             }
 
                             if (currentMsg) {
-                                useStore.getState().updateAgentMessage(resId, {
+                                useStore.getState().updateBoardroomMessage(resId, {
                                     thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
                                 });
                             }
@@ -436,13 +460,13 @@ export class AgentService {
                 );
 
                 if (result && result.text) {
-                    useStore.getState().updateAgentMessage(resId, {
+                    useStore.getState().updateBoardroomMessage(resId, {
                         text: result.text,
                         thoughtSignature: result.thoughtSignature,
                         isStreaming: false
                     });
                 } else {
-                    useStore.getState().updateAgentMessage(resId, {
+                    useStore.getState().updateBoardroomMessage(resId, {
                         thoughtSignature: result?.thoughtSignature,
                         isStreaming: false
                     });
