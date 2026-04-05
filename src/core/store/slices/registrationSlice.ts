@@ -2,20 +2,15 @@ import { StateCreator } from 'zustand';
 import type { OrgId, TrackRegistrationState, RegistrationFocus, OrgRegistrationRecord } from '@/modules/registration/types';
 
 export interface RegistrationSlice {
-  // What's currently focused in the Registration Center
   registrationFocus: RegistrationFocus;
   setRegistrationFocus: (focus: RegistrationFocus) => void;
 
-  // Per-track registration state (loaded on demand from Firestore)
   registrationStates: Record<string, TrackRegistrationState>;
   setTrackRegistrationState: (trackId: string, state: TrackRegistrationState) => void;
   updateOrgRecord: (trackId: string, orgId: OrgId, record: OrgRegistrationRecord) => void;
 
-  // Whether the AI co-pilot rail is actively filling a form
-  registrationAIActive: boolean;
-  setRegistrationAIActive: (active: boolean) => void;
-
-  // Current AI co-pilot message (shown in the AI rail)
+  // One-shot message bus: AgentOrchestrator/navigate_to pushes a message here;
+  // RegistrationAIRail consumes and clears it. Not persisted.
   registrationAIMessage: string;
   setRegistrationAIMessage: (message: string) => void;
 }
@@ -50,9 +45,6 @@ export const createRegistrationSlice: StateCreator<RegistrationSlice> = (set) =>
         },
       };
     }),
-
-  registrationAIActive: false,
-  setRegistrationAIActive: (active) => set({ registrationAIActive: active }),
 
   registrationAIMessage: '',
   setRegistrationAIMessage: (message) => set({ registrationAIMessage: message }),

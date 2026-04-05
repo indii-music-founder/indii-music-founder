@@ -107,6 +107,13 @@ export interface OrgAdapter {
 // Form values as the user fills them (gap fields only shown)
 export type FormValues = Record<string, string | boolean | string[]>;
 
+export const CATEGORY_LABELS: Record<OrgCategory, string> = {
+  copyright: 'Copyright',
+  pro: 'Performing Rights',
+  digital: 'Digital Performance',
+  mechanical: 'Mechanical',
+};
+
 // State shape managed by the registration Zustand slice
 export interface RegistrationFocus {
   trackId: string | null;

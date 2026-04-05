@@ -1,4 +1,5 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
+import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
 
 export const BmiAdapter: OrgAdapter = {
@@ -63,7 +64,7 @@ export const BmiAdapter: OrgAdapter = {
         isrc: track.isrc,
       });
 
-      await persistRecord(userId, track.id, 'bmi', data, result.confirmationId);
+      await persistOrgRecord(userId, track.id, 'bmi', data, result.confirmationId);
 
       return {
         success: true,
@@ -72,7 +73,7 @@ export const BmiAdapter: OrgAdapter = {
       };
     } catch (err: unknown) {
       logger.error('[BmiAdapter] Registration failed:', err);
-      await persistRecord(userId, track.id, 'bmi', data, undefined);
+      await persistOrgRecord(userId, track.id, 'bmi', data, undefined);
       return {
         success: false,
         errorMessage: err instanceof Error ? err.message : 'BMI Works Express submission failed',
@@ -84,18 +85,3 @@ export const BmiAdapter: OrgAdapter = {
     }
   },
 };
-
-async function persistRecord(
-  userId: string, trackId: string, orgId: string,
-  formSnapshot: Record<string, unknown>, confirmationNumber?: string
-) {
-  try {
-    const { db } = await import('@/services/firebase');
-    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-    await setDoc(
-      doc(db, `registrations/${userId}/tracks/${trackId}/orgs/${orgId}`),
-      { status: confirmationNumber ? 'submitted' : 'in_progress', submittedAt: serverTimestamp(), confirmationNumber: confirmationNumber ?? null, formSnapshot, lastUpdated: serverTimestamp() },
-      { merge: true }
-    );
-  } catch (e) { logger.warn('[BmiAdapter] Failed to persist:', e); }
-}

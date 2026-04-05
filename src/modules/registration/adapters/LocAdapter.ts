@@ -1,4 +1,5 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
+import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
 
 export const LocAdapter: OrgAdapter = {
@@ -103,7 +104,7 @@ export const LocAdapter: OrgAdapter = {
       const result = await browserService.executeTask(task);
 
       // Persist record to Firestore
-      await persistRecord(userId, track.id, 'loc', data, result.confirmationNumber);
+      await persistOrgRecord(userId, track.id, 'loc', data, result.confirmationNumber);
 
       return {
         success: true,
@@ -135,28 +136,3 @@ export const LocAdapter: OrgAdapter = {
   },
 };
 
-async function persistRecord(
-  userId: string,
-  trackId: string,
-  orgId: string,
-  formSnapshot: Record<string, unknown>,
-  confirmationNumber?: string
-) {
-  try {
-    const { db } = await import('@/services/firebase');
-    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-    await setDoc(
-      doc(db, `registrations/${userId}/tracks/${trackId}/orgs/${orgId}`),
-      {
-        status: confirmationNumber ? 'submitted' : 'in_progress',
-        submittedAt: serverTimestamp(),
-        confirmationNumber: confirmationNumber ?? null,
-        formSnapshot,
-        lastUpdated: serverTimestamp(),
-      },
-      { merge: true }
-    );
-  } catch (e) {
-    logger.warn('[LocAdapter] Failed to persist registration record:', e);
-  }
-}
