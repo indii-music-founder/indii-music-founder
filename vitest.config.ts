@@ -26,6 +26,10 @@ export default defineConfig({
       ...configDefaults.exclude,
       '**/e2e/**',
       '**/functions/**',
+      // Monorepo workspace packages — run tests from src/ only until migration finalized
+      '**/packages/**',
+      '**/landing-page/**',
+      '**/_archive_pre_monorepo/**',
       // Skip integration tests - they trigger deep module chains
       '**/*.integration.test.ts',
       '**/*.integration.test.tsx',
