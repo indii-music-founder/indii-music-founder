@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-04-05 15:34 UTC
-**Branch:** `claude/review-library-registration-C04tR`
+**Updated:** 2026-04-05 15:52 UTC
+**Branch:** `main`
 
 ## Recent Commits
 ```
+ab8115e feat(registration): Registration Center — artist never leaves indiiOS
+fbe0e6c chore: session checkpoint [15:34]
 60efe51 chore(tasks): add Sprint 11 Registration Center to task.md
 fb1d9d9 chore: session checkpoint [15:25]
 4a7d6e0 refactor(registration): simplify — fix all review findings
@@ -12,8 +14,6 @@ ac39745 feat(registration): build Registration Center — full Phase 1-6
 d645bb7 chore: session checkpoint [14:55]
 436e925 docs(registration): add Registration Center blueprint
 15ba421 chore: session checkpoint [14:44]
-3f02b0a chore: session checkpoint [14:34]
-9f27358 chore: session checkpoint [14:30]
 ```
 
 ## Working State
