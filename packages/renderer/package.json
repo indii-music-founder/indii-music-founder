@@ -44,6 +44,7 @@
         "framer-motion": "^12.35.1",
         "i18next": "^25.8.14",
         "i18next-browser-languagedetector": "^8.2.1",
+        "idb": "^7.1.1",
         "inngest": "3.46.0",
         "jszip": "3.10.1",
         "lucide-react": "0.555.0",
