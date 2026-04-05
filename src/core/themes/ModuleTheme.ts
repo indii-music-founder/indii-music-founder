@@ -227,7 +227,13 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         officeName: 'Video Ext. Display',
         accent: '#0d1117',
         backgroundGradient: 'none',
-    }
+    },
+    'registration': {
+        officeName: 'Registration Center',
+        accent: '#009688', // Teal (filing/compliance feel)
+        backgroundGradient: 'radial-gradient(circle at 30% 70%, rgba(0, 150, 136, 0.06), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'grid', opacity: 0.15 },
+    },
 };
 
 

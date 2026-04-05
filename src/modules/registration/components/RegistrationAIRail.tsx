@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { OrgAdapter, CatalogTrack } from '../types';
-import type { AgentService as AgentServiceType } from '@/services/agent/AgentService';
+import { GenAI } from '@/services/ai/GenAI';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 interface RegistrationAIRailProps {
   focusedAdapter: OrgAdapter | null;
@@ -30,7 +31,7 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
   const [input, setInput] = useState('');
   const [isActive, setIsActive] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const agentRef = useRef<AgentServiceType | null>(null);
+
 
   // Consume one-shot message from store (pushed by AgentOrchestrator / navigate_to)
   useEffect(() => {
@@ -41,7 +42,8 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
     }
   }, [registrationAIMessage, setRegistrationAIMessage]);
 
-  // Greet when a new org is focused
+  // Greet when a new org is focused — intentionally keyed by .id to avoid
+  // duplicate greetings on every shallow prop reference change.
   useEffect(() => {
     if (focusedAdapter && track) {
       const greeting = buildGreeting(focusedAdapter, track);
@@ -52,6 +54,7 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
       });
       setIsActive(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusedAdapter?.id, track?.id]);
 
   useEffect(() => {
@@ -65,20 +68,16 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
     setMessages(prev => [...prev, { role: 'user', text, ts: Date.now() }]);
 
     try {
-      // Reuse AgentService instance across messages
-      if (!agentRef.current) {
-        const { AgentService } = await import('@/services/agent/AgentService');
-        agentRef.current = new AgentService();
-      }
-      const context = {
-        activeModule: 'registration' as const,
-        projectHandle: track ? { name: track.title, type: 'registration' as const } : undefined,
-        systemContext: focusedAdapter
-          ? `The user is in the Registration Center filling out the ${focusedAdapter.name} registration form for "${track?.title}". Answer concisely.`
-          : 'The user is in the Registration Center of indiiOS.',
-      };
-      const reply = await agentRef.current.sendMessage(text, context);
-      setMessages(prev => [...prev, { role: 'ai', text: reply.content, ts: Date.now() }]);
+      const systemPrompt = focusedAdapter
+        ? `You are indii, a creative assistant. The user is filling out the ${focusedAdapter.name} registration form for "${track?.title}". Answer concisely with relevant music industry knowledge.`
+        : 'You are indii, a creative assistant in the Registration Center. Answer concisely.';
+
+      const replyText = await GenAI.generateText(
+        text,
+        AI_MODELS.TEXT.FAST,
+        systemPrompt
+      );
+      setMessages(prev => [...prev, { role: 'ai', text: replyText || "I'm here — ask me anything about this registration.", ts: Date.now() }]);
     } catch {
       setMessages(prev => [
         ...prev,

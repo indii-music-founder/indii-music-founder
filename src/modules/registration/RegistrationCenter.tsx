@@ -128,27 +128,37 @@ export default function RegistrationCenter() {
   useEffect(() => {
     if (!user?.uid) return;
     const uid = user.uid;
-    setLoading(true);
-    setLoadError(null);
+    let cancelled = false;
 
     // Load catalog and registration states in parallel
-    Promise.all([loadCatalogTracks(uid), null] as const)
-      .then(async ([loaded]) => {
+    (async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const loaded = await loadCatalogTracks(uid);
+        if (cancelled) return;
         setTracks(loaded);
         if (!registrationFocus.trackId && loaded[0]) {
           setRegistrationFocus({ orgId: registrationFocus.orgId, trackId: loaded[0].id });
         }
         const states = await loadRegistrationStates(uid, loaded.map(t => t.id));
+        if (cancelled) return;
         Object.entries(states).forEach(([trackId, state]) => {
           setTrackRegistrationState(trackId, state);
         });
-      })
-      .catch(err => {
+      } catch (err) {
+        if (cancelled) return;
         logger.error('[RegistrationCenter] Failed to load catalog:', err);
         setLoadError('Failed to load your catalog. Check your connection and try again.');
-      })
-      .finally(() => setLoading(false));
-  }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+    // Intentionally re-run only when uid changes — store actions are stable refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   const handleSelectTrack = useCallback((trackId: string) => {
     setRegistrationFocus({ trackId, orgId: null });

@@ -53,22 +53,24 @@ export const BmiAdapter: OrgAdapter = {
     logger.info('[BmiAdapter] Submitting work registration to BMI Works Express', { trackId: track.id });
 
     try {
-      const { PRORightsService } = await import('@/services/rights/PRORightsService');
-      const service = new PRORightsService();
+      const { registerWithBMI } = await import('@/services/rights/PRORightsService');
 
-      const result = await service.registerWithBMI({
-        title: String(data.workTitle),
+      const metadata = {
+        trackTitle: String(data.workTitle),
         iswc: data.iswc ? String(data.iswc) : undefined,
-        publisherNumber: data.publisherNumber ? String(data.publisherNumber) : undefined,
-        writers: track.writersAndContributors,
         isrc: track.isrc,
-      });
+        composerName: track.writersAndContributors[0]?.name ?? String(data.writers),
+        artistName: track.artistName,
+        publisherShare: data.publisherNumber ? 50 : undefined,
+      };
 
-      await persistOrgRecord(userId, track.id, 'bmi', data, result.confirmationId);
+      const result = await registerWithBMI(userId, metadata as Parameters<typeof registerWithBMI>[1]);
+
+      await persistOrgRecord(userId, track.id, 'bmi', data, result.workId);
 
       return {
         success: true,
-        confirmationNumber: result.confirmationId,
+        confirmationNumber: result.workId,
         submittedAt: new Date(),
       };
     } catch (err: unknown) {
