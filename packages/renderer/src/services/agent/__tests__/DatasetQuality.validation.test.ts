@@ -21,7 +21,7 @@ import { TOOL_AUTHORIZATION, ALL_AGENT_IDS } from './AgentStressTest.harness';
 // Constants
 // ============================================================================
 
-const DATASETS_DIR = path.resolve(__dirname, '../../../../docs/agent-training/datasets');
+const DATASETS_DIR = path.resolve(__dirname, '../../../../../../docs/agent-training/datasets');
 
 /** Required fields per the SCHEMA.md specification */
 const REQUIRED_FIELDS = ['agent_id', 'scenario_id', 'category', 'input', 'expected'];
