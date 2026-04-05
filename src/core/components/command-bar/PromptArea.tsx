@@ -60,8 +60,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setCommandBarCollapsed,
         commandBarPosition,
         setCommandBarPosition,
-        isBoardroomMode,
-        dispatchBoardroomMessage
+        isBoardroomMode
     } = useStore(useShallow(state => ({
         // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
         currentModule: state.currentModule,
@@ -84,8 +83,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setCommandBarCollapsed: state.setCommandBarCollapsed,
         commandBarPosition: state.commandBarPosition,
         setCommandBarPosition: state.setCommandBarPosition,
-        isBoardroomMode: state.isBoardroomMode,
-        dispatchBoardroomMessage: state.dispatchBoardroomMessage
+        isBoardroomMode: state.isBoardroomMode
     })));
 
     const isIndiiMode = chatChannel === 'indii';
@@ -269,12 +267,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             setCommandBarInput('');
             setCommandBarAttachments([]);
 
-            if (isBoardroomMode && dispatchBoardroomMessage) {
-                dispatchBoardroomMessage(currentInput);
-                setIsProcessing(false);
-                return;
-            }
-
             // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top
             const isOnAgentModule = currentModule === 'agent';
             if (!isOnAgentModule) {
@@ -303,7 +295,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             logger.error("PromptArea: Fatal crash", fatalError);
             setIsProcessing(false);
         }
-    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, setCommandBarInput, setCommandBarAttachments, isBoardroomMode, dispatchBoardroomMessage]);
+    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, setCommandBarInput, setCommandBarAttachments]);
 
     return (
         <div

@@ -48,7 +48,8 @@ export interface AgentSessionSlice {
 
     // Boardroom
     boardroomMessages: AgentMessage[];
-    dispatchBoardroomMessage: (text: string) => void;
+    addBoardroomMessage: (msg: AgentMessage) => void;
+    updateBoardroomMessage: (id: string, updates: Partial<AgentMessage>) => void;
 
     // Session State
     sessions: Record<string, ConversationSession>;
@@ -85,37 +86,15 @@ export function buildAgentSessionState(
         sessions: {},
         activeSessionId: null,
 
-        dispatchBoardroomMessage: (text: string) => {
-            const userMsg: AgentMessage = {
-                id: crypto.randomUUID(),
-                role: 'user',
-                text,
-                timestamp: Date.now()
-            };
+        addBoardroomMessage: (msg) => set(state => ({
+            boardroomMessages: [...state.boardroomMessages, msg]
+        })),
 
-            set(state => ({
-                boardroomMessages: [...state.boardroomMessages, userMsg]
-            }));
-
-            // Simulate API delay for offline mode
-            setTimeout(() => {
-                const globalState = get() as { activeAgents?: string[] };
-                const active = globalState.activeAgents || [];
-                const responders = active.length > 0 ? active.join(', ') : 'Conductor';
-
-                const modelMsg: AgentMessage = {
-                    id: crypto.randomUUID(),
-                    role: 'model',
-                    text: `**[Mock Response from ${responders}]**\n\nI have received your directive regarding: "${text}". \n\n*Note: We are operating in offline Boardroom Mode, simulating this strategic analysis without incurring API calls.*`,
-                    timestamp: Date.now(),
-                    agentId: active[0] || 'system'
-                };
-
-                set(state => ({
-                    boardroomMessages: [...state.boardroomMessages, modelMsg]
-                }));
-            }, 2000);
-        },
+        updateBoardroomMessage: (id, updates) => set(state => ({
+            boardroomMessages: state.boardroomMessages.map(msg =>
+                msg.id === id ? { ...msg, ...updates } : msg
+            )
+        })),
 
         createSession: (title = 'New Conversation', initialAgents = ['indii'], namespace?: string) => {
             const id = crypto.randomUUID();
