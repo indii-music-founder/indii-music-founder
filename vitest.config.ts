@@ -1,17 +1,24 @@
 import { defineConfig, configDefaults } from 'vitest/config';
 import path from 'path';
 
+/**
+ * Vitest configuration — post-monorepo migration.
+ *
+ * Tests run from packages/renderer/src/ as the canonical source.
+ * The `src/` symlink → `packages/renderer/src/` preserves backward
+ * compatibility with open editors and other agents.
+ */
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(import.meta.dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './packages/renderer/src'),
       '@agents': path.resolve(import.meta.dirname, './agents'),
     },
   },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: [path.resolve(import.meta.dirname, './src/test/setup.ts')],
+    setupFiles: [path.resolve(import.meta.dirname, './packages/renderer/src/test/setup.ts')],
     clearMocks: true,
     restoreMocks: true,
     environmentOptions: {
@@ -22,13 +29,16 @@ export default defineConfig({
     teardownTimeout: 1000,
     hookTimeout: 10000,
     pool: 'forks',
+    // Test discovery: scan packages/renderer/src/ for test files
+    include: ['packages/renderer/src/**/*.{test,spec}.{ts,tsx}'],
     exclude: [
       ...configDefaults.exclude,
       '**/e2e/**',
-      '**/functions/**',
-      // Monorepo workspace packages — run tests from src/ only until migration finalized
-      '**/packages/**',
-      '**/landing-page/**',
+      // Non-renderer workspace packages (they have their own test configs)
+      '**/packages/main/**',
+      '**/packages/firebase/**',
+      '**/packages/shared/**',
+      '**/packages/landing/**',
       '**/_archive_pre_monorepo/**',
       // Skip integration tests - they trigger deep module chains
       '**/*.integration.test.ts',
@@ -46,13 +56,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
       reportsDirectory: './coverage',
-      include: ['src/**/*.{ts,tsx}'],
+      include: ['packages/renderer/src/**/*.{ts,tsx}'],
       exclude: [
-        'src/test/**',
-        'src/**/*.test.{ts,tsx}',
-        'src/**/*.d.ts',
-        'src/types/**',
-        'src/vite-env.d.ts',
+        'packages/renderer/src/test/**',
+        'packages/renderer/src/**/*.test.{ts,tsx}',
+        'packages/renderer/src/**/*.d.ts',
+        'packages/renderer/src/types/**',
+        'packages/renderer/src/vite-env.d.ts',
       ],
       thresholds: {
         branches: 60,
