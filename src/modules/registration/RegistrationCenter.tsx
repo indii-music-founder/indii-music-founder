@@ -5,100 +5,88 @@ import { CatalogRail } from './components/CatalogRail';
 import { RegistrationSheet } from './components/RegistrationSheet';
 import { RegistrationAIRail } from './components/RegistrationAIRail';
 import { ORG_ADAPTERS } from './adapters';
-import type { CatalogTrack, OrgId, SubmissionResult } from './types';
+import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
 import { logger } from '@/utils/logger';
 
 // ============================================================================
-// Catalog loader — pulls tracks from existing distribution/project store
+// Data loaders (module-level, not component-level)
 // ============================================================================
 
 async function loadCatalogTracks(userId: string): Promise<CatalogTrack[]> {
-  try {
-    const { db } = await import('@/services/firebase');
-    const { collection, getDocs, query, where } = await import('firebase/firestore');
+  const { db } = await import('@/services/firebase');
+  const { collection, getDocs, query, where } = await import('firebase/firestore');
 
-    const tracksRef = collection(db, `users/${userId}/tracks`);
-    const snap = await getDocs(query(tracksRef, where('deleted', '!=', true)));
+  const snap = await getDocs(
+    query(collection(db, `users/${userId}/tracks`), where('deleted', '!=', true))
+  );
 
-    return snap.docs.map(doc => {
-      const d = doc.data();
-      return {
-        id: doc.id,
-        title: d.title ?? 'Untitled',
-        artistName: d.artistName ?? d.artist ?? '',
-        writersAndContributors: d.writersAndContributors ?? d.contributors ?? [],
-        isrc: d.isrc,
-        iswc: d.iswc,
-        releaseDate: d.releaseDate,
-        genre: d.genre,
-        duration: d.duration,
-        bpm: d.bpm,
-        musicalKey: d.key ?? d.musicalKey,
-        isPublished: d.isPublished ?? Boolean(d.releaseDate),
-        yearOfCreation: d.yearOfCreation ?? (d.releaseDate ? new Date(d.releaseDate).getFullYear().toString() : new Date().getFullYear().toString()),
-        copyrightClaimant: d.copyrightClaimant ?? d.artistName ?? d.artist,
-        workForHire: d.workForHire ?? false,
-        countryOfFirstPublication: d.countryOfFirstPublication ?? 'United States',
-        publisherName: d.publisherName,
-        publisherNumber: d.publisherNumber,
-      } as CatalogTrack;
-    });
-  } catch (err) {
-    logger.warn('[RegistrationCenter] Could not load tracks from Firestore, using demo data:', err);
-    // Demo data for development / web sessions without Firestore
-    return [
-      {
-        id: 'demo-track-1',
-        title: 'Demo Track (Add your catalog)',
-        artistName: 'Your Artist Name',
-        writersAndContributors: [{ name: 'Your Name', role: 'Composer/Lyricist', percentage: 100 }],
-        isPublished: false,
-        yearOfCreation: new Date().getFullYear().toString(),
-        copyrightClaimant: 'Your Legal Name',
-        workForHire: false,
-        countryOfFirstPublication: 'United States',
-      },
-    ];
-  }
+  return snap.docs.map(doc => {
+    const d = doc.data();
+    return {
+      id: doc.id,
+      title: d.title ?? 'Untitled',
+      artistName: d.artistName ?? d.artist ?? '',
+      writersAndContributors: d.writersAndContributors ?? d.contributors ?? [],
+      isrc: d.isrc,
+      iswc: d.iswc,
+      releaseDate: d.releaseDate,
+      genre: d.genre,
+      duration: d.duration,
+      bpm: d.bpm,
+      musicalKey: d.key ?? d.musicalKey,
+      isPublished: d.isPublished ?? Boolean(d.releaseDate),
+      yearOfCreation: d.yearOfCreation ?? new Date().getFullYear().toString(),
+      copyrightClaimant: d.copyrightClaimant ?? d.artistName ?? d.artist,
+      workForHire: d.workForHire ?? false,
+      countryOfFirstPublication: d.countryOfFirstPublication ?? 'United States',
+      publisherName: d.publisherName,
+      publisherNumber: d.publisherNumber,
+    } as CatalogTrack;
+  });
 }
 
-async function loadRegistrationStates(userId: string, trackIds: string[]) {
-  const states: Record<string, import('./types').TrackRegistrationState> = {};
-  try {
-    const { db } = await import('@/services/firebase');
-    const { collection, getDocs } = await import('firebase/firestore');
+async function loadRegistrationStates(
+  userId: string,
+  trackIds: string[]
+): Promise<Record<string, TrackRegistrationState>> {
+  if (trackIds.length === 0) return {};
 
-    for (const trackId of trackIds) {
-      const orgsRef = collection(db, `registrations/${userId}/tracks/${trackId}/orgs`);
-      const snap = await getDocs(orgsRef);
-      if (!snap.empty) {
-        const orgs: import('./types').TrackRegistrationState['orgs'] = {};
-        let confirmed = 0;
-        snap.docs.forEach(doc => {
-          const d = doc.data();
-          const orgId = doc.id as OrgId;
-          orgs[orgId] = {
-            orgId,
-            status: d.status,
-            submittedAt: d.submittedAt?.toDate(),
-            confirmedAt: d.confirmedAt?.toDate(),
-            confirmationNumber: d.confirmationNumber,
-            formSnapshot: d.formSnapshot,
-            errorMessage: d.errorMessage,
-            lastUpdated: d.lastUpdated?.toDate() ?? new Date(),
-          };
-          if (d.status === 'confirmed') confirmed++;
-        });
-        const total = snap.docs.length || 1;
-        states[trackId] = {
-          trackId,
-          orgs,
-          completenessScore: Math.round((confirmed / total) * 100),
-        };
-      }
-    }
-  } catch (err) {
-    logger.warn('[RegistrationCenter] Could not load registration states:', err);
+  const { db } = await import('@/services/firebase');
+  const { collection, getDocs } = await import('firebase/firestore');
+
+  // Fetch all tracks in parallel — no N+1
+  const results = await Promise.all(
+    trackIds.map(trackId =>
+      getDocs(collection(db, `registrations/${userId}/tracks/${trackId}/orgs`))
+        .then(snap => ({ trackId, snap }))
+    )
+  );
+
+  const states: Record<string, TrackRegistrationState> = {};
+  for (const { trackId, snap } of results) {
+    if (snap.empty) continue;
+    const orgs: TrackRegistrationState['orgs'] = {};
+    let confirmed = 0;
+    snap.docs.forEach(doc => {
+      const d = doc.data();
+      const orgId = doc.id as OrgId;
+      orgs[orgId] = {
+        orgId,
+        status: d.status,
+        submittedAt: d.submittedAt?.toDate(),
+        confirmedAt: d.confirmedAt?.toDate(),
+        confirmationNumber: d.confirmationNumber,
+        formSnapshot: d.formSnapshot,
+        errorMessage: d.errorMessage,
+        lastUpdated: d.lastUpdated?.toDate() ?? new Date(),
+      };
+      if (d.status === 'confirmed') confirmed++;
+    });
+    states[trackId] = {
+      trackId,
+      orgs,
+      completenessScore: Math.round((confirmed / snap.docs.length) * 100),
+    };
   }
   return states;
 }
@@ -108,7 +96,14 @@ async function loadRegistrationStates(userId: string, trackIds: string[]) {
 // ============================================================================
 
 export default function RegistrationCenter() {
-  const { user, registrationFocus, setRegistrationFocus, registrationStates, setTrackRegistrationState, updateOrgRecord } = useStore(
+  const {
+    user,
+    registrationFocus,
+    setRegistrationFocus,
+    registrationStates,
+    setTrackRegistrationState,
+    updateOrgRecord,
+  } = useStore(
     useShallow(s => ({
       user: s.user,
       registrationFocus: s.registrationFocus,
@@ -121,60 +116,89 @@ export default function RegistrationCenter() {
 
   const [tracks, setTracks] = useState<CatalogTrack[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Derive selected track from focus
   const selectedTrack = registrationFocus.trackId
-    ? tracks.find(t => t.id === registrationFocus.trackId) ?? null
-    : tracks[0] ?? null;
+    ? (tracks.find(t => t.id === registrationFocus.trackId) ?? tracks[0] ?? null)
+    : (tracks[0] ?? null);
 
   const focusedOrgId = registrationFocus.orgId;
   const focusedAdapter = focusedOrgId ? ORG_ADAPTERS[focusedOrgId] : null;
 
-  // Load catalog
   useEffect(() => {
     if (!user?.uid) return;
+    const uid = user.uid;
     setLoading(true);
-    loadCatalogTracks(user.uid).then(async (loaded) => {
-      setTracks(loaded);
-      // Auto-select first track if nothing focused
-      if (!registrationFocus.trackId && loaded[0]) {
-        setRegistrationFocus({ ...registrationFocus, trackId: loaded[0].id });
-      }
-      // Load registration states for all tracks
-      const states = await loadRegistrationStates(user.uid!, loaded.map(t => t.id));
-      Object.entries(states).forEach(([trackId, state]) => {
-        setTrackRegistrationState(trackId, state);
-      });
-      setLoading(false);
-    });
-  }, [user?.uid]);
+    setLoadError(null);
+
+    // Load catalog and registration states in parallel
+    Promise.all([loadCatalogTracks(uid), null] as const)
+      .then(async ([loaded]) => {
+        setTracks(loaded);
+        if (!registrationFocus.trackId && loaded[0]) {
+          setRegistrationFocus({ orgId: registrationFocus.orgId, trackId: loaded[0].id });
+        }
+        const states = await loadRegistrationStates(uid, loaded.map(t => t.id));
+        Object.entries(states).forEach(([trackId, state]) => {
+          setTrackRegistrationState(trackId, state);
+        });
+      })
+      .catch(err => {
+        logger.error('[RegistrationCenter] Failed to load catalog:', err);
+        setLoadError('Failed to load your catalog. Check your connection and try again.');
+      })
+      .finally(() => setLoading(false));
+  }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelectTrack = useCallback((trackId: string) => {
     setRegistrationFocus({ trackId, orgId: null });
   }, [setRegistrationFocus]);
 
   const handleSelectOrg = useCallback((orgId: OrgId) => {
-    setRegistrationFocus(prev => ({ ...prev, orgId }));
-  }, [setRegistrationFocus]);
+    setRegistrationFocus({ trackId: registrationFocus.trackId, orgId });
+  }, [setRegistrationFocus, registrationFocus.trackId]);
 
   const handleSubmitComplete = useCallback((orgId: OrgId, result: SubmissionResult) => {
-    const trackId = registrationFocus.trackId;
-    if (!trackId || !user?.uid) return;
-
-    updateOrgRecord(trackId, orgId, {
+    const trackId = selectedTrack?.id;
+    if (!trackId) return;
+    const record: OrgRegistrationRecord = {
       orgId,
       status: result.success ? 'submitted' : result.requiresManualStep ? 'in_progress' : 'error',
       submittedAt: result.submittedAt,
       confirmationNumber: result.confirmationNumber,
       errorMessage: result.errorMessage,
       lastUpdated: new Date(),
-    });
-  }, [registrationFocus.trackId, user?.uid, updateOrgRecord]);
+    };
+    updateOrgRecord(trackId, orgId, record);
+  }, [selectedTrack?.id, updateOrgRecord]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-600 text-sm">
         Loading your catalog…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500 text-sm px-8 text-center">
+        <span className="text-red-400">{loadError}</span>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-xs text-purple-400 hover:text-purple-300 underline"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (tracks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500 text-sm px-8 text-center">
+        <p>No tracks found in your catalog.</p>
+        <p className="text-xs text-gray-600">Add tracks via the Distribution module, then return here to register them.</p>
       </div>
     );
   }

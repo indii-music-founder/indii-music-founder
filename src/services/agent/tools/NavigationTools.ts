@@ -1,5 +1,5 @@
 import type { AppSlice } from '@/core/store/slices/appSlice';
-import { wrapTool } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import type { OrgId } from '@/modules/registration/types';
 
@@ -7,10 +7,7 @@ export const NavigationTools = {
     switch_module: wrapTool('switch_module', async (args: { module: AppSlice['currentModule'] }) => {
         const { useStore } = await import('@/core/store');
         useStore.getState().setModule(args.module);
-        return {
-            module: args.module,
-            message: `Navigated to module: ${args.module}`
-        };
+        return toolSuccess({ module: args.module }, `Navigated to module: ${args.module}`);
     }),
 
     /**
@@ -37,18 +34,15 @@ export const NavigationTools = {
             });
             // Activate AI co-pilot
             if (args.orgId) {
-                store.setRegistrationAIActive(true);
                 store.setRegistrationAIMessage(
                     `Opening ${args.orgId.toUpperCase()} registration. Let me pre-fill what I already know about your catalog…`
                 );
             }
         }
 
-        return {
-            module: args.module,
-            orgId: args.orgId ?? null,
-            trackId: args.trackId ?? null,
-            message: `Navigated to ${args.module}${args.orgId ? ` › ${args.orgId.toUpperCase()}` : ''}${args.trackId ? ` for track ${args.trackId}` : ''}`
-        };
+        return toolSuccess(
+            { module: args.module, orgId: args.orgId ?? null, trackId: args.trackId ?? null },
+            `Navigated to ${args.module}${args.orgId ? ` › ${args.orgId.toUpperCase()}` : ''}${args.trackId ? ` for track ${args.trackId}` : ''}`
+        );
     })
 } satisfies Record<string, AnyToolFunction>;

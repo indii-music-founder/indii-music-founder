@@ -1,4 +1,5 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
+import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
 
 export const MlcAdapter: OrgAdapter = {
@@ -66,13 +67,13 @@ export const MlcAdapter: OrgAdapter = {
       `;
 
       const result = await browserService.executeTask(task);
-      await persistRecord(userId, track.id, 'mlc', data, result.confirmationNumber);
+      await persistOrgRecord(userId, track.id, 'mlc', data, result.confirmationNumber);
 
       return { success: true, confirmationNumber: result.confirmationNumber, submittedAt: new Date() };
     } catch (err: unknown) {
       const isWebSession = typeof window !== 'undefined' && !window.electronAPI;
       logger.warn('[MlcAdapter] Submission failed:', err);
-      await persistRecord(userId, track.id, 'mlc', data, undefined);
+      await persistOrgRecord(userId, track.id, 'mlc', data, undefined);
       return {
         success: false,
         submittedAt: new Date(),
@@ -85,18 +86,3 @@ export const MlcAdapter: OrgAdapter = {
     }
   },
 };
-
-async function persistRecord(
-  userId: string, trackId: string, orgId: string,
-  formSnapshot: Record<string, unknown>, confirmationNumber?: string
-) {
-  try {
-    const { db } = await import('@/services/firebase');
-    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-    await setDoc(
-      doc(db, `registrations/${userId}/tracks/${trackId}/orgs/${orgId}`),
-      { status: confirmationNumber ? 'submitted' : 'in_progress', submittedAt: serverTimestamp(), confirmationNumber: confirmationNumber ?? null, formSnapshot, lastUpdated: serverTimestamp() },
-      { merge: true }
-    );
-  } catch (e) { logger.warn('[MlcAdapter] Failed to persist:', e); }
-}

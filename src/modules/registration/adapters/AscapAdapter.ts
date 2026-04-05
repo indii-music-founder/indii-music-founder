@@ -1,4 +1,5 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
+import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
 
 export const AscapAdapter: OrgAdapter = {
@@ -81,7 +82,7 @@ export const AscapAdapter: OrgAdapter = {
         isrc: track.isrc,
       });
 
-      await persistRecord(userId, track.id, 'ascap', data, result.confirmationId);
+      await persistOrgRecord(userId, track.id, 'ascap', data, result.confirmationId);
 
       return {
         success: true,
@@ -90,7 +91,7 @@ export const AscapAdapter: OrgAdapter = {
       };
     } catch (err: unknown) {
       logger.error('[AscapAdapter] Registration failed:', err);
-      await persistRecord(userId, track.id, 'ascap', data, undefined);
+      await persistOrgRecord(userId, track.id, 'ascap', data, undefined);
       return {
         success: false,
         errorMessage: err instanceof Error ? err.message : 'ASCAP API submission failed',
@@ -102,18 +103,3 @@ export const AscapAdapter: OrgAdapter = {
     }
   },
 };
-
-async function persistRecord(
-  userId: string, trackId: string, orgId: string,
-  formSnapshot: Record<string, unknown>, confirmationNumber?: string
-) {
-  try {
-    const { db } = await import('@/services/firebase');
-    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-    await setDoc(
-      doc(db, `registrations/${userId}/tracks/${trackId}/orgs/${orgId}`),
-      { status: confirmationNumber ? 'submitted' : 'in_progress', submittedAt: serverTimestamp(), confirmationNumber: confirmationNumber ?? null, formSnapshot, lastUpdated: serverTimestamp() },
-      { merge: true }
-    );
-  } catch (e) { logger.warn('[AscapAdapter] Failed to persist:', e); }
-}

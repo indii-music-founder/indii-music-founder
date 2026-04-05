@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Sparkles, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { OrgAdapter, CatalogTrack } from '../types';
+import type { AgentService as AgentServiceType } from '@/services/agent/AgentService';
 
 interface RegistrationAIRailProps {
   focusedAdapter: OrgAdapter | null;
@@ -18,22 +19,24 @@ interface AIMessage {
 }
 
 export function RegistrationAIRail({ focusedAdapter, track, className }: RegistrationAIRailProps) {
-  const { registrationAIActive, registrationAIMessage, setRegistrationAIMessage } = useStore(
+  const { registrationAIMessage, setRegistrationAIMessage } = useStore(
     useShallow(s => ({
-      registrationAIActive: s.registrationAIActive,
       registrationAIMessage: s.registrationAIMessage,
       setRegistrationAIMessage: s.setRegistrationAIMessage,
     }))
   );
 
-  const [messages, setMessages] = React.useState<AIMessage[]>([]);
-  const [input, setInput] = React.useState('');
+  const [messages, setMessages] = useState<AIMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isActive, setIsActive] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const agentRef = useRef<AgentServiceType | null>(null);
 
-  // Show AI message from store (set by AgentOrchestrator or navigate_to)
+  // Consume one-shot message from store (pushed by AgentOrchestrator / navigate_to)
   useEffect(() => {
     if (registrationAIMessage) {
       setMessages(prev => [...prev, { role: 'ai', text: registrationAIMessage, ts: Date.now() }]);
+      setIsActive(true);
       setRegistrationAIMessage('');
     }
   }, [registrationAIMessage, setRegistrationAIMessage]);
@@ -47,6 +50,7 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
         if (last?.text === greeting) return prev;
         return [...prev, { role: 'ai', text: greeting, ts: Date.now() }];
       });
+      setIsActive(true);
     }
   }, [focusedAdapter?.id, track?.id]);
 
@@ -60,18 +64,20 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text, ts: Date.now() }]);
 
-    // Simple contextual response — wired to the agent system
     try {
-      const { AgentService } = await import('@/services/agent/AgentService');
-      const service = new AgentService();
+      // Reuse AgentService instance across messages
+      if (!agentRef.current) {
+        const { AgentService } = await import('@/services/agent/AgentService');
+        agentRef.current = new AgentService();
+      }
       const context = {
         activeModule: 'registration' as const,
         projectHandle: track ? { name: track.title, type: 'registration' as const } : undefined,
         systemContext: focusedAdapter
-          ? `The user is in the Registration Center, filling out the ${focusedAdapter.name} registration form for the track "${track?.title}". Answer registration-specific questions concisely.`
-          : `The user is in the Registration Center of indiiOS.`,
+          ? `The user is in the Registration Center filling out the ${focusedAdapter.name} registration form for "${track?.title}". Answer concisely.`
+          : 'The user is in the Registration Center of indiiOS.',
       };
-      const reply = await service.sendMessage(text, context);
+      const reply = await agentRef.current.sendMessage(text, context);
       setMessages(prev => [...prev, { role: 'ai', text: reply.content, ts: Date.now() }]);
     } catch {
       setMessages(prev => [
@@ -87,12 +93,12 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
       <div className="px-4 py-3 border-b border-white/[0.05] flex items-center gap-2 flex-shrink-0">
         <div className={cn(
           'w-6 h-6 rounded-full flex items-center justify-center',
-          registrationAIActive ? 'bg-purple-500/30 animate-pulse' : 'bg-white/[0.06]'
+          isActive ? 'bg-purple-500/30 animate-pulse' : 'bg-white/[0.06]'
         )}>
           <Bot size={13} className="text-purple-400" />
         </div>
         <span className="text-xs font-semibold text-gray-300">indii Co-Pilot</span>
-        {registrationAIActive && (
+        {isActive && (
           <span className="text-[10px] text-purple-400 ml-auto flex items-center gap-1">
             <Sparkles size={10} />
             Active
@@ -114,8 +120,8 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
             className={cn(
               'text-xs leading-relaxed rounded-xl px-3 py-2.5 max-w-[90%]',
               msg.role === 'ai'
-                ? 'bg-purple-500/10 border border-purple-500/20 text-purple-100/90 self-start'
-                : 'bg-white/[0.04] border border-white/[0.06] text-gray-200 self-end ml-auto'
+                ? 'bg-purple-500/10 border border-purple-500/20 text-purple-100/90'
+                : 'bg-white/[0.04] border border-white/[0.06] text-gray-200 ml-auto'
             )}
           >
             {msg.text}
@@ -148,11 +154,10 @@ export function RegistrationAIRail({ focusedAdapter, track, className }: Registr
 }
 
 function buildGreeting(adapter: OrgAdapter, track: CatalogTrack): string {
-  const orgName = adapter.name;
   const gapCount = adapter.fields.filter(f => f.required && !f.autoFillFrom).length;
-
+  const autoCount = adapter.fields.filter(f => f.autoFillFrom).length;
   if (gapCount === 0) {
-    return `I can complete your ${orgName} registration for "${track.title}" entirely from your catalog data. Just hit Submit when you're ready to review.`;
+    return `I can complete your ${adapter.name} registration for "${track.title}" entirely from your catalog data. Review and hit Submit when ready.`;
   }
-  return `For ${orgName} registration of "${track.title}", I've pre-filled ${adapter.fields.filter(f => f.autoFillFrom).length} fields from your catalog. I just need ${gapCount} thing${gapCount > 1 ? 's' : ''} from you — they're highlighted above.`;
+  return `For ${adapter.name} registration of "${track.title}", I've pre-filled ${autoCount} field${autoCount !== 1 ? 's' : ''} from your catalog. I just need ${gapCount} thing${gapCount !== 1 ? 's' : ''} from you — highlighted above.`;
 }

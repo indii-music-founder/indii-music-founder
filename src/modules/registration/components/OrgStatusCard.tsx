@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle2, Clock, AlertCircle, Circle, ChevronRight, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OrgAdapter, RegistrationStatus } from '../types';
+import { CATEGORY_LABELS } from '../types';
 
 interface OrgStatusCardProps {
   adapter: OrgAdapter;
@@ -24,12 +25,6 @@ const STATUS_CONFIG: Record<RegistrationStatus, {
   error: { icon: AlertCircle, label: 'Error', color: 'text-red-400', dot: 'bg-red-400' },
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  copyright: 'Copyright',
-  pro: 'Performing Rights',
-  digital: 'Digital Performance',
-  mechanical: 'Mechanical',
-};
 
 export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected, onSelect }: OrgStatusCardProps) {
   const cfg = STATUS_CONFIG[status];
@@ -57,7 +52,7 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
                 <span className="text-[10px] text-gray-500 border border-white/10 rounded px-1.5 py-0.5 flex-shrink-0">Desktop</span>
               )}
             </div>
-            <div className="text-[11px] text-gray-500 mt-0.5">{CATEGORY_LABEL[adapter.category]}</div>
+            <div className="text-[11px] text-gray-500 mt-0.5">{CATEGORY_LABELS[adapter.category]}</div>
           </div>
         </div>
 
@@ -89,7 +84,7 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
       )}
 
       {/* Manual step indicator */}
-      {adapter.requiresDesktop && status === 'not_started' && !window.electronAPI && (
+      {adapter.requiresDesktop && status === 'not_started' && typeof window !== 'undefined' && !window.electronAPI && (
         <div className="mt-2 flex items-center gap-1 text-[11px] text-amber-500/80">
           <ExternalLink size={10} />
           <span>Manual step required on web</span>

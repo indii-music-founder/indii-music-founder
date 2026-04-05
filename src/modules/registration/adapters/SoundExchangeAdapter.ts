@@ -1,4 +1,5 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
+import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
 
 export const SoundExchangeAdapter: OrgAdapter = {
@@ -62,12 +63,12 @@ export const SoundExchangeAdapter: OrgAdapter = {
         ownershipPercentage: Number(data.ownershipPercentage) || 100,
       });
 
-      await persistRecord(userId, track.id, 'soundexchange', data, result.confirmationId);
+      await persistOrgRecord(userId, track.id, 'soundexchange', data, result.confirmationId);
 
       return { success: true, confirmationNumber: result.confirmationId, submittedAt: new Date() };
     } catch (err: unknown) {
       logger.error('[SoundExchangeAdapter] Enrollment failed:', err);
-      await persistRecord(userId, track.id, 'soundexchange', data, undefined);
+      await persistOrgRecord(userId, track.id, 'soundexchange', data, undefined);
       return {
         success: false,
         errorMessage: err instanceof Error ? err.message : 'SoundExchange enrollment failed',
@@ -79,18 +80,3 @@ export const SoundExchangeAdapter: OrgAdapter = {
     }
   },
 };
-
-async function persistRecord(
-  userId: string, trackId: string, orgId: string,
-  formSnapshot: Record<string, unknown>, confirmationNumber?: string
-) {
-  try {
-    const { db } = await import('@/services/firebase');
-    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-    await setDoc(
-      doc(db, `registrations/${userId}/tracks/${trackId}/orgs/${orgId}`),
-      { status: confirmationNumber ? 'submitted' : 'in_progress', submittedAt: serverTimestamp(), confirmationNumber: confirmationNumber ?? null, formSnapshot, lastUpdated: serverTimestamp() },
-      { merge: true }
-    );
-  } catch (e) { logger.warn('[SoundExchangeAdapter] Failed to persist:', e); }
-}
