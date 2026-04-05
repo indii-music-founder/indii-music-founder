@@ -194,7 +194,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
                 onClick={() => !filePath && inputRef.current?.click()}
                 className={`border-2 border-dashed p-6 text-center ${filePath ? 'border-white/10' : 'cursor-pointer border-white/5'}`}
             >
-                <input type="file" ref={inputRef} className="hidden" accept="audio/*" onChange={(e) => setFilePath(e.target.files?.[0]?.path ?? '')} />
+                <input type="file" ref={inputRef} className="hidden" accept="audio/*" onChange={(e) => setFilePath((e.target.files?.[0] as File & { path: string })?.path ?? '')} />
                 <div data-testid="qc-audio-file-path" className="text-gray-400">{filePath || 'Drop audio file here or browse'}</div>
             </div>
 
