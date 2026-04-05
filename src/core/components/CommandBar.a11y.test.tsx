@@ -83,28 +83,85 @@ vi.mock('motion/react', () => ({
     AnimatePresence: ({ children }: any) => <>{children}</>
 }));
 
-describe('CommandBar Accessibility', () => {
-    const mockSetModule = vi.fn();
-    const mockToggleAgentWindow = vi.fn();
-    const mockToast = { success: vi.fn(), error: vi.fn() };
+// --- REACTIVE STORE MOCK ---
+vi.mock('@/core/store', async () => {
+    const { create } = await import('zustand');
+    const store = create((set: any) => ({
+        currentModule: 'dashboard',
+        setModule: vi.fn((m) => set({ currentModule: m })),
+        toggleAgentWindow: vi.fn(),
+        isAgentOpen: false,
+        chatChannel: 'agent', // Ensure delegate menu is visible
+        setChatChannel: vi.fn((c) => set({ chatChannel: c })),
+        isCommandBarDetached: true,
+        setCommandBarDetached: vi.fn((d) => set({ isCommandBarDetached: d })),
+        isCommandBarCollapsed: false,
+        setCommandBarCollapsed: vi.fn((c) => set({ isCommandBarCollapsed: c })),
+        commandBarPosition: 'center' as const,
+        setCommandBarPosition: vi.fn((p) => set({ commandBarPosition: p })),
+        commandBarInput: '',
+        setCommandBarInput: vi.fn((i) => set({ commandBarInput: i })),
+        commandBarAttachments: [] as File[],
+        setCommandBarAttachments: vi.fn((a) => set({ commandBarAttachments: a })),
+        isAgentProcessing: false,
+        agentMode: 'assistant',
+        isKnowledgeBaseEnabled: false,
+        setKnowledgeBaseEnabled: vi.fn((k) => set({ isKnowledgeBaseEnabled: k })),
+        activeAgentProvider: 'native',
+        setActiveAgentProvider: vi.fn((p) => set({ activeAgentProvider: p })),
+        isRightPanelOpen: false,
+        toggleRightPanel: vi.fn(),
+        rightPanelTab: 'agent',
+        rightPanelView: 'messages',
+    }));
+    return {
+        serverTimestamp: vi.fn(),
+        useStore: Object.assign(
+            (selector: any) => store(selector),
+            {
+                getState: store.getState,
+                setState: store.setState,
+                subscribe: store.subscribe,
+            }
+        ),
+        store
+    };
+});
 
-    beforeEach(() => {
+vi.mock('zustand/react/shallow', async () => {
+    const actual = await vi.importActual('zustand/react/shallow') as any;
+    return actual;
+});
+
+vi.mock('@/core/context/ToastContext', () => {
+    const mockToast = {
+        success: vi.fn(),
+        error: vi.fn()
+    };
+    return {
+        useToast: () => mockToast,
+        mockToast
+    };
+});
+
+describe('CommandBar Accessibility', () => {
+    beforeEach(async () => {
         vi.clearAllMocks();
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'dashboard',
-            setModule: mockSetModule,
-            toggleAgentWindow: mockToggleAgentWindow,
-            isAgentOpen: false,
-            chatChannel: 'agent', // Ensure delegate menu is visible
-            setChatChannel: vi.fn(),
-            isCommandBarDetached: false,
-            setCommandBarDetached: vi.fn(),
-            commandBarInput: '',
-            setCommandBarInput: vi.fn(),
-            commandBarAttachments: [],
-            setCommandBarAttachments: vi.fn(),
+        const { act } = await import('@testing-library/react');
+        const storeModule = await import('@/core/store') as any;
+        const store = storeModule.store;
+        act(() => {
+            store.setState({
+                currentModule: 'dashboard',
+                chatChannel: 'agent',
+                isCommandBarDetached: true,
+                isCommandBarCollapsed: false,
+                commandBarInput: '',
+                commandBarAttachments: [],
+                isAgentProcessing: false,
+                isAgentOpen: false,
+            });
         });
-        (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockToast);
     });
 
     it('should have no accessibility violations in default state', async () => {

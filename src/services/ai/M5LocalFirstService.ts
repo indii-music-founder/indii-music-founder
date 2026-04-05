@@ -59,7 +59,7 @@ export interface M5Preferences {
     /** Per-capability routing */
     capabilities: AICapabilityConfig;
 
-    /** Ollama endpoint (default: http://localhost:11434) */
+    /** Ollama endpoint (default: http://127.0.0.1:11434) */
     ollamaEndpoint: string;
 
     /** Preferred local model for text tasks */
@@ -94,7 +94,7 @@ const DEFAULT_M5: M5Preferences = {
         videoGeneration: 'cloud',
         tts: 'cloud',
     },
-    ollamaEndpoint: 'http://localhost:11434',
+    ollamaEndpoint: import.meta.env.VITE_OLLAMA_URL || 'http://127.0.0.1:11434',
     localTextModel: 'gemma3:12b',
     localEmbeddingModel: 'nomic-embed-text',
     fallbackToCloud: true,

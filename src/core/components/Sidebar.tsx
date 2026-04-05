@@ -7,7 +7,6 @@ import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -133,15 +132,14 @@ export default function Sidebar() {
     });
 
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, updatePreferences, logout } = useStore(
+    const { currentModule, setModule, isSidebarOpen, toggleSidebar, isBoardroomMode, toggleBoardroomMode } = useStore(
         useShallow((state) => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
             isSidebarOpen: state.isSidebarOpen,
             toggleSidebar: state.toggleSidebar,
-            userProfile: state.userProfile,
-            updatePreferences: state.updatePreferences,
-            logout: state.logout,
+            isBoardroomMode: state.isBoardroomMode,
+            toggleBoardroomMode: state.toggleBoardroomMode,
         }))
     );
 
@@ -174,6 +172,7 @@ export default function Sidebar() {
         { id: 'distribution', icon: Music, label: 'Distribution Department' },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
         { id: 'merch', icon: ShoppingBag, label: 'Art & Merch Dept' },
+        { id: 'registration', icon: FileText, label: 'Registration Center' },
     ];
 
     const toolItems: SidebarItem[] = [
@@ -233,6 +232,11 @@ export default function Sidebar() {
                 </button>
             </div>
 
+            {/* Privacy Gate */}
+            <div className={`px-4 pt-4 pb-2 w-full border-b border-white/5 border-dashed`}>
+                <BiometricToggle isMinimized={!isSidebarOpen} />
+            </div>
+
             {/* CMD+K Global Search Trigger */}
             {isSidebarOpen ? (
                 <div className="px-4 pt-4 pb-2">
@@ -263,6 +267,43 @@ export default function Sidebar() {
                     </button>
                 </div>
             )}
+
+            {/* Boardroom Zen Mode Toggle */}
+            <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
+                <button
+                    onClick={toggleBoardroomMode}
+                    className={cn(
+                        "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
+                        isBoardroomMode
+                            ? "bg-indigo-500/20 border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+                            : "bg-gradient-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)]",
+                        isSidebarOpen ? "gap-3" : ""
+                    )}
+                    aria-label="Enter Boardroom"
+                    title={!isSidebarOpen ? "Enter Boardroom" : undefined}
+                >
+                    {isBoardroomMode && (
+                        <div className="absolute inset-0 rounded-xl border border-indigo-500/20 animate-pulse pointer-events-none" />
+                    )}
+                    <Network size={16} className={cn(
+                        "transition-all relative z-10",
+                        isBoardroomMode
+                            ? "text-indigo-300 drop-shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+                            : "text-indigo-400 group-hover:text-indigo-300 group-hover:scale-110"
+                    )} />
+                    {isSidebarOpen ? (
+                        <span className={cn(
+                            "text-sm font-bold tracking-wide transition-colors relative z-10",
+                            isBoardroomMode ? "text-indigo-200" : "text-indigo-300/90 group-hover:text-indigo-200"
+                        )}>
+                            Boardroom
+                        </span>
+                    ) : null}
+
+                    {/* Shimmer sweep */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-indigo-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                </button>
+            </div>
 
             {/* Founders Round — Primary Sales CTA */}
             <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
@@ -386,52 +427,10 @@ export default function Sidebar() {
                     </AnimatePresence>
                 </div>
             </div>
-            {/* User Profile Section */}
+            {/* Footer */}
             <div className={`p-4 border-t border-white/5 mt-auto flex flex-col gap-2 ${!isSidebarOpen ? 'items-center' : ''}`}>
-                {!isSidebarOpen && (
-                    <div className="mb-2 w-full flex flex-col gap-2">
-                    </div>
-                )}
-                <div className={`flex ${!isSidebarOpen ? 'flex-col justify-center' : 'items-center'} gap-3`}>
-
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {userProfile?.photoURL ? (
-                            <img src={userProfile.photoURL} alt="User avatar" className="w-full h-full object-cover" />
-                        ) : (
-                            <span className="text-xs font-bold text-white">
-                                {userProfile?.displayName ? userProfile.displayName.charAt(0).toUpperCase() : 'S'}
-                            </span>
-                        )}
-                    </div>
-                    {isSidebarOpen && (
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-200 truncate">
-                                {userProfile?.bio || 'Creative Director'}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate" data-testid="user-profile-info">
-                                System Active
-                            </p>
-                        </div>
-                    )}
-                    <button
-                        onClick={() => logout()}
-                        className={`p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors ${!isSidebarOpen ? 'mt-1' : ''}`}
-                        title="Reload System"
-                        aria-label="Reload System"
-                        data-testid="logout-btn"
-                    >
-                        <LogOut size={14} />
-                    </button>
-                </div>
-
-                {/* System Controls */}
-                <div className={`mt-3 flex flex-col gap-1.5 ${isSidebarOpen ? '' : ''}`}>
-                    <ThemeToggle isMinimized={!isSidebarOpen} />
-                    <BiometricToggle isMinimized={!isSidebarOpen} />
-                </div>
-
                 {isSidebarOpen && (
-                    <p className="mt-4 text-[10px] text-gray-600 text-center italic">
+                    <p className="text-[10px] text-gray-600 text-center italic">
                         made by Detroit, for the world.
                     </p>
                 )}

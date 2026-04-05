@@ -99,6 +99,7 @@ const AGENT_VAULT_MAP: Record<string, VaultCategory[]> = {
 
     // Module ID aliases (ContextPipeline passes activeModule, not agent folder name)
     'agent': ['artist_identity', 'goals', 'preferences', 'team'],       // alias for agent0
+    'generalist': ['artist_identity', 'goals', 'preferences', 'team'],  // alias for indii Conductor
     'creative': ['artist_identity', 'preferences', 'technical'],        // alias for creative-director
     'dashboard': ['artist_identity', 'goals', 'preferences'],           // overview module
 };

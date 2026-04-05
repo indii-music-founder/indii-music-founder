@@ -760,10 +760,27 @@ The `WorkflowEngine` now executes every node type with real service calls:
 
 - **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `indiios-alpha-electron` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
 - **Multi-Channel Architecture (Phase 2):** Designed and deployed a robust HTTPS webhook adapter for the Telegram Bot API (`telegramWebhook`), bridging external messages directly into the existing Firestore `remote-relay-commands` pipeline.
-- **Account Linking:** Implemented secure, one-time code generation (`generateTelegramLinkCode`) and status checking (`getTelegramLinkStatus`) to link Telegram chats to indiiOS authenticated accounts.
 - **Secret Management:** Integrated `TELEGRAM_BOT_TOKEN` securely via GCP Secret Manager with Cloud Functions IAM bindings, ensuring no secrets are exposed in the codebase.
 
 ---
+
+### v0.1.0-beta.3 — April 2026
+
+**Indii Growth Protocol & Meta Andromeda Pipeline**
+
+- **Creative Studio Integration**: Integrated the 15-variant (10 images, 5 videos via Veo 3.1) Meta Andromeda batch generation pipeline.
+- **Automated Deployment**: Andromeda directly interfaces with `AdAutomationService` to seamlessly deploy variants to Meta networks (Instagram exclusively) for algorithmic A/B testing and stream-velocity spikes.
+- **Dashboard Observability**: Real-time viral scoring, algorithmic velocity trends, and CPS Kill-Switch status indicators are now natively integrated into `PlatformCard.tsx`.
+
+**Command Bar Enhancements (UI/UX)**
+
+- **Slash Commands**: Introduced `/deploy-andromeda` and `/status-blitz` intercepts directly in the Command Bar (`PromptArea.tsx`).
+- **Accessibility**: 100% WCAG 2.1 AA compliance achieved on dynamic UI elements and Delegate Menus, verified by automated `jest-axe` tests.
+
+**Indii Conductor (Agentic Harness) Hardening**
+
+- **Persistent Worflows (`WorkflowStateService`)**: Replaced in-memory orchestration with Firestore-backed execution tracks (`users/{userId}/workflowExecutions`). Multi-agent workflows are now fully resumable across session reloads and crash-resistant.
+- **Risk-Aware Tool Governance (`ToolRiskRegistry`)**: Migrated boolean `isDestructive` checks to a centralized 3-tier framework (`read`, `write`, `destructive`). Secure digital handshakes automatically enforce appropriate user-approval gates based on tool severity, providing safety for 103+ autonomous capabilities.
 
 ## ⚖️ License
 

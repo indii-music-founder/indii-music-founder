@@ -8,6 +8,7 @@ import VideoPanel from './right-panel/VideoPanel';
 import WorkflowPanel from './right-panel/WorkflowPanel';
 import KnowledgePanel from './right-panel/KnowledgePanel';
 import AssetsPanel from './right-panel/AssetsPanel';
+import MarketingPanel from './right-panel/MarketingPanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
 import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'motion/react';
@@ -188,6 +189,8 @@ export default function RightPanel() {
                 return <WorkflowPanel toggleRightPanel={toggleRightPanel} />;
             case 'knowledge':
                 return <KnowledgePanel toggleRightPanel={toggleRightPanel} />;
+            case 'marketing':
+                return <MarketingPanel toggleRightPanel={toggleRightPanel} />;
             default:
                 return (
                     <div className="flex flex-col h-full">
@@ -267,7 +270,7 @@ export default function RightPanel() {
                                 return (
                                     <button
                                         key={id}
-                                        onClick={() => setRightPanelTab(id as any)}
+                                        onClick={() => setRightPanelTab(id)}
                                         className={cn(
                                             "p-2 rounded-xl transition-all flex items-center justify-center relative group shrink-0",
                                             isActive

@@ -3,7 +3,7 @@ name: public_relations
 description: Press releases, EPK development, blog outreach, crisis management, and media relations.
 ---
 
-# Public Relations & Media Strategy (Agent Zero Skill)
+# Public Relations & Media Strategy (indii Conductor Skill)
 
 **Domain Expert:** Music Publicist / Head of PR  
 **Goal:** Control the narrative, secure high-impact press placements, craft compelling EPKs, and manage artist reputation.

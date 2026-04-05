@@ -10,5 +10,5 @@
     "embeddings_model": "embedding-001",
     "auto_memory_count": 0,
     "rate_limit_seconds": 0,
-    "temperature": 0.5
+    "temperature": 1.0
 }

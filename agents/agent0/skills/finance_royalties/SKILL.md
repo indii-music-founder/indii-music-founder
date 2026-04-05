@@ -3,7 +3,7 @@ name: finance_royalties
 description: Master guide to music revenue streams, DSP payouts, recoupment math, advance structures, and global royalty collection.
 ---
 
-# Finance, Royalties & Revenue (Agent Zero Skill)
+# Finance, Royalties & Revenue (indii Conductor Skill)
 
 **Domain Expert:** Music Business Manager / Royalty Accountant  
 **Goal:** Track micro-pennies, audit distributors, model recoupment strategies, and ensure the artist's financial longevity.

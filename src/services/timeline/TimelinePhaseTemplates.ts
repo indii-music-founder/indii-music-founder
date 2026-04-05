@@ -10,6 +10,7 @@
  * - Album Rollout (16 weeks)
  * - Merch Drop (4 weeks)
  * - Tour Promotion (12 weeks)
+ * - indii 28-Day Frontloaded Growth Protocol (4 weeks)
  */
 
 import type {
@@ -745,6 +746,375 @@ const TOUR_PROMO_12W: TimelineTemplate = {
 };
 
 // ============================================================================
+// indii 28-Day Frontloaded Growth Protocol — 4 Week Cycle
+// ============================================================================
+
+/**
+ * The indii Growth Protocol template — a 28-day front-loaded campaign cycle
+ * optimized for triggering Spotify's algorithmic thresholds.
+ *
+ * Strategy: Concentrate Meta ad spend in the first 72 hours to create a stream
+ * velocity spike (the `72_hour_spike` growth pattern), then sustain momentum
+ * through the remaining 25 days to hit track popularity score milestones
+ * (20 → 30 → 40 → 50+) which unlock Discover Weekly, Radio, and Autoplay placements.
+ *
+ * This template is designed to be used in a repeating 28-day cadence,
+ * compounding artist popularity across multiple release cycles.
+ */
+const INDII_28_DAY_FRONTLOADED: TimelineTemplate = {
+    id: 'indii_28_day_frontloaded',
+    name: 'indii Growth Protocol',
+    description: 'A 28-day front-loaded growth cycle that concentrates Meta ad spend in the first 72 hours to trigger Spotify algorithm thresholds, then sustains momentum to compound artist popularity.',
+    recommendedWeeks: 4,
+    domains: ['marketing', 'social', 'distribution'],
+    phases: [
+        // ── Phase 1: BLITZ (Days 1–3) ──────────────────────────────────────
+        {
+            name: 'Blitz',
+            relativeStartPercent: 0.0,
+            relativeEndPercent: 0.107,  // ~3 days of 28
+            cadence: 'daily',
+            agentId: 'marketing',
+            description: 'Maximum intensity. Front-load 60–70% of total ad budget in the first 72 hours to trigger the 72-hour spike pattern and signal momentum to Spotify\'s algorithm.',
+            milestoneTemplates: [
+                {
+                    relativePosition: 0.0,
+                    type: 'agent_task',
+                    instruction: 'RELEASE DAY: Coordinate with Distribution Agent to confirm the track is live on all DSPs. Verify Spotify URI is active and pre-save conversions have landed.',
+                    assetStrategy: 'auto',
+                    agentId: 'distribution',
+                },
+                {
+                    relativePosition: 0.0,
+                    type: 'asset_creation',
+                    instruction: 'Generate 5 ad creative variants for Meta Ads: 3 short-form video clips (15s, using veo-3.1-generate-preview) and 2 static image ads (using gemini-3-pro-image-preview). Each must include a clear CTA routing to the Spotify track link.',
+                    assetStrategy: 'create_new',
+                },
+                {
+                    relativePosition: 0.1,
+                    type: 'agent_task',
+                    instruction: 'Deploy all 5 ad creatives to Meta Ads Manager via Instagram Graph API. Target: pixel-tracked landing page conversions routing to Spotify. Set budget to 60% of total campaign allocation. Audience: lookalike of existing listeners + interest-based targeting.',
+                    assetStrategy: 'auto',
+                    agentId: 'marketing',
+                },
+                {
+                    relativePosition: 0.1,
+                    type: 'post',
+                    instruction: 'Release day announcement across ALL social platforms. Cover art, streaming links, personal message from the artist. Maximum energy.',
+                    assetStrategy: 'use_existing',
+                    platform: 'Instagram',
+                },
+                {
+                    relativePosition: 0.2,
+                    type: 'post',
+                    instruction: 'Create and post a TikTok with the catchiest 15-second clip. Use a trending format or challenge mechanic.',
+                    assetStrategy: 'create_new',
+                    platform: 'TikTok',
+                },
+                {
+                    relativePosition: 0.3,
+                    type: 'email_blast',
+                    instruction: 'Send release day email blast to the full mailing list: streaming links, personal note, and a "listen now" CTA with urgency.',
+                    assetStrategy: 'create_new',
+                },
+                {
+                    relativePosition: 0.5,
+                    type: 'analytics_check',
+                    instruction: 'Pull Day 1 streaming velocity data. Check stream count, save rate, and completion rate. If velocity is below 1.5x target, increase ad spend by 20% for Days 2–3.',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.7,
+                    type: 'post',
+                    instruction: 'Day 2 push: Share early streaming milestones, fan reactions, and social proof. Repost the best UGC.',
+                    assetStrategy: 'auto',
+                    platform: 'Instagram',
+                },
+                {
+                    relativePosition: 0.9,
+                    type: 'analytics_check',
+                    instruction: 'End of 72-hour blitz: Pull comprehensive data — total streams, track popularity score, save rate, completion rate. Determine if the 72_hour_spike pattern triggered. Report to indii Conductor for tactical decisions.',
+                    assetStrategy: 'auto',
+                },
+            ],
+        },
+        // ── Phase 2: SUSTAIN (Days 4–10) ───────────────────────────────────
+        {
+            name: 'Sustain',
+            relativeStartPercent: 0.107,
+            relativeEndPercent: 0.357,  // ~days 4-10 of 28
+            cadence: 'moderate',
+            agentId: 'marketing',
+            description: 'Maintain stream velocity above the algorithmic threshold. Reduce ad spend to 20% of budget but sustain consistent daily reach. Monitor popularity score milestones (20, 30, 40).',
+            milestoneTemplates: [
+                {
+                    relativePosition: 0.0,
+                    type: 'agent_task',
+                    instruction: 'Adjust Meta ad budget to sustain phase allocation (20% of total). Pause underperforming creatives, scale winners. Maintain daily impression floor to prevent score tapering.',
+                    assetStrategy: 'auto',
+                    agentId: 'marketing',
+                },
+                {
+                    relativePosition: 0.15,
+                    type: 'post',
+                    instruction: 'Behind-the-scenes content: studio session clips, lyric breakdown, or production story. Authentic, personal.',
+                    assetStrategy: 'create_new',
+                    platform: 'TikTok',
+                },
+                {
+                    relativePosition: 0.3,
+                    type: 'asset_creation',
+                    instruction: 'Generate 2 new ad creative variants based on best-performing elements from the Blitz phase. Refresh the creative to combat ad fatigue.',
+                    assetStrategy: 'create_new',
+                },
+                {
+                    relativePosition: 0.5,
+                    type: 'analytics_check',
+                    instruction: 'Mid-sustain check: Pull track popularity score. If approaching a 10-point milestone (20, 30, 40), trigger a micro-burst of increased ad spend to push past the threshold.',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.7,
+                    type: 'post',
+                    instruction: 'Engagement post: Ask fans a question about the track, run a poll, or share a lyric card. Drive saves and shares.',
+                    assetStrategy: 'create_new',
+                    platform: 'Instagram',
+                },
+                {
+                    relativePosition: 0.9,
+                    type: 'review_checkpoint',
+                    instruction: 'Sustain phase review: track popularity score delta, ad ROAS, save rate trend, and playlist adds. Determine if organic momentum is building or still ad-dependent.',
+                    assetStrategy: 'auto',
+                },
+            ],
+        },
+        // ── Phase 3: ALGORITHMIC CLIMB (Days 11–21) ────────────────────────
+        {
+            name: 'Algorithmic Climb',
+            relativeStartPercent: 0.357,
+            relativeEndPercent: 0.75,  // ~days 11-21 of 28
+            cadence: 'moderate',
+            agentId: 'social',
+            description: 'Ride the algorithmic wave. Spotify should be recommending the track in Discover Weekly, Radio, and Autoplay by now. Shift focus from paid to organic amplification. Maintain 10–15% of budget on retargeting.',
+            milestoneTemplates: [
+                {
+                    relativePosition: 0.0,
+                    type: 'analytics_check',
+                    instruction: 'Check Discover Weekly inclusion, Radio placements, and Autoplay data. Confirm algorithmic pickup. If not yet triggered, execute contingency: targeted playlist pitching and micro-influencer UGC push.',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.15,
+                    type: 'post',
+                    instruction: 'Share a "thank you" milestone post if key streaming numbers have been hit. Show gratitude, build community.',
+                    assetStrategy: 'create_new',
+                    platform: 'Instagram',
+                },
+                {
+                    relativePosition: 0.3,
+                    type: 'post',
+                    instruction: 'Create a remix, acoustic, or live version snippet for TikTok/Reels to re-stimulate social discovery.',
+                    assetStrategy: 'create_new',
+                    platform: 'TikTok',
+                },
+                {
+                    relativePosition: 0.5,
+                    type: 'analytics_check',
+                    instruction: 'Weekly growth check: track popularity score, velocity trend, save-to-stream ratio. Compare against the previous 28-day cycle if one exists. Report to indii Conductor.',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.65,
+                    type: 'post',
+                    instruction: 'Cross-platform content push: Twitter lyric thread, Instagram carousel of fan favorites, YouTube community post. Cast a wide net.',
+                    assetStrategy: 'create_new',
+                    platform: 'Twitter',
+                },
+                {
+                    relativePosition: 0.85,
+                    type: 'agent_task',
+                    instruction: 'Reduce Meta retargeting to minimum viable spend. The algorithm should be self-sustaining at this phase. Reallocate remaining budget to the next cycle\'s Blitz reserve.',
+                    assetStrategy: 'auto',
+                    agentId: 'marketing',
+                },
+            ],
+        },
+        // ── Phase 4: HARVEST & PREP (Days 22–28) ──────────────────────────
+        {
+            name: 'Harvest & Prep',
+            relativeStartPercent: 0.75,
+            relativeEndPercent: 1.0,  // ~days 22-28 of 28
+            cadence: 'sparse',
+            agentId: 'marketing',
+            description: 'Harvest final data from this cycle. Compile the growth report. Begin pre-production for the NEXT 28-day cycle — the compounding effect is the key to exponential growth.',
+            milestoneTemplates: [
+                {
+                    relativePosition: 0.1,
+                    type: 'analytics_check',
+                    instruction: 'Full cycle analytics: final track popularity score, total streams, ROAS, cost-per-stream, save rate, playlist adds, follower growth. Compare to previous cycle.',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.3,
+                    type: 'asset_creation',
+                    instruction: 'Generate a visual performance report graphic showing the growth curve, key milestones hit, and popularity score trajectory.',
+                    assetStrategy: 'create_new',
+                },
+                {
+                    relativePosition: 0.5,
+                    type: 'post',
+                    instruction: 'Tease the next release or content drop. Keep fans engaged in the transition between cycles. Mystery, countdowns, or snippet reveals.',
+                    assetStrategy: 'create_new',
+                    platform: 'Instagram',
+                },
+                {
+                    relativePosition: 0.7,
+                    type: 'agent_task',
+                    instruction: 'Begin next-cycle pre-production: coordinate with Creative Director to start generating ad creatives for the next Blitz phase. Ensure the asset pipeline is primed before Day 1.',
+                    assetStrategy: 'auto',
+                    agentId: 'director',
+                },
+                {
+                    relativePosition: 0.9,
+                    type: 'review_checkpoint',
+                    instruction: 'CYCLE COMPLETE: Full indii Growth Protocol report. Include: popularity score delta, algorithmic placement status, cycle-over-cycle growth rate, budget efficiency, and recommended adjustments for the next 28-day cycle.',
+                    assetStrategy: 'auto',
+                },
+            ],
+        },
+    ],
+};
+
+// ============================================================================
+// indii Curator Playlist Builder — Ongoing (Between Releases)
+// ============================================================================
+
+/**
+ * The indii Curator Playlist Builder template — a secondary steady-state campaign
+ * for building owned algorithmic authority between releases.
+ *
+ * Strategy: The artist builds and promotes 60-100 song genre-specific playlists
+ * on Spotify, running low-budget Meta ads to grow playlist followers. This creates:
+ *   1. An owned media channel with algorithmic weight
+ *   2. A direct injection point for future releases (add your track to YOUR playlist)
+ *   3. Saver Lookalike audience training data for future blitz campaigns
+ *   4. Passive income potential via playlist placement deals
+ *
+ * Designed to run continuously between 28-day release cycles.
+ */
+const INDII_CURATOR_PLAYLIST_BUILDER: TimelineTemplate = {
+    id: 'indii_curator_playlist_builder',
+    name: 'indii Curator Playlist Builder',
+    description: 'An ongoing, low-budget campaign to build owned genre playlists on Spotify. Grows algorithmic authority and creates injection points for future releases.',
+    recommendedWeeks: 8,  // Initial setup + growth phase; designed to repeat indefinitely
+    domains: ['marketing', 'social'],
+    phases: [
+        // ── Phase 1: CURATE (Weeks 1-2) ──────────────────────────────────
+        {
+            name: 'Curate',
+            relativeStartPercent: 0.0,
+            relativeEndPercent: 0.25,
+            cadence: 'moderate',
+            agentId: 'social',
+            description: 'Build 2-3 genre playlists (60-100 tracks each) on Spotify. Source tracks from similar artists, trending sounds, and the artist\'s own catalog. Title and brand them for discoverability.',
+            milestoneTemplates: [
+                {
+                    relativePosition: 0.1,
+                    type: 'agent_task',
+                    instruction: 'Research and compile a list of 60-100 tracks for the primary genre playlist. Mix established artists (30%), rising artists (40%), and the indii artist\'s own tracks (30%). Title the playlist for SEO discoverability.',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.4,
+                    type: 'asset_creation',
+                    instruction: 'Generate branded playlist cover art for each playlist using gemini-3-pro-image-preview. Must match artist brand kit aesthetic. Include playlist name and artist branding.',
+                    assetStrategy: 'create_new',
+                },
+                {
+                    relativePosition: 0.7,
+                    type: 'post',
+                    instruction: 'Announce the playlist on social media. Share the Spotify URI with a personal note about why these songs were curated. Authentic, music-lover tone.',
+                    assetStrategy: 'auto',
+                    platform: 'Instagram',
+                },
+                {
+                    relativePosition: 0.9,
+                    type: 'review_checkpoint',
+                    instruction: 'Verify all playlists are live with correct artwork, descriptions, and track ordering. Confirm Spotify playlist URIs are accessible for ad campaigns.',
+                    assetStrategy: 'auto',
+                },
+            ],
+        },
+        // ── Phase 2: PROMOTE (Weeks 3-5) ─────────────────────────────────
+        {
+            name: 'Promote',
+            relativeStartPercent: 0.25,
+            relativeEndPercent: 0.625,
+            cadence: 'sparse',
+            agentId: 'marketing',
+            description: 'Run low-budget Meta ads ($3-5/day) driving playlist follows. Instagram-Only placement (Stories + Reels). Track follower growth rate.',
+            milestoneTemplates: [
+                {
+                    relativePosition: 0.0,
+                    type: 'asset_creation',
+                    instruction: 'Generate 3 ad creative variants for playlist promotion: vertical video (15s mood reel with track previews), static carousel, and a story-format testimonial. All must route to Spotify playlist link.',
+                    assetStrategy: 'create_new',
+                },
+                {
+                    relativePosition: 0.1,
+                    type: 'agent_task',
+                    instruction: 'Deploy playlist ads to Meta. STRICT: Instagram-Only placements (Stories, Reels, Feed). Ban Audience Network, Facebook Feed, Messenger. Budget: $3-5/day per playlist. Audience: genre-interest based.',
+                    assetStrategy: 'auto',
+                    agentId: 'marketing',
+                },
+                {
+                    relativePosition: 0.5,
+                    type: 'analytics_check',
+                    instruction: 'Mid-promotion check: playlist follower count, cost-per-follow, ad CTR. If CPF > $0.50, refresh creatives. Target: 500+ followers in first 3 weeks.',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.8,
+                    type: 'post',
+                    instruction: 'Share a "playlist update" post highlighting new tracks added this week. Tag featured artists to drive organic discovery.',
+                    assetStrategy: 'auto',
+                    platform: 'Instagram',
+                },
+            ],
+        },
+        // ── Phase 3: GROW & MAINTAIN (Weeks 6-8) ─────────────────────────
+        {
+            name: 'Grow & Maintain',
+            relativeStartPercent: 0.625,
+            relativeEndPercent: 1.0,
+            cadence: 'sparse',
+            agentId: 'social',
+            description: 'Sustain playlist growth with weekly track refreshes and organic social pushes. Begin monetizing placement requests from other artists.',
+            milestoneTemplates: [
+                {
+                    relativePosition: 0.2,
+                    type: 'agent_task',
+                    instruction: 'Refresh playlist: remove 5-10 underperforming tracks, add 5-10 fresh tracks. Keep the artist\'s own tracks in prominent positions (top 10, mid-playlist feature).',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.5,
+                    type: 'analytics_check',
+                    instruction: 'Full playlist audit: total followers, monthly listener reach, follower growth rate, engagement metrics. Assess readiness for next release injection.',
+                    assetStrategy: 'auto',
+                },
+                {
+                    relativePosition: 0.8,
+                    type: 'review_checkpoint',
+                    instruction: 'Curator cycle review: total followers gained, cost per follower, organic growth rate, playlist save rate. Recommend whether to continue, scale up, or create additional genre playlists.',
+                    assetStrategy: 'auto',
+                },
+            ],
+        },
+    ],
+};
+
+// ============================================================================
 // Registry
 // ============================================================================
 
@@ -756,6 +1126,8 @@ export const TIMELINE_TEMPLATES: Record<TimelineTemplateId, TimelineTemplate | n
     album_rollout_16w: ALBUM_ROLLOUT_16W,
     merch_drop_4w: MERCH_DROP_4W,
     tour_promo_12w: TOUR_PROMO_12W,
+    indii_28_day_frontloaded: INDII_28_DAY_FRONTLOADED,
+    indii_curator_playlist_builder: INDII_CURATOR_PLAYLIST_BUILDER,
     custom: null, // Custom timelines are generated purely by AI
 };
 

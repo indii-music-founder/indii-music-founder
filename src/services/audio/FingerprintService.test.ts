@@ -64,7 +64,7 @@ describe('FingerprintService', () => {
         expect(fingerprint).toContain('CMajor');
     });
 
-    it.skip('should use existing duration if provided (optimization check)', async () => {
+    it('should use existing duration if provided (optimization check)', async () => {
         const existingFeatures = {
             bpm: 128,
             key: 'A',

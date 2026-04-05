@@ -97,11 +97,14 @@ export const SceneBuilder = () => {
     const [assets, setAssets] = useState<DroppedAsset[]>([]);
 
     const handleDrop = (url: string) => {
+        const randValues = new Uint32Array(1);
+        crypto.getRandomValues(randValues);
+        const randomVal = randValues[0]! / 0xffffffff;
         const newAsset: DroppedAsset = {
             id: Date.now().toString(),
             url,
             // Drop them slightly spread out
-            position: [(Math.random() - 0.5) * 5, 0, (Math.random() - 0.5) * 5],
+            position: [(randomVal - 0.5) * 5, 0, (randomVal - 0.5) * 5],
             scale: 1,
         };
         setAssets((prev) => [...prev, newAsset]);

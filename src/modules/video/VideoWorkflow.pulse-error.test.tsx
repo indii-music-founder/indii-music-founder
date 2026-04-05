@@ -5,19 +5,29 @@ import VideoWorkflow from './VideoWorkflow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
 import userEvent from '@testing-library/user-event';
+import { useStore } from '@/core/store';
 
 // --- Mocks ---
 
 // Mock Store
-const mockAddToHistory = vi.fn();
-const mockSetJobId = vi.fn();
-const mockSetJobStatus = vi.fn();
-const mockSetProgress = vi.fn();
-const mockSetPrompt = vi.fn();
+const {
+    mockAddToHistory,
+    mockSetJobId,
+    mockSetJobStatus,
+    mockSetProgress,
+    mockSetPrompt,
+    mockUpdateJobStatus
+} = vi.hoisted(() => ({
+    mockAddToHistory: vi.fn(),
+    mockSetJobId: vi.fn(),
+    mockSetJobStatus: vi.fn(),
+    mockSetProgress: vi.fn(),
+    mockSetPrompt: vi.fn(),
+    mockUpdateJobStatus: vi.fn()
+}));
 
-vi.mock('@/core/store', () => ({
-    serverTimestamp: vi.fn(),
-    useStore: vi.fn(() => ({
+vi.mock('@/core/store', () => {
+    const useStoreMock = vi.fn(() => ({
         serverTimestamp: vi.fn(),
         generatedHistory: [],
         selectedItem: null,
@@ -25,7 +35,7 @@ vi.mock('@/core/store', () => ({
         setPendingPrompt: vi.fn(),
         addToHistory: mockAddToHistory,
         setPrompt: mockSetPrompt,
-        studioControls: { resolution: '1080p', duration: 4, aspectRatio: '16:9' }, // Short form (< 8s)
+        studioControls: { resolution: '1080p', duration: 4, aspectRatio: '16:9' },
         videoInputs: {},
         currentOrganizationId: 'org-123',
         currentProjectId: 'proj-123',
@@ -40,8 +50,14 @@ vi.mock('@/core/store', () => ({
         },
         isRightPanelOpen: false,
         toggleRightPanel: vi.fn()
-    })),
-}));
+    }));
+    (useStoreMock as any).getState = vi.fn(() => ({ updateJobStatus: mockUpdateJobStatus }));
+
+    return {
+        serverTimestamp: vi.fn(),
+        useStore: useStoreMock,
+    };
+});
 
 // Mock Video Editor Store
 const editorStoreState = {
@@ -209,7 +225,9 @@ describe('Pulse: Video Workflow Error Handling', () => {
         expect(screen.getByText(/Director's Chair/i)).toBeInTheDocument();
     });
 
-    it.skip('handles async job failures (e.g. Out of VRAM)', async () => {
+    it('handles async job failures (e.g. Out of VRAM)', async () => {
+        vi.mocked(VideoGeneration.generateVideo).mockRejectedValueOnce(new Error('CUDA Out of Memory'));
+
         const user = userEvent.setup();
         render(<VideoWorkflow />);
 

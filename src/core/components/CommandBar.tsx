@@ -38,7 +38,8 @@ function CommandBar() {
         setCommandBarCollapsed,
         isAgentOpen,
         currentModule,
-        commandBarPosition
+        commandBarPosition,
+        isBoardroomMode
     } = useStore(
         useShallow(state => ({
             isCommandBarDetached: state.isCommandBarDetached,
@@ -47,15 +48,25 @@ function CommandBar() {
             isAgentOpen: state.isAgentOpen,
             currentModule: state.currentModule,
             commandBarPosition: state.commandBarPosition,
+            isBoardroomMode: state.isBoardroomMode,
         }))
     );
 
-    // HQ page (agent module) has its own inline PromptArea — hide this global one
-    // Also hide if RightPanel (isAgentOpen) is showing its own unified prompt
-    if (currentModule === 'agent' || isAgentOpen) return null;
+    // CommandBar is currently disabled in standard views — recent agentic prompt interactions
+    // have been migrated to the Right Panel's unified prompt area.
+    // 
+    // FUTURE FEATURE: "The Boardroom" / "Office Hours" 
+    // This component will be reactivated for a full-page, ChatGPT-style interface where 
+    // users can have focused ongoing conversations with single or multiple agents simultaneously 
+    // (a virtual boardroom). 
+    // See docs/architecture/command_bar_boardroom.md for the full specification.
+    if (!isCommandBarDetached && !isBoardroomMode) return null;
 
     const shouldShow = true;
-    const posStyle = getPositionStyle(commandBarPosition, isCommandBarCollapsed);
+
+    // Force center position if in boardroom mode
+    const activePosition = isBoardroomMode ? 'center' : commandBarPosition;
+    const posStyle = getPositionStyle(activePosition, isCommandBarCollapsed);
 
     // Module-aware orb color: use CSS variable from the department color system
     const orbColor = getDepartmentCssVar(currentModule);

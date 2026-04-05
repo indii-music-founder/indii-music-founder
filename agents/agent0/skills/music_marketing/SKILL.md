@@ -3,7 +3,7 @@ name: music_marketing
 description: Advanced strategies for TikTok/IG algorithms, digital ad funnels, influencer campaigns, and DSP engagement.
 ---
 
-# Music Marketing & Audience Growth (Agent Zero Skill)
+# Music Marketing & Audience Growth (indii Conductor Skill)
 
 **Domain Expert:** Digital Marketing Manager / Audience Development  
 **Goal:** Maximize ROI on ad spend, exploit algorithm trends, build pre-save momentum, and convert casual listeners into superfans.

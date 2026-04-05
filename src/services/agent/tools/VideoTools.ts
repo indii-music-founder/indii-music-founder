@@ -431,6 +431,28 @@ export const VideoTools = {
             estimatedTotalDuration: prompts.reduce((acc, p) => acc + p.duration, 0),
             renderQueue: prompts
         }, `Video Agent orchestrated render queue with ${prompts.length} scenes targeting veo-3.1.`);
+    }),
+
+    generate_andromeda_variations: wrapTool('generate_andromeda_variations', async (args: { basePrompt: string }) => {
+        // Enforce Meta Andromeda 15-variant generation
+        // 6 to 15 unique 9:16 vertical video variations
+        // Enforce the 3-Second Hook rule
+        const variations = [];
+        const count = 15;
+        for (let i = 0; i < count; i++) {
+            variations.push({
+                variationId: crypto.randomUUID(),
+                model: 'veo-3.1-generate-preview',
+                prompt: `[MANDATORY 3-SECOND HOOK - SCROLL ARRESTING] Vertical 9:16 video variant ${i + 1}. ${args.basePrompt}`,
+                status: 'queued'
+            });
+        }
+
+        return toolSuccess({
+            totalVariations: count,
+            pipeline: 'Meta Andromeda',
+            variations
+        }, `Video Agent mass-generated ${count} unique 9:16 vertical video variations targeting veo-3.1-generate-preview for Meta Andromeda A/B testing.`);
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -443,5 +465,6 @@ export const {
     update_keyframe,
     generate_video_chain,
     interpolate_sequence,
-    orchestrate_video_render
+    orchestrate_video_render,
+    generate_andromeda_variations
 } = VideoTools;

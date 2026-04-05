@@ -6,13 +6,14 @@ interface DocumentCardProps {
     doc: KnowledgeDoc;
     onDelete: (doc: KnowledgeDoc) => void;
     onChat: (doc: KnowledgeDoc) => void;
+    onView?: (doc: KnowledgeDoc) => void;
 }
 
-export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onChat }) => {
+export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onChat, onView }) => {
 
     const getIcon = () => {
         if (doc.type === 'PDF') return <FileText size={32} className="text-red-400" />;
-        if (doc.type === 'MD' || doc.type === 'TXT') return <FileCode size={32} className="text-emerald-400" />;
+        if (doc.type === 'MD' || doc.type === 'TXT' || doc.type === 'WIKI') return <FileCode size={32} className="text-emerald-400" />;
         return <File size={32} className="text-blue-400" />;
     };
 
@@ -25,6 +26,15 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onCha
                         {getIcon()}
                     </div>
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {onView && doc.content && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onView(doc); }}
+                                className="p-2 bg-gray-800 hover:bg-blue-500 text-gray-400 hover:text-white rounded-lg transition-colors"
+                                title="View Document"
+                            >
+                                <Eye size={16} />
+                            </button>
+                        )}
                         <button
                             onClick={(e) => { e.stopPropagation(); onChat(doc); }}
                             className="p-2 bg-gray-800 hover:bg-[#FFE135] text-gray-400 hover:text-black rounded-lg transition-colors"
@@ -49,6 +59,12 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onCha
                         <span>{doc.type}</span>
                         <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
                         <span>{doc.size}</span>
+                        {doc.type === 'WIKI' && (
+                            <>
+                                <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                                <span className="text-emerald-400">WIKI</span>
+                            </>
+                        )}
                     </div>
                 </div>
 

@@ -40,6 +40,8 @@ export type TimelineTemplateId =
     | 'album_rollout_16w'
     | 'merch_drop_4w'
     | 'tour_promo_12w'
+    | 'indii_28_day_frontloaded'
+    | 'indii_curator_playlist_builder'
     | 'custom';
 
 // ============================================================================

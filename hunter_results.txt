@@ -1,0 +1,313 @@
+=== SECURITY ===
+src/modules/agent/components/MemoryDashboard.tsx:612:                                <style dangerouslySetInnerHTML={{
+src/modules/agent/components/InboxTab.tsx:287:                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fullMessage.bodyHtml, {
+src/services/memory/EventLogger.ts:237:      .replace(/AIza[0-9A-Za-z_-]{35}/g, '[REDACTED_API_KEY]')
+src/services/memory/EventLogger.ts:239:      .replace(/ghp_[0-9A-Za-z]{36}/g, '[REDACTED_GITHUB_TOKEN]')
+src/services/ai/utils/InputSanitizer.ts:19:    private static readonly STRIPE_KEY_REGEX = /\b(sk_live_[0-9a-zA-Z]+)\b/g;
+src/services/ai/utils/InputSanitizer.ts:81:        // Redact Standalone Tokens (e.g. sk_live_***)
+src/config/env.ts:67:    apiKey: getEnv(getSafeMetaEnv('VITE_API_KEY'), process.env.VITE_API_KEY),
+src/config/env.ts:68:    projectId: getEnv(getSafeMetaEnv('VITE_VERTEX_PROJECT_ID'), process.env.VITE_VERTEX_PROJECT_ID),
+src/config/env.ts:69:    location: getEnv(getSafeMetaEnv('VITE_VERTEX_LOCATION'), process.env.VITE_VERTEX_LOCATION) || "us-central1",
+src/config/env.ts:70:    useVertex: toBoolean(getSafeMetaEnv('VITE_USE_VERTEX') || process.env.VITE_USE_VERTEX),
+src/config/env.ts:71:    googleMapsApiKey: getEnv(getSafeMetaEnv('VITE_GOOGLE_MAPS_API_KEY'), process.env.VITE_GOOGLE_MAPS_API_KEY),
+src/config/env.ts:73:    VITE_FUNCTIONS_URL: getEnv(getSafeMetaEnv('VITE_FUNCTIONS_URL'), process.env.VITE_FUNCTIONS_URL),
+src/config/env.ts:74:    VITE_RAG_PROXY_URL: getEnv(getSafeMetaEnv('VITE_RAG_PROXY_URL'), process.env.VITE_RAG_PROXY_URL),
+src/config/env.ts:78:    firebaseApiKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_API_KEY'), process.env.VITE_FIREBASE_API_KEY),
+src/config/env.ts:79:    firebaseAuthDomain: getEnv(getSafeMetaEnv('VITE_FIREBASE_AUTH_DOMAIN'), process.env.VITE_FIREBASE_AUTH_DOMAIN),
+src/config/env.ts:80:    firebaseProjectId: getEnv(getSafeMetaEnv('VITE_FIREBASE_PROJECT_ID'), process.env.VITE_FIREBASE_PROJECT_ID),
+src/config/env.ts:81:    firebaseStorageBucket: getEnv(getSafeMetaEnv('VITE_FIREBASE_STORAGE_BUCKET'), process.env.VITE_FIREBASE_STORAGE_BUCKET),
+src/config/env.ts:82:    firebaseDatabaseURL: getEnv(getSafeMetaEnv('VITE_FIREBASE_DATABASE_URL'), process.env.VITE_FIREBASE_DATABASE_URL),
+src/config/env.ts:83:    appCheckKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_KEY'), process.env.VITE_FIREBASE_APP_CHECK_KEY),
+src/config/env.ts:84:    appCheckDebugToken: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'), process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN),
+src/config/env.ts:86:    skipOnboarding: toBoolean(getSafeMetaEnv('VITE_SKIP_ONBOARDING') || process.env.VITE_SKIP_ONBOARDING),
+src/config/env.ts:87:    VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), process.env.VITE_EXPOSE_INTERNALS),
+src/config/env.ts:88:    VITE_USE_FUNCTIONS_EMULATOR: getEnv(getSafeMetaEnv('VITE_USE_FUNCTIONS_EMULATOR'), process.env.VITE_USE_FUNCTIONS_EMULATOR),
+src/config/env.ts:91:    VITE_A0_BASE_URL: getEnv(getSafeMetaEnv('VITE_A0_BASE_URL'), process.env.VITE_A0_BASE_URL),
+src/config/env.ts:92:    VITE_A0_RUNTIME_ID: getEnv(getSafeMetaEnv('VITE_A0_RUNTIME_ID'), process.env.VITE_A0_RUNTIME_ID),
+src/config/env.ts:93:    VITE_A0_AUTH_LOGIN: getEnv(getSafeMetaEnv('VITE_A0_AUTH_LOGIN'), process.env.VITE_A0_AUTH_LOGIN),
+src/config/env.ts:94:    VITE_A0_AUTH_PASSWORD: getEnv(getSafeMetaEnv('VITE_A0_AUTH_PASSWORD'), process.env.VITE_A0_AUTH_PASSWORD),
+src/config/env.ts:159:    messagingSenderId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'), process.env.VITE_FIREBASE_MESSAGING_SENDER_ID) || "",
+src/config/env.ts:160:    appId: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), process.env.VITE_FIREBASE_APP_ID) || "",
+src/config/env.ts:161:    measurementId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MEASUREMENT_ID'), process.env.VITE_FIREBASE_MEASUREMENT_ID) || ""
+=== MEMORY LEAKS ===
+Add listeners:       71
+Remove listeners:       53
+src/core/utils/resilience.ts:62:            await new Promise((resolve) => setTimeout(resolve, delay));
+src/core/utils/resilience.ts:81:        timeoutId = setTimeout(() => {
+src/core/components/chat/CodeBlock.tsx:21:            setTimeout(() => setIsCopied(false), 2000);
+src/core/components/LoadingFallbacks.tsx:141:        const timer = setTimeout(() => setShow(true), 150);
+src/core/components/right-panel/MarketingPanel.tsx:40:            setTimeout(() => {
+src/core/components/UpdaterMonitor.tsx:38:                setTimeout(() => setIsVisible(false), 3000);
+src/core/components/Toast.tsx:30:            timeoutRef.current = setTimeout(() => {
+src/core/components/command-bar/DelegateMenu.tsx:23:            const timer = setTimeout(() => {
+src/core/store/slices/authSlice.ts:293:        const timeoutId = setTimeout(() => {
+src/core/store/slices/authSlice.ts:306:        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+src/core/store/slices/authSlice.ts:321:                debounceTimer = setTimeout(() => {
+src/utils/async.ts:7: * Use this to replace raw setTimeout calls in async workflows.
+src/utils/async.ts:10:    return new Promise(resolve => setTimeout(resolve, ms));
+src/utils/RequestBatcher.ts:30:            this.timer = setTimeout(() => this.flush(), this.options.maxWaitMs);
+src/components/ui/FirstRunTooltip.tsx:58:            const timer = setTimeout(() => setShouldShow(true), 1000);
+src/components/shared/DoNotSellToggle.tsx:66:            setTimeout(() => setSaved(false), 2000);
+src/components/shared/FirstRunTour.tsx:36:        const timeout = setTimeout(() => {
+src/components/shared/CookieConsentBanner.tsx:141:                const timer = setTimeout(() => setVisible(true), 800);
+src/components/shared/SessionTimeoutOverlay.tsx:18:        timeoutRef.current = setTimeout(() => {
+src/components/shared/SessionTimeoutOverlay.tsx:49:        setTimeout(() => {
+src/components/shared/GlobalDropZone.tsx:135:                    setTimeout(() => {
+src/components/shared/GlobalDropZone.tsx:138:                        const interval = setInterval(() => {
+src/components/shared/GlobalDropZone.tsx:202:            setTimeout(() => {
+src/components/instruments/InstrumentApprovalModal.tsx:172:    setTimeout(() => {
+src/components/kokonutui/file-upload.tsx:318:      setTimeout(() => {
+src/components/kokonutui/file-upload.tsx:340:      uploadIntervalRef.current = setInterval(
+src/hooks/useMobile.ts:160:            setTimeout(() => {
+src/hooks/useSessionTimeout.ts:41:        const interval = setInterval(async () => {
+src/hooks/useRemoteCommandListener.ts:96:        const interval = setInterval(pushState, 3000);
+src/hooks/useRemoteCommandListener.ts:175:        const interval = setInterval(pollAndProcess, POLL_INTERVAL);
+src/hooks/useRemoteCommandListener.ts:218:        const interval = setInterval(pushState, 5000);
+src/hooks/useRemoteCommandListener.ts:248:        let processingTimeout: ReturnType<typeof setTimeout> | null = null;
+src/hooks/useRemoteCommandListener.ts:258:            processingTimeout = setTimeout(() => {
+src/hooks/useRemoteCommandListener.ts:404:                            setTimeout(() => reject(new Error('Agent call timed out after 45s')), 45_000)
+src/hooks/useRemoteCommandListener.ts:442:                    await new Promise(r => setTimeout(r, 1000));
+src/hooks/useRemoteCommandListener.ts:492:        const interval = setInterval(cleanup, 30 * 60 * 1000);
+src/lib/throttle.ts:12:            setTimeout(() => (inThrottle = false), limit);
+src/lib/debounce.ts:6:    let timeout: ReturnType<typeof setTimeout> | null = null;
+src/lib/debounce.ts:10:        timeout = setTimeout(() => {
+src/lib/errors.ts:123:                const timeout = setTimeout(resolve, delay);
+src/lib/mobile.ts:310:        setTimeout(() => {
+src/modules/publishing/components/OfflineBanner.tsx:23:                const timer = setTimeout(() => setShowNotification(false), 3000);
+src/modules/settings/components/FounderBadge.tsx:50:            setTimeout(() => setHashCopied(false), 2000);
+src/modules/capture/QuickCapture.tsx:84:            setTimeout(() => nameInputRef.current?.focus(), 300);
+src/modules/capture/GhostCapture.tsx:54:        setTimeout(() => {
+src/modules/video/VideoWorkflow.tsx:279:                    setTimeout(() => {
+src/modules/video/VideoWorkflow.tsx:286:                    setTimeout(() => useVideoEditorStore.getState().setProgress(0), 100); // H9 Fix: Delay reset
+src/modules/video/components/VideoStage.tsx:105:            interval = setInterval(() => {
+src/modules/video/components/DirectorPromptBar.tsx:132:        const timer = setTimeout(() => {
+src/modules/video/editor/VideoPopout.tsx:40:        const heartbeatTimer = setInterval(() => {
+src/modules/video/store/videoEditorStore.ts:161:let _heartbeatExpiryTimer: ReturnType<typeof setTimeout> | null = null;
+src/modules/video/store/videoEditorStore.ts:168:    _heartbeatExpiryTimer = setTimeout(() => {
+src/modules/tools/ShareTargetReceiver.tsx:42:                    setTimeout(() => {
+src/modules/tools/ShareTargetReceiver.tsx:48:                    setTimeout(() => {
+src/modules/touring/components/TechnicalRiderGenerator.tsx:224:        setTimeout(() => setExported(false), 3000);
+src/modules/touring/components/RoadMode.tsx:529:                                setTimeout(() => inputRef.current?.focus(), 100);
+src/modules/merchandise/components/BlockchainLedger.tsx:70:                await new Promise(r => setTimeout(r, 1200));
+src/modules/merchandise/components/BlockchainLedger.tsx:73:            setTimeout(() => setIpfsSynced(false), 4000);
+src/modules/merchandise/components/BlockchainLedger.tsx:84:        setTimeout(() => setCopiedHash(null), 2000);
+src/modules/merchandise/components/DropCampaignWizard.tsx:46:        const id = setInterval(tick, 1000);
+src/modules/merchandise/components/DropCampaignWizard.tsx:80:        await new Promise(r => setTimeout(r, 1500));
+src/modules/merchandise/components/WalletConnectPanel.tsx:129:        setTimeout(() => setCopied(false), 2000);
+src/modules/merchandise/components/TokenGatedPreview.tsx:125:        setTimeout(() => setCopiedId(null), 2000);
+src/modules/merchandise/components/AssetLibrary.tsx:42:        const timer = setTimeout(() => setIsLoading(false), 300);
+src/modules/merchandise/components/PODIntegrationPanel.tsx:164:            const t = setTimeout(() => setLoading(false), 0);
+src/modules/merchandise/components/InventoryTracker.tsx:38:        await new Promise(r => setTimeout(r, 1500));
+src/modules/merchandise/components/SmartContractGenerator.tsx:81:        setTimeout(() => setCopied(false), 2000);
+src/modules/merchandise/components/StorefrontPreviewModal.tsx:31:        setTimeout(() => setCopied(false), 2000);
+src/modules/merchandise/components/StorefrontPreviewModal.tsx:36:        await new Promise(r => setTimeout(r, 2000));
+src/modules/merchandise/hooks/useAutoSave.ts:120:        const intervalId = setInterval(() => {
+src/modules/merchandise/hooks/useAutoSave.ts:140:            saveTimeoutRef.current = setTimeout(() => {
+src/modules/merchandise/hooks/useMerchandise.ts:71:        const timer = setTimeout(() => {
+src/modules/merchandise/hooks/useMerchandise.ts:120:        const safetyTimer = setTimeout(() => {
+src/modules/merchandise/hooks/useMerchandise.ts:145:            setTimeout(() => reject(new Error('Stats timeout')), 4000)
+src/modules/merchandise/hooks/useCanvasHistory.ts:94:    saveTimeoutRef.current = setTimeout(() => {
+src/modules/merchandise/hooks/useCanvasHistory.ts:118:      setTimeout(() => {
+src/modules/merchandise/hooks/useCanvasHistory.ts:145:      setTimeout(() => {
+src/modules/publicist/components/ReleaseKitModal.tsx:60:        setTimeout(() => setCopied(null), 2000);
+src/modules/publicist/components/PitchDraftingModal.tsx:76:        setTimeout(() => setCopied(false), 2000);
+src/modules/agent/components/InboxTab.tsx:500:        const interval = setInterval(() => emailSync(), 5 * 60 * 1000);
+src/modules/agent/components/SpecialistSelector.tsx:27:        const timer = setTimeout(() => {
+src/modules/observability/ObservabilityDashboard.tsx:143:        const interval = setInterval(loadMetrics, 30_000);
+src/modules/observability/components/SchedulerStatusPanel.tsx:90:        const interval = setInterval(() => {
+src/modules/observability/components/SchedulerStatusPanel.tsx:147:    const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+src/modules/observability/components/SchedulerStatusPanel.tsx:169:        setTimeout(() => setRefreshing(false), 500);
+src/modules/observability/components/SchedulerStatusPanel.tsx:175:        refreshTimerRef.current = setInterval(() => void loadStatus(), 30_000);
+src/modules/observability/components/HealthPanel.tsx:93:        const interval = setInterval(runChecks, 30_000);
+src/modules/dashboard/components/CustomDashboardWidgets.tsx:205:        const id = setInterval(() => setNow(Date.now()), 60_000);
+src/modules/dashboard/hooks/useAgentWorkspace.ts:48:        const id = setInterval(tick, 1000);
+src/modules/social/components/SocialFeed.tsx:61:            const timer = setTimeout(() => {
+src/modules/workflow/WorkflowLab.tsx:75:        const saveTimer = setTimeout(async () => {
+src/modules/workflow/services/WorkflowEngine.ts:327:                    setTimeout(() => {
+src/modules/marketing/components/CommunityWebhookPanel.tsx:57:        setTimeout(() => {
+src/modules/marketing/components/CommunityWebhookPanel.tsx:80:        setTimeout(() => {
+src/modules/marketing/components/AdBuyingPanel.tsx:41:        setTimeout(() => {
+src/modules/marketing/components/EmailMarketingPanel.tsx:46:        setTimeout(() => {
+src/modules/marketing/components/EmailMarketingPanel.tsx:49:            setTimeout(() => setSent(false), 4000);
+src/modules/marketing/components/EPKGenerator.tsx:47:        setTimeout(() => {
+src/modules/marketing/components/EPKGenerator.tsx:56:        setTimeout(() => setCopied(false), 2000);
+src/modules/marketing/components/AIEnhancePostModal.tsx:97:    setTimeout(() => setCopiedIndex(null), 2000);
+src/modules/marketing/components/InfluencerBountyBoard.tsx:113:        setTimeout(() => setCopiedCode(null), 2000);
+src/modules/marketing/components/AIGenerateCampaignModal.tsx:113:                await new Promise(resolve => setTimeout(resolve, 500));
+src/modules/marketing/components/brand-manager/VisualsPanel.tsx:69:            await new Promise(resolve => setTimeout(resolve, 2500));
+src/modules/marketing/components/PreSaveCampaignBuilder.tsx:47:        setTimeout(() => setCopied(false), 2000);
+src/modules/marketing/components/SMSMarketingPanel.tsx:35:        setTimeout(() => {
+src/modules/marketing/components/SMSMarketingPanel.tsx:44:        setTimeout(() => {
+src/modules/marketing/components/SMSMarketingPanel.tsx:47:            setTimeout(() => setSent(false), 4000);
+src/modules/marketing/hooks/useMarketing.ts:40:            const timer = setTimeout(() => setIsLoading(false), 0);
+src/modules/marketing/hooks/useMarketing.ts:44:        const timer = setTimeout(() => setIsLoading(true), 0);
+src/modules/marketing/hooks/useMarketing.ts:129:            const timer = setTimeout(() => {
+src/modules/finance/components/TaxFormCollection.tsx:41:        setTimeout(() => {
+src/modules/finance/components/StripeConnectOnboarding.tsx:56:        setTimeout(() => setCopiedId(null), 2000);
+src/modules/finance/components/ReceiptOCR.tsx:169:        setTimeout(() => setAddedToExpenses(false), 3000);
+src/modules/licensing/components/MicroLicensingPortal.tsx:120:            setTimeout(() => setCopied(false), 2000);
+src/modules/licensing/components/CatalogSearchTab.tsx:31:        const timer = setTimeout(() => {
+src/modules/creative/hooks/useCreativeCanvas.ts:19:    let timeout: ReturnType<typeof setTimeout> | null = null;
+src/modules/creative/hooks/useCreativeCanvas.ts:22:        timeout = setTimeout(() => func(...args), wait);
+src/modules/investor/components/ProtocolAuth.tsx:21:        const interval = setInterval(() => {
+src/modules/investor/components/ProtocolAuth.tsx:25:                    setTimeout(onAuthenticated, 1500); // Give time for the cinematic flash
+src/modules/investor/components/EquityDashboard.tsx:261:        const timer = setTimeout(() => setStarted(true), delay);
+src/modules/investor/components/EquityDashboard.tsx:271:        const interval = setInterval(() => {
+src/modules/investor/components/MissionBrief.tsx:66:        const timer = setTimeout(() => setStarted(true), delay);
+src/modules/investor/components/MissionBrief.tsx:76:        const interval = setInterval(() => {
+src/modules/legal/components/DMCANoticeGenerator.tsx:128:            setTimeout(() => setCopied(false), 2000);
+src/modules/mobile-remote/components/ApprovalQueue.tsx:33:        const interval = setInterval(updateTime, 1000);
+src/modules/mobile-remote/components/AgentChat.tsx:128:            const safetyTimeout = setTimeout(() => {
+src/modules/mobile-remote/components/GenerationMonitor.tsx:105:            const timeout = setTimeout(() => {
+src/services/pod/PrintOnDemandService.ts:194:                    await new Promise(resolve => setTimeout(resolve, waitMs));
+src/services/pod/PrintOnDemandService.ts:372:            await new Promise(resolve => setTimeout(resolve, 2000));
+src/services/optimistic/OptimisticManager.ts:149:setInterval(() => {
+src/services/collaboration/HandoffService.ts:38:        this.syncTimeout = setTimeout(async () => {
+src/services/video/VideoService.ts:50:                await new Promise(r => setTimeout(r, delay));
+src/services/video/VideoGenerationService.ts:375:        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+src/services/video/VideoGenerationService.ts:426:            timeoutId = setTimeout(() => {
+src/services/video/VideoUploadService.ts:157:            const timeout = setTimeout(() => {
+src/services/video/VideoRenderOrchestrator.ts:56:        const interval = setInterval(async () => {
+src/services/video/AvatarGenerationService.ts:66:        const interval = setInterval(() => {
+src/services/cache/CacheService.ts:36:    const timeout = setTimeout(() => {
+src/services/firebase.ts:117:            setTimeout(() => cb(mockUser), 100);
+src/services/places/NearbyPlacesService.ts:101:                        setTimeout(waitForLoad, 200);
+src/services/utils/APIHealthService.ts:37:        this.checkInterval = setInterval(() => {
+src/services/agent/BrowserAgentService.ts:644:        return new Promise(resolve => setTimeout(resolve, ms));
+src/services/agent/AlwaysOnMemoryEngine.ts:82:    private consolidationTimer: ReturnType<typeof setInterval> | null = null;
+src/services/agent/AlwaysOnMemoryEngine.ts:83:    private decayTimer: ReturnType<typeof setInterval> | null = null;
+src/services/agent/AlwaysOnMemoryEngine.ts:177:        this.consolidationTimer = setInterval(() => {
+src/services/agent/AlwaysOnMemoryEngine.ts:189:        this.decayTimer = setInterval(() => {
+src/services/agent/AssetObserver.ts:16:    private retryTimer: ReturnType<typeof setTimeout> | null = null;
+src/services/agent/AssetObserver.ts:17:    private relayTimers: Set<ReturnType<typeof setTimeout>> = new Set();
+src/services/agent/AssetObserver.ts:52:                    this.retryTimer = setTimeout(() => {
+src/services/agent/AssetObserver.ts:125:        const timerId = setTimeout(() => {
+src/services/agent/memory/AlwaysOnMemoryEngine.ts:77:    private consolidationTimer: ReturnType<typeof setInterval> | null = null;
+src/services/agent/memory/AlwaysOnMemoryEngine.ts:136:        this.consolidationTimer = setInterval(async () => {
+src/services/agent/memory/MemoryInboxWatcher.ts:69:    private pollTimer: ReturnType<typeof setInterval> | null = null;
+src/services/agent/memory/MemoryInboxWatcher.ts:122:        this.pollTimer = setInterval(() => {
+src/services/agent/AgentService.ts:163:            let timeoutHandle: ReturnType<typeof setTimeout>;
+src/services/agent/AgentService.ts:165:                timeoutHandle = setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
+src/services/agent/WebSocketControlPlane.ts:67:  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+src/services/agent/WebSocketControlPlane.ts:273:      setTimeout(() => {
+src/services/agent/WebSocketControlPlane.ts:291:    this.heartbeatTimer = setInterval(() => {
+src/services/agent/WebSocketControlPlane.ts:320:    setTimeout(() => this.connect(url), delay);
+src/services/agent/instruments/InstrumentRegistry.ts:274:            setTimeout(() => reject('Timeout'), options!.timeoutMs)
+src/services/agent/ProactiveService.ts:64:        this.activeInterval = setInterval(async () => {
+src/services/agent/registry.ts:220:                    await new Promise(resolve => setTimeout(resolve, delay));
+src/services/image/EditingService.ts:42:                await new Promise(r => setTimeout(r, delay));
+src/services/image/CanvasBatchService.ts:69:                await new Promise(r => setTimeout(r, 800));
+src/services/subscription/SubscriptionService.ts:171:        setTimeout(() => reject(new Error('Subscription check timeout')), 5000)
+src/services/subscription/UsageTracker.ts:114:        setTimeout(() => {
+src/services/social/SocialPlatformService.ts:258:                await new Promise(r => setTimeout(r, 5000));
+src/services/social/SocialPostingService.ts:63:            await new Promise(resolve => setTimeout(resolve, 2000));
+src/services/blockchain/SmartContractService.ts:148:            await new Promise(r => setTimeout(r, 3000)); // 3s between polls
+src/services/ai/RateLimiter.ts:56:            await new Promise(resolve => setTimeout(resolve, waitTime));
+src/services/ai/config/breaker-configs.ts:14:        resetTimeoutMs: 30000, // 30s
+src/services/ai/config/breaker-configs.ts:22:        resetTimeoutMs: 60000, // 60s
+src/services/ai/config/breaker-configs.ts:29:        resetTimeoutMs: 15000, // 15s
+src/services/ai/utils/CircuitBreaker.ts:11:    resetTimeoutMs: number;
+src/services/ai/utils/CircuitBreaker.ts:55:            if (Date.now() - this.lastFailureTime > this.config.resetTimeoutMs) {
+src/services/ai/FirebaseAIService.ts:331:                timeoutId = setTimeout(() => {
+src/services/ai/FirebaseAIService.ts:547:            timeoutId = setTimeout(() => {
+src/services/ai/FirebaseAIService.ts:1066:                        const timer = setTimeout(resolve, waitTime);
+src/services/ai/generators/MediaGenerator.ts:142:            await new Promise(resolve => setTimeout(resolve, pollInterval));
+src/services/persistence/MetadataPersistenceService.ts:292:                    await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
+src/services/persistence/MetadataPersistenceService.ts:367:                    await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+src/services/persistence/MetadataPersistenceService.ts:433:            setTimeout(() => {
+src/services/persistence/MetadataPersistenceService.ts:446:    setInterval(() => {
+src/services/marketing/SocialAutoPosterService.ts:97:        const interval = setInterval(() => {
+src/services/GeminiRetrievalService.ts:215:            await new Promise(resolve => setTimeout(resolve, pollInterval));
+src/services/monitoring/UptimeMonitorService.ts:61:    private intervalId: ReturnType<typeof setInterval> | null = null;
+src/services/monitoring/UptimeMonitorService.ts:77:            const timeout = setTimeout(() => controller.abort(), 10_000);
+src/services/monitoring/UptimeMonitorService.ts:132:        this.intervalId = setInterval(() => {
+src/services/email/EmailService.ts:89:            const interval = setInterval(() => {
+src/services/email/EmailService.ts:130:            setTimeout(() => {
+src/core/store/slices/subscriptionSlice.ts:11:     * Registers a new Firestore onSnapshot unsubscribe function.
+src/core/store/slices/profileSlice.ts:182:                const { doc, onSnapshot } = await import('firebase/firestore');
+src/core/store/slices/profileSlice.ts:186:                const unsubscribe = onSnapshot(userRef, (docSnap) => {
+src/utils/safeUnsubscribe.ts:4: * Wraps a Firestore `onSnapshot` unsubscribe function in a try-catch to prevent
+src/components/studio/observability/SwarmGraph.tsx:13:import { onSnapshot } from 'firebase/firestore';
+src/components/studio/observability/SwarmGraph.tsx:41:        const unsubscribe = onSnapshot(q, (snapshot) => {
+src/components/studio/observability/TraceViewer.tsx:2:import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+src/components/studio/observability/TraceViewer.tsx:25:        const unsubscribe = onSnapshot(q, (snapshot) => {
+src/hooks/useRemoteCommandListener.ts:4: * Uses Firestore onSnapshot to listen for commands from the phone in real-time.
+src/modules/publishing/hooks/useReleases.ts:3:import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc, FirestoreError } from 'firebase/firestore';
+src/modules/publishing/hooks/useReleases.ts:43:        const unsubscribe = onSnapshot(q, { includeMetadataChanges: true },
+src/modules/publishing/hooks/useAnalytics.ts:4:import { getFirestore, collection, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+src/modules/publishing/hooks/useAnalytics.ts:59:        const unsubscribe = onSnapshot(
+src/modules/publishing/hooks/useAnalytics.ts:150:        const unsubscribe = onSnapshot(
+src/modules/settings/components/AuditLogDashboard.tsx:3:import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+src/modules/settings/components/AuditLogDashboard.tsx:36:        const unsubscribe = onSnapshot(q, (snapshot) => {
+src/modules/distribution/components/TransmissionMonitor.tsx:14:    // Without this, rapid module switching causes the onSnapshot callback to fire
+src/modules/social/components/SocialFeed.tsx:254:// We use custom deep comparison here because Firestore onSnapshot often returns new object references
+src/modules/social/hooks/useSocial.ts:2:import { onSnapshot, doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+src/modules/social/hooks/useSocial.ts:86:        const userUnsub = onSnapshot(doc(db, "users", userProfile.id), (doc) => {
+src/modules/social/hooks/useSocial.ts:101:        const scheduledUnsub = onSnapshot(scheduledQuery, (snapshot) => {
+src/modules/social/hooks/useSocial.ts:121:        const feedUnsub = onSnapshot(postsQuery, (snapshot) => {
+src/modules/marketing/hooks/useMarketing.ts:2:import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
+src/modules/marketing/hooks/useMarketing.ts:53:            unsubscribeStats = onSnapshot(statsRef, (doc) => {
+src/modules/marketing/hooks/useMarketing.ts:79:            unsubscribeCampaigns = onSnapshot(campaignsQuery, (snapshot) => {
+src/modules/finance/components/AuditLogsPanel.tsx:5:import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
+src/modules/finance/components/AuditLogsPanel.tsx:52:        const unsubscribe = onSnapshot(q, (snapshot) => {
+src/modules/finance/components/LabelDealRecoupment.tsx:17:    collection, query, where, orderBy, onSnapshot,
+src/modules/finance/components/LabelDealRecoupment.tsx:306:        const unsub = onSnapshot(q, snap => {
+src/modules/mobile-remote/components/AgentChat.tsx:8: *   → Desktop's onSnapshot fires immediately
+src/modules/mobile-remote/components/AgentChat.tsx:11: *   → Phone's onSnapshot fires, displays the response
+src/services/FirestoreService.ts:16:    onSnapshot,
+src/services/FirestoreService.ts:126:        return onSnapshot(q, (snapshot) => {
+src/services/collaboration/HandoffService.ts:1:import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+src/services/collaboration/HandoffService.ts:74:        return onSnapshot(doc(db, 'users', user.uid, 'settings', 'handoff'), (snapshot) => {
+src/services/video/VideoGenerationService.ts:5:import { doc, onSnapshot } from 'firebase/firestore';
+src/services/video/VideoGenerationService.ts:346:        return onSnapshot(jobRef, (snapshot) => {
+src/services/touring/RiderService.ts:13:    onSnapshot
+src/services/touring/RiderService.ts:42:        return onSnapshot(q, (snapshot) => {
+src/services/touring/TouringService.ts:12:    onSnapshot,
+src/services/touring/TouringService.ts:106:        return onSnapshot(q, (snapshot) => {
+src/services/merchandise/MerchandiseService.ts:2:import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+src/services/merchandise/MerchandiseService.ts:25:        return onSnapshot(q, (snapshot) => {
+src/services/merchandise/MerchandiseService.ts:294:        return onSnapshot(jobRef, (snapshot) => {
+src/services/publicist/PublicistService.ts:5:    onSnapshot,
+src/services/publicist/PublicistService.ts:78:        return onSnapshot(q, (snapshot) => {
+src/services/publicist/PublicistService.ts:108:        return onSnapshot(q, (snapshot) => {
+src/services/distribution/DistributionSyncService.ts:1:import { collection, query, where, getDocs, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
+src/services/distribution/DistributionSyncService.ts:60:        return onSnapshot(q, (snapshot) => {
+src/services/agent/SessionService.ts:7:import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe } from 'firebase/firestore';
+src/services/agent/SessionService.ts:125:        return onSnapshot(q, (snapshot) => {
+src/services/agent/ProactiveService.ts:8:    onSnapshot,
+src/services/agent/RemoteRelayService.ts:29:    onSnapshot,
+src/services/agent/RemoteRelayService.ts:153:        return onSnapshot(q, (snapshot) => {
+src/services/agent/RemoteRelayService.ts:175:        return onSnapshot(q, (snapshot) => {
+src/services/agent/RemoteRelayService.ts:193:        return onSnapshot(ref, (snapshot) => {
+src/services/agent/RemoteRelayService.ts:223:        return onSnapshot(ref, (snapshot) => {
+src/services/StorageService.ts:4:import { collection, query, orderBy, limit, Timestamp, where, getDocs, onSnapshot, Unsubscribe } from 'firebase/firestore';
+src/services/StorageService.ts:337:        const originalUnsubscribe = onSnapshot(q, (snapshot) => {
+src/services/StorageService.ts:359:                unsubscribe = onSnapshot(fallbackQ, (fallbackSnap) => {
+src/services/dashboard/AnalyticsService.ts:32:    onSnapshot,
+src/services/dashboard/AnalyticsService.ts:38:// Internal helper: creates a standardised onSnapshot wrapper with validation.
+src/services/dashboard/AnalyticsService.ts:48:    return onSnapshot(ref, (snapshot) => {
+src/services/dashboard/AnalyticsService.ts:139:        return onSnapshot(ref, (snapshot) => {
+src/services/dashboard/AnalyticsService.ts:170:        return onSnapshot(ref, (snapshot) => {
+src/services/StorageQuotaService.ts:13:import { doc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+src/services/StorageQuotaService.ts:95:     * Fetches the subscription tier BEFORE starting the onSnapshot listener
+src/services/StorageQuotaService.ts:116:        // This prevents the race condition where the first onSnapshot callback
+src/services/StorageQuotaService.ts:124:                innerUnsub = onSnapshot(usageRef, (snapshot) => {
+src/services/StorageQuotaService.ts:139:                innerUnsub = onSnapshot(usageRef, (snapshot) => {
+src/services/finance/FinanceService.ts:15:  onSnapshot,
+src/services/finance/FinanceService.ts:181:    return onSnapshot(q, (snapshot) => {
+src/services/finance/FinanceService.ts:211:    return onSnapshot(q, (snapshot) => {
+src/services/email/EmailService.ts:19:import { doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, limit, Unsubscribe } from 'firebase/firestore';
+src/services/email/EmailService.ts:375:        return onSnapshot(accountsRef, (snap) => {
+=== ERRORS & LOADING TRAPS ===
+src/services/social/SocialPlatformService.ts:197:            const err = await response.json().catch(() => ({})) as { title?: string };
+src/services/social/SocialPlatformService.ts:248:            const err = await createRes.json().catch(() => ({})) as { error?: { message: string } };
+src/services/social/SocialPlatformService.ts:278:            const err = await publishRes.json().catch(() => ({})) as { error?: { message: string } };
+src/services/social/SocialPlatformService.ts:335:            const err = await initRes.json().catch(() => ({})) as { error?: { message: string } };
+src/services/social/SocialPlatformService.ts:400:            const err = await insertRes.json().catch(() => ({})) as { error?: { message: string } };
+src/services/rights/PRORightsService.ts:130:            const errData = await response.json().catch(() => ({})) as { message?: string };
+src/services/rights/PRORightsService.ts:253:            const err = await workRes.json().catch(() => ({})) as { message?: string };
+src/components/shared/GlobalDropZone.tsx:139:                            currentProgress += Math.floor(Math.random() * 20) + 10;
+src/components/shared/GlobalDropZone.tsx:195:                        }, 200 + Math.random() * 300); // Random chunk delay
+src/components/shared/GlobalDropZone.tsx:196:                    }, Math.random() * 1000); // Random start delay
+src/modules/video/VideoWorkflow.tsx:201:        const newSeed = Math.floor(Math.random() * 2147483647).toString();
+src/modules/video/visualizer/SceneBuilder.tsx:104:            position: [(Math.random() - 0.5) * 5, 0, (Math.random() - 0.5) * 5],

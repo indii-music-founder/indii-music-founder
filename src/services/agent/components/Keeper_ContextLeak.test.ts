@@ -26,10 +26,22 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         useStore = createStore<AgentSlice>((...a) => createAgentSlice(...a));
     });
 
-    it.skip('should persist messages and update context when adding a message', async () => {
+    it('should persist messages and update context when adding a message', async () => {
         // 1. Create Session
-        useStore.getState().createSession('Chat A', ['agent-1']);
-        const sessionId = useStore.getState().activeSessionId; // Fetch fresh ID
+        useStore.setState({
+            activeSessionId: 'sess-persist-test',
+            sessions: {
+                'sess-persist-test': {
+                    id: 'sess-persist-test',
+                    title: 'Test',
+                    messages: [],
+                    createdAt: 1,
+                    updatedAt: 1,
+                    participants: ['indii']
+                }
+            }
+        });
+        const sessionId = 'sess-persist-test';
 
         const msg: AgentMessage = { id: '1', role: 'user', text: 'Hello, persistence!', timestamp: Date.now() };
 

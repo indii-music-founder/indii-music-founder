@@ -59,7 +59,7 @@ export class AgentOrchestrator {
         ${AGENTS.map(a => `- "${a.id}" (${a.name}): ${a.description}`).join('\n')}
 
         AVAILABLE RAG CORPORA:
-        ["royalties", "deals", "publishing", "licensing", "contracts", "touring", "marketing", "finance", "merchandise", "production", "visual", "career", "general"]
+        ["royalties", "deals", "publishing", "licensing", "contracts", "touring", "marketing", "finance", "merchandise", "production", "visual", "career", "registration", "general"]
 
         CURRENT CONTEXT:
         - Active Module: ${context.activeModule || 'none'}
@@ -73,13 +73,24 @@ export class AgentOrchestrator {
              "targetAgentId": "string", // One of the available agent IDs
              "ragCorpus": "string", // One of the AVAILABLE RAG CORPORA based on intent detection
              "confidence": number, // 0.0 to 1.0
-             "reasoning": "string" // Brief explanation of the choices
+             "reasoning": "string", // Brief explanation of the choices
+             "registrationIntent": "loc" | "ascap" | "bmi" | "sesac" | "soundexchange" | "mlc" | "pro" | null // Detected registration target
            }
         2. "legal" -> contracts, agreements, splits.
         3. "music" -> audio analysis, lyrics, production.
         4. "video" -> storyboards, treatments, video editing.
         5. "marketing" -> social media, campaigns, brand strategy.
-        6. Use "general" for ragCorpus if no specific domain applies.
+        6. REGISTRATION INTENTS — route to "legal" agent with ragCorpus "registration":
+           - Library of Congress / copyright office / eCO portal / register copyright / register my songs / protect my music / USCO / copyright my music -> registrationIntent: "loc"
+           - ASCAP / register with ASCAP / ASCAP registration -> registrationIntent: "ascap"
+           - BMI / register with BMI / BMI registration -> registrationIntent: "bmi"
+           - SESAC / register with SESAC -> registrationIntent: "sesac"
+           - SoundExchange / digital performance royalties / satellite radio royalties -> registrationIntent: "soundexchange"
+           - MLC / mechanical licensing collective / mechanical royalties -> registrationIntent: "mlc"
+           - performing rights / PRO registration / sign up for royalties / performance royalties (no specific PRO named) -> registrationIntent: "pro"
+           - register my catalog / rights registration / register my music (general) -> registrationIntent: "pro"
+        7. Use "general" for ragCorpus if no specific domain applies.
+        8. If registrationIntent is null, omit the field or return null.
         `;
 
         try {
@@ -113,11 +124,29 @@ export class AgentOrchestrator {
             const ragCorpus = parsedResponse.ragCorpus?.trim().toLowerCase();
             const confidence = parsedResponse.confidence;
             const reasoning = parsedResponse.reasoning;
+            const registrationIntent = (parsedResponse as Record<string, unknown>).registrationIntent as string | null | undefined;
 
             // Optional enhancement: if a corpus was detected, attach it to context directly here.
             if (ragCorpus && ragCorpus !== 'general') {
                 context.ragCorpus = ragCorpus;
                 logger.info(`[AgentOrchestrator] Detected intent bound to RAG corpus: ${ragCorpus}`);
+            }
+
+            // Registration intent: fire navigate_to to open Registration Center
+            if (registrationIntent && registrationIntent !== 'null') {
+                const validOrgIds = ['loc', 'ascap', 'bmi', 'sesac', 'soundexchange', 'mlc'];
+                const orgId = validOrgIds.includes(registrationIntent) ? registrationIntent : null;
+                logger.info(`[AgentOrchestrator] Registration intent detected: ${registrationIntent} → opening Registration Center`);
+                import('@/core/store').then(({ useStore }) => {
+                    const store = useStore.getState();
+                    store.setModule('registration');
+                    if (orgId) {
+                        store.setRegistrationFocus({ orgId: orgId as import('@/modules/registration/types').OrgId, trackId: null });
+                        store.setRegistrationAIMessage(
+                            `I'll help you register with ${registrationIntent.toUpperCase()}. Let me pull your catalog info and pre-fill what I know…`
+                        );
+                    }
+                }).catch(err => logger.warn('[AgentOrchestrator] Failed to open Registration Center:', err));
             }
 
             const validRoutes = AGENTS.map(a => a.id);

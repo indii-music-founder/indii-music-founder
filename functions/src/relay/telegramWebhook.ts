@@ -22,7 +22,7 @@
  */
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
-import { telegramBotToken } from "../config/secrets";
+import { telegramBotToken, telegramWebhookSecret } from "../config/secrets";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,8 +64,8 @@ const MAX_TELEGRAM_MESSAGE_LENGTH = 4096;
 // Cloud Function: HTTPS Webhook
 // ---------------------------------------------------------------------------
 export const telegramWebhook = functions
-    .runWith({ enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true', 
-        secrets: [telegramBotToken],
+    .runWith({
+        secrets: [telegramBotToken, telegramWebhookSecret],
         timeoutSeconds: 120,
         memory: "256MB",
      })
@@ -74,6 +74,20 @@ export const telegramWebhook = functions
         if (req.method !== "POST") {
             res.status(405).send("Method Not Allowed");
             return;
+        }
+
+        // Verify Telegram webhook secret token
+        // Set via: setWebhook(url, { secret_token: TELEGRAM_WEBHOOK_SECRET })
+        const secret = process.env.TELEGRAM_WEBHOOK_SECRET || (() => {
+            try { return telegramWebhookSecret.value(); } catch { return ""; }
+        })();
+        if (secret) {
+            const incoming = req.headers['x-telegram-bot-api-secret-token'];
+            if (incoming !== secret) {
+                console.warn('[Telegram] Rejected request: invalid secret token');
+                res.status(401).send("Unauthorized");
+                return;
+            }
         }
 
         const update: TelegramUpdate = req.body;

@@ -97,3 +97,18 @@
 
 ---
 *Self-managed task list for Antigravity.*
+
+## Sprint 11 — Registration Center
+
+| ID | Task | Status | Source |
+| :--- | :--- | :--- | :--- |
+| 11.1 | OrgAdapter interface + all types | [x] | Blueprint |
+| 11.2 | registrationSlice.ts (Zustand state) | [x] | Blueprint |
+| 11.3 | 6 org adapters: LoC, ASCAP, BMI, SESAC, SoundExchange, MLC | [x] | Blueprint |
+| 11.4 | RegistrationPersistence shared service | [x] | Simplify |
+| 11.5 | navigate_to deep-link + intent routing in AgentOrchestrator | [x] | Blueprint |
+| 11.6 | UI: CatalogRail, OrgStatusCard, RegistrationForm, RegistrationSheet, RegistrationAIRail | [x] | Blueprint |
+| 11.7 | RegistrationCenter.tsx main module (3-column layout) | [x] | Blueprint |
+| 11.8 | register_copyright + start_pro_registration agent tools | [x] | Blueprint |
+| 11.9 | Wire into App.tsx + Sidebar + MODULE_IDS | [x] | Blueprint |
+| 11.10 | Simplify pass: N+1 fix, parallel loading, AI state cleanup | [x] | Simplify |

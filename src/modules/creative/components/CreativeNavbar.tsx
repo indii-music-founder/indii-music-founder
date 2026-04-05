@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, FlaskConical, Wand2
+    Palette, Clock, FlaskConical, Wand2, Rocket
 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import DaisyChainControls from './DaisyChainControls';
@@ -22,14 +22,20 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         setPrompt,
         generationMode,
         viewMode,
-        setViewMode
+        setViewMode,
+        studioControls,
+        enableAndromedaMode,
+        disableAndromedaMode
     } = useStore(useShallow(state => ({
         setVideoInput: state.setVideoInput,
         prompt: state.prompt,
         setPrompt: state.setPrompt,
         generationMode: state.generationMode,
         viewMode: state.viewMode,
-        setViewMode: state.setViewMode
+        setViewMode: state.setViewMode,
+        studioControls: state.studioControls,
+        enableAndromedaMode: state.enableAndromedaMode,
+        disableAndromedaMode: state.disableAndromedaMode
     })));
     const toast = useToast();
     const [showPromptBuilder, setShowPromptBuilder] = useState(false);
@@ -70,8 +76,8 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                     onClick={() => setViewMode(tab.id as typeof viewMode)}
                                     data-testid={tab.testId}
                                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${isActive
-                                            ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
-                                            : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.04]'
+                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.04]'
                                         }`}
                                 >
                                     <Icon size={11} className={isActive ? 'text-purple-400' : ''} />
@@ -123,6 +129,29 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                             }}
                         />
                     )}
+
+                    <div className="h-3.5 w-px bg-white/[0.08] mx-0.5" />
+
+                    {/* Andromeda Mode Toggle */}
+                    <button
+                        onClick={() => {
+                            if (studioControls.isAndromedaMode) {
+                                disableAndromedaMode();
+                                toast.success("Andromeda Mode deactivated");
+                            } else {
+                                enableAndromedaMode();
+                                toast.success("Andromeda Mode activated: Ready to generate 15 ad variants");
+                            }
+                        }}
+                        title={studioControls.isAndromedaMode ? "Disable Andromeda Pipeline" : "Enable Andromeda Pipeline"}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all text-[10px] font-bold uppercase tracking-wider
+                            ${studioControls.isAndromedaMode
+                                ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.3)] animate-pulse'
+                                : 'bg-white/[0.03] border-white/[0.06] text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]'}`}
+                    >
+                        <Rocket size={11} className={studioControls.isAndromedaMode ? "text-indigo-400" : ""} />
+                        <span className="hidden lg:inline">Andromeda</span>
+                    </button>
 
                     <div className="h-3.5 w-px bg-white/[0.08] mx-0.5" />
 

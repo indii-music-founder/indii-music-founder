@@ -4,6 +4,9 @@
  * Orchestrates SpotifyService, YouTubeAnalyticsService, and TikTokAnalyticsService
  * into a unified TrackAnalytics[] catalogue for the Growth Intelligence Engine.
  *
+ * indii Growth Protocol v2.0: Also provides Spotify popularity score fetching
+ * for algorithmic milestone tracking.
+ *
  * Data aggregation strategy:
  * - Track identity:  Spotify is used as the master track catalog (most complete metadata).
  *   YouTube and TikTok data is then aggregated at the channel/account level and
@@ -28,6 +31,7 @@ import type {
     PlatformData,
     StreamDataPoint,
     RegionData,
+    PopularityScores,
 } from './types';
 
 // ── Connection status ─────────────────────────────────────────────────────────
@@ -73,13 +77,13 @@ function mergeHistories(a: StreamDataPoint[], b: StreamDataPoint[]): StreamDataP
         if (existing) {
             map.set(point.date, {
                 date: point.date,
-                streams:          existing.streams         + point.streams,
-                saves:            existing.saves           + point.saves,
-                completions:      existing.completions     + point.completions,
-                uniqueListeners:  existing.uniqueListeners + point.uniqueListeners,
-                shares:           existing.shares          + point.shares,
-                newFollowers:     existing.newFollowers    + point.newFollowers,
-                playlistAdditions:existing.playlistAdditions + point.playlistAdditions,
+                streams: existing.streams + point.streams,
+                saves: existing.saves + point.saves,
+                completions: existing.completions + point.completions,
+                uniqueListeners: existing.uniqueListeners + point.uniqueListeners,
+                shares: existing.shares + point.shares,
+                newFollowers: existing.newFollowers + point.newFollowers,
+                playlistAdditions: existing.playlistAdditions + point.playlistAdditions,
             });
         } else {
             map.set(point.date, { ...point });
@@ -107,11 +111,11 @@ export class PlatformDataService {
         ]);
 
         return {
-            spotify:     spotify.status    === 'fulfilled' && spotify.value,
-            youtube:     youtube.status    === 'fulfilled' && youtube.value,
-            tiktok:      tiktok.status     === 'fulfilled' && tiktok.value,
-            apple_music: apple.status      === 'fulfilled' && apple.value,
-            instagram:   instagram.status  === 'fulfilled' && instagram.value,
+            spotify: spotify.status === 'fulfilled' && spotify.value,
+            youtube: youtube.status === 'fulfilled' && youtube.value,
+            tiktok: tiktok.status === 'fulfilled' && tiktok.value,
+            apple_music: apple.status === 'fulfilled' && apple.value,
+            instagram: instagram.status === 'fulfilled' && instagram.value,
         };
     }
 
@@ -164,16 +168,16 @@ export class PlatformDataService {
 
         // Fetch supplementary platform data (optional, non-blocking)
         const [ytResult, ttResult, igResult, amResult] = await Promise.allSettled([
-            status.youtube    ? youTubeAnalyticsService.buildPlatformData()   : Promise.resolve(null),
-            status.tiktok     ? tikTokAnalyticsService.buildPlatformData()    : Promise.resolve(null),
-            status.instagram  ? instagramAnalyticsService.buildPlatformData() : Promise.resolve(null),
-            status.apple_music ? appleMusicService.buildPlatformData()        : Promise.resolve(null),
+            status.youtube ? youTubeAnalyticsService.buildPlatformData() : Promise.resolve(null),
+            status.tiktok ? tikTokAnalyticsService.buildPlatformData() : Promise.resolve(null),
+            status.instagram ? instagramAnalyticsService.buildPlatformData() : Promise.resolve(null),
+            status.apple_music ? appleMusicService.buildPlatformData() : Promise.resolve(null),
         ]);
 
-        const ytPlatform  = ytResult.status  === 'fulfilled' ? ytResult.value  : null;
-        const ttPlatform  = ttResult.status  === 'fulfilled' ? ttResult.value  : null;
-        const igPlatform  = igResult.status  === 'fulfilled' ? igResult.value  : null;
-        const amPlatform  = amResult.status  === 'fulfilled' ? amResult.value  : null;
+        const ytPlatform = ytResult.status === 'fulfilled' ? ytResult.value : null;
+        const ttPlatform = ttResult.status === 'fulfilled' ? ttResult.value : null;
+        const igPlatform = igResult.status === 'fulfilled' ? igResult.value : null;
+        const amPlatform = amResult.status === 'fulfilled' ? amResult.value : null;
 
         // Fetch YouTube region data if available
         let regionData: RegionData[] = [];
@@ -214,8 +218,8 @@ export class PlatformDataService {
                 if (ytPlatform) {
                     platforms.push({
                         platform: 'youtube_shorts',
-                        streams:        Math.round(ytPlatform.streams        * shareRatio),
-                        saves:          Math.round(ytPlatform.saves          * shareRatio),
+                        streams: Math.round(ytPlatform.streams * shareRatio),
+                        saves: Math.round(ytPlatform.saves * shareRatio),
                         completionRate: ytPlatform.completionRate,
                     });
                 }
@@ -223,28 +227,28 @@ export class PlatformDataService {
                 if (ttPlatform) {
                     platforms.push({
                         platform: 'tiktok',
-                        streams:       Math.round(ttPlatform.streams       * shareRatio),
-                        saves:         Math.round(ttPlatform.saves         * shareRatio),
+                        streams: Math.round(ttPlatform.streams * shareRatio),
+                        saves: Math.round(ttPlatform.saves * shareRatio),
                         completionRate: ttPlatform.completionRate,
-                        creatorCount:  Math.round((ttPlatform.creatorCount ?? 0) * shareRatio),
+                        creatorCount: Math.round((ttPlatform.creatorCount ?? 0) * shareRatio),
                     });
                 }
 
                 if (igPlatform) {
                     platforms.push({
                         platform: 'instagram_reels',
-                        streams:       Math.round(igPlatform.streams       * shareRatio),
-                        saves:         Math.round(igPlatform.saves         * shareRatio),
+                        streams: Math.round(igPlatform.streams * shareRatio),
+                        saves: Math.round(igPlatform.saves * shareRatio),
                         completionRate: igPlatform.completionRate,
-                        creatorCount:  0,
+                        creatorCount: 0,
                     });
                 }
 
                 if (amPlatform) {
                     platforms.push({
                         platform: 'apple_music',
-                        streams:       Math.round(amPlatform.streams       * shareRatio),
-                        saves:         Math.round(amPlatform.saves         * shareRatio),
+                        streams: Math.round(amPlatform.streams * shareRatio),
+                        saves: Math.round(amPlatform.saves * shareRatio),
                         completionRate: amPlatform.completionRate,
                     });
                 }
@@ -253,17 +257,17 @@ export class PlatformDataService {
                 const creatorCount = platforms.reduce((s, p) => s + (p.creatorCount ?? 0), 0);
 
                 return {
-                    trackId:      track.id,
-                    trackName:    track.name,
-                    artistName:   track.artist,
-                    coverUrl:     track.albumArt,
-                    releaseDate:  track.releaseDate,
-                    genre:        'Music',   // Spotify track metadata doesn't include genre at track level
+                    trackId: track.id,
+                    trackName: track.name,
+                    artistName: track.artist,
+                    coverUrl: track.albumArt,
+                    releaseDate: track.releaseDate,
+                    genre: 'Music',   // Spotify track metadata doesn't include genre at track level
                     totalStreams,
                     platforms,
-                    history:      spotifyHistory,
+                    history: spotifyHistory,
                     creatorCount,
-                    regions:      index === 0 ? regionData : this._proRateRegions(regionData, shareRatio),
+                    regions: index === 0 ? regionData : this._proRateRegions(regionData, shareRatio),
                 };
             })
         );
@@ -296,12 +300,12 @@ export class PlatformDataService {
         const regions = ytRegions.status === 'fulfilled' ? ytRegions.value : [];
 
         return [{
-            trackId:      `yt-channel-${channel.id}`,
-            trackName:    channel.snippet.title,
-            artistName:   channel.snippet.title,
-            coverUrl:     undefined,
-            releaseDate:  new Date().toISOString().split('T')[0]!,
-            genre:        'Music',
+            trackId: `yt-channel-${channel.id}`,
+            trackName: channel.snippet.title,
+            artistName: channel.snippet.title,
+            coverUrl: undefined,
+            releaseDate: new Date().toISOString().split('T')[0]!,
+            genre: 'Music',
             totalStreams: platforms.reduce((s, p) => s + p.streams, 0),
             platforms,
             history,
@@ -331,17 +335,17 @@ export class PlatformDataService {
             : emptyHistory();
 
         return [{
-            trackId:      'tt-account',
-            trackName:    displayName,
-            artistName:   displayName,
-            coverUrl:     undefined,
-            releaseDate:  new Date().toISOString().split('T')[0]!,
-            genre:        'Music',
+            trackId: 'tt-account',
+            trackName: displayName,
+            artistName: displayName,
+            coverUrl: undefined,
+            releaseDate: new Date().toISOString().split('T')[0]!,
+            genre: 'Music',
             totalStreams: platforms.reduce((s, p) => s + p.streams, 0),
             platforms,
             history,
             creatorCount: 0,
-            regions:      [],
+            regions: [],
         }];
     }
 
@@ -352,6 +356,76 @@ export class PlatformDataService {
             ...r,
             streams: Math.round(r.streams * ratio),
         }));
+    }
+
+    // ── indii Growth Protocol: Popularity Score Fetching ────────────────────
+
+    /**
+     * Cache of previous popularity scores for delta calculation.
+     * Key: trackId, Value: last known scores
+     */
+    private _popularityCache = new Map<string, { track: number; artist: number }>();
+
+    /**
+     * Fetch the Spotify Popularity Score for a track and its artist.
+     *
+     * indii Growth Protocol v2.0: Popularity scores are the primary signal
+     * for algorithmic milestone tracking. This method:
+     *   1. Fetches current track & artist popularity via SpotifyService
+     *   2. Compares against cached previous values for delta calculation
+     *   3. Returns a PopularityScores object for GrowthPatternService alerts
+     *
+     * @param trackId - Spotify track ID
+     * @returns PopularityScores or null if Spotify is not connected
+     */
+    async fetchPopularityScores(trackId: string): Promise<PopularityScores | null> {
+        const status = await this.getConnectionStatus();
+        if (!status.spotify) {
+            logger.warn('[PlatformDataService] Cannot fetch popularity scores: Spotify not connected.');
+            return null;
+        }
+
+        try {
+            const trackData = await spotifyService.getTrack(trackId);
+            if (!trackData) {
+                logger.warn(`[PlatformDataService] Track ${trackId} not found on Spotify.`);
+                return null;
+            }
+
+            const artistId = trackData.artists?.[0]?.id;
+            let artistPopularity = 0;
+
+            if (artistId) {
+                try {
+                    const artistData = await spotifyService.getArtist(artistId);
+                    artistPopularity = artistData?.popularity ?? 0;
+                } catch (err: unknown) {
+                    logger.warn(`[PlatformDataService] Artist popularity fetch failed:`, err);
+                }
+            }
+
+            // Retrieve previous scores from cache
+            const cached = this._popularityCache.get(trackId);
+
+            const scores: PopularityScores = {
+                trackPopularity: trackData.popularity ?? 0,
+                artistPopularity,
+                fetchedAt: new Date().toISOString(),
+                previousTrackPopularity: cached?.track,
+                previousArtistPopularity: cached?.artist,
+            };
+
+            // Update cache with current scores
+            this._popularityCache.set(trackId, {
+                track: scores.trackPopularity,
+                artist: scores.artistPopularity,
+            });
+
+            return scores;
+        } catch (err: unknown) {
+            logger.error('[PlatformDataService] Popularity score fetch failed:', err);
+            return null;
+        }
     }
 }
 

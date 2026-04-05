@@ -27,13 +27,23 @@ All skills are in `.agent/skills/<name>/SKILL.md`. Read the SKILL.md before exec
 
 ---
 
+## Gemini API Docs MCP
+
+All primary agents are configured with the **Gemini API Docs MCP** server (`gemini-api-docs`) in their `.mcp.json`. This gives agents live access to current Gemini API documentation, SDK references, and model IDs — preventing stale API code.
+
+- **MCP server:** `@google/gemini-api-docs-mcp@latest`
+- **Reference:** [ai.google.dev/gemini-api/docs/coding-agents](https://ai.google.dev/gemini-api/docs/coding-agents)
+- **Skill:** `agents/agent0/skills/gemini_api/SKILL.md` — invoke before writing any Gemini API code
+
+---
+
 ## Execution Rules
 
 1. **Always run `/opp` at session start** to get situational awareness before any directive
 2. **Check `.agent/skills/error_memory/ERROR_LEDGER.md`** before debugging any error
 3. **Use `/go` for multi-step tasks** — it prevents getting lost in long sessions
 4. **Use `/hunter` after any infrastructure change** — security rules, Cloud Functions, API clients
-5. **Model policy:** Only use `gemini-3-pro-preview` (complex) or `gemini-3-flash-preview` (fast). Never use 1.5/2.0 variants.
+5. **Model policy:** Always resolve current model IDs via the `gemini-api-docs` MCP before use. Import constants from `src/core/config/ai-models.ts` — never hardcode model names.
 
 ---
 

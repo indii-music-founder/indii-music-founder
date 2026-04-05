@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Date:** 2026-03-15
-**Scope:** All agents — Agent Zero (Hub) and all 17+ specialist agents
+**Scope:** All agents — indii Conductor (Hub) and all 17+ specialist agents
 **Enforced by:** Layer 2 Orchestration (You)
 
 ---
@@ -15,9 +15,9 @@ This directive codifies the architectural patterns synthesized from OpenClaw's p
 
 ---
 
-## 1. Gateway Control Plane (Agent Zero as Secure Router)
+## 1. Gateway Control Plane (indii Conductor as Secure Router)
 
-Agent Zero (`agents/agent0/`) is the **single secure router** for all 17+ specialist agents.
+indii Conductor (`agents/agent0/`) is the **single secure router** for all 17+ specialist agents.
 
 ### Responsibilities
 - Accept all inbound messages via the WebSocket Control Plane (`src/services/agent/WebSocketControlPlane.ts`)
