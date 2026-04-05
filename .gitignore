@@ -86,3 +86,4 @@ __pycache__/
 _archive_pre_monorepo/
 packages/firebase/lib/
 dist/
+packages/shared/dist/
