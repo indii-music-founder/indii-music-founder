@@ -141,8 +141,8 @@ export const VideoStage = React.memo<VideoStageProps>(({
                 if (meta.mime_type && meta.mime_type !== 'video/mp4') {
                     setVideoError(`Invalid video format: ${meta.mime_type}. Lens requires video/mp4.`);
                 }
-            } catch {
-                // Ignore parse errors, treating metadata as optional if malformed
+            } catch (e: unknown) {
+                logger.debug('[VideoStage] Non-fatal metadata parse error:', e);
             }
         }
     }, [activeVideo]);
