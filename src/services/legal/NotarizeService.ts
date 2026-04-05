@@ -16,6 +16,8 @@
  *   5. Download the notarized document
  */
 
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
+
 export interface Signer {
     firstName: string;
     lastName: string;
@@ -96,7 +98,7 @@ export class NotarizeService {
             },
         };
 
-        const response = await fetch(`${NOTARIZE_API}/transactions`, {
+        const response = await fetchWithTimeout(`${NOTARIZE_API}/transactions`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify(body),
@@ -126,7 +128,7 @@ export class NotarizeService {
             throw new Error('Notarize.com not configured');
         }
 
-        const response = await fetch(`${NOTARIZE_API}/transactions/${transactionId}`, {
+        const response = await fetchWithTimeout(`${NOTARIZE_API}/transactions/${transactionId}`, {
             headers: this.getHeaders(),
         });
 
@@ -160,7 +162,7 @@ export class NotarizeService {
             throw new Error('Notarize.com not configured');
         }
 
-        const response = await fetch(`${NOTARIZE_API}/transactions/${transactionId}/cancel`, {
+        const response = await fetchWithTimeout(`${NOTARIZE_API}/transactions/${transactionId}/cancel`, {
             method: 'POST',
             headers: this.getHeaders(),
         });
@@ -184,9 +186,9 @@ export class NotarizeService {
             throw new Error('Document not yet notarized');
         }
 
-        const response = await fetch(transaction.notarizedDocumentUrl, {
+        const response = await fetchWithTimeout(transaction.notarizedDocumentUrl, {
             headers: { 'Authorization': `Bearer ${this.apiKey}` },
-        });
+        }, 60_000);
 
         if (!response.ok) {
             throw new Error(`Download error: ${response.status}`);

@@ -6,6 +6,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 
 export type WebhookPlatform = 'discord' | 'telegram' | 'slack';
 
@@ -67,11 +68,11 @@ export class CommunityWebhookService {
             }]
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithTimeout(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(discordBody)
-        });
+        }, 15_000);
 
         if (!response.ok) throw new Error(`Status ${response.status}`);
     }
@@ -81,7 +82,7 @@ export class CommunityWebhookService {
         // This implementation assumes a standard webhook wrapper or direct bot URL
         const msg = `<b>${payload.title}</b>\n\n${payload.message}\n\n${payload.actionUrl || ''}`;
 
-        const response = await fetch(url, {
+        const response = await fetchWithTimeout(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -89,7 +90,7 @@ export class CommunityWebhookService {
                 parse_mode: 'HTML',
                 disable_web_page_preview: false
             })
-        });
+        }, 15_000);
 
         if (!response.ok) throw new Error(`Status ${response.status}`);
     }
@@ -99,11 +100,11 @@ export class CommunityWebhookService {
             text: `*${payload.title}*\n${payload.message}\n<${payload.actionUrl}|View Details>`,
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithTimeout(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(slackBody)
-        });
+        }, 15_000);
 
         if (!response.ok) throw new Error(`Status ${response.status}`);
     }

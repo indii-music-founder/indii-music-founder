@@ -11,6 +11,7 @@
 
 import { db } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, deleteField } from 'firebase/firestore';
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import type { PODProvider } from './PrintOnDemandService';
 
 const CREDENTIAL_COLLECTION = 'users';
@@ -84,21 +85,23 @@ export class PODCredentialService {
         try {
             switch (provider) {
                 case 'printful': {
-                    const res = await fetch('https://api.printful.com/store', {
+                    const res = await fetchWithTimeout('https://api.printful.com/store', {
                         headers: { Authorization: `Bearer ${apiKey}` },
-                    });
+                    }, 10_000);
                     return res.ok;
                 }
                 case 'printify': {
-                    const res = await fetch('https://api.printify.com/v1/shops.json', {
+                    const res = await fetchWithTimeout('https://api.printify.com/v1/shops.json', {
                         headers: { Authorization: `Bearer ${apiKey}` },
-                    });
+                    }, 10_000);
                     return res.ok;
                 }
                 case 'gooten': {
                     // Gooten uses a partner billing key — validate by listing catalog
-                    const res = await fetch(
-                        `https://prod.gooten.com/api/v5/orders?limit=1&billingKey=${apiKey}`
+                    const res = await fetchWithTimeout(
+                        `https://prod.gooten.com/api/v5/orders?limit=1&billingKey=${apiKey}`,
+                        undefined,
+                        10_000
                     );
                     return res.ok;
                 }
