@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 // 1. Hoisted mocks for dependencies
 const mocks = vi.hoisted(() => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     httpsCallable: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
@@ -17,7 +17,8 @@ const mocks = vi.hoisted(() => ({
     },
     useStore: {
         getState: vi.fn(() => ({
-  serverTimestamp: vi.fn(), currentOrganizationId: 'org-123' }))
+            serverTimestamp: vi.fn(), currentOrganizationId: 'org-123'
+        }))
     },
     firebaseAI: {
         analyzeImage: vi.fn(),
@@ -28,18 +29,19 @@ const mocks = vi.hoisted(() => ({
 
 // 2. Mock modules
 vi.mock('firebase/functions', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     httpsCallable: mocks.httpsCallable,
     getFunctions: vi.fn()
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
     getFirestore: vi.fn(),
     setDoc: vi.fn(() => Promise.resolve()),
     updateDoc: vi.fn(() => Promise.resolve()),
+    addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc' })),
     collection: vi.fn(() => ({ id: 'mock-coll' })),
 }));
 
@@ -59,7 +61,7 @@ vi.mock('@/services/firebase', () => ({
 
 // Handle dynamic import used in VideoGenerationService
 vi.mock('../firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     functions: {},
     functionsWest1: {},
     db: {},
@@ -67,22 +69,22 @@ vi.mock('../firebase', () => ({
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     subscriptionService: mocks.subscriptionService
 }));
 
 vi.mock('@/core/store', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
 vi.mock('../ai/FirebaseAIService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));
 
 vi.mock('uuid', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     v4: mocks.uuid
 }));
 
@@ -103,7 +105,8 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
 
         // Default happy path for function trigger
         mocks.httpsCallable.mockReturnValue(async () => ({
-  serverTimestamp: vi.fn(), data: { jobId: 'job-123' } }));
+            serverTimestamp: vi.fn(), data: { jobId: 'job-123' }
+        }));
     });
 
     describe('Input Validation (Schema)', () => {
