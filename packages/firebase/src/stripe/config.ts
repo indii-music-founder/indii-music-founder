@@ -14,7 +14,7 @@ let _stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (!_stripe) {
     _stripe = new Stripe(getStripeSecretKey(), {
-      apiVersion: '2026-02-25.clover',
+      apiVersion: '2026-02-25.clover' as Stripe.LatestApiVersion,
       typescript: true,
     });
   }
