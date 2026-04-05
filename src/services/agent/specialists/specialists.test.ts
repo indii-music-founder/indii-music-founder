@@ -24,6 +24,13 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
+vi.mock('@/services/rag/GeminiRetrievalService', () => ({
+    GeminiRetrievalService: vi.fn().mockImplementation(() => ({
+        ensureFileSearchStore: vi.fn().mockResolvedValue('mock-store-id'),
+        uploadFileAndPoll: vi.fn().mockResolvedValue({ name: 'mock-file', uri: 'mock-uri' })
+    }))
+}));
+
 vi.mock('@/services/firebase', () => ({
     functions: {},
     remoteConfig: { defaultConfig: {} },
@@ -95,7 +102,7 @@ describe('Specialist Agents Connection', () => {
     // The RAG agent's execute() path triggers ensureFileSearchStore → fetch, which
     // requires a real Firebase Auth token. The mock only provides getIdToken but the
     // downstream fetch still fails/hangs. This should be an integration test, not unit.
-    it.skip('should inherit indii Conductor superpowers via BaseAgent', async () => {
+    it('should inherit indii Conductor superpowers via BaseAgent', async () => {
         const brandAgent = await agentRegistry.getAsync('brand');
         if (!brandAgent) throw new Error('Brand agent not found');
 
