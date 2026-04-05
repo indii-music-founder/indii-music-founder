@@ -19,7 +19,7 @@ export class HistoryStore {
                     sessions: {}
                 }
             });
-            console.log('[HistoryStore] Initialized at:', this._store.path);
+            console.log('[HistoryStore] Initialized at:', (this._store as any).path);
         }
         return this._store;
     }
@@ -29,17 +29,17 @@ export class HistoryStore {
     }
 
     get(sessionId: string): any | null {
-        const sessions = this.store.get('sessions');
+        const sessions = (this.store as any).get('sessions');
         return sessions[sessionId] || null;
     }
 
     getAll(): any[] {
-        const sessions = this.store.get('sessions');
+        const sessions = (this.store as any).get('sessions');
         return Object.values(sessions);
     }
 
     save(sessionId: string, data: any): void {
-        const sessions = this.store.get('sessions');
+        const sessions = (this.store as any).get('sessions');
 
         // Merge if exists, or overwrite?
         // Usually we want to overwrite with latest state or merge messages.
@@ -50,17 +50,17 @@ export class HistoryStore {
         const existing = sessions[sessionId] || {};
         const updated = { ...existing, ...data };
 
-        this.store.set(`sessions.${sessionId}`, updated);
+        (this.store as any).set(`sessions.${sessionId}`, updated);
     }
 
     delete(sessionId: string): void {
-        const sessions = this.store.get('sessions');
+        const sessions = (this.store as any).get('sessions');
         delete sessions[sessionId];
-        this.store.set('sessions', sessions);
+        (this.store as any).set('sessions', sessions);
     }
 
     clearAll(): void {
-        this.store.clear();
+        (this.store as any).clear();
     }
 }
 

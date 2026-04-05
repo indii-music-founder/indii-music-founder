@@ -49,7 +49,7 @@ function validateTokenStructure(token: string): { valid: boolean; error?: string
             'accounts.google.com',
             'https://securetoken.google.com/indiios-v-1-1',
         ];
-        
+
         if (!validIssuers.some(iss => payload.iss === iss || payload.iss.includes('securetoken.google.com'))) {
             return { valid: false, error: `Token has unexpected issuer: ${payload.iss}` };
         }
@@ -256,7 +256,7 @@ export function handleDeepLink(url: string) {
 
         if (refreshToken) {
             logToFile(`Received Refresh Token (len: ${refreshToken.length})`);
-            authStorage.saveToken(refreshToken).catch(err => console.error("Failed to save refresh token:", err));
+            authStorage.saveToken(refreshToken).catch((err: any) => console.error("Failed to save refresh token:", err));
         }
 
         if (idToken) {

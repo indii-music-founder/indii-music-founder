@@ -59,7 +59,7 @@ vi.mock('path', () => ({
 // ─── Import after mocks ───────────────────────────────────────────────────────
 
 import { SchedulerService } from './SchedulerService';
-import type { ScheduledTask } from '../../src/services/scheduler/types';
+import type { ScheduledTask } from './scheduler/types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

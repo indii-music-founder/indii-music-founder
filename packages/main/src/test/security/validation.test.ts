@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { FetchUrlSchema, AudioAnalyzeSchema, DistributionStageReleaseSchema } from '../../../electron/utils/validation';
+import { FetchUrlSchema, AudioAnalyzeSchema, DistributionStageReleaseSchema } from '../../utils/validation';
 
 describe('Electron Validation Schemas', () => {
 
