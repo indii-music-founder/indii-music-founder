@@ -5,6 +5,7 @@
   "author": "IndiiOS LLC <info@indiios.com>",
   "private": true,
   "type": "module",
+  "main": "dist/main/index.js",
   "workspaces": [
     "packages/main",
     "packages/renderer",
@@ -15,6 +16,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "build:studio": "npm run build",
     "build:firebase": "npm run build -w packages/firebase",
     "build:landing": "npm run build -w packages/landing",
     "build:full": "npm run typecheck && npm run lint && electron-vite build",

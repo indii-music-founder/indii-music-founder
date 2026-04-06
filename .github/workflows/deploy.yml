@@ -101,7 +101,7 @@ jobs:
       - name: Verify build outputs
         run: |
           ls -la packages/landing/dist/index.html
-          ls -la dist/index.html
+          ls -la dist/renderer/index.html
 
       - name: Bundle size check
         run: |
