@@ -51,7 +51,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
             });
             setCopy(generatedCopy);
             toast.success("Copy generated!");
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error("Failed to generate copy");
         } finally {
             setIsGenerating(false);

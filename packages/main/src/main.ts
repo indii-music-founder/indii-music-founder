@@ -223,7 +223,7 @@ const checkSidecarHealth = async (window: BrowserWindow) => {
         } else {
             throw new Error('Health check response not OK');
         }
-    } catch (err) {
+    } catch (_err) {
         sidecarFailureCount++;
         log.warn(`[Sidecar] Health check failed (${sidecarFailureCount}/${MAX_SIDECAR_FAILURES})`);
         window.webContents.send('sidecar:status-update', 'offline');

@@ -52,7 +52,7 @@ async function extractFrameFromGrid(imageUrl: string, gridIndex: number): Promis
                 const dataUrl = canvas.toDataURL('image/png');
                 resolve(dataUrl);
 
-            } catch (error: unknown) {
+            } catch (_error: unknown) {
                 resolve(null);
             }
         };

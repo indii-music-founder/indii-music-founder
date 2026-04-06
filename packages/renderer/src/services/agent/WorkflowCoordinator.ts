@@ -127,7 +127,7 @@ export class WorkflowCoordinator {
                     userId: context.userId
                 });
             }
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             // Ignore error if folder creation fails (might already exist)
         }
     }

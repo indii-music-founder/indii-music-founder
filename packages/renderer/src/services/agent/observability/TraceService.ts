@@ -103,7 +103,7 @@ export class TraceService {
                     }
                 }
             }
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             // Ignore config errors, fall back to static pricing
         }
 

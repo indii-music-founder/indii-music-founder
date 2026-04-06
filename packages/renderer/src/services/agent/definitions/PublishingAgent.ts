@@ -120,7 +120,7 @@ When a request falls outside your scope:
                 // Using "object" schema type
                 const response = await firebaseAI.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema);
                 return { success: true, data: { status: "Submitted", ...response } };
-            } catch (e: unknown) {
+            } catch (_e: unknown) {
                 const randomISWC = `T-${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}-${secureRandomInt(1, 10)}`;
                 return { success: true, data: { status: "Submitted", iswc: randomISWC } };
             }

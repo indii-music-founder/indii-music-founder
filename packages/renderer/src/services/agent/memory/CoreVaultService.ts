@@ -255,7 +255,7 @@ class CoreVaultService {
                 items: updatedItems,
                 lastUpdated: serverTimestamp(),
             });
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             // Document might not exist yet (race condition with getOrCreateDocument)
             await setDoc(docRef, {
                 category,

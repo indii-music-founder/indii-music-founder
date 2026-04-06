@@ -814,7 +814,7 @@ export const generateContentStream = functions
             }
             try {
                 await admin.auth().verifyIdToken(idToken);
-            } catch (error) {
+            } catch (_error) {
                 res.status(403).send('Forbidden: Invalid Token');
                 return;
             }
@@ -895,7 +895,7 @@ export const ragProxy = functions
             }
             try {
                 await admin.auth().verifyIdToken(idToken);
-            } catch (error) {
+            } catch (_error) {
                 res.status(403).send('Forbidden: Invalid Token');
                 return;
             }

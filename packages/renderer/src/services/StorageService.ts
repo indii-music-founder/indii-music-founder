@@ -113,7 +113,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         try {
             const storageRef = ref(storage, path);
             await deleteObject(storageRef);
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             // Silently fail storage cleanup if file missing
         }
     }

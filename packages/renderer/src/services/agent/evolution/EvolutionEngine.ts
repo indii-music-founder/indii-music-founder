@@ -28,7 +28,7 @@ export class EvolutionEngine {
           try {
             const fitness = await this.fitnessFn(gene);
             return { ...gene, fitness };
-          } catch (error: unknown) {
+          } catch (_error: unknown) {
             // Helix: If fitness check crashes, the gene is defective.
             // Assign 0.0 fitness (Death to the buggy).
             return { ...gene, fitness: 0.0 };
@@ -97,7 +97,7 @@ export class EvolutionEngine {
         // we don't accidentally mutate the parent (which might be an Elite survivor).
         try {
           offspring = structuredClone(offspring);
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
           // Helix: Robust fallback for non-clonable objects (e.g. methods attached to genes)
           offspring = JSON.parse(JSON.stringify(offspring));
         }

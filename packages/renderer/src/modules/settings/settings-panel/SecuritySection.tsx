@@ -45,7 +45,7 @@ const SecuritySection: React.FC = () => {
         try {
             await logout();
             showToast('Signed out successfully', 'success');
-        } catch (err: unknown) {
+        } catch (_err: unknown) {
             showToast('Sign out failed', 'error');
         }
     };

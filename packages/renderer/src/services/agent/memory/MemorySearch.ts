@@ -311,7 +311,7 @@ export class MemorySearch {
         let queryEmbedding: number[] = [];
         try {
             queryEmbedding = await this.embeddingBatcher.add(queryText);
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             logger.warn('[MemorySearch] Query embedding failed, using keyword fallback');
         }
 

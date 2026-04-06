@@ -119,7 +119,7 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
                 description: result.description || '',
                 posts: Array.isArray(result.posts) ? result.posts : []
             };
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             throw new Error('Failed to generate campaign. Please try again.');
         }
     }
@@ -237,7 +237,7 @@ Ensure all versions respect the platform's character limit.
                 suggestedHashtags: Array.isArray(result.suggestedHashtags) ? result.suggestedHashtags : [],
                 toneAnalysis: result.toneAnalysis || ''
             };
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             throw new Error('Failed to enhance post copy. Please try again.');
         }
     }
@@ -281,7 +281,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                     ...config
                 }
             });
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             throw new Error('Failed to generate marketing video. Please try again.');
         }
     }
@@ -341,7 +341,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                     }
                 } as ScheduledPost);
 
-            } catch (error: unknown) {
+            } catch (_error: unknown) {
                 // Continue with other posts, don't fail the whole batch
             }
         }
@@ -376,7 +376,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
             const base64 = await GenAI.generateImage(imagePrompt, AI_MODELS.IMAGE.GENERATION);
 
             return `data:image/png;base64,${base64}`;
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             return null;
         }
     }
@@ -405,7 +405,7 @@ Return ONLY the image prompt, no explanation or formatting.
 
         try {
             return await GenAI.generateText(prompt);
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             return `Modern, visually striking social media graphic for ${platform}`;
         }
     }
@@ -537,7 +537,7 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
                 recommendations: Array.isArray(result.recommendations) ? result.recommendations : [],
                 riskFactors: Array.isArray(result.riskFactors) ? result.riskFactors : []
             };
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             throw new Error('Failed to predict engagement. Please try again.');
         }
     }

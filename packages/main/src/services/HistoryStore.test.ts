@@ -53,7 +53,7 @@ describe('📚 Keeper: Electron HistoryStore Persistence', () => {
                         if (_fs.existsSync(this.path)) {
                             try {
                                 this.data = JSON.parse(_fs.readFileSync(this.path, 'utf-8'));
-                            } catch (e) {
+                            } catch (_e) {
                                 this.data = options.defaults || {};
                             }
                         } else {

@@ -106,7 +106,7 @@ export default function MultiPlatformPoster() {
 
             toast.success(`Post dispatched to ${post.platforms.join(', ')}`);
             setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'posted', scheduledAt: new Date() } : p));
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error("Failed to post now.");
             setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'failed' } : p));
         } finally {

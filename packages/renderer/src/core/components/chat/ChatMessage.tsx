@@ -131,7 +131,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
                 if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return children;
-                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (e: unknown) { /* ignore */ } }
+                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (_e: unknown) { /* ignore */ } }
             }
             return <CodeBlock {...props}>{children}</CodeBlock>;
         },
@@ -154,7 +154,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                     if (data.elements && data.elements[0]?.type === 'slugline') return <ScreenplayRenderer data={data} />;
                     if (data.callTime && data.nearestHospital) return <CallSheetRenderer data={data} />;
                     return <JsonViewer data={data} />;
-                } catch (e: unknown) { /* ignore */ }
+                } catch (_e: unknown) { /* ignore */ }
             }
             return <code className={className} {...props}>{children}</code>
         }
@@ -256,7 +256,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 );
                             }
                         }
-                    } catch (e: unknown) { /* ignore parse errors */ }
+                    } catch (_e: unknown) { /* ignore parse errors */ }
                     return null;
                 })}
 

@@ -58,7 +58,7 @@ export function getGeminiApiKey(): string {
         if (secret && secret.trim().length > 0) {
             return secret;
         }
-    } catch (e) {
+    } catch (_e) {
         // Fallback to direct process.env check in case .value() fails in specific contexts
         const directEnv = process.env.GEMINI_API_KEY;
         if (directEnv && directEnv.trim().length > 0) {
