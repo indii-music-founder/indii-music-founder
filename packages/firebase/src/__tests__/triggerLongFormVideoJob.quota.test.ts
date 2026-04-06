@@ -1,6 +1,5 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as admin from 'firebase-admin';
 import firebaseFunctionsTest from 'firebase-functions-test';
 
 // Initialize test environment
@@ -52,8 +51,8 @@ vi.mock('firebase-functions/v1', () => ({
     config: vi.fn(() => ({}))
 }));
 
-// Mock Firestore FieldValue
-(admin.firestore as any).FieldValue = {
+// Augment mockFirestore with FieldValue for Firestore operations
+(mockFirestore as any).FieldValue = {
     serverTimestamp: vi.fn(),
     increment: vi.fn((n) => n)
 };
@@ -88,7 +87,7 @@ vi.mock('firebase-functions/params', () => ({
 // Mock Stripe to prevent initialization error
 vi.mock('stripe', () => ({
     default: class MockStripe {
-        constructor(apiKey: string) { }
+        constructor(_apiKey: string) { }
     }
 }));
 
@@ -106,8 +105,6 @@ describe('triggerLongFormVideoJob (Ledger Quota Checks)', () => {
         vi.clearAllMocks();
 
         // Reset Firestore Mocks
-        const mockCollection = vi.fn();
-        const mockDoc = vi.fn();
 
         mockFirestore.collection.mockReturnValue({
             doc: mockDoc
@@ -157,7 +154,7 @@ describe('triggerLongFormVideoJob (Ledger Quota Checks)', () => {
         mockTransaction.get.mockImplementation(mockUsageGet);
 
         // Setup mock chain
-        const mockDoc = vi.fn((path) => {
+        const _mockDoc = vi.fn((path) => {
             if (path === 'personal') return { get: mockOrgGet }; // Org check (simplified)
             return {
                 get: mockOrgGet,
