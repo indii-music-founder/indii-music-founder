@@ -256,11 +256,11 @@ export const AgentCanvasPanel: React.FC = () => {
 
     const { isCanvasOpen, canvasPanels, toggleCanvas, removePanel, clearCanvas } = useStore(
         useShallow((state) => ({
-            isCanvasOpen: state.isCanvasOpen,
-            canvasPanels: state.canvasPanels,
-            toggleCanvas: state.toggleCanvas,
-            removePanel: state.removePanel,
-            clearCanvas: state.clearCanvas,
+            isCanvasOpen: state.isCanvasOpen ?? false,
+            canvasPanels: state.canvasPanels ?? [],
+            toggleCanvas: state.toggleCanvas ?? (() => { }),
+            removePanel: state.removePanel ?? (() => { }),
+            clearCanvas: state.clearCanvas ?? (() => { }),
         }))
     );
 

@@ -1,6 +1,7 @@
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { useStore } from '@/core/store';
 
 /**
  * NotificationTools — Multi-Channel Notifications
@@ -52,7 +53,22 @@ export const NotificationTools = {
                     if (action_url) {
                         notif.onclick = () => {
                             window.focus();
-                            window.location.hash = action_url;
+                            // Navigate via Zustand store for SPA-native routing
+                            if (action_url.startsWith('/')) {
+                                const moduleId = action_url.replace(/^\//, '');
+                                const { setModule } = useStore.getState();
+                                if (typeof setModule === 'function') {
+                                    // Module ID from URL is dynamic; runtime guard above ensures setModule exists
+                                    setModule(moduleId as Parameters<typeof setModule>[0]);
+                                    logger.info(`[NotificationTools] Deep-linked to module: ${moduleId}`);
+                                } else {
+                                    // Fallback: hash navigation
+                                    window.location.hash = action_url;
+                                }
+                            } else {
+                                // External URL or hash fragment
+                                window.location.hash = action_url;
+                            }
                         };
                     }
                     desktopDelivered = true;
