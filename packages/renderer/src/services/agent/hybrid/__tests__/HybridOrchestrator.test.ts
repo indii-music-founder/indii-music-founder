@@ -2,7 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HybridOrchestrator } from '../HybridOrchestrator';
 import { AgentContext } from '../../types';
 import { GenAI } from '@/services/ai/GenAI';
-import { TraceService } from '../../observability/TraceService';
+
+vi.mock('@/core/store', () => ({
+    useStore: Object.assign(() => ({}), {
+        getState: vi.fn(() => ({
+            setPlan: vi.fn(),
+            updatePlanStep: vi.fn(),
+            activePlan: null,
+        })),
+        setState: vi.fn(),
+        subscribe: vi.fn(),
+    }),
+}));
 
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
@@ -89,7 +100,7 @@ describe('HybridOrchestrator Integration', () => {
     });
 
     it('should prune excessively long tool results', async () => {
-        const longData = 'x'.repeat(5000);
+        const _longData = 'x'.repeat(5000);
 
         // We can't easily mock BrowserTools here due to how it's imported in the orchestrator
         // but we can mock the second call to see how it handles the history
@@ -128,8 +139,7 @@ describe('HybridOrchestrator Integration', () => {
         // Verify the second call's prompt context
         const calls = vi.mocked(GenAI.generateContent).mock.calls;
         if (calls.length >= 2) {
-            const secondCallContents = calls[1]![0] as { parts: { text: string }[] }[];
-            const secondCallPrompt = secondCallContents[0]!.parts[0]!.text;
+            const _secondCallContents = calls[1]![0] as { parts: { text: string }[] }[];
             // The orchestrator prunes tool results in its private loop
             // We're asserting the logic exists in HybridOrchestrator.ts
         }
