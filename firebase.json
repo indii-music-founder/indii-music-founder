@@ -151,7 +151,7 @@
         "**/.*",
         "**/node_modules/**"
       ],
-      "public": "dist",
+      "public": "dist/renderer",
       "rewrites": [
         {
           "destination": "/index.html",
