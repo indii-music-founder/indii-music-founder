@@ -37,7 +37,7 @@ export class CostPredictor {
 
         // Estimate input tokens (rough heuristic: 4 chars per token)
         const inputTokens = Math.ceil(prompt.length / 4);
-        const totalTokens = inputTokens + expectedOutputTokens;
+        const _totalTokens = inputTokens + expectedOutputTokens;
 
         const costUsd = ((inputTokens * pricing.input) / 1000000) + ((expectedOutputTokens * pricing.output) / 1000000);
 

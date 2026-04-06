@@ -24,7 +24,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 /* ================================================================== */
 
 export default function SocialDashboard() {
-    const toast = useToast();
+    const _toast = useToast();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAccountWizardOpen, setIsAccountWizardOpen] = useState(false);
 
@@ -46,7 +46,7 @@ export default function SocialDashboard() {
                     ? new Date(post.scheduledTime as unknown as string).getTime()
                     : Date.now();
 
-            const success = await actions.schedulePost({
+            const _success = await actions.schedulePost({
                 platform: post.platform,
                 copy: post.copy,
                 imageAsset: post.imageAsset,

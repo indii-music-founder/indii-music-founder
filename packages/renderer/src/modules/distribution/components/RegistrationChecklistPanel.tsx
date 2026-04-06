@@ -125,7 +125,7 @@ export function RegistrationChecklistPanel() {
         else if (id === 'upc') handleAssignUPC();
     };
 
-    const completeCount = items.filter(item => item.status === 'complete').length;
+    const _completeCount = items.filter(item => item.status === 'complete').length;
     const totalRequired = items.filter(item => item.required).length;
     const requiredComplete = items.filter(item => item.status === 'complete' && item.required).length;
 

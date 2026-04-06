@@ -69,7 +69,7 @@ describe('StorageService', () => {
 
         // Verify query construction
         expect(mockQuery).toHaveBeenCalled();
-        const queryArgs = mockQuery.mock.calls[0];
+        const _queryArgs = mockQuery.mock.calls[0];
         // query(collection, where, orderBy, limit)
         // We can't easily check the exact arguments order without inspecting them, 
         // but we verified orderBy was called.

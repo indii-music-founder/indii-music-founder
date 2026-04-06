@@ -198,7 +198,7 @@ describe('🧬 Helix: Gemini 3 Pro Thinking Budget Evolution', () => {
 
     // The "BadChild" enters the pool (since Engine doesn't know 'thinkingBudget' must be number).
     // But let's verify it has the bad value.
-    const badChild = nextGen.find(g => g.parameters.thinkingBudget === "Maximum");
+    const _badChild = nextGen.find(g => g.parameters.thinkingBudget === "Maximum");
 
     // If we wanted to ENFORCE type safety, we would need to modify EvolutionEngine.
     // Since we are "Helix", maybe we should just verify the current behavior:

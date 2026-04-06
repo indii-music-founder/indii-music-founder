@@ -53,7 +53,7 @@ import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 const COLLECTION_ROOT = 'timelines';
 
 /** Cadence → approximate posts per week */
-const CADENCE_FREQUENCY: Record<string, number> = {
+const _CADENCE_FREQUENCY: Record<string, number> = {
     sparse: 2,
     moderate: 4,
     intense: 7,
@@ -662,7 +662,7 @@ Return a JSON object with:
      */
     getTimelineProgress(timeline: Timeline): TimelineProgress {
         const now = Date.now();
-        const totalDuration = timeline.endDate - timeline.startDate;
+        const _totalDuration = timeline.endDate - timeline.startDate;
         const elapsed = Math.max(0, now - timeline.startDate);
         const daysElapsed = Math.round(elapsed / (24 * 60 * 60 * 1000));
         const daysRemaining = Math.max(0, Math.round((timeline.endDate - now) / (24 * 60 * 60 * 1000)));

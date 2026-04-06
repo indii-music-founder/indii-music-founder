@@ -34,7 +34,7 @@ describe('TraceService', () => {
 
     describe('startTrace', () => {
         it('should generate a root swarmId if none provided', async () => {
-            const traceId = await TraceService.startTrace('user-1', 'orchestrator', 'Hello');
+            const _traceId = await TraceService.startTrace('user-1', 'orchestrator', 'Hello');
 
             expect(setDoc).toHaveBeenCalledWith(
                 expect.anything(),

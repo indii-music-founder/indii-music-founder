@@ -181,7 +181,7 @@ declare module '@react-three/fiber' {
 export default function WaveMesh() {
     const meshRef = useRef<THREE.Mesh>(null);
     const materialRef = useRef<any>(null);
-    const noise3D = useMemo(() => createNoise3D(), []);
+    const _noise3D = useMemo(() => createNoise3D(), []);
 
     // Helper to calculate average of a sub-array
     const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);

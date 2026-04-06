@@ -3,7 +3,7 @@ import { FirebaseAIService } from '../FirebaseAIService';
 import { RequestBatcher } from '../../../utils/RequestBatcher';
 
 const mockEmbedContent = vi.fn();
-const mockBatchEmbedContents = vi.fn();
+const _mockBatchEmbedContents = vi.fn();
 
 // Mock env config to provide fake API key
 vi.mock('@/config/env', () => ({

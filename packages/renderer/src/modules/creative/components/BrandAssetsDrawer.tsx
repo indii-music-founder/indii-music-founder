@@ -39,16 +39,16 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     const refImages = userProfile?.brandKit?.referenceImages || [];
 
     // Drag and drop handlers
-    const handleDragOver = (e: React.DragEvent) => {
+    const _handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(true);
     };
 
-    const handleDragLeave = () => {
+    const _handleDragLeave = () => {
         setIsDragging(false);
     };
 
-    const handleDrop = async (e: React.DragEvent) => {
+    const _handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
         const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));

@@ -246,7 +246,7 @@ const StatCard = ({ label, value, subvalue, icon: Icon, delay, highlight }: any)
     </motion.div>
 );
 
-const LogEntry = ({ time, msg, highlight }: any) => (
+const _LogEntry = ({ time, msg, highlight }: any) => (
     <div className={`flex flex-col md:flex-row md:items-center gap-2 md:gap-6 p-3 border-l-2 ${highlight ? 'border-[#ff3366] bg-[#ff3366]/5 text-white' : 'border-[#1a1a1a] hover:border-[#00ff66] hover:bg-[#00ff66]/5 text-[#e0e0e0]'} transition-colors`}>
         <span className="text-[#8b949e] min-w-[100px] text-xs font-bold">{time}</span>
         <span className="text-sm">{msg}</span>

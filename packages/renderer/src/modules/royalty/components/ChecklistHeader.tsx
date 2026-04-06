@@ -10,7 +10,7 @@ export const ChecklistHeader: React.FC<ChecklistHeaderProps> = ({ profile }) => 
     const { completed, total } = calculateProgress(profile);
 
     // Progress ratio 0 - 100
-    const progressRatio = Math.round((completed / total) * 100);
+    const _progressRatio = Math.round((completed / total) * 100);
 
     const getSegmentColor = (index: number) => {
         // Determine status of each segment manually 

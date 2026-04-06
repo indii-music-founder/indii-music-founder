@@ -13,7 +13,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-const mockHttpsCallable = vi.fn();
+const _mockHttpsCallable = vi.fn();
 // We need to return a function that returns the result, because httpsCallable returns a callable function
 const mockTriggerVideoJob = vi.fn().mockResolvedValue({ data: { jobId: 'job-123' } });
 

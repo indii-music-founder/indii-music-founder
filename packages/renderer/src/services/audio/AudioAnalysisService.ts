@@ -45,7 +45,7 @@ import { DSPComplianceValidator } from './DSPComplianceValidator';
 import type { DeepAudioFeatures, TechnicalAudit } from './types';
 
 // Genre labels for Rosamerica model
-const GENRE_LABELS = ['Classical', 'Dance', 'Hip-Hop', 'Jazz', 'Metal', 'Pop', 'Reggae', 'Rock'];
+const _GENRE_LABELS = ['Classical', 'Dance', 'Hip-Hop', 'Jazz', 'Metal', 'Pop', 'Reggae', 'Rock'];
 
 export class AudioAnalysisService {
     private essentia: EssentiaInstance | null = null;

@@ -31,7 +31,7 @@ export function KeysStatusPanel() {
         );
     }
 
-    const WARN_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+    const _WARN_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
     const keys = connections
         .filter((c) => c.isConnected)

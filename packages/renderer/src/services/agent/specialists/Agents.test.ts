@@ -44,7 +44,7 @@ describe('Agent System Verification', () => {
     // 2. Verify Brand Agent Tools
     it('should have Brand Agent tools registered', () => {
         // Check definition
-        const toolNames = BrandAgent.tools.flatMap(t => t.functionDeclarations.map(f => f.name));
+        const _toolNames = BrandAgent.tools.flatMap(t => t.functionDeclarations.map(f => f.name));
         // Note: definitions usually define what the LLM *sees*, registry contains the implementation.
         // We verify the implementation exists in registry.
 

@@ -105,7 +105,7 @@ function validateDeepLinkOrigin(url: string): { valid: boolean; error?: string }
 }
 
 // In-memory storage for pending auth flows
-const pendingVerifier: string | null = null;
+const _pendingVerifier: string | null = null;
 
 // Rate limiting for auth attempts
 const authAttempts = new Map<string, { count: number; lastAttempt: number }>();
@@ -213,7 +213,7 @@ export function handleDeepLink(url: string) {
     try {
         const urlObj = new URL(url);
 
-        const code = urlObj.searchParams.get('code');
+        const _code = urlObj.searchParams.get('code');
         const error = urlObj.searchParams.get('error');
 
         if (error) {

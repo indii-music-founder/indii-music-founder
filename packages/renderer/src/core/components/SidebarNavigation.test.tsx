@@ -77,7 +77,7 @@ describe('Sidebar Navigation Integration', () => {
         getState: import('vitest').Mock;
     };
     const mockSetModule = vi.fn();
-    const mockInitializeAuth = vi.fn();
+    const _mockInitializeAuth = vi.fn();
     const mockInitializeHistory = vi.fn();
     const mockLoadProjects = vi.fn();
     const mockToggleSidebar = vi.fn();

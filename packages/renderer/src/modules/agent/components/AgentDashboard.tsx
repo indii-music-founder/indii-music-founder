@@ -138,7 +138,7 @@ const AgentDashboard: React.FC = () => {
     const { isAnyPhone } = useMobile();
 
     // On mobile, default to 'chat' tab and hide desktop-only features
-    const defaultTab = isAnyPhone ? 'chat' : 'scout';
+    const _defaultTab = isAnyPhone ? 'chat' : 'scout';
     // Set initial tab to appropriate default based on device
     useEffect(() => {
         if (isAnyPhone && (activeTab === 'scout' || activeTab === 'browser')) {

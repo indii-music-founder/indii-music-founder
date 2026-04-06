@@ -402,7 +402,7 @@ export class BaseAgent implements SpecializedAgent {
             }]
             : [];
 
-        const accumulatedResponse = '';
+        const _accumulatedResponse = '';
         let iterations = 0;
         const MAX_ITERATIONS = 15;
         const toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }> = [];

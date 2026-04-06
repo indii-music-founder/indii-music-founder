@@ -52,7 +52,7 @@ const { mockTF, mockEssentiaInstance, mockEssentiaWASM } = vi.hoisted(() => ({
     }))
 }));
 
-const MockEssentiaClass = vi.fn().mockImplementation(() => mockEssentiaInstance);
+const _MockEssentiaClass = vi.fn().mockImplementation(() => mockEssentiaInstance);
 
 // Mock MusicLibraryService
 vi.mock('@/services/music/MusicLibraryService', () => ({

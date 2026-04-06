@@ -72,7 +72,7 @@ class APIHealthService {
             // Minimal check: attempt to read a known path or just check persistence status
             // We use a non-existent doc to minimize costs but verify connectivity
             const { doc } = await import('firebase/firestore');
-            const heartbeatRef = doc(db, '_system/heartbeat');
+            const _heartbeatRef = doc(db, '_system/heartbeat');
 
             // In a real app, we might write a heartbeat if the user is authenticated
             // For now, we just verify we can reach the service

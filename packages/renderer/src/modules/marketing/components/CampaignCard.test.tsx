@@ -63,7 +63,7 @@ describe('CampaignCard', () => {
         // Create a campaign with some progress
 
         // Helper to avoid 'as any' casting
-        const createMockPost = (status: CampaignStatus) => ({
+        const _createMockPost = (status: CampaignStatus) => ({
             id: Math.random().toString(),
             platform: 'Twitter', // valid platform
             copy: 'test',

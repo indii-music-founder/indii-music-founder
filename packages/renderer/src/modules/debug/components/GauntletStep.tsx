@@ -16,7 +16,7 @@ interface GauntletStepProps {
  * and complete (green checkmark).
  */
 export function GauntletStep({ num, title, status, detail }: GauntletStepProps) {
-    const isPending = status === 'pending';
+    const _isPending = status === 'pending';
     const isActive = status === 'active';
     const isComplete = status === 'complete';
 

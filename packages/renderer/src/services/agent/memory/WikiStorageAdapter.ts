@@ -90,7 +90,7 @@ export class WikiStorageAdapter {
         try {
             // Note: In browser environments, we represent this as a File to send to the backend
             const blob = new Blob([content], { type: 'text/markdown' });
-            const file = new File([blob], `${docId}.md`, { type: 'text/markdown' });
+            const _file = new File([blob], `${docId}.md`, { type: 'text/markdown' });
 
             // Wait, we bypass processForKnowledgeBase and use the actual Service if integrated
             // For now, this is a placeholder. RAG integration can run via HTTP APIs or Firebase Functions.

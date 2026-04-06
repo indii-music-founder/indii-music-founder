@@ -4,7 +4,7 @@ import { UserProfile } from '@/types/User';
 import { BrandKit } from '@/modules/workflow/types';
 
 // Default initial state for a new user's app profile
-const INITIAL_BRAND_KIT: BrandKit = {
+const _INITIAL_BRAND_KIT: BrandKit = {
     colors: [],
     fonts: 'Inter',
     brandDescription: '',

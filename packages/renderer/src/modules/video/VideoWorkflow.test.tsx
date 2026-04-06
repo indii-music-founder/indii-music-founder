@@ -156,9 +156,9 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 describe('VideoWorkflow', () => {
-    const mockAddToHistory = vi.fn();
-    const mockSetJobId = vi.fn();
-    const mockSetJobStatus = vi.fn();
+    const _mockAddToHistory = vi.fn();
+    const _mockSetJobId = vi.fn();
+    const _mockSetJobStatus = vi.fn();
 
     // Setup mock toast instance for expectations
     const mockToast = {

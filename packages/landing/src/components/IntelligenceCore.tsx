@@ -3,7 +3,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
-const GlitchMaterial = {
+const _GlitchMaterial = {
     uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color('#b026ff') }

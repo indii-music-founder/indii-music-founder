@@ -28,7 +28,7 @@ describe('AnnotationPalette Interaction (🖱️ Click)', () => {
         );
 
         // 1. Ready State: Colors are rendered
-        const colorBtn1 = screen.getByTestId(`color-btn-${firstColor.id}`);
+        const _colorBtn1 = screen.getByTestId(`color-btn-${firstColor.id}`);
         const colorBtn2 = screen.getByTestId(`color-btn-${secondColor.id}`);
 
         // Verify active styling loosely (checking class logic is brittle in unit tests, 

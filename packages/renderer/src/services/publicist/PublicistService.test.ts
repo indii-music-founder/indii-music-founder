@@ -39,7 +39,7 @@ vi.mock('../firebase', () => ({
 }));
 
 describe('PublicistService', () => {
-    const minUserId = 'user123';
+    const _minUserId = 'user123';
 
     beforeEach(() => {
         vi.clearAllMocks();

@@ -19,7 +19,7 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
         onSave(post.id, content);
     };
 
-    const handleEnhanceApply = (postId: string, newCopy: string) => {
+    const _handleEnhanceApply = (postId: string, newCopy: string) => {
         setContent(newCopy);
         setShowEnhanceModal(false);
     };

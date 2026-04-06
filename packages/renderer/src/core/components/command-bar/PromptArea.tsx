@@ -37,7 +37,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const [isListening, setIsListening] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const cameraInputRef = useRef<HTMLInputElement>(null);
+    const _cameraInputRef = useRef<HTMLInputElement>(null);
 
     const {
         currentModule,

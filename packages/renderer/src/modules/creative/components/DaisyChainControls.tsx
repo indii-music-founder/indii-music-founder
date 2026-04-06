@@ -12,7 +12,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
         videoInputs: state.videoInputs,
         setVideoInput: state.setVideoInput
     })));
-    const toast = useToast();
+    const _toast = useToast();
 
     return (
         <div className="flex items-center gap-2 border-l border-r border-gray-800 px-3 mx-2">

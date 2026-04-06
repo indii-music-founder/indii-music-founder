@@ -29,7 +29,7 @@ const AuditPermissionsSchema = z.object({
     recommendations: z.array(z.string())
 });
 
-const VulnerabilityScanSchema = z.object({
+const _VulnerabilityScanSchema = z.object({
     scope: z.string(),
     vulnerabilities: z.array(z.object({
         severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
