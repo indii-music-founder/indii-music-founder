@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { CampaignAsset, CampaignStatus, ScheduledPost } from '../types';
 import { ArrowLeft, Calendar, LayoutGrid, List, Play, CheckCircle, AlertCircle, Clock, MoreVertical, Edit3, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { format } from 'date-fns';
 import AIPredictionPanel from './AIPredictionPanel';
 
 import { LucideIcon } from 'lucide-react';

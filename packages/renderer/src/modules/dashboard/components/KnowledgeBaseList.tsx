@@ -3,7 +3,7 @@ import React from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';
-import { FileText, Image, Music, Clock, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { FileText, Image, Clock, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
 
 export const KnowledgeBaseList: React.FC = () => {

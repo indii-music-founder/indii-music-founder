@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
@@ -192,7 +192,6 @@ export const useMerchandise = () => {
         fetchStats();
 
     }, [userProfile?.id, isProductsLoading, products]);
-
 
     const standardProducts = useMemo(() => products.filter(p => p.category === 'standard'), [products]);
     const proProducts = useMemo(() => products.filter(p => p.category === 'pro'), [products]);

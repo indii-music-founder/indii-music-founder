@@ -47,7 +47,7 @@ describe('toGcsUri', () => {
 
         try {
             new URL('https://storage.googleapis.com/path with spaces');
-        } catch (e) {
+        } catch (_e) {
             // If this throws, we can test fallback
              expect(toGcsUri('https://storage.googleapis.com/path with spaces'))
                 .toBe('gs://path with spaces');

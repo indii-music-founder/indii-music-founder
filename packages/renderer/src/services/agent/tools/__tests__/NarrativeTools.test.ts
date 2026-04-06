@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NarrativeTools } from '../NarrativeTools';
 import { DirectorTools } from '../DirectorTools';
 import { VideoTools } from '../VideoTools';

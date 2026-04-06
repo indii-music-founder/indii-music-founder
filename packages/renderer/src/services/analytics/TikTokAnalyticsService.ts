@@ -28,7 +28,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import type { PlatformData, StreamDataPoint, RegionData } from './types';
+import type { PlatformData, StreamDataPoint } from './types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

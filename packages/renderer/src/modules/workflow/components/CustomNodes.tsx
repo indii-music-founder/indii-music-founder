@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
 import type { InputNodeData, OutputNodeData, AudioSegmentNodeData, AnyAsset } from '../types';
-import { Pencil, AudioWaveform, Play, Sparkles } from 'lucide-react';
+import { AudioWaveform, Play, Sparkles } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import UniversalNode from './UniversalNode';
@@ -99,7 +99,6 @@ export const AudioSegmentNode = memo(({ data, selected }: NodeProps<AudioSegment
         </NodeWrapper>
     );
 });
-
 
 export const OutputNode = memo(({ data, selected }: NodeProps<OutputNodeData>) => {
     const resultIsAsset = typeof data.result === 'object' && data.result !== null;

@@ -5,11 +5,7 @@ import systemPrompt from '@/agents/licensing/prompt.md?raw';
 import { licensingService } from "../../licensing/LicensingService";
 import { licenseScannerService } from "../../knowledge/LicenseScannerService";
 import { firebaseAI } from "@/services/ai/FirebaseAIService";
-import { AI_MODELS, AI_CONFIG } from "@/core/config/ai-models";
 import { LegalTools } from "../tools/LegalTools";
-import { ToolFunctionArgs } from "../types";
-import { LicenseRequest } from "../../licensing/types";
-
 export const LicensingAgent: AgentConfig = {
     id: 'licensing',
     name: 'Licensing Department',

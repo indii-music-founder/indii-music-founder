@@ -3,7 +3,6 @@ import {
     Webhook, Send, CheckCircle, Loader2, AlertCircle,
     ToggleLeft, ToggleRight, MessageSquare
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 
 interface PlatformConfig {

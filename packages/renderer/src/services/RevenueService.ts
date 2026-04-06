@@ -1,7 +1,7 @@
 
 import { db, auth } from '@/services/firebase';
 import { collection, query, where, getDocs, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
-import { RevenueEntrySchema, RevenueStatsSchema, type RevenueEntry, type RevenueStats } from '@/services/revenue/schema';
+import { RevenueEntrySchema, type RevenueEntry, type RevenueStats } from '@/services/revenue/schema';
 import { logger } from '@/utils/logger';
 
 // Re-export types for backward compatibility or direct use

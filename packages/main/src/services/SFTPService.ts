@@ -1,6 +1,4 @@
 import Client from 'ssh2-sftp-client';
-import path from 'path';
-
 export interface SFTPConfig {
     host: string;
     port?: number;

@@ -4,7 +4,6 @@ import {
     AnyToolFunction,
     ValidAgentId,
     AgentCategory,
-    ToolFunctionResult
 } from '../types';
 
 /**

@@ -1,5 +1,5 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import AIGenerateCampaignModal from './AIGenerateCampaignModal';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
 import { GeneratedCampaignPlan } from '../types';

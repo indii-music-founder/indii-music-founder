@@ -13,8 +13,6 @@ import {
     EnhancementType,
     Platform
 } from '@/modules/marketing/types';
-import { AppException, AppErrorCode } from '@/shared/types/errors';
-
 /**
  * Mock interface for test injection via window global.
  * Used by E2E and integration tests to stub image generation.

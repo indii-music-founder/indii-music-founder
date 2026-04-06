@@ -1,5 +1,5 @@
 import React from 'react';
-import { Paintbrush, Video, Megaphone, Users, Box, Search, FileText, Music, Cog, Split, ShieldCheck, Database } from 'lucide-react';
+import { Paintbrush, Video, Megaphone, Users, Box, Search, Cog, Database } from 'lucide-react';
 
 export type DataType = 'TRIGGER' | 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'CONTEXT' | 'ANY';
 

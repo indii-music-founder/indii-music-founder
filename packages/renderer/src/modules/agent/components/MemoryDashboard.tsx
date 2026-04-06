@@ -4,17 +4,11 @@ import {
     Brain,
     Search,
     Zap,
-    Trash2,
-    MessageSquare,
     Plus,
     RefreshCw,
-    Sparkles,
     Layers,
     Filter,
-    ChevronDown,
     Clock,
-    Tag,
-    TrendingUp,
     Archive,
     AlertCircle,
     CheckCircle,
@@ -39,7 +33,7 @@ import type { AlwaysOnMemory, AlwaysOnMemoryCategory, MemoryTier } from '@/types
 import type { Directive } from '@/services/directive/DirectiveTypes';
 import type { MemoryInboxItem } from '@/core/store/slices/memoryAgentSlice';
 
-import { CATEGORY_ICONS, CATEGORY_COLORS, TIER_LABELS, MemoryCard, InsightCard, StatCard, DirectiveCard, HandshakeApprovalCard, formatTimeAgo } from "./MemoryDashboardSubComponents";
+import { CATEGORY_COLORS, TIER_LABELS, MemoryCard, InsightCard, StatCard, DirectiveCard, HandshakeApprovalCard } from "./MemoryDashboardSubComponents";
 
 // ============================================================================
 // MAIN COMPONENT
@@ -781,6 +775,5 @@ export const MemoryDashboard: React.FC = () => {
 // ============================================================================
 // UTILITY
 // ============================================================================
-
 
 export default MemoryDashboard;

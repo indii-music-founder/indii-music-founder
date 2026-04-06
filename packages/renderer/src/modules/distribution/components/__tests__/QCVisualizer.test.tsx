@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QCVisualizer } from '../QCVisualizer';
 import { distributionService } from '@/services/distribution/DistributionService';
-import { ToastProvider } from '@/core/context/ToastContext';
 import React from 'react';
 
 // Mock DistributionService

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Megaphone, Calendar, Plus, TrendingUp, Users, MoreHorizontal, UserPlus, Clock, Hash, Zap, BarChart3, Radio } from 'lucide-react';
+import { Megaphone, Calendar, Plus, TrendingUp, Users, UserPlus, Clock, Hash, Radio } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import CreatePostModal from './components/CreatePostModal';
 import AccountCreationWizard from './components/AccountCreationWizard';
-import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost } from '@/services/social/types';
 import type { ScheduledPost as ModalPost } from './types';
 import { useSocial } from './hooks/useSocial';

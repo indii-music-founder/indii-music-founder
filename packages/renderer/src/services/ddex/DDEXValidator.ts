@@ -142,7 +142,7 @@ export class DDEXValidator {
             }
 
             return true;
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             return false;
         }
     }

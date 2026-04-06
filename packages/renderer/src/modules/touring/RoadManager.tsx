@@ -13,14 +13,13 @@ import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
 import { RiderChecklist } from './components/RiderChecklist';
-import { MapPin, CloudSun, Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation } from 'lucide-react';
+import { Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation } from 'lucide-react';
 import { TourRouteOptimizer } from './components/TourRouteOptimizer';
 import { TechnicalRiderGenerator } from './components/TechnicalRiderGenerator';
 import { SetlistAnalytics } from './components/SetlistAnalytics';
 import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-
 
 const RoadManager: React.FC = () => {
     // Hooks must be called unconditionally before early returns

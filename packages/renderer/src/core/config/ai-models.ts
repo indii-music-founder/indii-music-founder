@@ -69,6 +69,14 @@ export const AI_CONFIG = {
             thinkingConfig: { thinkingLevel: "LOW" }
         }
     },
+    TEXT: {
+        /** Default maxOutputTokens for Pro model — safety cap for cost control */
+        MAX_OUTPUT_TOKENS_AGENT: 8192,
+        /** Default maxOutputTokens for Flash model — lower cap for fast tasks */
+        MAX_OUTPUT_TOKENS_FAST: 4096,
+        /** Default maxOutputTokens applied to all calls unless overridden */
+        MAX_OUTPUT_TOKENS_DEFAULT: 8192,
+    },
     MEDIA_RESOLUTION: {
         DEFAULT: 'MEDIA_RESOLUTION_HIGH',
         LOW: 'MEDIA_RESOLUTION_LOW'

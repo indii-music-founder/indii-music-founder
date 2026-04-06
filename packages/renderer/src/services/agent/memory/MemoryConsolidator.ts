@@ -10,7 +10,6 @@ import {
     limit,
     updateDoc,
     doc as firestoreDoc,
-    deleteDoc,
     writeBatch,
     Timestamp,
 } from 'firebase/firestore';

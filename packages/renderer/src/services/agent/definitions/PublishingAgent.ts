@@ -1,5 +1,4 @@
 import { AgentConfig } from "../types";
-import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { secureRandomInt } from '@/utils/crypto-random';
 
 import systemPrompt from '@agents/publishing/prompt.md?raw';
@@ -219,5 +218,4 @@ When a request falls outside your scope:
         ]
     }]
 };
-
 

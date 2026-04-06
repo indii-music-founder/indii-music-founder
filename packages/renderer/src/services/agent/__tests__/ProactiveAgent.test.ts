@@ -3,8 +3,6 @@ import { proactiveService } from '../ProactiveService';
 import { agentService } from '../AgentService';
 import { events } from '@/core/events';
 import { agentRegistry } from '../registry';
-import { type ValidAgentId } from '../types';
-
 // Mock dependencies
 vi.mock('../AgentService', () => ({
     serverTimestamp: vi.fn(),

@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import CampaignDashboard from './CampaignDashboard';
 import { MarketingService } from '@/services/marketing/MarketingService';
-import { CampaignStatus, CampaignAsset } from '../types';
-
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({

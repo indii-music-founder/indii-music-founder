@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Folder, File, Image as ImageIcon, Music, Video, FileText, Search, Plus, Upload, Filter, Grid, List as ListIcon, MoreVertical, Star, Clock, Trash2, Download, ExternalLink, X } from 'lucide-react';
+import { Folder, File, Image as ImageIcon, Music, Video, FileText, Search, Upload, Grid, List as ListIcon, MoreVertical, Star, Clock, Trash2, Download, ExternalLink, X } from 'lucide-react';
 import { FileNode } from '@/services/FileSystemService';
 import { cn } from '@/lib/utils';
 import FilePreview from './FilePreview';

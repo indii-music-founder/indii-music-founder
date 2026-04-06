@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, TrendingUp, Users, MousePointerClick, AlertCircle, Loader2 } from 'lucide-react';
+import { Activity, TrendingUp, Users, MousePointerClick, AlertCircle } from 'lucide-react';
 import { SkeletonStat, SkeletonTable } from '@/components/ui/Skeleton';
 import { DashboardService } from '@/services/dashboard/DashboardService';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';

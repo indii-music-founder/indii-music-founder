@@ -1,5 +1,5 @@
 import { db } from '@/services/firebase';
-import { doc, runTransaction, getDoc } from 'firebase/firestore';
+import { doc, runTransaction } from 'firebase/firestore';
 
 /**
  * IdentifierService

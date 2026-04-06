@@ -1,7 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { app } from 'electron';
-
 // Define Safe System Roots (Allow User directories, deny System)
 const SYSTEM_ROOTS = [
     '/etc', '/var', '/usr', '/bin', '/sbin', '/proc', '/sys', '/root',

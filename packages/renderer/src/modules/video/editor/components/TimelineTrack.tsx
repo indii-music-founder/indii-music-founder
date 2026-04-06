@@ -109,7 +109,7 @@ export const TimelineTrack = memo(({
                                         });
                                     }
                                 }
-                            } catch (err) {
+                            } catch (_err) {
                                 // Silent catch for invalid dropped JSON
                             }
                         }

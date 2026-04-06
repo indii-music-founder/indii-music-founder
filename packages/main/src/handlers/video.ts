@@ -156,7 +156,7 @@ export function registerVideoHandlers() {
                 const _dir = path.dirname(outputLocation);
                 // If mocking realpathSync in test, we should use it?
                 // But for a new file, we check the parent directory.
-            } catch (_e) {
+            } catch (__e) {
                 // ignore
             }
 

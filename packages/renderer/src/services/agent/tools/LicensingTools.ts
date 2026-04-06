@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
-import { AI_MODELS } from '@/core/config/ai-models';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { z } from 'zod';

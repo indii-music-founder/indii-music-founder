@@ -104,7 +104,7 @@ export const PublishingTools = {
     }) => {
         try {
             const { db, auth } = await import('@/services/firebase');
-            const { doc, updateDoc, serverTimestamp, FieldValue } = await import('firebase/firestore');
+            const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
 
             const uid = auth.currentUser?.uid;
             if (!uid) {

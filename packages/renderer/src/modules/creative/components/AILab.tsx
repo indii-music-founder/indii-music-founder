@@ -8,16 +8,14 @@ import { Button } from '@/components/ui/button';
 import {
     FlaskConical,
     Zap,
-    MoveRight,
     CheckCircle2,
-    AlertCircle,
     Loader2,
     Play,
     Image as ImageIcon,
     Target,
     ArrowRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
 
 export default function AILab() {

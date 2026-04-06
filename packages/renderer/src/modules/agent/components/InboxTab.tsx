@@ -25,7 +25,6 @@ import {
     ChevronRight,
     Paperclip,
     AlertCircle,
-    Check,
     X,
     Loader2,
     Send,

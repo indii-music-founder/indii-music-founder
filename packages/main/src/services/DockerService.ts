@@ -1,5 +1,4 @@
 import { exec } from 'child_process';
-import path from 'path';
 import { app } from 'electron';
 import log from 'electron-log';
 import util from 'util';

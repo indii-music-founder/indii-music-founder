@@ -1,4 +1,4 @@
-import { Connection, Node } from 'reactflow';
+import { Node } from 'reactflow';
 import type { PortDefinition } from '../services/nodeRegistry';
 import { getJobDefinition } from '../services/nodeRegistry';
 

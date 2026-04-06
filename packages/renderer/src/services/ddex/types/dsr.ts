@@ -3,7 +3,7 @@
  * For processing royalty reports from DSPs
  */
 
-import type { DateRange, Price, TerritoryCode } from './common';
+import type { DateRange, TerritoryCode } from './common';
 
 // DSR Report - usage/sales report from a DSP
 export interface DSRReport {

@@ -32,7 +32,7 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
                 return null;
             }
             return this.useStore.getState().currentOrganizationId || 'personal';
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             return 'personal';
         }
     }

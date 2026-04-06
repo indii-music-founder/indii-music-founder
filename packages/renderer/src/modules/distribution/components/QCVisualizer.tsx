@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-    ShieldCheck, Music, Tag, XCircle,
-    CheckCircle, AlertTriangle, Upload, Loader2, FileAudio,
-    BarChart2, Waves, X, RotateCcw,
+    ShieldCheck, Music, Tag,
+    CheckCircle, FileAudio,
+    BarChart2, Waves, RotateCcw,
     type LucideIcon,
 } from 'lucide-react';
 import { distributionService } from '@/services/distribution/DistributionService';

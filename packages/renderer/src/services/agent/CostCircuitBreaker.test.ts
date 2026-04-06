@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BaseAgent } from './BaseAgent';
-import { AgentConfig, ToolDefinition } from './types';
+import { AgentConfig } from './types';
 import { MembershipService } from '@/services/MembershipService';
 
 // Mock dependencies

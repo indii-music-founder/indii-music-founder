@@ -15,7 +15,7 @@ describe('Agent Schema Lock Proof', () => {
             try {
                 // @ts-ignore - intentional mutation for test
                 (tool.parameters as unknown as { required: string[] }).required.push('MUTATION_ATTEMPT');
-            } catch (e: unknown) {
+            } catch (_e: unknown) {
                 // In strict mode, Object.freeze throws TypeError
             }
 

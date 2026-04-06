@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { AIResponseCache } from './AIResponseCache';
 import { GenerateContentResponse, GenerateContentOptions } from '@/shared/types/ai.dto';
 describe('AIResponseCache', () => {

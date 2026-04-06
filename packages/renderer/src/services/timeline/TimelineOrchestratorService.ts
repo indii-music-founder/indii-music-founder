@@ -20,7 +20,6 @@ import {
     setDoc,
     getDoc,
     getDocs,
-    updateDoc,
     query,
     where,
     orderBy,

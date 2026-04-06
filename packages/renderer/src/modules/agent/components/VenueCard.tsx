@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Venue } from '../types';
-import { MapPin, Users, Globe, Mail, Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { MapPin, Users, Globe, Mail, Plus, CheckCircle, Loader2 } from 'lucide-react';
 import { logger } from '@/utils/logger';
 
 interface VenueCardProps {

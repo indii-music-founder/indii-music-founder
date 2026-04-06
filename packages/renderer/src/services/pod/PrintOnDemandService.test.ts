@@ -27,7 +27,6 @@ vi.mock('firebase/firestore', () => ({
 
 // We import after mocks are set
 import {
-    type PODProduct,
     type PODOrderItem,
     type PODShippingAddress,
     type PODOrder,

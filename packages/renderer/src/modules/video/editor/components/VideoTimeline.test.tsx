@@ -64,7 +64,7 @@ describe('VideoTimeline', () => {
             if (selector && typeof selector === 'function') {
                 try {
                     return selector(mockState);
-                } catch (e: unknown) {
+                } catch (_e: unknown) {
                     return undefined;
                 }
             }

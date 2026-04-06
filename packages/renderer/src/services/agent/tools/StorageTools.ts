@@ -60,7 +60,7 @@ export const StorageTools = {
                 savedBytes: result.data.savedBytes,
                 status: result.data.status
             }, `Storage scrub completed for bucket ${args.bucketId}. Deleted ${result.data.deletedFiles} orphaned files, saved ${(result.data.savedBytes / 1024 / 1024).toFixed(1)} MB.`);
-        } catch (_error: unknown) {
+        } catch (__error: unknown) {
             return toolSuccess({
                 bucketId: args.bucketId,
                 olderThanDays: args.olderThanDays,

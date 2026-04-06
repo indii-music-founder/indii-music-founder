@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { Timestamp, FieldValue, getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
+import { Timestamp, FieldValue, getFirestore, collection, addDoc, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
 import { app } from '@/services/firebase';
 
 export interface RoyaltyPayout {

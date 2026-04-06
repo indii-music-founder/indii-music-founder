@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Edit2, Settings, Check } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 
 interface AnnotationPaletteProps {

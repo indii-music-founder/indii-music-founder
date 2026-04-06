@@ -3,9 +3,6 @@ import { GenAI as AI } from '@/services/ai/GenAI';
 import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';
 import type { SavedWorkflow } from '../types';
 import { Status } from '../types';
-import { isTextPart } from '@/shared/types/ai.dto';
-import { AI_MODELS } from '@/core/config/ai-models';
-
 interface JobSummary {
     id: string;
     description: string;

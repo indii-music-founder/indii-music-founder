@@ -3,8 +3,6 @@ import {
     Music, Calendar, Link2, Copy, Share2, CheckCircle,
     Mail, Phone, QrCode, Globe, ExternalLink
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-
 interface DSPLink {
     name: string;
     icon: string;

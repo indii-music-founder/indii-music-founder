@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Activity, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -118,7 +118,6 @@ const NavItem = React.memo(function NavItem({
         </TooltipProvider>
     );
 });
-
 
 export default function Sidebar() {
     const { t } = useTranslation();

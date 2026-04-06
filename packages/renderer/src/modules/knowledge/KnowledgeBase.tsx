@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, Search, Filter, Loader2, Book, Sparkles, X } from 'lucide-react';
+import { Upload, Search, Loader2, Book, Sparkles, X } from 'lucide-react';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useToast } from '@/core/context/ToastContext';
 import { knowledgeBaseService, KnowledgeDoc } from './services/KnowledgeBaseService';
@@ -71,7 +71,7 @@ export default function KnowledgeBase() {
             await knowledgeBaseService.deleteDocument(doc.rawName);
             toast.success("Document deleted.");
             await loadDocuments();
-        } catch (err: unknown) {
+        } catch (_err: unknown) {
             toast.error("Failed to delete document.");
         }
     };

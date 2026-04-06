@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Database, Download, ExternalLink, HardDrive, Trash2 } from 'lucide-react';
+import { Database, Download, ExternalLink, HardDrive } from 'lucide-react';
 import { DashboardService, StorageStats } from '@/services/dashboard/DashboardService';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 import { useStore } from '@/core/store';

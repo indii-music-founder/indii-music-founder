@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Disc, Scale, Clapperboard, AudioWaveform, ArrowRight } from 'lucide-react';
+import { Disc, Scale, Clapperboard, ArrowRight } from 'lucide-react';
 
 const features = [
     {

@@ -6,7 +6,7 @@
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
-    Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
+    Play, Pause, SkipForward, Volume2, VolumeX,
     Square, Music2
 } from 'lucide-react';
 

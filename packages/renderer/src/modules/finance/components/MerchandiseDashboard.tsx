@@ -3,7 +3,7 @@ import { MerchandiseAnalytics } from './MerchandiseAnalytics';
 import { MerchTable } from './MerchTable';
 import { useFinance } from '../hooks/useFinance';
 import { motion } from 'motion/react';
-import { ShoppingBag, TrendingUp, Package, DollarSign } from 'lucide-react';
+import { ShoppingBag, TrendingUp, Package } from 'lucide-react';
 
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {

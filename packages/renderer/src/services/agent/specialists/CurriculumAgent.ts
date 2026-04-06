@@ -388,7 +388,7 @@ When a request falls outside education scope:
                     data: { result },
                     message: 'Knowledge base search complete.'
                 };
-            } catch (_err: unknown) {
+            } catch (__err: unknown) {
                 return {
                     success: false,
                     error: 'Knowledge base unavailable. Answering from training data.'

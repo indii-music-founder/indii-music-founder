@@ -259,7 +259,7 @@ export class AgentExecutionContext {
                 let valStr: string;
                 try {
                     valStr = JSON.stringify(val);
-                } catch (e: unknown) {
+                } catch (_e: unknown) {
                     valStr = `[Non-serializable: ${typeof val}]`;
                 }
 

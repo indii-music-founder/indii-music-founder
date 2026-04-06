@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, X, Copy, Trash2, ChevronDown } from 'lucide-react';
+import { Send, Loader2, Sparkles, X, Copy, Trash2 } from 'lucide-react';
 import { knowledgeBaseService, ChatMessage, KnowledgeDoc } from '../services/KnowledgeBaseService';
 
 interface KnowledgeChatProps {

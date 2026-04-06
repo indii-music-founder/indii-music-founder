@@ -2,8 +2,6 @@ import { render, screen, fireEvent } from '@/test/utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeCanvas from './CreativeCanvas';
 import { useStore } from '@/core/store';
-import { useToast } from '@/core/context/ToastContext';
-
 import { createMockStore } from '@/test/utils';
 
 // Mock dependencies

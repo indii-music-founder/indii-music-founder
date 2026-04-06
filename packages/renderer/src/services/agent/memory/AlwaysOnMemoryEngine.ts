@@ -11,13 +11,11 @@ import {
     writeBatch,
     doc as firestoreDoc,
     getCountFromServer,
-    Timestamp,
 } from 'firebase/firestore';
 import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { MemoryConsolidator } from './MemoryConsolidator';
 import { MemoryIngestionPipeline, memoryIngestionPipeline } from './MemoryIngestionPipeline';
-import { MemorySummarizer } from './MemorySummarizer';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryConfig,

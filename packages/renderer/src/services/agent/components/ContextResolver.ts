@@ -1,6 +1,5 @@
 import type { AgentMessage } from '@/core/store';
 // useStore removed
-import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { buildDistributorContext, getDistributorPromptContext } from '@/services/onboarding/DistributorContext';
 
 import { AgentContext, ProjectHandle, DistributorInfo } from '../types';

@@ -18,8 +18,7 @@ import MultiPlatformPoster from './MultiPlatformPoster';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import { CampaignAsset } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
-import { BarChart3, TrendingUp, MousePointerClick, Image, Sparkles, Radio } from 'lucide-react';
-import { motion } from 'motion/react';
+import { BarChart3, Image, Sparkles, Radio } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { SkeletonList, SkeletonStat } from '@/components/shared/SkeletonLoader';
 import { useStore } from '@/core/store';
@@ -118,7 +117,6 @@ const CampaignDashboard: React.FC = () => {
             }
         };
     }, []);
-
 
     return (
         <ModuleErrorBoundary moduleName="Marketing Dashboard">

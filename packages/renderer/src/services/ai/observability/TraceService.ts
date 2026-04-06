@@ -1,5 +1,5 @@
 import { db } from '@/services/firebase';
-import { Timestamp, FieldValue, collection, doc, addDoc, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
+import { Timestamp, FieldValue, collection, doc, addDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
 export interface TraceStep {

@@ -1,10 +1,7 @@
 import { ipcMain, BrowserWindow, shell, session, app } from 'electron';
 import { authStorage } from '../services/AuthStorage';
-import { generatePKCECodeVerifier, generatePKCECodeChallenge } from '../utils/pkce';
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
-
 const LOG_FILE = path.join(process.cwd(), 'auth-debug.log');
 
 function logToFile(msg: string) {

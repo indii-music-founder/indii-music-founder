@@ -276,7 +276,7 @@ export class SmartContractService {
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        } catch (_e: unknown) {
+        } catch (__e: unknown) {
             // Fallback if SubtleCrypto unavailable (e.g., non-secure context)
             hash = `sha256_${crypto.randomUUID().replace(/-/g, '')}`;
         }

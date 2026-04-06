@@ -1,4 +1,4 @@
-import { ipcMain, app } from 'electron';
+import { ipcMain } from 'electron';
 import { sftpService } from '../services/SFTPService';
 import { SFTPConfigSchema, SftpUploadSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
@@ -6,7 +6,6 @@ import { validateSafeHostAsync } from '../utils/network-security';
 import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 import path from 'path';
-import os from 'os';
 import fs from 'fs';
 import { credentialService } from '../services/CredentialService';
 
@@ -71,7 +70,7 @@ export const registerSFTPHandlers = () => {
             try {
                 // If it doesn't exist, realpathSync throws, which acts as a check.
                 realLocalPath = fs.realpathSync(validated.localPath);
-            } catch (e) {
+            } catch (_e) {
                 // If we can't resolve it, fail secure.
                 throw new Error(`Security: Invalid path or permission denied: ${validated.localPath}`);
             }

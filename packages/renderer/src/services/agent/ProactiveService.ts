@@ -5,17 +5,13 @@ import {
     addDoc,
     query,
     where,
-    onSnapshot,
     updateDoc,
     doc,
-    Timestamp,
-    deleteDoc,
     getDocs
 } from 'firebase/firestore';
 import { events, EventType } from '@/core/events';
 import { v4 as uuidv4 } from 'uuid';
 import { AgentContext, ProactiveTask } from './types';
-
 
 export class ProactiveService {
     private unsubscribers: (() => void)[] = [];

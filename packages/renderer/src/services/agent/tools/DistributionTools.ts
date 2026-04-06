@@ -8,7 +8,6 @@
 
 import { IdentifierService } from '@/services/identity/IdentifierService';
 import { ernService, ERNService } from '@/services/ddex/ERNService';
-import { RoyaltyService, RevenueReportItem } from '@/services/finance/RoyaltyService';
 import { db, auth } from '@/services/firebase';
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
@@ -17,7 +16,6 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { MusicTools } from './MusicTools';
 import { logger } from '@/utils/logger';
-
 
 /**
  * Prepare a release for distribution using the Industrial Engine (Python/DDEX).
@@ -446,7 +444,6 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
 
     return toolSuccess(result, `Metadata QC ${status}: ${warnings.length} warning(s).`);
 });
-
 
 /**
  * Generate (The MLC) BWARM CSV via Keys Layer.

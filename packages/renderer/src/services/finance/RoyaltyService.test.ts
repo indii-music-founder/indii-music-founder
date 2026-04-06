@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { RoyaltyService, RevenueReportItem } from '@/services/finance/RoyaltyService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { db } from '@/services/firebase';
-import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, collection, getDocs, query, where } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { DistributorId, DistributorAdapter } from '@/services/distribution/types/distributor';
+import { DistributorAdapter } from '@/services/distribution/types/distributor';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { X, Lock, Save, Loader2, AlertCircle, Globe, Terminal, ShieldCheck, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';

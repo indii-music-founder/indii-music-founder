@@ -139,7 +139,7 @@ vi.mock('firebase-functions/params', () => ({
 }));
 
 // Import functions AFTER mocks
-import { triggerVideoJob, triggerLongFormVideoJob, renderVideo } from '../index';
+import { triggerVideoJob, renderVideo } from '../index';
 
 describe('Video Functions', () => {
     beforeEach(() => {

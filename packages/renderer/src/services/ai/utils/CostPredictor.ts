@@ -1,6 +1,5 @@
 
 import { APPROVED_MODELS, MODEL_PRICING, AI_CONFIG, getModelKey } from '@/core/config/ai-models';
-import { logger } from '@/utils/logger';
 import { remoteConfig } from '@/services/firebase';
 import { getValue } from 'firebase/remote-config';
 import { RemoteAIConfigSchema } from '@/services/ai/config/RemoteAIConfig';
@@ -150,7 +149,7 @@ export class CostPredictor {
                     }
                 }
             }
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             // Ignore
         }
 

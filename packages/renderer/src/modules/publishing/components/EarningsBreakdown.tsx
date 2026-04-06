@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Globe, Smartphone, Music, MapPin, TrendingUp, DollarSign } from 'lucide-react';
+import { Smartphone, Music, MapPin, TrendingUp, DollarSign } from 'lucide-react';
 
 interface EarningsBreakdownItem {
     label: string;
