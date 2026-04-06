@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, fireEvent, waitFor, screen } from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 import { ResourceTree } from './ResourceTree';
 import { useStore } from '@/core/store';
 import { StorageService } from '@/services/StorageService';

@@ -1,5 +1,5 @@
 import { db, auth } from '@/services/firebase';
-import { collection, doc, setDoc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, query, where, getDocs } from 'firebase/firestore';
 import type { AudioFeatures, AudioSemanticData } from '@/services/audio/types';
 import { logger } from '@/utils/logger';
 

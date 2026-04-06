@@ -2,8 +2,6 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { z } from 'zod';
-
 // 1. Hoisted mocks for dependencies
 const mocks = vi.hoisted(() => ({
     serverTimestamp: vi.fn(),
@@ -90,8 +88,6 @@ vi.mock('uuid', () => ({
 
 // Import service AFTER mocks
 import { VideoGenerationService } from './VideoGenerationService';
-import { VideoGenerationOptionsSchema } from '@/modules/video/schemas';
-
 describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
     let service: VideoGenerationService;
 
@@ -160,7 +156,6 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 duration: -5
             };
 
-
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
@@ -169,7 +164,6 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 prompt: 'Valid prompt',
                 duration: 301
             };
-
 
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
@@ -180,7 +174,6 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 fps: 120
             };
 
-
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
@@ -189,7 +182,6 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 prompt: 'Valid prompt',
                 firstFrame: 12345 // Should be string
             };
-
 
             // @ts-expect-error - bypassing TS to test runtime validation
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);

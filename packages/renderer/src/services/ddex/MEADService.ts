@@ -1,8 +1,6 @@
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 import { MEADMessage, MEADContent, MEADRelease, MEADResource, Biography } from './types/mead';
-import { DDEXParser } from './DDEXParser'; // We might need to extend parser for MEAD if we output XML
-
 /**
  * MEAD Service
  * Manages creation of Media Enrichment and Description messages (Lyrics, Bios, etc.)

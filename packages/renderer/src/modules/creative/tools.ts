@@ -1,6 +1,5 @@
 
 import { StorageService } from '@/services/StorageService';
-import { HistoryItem } from '@/core/store';
 import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';

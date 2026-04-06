@@ -13,7 +13,7 @@ export interface AudioGenerationSlice {
     deleteAudioAsset: (id: string) => Promise<void>;
 }
 
-export const createAudioGenerationSlice: StateCreator<AudioGenerationSlice> = (set, get) => ({
+export const createAudioGenerationSlice: StateCreator<AudioGenerationSlice> = (set) => ({
     generatedAssets: [],
     isAudioLoading: false,
     audioError: null,

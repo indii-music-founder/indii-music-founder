@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React, { useState } from 'react';
-import { Brush, Wand2, Save, Image as ImageIcon, Play, X, Film, Clapperboard, ChevronDown, Share2, Star, Download, Sparkles } from 'lucide-react';
+import { Wand2, Save, Image as ImageIcon, Play, X, Share2, Star, Download, Sparkles } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 

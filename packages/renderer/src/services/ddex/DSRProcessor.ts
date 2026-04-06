@@ -1,6 +1,5 @@
 import {
     DSRReport,
-    DSRTransaction,
     RoyaltyCalculation,
     ContributorPayment,
 } from './types/dsr';

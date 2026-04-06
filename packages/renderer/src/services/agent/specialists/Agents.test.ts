@@ -2,10 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { TOOL_REGISTRY } from '../tools';
 import { AGENT_CONFIGS } from '../agentConfig';
 import { BrandAgent } from '../definitions/BrandAgent';
-import { MarketingAgent } from '../definitions/MarketingAgent';
-import { RoadAgent } from '../definitions/RoadAgent';
-import { SecurityAgent } from '../definitions/SecurityAgent';
-import { PublicistAgent } from '../definitions/PublicistAgent';
 import { vi } from 'vitest';
 
 // Mock FirebaseAIService for verify_output (which is currently in BrandTools)

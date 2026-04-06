@@ -104,7 +104,7 @@ export class PythonBridge {
                     const lastLine = lines[lines.length - 1]!;
                     const result = JSON.parse(lastLine);
                     resolve(result);
-                } catch (e) {
+                } catch (_e) {
                     // If not JSON, return full stdout
                     console.warn('[PythonBridge] Could not parse output as JSON, returning raw string.');
                     resolve(stdout);

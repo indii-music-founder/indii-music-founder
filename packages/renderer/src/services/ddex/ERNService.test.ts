@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { ERNService } from './ERNService';
 import { ERNMapper } from './ERNMapper';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { DDEX_CONFIG } from '@/core/config/ddex';
-
 export const MOCK_METADATA: ExtendedGoldenMetadata = {
     trackTitle: 'Midnight City',
     artistName: 'M83',

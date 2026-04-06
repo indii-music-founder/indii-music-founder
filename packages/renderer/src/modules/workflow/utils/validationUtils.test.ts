@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { validateConnection, getHandleType } from './validationUtils';
+import { validateConnection } from './validationUtils';
 import { Node } from 'reactflow';
 
 // Mock getJobDefinition
 vi.mock('../services/nodeRegistry', () => ({
-    getJobDefinition: (deptName: string, jobId: string) => {
+    getJobDefinition: (deptName: string) => {
         if (deptName === 'Knowledge Base') {
             return {
                 inputs: [

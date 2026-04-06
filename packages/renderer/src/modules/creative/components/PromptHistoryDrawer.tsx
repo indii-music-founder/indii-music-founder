@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { X, Search, RotateCw, Copy, Clock } from 'lucide-react';
+import { X, RotateCw, Copy, Clock } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
 export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }) {

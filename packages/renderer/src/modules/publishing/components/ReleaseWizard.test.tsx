@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 import ReleaseWizard from './ReleaseWizard';
 import { useDDEXRelease } from '../hooks/useDDEXRelease';

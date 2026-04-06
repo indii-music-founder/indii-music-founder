@@ -44,7 +44,7 @@ export class StateManager {
                 logger.warn(`[StateManager] Failed to deep clone slice ${String(key)}. Falling back to JSON/shallow.`, e);
                 try {
                     setKey(snapshot, key, JSON.parse(JSON.stringify(value)));
-                } catch (jsonErr: unknown) {
+                } catch (_jsonErr: unknown) {
                     // Final fallback to shallow copy if all else fails
                     setKey(snapshot, key, value);
                 }

@@ -1,18 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect } from 'react';
 import {
-    LayoutDashboard,
-    Plus,
-    GripVertical,
-    X,
     Music,
     DollarSign,
     Calendar,
     TrendingUp,
     Bot,
-    Edit3,
-    BarChart3,
-    Undo2,
     Users,
     Activity,
     CheckSquare,
@@ -38,7 +30,6 @@ import type {
     DashboardMerchSales,
     DashboardTourStatus,
 } from '@/services/dashboard/schema';
-
 
 export type WidgetType = 'streams_today' | 'revenue_mtd' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status';
 

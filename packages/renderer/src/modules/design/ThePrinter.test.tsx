@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, cleanup, act } from '@testing-library/react';
+import { render, cleanup } from '@testing-library/react';
 import { PhysicalMediaLayout } from './components/PhysicalMediaLayout';
 import { PHYSICAL_MEDIA_TEMPLATES } from '../../services/design/templates';
 import React from 'react';

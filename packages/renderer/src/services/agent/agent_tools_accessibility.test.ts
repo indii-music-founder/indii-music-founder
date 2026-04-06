@@ -5,7 +5,7 @@
  * and identifies any tools that might be cut off due to limits.
  */
 
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { TOOL_REGISTRY, BASE_TOOLS } from './tools';
 import { agentRegistry } from './registry';
 import { AGENT_CONFIGS } from './agentConfig';

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { areFeedItemPropsEqual, FeedItemProps } from './SocialFeed.utils';
 import { SocialPost } from '@/services/social/types';
 
@@ -89,8 +89,6 @@ describe('SocialFeed.utils', () => {
             };
             expect(areFeedItemPropsEqual(defaultProps, nextProps)).toBe(false);
         });
-
-
 
         it('handles null/undefined mediaUrls gracefully', () => {
             const propsWithNoMedia = {

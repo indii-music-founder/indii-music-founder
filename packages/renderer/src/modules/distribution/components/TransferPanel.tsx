@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Server, Shield, Loader2, CheckCircle, XCircle, Terminal, HardDrive } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { distributionService } from '@/services/distribution/DistributionService';
 import { SFTPConfig, SFTPReport } from '@/types/distribution';
 
 export const TransferPanel: React.FC = () => {
-    const { success, error, info } = useToast();
+    const { success, error } = useToast();
     const [loading, setLoading] = useState(false);
     const [report, setReport] = useState<SFTPReport | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
@@ -247,7 +246,6 @@ export const TransferPanel: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-
 
                         <button
                             data-testid="transfer-launch-button"

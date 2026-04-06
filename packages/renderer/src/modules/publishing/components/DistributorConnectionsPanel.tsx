@@ -5,7 +5,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 
 export const DistributorConnectionsPanel: React.FC = () => {
-    const { connections, loading, refresh, disconnect } = useDistributorConnections();
+    const { connections, loading } = useDistributorConnections();
     const { setModule } = useStore(useShallow(state => ({
         setModule: state.setModule
     })));

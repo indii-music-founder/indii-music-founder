@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useToast } from '@/core/context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-    Search, Filter, Plus, MoreHorizontal,
-    Circle, CheckCircle2, AlertCircle, Clock,
+    Search, Plus,
+    Circle,
     LayoutGrid, List as ListIcon, Trash2, Archive, ExternalLink
 } from 'lucide-react';
 import { ReleaseStatusCard } from './ReleaseStatusCard';
@@ -32,8 +32,6 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev =>

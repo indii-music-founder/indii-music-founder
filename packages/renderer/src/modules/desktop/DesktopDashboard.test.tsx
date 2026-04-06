@@ -25,7 +25,6 @@ vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: vi.f
 vi.mock('@/lib/utils', () => ({ cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
 
 import DesktopDashboard from './DesktopDashboard';
-import { ResourceBar } from './components/ResourceBar';
 import { SettingCard } from './components/SettingCard';
 
 describe('DesktopDashboard', () => {

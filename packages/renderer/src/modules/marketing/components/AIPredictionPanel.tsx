@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, Loader2, RefreshCw, AlertTriangle, Lightbulb, ThumbsUp, MessageCircle, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, Loader2, RefreshCw, AlertTriangle, Lightbulb, ThumbsUp, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
 import { CampaignAsset, EngagementPrediction } from '../types';

@@ -5,7 +5,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Instance, Instances } from '@react-three/drei';
 import * as THREE from 'three';
-import { useAudioStore, audioStore } from '../store/audioStore';
+import { audioStore } from '../store/audioStore';
 
 const COUNT = 200;
 

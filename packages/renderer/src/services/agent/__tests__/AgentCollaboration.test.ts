@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
 import { GenAI } from '../../ai/GenAI';
-import { StreamChunk } from '@/shared/types/ai.dto';
 import { agentService } from '../AgentService';
 
 vi.mock('../../ai/GenAI', () => ({

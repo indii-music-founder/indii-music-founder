@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useAuth } from './components/auth/AuthProvider';
 import { getStudioUrl } from './lib/auth';
-import { Database, ShieldCheck, Megaphone, BrainCircuit, Globe, Cpu, Network, Zap, ArrowRight, Activity } from 'lucide-react';
+import { Database, ShieldCheck, Megaphone, BrainCircuit, Cpu, Network, Zap, ArrowRight } from 'lucide-react';
 
 /* --- Premium Reusable UI Components --- */
 

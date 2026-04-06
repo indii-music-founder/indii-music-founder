@@ -4,7 +4,6 @@ import {
     Mic,
     Plus,
     Search,
-    MoreVertical,
     Users,
     Megaphone,
     ArrowUpRight,
@@ -17,7 +16,6 @@ import {
 import { usePublicist } from './hooks/usePublicist';
 import { CampaignCard } from './components/CampaignCard';
 import { ContactList } from './components/ContactList';
-import { StatsTicker } from './components/StatsTicker';
 import { CreateCampaignModal } from './components/CreateCampaignModal';
 import { CreateContactModal } from './components/CreateContactModal';
 import { CampaignDetailsModal } from './components/CampaignDetailsModal';

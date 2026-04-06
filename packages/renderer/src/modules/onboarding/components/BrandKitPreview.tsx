@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Edit3, RotateCcw, X, Check } from 'lucide-react';
+import { Sparkles, Edit3, RotateCcw, Check } from 'lucide-react';
 import type { UserProfile } from '@/types/User';
 
 interface BrandKitPreviewProps {

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
 import { TransactionManager } from './context/TransactionManager';
-import { StateManager } from './context/StateManager';
 import { LoopDetector } from './LoopDetector';
 import { AgentContext } from './types';
 import { useStore } from '@/core/store';
@@ -114,7 +113,6 @@ describe('Phase 3: Architectural Improvements', () => {
                 userId: 'user-1',
                 projectId: 'proj-1'
             });
-
 
             // Set state in context
             executionContext.setState('currentProjectId', 'new-project-id');

@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Note: We need to import the class to mock it, and the instance to test it.
 // The instance uses the class internally.
 import { memoryService, MemoryItem } from './MemoryService';

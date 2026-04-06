@@ -16,13 +16,12 @@
  */
 
 import {
-    doc, setDoc, getDoc, collection, query,
+    doc, setDoc, getDoc, collection,
     where, getDocs, Timestamp, serverTimestamp,
-    type DocumentData
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
-import { AI_CONFIG, APPROVED_MODELS } from '@/core/config/ai-models';
+import { APPROVED_MODELS } from '@/core/config/ai-models';
 import type { AudioIntelligenceProfile, AudioSemanticData } from '@/services/audio/types';
 import { logger } from '@/utils/logger';
 

@@ -375,7 +375,7 @@ export async function syncWorkflows(): Promise<void> {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', wf.id);
             await setDoc(docRef, { ...wf, synced: true }, { merge: true });
-        } catch (_e: unknown) {
+        } catch (__e: unknown) {
             // Failed to sync workflow ${wf.id}
         }
     });

@@ -7,7 +7,6 @@ import {
     Trash2,
     Menu,
     X,
-    ChevronRight,
     Loader2,
     Upload
 } from 'lucide-react';

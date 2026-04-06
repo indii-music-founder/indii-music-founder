@@ -19,10 +19,9 @@
  */
 
 import { db, functions as firebaseFunctions } from '@/services/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
-import { logger } from '@/utils/logger';
 import type { PlatformData, StreamDataPoint } from './types';
 
 // ── PKCE helpers ──────────────────────────────────────────────────────────────

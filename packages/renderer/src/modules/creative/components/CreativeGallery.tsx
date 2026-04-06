@@ -1,9 +1,8 @@
 import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from 'react';
-import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star, RotateCw } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
@@ -273,7 +272,6 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     useEffect(() => {
         onSelectRef.current = onSelect;
     });
-
 
     const handleSelect = useCallback((item: HistoryItem) => {
         if (onSelectRef.current) {

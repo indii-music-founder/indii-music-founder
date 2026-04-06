@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldAlert, Database, FileText, ArrowRight } from 'lucide-react';
+import { ShieldAlert, Database } from 'lucide-react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';

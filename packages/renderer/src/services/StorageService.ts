@@ -1,8 +1,8 @@
 import { logger } from '@/utils/logger';
 
-import { db, storage } from './firebase';
-import { collection, query, orderBy, limit, Timestamp, where, getDocs, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
+import { storage } from './firebase';
+import { collection, query, orderBy, limit, Timestamp, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { ref, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
 import { HistoryItem } from '@/core/types/history';
 import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';

@@ -27,7 +27,7 @@ interface MarketingSidebarProps {
 }
 
 export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, onTabChange }) => {
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed] = useState(false);
 
     const mainNav = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },

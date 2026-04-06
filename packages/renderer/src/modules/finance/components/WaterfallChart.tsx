@@ -2,8 +2,6 @@ import React, { useMemo } from 'react';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
-import { motion } from 'motion/react';
-
 // Actual distributor commission rates (0 = flat-fee models, revenue not percentage-based)
 // NOTE: Some distributors have tiered pricing (e.g., UnitedMasters Select 10% vs Pro 0%,
 // Amuse Free 0% vs Boost flat fee). This map uses the "most common" tier rate.
@@ -74,7 +72,6 @@ const CustomTooltip = ({ active, payload }: WaterfallTooltipProps) => {
     }
     return null;
 };
-
 
 export const WaterfallChart: React.FC<WaterfallChartProps> = ({
     grossRevenue,

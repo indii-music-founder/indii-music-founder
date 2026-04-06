@@ -36,7 +36,7 @@ export default function RecentProjects() {
             setProjects((prev) => [p, ...prev].slice(0, 4));
             setIsModalOpen(false);
             handleOpen(p.id);
-        } catch (_e: unknown) {
+        } catch (__e: unknown) {
             // swallow
         }
     };

@@ -19,7 +19,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 import {
-    Briefcase, CreditCard, ShoppingBag, TrendingUp,
+    Briefcase, TrendingUp,
     DollarSign, ArrowUpRight, Wallet, Clock, Scale,
     AlertTriangle, Calendar, PiggyBank, Globe, Users,
     FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark, Sparkles

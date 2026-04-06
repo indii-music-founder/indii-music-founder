@@ -50,7 +50,7 @@ export class VideoGenerationService {
             Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
 
             return await firebaseAI.analyzeImage(analysisPrompt, image);
-        } catch (_e: unknown) {
+        } catch (__e: unknown) {
             // Temporal analysis failure should not block generation
             return "";
         }

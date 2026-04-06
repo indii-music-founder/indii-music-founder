@@ -1,4 +1,4 @@
-import { serverTimestamp, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { serverTimestamp, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { auth } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import type { EarningsDocument } from '@/types/firestore';

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Sparkles, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { ArrowRight, Loader2, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -343,7 +343,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                 />
-
 
                 <AttachmentList attachments={commandBarAttachments} onRemove={removeAttachment} />
 

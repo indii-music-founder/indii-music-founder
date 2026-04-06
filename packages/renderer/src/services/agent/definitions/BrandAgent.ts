@@ -4,7 +4,6 @@ import systemPrompt from '@agents/brand/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 
-
 export const BrandAgent: AgentConfig = {
     id: 'brand',
     name: 'Brand Manager',
@@ -344,7 +343,5 @@ If a task is outside Brand, say:
         ]
     }]
 };
-
-import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination

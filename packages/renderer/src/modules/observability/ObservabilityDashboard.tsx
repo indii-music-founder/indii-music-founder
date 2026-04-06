@@ -5,13 +5,11 @@ import { SchedulerStatusPanel } from './components/SchedulerStatusPanel';
 import { MetricsService, SystemMetrics } from '@/services/agent/observability/MetricsService';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion } from 'motion/react';
 import {
-    Activity, Cpu, DollarSign, Clock, AlertTriangle,
+    Activity, Cpu, Clock, AlertTriangle,
     Zap, RefreshCw, TrendingUp, TrendingDown, BarChart3,
-    Coins, Users, Shield
+    Coins, Shield
 } from 'lucide-react';
 
 /* ================================================================== */

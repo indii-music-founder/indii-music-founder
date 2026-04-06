@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useStore, CanvasImage } from '@/core/store';
+import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';

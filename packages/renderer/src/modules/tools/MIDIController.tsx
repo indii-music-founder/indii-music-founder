@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Music2, Zap, Activity, Wifi, WifiOff, Sliders } from 'lucide-react';
+import { Zap, Activity, Wifi, WifiOff, Sliders } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface MIDIDevice {

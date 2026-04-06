@@ -1,6 +1,6 @@
 import React from 'react';
 import { PHYSICAL_MEDIA_TEMPLATES, PrintTemplate } from '../../../services/design/templates';
-import { Disc, Square, RectangleHorizontal, StickyNote } from 'lucide-react';
+import { Disc, RectangleHorizontal, StickyNote } from 'lucide-react';
 
 interface TemplateSelectorProps {
     onSelect: (template: PrintTemplate) => void;

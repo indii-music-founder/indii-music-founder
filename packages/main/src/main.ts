@@ -66,7 +66,7 @@ const createWindow = async () => {
 
     // Load .env here (after app.whenReady) to avoid esbuild hoisting issues with dotenv v17
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    try { require('dotenv').config(); } catch (_e) { /* dotenv optional */ }
+    try { require('dotenv').config(); } catch (__e) { /* dotenv optional */ }
 
     try {
         const { indiiRemoteService } = await import('./services/IndiiRemoteService');
@@ -317,7 +317,6 @@ const showNotification = (title: string, body: string) => {
     }
 };
 
-
 // Protocol Registration
 if (process.defaultApp) {
     if (process.argv.length >= 2) {
@@ -395,7 +394,6 @@ if (!gotTheLock) {
 
             return result;
         });
-
 
         // Item 373: IPC channel allowlist audit — log any unregistered channels on startup
         const KNOWN_IPC_CHANNELS = new Set([

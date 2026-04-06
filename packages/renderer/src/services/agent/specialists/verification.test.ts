@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from '../registry';
 import { AGENT_CONFIGS } from '../agentConfig';
 import { GenAI as AI } from '@/services/ai/GenAI';

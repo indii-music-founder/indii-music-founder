@@ -32,8 +32,6 @@ vi.mock('@/services/marketing/MarketingService', () => ({
     }
 }));
 
-
-
 describe('Agent Tools Validation', () => {
 
     beforeEach(() => {
@@ -58,7 +56,7 @@ describe('Agent Tools Validation', () => {
 
             try {
                 await BrandTools.verify_output({ goal: "Test", content: "Test content" });
-            } catch (error: unknown) {
+            } catch (_error: unknown) {
                 // Should probably return a failed tool result, but if it throws, we catch it here.
                 // Assuming tool wraps error:
             }
@@ -95,7 +93,6 @@ describe('Agent Tools Validation', () => {
                 estimatedDuration: "2 hours",
                 legs: [{ from: "NY", to: "NJ", distance: "100 miles", driveTime: "2 hours" }]
             } as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
-
 
             const result = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
             expect(result.data.route).toContain("NY");

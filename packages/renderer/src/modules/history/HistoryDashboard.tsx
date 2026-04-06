@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { formatSmartDate, cn } from '@/lib/utils';
-import { MessageSquare, Calendar, Trash2, X, Edit2, Check, Clock, Search, Filter, Activity, FileText, Image as ImageIcon, Music, Video as VideoIcon, Bot } from 'lucide-react';
+import { formatSmartDate } from '@/lib/utils';
+import { MessageSquare, Trash2, Clock, Search, Activity, FileText, Image as ImageIcon, Music, Video as VideoIcon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationSession } from '@/core/store/slices/agent';
 import { FilterItem } from './components/FilterItem';

@@ -6,12 +6,11 @@ import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HybridOrchestrator } from './hybrid/HybridOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
-import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentContext, HUB_AGENT_ID, SPOKE_AGENT_IDS } from './types';
+import { AgentContext } from './types';
 import { memoryService } from './MemoryService';
 import { agentRegistry } from './registry';
 
 // Workflow coordinator removed for indii Conductor standard routing
-import { orchestrationService } from './OrchestrationService';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';

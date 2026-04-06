@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { distributionService } from '@/services/distribution/DistributionService';
-import { Loader2, DollarSign, FileCheck, Landmark, Users, Plus, Trash2, PieChart, ArrowDownRight, Shield } from 'lucide-react';
+import { Loader2, DollarSign, Landmark, Users, Plus, Trash2, PieChart, ArrowDownRight, Shield } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { TaxReport, WaterfallReport, WaterfallData } from '@/types/distribution';
 import { logger } from '@/utils/logger';

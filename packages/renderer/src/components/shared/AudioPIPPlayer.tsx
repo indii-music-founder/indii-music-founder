@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Play, Pause, X, SkipForward, SkipBack, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Pause, X, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { logger } from '@/utils/logger';
 
 export default function AudioPIPPlayer() {

@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useFinance } from '../hooks/useFinance';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RevenueChart } from './RevenueChart';
 import { EarningsTable } from './EarningsTable';

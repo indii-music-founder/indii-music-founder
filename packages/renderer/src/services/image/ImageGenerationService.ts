@@ -4,8 +4,6 @@ import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { firebaseAI } from '../ai/FirebaseAIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { env } from '@/config/env';
-
 // isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';

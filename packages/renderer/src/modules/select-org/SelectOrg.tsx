@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Building2, Check, Plus, ArrowRight, Activity, Users, Settings, LogOut, ChevronRight, Zap } from 'lucide-react';
+import { Building2, Check, Plus, ArrowRight, Activity, Users, LogOut, ChevronRight, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SelectOrg() {

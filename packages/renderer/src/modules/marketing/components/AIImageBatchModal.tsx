@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ImageIcon, Loader2, Check, AlertCircle, RefreshCw, Play, Pause } from 'lucide-react';
+import { X, ImageIcon, Loader2, Check, AlertCircle, RefreshCw, Play } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
 import { CampaignAsset, ScheduledPost, BatchImageProgress } from '../types';

@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import {
     Briefcase, Users, Megaphone, Network, Mic, Palette, Film,
-    Scale, Book, DollarSign, FileText, ShoppingBag, Radio, Globe,
+    Scale, Book, DollarSign, FileText, ShoppingBag, Radio,
     Menu, X, Layout, Clock
 } from 'lucide-react';
 import { haptic } from '@/lib/mobile';

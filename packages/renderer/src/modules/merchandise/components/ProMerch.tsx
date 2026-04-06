@@ -1,8 +1,6 @@
 import React from 'react';
-import { Crown, Zap, ShieldCheck } from 'lucide-react';
+import { Crown, ShieldCheck } from 'lucide-react';
 import { useMerchandise } from '../hooks/useMerchandise';
-
-
 
 export const ProMerch: React.FC = () => {
     const { proProducts: products } = useMerchandise();

@@ -18,8 +18,6 @@
  */
 
 import { useEffect, useCallback, useState, lazy, Suspense } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { useStore } from '@/core/store';
 import { remoteRelayService, type DesktopState } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import {
@@ -60,7 +58,7 @@ import { QRCodeSVG } from 'qrcode.react';
 // ─── Pairing Modal (Cloud Relay version) ─────────────────────────────────────
 
 function PairingModal({ onClose }: { onClose: () => void }) {
-  const [qrUrl, setQrUrl] = useState<string>(() => {
+  const [qrUrl] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
       return isDev ? window.location.origin + '/remote' : 'https://indiios-studio.web.app/remote';

@@ -8,7 +8,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import ManufacturingPanel from './ManufacturingPanel';
 import { THEMES } from '../themes';
-import { ProductType, PRODUCT_TYPE_MAPPING } from '../types';
+import { PRODUCT_TYPE_MAPPING } from '../types';
 
 // Placement options for different product types
 const placementOptions: Record<string, { id: string; label: string; icon: React.ReactNode }[]> = {

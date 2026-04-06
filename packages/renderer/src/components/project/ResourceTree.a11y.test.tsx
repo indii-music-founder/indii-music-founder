@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ResourceTree } from './ResourceTree';
 import { useStore } from '@/core/store';
 import { vi, describe, it, expect, beforeEach } from 'vitest';

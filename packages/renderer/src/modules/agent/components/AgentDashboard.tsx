@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Sparkles, Megaphone, Mail, ExternalLink, RefreshCw, Filter, Download } from 'lucide-react';
+import { MapPin, Sparkles, Megaphone, ExternalLink, RefreshCw, Filter, Download } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignAsset } from '@/modules/marketing/types';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
@@ -8,7 +8,6 @@ import { useAgentStore } from '../store/AgentStore';
 import BrowserAgentTester from './BrowserAgentTester';
 import { VenueCard } from './VenueCard';
 import { ScoutMapVisualization } from './ScoutMapVisualization';
-import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { useMobile } from '@/hooks/useMobile';
 import { AgentSidebar } from './AgentSidebar';
 import { AgentToolbar } from './AgentToolbar';
@@ -20,7 +19,6 @@ import { RosterService } from '../services/RosterService';
 import { Venue } from '../types';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-import { agentService } from '@/services/agent/AgentService';
 import { MessageItem } from '@/core/components/chat/ChatMessage';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { useStore } from '@/core/store';
@@ -114,7 +112,6 @@ const CampaignsTab: React.FC = () => {
 };
 
 // No hardcoded inbox data — messages come from connected email integrations.
-
 
 const AgentDashboard: React.FC = () => {
     const { t } = useTranslation();
@@ -389,7 +386,6 @@ const AgentDashboard: React.FC = () => {
                                 </div>
                             </div>
                         )}
-
 
                         {activeTab === 'campaigns' && (
                             <CampaignsTab />

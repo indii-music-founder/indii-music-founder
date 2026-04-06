@@ -10,7 +10,6 @@ import { validateSafeHostAsync } from '../utils/network-security';
 import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 
-import { PythonBridge } from '../utils/python-bridge';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { credentialService } from '../services/CredentialService';
 
@@ -47,7 +46,7 @@ export const setupDistributionHandlers = () => {
             // cleaned up previous staging if exists
             try {
                 await fs.rm(stagingPath, { recursive: true, force: true });
-            } catch (e) {
+            } catch (_e) {
                 // ignore
             }
 

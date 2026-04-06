@@ -6,7 +6,6 @@ import type {
     FabricObjectWithMeta,
     FabricCanvasWithClipboard,
     FabricActiveSelectionWithIterator,
-    FabricTextObject,
 } from '../types/fabric-extensions';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 

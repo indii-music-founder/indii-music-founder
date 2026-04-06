@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
     CreditCard,
     Clock,
@@ -7,7 +7,6 @@ import {
     AlertTriangle,
     Download,
     ChevronRight,
-    ExternalLink,
     Banknote,
     ArrowUpRight
 } from 'lucide-react';

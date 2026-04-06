@@ -17,7 +17,7 @@
  */
 
 import { captainsLogService } from './CaptainsLogService';
-import { coreVaultService, type VaultCategory, ALL_VAULT_CATEGORIES } from './CoreVaultService';
+import { coreVaultService, type VaultCategory } from './CoreVaultService';
 import { userMemoryService } from '../UserMemoryService';
 import { memoryService } from '../MemoryService';
 import { logger } from '@/utils/logger';

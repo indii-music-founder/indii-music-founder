@@ -7,16 +7,12 @@ import { MemorySummarizer } from './MemorySummarizer';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryCategory,
-    IngestionEvent,
     IngestionContentType,
     IngestionStatus,
     MemoryEntity,
     MemorySource,
 } from '@/types/AlwaysOnMemory';
 import {
-    SUPPORTED_TEXT_EXTENSIONS,
-    SUPPORTED_MEDIA_EXTENSIONS,
-    ALL_SUPPORTED_EXTENSIONS,
     MAX_INLINE_FILE_SIZE_BYTES,
 } from '@/types/AlwaysOnMemory';
 import { Timestamp } from 'firebase/firestore';

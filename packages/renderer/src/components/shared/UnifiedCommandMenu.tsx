@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Command } from 'cmdk';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
-    AudioWaveform, FolderOpen, Video, Map, User, Briefcase,
+    AudioWaveform, FolderOpen, Video, Map, Briefcase,
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
-    Building, Music, ShieldAlert, Cpu, Workflow
+    Building, ShieldAlert, Cpu, Workflow
 } from 'lucide-react';
 
 export function UnifiedCommandMenu() {

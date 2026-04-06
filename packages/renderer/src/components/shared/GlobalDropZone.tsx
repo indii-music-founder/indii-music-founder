@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
-import { FileUp, FileAudio, FileImage, FileText, AlertTriangle } from 'lucide-react';
+import { FileAudio, FileImage, FileText } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
 

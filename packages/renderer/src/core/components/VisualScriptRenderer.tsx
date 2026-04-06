@@ -33,7 +33,7 @@ export default function VisualScriptRenderer({ data }: VisualScriptRendererProps
     const script: VisualScriptData | null = typeof data === 'string' ? (() => {
         try {
             return JSON.parse(data);
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             return null;
         }
     })() : data;

@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { db } from '@/services/firebase';
-import { Timestamp, FieldValue, collection, doc, runTransaction, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+import { Timestamp, FieldValue, collection, doc, runTransaction, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export interface RevenueReportItem {
     transactionId: string;
