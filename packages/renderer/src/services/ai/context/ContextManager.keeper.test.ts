@@ -36,7 +36,7 @@ describe('📚 Keeper: Context Window Integrity', () => {
         const payload = generateTokenLoad(msgTokenSize);
 
         // Confirm our generator works as expected (or close enough)
-        const actualTokenSize = ContextManager.estimateTokens(payload);
+        const _actualTokenSize = ContextManager.estimateTokens(payload);
 
         const history: Content[] = [
             createMsg('user', `ANCHOR_${payload}`),     // Index 0
@@ -48,7 +48,7 @@ describe('📚 Keeper: Context Window Integrity', () => {
         ];
 
         // Total tokens approx: 6 * (actualTokenSize + extra chars for ID)
-        const totalTokens = ContextManager.estimateContextTokens(history);
+        const _totalTokens = ContextManager.estimateContextTokens(history);
 
         // Budget: Enough for Anchor + Recent (3 messages) + a tiny bit of wiggle room,
         // but DEFINITELY not enough for 4 messages.

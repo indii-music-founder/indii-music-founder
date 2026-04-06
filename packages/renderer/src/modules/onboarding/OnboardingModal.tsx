@@ -161,7 +161,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
 
         } catch (error: unknown) {
             logger.error("Full Onboarding Error:", error);
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const _errorMessage = error instanceof Error ? error.message : String(error);
             // Optionally logs to a tracking service if needed, but avoiding console log spam here.
 
             const errorResponses = [

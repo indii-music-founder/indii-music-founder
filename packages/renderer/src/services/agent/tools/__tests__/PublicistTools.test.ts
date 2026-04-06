@@ -35,7 +35,7 @@ describe('PublicistTools', () => {
     });
 
     it('generate_social_post calls database', async () => {
-        const mockCampaign = { id: 'camp-1', platforms: ['twitter'] };
+        const _mockCampaign = { id: 'camp-1', platforms: ['twitter'] };
         // ...
     });
 

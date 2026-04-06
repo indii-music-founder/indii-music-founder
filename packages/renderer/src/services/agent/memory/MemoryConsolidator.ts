@@ -359,7 +359,7 @@ export class MemoryConsolidator {
             // Since writeBatch doesn't support reads, we'll use individual updates.
             try {
                 // Update the "from" memory
-                const fromRef = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', conn.fromMemoryId);
+                const _fromRef = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', conn.fromMemoryId);
                 // Note: In production, you'd read the current connections first.
                 // For simplicity, we use arrayUnion-like behavior.
                 // Firestore arrayUnion requires exact match, so we store as a subcollection instead.

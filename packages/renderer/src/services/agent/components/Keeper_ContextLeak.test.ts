@@ -72,7 +72,7 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         await new Promise(resolve => setTimeout(resolve, 50));
 
         // 2. Setup Chat B (Switching happens automatically on create)
-        const sessionB = store.createSession('Chat B');
+        const _sessionB = store.createSession('Chat B');
         store.addAgentMessage({ id: 'b1', role: 'user', text: 'Secret B', timestamp: Date.now() });
         await new Promise(resolve => setTimeout(resolve, 50));
 

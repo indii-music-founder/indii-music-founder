@@ -167,7 +167,7 @@ export const ApprovalManager: React.FC = () => {
     };
   }, []);
 
-  const handleClose = () => {
+  const _handleClose = () => {
     setClosing(true);
     setTimeout(() => {
       setCurrentRequest(null);

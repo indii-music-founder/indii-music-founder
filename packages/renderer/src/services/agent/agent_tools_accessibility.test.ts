@@ -116,7 +116,7 @@ describe('Agent Tool Accessibility Audit', () => {
             expect(BASE_TOOLS.length).toBeGreaterThan(0);
 
             // Count tool descriptions in BASE_TOOLS
-            const toolCount = (BASE_TOOLS.match(/\d+\.\s+\w+\(/g) || []).length;
+            const _toolCount = (BASE_TOOLS.match(/\d+\.\s+\w+\(/g) || []).length;
             // console.log(`\n📝 BASE_TOOLS describes ${toolCount} tools in system prompt`);
         });
     });
@@ -142,7 +142,7 @@ describe('Agent Tool Accessibility Audit', () => {
                     .flatMap(t => t.functionDeclarations || [])
                     .length;
 
-                const functionsCount = Object.keys(config.functions || {}).length;
+                const _functionsCount = Object.keys(config.functions || {}).length;
 
                 // Effective tools = config tools + filtered superpowers (capped at CURRENT_LIMIT)
                 const totalPotential = configuredToolCount + SUPERPOWER_TOOL_COUNT;
@@ -157,8 +157,8 @@ describe('Agent Tool Accessibility Audit', () => {
                     overLimit
                 });
 
-                const status = overLimit ? '⚠️' : '✅';
-                const lostTools = overLimit ? ` (${totalPotential - CURRENT_LIMIT} tools cut off!)` : '';
+                const _status = overLimit ? '⚠️' : '✅';
+                const _lostTools = overLimit ? ` (${totalPotential - CURRENT_LIMIT} tools cut off!)` : '';
 
                 // console.log(`${status} ${config.name.padEnd(25)} | Configured: ${configuredToolCount.toString().padStart(2)} | Functions: ${functionsCount.toString().padStart(2)} | Effective: ${effectiveTools}${lostTools}`);
             });

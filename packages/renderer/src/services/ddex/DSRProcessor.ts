@@ -100,7 +100,7 @@ export class DSRProcessor {
 
     private calculateSplits(netAmount: number, splits: RoyaltySplit[]): ContributorPayment[] {
         // Validate split sum (should be 100)
-        const totalPercentage = splits.reduce((sum, s) => sum + s.percentage, 0);
+        const _totalPercentage = splits.reduce((sum, s) => sum + s.percentage, 0);
         // If not 100, normalize or warn? For now assume valid GoldenMetadata.
 
         return splits.map(split => {

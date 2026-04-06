@@ -515,7 +515,7 @@ CURRENT REQUEST: ${task}
 
             try {
                 // DEBUG: Log tool declarations being sent to model
-                const toolCount = this.tools?.[0]?.functionDeclarations?.length || 0;
+                const _toolCount = this.tools?.[0]?.functionDeclarations?.length || 0;
 
                 const { stream, response: responsePromise } = await AI.generateContentStream(
                     [{

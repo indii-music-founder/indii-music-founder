@@ -21,9 +21,9 @@ describe('QA Stress Tests: Reliability & Stability', () => {
             const acquisitions: number[] = [];
 
             // Fire 5 requests immediately
-            const p1 = limiter.acquire().then(() => acquisitions.push(Date.now()));
-            const p2 = limiter.acquire().then(() => acquisitions.push(Date.now()));
-            const p3 = limiter.acquire().then(() => acquisitions.push(Date.now()));
+            const _p1 = limiter.acquire().then(() => acquisitions.push(Date.now()));
+            const _p2 = limiter.acquire().then(() => acquisitions.push(Date.now()));
+            const _p3 = limiter.acquire().then(() => acquisitions.push(Date.now()));
 
             // First should happen immediately (burst)
             await vi.advanceTimersByTimeAsync(1); // minimal tick

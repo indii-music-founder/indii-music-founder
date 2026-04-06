@@ -42,7 +42,7 @@ const IconButton = ({ icon, onClick, label, disabled, title }: { icon: React.Rea
     </button>
 );
 
-const ColorSwatch = ({ color, active, onClick, className }: { color: string, active?: boolean, onClick: () => void, className?: string }) => (
+const _ColorSwatch = ({ color, active, onClick, className }: { color: string, active?: boolean, onClick: () => void, className?: string }) => (
     <button
         onClick={onClick}
         className={cn(

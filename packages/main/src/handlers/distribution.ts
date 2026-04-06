@@ -41,7 +41,7 @@ export const setupDistributionHandlers = () => {
 
             const tempDir = os.tmpdir();
             const stagingPath = path.join(tempDir, 'indiiOS-releases', validated.releaseId);
-            const resolvedStagingPath = path.resolve(stagingPath) + path.sep; // Ensure trailing slash for security check
+            const _resolvedStagingPath = path.resolve(stagingPath) + path.sep; // Ensure trailing slash for security check
 
             // cleaned up previous staging if exists
             try {

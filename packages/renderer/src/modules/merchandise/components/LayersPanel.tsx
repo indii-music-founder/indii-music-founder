@@ -182,7 +182,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1">
                         {displayLayers.map((layer, index) => {
                             const isSelected = selectedLayer?.id === layer.id;
-                            const actualIndex = layers.length - 1 - index;
+                            const _actualIndex = layers.length - 1 - index;
 
                             return (
                                 <div

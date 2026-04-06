@@ -27,13 +27,13 @@ const DATASETS_DIR = path.resolve(__dirname, '../../../../../../docs/agent-train
 const REQUIRED_FIELDS = ['agent_id', 'scenario_id', 'category', 'input', 'expected'];
 
 /** Optional fields that should be typed correctly if present */
-const OPTIONAL_FIELDS = ['difficulty', 'artist_stance', 'tools_called', 'reasoning_chain'];
+const _OPTIONAL_FIELDS = ['difficulty', 'artist_stance', 'tools_called', 'reasoning_chain'];
 
 /** Minimum example count per agent (from MASTER_TRAINING_PLAN) */
 const MIN_EXAMPLES_PER_AGENT = 20;
 
 /** Known valid categories from SCHEMA.md */
-const VALID_CATEGORIES = [
+const _VALID_CATEGORIES = [
     'core_competency',
     'edge_case',
     'guard_rail',

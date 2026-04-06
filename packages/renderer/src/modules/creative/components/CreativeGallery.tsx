@@ -364,7 +364,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     });
 
     // ⚡ Bolt Optimization: Stable delete handler
-    const handleDelete = useCallback((id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => {
+    const _handleDelete = useCallback((id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => {
         if (origin === 'uploaded') {
             if (type === 'music') removeUploadedAudio(id);
             else removeUploadedImage(id);

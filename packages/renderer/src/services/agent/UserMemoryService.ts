@@ -561,7 +561,7 @@ Be specific and actionable. Avoid generic statements.
     userId: string,
     config: Partial<MemoryConsolidationConfig> = {}
   ): Promise<MemoryBatchResult> {
-    const fullConfig = { ...DEFAULT_CONSOLIDATION_CONFIG, ...config };
+    const _fullConfig = { ...DEFAULT_CONSOLIDATION_CONFIG, ...config };
     const service = this.getService(userId);
     const memories = await service.list();
 

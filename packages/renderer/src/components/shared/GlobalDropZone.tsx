@@ -49,7 +49,7 @@ async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?
 }
 
 export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const generateFileId = (file: File) => {
+    const _generateFileId = (file: File) => {
         const randValues = new Uint32Array(1);
         crypto.getRandomValues(randValues);
         const randomId = (randValues[0] ?? 0).toString(16);

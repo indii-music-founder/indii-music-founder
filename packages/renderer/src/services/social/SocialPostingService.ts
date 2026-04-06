@@ -57,7 +57,7 @@ export class SocialPostingService {
 
             // Format caption with hashtags
             const formattedTags = request.hashtags?.map(tag => tag.startsWith('#') ? tag : `#${tag}`).join(' ') || '';
-            const finalCaption = `${request.caption}\n\n${formattedTags}`.trim();
+            const _finalCaption = `${request.caption}\n\n${formattedTags}`.trim();
 
             // Mock API network delay (simulates upload/processing time)
             await new Promise(resolve => setTimeout(resolve, 2000));

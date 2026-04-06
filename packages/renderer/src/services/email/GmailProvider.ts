@@ -238,7 +238,7 @@ export class GmailProvider implements EmailProviderInterface {
         data: ComposeEmailData
     ): Promise<SendEmailResult> {
         // Construct RFC 2822 message
-        const boundary = `boundary_${Date.now()}`;
+        const _boundary = `boundary_${Date.now()}`;
         const to = data.to.join(', ');
         const cc = data.cc?.join(', ') || '';
         const bcc = data.bcc?.join(', ') || '';

@@ -331,7 +331,7 @@ export class ENSIdentityService {
         const M5 = [0, 1, 2, 3, 4, 0, 1, 2, 3, 4];
 
         const rate = 136; // Keccak-256: rate = 1088 bits = 136 bytes
-        const capacity = 64;
+        const _capacity = 64;
         const hashLen = 32;
 
         // Pad message

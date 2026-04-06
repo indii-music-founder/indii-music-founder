@@ -496,7 +496,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
     ];
 
     // Flatten for backward compatibility
-    const productTypes = productCategories.flatMap(cat => cat.items);
+    const _productTypes = productCategories.flatMap(cat => cat.items);
 
     return (
         <div className="flex-1 text-white overflow-hidden flex flex-col bg-black">

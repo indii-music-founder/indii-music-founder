@@ -120,7 +120,7 @@ describe('Ledger\'s Cost Circuit Breaker', () => {
     it('enforces the $1.00 Hard Limit on daily spend', async () => {
         // "The 'Hard Limit': Set a budget of $1.00. Run a loop of tasks. Assert the system halts exactly when $1.00 is breached."
 
-        const BUDGET_LIMIT = 1.00;
+        const _BUDGET_LIMIT = 1.00;
         const TASK_COST = 0.20;
         let currentSpend = 0;
 
