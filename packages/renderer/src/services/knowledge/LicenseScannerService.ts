@@ -66,7 +66,7 @@ export class LicenseScannerService {
             const analysis = await GenAI.generateStructuredData<LicenseAnalysis>(prompt, schema as Record<string, unknown>);
             return analysis;
 
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             return {
                 licenseType: 'Unknown',
                 requiresAttribution: false,

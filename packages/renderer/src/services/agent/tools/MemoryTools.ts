@@ -78,7 +78,7 @@ export const MemoryTools = {
         let verification;
         try {
             verification = JSON.parse(text);
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             logger.error('[MemoryTools] Failed to parse verification JSON:', text);
             verification = { score: 0, pass: false, reasoning: 'Failed to parse AI response' };
         }

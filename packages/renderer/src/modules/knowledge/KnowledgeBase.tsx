@@ -29,7 +29,7 @@ export default function KnowledgeBase() {
         try {
             const docs = await knowledgeBaseService.getDocuments();
             setDocuments(docs);
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error("Failed to load Knowledge Base.");
         } finally {
             setIsLoading(false);
@@ -57,7 +57,7 @@ export default function KnowledgeBase() {
             } else {
                 toast.error("Upload failed.");
             }
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error("Upload encountered an error.");
         } finally {
             setIsUploading(false);

@@ -736,7 +736,7 @@ export class FirebaseAIService implements AIContext {
             logger.debug('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
             logger.debug('[DEBUG-PAYLOAD] prompt:', JSON.stringify(sanitizedForLog).substring(0, 500) + "...");
             logger.debug('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
-        } catch (e: unknown) { /* Ignore logging errors */ }
+        } catch (_e: unknown) { /* Ignore logging errors */ }
 
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }

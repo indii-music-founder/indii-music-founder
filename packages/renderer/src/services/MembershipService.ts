@@ -400,7 +400,7 @@ class MembershipServiceImpl {
             if (email === 'the.walking.agency.det@gmail.com') {
                 return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
             }
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             // Ignore
         }
 
@@ -429,8 +429,8 @@ class MembershipServiceImpl {
                     const q = query(collection(db, 'projects'), where('orgId', '==', 'personal'), where('userId', '==', userId));
                     const snapshot = await getCountFromServer(q);
                     currentUsage = snapshot.data().count;
-                } catch (e: unknown) {
-                    logger.warn('[MembershipService] Failed to count projects:', e);
+                } catch (_e: unknown) {
+                    logger.warn("[MembershipService] Failed to count projects:", _e);
                     currentUsage = 0;
                 }
                 // Check if quota is unlimited first
@@ -461,8 +461,8 @@ class MembershipServiceImpl {
                         // This might need adjustment based on exact data model
                         currentUsage = 0;
                     }
-                } catch (e: unknown) {
-                    logger.warn('[MembershipService] Failed to count projects:', e);
+                } catch (_e: unknown) {
+                    logger.warn("[MembershipService] Failed to count projects:", _e);
                     currentUsage = 0; // Fail open but warn
                 }
 

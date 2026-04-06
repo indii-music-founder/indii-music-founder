@@ -98,7 +98,7 @@ export default function InfluencerBountyBoard() {
             setBounties(prev => [newBounty, ...prev]);
             setInfluencerName('');
             toast.success("Bounty and referral link created!");
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error("Failed to create bounty.");
         } finally {
             setIsCreating(false);

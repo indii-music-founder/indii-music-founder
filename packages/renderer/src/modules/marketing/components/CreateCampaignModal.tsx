@@ -94,7 +94,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
             toast.success('Campaign created successfully!');
             onSave(id);
             onClose();
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error('Failed to create campaign');
         } finally {
             setIsLoading(false);

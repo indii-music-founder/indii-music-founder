@@ -145,7 +145,7 @@ Only return valid JSON.
 
             await LegalService.generateNDA(parties, purpose);
             toast.success("NDA Template generated! Check console for output.");
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error("Failed to generate NDA.");
         } finally {
             setIsGenerating(null);
@@ -161,7 +161,7 @@ Only return valid JSON.
 
             await LegalService.draftContract(type, parties, terms);
             toast.success("IP Assignment generated! Check console for output.");
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error("Failed to generate IP Assignment.");
         } finally {
             setIsGenerating(null);

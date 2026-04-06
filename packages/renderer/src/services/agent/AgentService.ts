@@ -668,7 +668,7 @@ If the user asks you to do something that requires active tools (like generating
             // Deep clone to isolate execution contexts
             try {
                 context = structuredClone(parentContext);
-            } catch (e: unknown) {
+            } catch (_e: unknown) {
                 context = { ...parentContext };
             }
 

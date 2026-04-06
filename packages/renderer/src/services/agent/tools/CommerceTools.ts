@@ -61,7 +61,7 @@ export const CommerceTools = {
 
             const result = await createPaymentLinksFn({ campaignName: args.campaignName, items: args.items });
             return toolSuccess(result.data, `Storefront deployed for "${args.campaignName}" with ${args.items.length} real Stripe Payment Links.`);
-        } catch (err: unknown) {
+        } catch (_err: unknown) {
             // Cloud Function not yet deployed — return a staged preview URL with clear status
             const slug = args.campaignName.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
             logger.warn('[CommerceTools] createStripePaymentLinks not available, returning staged preview');

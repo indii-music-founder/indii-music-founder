@@ -138,7 +138,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
             } else {
                 toast.error('Failed to regenerate image');
             }
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             setPostStates(prev => prev.map(state =>
                 state.post.id === postId ? { ...state, status: 'error' } : state
             ));

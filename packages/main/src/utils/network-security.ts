@@ -133,7 +133,7 @@ export async function validateSafeHostAsync(hostInput: string): Promise<void> {
     try {
         const u = new URL('https://' + hostInput);
         hostname = u.hostname;
-    } catch (e) {
+    } catch (_e) {
         // Fallback to raw input if URL parsing fails
     }
 
@@ -170,7 +170,7 @@ export async function validateSafeUrlAsync(urlString: string): Promise<void> {
     let url: URL;
     try {
         url = new URL(urlString);
-    } catch (e) {
+    } catch (_e) {
         throw new Error('Invalid URL format');
     }
 

@@ -25,7 +25,7 @@ export const SOCIAL_TOOLS = {
                 AI_MODELS.TEXT.AGENT
             );
             return res.response.text() || "Failed to generate copy.";
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             return "Error generating copy.";
         }
     },

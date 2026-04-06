@@ -309,7 +309,7 @@ export class SubscriptionService {
 
       const result = await createSessionFn(params);
       return result.data as CheckoutSessionResponse;
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
       throw new Error('Failed to create checkout session. Please try again.');
     }
   }
@@ -331,7 +331,7 @@ export class SubscriptionService {
         returnUrl
       });
       return result.data as { url: string };
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
       throw new Error('Failed to access customer portal. Please try again.');
     }
   }
@@ -354,7 +354,7 @@ export class SubscriptionService {
       // Invalidate cache
       this.subscriptionCache.delete(targetUserId);
       cacheService.invalidate(`subscription:${targetUserId}`);
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
       throw new Error('Failed to cancel subscription. Please try again.');
     }
   }
@@ -377,7 +377,7 @@ export class SubscriptionService {
       // Invalidate cache
       this.subscriptionCache.delete(targetUserId);
       cacheService.invalidate(`subscription:${targetUserId}`);
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
       throw new Error('Failed to resume subscription. Please try again.');
     }
   }

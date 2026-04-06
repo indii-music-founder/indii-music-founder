@@ -69,11 +69,11 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                 timestamp: Date.now()
             };
             setMessages(prev => [...prev, botMsg]);
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             const errorMsg: ChatMessage = {
                 id: Date.now().toString(),
                 role: 'model',
-                content: "I apologize, but I encountered an error processing your request.",
+                content: "I apologize, but I encountered an _error processing your request.",
                 timestamp: Date.now(),
                 isError: true
             };

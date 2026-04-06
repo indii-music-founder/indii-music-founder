@@ -43,7 +43,7 @@ async function generateWithGemini(prompt: string, schema?: any): Promise<any> {
         // Clean up markdown code blocks if present
         const jsonStr = text.replace(/```json\n?|\n?```/g, "");
         return JSON.parse(jsonStr);
-    } catch (e) {
+    } catch (_e) {
         console.error("Failed to parse JSON from Gemini:", text);
         throw new Error("Invalid JSON response from AI");
     }

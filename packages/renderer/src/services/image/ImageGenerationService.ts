@@ -235,7 +235,7 @@ export class ImageGenerationService {
                         resolution: options.resolution
                     });
                 }
-            } catch (e: unknown) {
+            } catch (_e: unknown) {
                 // Usage tracking failure should not block generation
             }
 

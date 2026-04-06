@@ -245,11 +245,11 @@ export class VenueScoutService {
                         createdAt: serverTimestamp()
                     });
                     return [{ id: docRef.id, ...newVenue } as Venue];
-                } catch (e: unknown) {
+                } catch (_e: unknown) {
                     return [{ id: 'temp-autonomous', ...newVenue } as Venue];
                 }
             }
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             // logger.error("Autonomous search failed", e);
         }
         return [];
