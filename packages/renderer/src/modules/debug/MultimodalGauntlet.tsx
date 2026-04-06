@@ -6,9 +6,24 @@ import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Play, CheckCircle, AlertCircle, Image as ImageIcon, Video } from 'lucide-react';
+import { Loader2, Play } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { GauntletStep } from './components/GauntletStep';
+import { GauntletPreview } from './components/GauntletPreview';
 
+/**
+ * MultimodalGauntlet — Debug tool for proving consistent AI generation.
+ *
+ * Executes a 4-step pipeline:
+ *   1. Primary Image Generation
+ *   2. Derivative Image (remix/consistency test)
+ *   3. Video interpolation (start→end frame)
+ *   4. Loop synchronization (reverse mapping)
+ *
+ * Architecture:
+ * - GauntletStep    → Individual step status card (pending/active/complete)
+ * - GauntletPreview → Live preview panel with loading overlay + video job badge
+ */
 export default function MultimodalGauntlet() {
     const { userProfile } = useStore(useShallow(state => ({
         userProfile: state.userProfile
@@ -48,10 +63,9 @@ export default function MultimodalGauntlet() {
 
             // STEP 2: IMAGE 2 (THE DERIVATIVE)
             setStep(2);
-            // Logic: Remix Image 1 into a night version or similar
             const img2Results = await ImageGeneration.remixImage({
                 contentImage: { mimeType: 'image/png', data: img1.split(',')[1] || img1 },
-                styleImage: { mimeType: 'image/png', data: img1.split(',')[1] || img1 }, // Using same image as style for consistency in demo
+                styleImage: { mimeType: 'image/png', data: img1.split(',')[1] || img1 },
                 prompt: "The same studio but with a holographic DJ booth. IS it spelled in capital letters both times."
             });
             if (!img2Results) throw new Error("Image 2 failed to generate.");
@@ -90,6 +104,19 @@ export default function MultimodalGauntlet() {
         }
     };
 
+    const steps = [
+        { num: 1, title: "Primary Image Generation", detail: "Bypassing App Check locally for developer verification." },
+        { num: 2, title: "Derivative Reference (Consistency)", detail: "Generating last frame from primary context." },
+        { num: 3, title: "Temporal Interpolation (Video)", detail: "Veo 3.1: Startframe -> Endframe mapping." },
+        { num: 4, title: "Loop Synchronization", detail: "Inverse mapping for seamless loop." },
+    ];
+
+    const getStepStatus = (num: number) => {
+        if (step > num) return 'complete' as const;
+        if (step === num) return 'active' as const;
+        return 'pending' as const;
+    };
+
     return (
         <div className="p-8 max-w-4xl mx-auto space-y-8 bg-background min-h-screen">
             <header className="space-y-2">
@@ -107,30 +134,15 @@ export default function MultimodalGauntlet() {
                         <Play className="w-4 h-4 text-purple-400" /> Executive Logic
                     </h3>
                     <div className="space-y-3">
-                        <GauntletStep
-                            num={1}
-                            title="Primary Image Generation"
-                            status={step > 1 ? 'complete' : step === 1 ? 'active' : 'pending'}
-                            detail="Bypassing App Check locally for developer verification."
-                        />
-                        <GauntletStep
-                            num={2}
-                            title="Derivative Reference (Consistency)"
-                            status={step > 2 ? 'complete' : step === 2 ? 'active' : 'pending'}
-                            detail="Generating last frame from primary context."
-                        />
-                        <GauntletStep
-                            num={3}
-                            title="Temporal Interpolation (Video)"
-                            status={step > 3 ? 'complete' : step === 3 ? 'active' : 'pending'}
-                            detail="Veo 3.1: Startframe -> Endframe mapping."
-                        />
-                        <GauntletStep
-                            num={4}
-                            title="Loop Synchronization"
-                            status={step > 4 ? 'complete' : step === 4 ? 'active' : 'pending'}
-                            detail="Inverse mapping for seamless loop."
-                        />
+                        {steps.map(s => (
+                            <GauntletStep
+                                key={s.num}
+                                num={s.num}
+                                title={s.title}
+                                status={getStepStatus(s.num)}
+                                detail={s.detail}
+                            />
+                        ))}
                     </div>
 
                     <Button
@@ -144,37 +156,12 @@ export default function MultimodalGauntlet() {
                 </Card>
 
                 <div className="space-y-4">
-                    <Card className="p-6 bg-surface/30 border-white/5 h-full min-h-[400px] flex flex-col">
-                        <h3 className="text-lg font-bold mb-4">Live Preview</h3>
-                        <div className="flex-1 border border-white/10 rounded-lg flex items-center justify-center bg-black/40 overflow-hidden relative">
-                            {results.img1 && (
-                                <img src={results.img1} alt="Result" className="w-full h-full object-cover" />
-                            )}
-                            {loading && (
-                                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-center p-4">
-                                    <Loader2 className="w-12 h-12 text-purple-500 animate-spin mb-4" />
-                                    <p className="text-xl font-bold italic tracking-widest text-white">IF IT WORKED...</p>
-                                    <p className="text-sm text-purple-400 font-mono mt-2 animate-pulse">PROCESSING STEP {step}</p>
-                                </div>
-                            )}
-                            {!loading && !results.img1 && (
-                                <div className="text-muted-foreground flex flex-col items-center gap-2">
-                                    <ImageIcon className="w-12 h-12 opacity-20" />
-                                    <p className="text-xs font-mono uppercase tracking-widest">Waiting for Execution</p>
-                                </div>
-                            )}
-                        </div>
-                        {results.vid1 && (
-                            <div className="mt-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded flex items-center gap-3">
-                                <Video className="w-5 h-5 text-purple-400" />
-                                <div className="flex-1">
-                                    <p className="text-xs font-bold text-white leading-none">Job ID Detected</p>
-                                    <p className="text-[10px] font-mono text-purple-300 opacity-80">{results.vid1}</p>
-                                </div>
-                                <div className="text-[10px] font-bold px-2 py-1 bg-purple-500/40 rounded uppercase tracking-tighter">Live</div>
-                            </div>
-                        )}
-                    </Card>
+                    <GauntletPreview
+                        loading={loading}
+                        step={step}
+                        resultImage={results.img1}
+                        videoJobId={results.vid1}
+                    />
                 </div>
             </div>
 
@@ -183,35 +170,6 @@ export default function MultimodalGauntlet() {
                 <div>Logic: Multimodal Chain Verification</div>
                 <div className="text-purple-500 font-bold">Protocol: IS IT SPELLED IN CAPITAL LETTERS BOTH TIMES</div>
             </footer>
-        </div>
-    );
-}
-
-function GauntletStep({ num, title, status, detail }: { num: number, title: string, status: 'pending' | 'active' | 'complete', detail: string }) {
-    const isPending = status === 'pending';
-    const isActive = status === 'active';
-    const isComplete = status === 'complete';
-
-    return (
-        <div className={`p-3 rounded-lg border transition-all duration-500 ${isActive ? 'bg-purple-900/30 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)]' :
-            isComplete ? 'bg-green-900/10 border-green-500/30' :
-                'bg-surface/30 border-white/5 opacity-50'
-            }`}>
-            <div className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isActive ? 'bg-purple-500 text-white animate-pulse' :
-                    isComplete ? 'bg-green-500 text-black' :
-                        'bg-white/10 text-white'
-                    }`}>
-                    {isComplete ? <CheckCircle className="w-4 h-4" /> : num}
-                </div>
-                <div className="flex-1">
-                    <p className={`text-xs font-bold ${isActive ? 'text-white' : isComplete ? 'text-green-400' : 'text-muted-foreground'}`}>
-                        {title}
-                    </p>
-                    <p className="text-[10px] opacity-60 leading-tight mt-0.5">{detail}</p>
-                </div>
-                {isActive && <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping" />}
-            </div>
         </div>
     );
 }

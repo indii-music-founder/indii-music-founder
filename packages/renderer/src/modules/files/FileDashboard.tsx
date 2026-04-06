@@ -6,6 +6,8 @@ import { Folder, File, Image as ImageIcon, Music, Video, FileText, Search, Plus,
 import { FileNode } from '@/services/FileSystemService';
 import { cn } from '@/lib/utils';
 import FilePreview from './FilePreview';
+import { NavItem } from './components/NavItem';
+import { DetailRow } from './components/DetailRow';
 
 export default function FileDashboard() {
     const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode } = useStore(useShallow(state => ({
@@ -266,42 +268,6 @@ export default function FileDashboard() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
-    );
-}
-
-function NavItem({ icon: Icon, label, count, active, onClick }: { icon: React.ElementType, label: string, count?: number, active?: boolean, onClick?: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className={cn(
-                "w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all text-sm",
-                active
-                    ? "bg-blue-500/10 text-blue-400 font-medium"
-                    : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
-            )}
-        >
-            <div className="flex items-center gap-3">
-                <Icon size={16} />
-                <span>{label}</span>
-            </div>
-            {count !== undefined && (
-                <span className={cn(
-                    "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                    active ? "bg-blue-500/20 text-blue-300" : "bg-white/5 text-gray-500"
-                )}>
-                    {count}
-                </span>
-            )}
-        </button>
-    );
-}
-
-function DetailRow({ label, value, className }: { label: string, value: string, className?: string }) {
-    return (
-        <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">{label}</span>
-            <span className={cn("text-gray-200 font-medium", className)}>{value}</span>
         </div>
     );
 }

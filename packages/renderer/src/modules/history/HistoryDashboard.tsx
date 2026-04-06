@@ -5,6 +5,7 @@ import { formatSmartDate, cn } from '@/lib/utils';
 import { MessageSquare, Calendar, Trash2, X, Edit2, Check, Clock, Search, Filter, Activity, FileText, Image as ImageIcon, Music, Video as VideoIcon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationSession } from '@/core/store/slices/agent';
+import { FilterItem } from './components/FilterItem';
 
 export default function HistoryDashboard() {
     const {
@@ -216,22 +217,5 @@ export default function HistoryDashboard() {
                 </div>
             </div>
         </div>
-    );
-}
-
-function FilterItem({ icon: Icon, label, active, onClick }: { icon: React.ElementType, label: string, active?: boolean, onClick?: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium",
-                active
-                    ? "bg-purple-500/20 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.1)] border border-purple-500/30"
-                    : "text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent"
-            )}
-        >
-            <Icon size={16} />
-            <span>{label}</span>
-        </button>
     );
 }
