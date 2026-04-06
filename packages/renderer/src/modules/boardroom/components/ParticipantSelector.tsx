@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Briefcase, Target, Scale, DollarSign, Palette, Film, Share2, Library, Shield } from 'lucide-react';
+import { Briefcase, Target, Scale, DollarSign, Palette, Film, Share2, Library } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 

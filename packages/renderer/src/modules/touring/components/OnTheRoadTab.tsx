@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 import { motion } from 'motion/react';
-import { MapPin, Navigation, Gauge, Zap, Fuel, Clock, ArrowRight, AlertTriangle, CheckCircle2, Crosshair } from 'lucide-react';
+import { Navigation, Gauge, Zap, Fuel, Clock, Crosshair } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
@@ -51,7 +51,6 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
 
     // Simulate telemetry updates
-
 
     const handleLocateMe = () => {
         if (!navigator.geolocation) return;

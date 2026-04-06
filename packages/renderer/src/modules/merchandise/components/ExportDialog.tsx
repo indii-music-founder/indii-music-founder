@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Download, FileImage } from 'lucide-react';
-import { MerchButton } from './MerchButton';
-
 export interface ExportDialogProps {
     onExport: (format: 'png' | 'jpeg' | 'svg' | 'webp') => void;
     onCancel: () => void;

@@ -1,9 +1,8 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { TraceViewer } from './TraceViewer';
 import { AgentTrace } from '@/services/agent/observability/types';
 import type { Timestamp } from 'firebase/firestore';
-
 
 // Mock data
 const mockTrace: AgentTrace = {
@@ -16,7 +15,6 @@ const mockTrace: AgentTrace = {
     steps: [],
     endTime: { seconds: 1600000010, nanoseconds: 0, toDate: () => new Date(), toMillis: () => 1600000010000, isEqual: () => false, valueOf: () => '' } as unknown as Timestamp,
 };
-
 
 // Mock dependencies
 const mockOnSnapshot = vi.fn((query, callback) => {

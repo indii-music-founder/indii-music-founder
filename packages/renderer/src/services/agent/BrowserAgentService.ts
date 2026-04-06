@@ -415,7 +415,7 @@ Respond with a JSON object describing your next action. Use one of these types:
             }
 
             return parsed as unknown as BrowserAction;
-        } catch (_parseError: unknown) {
+        } catch (__parseError: unknown) {
             // If parsing fails entirely, treat the response as a completion message
             return { type: 'done', result: `Could not parse action. Model said: ${text.substring(0, 500)}` };
         }

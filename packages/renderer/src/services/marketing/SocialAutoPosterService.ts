@@ -108,8 +108,6 @@ export class SocialAutoPosterService {
         }, 300);
     }
 
-
-
     /**
      * Revokes or deletes a scheduled post if it hasn't been published yet.
      */
@@ -137,7 +135,7 @@ export class SocialAutoPosterService {
 
             const result = await getInsightsFn({ externalId, platform });
             return result.data;
-        } catch (_error: unknown) {
+        } catch (__error: unknown) {
             logger.warn(`[SocialPost] Insights Cloud Function unavailable for ${platform}:${externalId}. Deploy Cloud Function 'getSocialPostInsights'.`);
             return {
                 views: 0,

@@ -34,8 +34,6 @@ import { currencyConversionService } from './CurrencyConversionService';
 import { retryWithBackoff, CircuitBreaker, withTimeout } from '@/core/utils/resilience';
 import {
   ExtendedGoldenMetadataSchema,
-  DSRReportSchema,
-  ReleaseAssetsSchema,
   DistributorEarningsSchema
 } from '@/services/ddex/validation';
 

@@ -5,38 +5,15 @@ import {
     Plus,
     GripVertical,
     X,
-    Music,
-    DollarSign,
-    Calendar,
-    TrendingUp,
-    Bot,
     Edit3,
-    BarChart3,
     Undo2,
-    Users,
-    Activity,
     CheckSquare,
     ThumbsUp,
     Palette,
     ShoppingBag,
     MapPin,
 } from 'lucide-react';
-import { useStore } from '@/core/store';
-import { useShallow } from 'zustand/react/shallow';
-import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 import type {
-    DashboardRevenueStats,
-    DashboardStreamsStats,
-    DashboardAudienceStats,
-    DashboardTopTrack,
-    DashboardNextRelease,
-    DashboardAgentActivity,
-    DashboardActiveCampaigns,
-    DashboardPendingTasks,
-    DashboardSocialEngagement,
-    DashboardBrandIdentity,
-    DashboardMerchSales,
-    DashboardTourStatus,
 } from '@/services/dashboard/schema';
 
 /* ================================================================== */

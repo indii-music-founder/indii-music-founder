@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, Suspense, Component, ErrorInfo } from 'react';
+import React, { useState, useMemo, useEffect, Suspense, Component, ErrorInfo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import { Mesh } from 'three'; // Item 357: Named import enables Three.js tree-shaking

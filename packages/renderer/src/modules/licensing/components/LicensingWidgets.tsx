@@ -2,8 +2,6 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { CreditCard, TrendingUp, Users, ArrowUpRight } from 'lucide-react';
 
-import { License, LicenseRequest } from '@/services/licensing/types';
-
 interface MetricsGridProps {
     activeLicensesCount: number;
     pendingRequestsCount: number;

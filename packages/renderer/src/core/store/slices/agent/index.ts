@@ -30,7 +30,7 @@ export type { AgentMessage, AgentThought, ConversationSession } from './agentSes
  * Composed StateCreator that merges all 3 agent sub-slices.
  * This is the single entry point consumed by the root store.
  */
-export const createAgentSlice: StateCreator<AgentSlice> = (set, get, store) => {
+export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => {
     // Each builder receives the full set/get so cross-slice reads work
     // (e.g., setActiveSession sets rightPanelView from UI slice)
     const uiState = buildAgentUIState(set, get);

@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download } from 'lucide-react';

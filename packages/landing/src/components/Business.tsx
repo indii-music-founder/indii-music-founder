@@ -4,7 +4,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
-import { Points, PointMaterial, Instances, Instance, Float } from '@react-three/drei';
+import { Points, PointMaterial, Instances, Instance } from '@react-three/drei';
 import { useAudioStore } from '../store/audioStore';
 
 function GlobalNetwork() {

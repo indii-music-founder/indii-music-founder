@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LicensingService } from './LicensingService';
-import { FirestoreService } from '../FirestoreService';
-
 // --- Mocks ---
 
 const {

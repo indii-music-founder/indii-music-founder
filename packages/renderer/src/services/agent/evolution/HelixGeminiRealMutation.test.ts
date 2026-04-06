@@ -38,7 +38,7 @@ const geminiMutationFn = async (gene: AgentGene): Promise<AgentGene> => {
       systemPrompt: mutation.systemPrompt,
       parameters: { ...gene.parameters, ...mutation.parameters }
     };
-  } catch (e: unknown) {
+  } catch (_e: unknown) {
     // Fallback or re-throw (EvolutionEngine handles retries)
     throw new Error("Gemini produced invalid JSON");
   }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plane, Calendar, FileText, CheckCircle } from 'lucide-react';
+import { Plane, FileText, CheckCircle } from 'lucide-react';
 
 export const VisaImmigrationChecklist: React.FC = () => {
     // Visa/Immigration Checklist Module mock (Item 140)

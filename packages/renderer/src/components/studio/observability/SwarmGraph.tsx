@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -92,7 +92,6 @@ export function SwarmGraph({ swarmId, onNodeClick }: SwarmGraphProps) {
                     color: '#666',
                 },
             }));
-
 
         // Simple horizontal centering if no better layout is available
         // We can improve this with d3-hierarchy or dagre later

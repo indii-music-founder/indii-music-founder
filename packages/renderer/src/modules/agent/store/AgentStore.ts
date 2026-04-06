@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Venue, GigOpportunity, AgentAction, OutreachCampaign, GigStatus, AgentActionType } from '../types';
+import { Venue, GigOpportunity, AgentAction, OutreachCampaign, GigStatus } from '../types';
 
 interface AgentState {
     venues: Venue[];

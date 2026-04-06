@@ -1,6 +1,3 @@
-import React from 'react';
-import { Clock, CheckCircle2, AlertCircle, Building2, Radio, FileMusic, Copyright } from 'lucide-react';
-
 export type RegistrationStatus = 'not_started' | 'in_progress' | 'active' | 'blocked';
 
 export interface RoyaltyProfile {

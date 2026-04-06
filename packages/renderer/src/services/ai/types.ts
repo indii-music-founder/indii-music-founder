@@ -10,7 +10,6 @@ import type {
     ContentPart,
     SafetySetting,
     ToolConfig,
-    GenerationConfig,
 } from '@/shared/types/ai.dto';
 
 // ============================================================================

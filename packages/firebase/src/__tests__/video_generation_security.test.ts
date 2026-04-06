@@ -112,7 +112,7 @@ describe('🛡️ Shield: Video Generation Security', () => {
 
         try {
             await handler({ event, step: mockStep });
-        } catch (e) {
+        } catch (_e) {
             // Ignore processing errors, we just want to check the fetch call
         }
 

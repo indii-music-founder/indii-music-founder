@@ -28,7 +28,7 @@ export type { ShotItem, WhiskCategory, TargetMedia, WhiskItem, WhiskState, Saved
  * Composed StateCreator that merges both creative sub-slices.
  * This is the single entry point consumed by the root store.
  */
-export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get, store) => {
+export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => {
     const historyState = buildCreativeHistoryState(set, get);
     const controlsState = buildCreativeControlsState(set, get);
 

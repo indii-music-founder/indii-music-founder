@@ -16,7 +16,7 @@
 
 import { logger } from '@/utils/logger';
 import { auth, db } from '@/services/firebase';
-import { doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, limit, Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, Unsubscribe } from 'firebase/firestore';
 import { GmailProvider } from './GmailProvider';
 import { OutlookProvider } from './OutlookProvider';
 import type {
@@ -28,7 +28,6 @@ import type {
     ComposeEmailData,
     SendEmailResult,
     EmailProviderInterface,
-    OAuthTokens,
 } from './types';
 
 // ---------------------------------------------------------------------------

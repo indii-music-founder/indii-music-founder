@@ -1,5 +1,3 @@
-import { logger } from '@/utils/logger';
-
 /**
  * Security Utilities
  * Centralized place for security-critical functions to avoid duplication and insecure practices.

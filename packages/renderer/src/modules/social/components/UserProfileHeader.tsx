@@ -5,7 +5,7 @@ import { SocialService } from '@/services/social/SocialService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';
-import { Users, UserPlus, UserCheck, Edit, MapPin, Link as LinkIcon } from 'lucide-react';
+import { Users, UserPlus, UserCheck, Edit, Link as LinkIcon } from 'lucide-react';
 import { logger } from '@/utils/logger';
 
 interface UserProfileHeaderProps {

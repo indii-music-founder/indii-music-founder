@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
-    Play, Pause, Clock, CheckCircle2, XCircle,
-    Plus, Trash2, Upload, Video, Calendar, Loader2
+    Play, Clock, CheckCircle2, XCircle,
+    Plus, Trash2, Video, Calendar, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { socialAutoPosterService, type SocialPlatform } from '@/services/marketing/SocialAutoPosterService';

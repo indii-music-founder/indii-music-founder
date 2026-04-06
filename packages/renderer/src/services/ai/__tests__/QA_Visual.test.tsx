@@ -1,10 +1,9 @@
 import React from 'react';
 import { onSnapshot } from 'firebase/firestore';
-import { render, screen, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SwarmGraph } from '@/components/studio/observability/SwarmGraph';
 import { TraceService } from '@/services/agent/observability/TraceService';
-import { useStore } from '@/core/store';
 import { ReactFlowProvider } from 'reactflow';
 
 // Mock dependencies
@@ -132,6 +131,5 @@ describe('Visual Regression & Performance Verification', () => {
             });
         });
     });
-
 
 });

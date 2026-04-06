@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
-    Mail, Sparkles, Users, Clock, CheckCircle,
-    Loader2, ChevronDown, Send, Calendar
+    Mail, Sparkles, Users, CheckCircle,
+    Loader2, Send, Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GenAI as AI } from '@/services/ai/GenAI';

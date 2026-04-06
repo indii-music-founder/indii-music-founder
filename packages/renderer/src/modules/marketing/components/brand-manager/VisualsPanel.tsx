@@ -68,7 +68,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
             // AI-powered visual consistency check across both collections
             await new Promise(resolve => setTimeout(resolve, 2500));
             toast.success(`Visual audit complete. ${totalAssets} assets are brand-aligned.`);
-        } catch (_e: unknown) {
+        } catch (__e: unknown) {
             toast.error("Visual audit failed check system logs.");
         } finally {
             setIsAuditingAssets(false);

@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { UserProfile } from '@/types/User';
 import { BrandKit } from '@/modules/workflow/types';
@@ -30,7 +30,6 @@ export class UserService {
      * Create or update a user profile document from a Firebase Auth User.
      */
     // syncUserProfile removed - Legacy Auth
-
 
     /**
      * Get the current user's profile.

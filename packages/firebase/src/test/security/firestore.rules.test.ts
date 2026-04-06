@@ -40,7 +40,7 @@ import {
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { createConnection } from 'net';
-import { describe, it, beforeAll, beforeEach, afterAll, afterEach, expect } from 'vitest';
+import { describe, it, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Constants

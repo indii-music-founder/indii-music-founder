@@ -93,7 +93,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
             saveBrandKit({ healthHistory: updatedHistory });
 
             toast.success("Analysis complete");
-        } catch (_error: unknown) {
+        } catch (__error: unknown) {
             toast.error("Analysis failed");
         } finally {
             setIsAnalyzing(false);

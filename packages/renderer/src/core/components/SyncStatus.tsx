@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Cloud, CloudOff, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Cloud, CloudOff, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';

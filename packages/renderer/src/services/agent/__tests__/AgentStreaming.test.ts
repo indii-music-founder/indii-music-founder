@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseAgent } from '../BaseAgent';
 import { GenAI as AI } from '../../ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
 import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 
 // Mock the entire AI service

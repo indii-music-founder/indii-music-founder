@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { dsrService } from './DSRService';
-import { dsrProcessor } from './DSRProcessor';
 import type { DSRReport } from './types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 

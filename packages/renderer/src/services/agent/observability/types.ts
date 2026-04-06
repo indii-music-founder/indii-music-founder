@@ -1,4 +1,4 @@
-import type { Timestamp, FieldValue } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore';
 
 export type TraceStatus = 'pending' | 'completed' | 'failed';
 

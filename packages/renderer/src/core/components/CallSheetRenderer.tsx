@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, MapPin, Users, Sun, Clock } from 'lucide-react';
+import { MapPin, Users, Sun, Clock } from 'lucide-react';
 
 interface CallSheetData {
     production: string;
@@ -21,7 +21,7 @@ export default function CallSheetRenderer({ data }: CallSheetRendererProps) {
     const sheet: CallSheetData | null = typeof data === 'string' ? (() => {
         try {
             return JSON.parse(data);
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             return null;
         }
     })() : data;

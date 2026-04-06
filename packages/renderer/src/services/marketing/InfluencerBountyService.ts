@@ -6,8 +6,6 @@
  */
 
 import { logger } from '@/utils/logger';
-import { useStore } from '@/core/store';
-
 export interface BountyLink {
     id: string;
     influencerId: string;

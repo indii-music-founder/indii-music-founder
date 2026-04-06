@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Cookie, Settings, X } from 'lucide-react';
+import { Cookie, Settings, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 

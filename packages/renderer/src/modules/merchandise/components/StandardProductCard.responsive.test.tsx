@@ -1,6 +1,6 @@
 
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import { StandardProductCard } from './StandardProductCard';
 import { MerchProduct } from '../types';

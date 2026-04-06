@@ -1,21 +1,11 @@
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Music,
     Plus,
-    Search,
-    Filter,
-    MoreVertical,
-    Share2,
-    Archive,
-    Edit2,
-    Trash2,
-    CheckCircle2,
     AlertCircle,
-    BarChart3,
     Clock,
-    CheckSquare,
     Square,
     Globe,
     DollarSign,
@@ -34,7 +24,6 @@ import ReleaseWizard from './components/ReleaseWizard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useToast } from '@/core/context/ToastContext';
 import { PublishingSkeleton } from './components/PublishingSkeleton';
-import { ReleaseStatusCard } from './components/ReleaseStatusCard';
 import { DistributorConnectionsPanel } from './components/DistributorConnectionsPanel';
 import { EarningsDashboard } from './components/EarningsDashboard';
 import { ReleaseListView } from './components/ReleaseListView';
@@ -48,7 +37,7 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { LayoutGrid, BarChart2, CreditCard, Upload, ScrollText } from 'lucide-react';
 import { MechanicalRoyaltyPanel } from './components/MechanicalRoyaltyPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ReleaseAssets, DistributorId, ReleaseStatus, DashboardRelease } from '@/services/distribution/types/distributor';
+import type { DistributorId, ReleaseStatus } from '@/services/distribution/types/distributor';
 import type { ClientReleaseRecord } from './hooks/useReleases';
 import { logger } from '@/utils/logger';
 

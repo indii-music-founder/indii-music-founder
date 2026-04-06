@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
 import { FUNCTION_AI_MODELS } from "../config/models";
 
-export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => inngestClient.createFunction(
+export const generateVideoFn = (inngestClient: any: any) => inngestClient.createFunction(
     { id: "generate-video-logic" },
     { event: "video/generate.requested" },
     async ({ event, step }: any) => {

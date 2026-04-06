@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MembershipService, TIER_LIMITS, MembershipTier, TierLimits } from './MembershipService';
+import { describe, it, expect } from 'vitest';
+import { MembershipService, TIER_LIMITS, MembershipTier } from './MembershipService';
 
 describe('MembershipService', () => {
     describe('getLimits', () => {

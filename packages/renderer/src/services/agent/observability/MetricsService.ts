@@ -1,6 +1,6 @@
 import { db } from '@/services/firebase';
 import { collection, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
-import { AgentTrace, UsageMetrics } from './types';
+import { AgentTrace } from './types';
 
 export interface SystemMetrics {
     totalExecutions: number;
@@ -59,7 +59,6 @@ export class MetricsService {
                 const end = trace.endTime.toMillis();
                 totalLatency += (end - start);
             }
-
 
             // Aggregate errors
             if (trace.status === 'failed') {

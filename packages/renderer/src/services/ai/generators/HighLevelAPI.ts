@@ -16,7 +16,6 @@ import type { AIContext } from '../AIContext';
 import type {
     GenerationConfig,
     GenerateContentOptions,
-    FunctionCallPart,
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
@@ -143,7 +142,7 @@ export async function generateStructuredData<T>(
     if (cached) {
         try {
             return safeJsonParse(cached) as T;
-        } catch (_e: unknown) {
+        } catch (__e: unknown) {
             // Ignore parse failure
         }
     }

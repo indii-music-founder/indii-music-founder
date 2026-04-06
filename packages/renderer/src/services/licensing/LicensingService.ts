@@ -1,4 +1,3 @@
-import { Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { logger } from '@/utils/logger';
 
@@ -112,7 +111,6 @@ export class LicensingService {
             status: request.status || 'checking'
         } as unknown as LicenseRequest);
     }
-
 
     /**
      * Update an existing request.

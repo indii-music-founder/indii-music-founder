@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Trash2, MessageSquare, Eye, FileCode, FileSpreadsheet, File } from 'lucide-react';
+import { FileText, Trash2, MessageSquare, Eye, FileCode, File } from 'lucide-react';
 import { KnowledgeDoc } from '../services/KnowledgeBaseService';
 
 interface DocumentCardProps {

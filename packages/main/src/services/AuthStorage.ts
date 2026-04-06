@@ -28,7 +28,7 @@ export class AuthStorage {
                 try {
                     const encryptedBuffer = Buffer.from(storedPayload, 'base64');
                     return safeStorage.decryptString(encryptedBuffer);
-                } catch (e) {
+                } catch (_e) {
                     // Fallback if not encrypted or corrupted
                     return storedPayload;
                 }

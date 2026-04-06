@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contact } from '../types';
-import { User, Star, TrendingUp, Radio, Sparkles } from 'lucide-react';
+import { User, Star, Sparkles } from 'lucide-react';
 
 interface ContactListProps {
     contacts: Contact[];

@@ -1,7 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { validateHubAndSpoke, HUB_AGENT_ID, VALID_AGENT_IDS } from '../types';
-import { INDII_MESSAGES } from '../constants';
-
 describe('Agent Delegation and Collaboration', () => {
     describe('Delegation Validation', () => {
         it('validates delegation before executing', () => {

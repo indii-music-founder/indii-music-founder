@@ -1,7 +1,7 @@
 
 // @vitest-environment node
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
 describe('📚 Keeper: Electron HistoryStore Persistence', () => {
     let historyStore: any;

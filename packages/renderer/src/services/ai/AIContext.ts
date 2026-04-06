@@ -10,7 +10,7 @@
  */
 
 import type { GoogleGenAI } from '@google/genai';
-import type { GenerativeModel, GenerateContentResult, Content, Part, Tool } from 'firebase/ai';
+import type { GenerateContentResult, Content, Tool } from 'firebase/ai';
 import type { CircuitBreaker } from './utils/CircuitBreaker';
 import type { RateLimiter } from './RateLimiter';
 import type {

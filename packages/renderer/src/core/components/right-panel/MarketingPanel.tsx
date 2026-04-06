@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Rocket, TrendingUp, Play, CalendarClock, Settings } from 'lucide-react';
+import { ChevronRight, Rocket, TrendingUp, CalendarClock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';

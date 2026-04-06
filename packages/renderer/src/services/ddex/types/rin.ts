@@ -1,4 +1,4 @@
-import { DDEXMessageHeader, ResourceReference } from './common';
+import { DDEXMessageHeader } from './common';
 
 // Root Message
 export interface RINMessage {

@@ -79,7 +79,7 @@ export class SMSMarketingService {
 
             const result = await getStatusFn({ messageId });
             return result.data.status;
-        } catch (_error: unknown) {
+        } catch (__error: unknown) {
             logger.warn(`[SMSMarketing] Status check unavailable for ${messageId}. Deploy Cloud Function 'getSMSDeliveryStatus'.`);
             return 'pending';
         }

@@ -1,5 +1,4 @@
 import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
 
 export interface LicenseAnalysis {

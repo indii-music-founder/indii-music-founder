@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { MerchCard } from './MerchCard';
 import { Layers, Eye, EyeOff, Lock, Unlock, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Square } from 'lucide-react';
 import type { CanvasObject } from './DesignCanvas';
@@ -46,7 +46,6 @@ const LayerProperties: React.FC<{
 
     const _fontSizeCb = useCallback((l: CanvasObject, value: number) => { onUpdateProperty?.(l, 'fontSize', value); }, [onUpdateProperty]);
     const debouncedFontSizeUpdate = useMemo(() => debounce(_fontSizeCb, 150), [_fontSizeCb]);
-
 
     return (
         <MerchCard className="p-4">

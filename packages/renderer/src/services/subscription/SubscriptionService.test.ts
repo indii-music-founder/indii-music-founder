@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SubscriptionService } from './SubscriptionService';
 import { SubscriptionTier, getTierConfig } from './SubscriptionTier';
 import { auth } from '@/services/firebase';

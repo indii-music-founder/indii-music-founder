@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { signInWithEmail, getStudioUrl } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 
@@ -11,8 +11,6 @@ export default function LoginForm() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,8 +29,6 @@ export default function LoginForm() {
             setIsLoading(false);
         }
     };
-
-
 
     return (
         <div className="w-full max-w-md space-y-8 bg-black/50 p-8 rounded-2xl border border-white/10 backdrop-blur-xl">
@@ -115,7 +111,6 @@ export default function LoginForm() {
                             'Sign in'
                         )}
                     </button>
-
 
                 </div>
 

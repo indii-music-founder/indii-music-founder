@@ -3,8 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeNavbar from './CreativeNavbar';
 import { useStore } from '@/core/store';
 import { useToast, ToastProvider } from '@/core/context/ToastContext';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 
 // Mock dependencies

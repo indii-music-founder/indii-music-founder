@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { type ModuleId } from '@/core/constants';
 import { cn } from '@/lib/utils';
 
 interface SkeletonProps {

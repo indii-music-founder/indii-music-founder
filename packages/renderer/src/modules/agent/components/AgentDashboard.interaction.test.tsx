@@ -5,8 +5,6 @@ import { VenueScoutService } from '../services/VenueScoutService';
 
 // --- MOCKS ---
 
-import { createMockStore } from '@/test/utils';
-
 // Mock VenueScoutService
 vi.mock('../services/VenueScoutService', () => ({
     VenueScoutService: {
@@ -55,8 +53,6 @@ vi.mock('../store/AgentStore', async (importOriginal) => {
         })
     };
 });
-
-
 
 // Mock Child Components to verify props
 const MockScoutMapVisualizationContent = vi.fn();

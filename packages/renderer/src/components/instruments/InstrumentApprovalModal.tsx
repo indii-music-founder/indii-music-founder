@@ -5,7 +5,7 @@
  * Shown when an agent wants to execute an expensive instrument that requires user approval.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, Clock, Zap, X, Check, Loader2 } from 'lucide-react';
 

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 import { Instrument,
-  InstrumentMetadata,
   InstrumentResult,
   InstrumentRegistryEntry,
   InstrumentFilter
@@ -9,7 +8,7 @@ import { ImageGenerationInstrument } from './ImageGenerationInstrument';
 import { VideoGenerationInstrument } from './VideoGenerationInstrument';
 import { CacheService } from '@/services/cache/CacheService';
 import { db } from '@/services/firebase';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
 class InstrumentRegistry {

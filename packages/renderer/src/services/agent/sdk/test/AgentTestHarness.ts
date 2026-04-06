@@ -46,7 +46,7 @@ export class AgentTestHarness {
         if (!vi.isMockFunction(GenAI.generateContentStream)) {
             try {
                 vi.spyOn(GenAI, 'generateContentStream');
-            } catch (e: unknown) {
+            } catch (_e: unknown) {
                 // Ignore if it fails (already mocked or property descriptor issue)
             }
         }

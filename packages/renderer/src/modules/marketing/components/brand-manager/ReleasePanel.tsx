@@ -12,7 +12,6 @@ interface ReleasePanelProps extends BrandManagerTabProps {}
 
 const ReleasePanel: React.FC<ReleasePanelProps> = ({
     userProfile,
-    brandKit,
     updateBrandKit,
     saveBrandKit,
     release,
@@ -29,7 +28,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
         try {
             await saveBrandKit({ releaseDetails: release });
             toast.success("Release details saved");
-        } catch (_e: unknown) {
+        } catch (__e: unknown) {
             toast.error("Failed to save release details");
         }
     };
