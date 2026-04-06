@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as admin from 'firebase-admin';
 
 // Use vi.hoisted to define mocks that can be accessed inside vi.mock factories
 const mocks = vi.hoisted(() => {
@@ -124,7 +123,7 @@ vi.mock('firebase-functions/v1', () => {
 // Mock Stripe to prevent initialization error
 vi.mock('stripe', () => ({
     default: class MockStripe {
-        constructor(apiKey: string) { }
+        constructor(_apiKey: string) { }
     }
 }));
 
@@ -227,7 +226,7 @@ describe('Video Functions', () => {
                 })
             });
 
-            const event = {
+            const _event = {
                 data: {
                     jobId: 'job-123',
                     userId: 'user123'

@@ -1,6 +1,5 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as admin from 'firebase-admin';
 import { generateVideoFn } from '../lib/video_generation';
 
 // Use vi.hoisted to define mocks
@@ -112,14 +111,12 @@ describe('🛡️ Shield: Video Generation Security', () => {
 
         try {
             await handler({ event, step: mockStep });
-        } catch (_e) {
+        } catch {
             // Ignore processing errors, we just want to check the fetch call
         }
 
         // Check the first fetch call (Trigger)
-        const triggerCall = (global.fetch as any).mock.calls[0];
-        const requestUrl = triggerCall[0];
-        const requestOptions = triggerCall[1];
+        const [, requestOptions] = (global.fetch as any).mock.calls[0];
         const body = JSON.parse(requestOptions.body);
 
         console.log("Request Body:", JSON.stringify(body, null, 2));

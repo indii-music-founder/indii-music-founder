@@ -1,6 +1,5 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as admin from 'firebase-admin';
 import { generateVideoFn } from '../lib/video_generation';
 
 // Use vi.hoisted to define mocks

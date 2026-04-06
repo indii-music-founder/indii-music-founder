@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as admin from 'firebase-admin';
 
 // Use vi.hoisted to define mocks
 const mocks = vi.hoisted(() => {
