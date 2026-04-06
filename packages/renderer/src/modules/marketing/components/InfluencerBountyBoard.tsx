@@ -3,7 +3,6 @@ import {
     Trophy, Plus, Link2, DollarSign, Copy, CheckCircle,
     Clock, Star, TrendingUp, Music, Video
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { influencerBountyService } from '@/services/marketing/InfluencerBountyService';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -37,7 +36,6 @@ const STATUS_STYLES: Record<BountyStatus, string> = {
     verified: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     paid: 'bg-green-500/10 text-green-400 border-green-500/20',
 };
-
 
 export default function InfluencerBountyBoard() {
     const [bounties, setBounties] = useState<Bounty[]>([]);

@@ -1,8 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { arePropsEqual, DailyItemProps } from './DailyItem.utils';
 import { HistoryItem } from '@/core/store/slices/creative';
-import React from 'react';
-
 const mockVideo: HistoryItem = {
     id: 'vid-1',
     url: 'http://example.com/video.mp4',

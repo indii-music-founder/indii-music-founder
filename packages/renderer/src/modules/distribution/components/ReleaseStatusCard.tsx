@@ -64,7 +64,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                 text: `Check out "${releaseTitle}" by ${artistName} on all platforms.`,
                 url: window.location.href,
             });
-        } catch (_e: unknown) {
+        } catch (__e: unknown) {
             // User cancelled or API not available — ignore
         }
     }, [releaseTitle, artistName]);

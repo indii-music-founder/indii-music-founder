@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PublicistService } from './PublicistService';
 import {
     collection,
@@ -48,6 +48,5 @@ describe('PublicistService', () => {
     it('should be defined', () => {
         expect(PublicistService).toBeDefined();
     });
-
 
 });

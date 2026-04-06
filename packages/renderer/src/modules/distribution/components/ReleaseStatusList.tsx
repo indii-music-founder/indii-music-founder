@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { ReleaseStatus, DistributorId } from '@/services/distribution/types/distributor';
-import { MoreHorizontal, Play, Archive, FileText, CheckCircle, AlertCircle, Clock, Loader2 } from 'lucide-react';
+import { DistributorId } from '@/services/distribution/types/distributor';
+import { MoreHorizontal, FileText, CheckCircle, AlertCircle, Clock, Loader2 } from 'lucide-react';
 
 interface ReleaseItem {
     id: string; // Internal ID

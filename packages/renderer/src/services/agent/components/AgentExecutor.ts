@@ -2,9 +2,6 @@ import { auth, db } from '@/services/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { TraceService } from '../observability/TraceService';
 import {
-    AgentContext,
-    AgentMessage,
-    SpecializedAgent,
     AgentRegistryProvider,
     AgentResponse,
     AgentProgressCallback

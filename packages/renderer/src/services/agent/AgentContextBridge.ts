@@ -8,10 +8,8 @@
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 import { SubscriptionService, subscriptionService } from '@/services/subscription/SubscriptionService';
 import { instrumentRegistry } from './instruments/InstrumentRegistry';
-import { Instrument, InstrumentInput } from './instruments/InstrumentTypes';
+import { Instrument } from './instruments/InstrumentTypes';
 import type { UsageStats } from '@/services/subscription/types';
-import { logger } from '@/utils/logger';
-
 export interface AgentInstrumentContext {
   /** Available instruments formatted for agent discovery */
   availableInstruments: Array<{

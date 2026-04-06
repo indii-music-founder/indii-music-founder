@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Play, Sparkles, MessageSquare, Music, Video, Image as ImageIcon, GitBranch, ShieldAlert, GripHorizontal } from 'lucide-react';
+import { Play, Sparkles, Music, Video, Image as ImageIcon, GitBranch, ShieldAlert, GripHorizontal } from 'lucide-react';
 import { motion, useDragControls } from 'motion/react';
 
 export default function NodePanel() {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { firebaseAI } from '../FirebaseAIService';
 import { aiCache } from '../AIResponseCache';
 import 'fake-indexeddb/auto'; // Polyfill IndexedDB for JSDOM

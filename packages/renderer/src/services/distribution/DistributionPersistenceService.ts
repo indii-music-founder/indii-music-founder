@@ -1,4 +1,3 @@
-import { auth } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import { ReleaseDeploymentDocument } from '@/types/firestore';
 import { Timestamp } from 'firebase/firestore';

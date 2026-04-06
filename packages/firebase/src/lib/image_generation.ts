@@ -157,7 +157,7 @@ class GeminiImageService {
                     try {
                         const parsedError = JSON.parse(errorText);
                         errorText = parsedError.error?.message || errorText;
-                    } catch (_e) { /* ignore JSON parse error */ }
+                    } catch (__e) { /* ignore JSON parse error */ }
                     throw new Error(`Vertex AI Image API Error: ${response.status} ${errorText}`);
                 }
 

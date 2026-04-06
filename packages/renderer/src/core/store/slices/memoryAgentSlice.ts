@@ -257,7 +257,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
             try {
                 const status = await alwaysOnMemoryEngine.getStatus(userId);
                 set({ alwaysOnEngineStatus: status });
-            } catch (_e: unknown) { /* non-blocking */ }
+            } catch (__e: unknown) { /* non-blocking */ }
         }
     },
 

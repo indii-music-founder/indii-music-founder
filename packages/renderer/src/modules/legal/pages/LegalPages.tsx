@@ -1,4 +1,4 @@
-import { Scale, FileText, Shield, Mail, ExternalLink } from 'lucide-react';
+import { Scale, FileText, Shield } from 'lucide-react';
 
 /**
  * Legal Pages

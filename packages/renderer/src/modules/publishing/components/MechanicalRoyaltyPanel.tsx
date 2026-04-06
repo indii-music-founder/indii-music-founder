@@ -87,7 +87,7 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
 
             toast.success(`License record created for "${trackTitle}"`);
             onAdded();
-        } catch (err: unknown) {
+        } catch (_err: unknown) {
             toast.error('Failed to create license record');
         } finally {
             setSearching(false);

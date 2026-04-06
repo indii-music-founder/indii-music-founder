@@ -63,7 +63,7 @@ export class CredentialService {
                     } else {
                         throw new Error('safeStorage not available for decryption');
                     }
-                } catch (e) {
+                } catch (_e) {
                     console.error('[CredentialService] Decryption failed, may be legacy or corrupted data');
                     // If it's not JSON and decryption failed, we can't use it
                     if (storedPayload.trim().startsWith('{')) return JSON.parse(storedPayload);

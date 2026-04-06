@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion } from 'motion/react';
 import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';

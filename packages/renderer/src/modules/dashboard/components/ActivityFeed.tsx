@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import {
-    MessageSquare, Bot, Sparkles, Zap, Clock, CheckCircle, Package, AlertCircle
+    MessageSquare, Bot, Zap, Clock, CheckCircle, Package, AlertCircle
 } from 'lucide-react';
 import { events, EventType, AgentActionEvent, SystemAlertEvent } from '@/core/events';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';

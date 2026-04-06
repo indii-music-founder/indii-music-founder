@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import UniversalNode from './UniversalNode';
 import { Status } from '../types';
 
 // Mock dependencies
 vi.mock('reactflow', () => ({
-    Handle: ({ type, position, id }: any) => <div data-testid={`handle-${type}-${id}`} />,
+    Handle: ({ type, id }: any) => <div data-testid={`handle-${type}-${id}`} />,
     Position: { Left: 'left', Right: 'right' },
 }));
 

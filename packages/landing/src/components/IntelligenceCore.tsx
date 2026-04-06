@@ -1,10 +1,8 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { useRef, useMemo } from 'react';
+import { useRef } from 'react';
 import * as THREE from 'three';
-import { Trail } from '@react-three/drei';
-
 const GlitchMaterial = {
     uniforms: {
         uTime: { value: 0 },

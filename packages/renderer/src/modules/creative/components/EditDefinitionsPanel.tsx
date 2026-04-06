@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { X, Sparkles, AlertCircle } from 'lucide-react';
-import { STUDIO_COLORS, CreativeColor } from '../constants';
+import { STUDIO_COLORS } from '../constants';
 
 interface EditDefinitionsPanelProps {
     isOpen: boolean;

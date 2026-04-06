@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import type {
     ContributorRole,
-    ResourceType,
-    ReleaseType,
-    UseType,
-    CommercialModelType,
-    ParentalWarningType
 } from '../types/common';
 
 /**

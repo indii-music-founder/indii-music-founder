@@ -1,6 +1,6 @@
 import { db } from '@/services/firebase';
 import { collection, addDoc, getDocs, doc, getDoc, query, where, updateDoc } from 'firebase/firestore';
-import { SavedWorkflow, CustomNode, CustomEdge } from '../types';
+import { SavedWorkflow } from '../types';
 import { logger } from '@/utils/logger';
 
 const WORKFLOWS_COLLECTION = 'workflows';

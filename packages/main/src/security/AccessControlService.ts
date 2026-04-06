@@ -77,7 +77,7 @@ class AccessControlService {
                  try {
                     // Try to resolve root to handle symlinks (e.g. /var/tmp -> /private/var/tmp)
                     return fs.realpathSync(p);
-                } catch (e) {
+                } catch (_e) {
                     // Fallback if root doesn't exist yet (unlikely for these standard dirs)
                     return path.resolve(p);
                 }

@@ -19,7 +19,6 @@ interface CreativeCanvasProps {
 export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefine }: CreativeCanvasProps) {
     const {
         isProcessing,
-        processingStatus,
         isMagicFillMode,
         isSelectingEndFrame,
         isDefinitionsOpen,

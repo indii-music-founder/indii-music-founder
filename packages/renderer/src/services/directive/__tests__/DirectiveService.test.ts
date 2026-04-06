@@ -1,7 +1,5 @@
 import { expect, test, describe, vi, beforeEach } from 'vitest';
 import { DirectiveService } from '../DirectiveService';
-import { Timestamp } from 'firebase/firestore';
-
 // Mock implementation of FirestoreService
 vi.mock('../../FirestoreService', () => {
     return {

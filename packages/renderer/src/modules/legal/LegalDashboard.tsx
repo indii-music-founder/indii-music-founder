@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Clock, Briefcase, BookOpen, Radio, Star, ExternalLink, ChevronRight, Search, MapPin, Award } from 'lucide-react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award } from 'lucide-react';
 import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
@@ -7,7 +7,6 @@ import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { LegalService } from '@/services/legal/LegalService';
 import { logger } from '@/utils/logger';
-import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 

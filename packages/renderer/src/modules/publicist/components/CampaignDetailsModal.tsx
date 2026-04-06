@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Save, Trash2, Calendar, Activity, BarChart2 } from 'lucide-react';
+import { X, Save, Trash2, Calendar, BarChart2 } from 'lucide-react';
 import { Campaign } from '../types';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';

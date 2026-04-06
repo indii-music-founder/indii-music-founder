@@ -24,8 +24,7 @@
  */
 
 import { auth } from '@/services/firebase';
-import { GoogleAuthProvider, reauthenticateWithPopup, getAdditionalUserInfo } from 'firebase/auth';
-import { logger } from '@/utils/logger';
+import { GoogleAuthProvider, reauthenticateWithPopup } from 'firebase/auth';
 import type { PlatformData, StreamDataPoint, RegionData } from './types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────

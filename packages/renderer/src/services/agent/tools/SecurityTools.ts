@@ -1,13 +1,10 @@
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
-import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { delay } from '@/utils/async';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
-import { generateSecureId } from '@/utils/security';
 import { logger } from '@/utils/logger';
 
 /**

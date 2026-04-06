@@ -1,6 +1,6 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import SocialFeed from './SocialFeed';
 import { useSocial } from '../hooks/useSocial';
 import { useStore } from '@/core/store';

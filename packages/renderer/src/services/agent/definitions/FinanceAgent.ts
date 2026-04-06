@@ -2,8 +2,6 @@ import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { Schema } from 'firebase/ai';
-
 export const FinanceAgent: AgentConfig = {
     id: "finance",
     name: "Finance Department",
@@ -429,7 +427,5 @@ If a task is outside Finance, say:
         ]
     }]
 };
-
-import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination

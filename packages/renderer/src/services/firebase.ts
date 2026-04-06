@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAuth, initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
+import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
 import { getAI, VertexAIBackend, AI } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
@@ -217,9 +217,6 @@ if (typeof window !== 'undefined') {
     }
 }
 export { appCheck };
-
-
-
 
 // Expose for e2e testing
 // Expose for e2e testing

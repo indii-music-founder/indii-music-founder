@@ -254,6 +254,4 @@ If a task is outside Video, say:
     }]
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-
 // Freeze the schema to prevent cross-test contamination

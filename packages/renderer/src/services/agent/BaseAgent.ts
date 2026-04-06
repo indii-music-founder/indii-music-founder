@@ -9,10 +9,8 @@ import {
     ToolDefinition,
     FunctionDeclaration,
     AgentContext,
-    VALID_AGENT_IDS_LIST,
     VALID_AGENT_IDS,
     ValidAgentId,
-    WhiskState,
     AnyToolFunction,
     DelegateTaskArgs,
     ConsultExpertsArgs,
@@ -25,14 +23,12 @@ import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
-import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
+import { ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
-import { wrapTool, toolError } from './utils/ToolUtils';
-import { SUPERPOWER_TOOLS } from './definitions/SuperpowerTools';
+import { toolError } from './utils/ToolUtils';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
 import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
-
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 

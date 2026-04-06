@@ -1,5 +1,4 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PublishingDashboard from './PublishingDashboard';
 import { useReleases } from './hooks/useReleases';

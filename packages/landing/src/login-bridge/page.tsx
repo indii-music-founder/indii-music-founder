@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, UserCredential } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
 import app from '../lib/firebase';
 
 export default function LoginBridge() {

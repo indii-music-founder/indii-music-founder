@@ -15,10 +15,9 @@ import { KeyboardShortcuts, useKeyboardShortcutsHint } from './components/Keyboa
 import { DesignTemplate, templateService, TemplateFabricObject } from './templates/DesignTemplates';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2, FolderOpen, History, HelpCircle, Star } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, FolderOpen, History, HelpCircle, Star } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
-import { MerchCard } from './components/MerchCard';
 import { logger } from '@/utils/logger';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
@@ -645,8 +644,6 @@ export default function MerchDesigner() {
                             onReorderLayer={handleReorderLayer}
                             onUpdateProperty={handleUpdateProperty}
                         />
-
-
 
                         {/* AI Generation Dialog */}
                         <AIGenerationDialog

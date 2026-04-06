@@ -26,13 +26,12 @@ export const MARKETING_TOOLS = {
                 AI_MODELS.TEXT.AGENT
             );
             return res.response.text() || "Failed to generate strategy.";
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             return JSON.stringify({ error: "AI Service Unavailable" });
         }
     },
 
 }
-
 
 export const MARKETING_MANAGER_PROMPT = `
 You are the "Chief Marketing Officer" (CMO) for indiiOS.

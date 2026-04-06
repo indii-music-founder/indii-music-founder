@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ThumbsUp, ThumbsDown, MessageSquare, Check, X } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Check, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 

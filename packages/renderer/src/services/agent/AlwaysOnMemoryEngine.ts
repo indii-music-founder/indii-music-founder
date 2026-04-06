@@ -16,7 +16,7 @@
 
 import { FirestoreService } from '../FirestoreService';
 import { FirebaseAIService } from '../ai/FirebaseAIService';
-import type { GenerationConfig, ContentPart } from '@/shared/types/ai.dto';
+import type { ContentPart } from '@/shared/types/ai.dto';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
@@ -29,11 +29,9 @@ import type {
     AlwaysOnEngineStatus,
     AlwaysOnMemoryConfig,
     ConsolidationInsight,
-    ConsolidationConfig,
     IngestionEvent,
     IngestionContentType,
     MemoryTier,
-    MemoryTierConfig,
     MemorySource,
     DEFAULT_CONSOLIDATION_CONFIG as _DCC,
     DEFAULT_TIER_CONFIG as _DTC,

@@ -21,7 +21,7 @@ export function validateSafeDistributionSource(filePath: string, options: { allo
     let resolvedPath: string;
     try {
         resolvedPath = fs.realpathSync(filePath);
-    } catch (error) {
+    } catch (_error) {
         throw new Error(`Security Violation: Invalid file path or file not found`);
     }
 

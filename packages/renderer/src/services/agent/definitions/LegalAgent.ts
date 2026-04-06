@@ -142,6 +142,4 @@ As a specialist (spoke), you operate under strict architectural rules:
     }]
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-
 // Freeze the schema to prevent cross-test contamination

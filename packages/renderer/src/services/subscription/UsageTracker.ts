@@ -10,8 +10,6 @@ import { secureRandomInt } from '@/utils/crypto-random';
 import { UsageRecord } from './types';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { auth } from '@/services/firebase';
-
 class UsageTracker {
   /**
    * Track image generation

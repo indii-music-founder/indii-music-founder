@@ -108,7 +108,7 @@ export class AgentOrchestrator {
 
             try {
                 parsedResponse = JSON.parse(textResponse);
-            } catch (parseError: unknown) {
+            } catch (_parseError: unknown) {
                 logger.warn('[indii:Orchestrator] Failed to parse JSON response:', textResponse);
                 await TraceService.addStep(traceId, 'routing', {
                     selectedAgent: 'generalist',

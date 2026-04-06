@@ -1,6 +1,4 @@
 import { createAgent } from '../sdk/AgentBuilder';
-import { AgentConfig } from "../types";
-import systemPrompt from '@agents/publicist/prompt.md?raw';
 import { PublicistService } from '../../publicist/PublicistService';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
@@ -567,7 +565,5 @@ Return only valid JSON, no markdown fences.`;
         'generate_pdf', 'generate_live_epk', 'pitch_media'
     ])
     .build();
-
-import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination

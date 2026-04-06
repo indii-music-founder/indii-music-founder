@@ -1,7 +1,6 @@
 import {
     getGenerativeModel,
     getLiveGenerativeModel,
-    GenerativeModel,
     LiveGenerativeModel,
     GenerateContentResult,
     GenerateContentStreamResult,
@@ -12,29 +11,20 @@ import {
     SafetySetting as FirebaseSafetySetting
 } from 'firebase/ai';
 import { GoogleGenAI } from '@google/genai';
-import { getFirebaseAI, remoteConfig, functions } from '@/services/firebase';
-import { env } from '@/config/env';
+import { getFirebaseAI, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
-import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
-import { PromptSanitizer } from '@/services/security/PromptSanitizer';
-import { AI_MODELS, APPROVED_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
+import { AI_MODELS, getModelKey } from '@/core/config/ai-models';
 import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
-    InlineDataPart,
     FunctionCallPart,
     GenerateContentResponse,
     WrappedResponse,
     StreamChunk,
     GenerateVideoRequest,
-    GenerateVideoResponse,
-    GenerateImageRequest,
-    GenerateImageResponse,
     GenerateSpeechResponse,
     GenerateContentOptions,
-    GenerateStreamOptions,
-    GenerateVideoOptions,
     GenerateImageOptions,
     EmbedContentOptions,
     GenerationConfig,
@@ -49,8 +39,6 @@ import { STANDARD_SAFETY_SETTINGS } from './config/safety-settings';
 import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
 import { auth } from '@/services/firebase';
-import { aiCache } from './AIResponseCache';
-import { generateSecureId } from '@/utils/security';
 import { logger } from '@/utils/logger';
 import { CachedContextService } from './context/CachedContextService';
 import { RateLimiter } from './RateLimiter';
@@ -83,13 +71,8 @@ import {
 } from './generators/EmbeddingGenerator';
 import type { AIContext } from './AIContext';
 import type {
-    ImportMetaEnvWithKeys,
-    GenAIEmbedResult,
     FileDataPart,
     FirebaseModelOptions,
-    GenAIGenerateResult,
-    GenAIStreamChunk,
-    BatchEmbedContentsResponse,
     ExtendedGenerativeModel,
     ChatMessage,
 } from './types';
@@ -758,7 +741,6 @@ export class FirebaseAIService implements AIContext {
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
 
-
     /**
      * CORE: Generate content stream(Used by AIService)
      */
@@ -921,7 +903,6 @@ export class FirebaseAIService implements AIContext {
             return mediaGenerateVideo(this.fallbackClient, options);
         });
     }
-
 
     /**
      * BATCHING: Embed multiple documents in parallel.

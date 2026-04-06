@@ -1,6 +1,5 @@
 
 import { auth, db, functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 
 export type ServiceStatus = 'healthy' | 'unstable' | 'offline' | 'unknown';
@@ -72,7 +71,7 @@ class APIHealthService {
         try {
             // Minimal check: attempt to read a known path or just check persistence status
             // We use a non-existent doc to minimize costs but verify connectivity
-            const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
+            const { doc } = await import('firebase/firestore');
             const heartbeatRef = doc(db, '_system/heartbeat');
 
             // In a real app, we might write a heartbeat if the user is authenticated

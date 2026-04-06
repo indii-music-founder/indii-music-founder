@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TokenUsageService } from './TokenUsageService';
 import * as firestore from 'firebase/firestore';
-import { AppErrorCode, AppException } from '@/shared/types/errors';
-
 // Mock Firestore
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),

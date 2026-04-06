@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MembershipService } from './MembershipService';
 import { getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
 

@@ -1,5 +1,4 @@
 import { openDB, IDBPDatabase } from 'idb';
-import { createHash } from 'crypto';
 import { logger } from '@/utils/logger';
 
 interface CachedResponse {

@@ -119,7 +119,7 @@ describe('generateImageV3Fn', () => {
         // It might throw because we mocked an empty response, but we care about the request
         try {
             await wrapped(data, context);
-        } catch (e) {
+        } catch (_e) {
             // Expected error due to empty candidates in mock
         }
 

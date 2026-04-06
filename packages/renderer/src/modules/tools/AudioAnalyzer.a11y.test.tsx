@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import AudioAnalyzer from './AudioAnalyzer'
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import * as matchers from 'vitest-axe/matchers'
 import React from 'react'

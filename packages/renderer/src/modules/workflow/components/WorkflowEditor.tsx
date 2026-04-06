@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from 'react';
 
-import { Maximize, Eraser, Users } from 'lucide-react';
+import { Maximize, Eraser } from 'lucide-react';
 
 import ReactFlow, {
     ReactFlowProvider,
@@ -14,7 +14,6 @@ import ReactFlow, {
     applyEdgeChanges,
     Connection,
     Edge,
-    Node,
     NodeChange,
     EdgeChange,
     ReactFlowInstance,
@@ -26,8 +25,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { validateConnection } from '../utils/validationUtils';
 import { DepartmentNode, InputNode, OutputNode, AudioSegmentNode, LogicNode } from './CustomNodes';
 import { createNodeFromDrop } from '../utils/dndUtils';
-import { getJobDefinition } from '../services/nodeRegistry';
-
 const nodeTypes = {
     departmentNode: DepartmentNode,
     inputNode: InputNode,
@@ -54,7 +51,6 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
         }))
     );
 
-
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const [reactFlowInstance, setReactFlowInstance] = React.useState<ReactFlowInstance | null>(null);
 
@@ -67,8 +63,6 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
         if (readOnly) return;
         setEdges((eds) => applyEdgeChanges(changes, eds));
     }, [setEdges, readOnly]);
-
-
 
     // --- STRICT CONNECTION VALIDATION ---
     const isValidConnection = useCallback((connection: Connection) => {

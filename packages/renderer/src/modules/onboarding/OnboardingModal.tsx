@@ -3,7 +3,6 @@ import { useStore } from '../../core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import {
-    OnboardingTools,
     runOnboardingConversation,
     processFunctionCalls,
     generateEmptyResponseFallback,
@@ -11,8 +10,8 @@ import {
     calculateProfileStatus,
     TopicKey
 } from '@/services/onboarding/onboardingService';
-import { X, Send, Upload, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as ImageIcon, Trash2, Music } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { X, Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as Trash2, Music } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 import type { ConversationFile } from '../../modules/workflow/types';

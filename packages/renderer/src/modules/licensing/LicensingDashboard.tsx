@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, Scale, TrendingUp, Briefcase, BarChart3 } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, Scale, TrendingUp } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
 import type { LicenseRequest, License } from '@/services/licensing/types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -8,7 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
 import { useLicensing } from './hooks/useLicensing';
-import { MetricsGrid, DealFlowChart } from './components/LicensingWidgets';
+import { DealFlowChart } from './components/LicensingWidgets';
 import { EmptyActionState } from './components/EmptyActionState';
 import { SkeletonStat, SkeletonList } from '@/components/shared/SkeletonLoader';
 import { CatalogSearchTab } from './components/CatalogSearchTab';

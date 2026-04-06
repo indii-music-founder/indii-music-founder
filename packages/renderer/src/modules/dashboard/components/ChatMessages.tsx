@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageItem } from '@/core/components/chat/ChatMessage';
 import { type AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
-import { Bot, MoreHorizontal } from 'lucide-react';
+import { Bot } from 'lucide-react';
 
 interface ChatMessagesProps {
     history: AgentMessage[];

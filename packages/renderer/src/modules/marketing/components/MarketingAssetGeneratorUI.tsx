@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Upload, Music, Video, Wand2, ArrowRight, Play, CheckCircle2, Download, RefreshCw, FileAudio } from 'lucide-react';
+import { Upload, Video, Wand2, ArrowRight, Play, CheckCircle2, Download, RefreshCw, FileAudio } from 'lucide-react';
 
 export default function MarketingAssetGeneratorUI() {
     const [step, setStep] = useState<1 | 2 | 3 | 4>(1);

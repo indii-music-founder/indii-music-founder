@@ -23,7 +23,6 @@ import {
 import { useVoice } from '@/core/context/VoiceContext';
 import { useTouring } from '../hooks/useTouring';
 import { useStore } from '@/core/store';
-import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { searchNearbyPlaces, navigateToPlace, type NearbyPlace, type NearbySearchResult } from '@/services/places/NearbyPlacesService';
 import { logger } from '@/utils/logger';

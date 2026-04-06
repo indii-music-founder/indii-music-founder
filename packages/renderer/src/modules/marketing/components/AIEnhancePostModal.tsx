@@ -7,13 +7,10 @@ import {
   Copy,
   Check,
   ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/core/context/ToastContext";
 import { CampaignAI } from "@/services/marketing/CampaignAIService";
 import { ScheduledPost, PostEnhancement, EnhancementType } from "../types";
-import { logger } from '@/utils/logger';
-
 interface AIEnhancePostModalProps {
   post: ScheduledPost;
   onClose: () => void;

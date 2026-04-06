@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { useEarnings } from '../hooks/useEarnings';
 import { EarningsBreakdown } from './EarningsBreakdown';
-import { Loader2, DollarSign, Globe, TrendingUp, Download, PieChart } from 'lucide-react';
-import { motion } from 'motion/react';
+import { DollarSign, Globe, TrendingUp, Download } from 'lucide-react';
 import { SkeletonText, Skeleton } from '@/components/ui/Skeleton';
 
 // Compute default period outside component to satisfy react-compiler purity rules

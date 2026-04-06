@@ -1,6 +1,6 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
-import { TrendingUp, Award, Zap, BarChart3 } from 'lucide-react';
+import { TrendingUp, Zap, BarChart3 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface RevenueTrend {

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Wand2 } from 'lucide-react';
 import { ScheduledPost } from '../types';
-import AIEnhancePostModal from './AIEnhancePostModal';
-
 interface EditableCopyModalProps {
     post: ScheduledPost;
     onClose: () => void;

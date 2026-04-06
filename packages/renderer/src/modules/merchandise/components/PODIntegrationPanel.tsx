@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Truck, CheckCircle2, AlertCircle, RefreshCw, ExternalLink, Link2, Unlink, Key, X, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, RefreshCw, ExternalLink, Link2, Unlink, Key, X, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { PODCredentialService } from '@/services/pod/PODCredentialService';
 import { PrintOnDemandService, PODProvider } from '@/services/pod/PrintOnDemandService';
 import { useStore } from '@/core/store';

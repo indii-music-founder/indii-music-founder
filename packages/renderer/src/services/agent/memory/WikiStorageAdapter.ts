@@ -1,6 +1,5 @@
 import { FirestoreService } from '@/services/FirestoreService';
 import { Timestamp } from 'firebase/firestore';
-import { GeminiRetrieval } from '@/services/rag/GeminiRetrievalService';
 import { logger } from '@/utils/logger';
 
 export interface WikiDocument {

@@ -1,9 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, User, Hash } from 'lucide-react';
+import { FileText, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useStore } from '@/core/store';
-
 export type TypeaheadContext = {
     type: '@' | '#';
     query: string;

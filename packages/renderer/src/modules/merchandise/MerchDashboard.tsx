@@ -5,7 +5,7 @@ import { MerchButton } from './components/MerchButton';
 import {
     TrendingUp, ShoppingBag, DollarSign, Plus, Loader2,
     LayoutGrid, PenTool, Package, Settings, LogOut,
-    Palette, Truck, BarChart3, Sparkles, Star,
+    Palette, Truck, BarChart3, Sparkles,
     Store, Flame, Globe, Wallet, Shield, Lock
 } from 'lucide-react';
 
@@ -13,7 +13,6 @@ import { useMerchandise, MerchStats } from './hooks/useMerchandise';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { TopSellingProductItem } from './components/TopSellingProductItem';
-import { RecentDesignItem } from './components/RecentDesignItem';
 import { formatCurrency } from '@/lib/utils';
 import { PODIntegrationPanel } from './components/PODIntegrationPanel';
 import { StorefrontPreviewModal } from './components/StorefrontPreviewModal';

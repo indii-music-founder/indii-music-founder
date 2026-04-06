@@ -1,7 +1,6 @@
 
 // Lazy-load essentia.js (2.6MB) only when audio analysis is needed
 type EssentiaModule = typeof import('essentia.js');
-import JSZip from 'jszip';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { logger } from '@/utils/logger';
@@ -43,7 +42,7 @@ declare global {
 }
 
 import { DSPComplianceValidator } from './DSPComplianceValidator';
-import type { AudioFeatures, DeepAudioFeatures, TechnicalAudit } from './types';
+import type { DeepAudioFeatures, TechnicalAudit } from './types';
 
 // Genre labels for Rosamerica model
 const GENRE_LABELS = ['Classical', 'Dance', 'Hip-Hop', 'Jazz', 'Metal', 'Pop', 'Reggae', 'Rock'];

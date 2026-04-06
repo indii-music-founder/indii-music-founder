@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus } from 'lucide-react';
 import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { TimeRuler } from './TimeRuler';

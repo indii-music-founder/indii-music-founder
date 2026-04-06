@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Disc, Calendar, BarChart2, Radio, Send } from 'lucide-react';
+import { Disc, Calendar, Send } from 'lucide-react';
 import { Campaign } from '../types';
 
 interface CampaignCardProps {
