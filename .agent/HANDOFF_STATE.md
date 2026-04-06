@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+d55c7c7 chore: session checkpoint [18:01]
 503f075 chore: session checkpoint [17:42]
 a48c3ff chore: session checkpoint [17:40]
 002d8e2 chore: platinum-level engineering review remediation
@@ -13,7 +14,6 @@ a48c3ff chore: session checkpoint [17:40]
 5dde227 fix(deploy): update Firebase Hosting landing target output directory to new workspace path
 7c7474f fix(ci): remove destructive nested npm ci causing electron-vite wipe in GitHub Actions deployment workflow
 92ee15b fix(build): correct Electron main entry point and Firebase Hosting target directories for npm workspace monorepo
-33d9345 fix(ci): correct YAML syntax in build.yml and update landing-page path to packages/landing in deploy.yml
 ```
 
 ## Working State
