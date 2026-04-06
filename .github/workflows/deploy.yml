@@ -79,7 +79,6 @@ jobs:
         run: |
           cd packages/landing
           rm -rf dist .next
-          npm ci --ignore-scripts
           NODE_ENV=production npm run build
 
       - name: Build studio app
