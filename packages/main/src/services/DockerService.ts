@@ -30,9 +30,10 @@ export class DockerService {
             if (stderr) log.warn(`[DockerService] Startup Warnings: ${stderr}`);
 
             return { success: true, log: stdout };
-        } catch (error: any) {
-            log.error(`[DockerService] Startup Failed: ${error.message}`);
-            return { success: false, log: error.message };
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            log.error(`[DockerService] Startup Failed: ${msg}`);
+            return { success: false, log: msg };
         }
     }
 
@@ -47,9 +48,10 @@ export class DockerService {
         try {
             await execPromise('docker compose down', { cwd });
             return await this.ensureStarted();
-        } catch (error: any) {
-            log.error(`[DockerService] Restart Failed: ${error.message}`);
-            return { success: false, log: error.message };
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            log.error(`[DockerService] Restart Failed: ${msg}`);
+            return { success: false, log: msg };
         }
     }
 
@@ -63,8 +65,9 @@ export class DockerService {
         try {
             // We use 'stop' instead of 'down' to preserve container state but free up resources
             await execPromise('docker compose stop', { cwd });
-        } catch (error: any) {
-            log.error(`[DockerService] Stop Failed: ${error.message}`);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            log.error(`[DockerService] Stop Failed: ${msg}`);
         }
     }
 }

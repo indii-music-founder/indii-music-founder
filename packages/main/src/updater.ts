@@ -50,9 +50,10 @@ export function setupAutoUpdater(): void {
         sendToRenderer('updater:checking');
     });
 
-    autoUpdater.on('update-available', (info: any) => {
-        log.info(`[Updater] Update available: ${info.version}`);
-        sendToRenderer('updater:available', { version: info.version });
+    autoUpdater.on('update-available', (info: unknown) => {
+        const updateInfo = info as Record<string, unknown>;
+        log.info(`[Updater] Update available: ${updateInfo.version}`);
+        sendToRenderer('updater:available', { version: updateInfo.version as string });
     });
 
     autoUpdater.on('update-not-available', () => {
@@ -60,24 +61,27 @@ export function setupAutoUpdater(): void {
         sendToRenderer('updater:not-available');
     });
 
-    autoUpdater.on('download-progress', (progress: any) => {
-        log.info(`[Updater] Download: ${progress.percent.toFixed(1)}%`);
+    autoUpdater.on('download-progress', (progress: unknown) => {
+        const p = progress as Record<string, unknown>;
+        log.info(`[Updater] Download: ${(p.percent as number).toFixed(1)}%`);
         sendToRenderer('updater:progress', {
-            percent: progress.percent,
-            bytesPerSecond: progress.bytesPerSecond,
-            transferred: progress.transferred,
-            total: progress.total,
+            percent: p.percent as number,
+            bytesPerSecond: p.bytesPerSecond as number,
+            transferred: p.transferred as number,
+            total: p.total as number,
         });
     });
 
-    autoUpdater.on('update-downloaded', (info: any) => {
-        log.info(`[Updater] Update downloaded: ${info.version}`);
-        sendToRenderer('updater:downloaded', { version: info.version });
+    autoUpdater.on('update-downloaded', (info: unknown) => {
+        const updateInfo = info as Record<string, unknown>;
+        log.info(`[Updater] Update downloaded: ${updateInfo.version}`);
+        sendToRenderer('updater:downloaded', { version: updateInfo.version as string });
     });
 
-    autoUpdater.on('error', (err: any) => {
-        log.error('[Updater] Error:', err.message);
-        sendToRenderer('updater:error', { message: err.message });
+    autoUpdater.on('error', (err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        log.error('[Updater] Error:', message);
+        sendToRenderer('updater:error', { message });
     });
 
     // IPC handlers for renderer control

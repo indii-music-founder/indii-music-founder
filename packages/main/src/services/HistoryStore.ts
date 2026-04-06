@@ -1,10 +1,22 @@
-
 import Store from 'electron-store';
 import { app } from 'electron';
-import path from 'path';
+import log from 'electron-log';
+
+/**
+ * Schema for session data persisted via electron-store.
+ * Each session is keyed by its unique ID and stores an arbitrary JSON payload.
+ */
+interface SessionData {
+    id?: string;
+    title?: string;
+    messages?: unknown[];
+    createdAt?: number;
+    updatedAt?: number;
+    [key: string]: unknown;
+}
 
 interface HistorySchema {
-    sessions: Record<string, any>; // Session ID -> Session Data
+    sessions: Record<string, SessionData>;
 }
 
 export class HistoryStore {
@@ -14,12 +26,12 @@ export class HistoryStore {
         if (!this._store) {
             this._store = new Store<HistorySchema>({
                 name: 'chat-history',
-                cwd: app.getPath('userData'), // Explicitly set path
+                cwd: app.getPath('userData'),
                 defaults: {
-                    sessions: {}
-                }
+                    sessions: {},
+                },
             });
-            console.log('[HistoryStore] Initialized at:', (this._store as any).path);
+            log.info('[HistoryStore] Initialized at:', (this._store as unknown as { path: string }).path);
         }
         return this._store;
     }
@@ -28,38 +40,37 @@ export class HistoryStore {
         // Initialization is lazy to prevent calling app.getPath before app is ready
     }
 
-    get(sessionId: string): any | null {
+    get(sessionId: string): SessionData | null {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sessions = (this.store as any).get('sessions');
         return sessions[sessionId] || null;
     }
 
-    getAll(): any[] {
+    getAll(): SessionData[] {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sessions = (this.store as any).get('sessions');
         return Object.values(sessions);
     }
 
-    save(sessionId: string, data: any): void {
+    save(sessionId: string, data: SessionData): void {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sessions = (this.store as any).get('sessions');
-
-        // Merge if exists, or overwrite?
-        // Usually we want to overwrite with latest state or merge messages.
-        // For simplicity and correctness with the store logic, we'll assume 'data' is the full session object
-        // or a significant partial update.
-        // If it's a partial update, we should fetch first.
-
         const existing = sessions[sessionId] || {};
         const updated = { ...existing, ...data };
-
-        (this.store as any).set(`sessions.${sessionId}`, updated);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this.store as any).set(`sessions.${sessionId}` as keyof HistorySchema, updated);
     }
 
     delete(sessionId: string): void {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sessions = (this.store as any).get('sessions');
         delete sessions[sessionId];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (this.store as any).set('sessions', sessions);
     }
 
     clearAll(): void {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (this.store as any).clear();
     }
 }

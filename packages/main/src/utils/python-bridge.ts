@@ -38,7 +38,7 @@ export class PythonBridge {
         onProgress?: (progress: number, log?: string) => void,
         env: NodeJS.ProcessEnv = {},
         sensitiveArgsIndices: number[] = []
-    ): Promise<any> {
+    ): Promise<unknown> {
         return new Promise((resolve, reject) => {
             const python = this.getPythonPath();
             // Construct path: execution/<category>/<scriptName>

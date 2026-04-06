@@ -55,6 +55,7 @@ const createWindow = async () => {
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
 
     const store = new Store();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const windowState = (store as any).get('window-state', {
         width: 1280,
         height: 800,
@@ -114,6 +115,7 @@ const createWindow = async () => {
 
     const saveWindowState = () => {
         const bounds = win.getBounds();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (store as any).set('window-state', {
             x: bounds.x,
             y: bounds.y,

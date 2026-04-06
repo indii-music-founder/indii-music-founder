@@ -12,7 +12,7 @@ export function registerAgentHandlers() {
             validateSender(event);
             AgentHistorySaveSchema.parse({ id, data });
 
-            historyStore.save(id, data);
+            historyStore.save(id, data as Record<string, unknown>);
             return { success: true };
         } catch (error) {
             console.error('Agent History Save Failed:', error);

@@ -36,7 +36,7 @@ export const registerSFTPHandlers = () => {
             if (!distributorId) throw new Error('distributorId is required');
 
             // 1. Fetch credentials securely from the main process keychain
-            const credentials = await credentialService.getCredentials(distributorId as any);
+            const credentials = await credentialService.getCredentials(distributorId);
             if (!credentials || !credentials.sftpHost || (!credentials.sftpPassword && !credentials.password)) {
                 throw new Error(`Missing or incomplete SFTP credentials for ${distributorId}`);
             }

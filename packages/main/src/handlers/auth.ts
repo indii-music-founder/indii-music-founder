@@ -256,7 +256,7 @@ export function handleDeepLink(url: string) {
 
         if (refreshToken) {
             logToFile(`Received Refresh Token (len: ${refreshToken.length})`);
-            authStorage.saveToken(refreshToken).catch((err: any) => console.error("Failed to save refresh token:", err));
+            authStorage.saveToken(refreshToken).catch((err: unknown) => logToFile("[Auth] Failed to save refresh token: " + String(err)));
         }
 
         if (idToken) {
