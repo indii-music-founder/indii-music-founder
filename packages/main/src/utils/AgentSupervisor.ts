@@ -1,6 +1,6 @@
 import { PythonBridge } from './python-bridge';
 
-export interface PythonExecutionResult<T = any> {
+export interface PythonExecutionResult<T = unknown> {
     status: 'success' | 'error';
     data?: T;
     error?: string;
@@ -55,16 +55,16 @@ export class AgentSupervisor {
 
                 // Add metadata to result if it's an object and extensible
                 if (result && typeof result === 'object' && !Object.isFrozen(result)) {
-                    (result as any)._supervisorMetadata = {
+                    (result as Record<string, unknown>)._supervisorMetadata = {
                         executionTimeMs: Date.now() - startTime,
                         attempts
                     };
                 }
 
                 return result;
-            } catch (error: any) {
-                lastError = error;
-                console.warn(`[AgentSupervisor] Attempt ${attempts}/${maxRetries + 1} failed for ${scriptName}: ${error.message}`);
+            } catch (error: unknown) {
+                lastError = error instanceof Error ? error : new Error(String(error));
+                console.warn(`[AgentSupervisor] Attempt ${attempts}/${maxRetries + 1} failed for ${scriptName}: ${lastError.message}`);
 
                 if (attempts <= maxRetries) {
                     // Exponential backoff or simple delay before retry
@@ -137,7 +137,7 @@ export class AgentSupervisor {
     /**
      * Enforces that the Python script output matches the standard IPC schema.
      */
-    private static validateSchema<T>(output: any): T {
+    private static validateSchema<T>(output: unknown): T {
         // If output is a string, it means PythonBridge couldn't parse it as JSON
         if (typeof output === 'string') {
             throw new Error(`IPC Schema Validation Error: Output is not JSON. Raw output: ${output.substring(0, 100)}...`);
@@ -149,16 +149,17 @@ export class AgentSupervisor {
         // Let's implement schema flexibility during transition:
         // 1. Strict `{ status: 'success', data: ... }` format
         if (output && typeof output === 'object') {
-            if (output.status === 'success' && 'data' in output) {
-                return output.data as T;
+            const obj = output as Record<string, unknown>;
+            if (obj.status === 'success' && 'data' in obj) {
+                return obj.data as T;
             }
-            if (output.status === 'error') {
-                throw new Error(`Python Script Error: ${output.error || 'Unknown error'}`);
+            if (obj.status === 'error') {
+                throw new Error(`Python Script Error: ${obj.error || 'Unknown error'}`);
             }
 
             // 2. Legacy fallback format (e.g., direct error key)
-            if (output.error) {
-                throw new Error(`Python Script Legacy Error: ${output.error}`);
+            if (obj.error) {
+                throw new Error(`Python Script Legacy Error: ${obj.error}`);
             }
         }
 

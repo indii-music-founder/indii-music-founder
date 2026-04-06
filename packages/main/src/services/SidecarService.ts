@@ -151,9 +151,10 @@ export class SidecarService {
             this._usingBundled = true;
             log.info('[SidecarService] Bundled sidecar is healthy');
             return { success: true };
-        } catch (error: any) {
-            log.error(`[SidecarService] Failed to spawn: ${error.message}`);
-            return { success: false, log: error.message };
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            log.error(`[SidecarService] Failed to spawn: ${msg}`);
+            return { success: false, log: msg };
         }
     }
 

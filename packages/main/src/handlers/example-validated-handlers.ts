@@ -128,7 +128,7 @@ registerValidatedHandler(
     validators.object({
         userId: commonValidators.userId,
     }),
-    async (event: any, { userId }: any) => {
+    async (_event: Electron.IpcMainInvokeEvent, { userId }: Record<string, unknown>) => {
         // Your user profile fetching logic
         // The userId is guaranteed to be a valid format
         console.log(`Fetching profile for validated userId: ${userId}`);
@@ -150,7 +150,7 @@ registerValidatedHandler(
             notifications: validators.optional(validators.boolean()),
         }, { strict: false }), // Allow extra preferences
     }),
-    async (event: any, { userId, preferences }: any) => {
+    async (_event: Electron.IpcMainInvokeEvent, { userId, preferences }: Record<string, unknown>) => {
         console.log(`Updating preferences for ${userId}:`, preferences);
         return { success: true };
     }
@@ -166,7 +166,7 @@ registerValidatedHandler(
         limit: validators.optional(commonValidators.paginationLimit, 20),
         offset: validators.optional(commonValidators.paginationOffset, 0),
     }),
-    async (event: any, { orgId, limit, offset }: any) => {
+    async (_event: Electron.IpcMainInvokeEvent, { orgId, limit, offset }: Record<string, unknown>) => {
         console.log(`Fetching members for org ${orgId}, limit: ${limit}, offset: ${offset}`);
         return { members: [], total: 0 };
     }
@@ -189,7 +189,7 @@ registerRateLimitedHandler(
         ),
         maxTokens: validators.optional(validators.number({ min: 1, max: 4096 }), 1024),
     }),
-    async (event: any, { prompt, model, maxTokens }: any) => {
+    async (_event: Electron.IpcMainInvokeEvent, { prompt, model, maxTokens }: Record<string, unknown>) => {
         console.log(`Generating with ${model}, prompt length: ${prompt.length}`);
         return { content: 'Generated content here' };
     },
@@ -210,7 +210,7 @@ registerRateLimitedHandler(
         ] as const),
         size: validators.number({ min: 1, max: 20_000_000 }), // 20MB max
     }),
-    async (event: any, { fileName, mimeType, size }: any) => {
+    async (_event: Electron.IpcMainInvokeEvent, { fileName, mimeType, size }: Record<string, unknown>) => {
         console.log(`Uploading ${fileName} (${mimeType}, ${size} bytes)`);
         return { uploadId: 'upload-123' };
     },
@@ -236,7 +236,7 @@ registerValidatedHandler(
             ],
         }),
     }),
-    async (event: any, { url }: any) => {
+    async (_event: Electron.IpcMainInvokeEvent, { url }: Record<string, unknown>) => {
         // Safe to fetch - URL is validated and host is whitelisted
         console.log(`Fetching validated URL: ${url}`);
         return { data: 'Response data' };
@@ -255,7 +255,7 @@ registerValidatedHandler(
     validators.object({
         email: validators.email(),
     }),
-    async (event: any, { email }: any) => {
+    async (_event: Electron.IpcMainInvokeEvent, { email }: Record<string, unknown>) => {
         // Email is guaranteed to be valid format
         return { valid: true, email };
     }

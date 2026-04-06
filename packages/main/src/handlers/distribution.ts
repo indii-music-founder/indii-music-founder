@@ -406,7 +406,7 @@ export const setupDistributionHandlers = () => {
             const distributorId = config.distributorId as string | undefined;
 
             if (distributorId) {
-                const creds = await credentialService.getCredentials(distributorId as any);
+                const creds = await credentialService.getCredentials(distributorId);
                 if (creds) {
                     if (!runtimePassword) runtimePassword = creds.sftpPassword || creds.password;
                 }
@@ -474,7 +474,7 @@ export const setupDistributionHandlers = () => {
             const distributorId = releaseData.distributorId as string | undefined;
 
             if (distributorId) {
-                const secureCreds = await credentialService.getCredentials(distributorId as any);
+                const secureCreds = await credentialService.getCredentials(distributorId);
                 if (secureCreds && (secureCreds.sftpPassword || secureCreds.password)) {
                     env.SFTP_PASSWORD = secureCreds.sftpPassword || secureCreds.password;
                     // Inject connection meta if missing

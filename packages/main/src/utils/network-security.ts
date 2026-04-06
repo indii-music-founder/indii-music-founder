@@ -155,10 +155,11 @@ export async function validateSafeHostAsync(hostInput: string): Promise<void> {
                 throw new Error(`Security Violation: Domain '${hostInput}' resolves to private IP ${address}.`);
             }
         }
-    } catch (error: any) {
-        if (error.message.startsWith('Security Violation')) throw error;
+    } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        if (errMsg.startsWith('Security Violation')) throw error;
         // Fail closed if DNS resolution fails
-        throw new Error(`Security Violation: Could not verify DNS for '${hostname}': ${error.message}`);
+        throw new Error(`Security Violation: Could not verify DNS for '${hostname}': ${errMsg}`);
     }
 }
 
