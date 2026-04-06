@@ -26,7 +26,7 @@ Map the changed file → correct test:
 |---------------------|------------|
 | `src/services/X.ts` | `X.test.ts` or `find("*X*test*")` |
 | `src/modules/**/Comp.tsx` | `Comp.test.tsx` or `__tests__/Comp.test.tsx` |
-| `firestore.rules` | `firestore.rules.test.ts` |
+| `packages/firebase/firestore.rules` | `firestore.rules.test.ts` |
 | `execution/*.py` | `python3 -m pytest execution/tests/` |
 | `functions/src/*.ts` | `functions/src/__tests__/*.test.ts` |
 | No specific match | Run full unit suite: `npm test -- --run` |

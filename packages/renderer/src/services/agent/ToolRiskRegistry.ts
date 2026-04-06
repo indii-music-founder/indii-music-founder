@@ -208,6 +208,20 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Legal (destructive — initiates legal processes)
     trigger_digital_signature: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },
+
+    // Code Execution (destructive — runs arbitrary code on host)
+    execute_code: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Executes arbitrary Python code via the sidecar — requires explicit user approval' },
+
+    // =========================================================================
+    // WRITE — OpenClaw Gap Tools
+    // =========================================================================
+
+    // Canvas A2UI (write — pushes UI content, no destructive side effects)
+    canvas_push: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Push visual content to user workspace' },
+    canvas_clear: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Clear agent canvas panels' },
+
+    // Notifications (write — sends alerts to the user)
+    send_notification: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Send notification to user outside app' },
 };
 
 /**

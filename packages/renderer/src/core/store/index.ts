@@ -28,6 +28,8 @@ import { AnalyticsSlice, createAnalyticsSlice } from './slices/analyticsSlice';
 import { AgentFeedbackSlice, createAgentFeedbackSlice } from './slices/agentFeedbackSlice';
 import { BoardroomSlice, createBoardroomSlice } from './slices/boardroomSlice';
 import { RegistrationSlice, createRegistrationSlice } from './slices/registrationSlice';
+import { AgentPlanSlice, createAgentPlanSlice } from './slices/agentPlanSlice';
+import { AgentCanvasSlice, createAgentCanvasSlice } from './slices/agentCanvasSlice';
 
 
 export type { AgentMessage, AgentThought } from './slices/agent';
@@ -57,7 +59,9 @@ export interface StoreState extends
     AnalyticsSlice,
     BoardroomSlice,
     AgentFeedbackSlice,
-    RegistrationSlice { }
+    RegistrationSlice,
+    AgentPlanSlice,
+    AgentCanvasSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -93,6 +97,8 @@ export const useStore = create<StoreState>()(
                 ...createAgentFeedbackSlice(...a),
                 ...createBoardroomSlice(...a),
                 ...createRegistrationSlice(...a),
+                ...createAgentPlanSlice(...a),
+                ...createAgentCanvasSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access

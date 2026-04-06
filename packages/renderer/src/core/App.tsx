@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { initSentry, setSentryUser, clearSentryUser } from '@/services/observability/SentryService';
 
@@ -19,7 +19,7 @@ import { ModuleAmbientBackground } from './components/ModuleAmbientBackground';
 import { MobileTabBar } from './components/MobileTabBar';
 import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
-import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
+
 import { ApprovalModal } from './components/ApprovalModal';
 import { BiometricGate } from './components/auth/BiometricGate';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -54,6 +54,8 @@ import { logger } from '@/utils/logger';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { FirstRunTour } from '@/components/shared/FirstRunTour';
 import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
+import { TaskPlanWidget } from './components/TaskPlanWidget';
+import { AgentCanvasPanel } from './components/AgentCanvasPanel';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -614,6 +616,12 @@ export default function App() {
 
                                 {/* Agent Alignment Steering Widget */}
                                 <AgentFeedbackWidget />
+
+                                {/* Agent Progress Updates (P0) — floating checklist */}
+                                <TaskPlanWidget />
+
+                                {/* Agent Canvas Panel (A2UI) — slide-out visual content */}
+                                <AgentCanvasPanel />
                             </GlobalDropZone>
                         </div>
                     </ToastProvider>

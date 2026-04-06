@@ -12,7 +12,7 @@ description: Automatically identify and run relevant tests based on the current 
 
 * `src/services/X.ts` -> `X.test.ts` or `find("*X*test*")`
 * `src/modules/**/comp.tsx` -> `__tests__/comp.test.tsx`
-* `firestore.rules` -> `firestore.rules.test.ts`
+* `packages/firebase/firestore.rules` -> `firestore.rules.test.ts`
 * `execution/` -> `python3 -m pytest ...`
 
 ## 2. Execution Protocol

@@ -6,6 +6,7 @@ import { auth } from '@/services/firebase';
 import { agentRegistry } from '../registry';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
+import { useStore } from '@/core/store';
 
 interface IAgentRunner {
     runAgent: (agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string) => Promise<{ text: string; thoughtSignature?: string }>;
@@ -65,6 +66,41 @@ export class HybridOrchestrator {
 
         // 2. Sanitize
         const sanitizedQuery = InputSanitizer.sanitize(userQuery);
+
+        // 3. Initialize structured plan for UI visibility
+        const planId = `plan-${Date.now()}`;
+        const now = Date.now();
+        useStore.getState().setPlan({
+            planId,
+            title: sanitizedQuery.length > 60 ? sanitizedQuery.slice(0, 57) + '...' : sanitizedQuery,
+            steps: [
+                { id: `${planId}-step-1`, label: 'Analyzing request...', status: 'running', startedAt: now },
+            ],
+            createdAt: now,
+            updatedAt: now,
+        });
+        let stepCounter = 1;
+
+        /** Helper: mark current step done + push the next one */
+        const advanceStep = (nextLabel: string) => {
+            useStore.getState().updatePlanStep(planId, `${planId}-step-${stepCounter}`, 'done');
+            stepCounter++;
+            // Push next step by adding it to the plan
+            const plan = useStore.getState().activePlan;
+            if (plan) {
+                const nextStep = {
+                    id: `${planId}-step-${stepCounter}`,
+                    label: nextLabel,
+                    status: 'running' as const,
+                    startedAt: Date.now(),
+                };
+                useStore.getState().setPlan({
+                    ...plan,
+                    steps: [...plan.steps, nextStep],
+                    updatedAt: Date.now(),
+                });
+            }
+        };
 
         while (currentTurn < this.MAX_TURNS && !isTaskComplete) {
             currentTurn++;
@@ -131,6 +167,9 @@ export class HybridOrchestrator {
 
                 // Specialists Invocation
                 if (decision.callAgentId && decision.task) {
+                    const agentDef = agentRegistry.get(decision.callAgentId);
+                    const agentLabel = agentDef?.name || decision.callAgentId;
+                    advanceStep(`Delegating to ${agentLabel}...`);
                     logger.info(`[indii:Hybrid] Delegating to specialist: ${decision.callAgentId}`);
                     try {
                         if (!service) throw new Error('AgentService instance not provided for delegation');
@@ -150,6 +189,7 @@ export class HybridOrchestrator {
 
                 // System Tools Invocation
                 if (decision.useTool === 'knowledge_base') {
+                    advanceStep('Searching knowledge base...');
                     logger.info(`[indii:Hybrid] Using system tool: knowledge_base`);
                     try {
                         const { KnowledgeTools } = await import('../tools/KnowledgeTools');
@@ -169,6 +209,7 @@ export class HybridOrchestrator {
                 }
 
                 if (decision.useTool === 'browser_control') {
+                    advanceStep('Executing browser action...');
                     logger.info(`[indii:Hybrid] Using system tool: browser_control`);
                     try {
                         const { BrowserTools } = await import('../tools/BrowserTools');
@@ -215,6 +256,9 @@ export class HybridOrchestrator {
                 break;
             }
         }
+
+        // Finalize plan — mark final step as done
+        useStore.getState().updatePlanStep(planId, `${planId}-step-${stepCounter}`, 'done');
 
         await TraceService.completeTrace(traceId, { finalResponse: lastAgentResponse });
         return lastAgentResponse || "I encountered an issue while orchestrating your request. Let's try a different approach.";

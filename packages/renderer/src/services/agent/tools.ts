@@ -39,6 +39,9 @@ import { CoreVaultTools } from './tools/CoreVaultTools';
 import { CaptainsLogTools } from './tools/CaptainsLogTools';
 import { SqueezerTools } from './tools/SqueezerTools';
 import { HiveTools } from './tools/HiveTools';
+import { CanvasTools } from './tools/CanvasTools';
+import { CodeExecutionTools } from './tools/CodeExecutionTools';
+import { NotificationTools } from './tools/NotificationTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -85,6 +88,10 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     // Memory Architecture Layer 1 & 2
     ...SqueezerTools,
     ...HiveTools,
+    // A2UI + Code Execution + Notifications (OpenClaw gaps)
+    ...CanvasTools,
+    ...CodeExecutionTools,
+    ...NotificationTools,
 };
 
 
@@ -199,4 +206,11 @@ AVAILABLE TOOLS:
 101. browser_navigate(url) - Navigate to a URL in the background browser.
 102. browser_action(action, selector, value) - Perform a browser action (click, type, select).
 103. browser_snapshot(format) - Take a snapshot of the current browser page.
+--- CANVAS (A2UI) ---
+104. canvas_push(type, title, data, agentId?) - Push structured visual content (chart/table/card/markdown) to the user's workspace canvas.
+105. canvas_clear() - Clear all agent-pushed canvas panels.
+--- CODE EXECUTION ---
+106. execute_code(language, code, description) - Execute a Python script via the sandboxed sidecar. HIGH RISK — requires user approval.
+--- NOTIFICATIONS ---
+107. send_notification(title, body, urgency?, action_url?) - Send a notification (info/warning/critical) to the user outside the app.
 `;
