@@ -19,11 +19,11 @@ export default tseslint.config(
         },
         rules: {
             ...reactHooks.configs.recommended.rules,
-            'react-refresh/only-export-components': 'off',
+            'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
             '@typescript-eslint/no-explicit-any': 'warn',
-            '@typescript-eslint/no-unused-vars': 'off',
+            '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
             '@typescript-eslint/no-empty-object-type': 'off',
-            '@typescript-eslint/ban-ts-comment': 'off',
+            '@typescript-eslint/ban-ts-comment': 'warn',
         },
     },
     // Test files, Cloud Functions, and Electron: relax no-explicit-any

@@ -54,6 +54,6 @@ All primary agents are configured with the **Gemini API Docs MCP** server (`gemi
 | `.agent/artifacts/task.md` | Active task checklist |
 | `.agent/artifacts/implementation_plan.md` | Active implementation plan |
 | `AGENT_BRIDGE.md` | IPC bridge between Antigravity and OpenClaw |
-| `firestore.rules` | Firestore security — update whenever collections change |
-| `storage.rules` | Storage security — update whenever storage paths change |
+| `packages/firebase/firestore.rules` | Firestore security — update whenever collections change |
+| `packages/firebase/storage.rules` | Storage security — update whenever storage paths change |
 | `src/core/config/ai-models.ts` | AI model constants — always import from here |
