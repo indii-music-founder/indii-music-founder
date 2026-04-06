@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Monitor, Cpu, HardDrive, Wifi, ShieldCheck, ToggleLeft, ToggleRight, Keyboard, Database, Network, Power } from 'lucide-react';
+import { Monitor, Cpu, Wifi, ShieldCheck, Keyboard, Database, Network, Power } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/core/context/ToastContext';
+import { ResourceBar } from './components/ResourceBar';
+import { SettingCard } from './components/SettingCard';
 
 export default function DesktopDashboard() {
     const { userProfile, currentProjectId } = useStore(
@@ -127,58 +127,5 @@ export default function DesktopDashboard() {
                 </div>
             </div>
         </div>
-    );
-}
-
-function ResourceBar({ label, value, color }: { label: string, value: number, color: string }) {
-    return (
-        <div>
-            <div className="flex justify-between text-xs mb-2">
-                <span className="text-gray-400 font-medium tracking-wide">{label}</span>
-                <span className="text-white font-bold">{value}%</span>
-            </div>
-            <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
-                <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${value}%` }}
-                    transition={{ duration: 1, ease: 'easeOut' }}
-                    className={cn("h-full rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]", color)}
-                />
-            </div>
-        </div>
-    );
-}
-
-function SettingCard({ icon: Icon, title, description, enabled, onClick }: { icon: React.ElementType, title: string, description: string, enabled: boolean, onClick: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className={cn(
-                "w-full text-left p-6 rounded-3xl border transition-all duration-300 flex items-start gap-6 group hover:scale-[1.01] active:scale-95",
-                enabled
-                    ? "bg-surface/40 hover:bg-surface/60 border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.05)]"
-                    : "bg-surface/20 hover:bg-surface/40 border-white/5"
-            )}
-        >
-            <div className={cn(
-                "p-3 rounded-2xl flex-shrink-0 transition-colors",
-                enabled ? "bg-cyan-500/20 text-cyan-400" : "bg-black/40 text-gray-500 group-hover:text-gray-400"
-            )}>
-                <Icon size={24} />
-            </div>
-
-            <div className="flex-1 min-w-0">
-                <h4 className={cn("text-lg font-bold mb-1 transition-colors", enabled ? "text-white" : "text-gray-300")}>{title}</h4>
-                <p className="text-sm text-gray-500 leading-relaxed pr-8">{description}</p>
-            </div>
-
-            <div className="flex-shrink-0 ml-4 pt-1">
-                {enabled ? (
-                    <ToggleRight size={32} className="text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
-                ) : (
-                    <ToggleLeft size={32} className="text-gray-600" />
-                )}
-            </div>
-        </button>
     );
 }
