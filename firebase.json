@@ -70,7 +70,7 @@
         "**/.*",
         "**/node_modules/**"
       ],
-      "public": "landing-page/dist",
+      "public": "packages/landing/dist",
       "rewrites": [
         {
           "destination": "/index.html",
