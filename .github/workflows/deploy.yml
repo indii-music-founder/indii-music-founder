@@ -77,7 +77,7 @@ jobs:
 
       - name: Build landing page
         run: |
-          cd landing-page
+          cd packages/landing
           rm -rf dist .next
           npm ci --ignore-scripts
           NODE_ENV=production npm run build
@@ -100,7 +100,7 @@ jobs:
 
       - name: Verify build outputs
         run: |
-          ls -la landing-page/dist/index.html
+          ls -la packages/landing/dist/index.html
           ls -la dist/index.html
 
       - name: Bundle size check
@@ -127,7 +127,7 @@ jobs:
           name: build-dist-${{ github.sha }}
           path: |
             dist/
-            landing-page/dist/
+            packages/landing/dist/
           retention-days: 1
 
   # ─── Staging Deploy ──────────────────────────────────────────────────────────
