@@ -6,13 +6,9 @@ import {
     Plus,
     AlertCircle,
     Clock,
-    Square,
     Globe,
     DollarSign,
     Book,
-    ExternalLink,
-    Loader2,
-    TrendingUp,
     Radio,
     FileText
 } from 'lucide-react';
@@ -54,11 +50,10 @@ import { logger } from '@/utils/logger';
 /* ================================================================== */
 
 export default function PublishingDashboard() {
-    const { setModule, finance, distribution, fetchDistributors, fetchEarnings, currentOrganizationId } = useStore(
+    const { setModule, finance, fetchDistributors, fetchEarnings, currentOrganizationId } = useStore(
         useShallow(state => ({
             setModule: state.setModule,
             finance: state.finance,
-            distribution: state.distribution,
             fetchDistributors: state.fetchDistributors,
             fetchEarnings: state.fetchEarnings,
             currentOrganizationId: state.currentOrganizationId,
@@ -344,7 +339,7 @@ export default function PublishingDashboard() {
             {isWizardOpen && (
                 <ReleaseWizard
                     onClose={() => setIsWizardOpen(false)}
-                    onComplete={(releaseId) => {
+                    onComplete={(_releaseId) => {
                         setIsWizardOpen(false);
                     }}
                 />
@@ -385,7 +380,7 @@ function ReleaseStatsPanel({ stats, earnings }: { stats: { total: number; live: 
     );
 }
 
-type ReleaseRow = { id: string; status: string; metadata?: { trackTitle?: string; artistName?: string;[key: string]: unknown } };
+type _ReleaseRow = { id: string; status: string; metadata?: { trackTitle?: string; artistName?: string;[key: string]: unknown } };
 function ActiveReleasePanel({ releases, onSelect }: { releases: ClientReleaseRecord[]; onSelect: (id: string) => void }) {
     const liveReleases = releases.filter(r => r.status === 'live').slice(0, 4);
 

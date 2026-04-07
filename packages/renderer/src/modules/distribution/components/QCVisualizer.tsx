@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-    ShieldCheck, Music, Tag,
-    CheckCircle, FileAudio,
+    Music, Tag,
+    FileAudio,
     BarChart2, Waves, RotateCcw,
     type LucideIcon,
 } from 'lucide-react';
@@ -117,9 +117,8 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
     const [filePath, setFilePath] = useState(initialFilePath ?? '');
     const [runState, setRunState] = useState<RunState>('idle');
     const [checks, setChecks] = useState<QCCheck[] | null>(null);
-    const [report, setReport] = useState<ForensicsReport | null>(null);
+    const [_report, setReport] = useState<ForensicsReport | null>(null);
     const [isDemoMode, setIsDemoMode] = useState(false);
-    const [isDragOver, setIsDragOver] = useState(false);
     const taskIdRef = useRef<string>('qc-initial');
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -201,7 +200,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
             <AnimatePresence>
                 {checks && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {checks.map((c, i) => (
+                        {checks.map((c, _i) => (
                             <div key={c.id} className="p-4 bg-white/5 border border-white/10 rounded-xl flex justify-between">
                                 <div>
                                     <div className="text-xs text-gray-500">{c.type}</div>
