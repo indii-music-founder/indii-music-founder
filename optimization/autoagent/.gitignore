@@ -1,0 +1,7 @@
+.venv/
+jobs/
+results.tsv
+run.log
+__pycache__/
+*.pyc
+.uv-cache/
