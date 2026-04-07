@@ -18,7 +18,7 @@ import {
     getFineTunedModel,
 } from '../fine-tuned-models';
 import { VALID_AGENT_IDS, type ValidAgentId } from '../types';
-import { ALL_AGENT_IDS, SPOKE_AGENT_IDS } from './AgentStressTest.harness';
+import { SPOKE_AGENT_IDS } from './AgentStressTest.harness';
 
 // ============================================================================
 // Mocks
@@ -76,7 +76,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
         it('all non-undefined entries should match Vertex AI endpoint format', () => {
             const entries = Object.entries(FINE_TUNED_MODEL_REGISTRY);
 
-            entries.forEach(([agentId, endpoint]) => {
+            entries.forEach(([_agentId, endpoint]) => {
                 if (endpoint !== undefined) {
                     expect(endpoint).toMatch(ENDPOINT_FORMAT);
                 }
@@ -86,7 +86,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
         it('endpoints should contain valid GCP project number', () => {
             const entries = Object.entries(FINE_TUNED_MODEL_REGISTRY);
 
-            entries.forEach(([agentId, endpoint]) => {
+            entries.forEach(([_agentId, endpoint]) => {
                 if (endpoint !== undefined) {
                     // Extract project number from endpoint
                     const match = endpoint.match(/^projects\/(\d+)\//);
@@ -101,7 +101,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
         it('endpoints should contain valid location (us-central1)', () => {
             const entries = Object.entries(FINE_TUNED_MODEL_REGISTRY);
 
-            entries.forEach(([agentId, endpoint]) => {
+            entries.forEach(([_agentId, endpoint]) => {
                 if (endpoint !== undefined) {
                     const match = endpoint.match(/\/locations\/([a-z0-9-]+)\//);
                     expect(match).not.toBeNull();
@@ -234,7 +234,7 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
         });
 
         it('no endpoint should be empty string', () => {
-            Object.entries(FINE_TUNED_MODEL_REGISTRY).forEach(([agentId, endpoint]) => {
+            Object.entries(FINE_TUNED_MODEL_REGISTRY).forEach(([_agentId, endpoint]) => {
                 if (endpoint !== undefined) {
                     expect(endpoint.length).toBeGreaterThan(0);
                     expect(endpoint.trim()).toBe(endpoint);

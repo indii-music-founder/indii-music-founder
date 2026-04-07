@@ -327,7 +327,7 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
     recoupableExpenses?: number;
     splits: { name: string; email?: string; percentage: number; role?: string }[];
 }) => {
-    const { grossRevenue, isrc, indiiFeePercent = 10, recoupableExpenses = 0, splits } = args;
+    const { grossRevenue, isrc: _isrc, indiiFeePercent = 10, recoupableExpenses = 0, splits } = args;
 
     // 1. Try Bank Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
@@ -487,7 +487,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
     has_upcs: boolean;
     exclusive_rights: boolean;
 }) => {
-    const { total_tracks, has_isrcs, has_upcs, exclusive_rights } = args;
+    const { total_tracks: _total_tracks, has_isrcs: _has_isrcs, has_upcs: _has_upcs, exclusive_rights: _exclusive_rights } = args;
 
     // 1. Try Keys Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {

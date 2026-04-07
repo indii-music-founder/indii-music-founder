@@ -165,7 +165,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         }
     }
 
-    async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
+    async updateRelease(_releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         return {
             success: false,
             status: 'failed',
@@ -173,11 +173,11 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
         return 'processing';
     }
 
-    async takedownRelease(releaseId: string): Promise<ReleaseResult> {
+    async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
             success: true,
             status: 'takedown_requested'
@@ -199,7 +199,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
         return [];
     }
 
