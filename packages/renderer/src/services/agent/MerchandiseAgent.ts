@@ -317,7 +317,7 @@ When a request falls outside your scope:
                 'submit_to_production', 'ask_clarification', 'list_product_types'],
             tools: [{ functionDeclarations: MERCHANDISE_TOOLS }],
             functions: {
-                search_assets: async (args, context) => {
+                search_assets: async (args, _context) => {
                     const { query, projectId, limit = 10 } = args as { query: string; projectId?: string; limit?: number };
                     const { useStore } = await import('@/core/store');
                     const { generatedHistory, uploadedImages } = useStore.getState();
@@ -360,7 +360,7 @@ When a request falls outside your scope:
                         message: `Found ${matches.length} assets matching "${query}"`
                     };
                 },
-                create_product_mockup: async (args, context) => {
+                create_product_mockup: async (args, _context) => {
                     const { assetUrl, productType, placement, sceneDescription, purpose = 'store-listing' } = args as {
                         assetUrl: string;
                         productType: string;
@@ -502,7 +502,7 @@ Style: High-end commercial product photography, 8K resolution, professional stud
                         message: `Successfully generated ${productType} mockup with ${placement} placement for ${purpose}`
                     };
                 },
-                generate_product_video: async (args, context) => {
+                generate_product_video: async (args, _context) => {
                     const { mockupUrl, motionDescription, duration = 5 } = args as {
                         mockupUrl: string;
                         motionDescription: string;
@@ -539,8 +539,8 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         message: `Video generation started (Job ID: ${jobId}). This typically takes 2-5 minutes. You'll be notified when complete.`
                     };
                 },
-                submit_to_production: async (args, context) => {
-                    const { productType, designUrl, quantity, sizes, colors } = args as {
+                submit_to_production: async (args, _context) => {
+                    const { productType, designUrl: _designUrl, quantity, sizes, colors } = args as {
                         productType: string;
                         designUrl: string;
                         quantity: number;
@@ -567,7 +567,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                     const retailPrice = unitCost * 2.2;
                     const profit = (retailPrice - unitCost) * quantity;
 
-                    const result = await MerchandiseService.submitToProduction({
+                    const _result = await MerchandiseService.submitToProduction({
                         productId: `${productType}-${Date.now()}`,
                         variantId: `${sizes?.join(',') || 'standard'}-${colors?.join(',') || 'default'}`,
                         quantity
