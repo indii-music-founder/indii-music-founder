@@ -1,0 +1,192 @@
+name: AutoAgent — Nightly Conductor Optimization
+
+# Runs the kevinrgu/autoagent meta-agent against the indii Conductor system
+# prompt overnight, then opens a PR with any winning prompt delta.
+#
+# IMPORTANT — cost control:
+#   - The hard `--n-iterations` cap below limits how many meta-iterations the
+#     meta-agent can run. Each iteration runs every task once, so total task
+#     executions ≈ N_ITERATIONS * len(tasks). Each task execution can spend
+#     several thousand tokens via gpt-5. DO NOT remove the cap.
+#   - The job timeout below acts as a backstop. If the budget cap fails, the
+#     workflow still hard-stops after 6 hours.
+#   - Verify the OPENAI_API_KEY secret has a billing limit set.
+#
+# See docs/AUTOAGENT_SETUP.md for the full runbook.
+
+on:
+  schedule:
+    # Nightly at 04:00 UTC (~midnight ET, ~9pm PT). Picked to be off-peak so
+    # the resulting PR is waiting in the morning.
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      n_iterations:
+        description: 'Meta-agent iterations (cost cap — keep small for testing)'
+        required: false
+        default: '10'
+      task_filter:
+        description: 'Optional --task-name filter to debug a single task'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  # Prevent two nightly runs from racing on the same prompt file.
+  group: autoagent-nightly
+  cancel-in-progress: false
+
+jobs:
+  optimize:
+    name: Hill-climb Conductor system prompt
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hour hard backstop
+
+    env:
+      # Default cap for scheduled runs. workflow_dispatch can override via input.
+      N_ITERATIONS_DEFAULT: '50'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # need full history for PR creation
+
+      - name: Resolve iteration cap
+        id: cap
+        run: |
+          N="${{ github.event.inputs.n_iterations }}"
+          if [ -z "$N" ]; then N="$N_ITERATIONS_DEFAULT"; fi
+          echo "n=$N" >> "$GITHUB_OUTPUT"
+          echo "Iteration cap for this run: $N"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install autoagent dependencies
+        working-directory: optimization/autoagent
+        run: uv sync
+
+      - name: Verify Docker is available
+        run: |
+          docker version
+          docker info | head -20
+
+      - name: Capture baseline agent.py for diff
+        working-directory: optimization/autoagent
+        run: cp agent.py /tmp/agent.py.baseline
+
+      - name: Run autoagent (capped)
+        id: run
+        working-directory: optimization/autoagent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -o pipefail
+          ARGS=(-p tasks/ -n "${{ steps.cap.outputs.n }}" \
+                --agent-import-path agent:AutoAgent \
+                -o jobs --job-name nightly-${{ github.run_number }})
+          if [ -n "${{ github.event.inputs.task_filter }}" ]; then
+            ARGS+=(--task-name "${{ github.event.inputs.task_filter }}" -l 1)
+          fi
+          uv run harbor run "${ARGS[@]}" 2>&1 | tee run.log
+
+      - name: Diff baseline vs winning agent.py
+        id: diff
+        working-directory: optimization/autoagent
+        run: |
+          if diff -q /tmp/agent.py.baseline agent.py > /dev/null; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Meta-agent did not modify agent.py — nothing to ship."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Meta-agent modified agent.py. Diff:"
+            diff /tmp/agent.py.baseline agent.py || true
+          fi
+
+      - name: Sync winning SYSTEM_PROMPT to agents/agent0/prompt.md
+        if: steps.diff.outputs.changed == 'true'
+        id: sync
+        run: |
+          set +e
+          python3 optimization/autoagent/scripts/sync_winning_prompt.py
+          rc=$?
+          # 0 = wrote a real change. 2 = SYSTEM_PROMPT unchanged (only tools/etc edited).
+          # 1 = real error.
+          if [ "$rc" -eq 0 ]; then
+            echo "wrote_prompt=true" >> "$GITHUB_OUTPUT"
+          elif [ "$rc" -eq 2 ]; then
+            echo "wrote_prompt=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Sync script failed with code $rc"
+            exit "$rc"
+          fi
+
+      - name: Open PR with prompt delta
+        if: steps.sync.outputs.wrote_prompt == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ID: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          ITERATION_CAP: ${{ steps.cap.outputs.n }}
+        run: |
+          set -e
+          BRANCH="autoagent/nightly-${RUN_NUMBER}"
+          git config user.name "indiiOS AutoAgent"
+          git config user.email "autoagent@indiios.local"
+          git checkout -b "$BRANCH"
+          git add agents/agent0/prompt.md
+
+          cat > /tmp/commit_msg.txt <<COMMIT_EOF
+          feat(conductor): autoagent nightly run #${RUN_NUMBER} — prompt update
+
+          Meta-agent winning iteration synced from optimization/autoagent/agent.py.
+          Review the diff carefully before merging. The nightly task scores are
+          attached in the workflow run logs (run.log) under jobs/nightly-${RUN_NUMBER}/.
+          COMMIT_EOF
+          git commit -F /tmp/commit_msg.txt
+
+          git push -u origin "$BRANCH"
+
+          cat > /tmp/pr_body.md <<PR_EOF
+          Automated nightly meta-agent run hill-climbed on the routing tasks under
+          \`optimization/autoagent/tasks/\` and produced a new system prompt for
+          the indii Conductor.
+
+          **Review checklist:**
+          - [ ] Diff in \`agents/agent0/prompt.md\` makes sense — no specialists invented, no hallucinations
+          - [ ] Run logs show improving rolling mean reward (see workflow artifacts)
+          - [ ] Cost is within expected budget for ${ITERATION_CAP} iterations
+          - [ ] No regressions on tasks the previous prompt was already passing
+
+          Workflow run: ${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}
+          PR_EOF
+
+          gh pr create \
+            --title "AutoAgent nightly #${RUN_NUMBER}: Conductor prompt update" \
+            --body-file /tmp/pr_body.md \
+            --base main \
+            --head "$BRANCH"
+
+      - name: Upload run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoagent-nightly-${{ github.run_number }}
+          path: |
+            optimization/autoagent/run.log
+            optimization/autoagent/jobs/
+          retention-days: 14
+          if-no-files-found: warn
