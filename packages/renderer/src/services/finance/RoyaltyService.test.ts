@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RoyaltyService, RevenueReportItem } from '@/services/finance/RoyaltyService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { db } from '@/services/firebase';
-import { doc, collection, getDocs, query, where } from 'firebase/firestore';
+
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
@@ -27,7 +26,7 @@ vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),
     runTransaction: vi.fn(async (db, cb) => {
         const transaction = {
-            get: vi.fn(async (ref) => ({
+            get: vi.fn(async (_ref) => ({
                 exists: () => true,
                 data: () => ({ balance: 100, totalExpense: 100 })
             })),

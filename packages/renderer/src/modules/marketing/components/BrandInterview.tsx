@@ -67,9 +67,6 @@ const BrandInterview: React.FC = () => {
         history,
         isProcessing,
         files,
-        isEditingBio,
-        editedBio,
-        isRegenerating,
         messagesEndRef,
         fileInputRef,
         profileStatus,
@@ -78,11 +75,6 @@ const BrandInterview: React.FC = () => {
         removeFile,
         handleSend,
         handleComplete,
-        handleEditBio,
-        handleSaveBio,
-        handleCancelEdit,
-        handleRegenerateBio,
-        setEditedBio
     } = useOnboarding({
         onComplete: handleInterviewComplete,
         greetings: smartGreetings,
