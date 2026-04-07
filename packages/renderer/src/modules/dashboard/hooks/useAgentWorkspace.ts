@@ -11,19 +11,11 @@ export function useAgentWorkspace() {
         agentHistory,
         userProfile,
         isAgentProcessing,
-        isAgentOpen,
-        toggleAgentWindow,
-        isRightPanelOpen,
-        toggleRightPanel,
     } = useStore(
         useShallow((s) => ({
             agentHistory: s.agentHistory,
             userProfile: s.userProfile,
             isAgentProcessing: s.isAgentProcessing,
-            isAgentOpen: s.isAgentOpen,
-            toggleAgentWindow: s.toggleAgentWindow,
-            isRightPanelOpen: s.isRightPanelOpen,
-            toggleRightPanel: s.toggleRightPanel,
         }))
     );
 

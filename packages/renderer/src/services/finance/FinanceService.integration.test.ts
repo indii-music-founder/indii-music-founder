@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { FinanceService } from '@/services/finance/FinanceService';
-import { db, auth } from '@/services/firebase';
-import { addDoc, collection } from 'firebase/firestore';
+import '@/services/firebase';
+import 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
