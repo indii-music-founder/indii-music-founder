@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+42be9f7 chore: session checkpoint [21:59]
 0594232 chore: session checkpoint [21:56]
 d007e7c chore: session checkpoint [21:54]
 b3d4210 chore: session checkpoint [21:37]
@@ -13,7 +14,6 @@ c87ea32 chore: session checkpoint [13:28]
 03a5044 chore: session checkpoint [13:18]
 00e6981 docs(autoagent): full session handoff — phased plan A/B/C, risks, next commands
 efba71a chore: session checkpoint [13:08]
-0b8f362 chore: session checkpoint [13:01]
 ```
 
 ## Working State
