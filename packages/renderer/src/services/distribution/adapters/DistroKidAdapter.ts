@@ -92,7 +92,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
                     ? metadata.tracks
                     : [metadata];
 
-                tracks.forEach((track, index) => {
+                tracks.forEach((_track, index) => {
                     const ref = `A${resourceCounter++}`;
                     let assetObj = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
 
@@ -164,7 +164,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         }
     }
 
-    async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
+    async updateRelease(_releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         // DistroKid often requires full takedown and re-upload for metadata changes
         return {
             success: false,
@@ -173,11 +173,11 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
         return 'live';
     }
 
-    async takedownRelease(releaseId: string): Promise<ReleaseResult> {
+    async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
             success: true,
             status: 'takedown_requested'
@@ -201,7 +201,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
         // Return empty array until real implementation
         return [];
     }

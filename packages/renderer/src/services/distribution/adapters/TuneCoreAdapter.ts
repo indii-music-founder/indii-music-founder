@@ -179,11 +179,11 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
         }
     }
 
-    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
         return 'in_review';
     }
 
-    async takedownRelease(releaseId: string): Promise<ReleaseResult> {
+    async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
             success: true,
             status: 'takedown_requested'
@@ -205,7 +205,7 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
         return [];
     }
 
