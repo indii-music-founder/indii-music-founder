@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MembershipService } from './MembershipService';
-import { getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import 'firebase/firestore';
 
 // -----------------------------------------------------------------------------
 // LEDGER'S MISSION: BUDGET ALERTS & HIGH USAGE INJECTION

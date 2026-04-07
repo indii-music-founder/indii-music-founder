@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MembershipService } from './MembershipService';
-import { getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { getDoc, setDoc } from 'firebase/firestore';
 
 // -----------------------------------------------------------------------------
 // LEDGER'S TEST SUITE: TRANSACTION INTEGRITY

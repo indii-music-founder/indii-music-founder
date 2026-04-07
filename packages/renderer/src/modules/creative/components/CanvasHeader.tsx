@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
-import React, { useState } from 'react';
+import React from 'react';
 import { Wand2, Save, Image as ImageIcon, Play, X, Share2, Star, Download, Sparkles } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
@@ -28,8 +28,7 @@ interface CanvasHeaderProps {
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
-    // Removed isEditing, setIsEditing
-    isMagicFillMode,
+    // Removed isEditing, setIsEditing, isMagicFillMode (unused in render)
     magicFillPrompt,
     setMagicFillPrompt,
     handleMagicFill,
@@ -41,8 +40,8 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     setIsSelectingEndFrame,
     handleAnimate,
     onClose,
-    onSendToWorkflow,
-    onRefine,
+    onSendToWorkflow: _onSendToWorkflow,
+    onRefine: _onRefine,
     onCreateLastFrame,
     processingStatus,
     isHighFidelity,
