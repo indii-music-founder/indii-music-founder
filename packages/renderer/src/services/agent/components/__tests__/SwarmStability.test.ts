@@ -43,7 +43,7 @@ class RecursiveAgent extends BaseAgent {
     }
 
 
-    async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
+    async execute(task: string, context?: any, _onProgress?: any, _signal?: AbortSignal, _attachments?: any[]) {
         const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
         // Simulate recursion
         return executor.execute('recursive-agent', task, context);
@@ -64,7 +64,7 @@ class FailingAgent extends BaseAgent {
     }
 
 
-    async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]): Promise<any> {
+    async execute(_task: string, _context?: any, _onProgress?: any, _signal?: AbortSignal, _attachments?: any[]): Promise<any> {
         throw new Error('Intentional Failure');
     }
 }
@@ -82,7 +82,7 @@ class ParentAgent extends BaseAgent {
         } as unknown as ConstructorParameters<typeof BaseAgent>[0]);
     }
 
-    async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
+    async execute(task: string, context?: any, _onProgress?: any, _signal?: AbortSignal, _attachments?: any[]) {
         const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
         return executor.execute('child', task, context);
     }
@@ -117,14 +117,14 @@ describe('Swarm Stability Integration', () => {
     });
 
     it('should detect and prevent infinite recursion', async () => {
-        const executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
+        const _executor = new AgentExecutor(agentRegistry as unknown as ConstructorParameters<typeof AgentExecutor>[0]);
 
         vi.mocked(agentRegistry.getAsync).mockImplementation(async (id: string) => {
             if (id === 'recursive-agent') return new RecursiveAgent();
             return null as unknown as Awaited<ReturnType<typeof agentRegistry.getAsync>>;
         });
 
-        const context = {
+        const _context = {
             activeModule: 'test',
             chatHistoryString: '',
             relevantMemories: [],

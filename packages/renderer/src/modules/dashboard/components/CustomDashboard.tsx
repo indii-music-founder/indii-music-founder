@@ -7,14 +7,8 @@ import {
     X,
     Edit3,
     Undo2,
-    CheckSquare,
-    ThumbsUp,
-    Palette,
-    ShoppingBag,
-    MapPin,
 } from 'lucide-react';
-import type {
-} from '@/services/dashboard/schema';
+
 
 /* ================================================================== */
 /*  Item 159 — Customizable Dashboard                                  */

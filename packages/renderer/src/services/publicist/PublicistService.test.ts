@@ -1,13 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PublicistService } from './PublicistService';
-import {
-    collection,
-    query,
-    where,
-    getDocs,
-    writeBatch,
-    doc
-} from 'firebase/firestore';
+
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({

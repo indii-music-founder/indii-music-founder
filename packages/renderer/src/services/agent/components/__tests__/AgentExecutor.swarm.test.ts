@@ -40,7 +40,7 @@ class MockAgent extends BaseAgent {
         } as unknown as ConstructorParameters<typeof BaseAgent>[0]); // Constructor arguments are untyped here
     }
 
-    async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
+    async execute(_task: string, _context?: any, _onProgress?: any, _signal?: AbortSignal, _attachments?: any[]) {
         return { text: 'success', toolCalls: [], thoughts: [] } as unknown as Awaited<ReturnType<BaseAgent['execute']>>;
     }
 }
