@@ -31,6 +31,8 @@ vi.mock('../FirestoreService', () => ({
         add = mocks.add;
         update = mocks.update;
         delete = mocks.deleteFn;
+        deleteMany = vi.fn().mockResolvedValue(undefined);
+        updateMany = vi.fn().mockResolvedValue(undefined);
         get = mocks.get;
         query = vi.fn().mockResolvedValue([]);
     },
