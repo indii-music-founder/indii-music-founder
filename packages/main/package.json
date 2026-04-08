@@ -8,6 +8,7 @@
     },
     "dependencies": {
         "@indiios/shared": "*",
+        "@modelcontextprotocol/sdk": "^1.25.2",
         "@ngrok/ngrok": "^1.7.0",
         "chokidar": "^5.0.0",
         "electron-log": "5.4.3",
