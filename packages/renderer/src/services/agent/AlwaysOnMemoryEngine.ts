@@ -784,9 +784,9 @@ Be thorough but concise. Always cite your sources.`;
         const events = await ingestionService.list();
 
         await Promise.all([
-            ...memories.map((m) => memService.delete(m.id)),
-            ...insights.map((i) => insightService.delete(i.id)),
-            ...events.map((e) => ingestionService.delete(e.id)),
+            memService.deleteMany(memories.map((m) => m.id)),
+            insightService.deleteMany(insights.map((i) => i.id)),
+            ingestionService.deleteMany(events.map((e) => e.id)),
         ]);
 
         logger.info(`[AlwaysOnMemoryEngine] 🗑️ Cleared ${memories.length} memories, ${insights.length} insights.`);
@@ -894,27 +894,26 @@ Be thorough but concise. Always cite your sources.`;
 
     private async markConsolidated(userId: string, memories: AlwaysOnMemory[]): Promise<void> {
         const service = this.getMemoryService(userId);
-        await Promise.all(
-            memories.map((m) =>
-                service.update(m.id, {
-                    consolidated: true,
-                    updatedAt: Timestamp.now(),
-                } as Partial<AlwaysOnMemory>)
-            )
-        );
+        const updates = memories.map((m) => ({
+            id: m.id,
+            data: {
+                consolidated: true,
+            } as Partial<AlwaysOnMemory>,
+        }));
+        await service.updateMany(updates);
     }
 
     private async updateAccessStats(userId: string, memories: AlwaysOnMemory[]): Promise<void> {
         const service = this.getMemoryService(userId);
         const now = Timestamp.now();
-        await Promise.all(
-            memories.map((m) =>
-                service.update(m.id, {
-                    accessCount: (m.accessCount || 0) + 1,
-                    lastAccessedAt: now,
-                } as Partial<AlwaysOnMemory>)
-            )
-        );
+        const updates = memories.map((m) => ({
+            id: m.id,
+            data: {
+                accessCount: (m.accessCount || 0) + 1,
+                lastAccessedAt: now,
+            } as Partial<AlwaysOnMemory>,
+        }));
+        await service.updateMany(updates);
     }
 
     private async logIngestionEvent(
