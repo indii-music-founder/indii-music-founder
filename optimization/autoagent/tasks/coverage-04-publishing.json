@@ -1,0 +1,16 @@
+{
+    "type": "coverage",
+    "agent": "publishing",
+    "required_concepts": [
+        "pro",
+        "ascap",
+        "bmi",
+        "sesac",
+        "mechanical",
+        "songwriter",
+        "splits",
+        "composition",
+        "royalt"
+    ],
+    "description": "Publishing Director covers PROs and composition rights"
+}

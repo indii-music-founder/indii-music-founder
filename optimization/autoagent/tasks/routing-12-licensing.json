@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Clear the sample I used from that 70s funk record before release",
+    "expected_agent": "licensing",
+    "description": "Sample clearance request routes to Licensing"
+}

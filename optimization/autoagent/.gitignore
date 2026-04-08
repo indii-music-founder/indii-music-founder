@@ -1,7 +1,6 @@
-.venv/
-jobs/
+# AutoAgent eval artifacts
 results.tsv
-run.log
 __pycache__/
 *.pyc
-.uv-cache/
+jobs/
+run.log

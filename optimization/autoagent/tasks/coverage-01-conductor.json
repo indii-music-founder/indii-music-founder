@@ -1,0 +1,26 @@
+{
+    "type": "coverage",
+    "agent": "agent0",
+    "required_concepts": [
+        "hub-and-spoke",
+        "route",
+        "parallelize",
+        "conductor",
+        "analytics",
+        "brand",
+        "creative",
+        "distribution",
+        "finance",
+        "legal",
+        "licensing",
+        "marketing",
+        "merchandise",
+        "music",
+        "publicist",
+        "publishing",
+        "road",
+        "social",
+        "video"
+    ],
+    "description": "Conductor prompt covers all spoke agents and core architecture concepts"
+}

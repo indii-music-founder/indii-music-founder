@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Register my new song with ASCAP and set up songwriter splits for my co-writer",
+    "expected_agent": "publishing",
+    "description": "Songwriter registration request routes to Publishing"
+}

@@ -1,0 +1,11 @@
+{
+    "type": "consistency",
+    "agent": "legal",
+    "checks": {
+        "has_mission": true,
+        "has_identity": true,
+        "no_other_ai_names": true,
+        "has_architecture_section": true
+    },
+    "description": "Legal agent has mission, identity, no other AI names, and architecture section"
+}

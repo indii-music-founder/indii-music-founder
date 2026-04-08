@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Show me a breakdown of my royalty payments from last quarter",
+    "expected_agent": "finance",
+    "description": "Royalty payment request routes to Finance"
+}

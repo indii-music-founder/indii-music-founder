@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Review this contract from the label before I sign it",
+    "expected_agent": "legal",
+    "description": "Contract review request routes to Legal"
+}

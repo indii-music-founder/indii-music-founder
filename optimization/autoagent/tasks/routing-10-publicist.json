@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Write a press release for my album launch and pitch it to music blogs",
+    "expected_agent": "publicist",
+    "description": "PR/press request routes to Publicist"
+}

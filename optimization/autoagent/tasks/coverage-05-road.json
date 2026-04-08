@@ -1,0 +1,15 @@
+{
+    "type": "coverage",
+    "agent": "road",
+    "required_concepts": [
+        "venue",
+        "tour",
+        "travel",
+        "logistics",
+        "advancing",
+        "crew",
+        "load-out",
+        "itinerary"
+    ],
+    "description": "Road Manager covers touring logistics vocabulary"
+}

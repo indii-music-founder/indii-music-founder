@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Plan my 10-city US tour for September with venue recommendations",
+    "expected_agent": "road",
+    "description": "Tour planning request routes to Road Manager"
+}

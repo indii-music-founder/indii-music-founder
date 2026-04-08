@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Show me my streaming metrics and listener demographics from last month",
+    "expected_agent": "analytics",
+    "description": "Streaming metrics request routes to Analytics"
+}
