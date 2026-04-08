@@ -24,6 +24,7 @@ import { SchedulerService } from './services/SchedulerService';
 import { configureSecurity, auditSessionCookies } from './security';
 import { applyCSP } from './security/csp';
 import { SidecarService } from './services/SidecarService';
+import { mcpClientService } from './services/mcp/MCPClientService';
 import { setupAutoUpdater } from './updater';
 import Store from 'electron-store';
 
@@ -436,6 +437,21 @@ if (!gotTheLock) {
         SchedulerService.start();
         SchedulerService.registerBuiltInTasks();
 
+        // Initialize Local MCP Client
+        mcpClientService.connectLocal().then(async () => {
+            log.info('[MCP] Successfully connected to local server');
+            try {
+                // Test call just to prove the protocol works on startup
+                const res = await mcpClientService.executeTool('read_wav_tags', { filePath: '/invalid/path.wav' });
+                log.info(`[MCP] Test call result: ${JSON.stringify(res)}`);
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e);
+                log.info(`[MCP] Test call (expected) error: ${msg}`);
+            }
+        }).catch(err => {
+            log.error(`[MCP] Failed to connect to local server: ${err?.message}`);
+        });
+
         createWindow();
         createTray();
 
@@ -500,6 +516,7 @@ app.on('will-quit', async () => {
     if (sftpService.isConnected()) {
         await sftpService.disconnect().catch(e => log.warn('[Main] SFTP disconnect on quit error:', e));
     }
+    await mcpClientService.disconnect().catch(e => log.warn('[Main] MCP disconnect error:', e));
     await SidecarService.stopSystem();
     await stopMobileRemoteServer().catch(e => log.warn('[Main] Mobile remote shutdown error:', e));
 });

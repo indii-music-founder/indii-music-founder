@@ -74,25 +74,21 @@ def execute_code(
 
         # Build the subprocess command
         python_exe = sys.executable
-        env = os.environ.copy()
-        # Restrict environment for security — strip all known secrets and VITE_* vars
-        sensitive_keys = [
-            "OPENAI_API_KEY",
-            "ANTHROPIC_API_KEY",
-            "GOOGLE_API_KEY",
-            "STRIPE_SECRET_KEY",
-            "FIREBASE_SERVICE_ACCOUNT",
-            "FIREBASE_TOKEN",
-            "GITHUB_TOKEN",
-            "AWS_SECRET_ACCESS_KEY",
-            "AWS_SESSION_TOKEN",
-        ]
-        for key in sensitive_keys:
-            env.pop(key, None)
-        # Strip all VITE_* vars (frontend secrets exposed via build env)
-        vite_keys = [k for k in env if k.startswith("VITE_")]
-        for key in vite_keys:
-            env.pop(key, None)
+
+        # Restrict environment for security — use an explicit allowlist
+        allowed_env_keys = {
+            "PATH",
+            "HOME",
+            "TMPDIR",
+            "LANG",
+            "LC_ALL",
+            "LC_CTYPE",
+            "PYTHONPATH",
+            "PYTHONIOENCODING",
+            "PYENV_VERSION",
+            "PYENV_ROOT",
+        }
+        env = {k: v for k, v in os.environ.items() if k in allowed_env_keys}
 
         # Set memory limit via preexec_fn (Unix only)
         preexec = None
