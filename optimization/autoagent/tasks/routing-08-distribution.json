@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Deliver my album to Spotify, Apple Music, and Tidal with DDEX",
+    "expected_agent": "distribution",
+    "description": "DSP delivery request routes to Distribution"
+}

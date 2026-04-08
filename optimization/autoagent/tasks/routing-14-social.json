@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Schedule my TikTok and Instagram posts for the rest of this week",
+    "expected_agent": "social",
+    "description": "Social media scheduling request routes to Social"
+}

@@ -1,0 +1,16 @@
+{
+    "type": "coverage",
+    "agent": "distribution",
+    "required_concepts": [
+        "ddex",
+        "ern",
+        "sftp",
+        "dsp",
+        "isrc",
+        "upc",
+        "metadata",
+        "qc",
+        "delivery"
+    ],
+    "description": "Distribution Director covers DDEX and DSP delivery pipeline"
+}

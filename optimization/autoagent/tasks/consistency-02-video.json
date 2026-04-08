@@ -1,0 +1,11 @@
+{
+    "type": "consistency",
+    "agent": "video",
+    "checks": {
+        "has_mission": true,
+        "has_identity": true,
+        "no_other_ai_names": true,
+        "has_architecture_section": false
+    },
+    "description": "Video agent has mission & identity, no other AI names"
+}

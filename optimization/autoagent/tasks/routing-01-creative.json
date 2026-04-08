@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "I need an album cover designed for my upcoming EP",
+    "expected_agent": "creative-director",
+    "description": "Visual content request routes to Creative Director"
+}

@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Create a launch campaign for my single dropping next Friday on TikTok and Instagram",
+    "expected_agent": "marketing",
+    "description": "Campaign strategy request routes to Marketing"
+}

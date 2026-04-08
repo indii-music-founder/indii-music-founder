@@ -1,0 +1,17 @@
+{
+    "type": "coverage",
+    "agent": "music",
+    "required_concepts": [
+        "lufs",
+        "mastering",
+        "loudness",
+        "metadata",
+        "ddex",
+        "audio",
+        "frequency",
+        "codec",
+        "sample rate",
+        "bit depth"
+    ],
+    "description": "Sonic Director covers key audio analysis concepts"
+}

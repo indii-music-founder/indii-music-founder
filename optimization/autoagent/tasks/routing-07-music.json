@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Check if my master is hitting the right LUFS for Spotify",
+    "expected_agent": "music",
+    "description": "Audio analysis request routes to Music/Sonic Director"
+}

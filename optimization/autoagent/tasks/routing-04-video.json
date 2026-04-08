@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Generate a lyric video for my latest track using AI",
+    "expected_agent": "video",
+    "description": "Video production request routes to Video"
+}

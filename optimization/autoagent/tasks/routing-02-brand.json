@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "Make sure all my social media posts match my brand guidelines",
+    "expected_agent": "brand",
+    "description": "Brand consistency request routes to Brand Manager"
+}
