@@ -1430,3 +1430,6 @@ export const enrichFanData = functions
             }
         };
     });
+
+// MCP SSE Server
+export * from './mcp';
