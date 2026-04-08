@@ -18,7 +18,8 @@ import {
     setDoc,
     orderBy,
     OrderByDirection,
-    WhereFilterOp
+    WhereFilterOp,
+    writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -89,6 +90,51 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     async delete(id: string): Promise<void> {
         const docRef = doc(db, this.collectionPath, id);
         await deleteDoc(docRef);
+    }
+
+    /**
+     * Deletes multiple documents in batches.
+     * Firestore batches are limited to 500 operations.
+     */
+    async deleteMany(ids: string[]): Promise<void> {
+        if (ids.length === 0) return;
+        if (this.isE2EMode) return;
+
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+            const chunk = ids.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(db);
+            chunk.forEach((id) => {
+                const docRef = doc(db, this.collectionPath, id);
+                batch.delete(docRef);
+            });
+            await batch.commit();
+        }
+    }
+
+    /**
+     * Updates multiple documents in batches.
+     * Firestore batches are limited to 500 operations.
+     */
+    async updateMany(updates: { id: string; data: Partial<T> }[]): Promise<void> {
+        if (updates.length === 0) return;
+        if (this.isE2EMode) return;
+
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
+            const chunk = updates.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(db);
+            const now = Timestamp.now();
+
+            chunk.forEach(({ id, data }) => {
+                const docRef = doc(db, this.collectionPath, id);
+                batch.update(docRef, this.pruneUndefined({
+                    ...data,
+                    updatedAt: now
+                }));
+            });
+            await batch.commit();
+        }
     }
 
     async get(id: string): Promise<T | null> {
