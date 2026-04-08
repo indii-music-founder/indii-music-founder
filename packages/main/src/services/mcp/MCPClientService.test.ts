@@ -34,14 +34,14 @@ describe('MCPClientService', () => {
     });
 
     it('should connect successfully', async () => {
-        await service.connect();
+        await service.connectLocal();
 
         // Assert that the client was instantiated
         expect(Client).toHaveBeenCalledTimes(1);
     });
 
     it('should disconnect successfully', async () => {
-        await service.connect();
+        await service.connectLocal();
         await service.disconnect();
 
         // Internal state cannot be easily asserted without cast, but we verify it runs
@@ -49,13 +49,13 @@ describe('MCPClientService', () => {
     });
 
     it('should throw an error when calling tool without connecting', async () => {
-        await expect(service.callTool('test_tool', {})).rejects.toThrow('MCP Client is not connected');
+        await expect(service.executeTool('test_tool', {})).rejects.toThrow('MCP Client (local) is not connected for tool: test_tool');
     });
 
     it('should call an MCP tool successfully', async () => {
-        await service.connect();
+        await service.connectLocal();
 
-        const response = await service.callTool('test_tool', { arg: 'value' });
+        const response = await service.executeTool('test_tool', { arg: 'value' });
 
         expect(response.content[0].text).toBe('mocked response');
     });
