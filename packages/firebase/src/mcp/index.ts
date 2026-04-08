@@ -1,10 +1,14 @@
-import { onRequest } from 'firebase-functions/v2/https';
+import * as functions from "firebase-functions/v1";
 import * as express from 'express';
+import cors from 'cors';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from '@modelcontextprotocol/sdk/types.js';
 
+const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true' || process.env.NODE_ENV === 'production';
+
 const app = express.default();
+app.use(cors({ origin: true }));
 
 const server = new Server(
     {
@@ -22,18 +26,18 @@ const server = new Server(
 const transports = new Map<string, SSEServerTransport>();
 
 app.get('/sse', async (req, res) => {
-    // Generate a unique session ID
-    const sessionId = Math.random().toString(36).substring(2, 15);
+    console.log(`[MCP Server] New SSE connection request`);
 
-    console.log(`[MCP Server] New SSE connection established: ${sessionId}`);
-
-    // In production this endpoint URL should match what Cloud Run exposes. But we just need a relative path or absolute path
-    // The firebase emulator usually mounts on /<project>/<region>/mcpEndpoint
-    // We can just use a relative URL if clients support it, or an absolute path based on req.baseUrl
-    const messageUrl = `${req.baseUrl || ''}/message?sessionId=${sessionId}`;
+    // In production this endpoint URL should match what Cloud Run exposes.
+    const messageUrl = `${req.baseUrl || ''}/message`;
 
     const transport = new SSEServerTransport(messageUrl, res);
+
+    // The SDK generates its own UUID sessionId
+    const sessionId = transport.sessionId;
     transports.set(sessionId, transport);
+
+    console.log(`[MCP Server] SSE connection established: ${sessionId}`);
 
     // Cleanup on disconnect
     res.on('close', () => {
@@ -83,7 +87,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (request.params.name === 'format_dsp_metadata') {
-        const { releaseTitle, artists, genre } = request.params.arguments as any;
+        const args = request.params.arguments as unknown as {
+            releaseTitle: string;
+            artists: string[];
+            genre: string;
+        };
+        const { releaseTitle, artists, genre } = args;
 
         // Mocked remote operation that would actually hit Firestore/BigQuery
         const formattedMetadata = {
@@ -107,4 +116,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
 });
 
-export const mcpEndpoint = onRequest({ cors: true }, app);
+export const mcpEndpoint = functions
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK })
+    .https.onRequest(app);
+export const expressApp = app;

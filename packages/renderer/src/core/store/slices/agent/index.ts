@@ -18,9 +18,10 @@ import { StateCreator } from 'zustand';
 import { AgentUISlice, buildAgentUIState } from './agentUISlice';
 import { AgentSessionSlice, buildAgentSessionState } from './agentSessionSlice';
 import { AgentTaskSlice, buildAgentTaskState } from './agentTaskSlice';
+import { AgentOrchestrationSlice, buildAgentOrchestrationState } from './agentOrchestrationSlice';
 
 // Combined interface for the root store
-export interface AgentSlice extends AgentUISlice, AgentSessionSlice, AgentTaskSlice {}
+export interface AgentSlice extends AgentUISlice, AgentSessionSlice, AgentTaskSlice, AgentOrchestrationSlice { }
 
 // Type re-exports for backward compatibility
 export type { AgentMode, ApprovalRequest } from './agentUISlice';
@@ -36,6 +37,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => {
     const uiState = buildAgentUIState(set, get);
     const sessionState = buildAgentSessionState(set, get);
     const taskState = buildAgentTaskState(set, get);
+    const orchestrationState = buildAgentOrchestrationState(set, get);
 
     // Override setActiveSession to also set rightPanelView (cross-slice concern)
     const originalSetActiveSession = sessionState.setActiveSession;
@@ -57,5 +59,6 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => {
         ...uiState,
         ...sessionState,
         ...taskState,
+        ...orchestrationState,
     };
 };

@@ -297,7 +297,7 @@ export const triggerVideoJob = functions
 
         // Construct input matching the schema
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
-        const inputData: any = { ...safeData, userId };
+        const inputData: Record<string, unknown> = { ...safeData, userId };
 
         // Zod Validation
         const validation = VideoJobSchema.safeParse(inputData);
@@ -342,7 +342,8 @@ export const triggerVideoJob = functions
 
             return { success: true, message: "Video generation job started." };
 
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             console.error("[VideoJob] Error triggering video generation:", error);
             throw new functions.https.HttpsError(
                 "internal",
@@ -405,7 +406,8 @@ export const executeVideoJob = functions
                 prompt,
                 options
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             // Error is already handled inside generateVideoDirect (Firestore updated to "failed")
             console.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
         }
@@ -564,7 +566,8 @@ export const triggerLongFormVideoJob = functions
 
             return { success: true, message: "Long form video generation started." };
 
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             console.error("[LongFormVideoJob] Error:", error);
             if (error instanceof functions.https.HttpsError) {
                 throw error;
@@ -600,8 +603,8 @@ export const renderVideo = functions
         }
 
         const userId = context.auth.uid;
-        const safeData = (typeof data === 'object' && data !== null) ? data as Record<string, any> : {};
-        const { compositionId, inputProps } = safeData;
+        const safeData = (typeof data === 'object' && data !== null) ? data as Record<string, unknown> : {};
+        const { compositionId, inputProps } = safeData as { compositionId?: string; inputProps?: Record<string, unknown> };
         const project = inputProps?.project;
 
         if (!project || !project.tracks || !project.clips) {
@@ -621,9 +624,9 @@ export const renderVideo = functions
             // Google Transcoder Stitching requires a list of inputs.
 
             // Filter only video clips
-            const videoClips = project.clips
-                .filter((c: any) => c.type === 'video')
-                .sort((a: any, b: any) => a.startFrame - b.startFrame);
+            const videoClips = (project.clips as Record<string, unknown>[])
+                .filter((c: Record<string, unknown>) => c && typeof c === "object" && c.type === 'video')
+                .sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(a.startFrame) - Number(b.startFrame));
 
             if (videoClips.length === 0) {
                 throw new functions.https.HttpsError(
@@ -632,7 +635,7 @@ export const renderVideo = functions
                 );
             }
 
-            const segmentUrls = videoClips.map((c: any) => c.src);
+            const segmentUrls = videoClips.map((c: Record<string, unknown>) => c.src as string);
 
             // 2. Create Job Record (Atomic Create)
             await admin.firestore().collection("videoJobs").doc(jobId).create({
@@ -665,7 +668,8 @@ export const renderVideo = functions
 
             return { success: true, renderId: jobId, message: "Render job queued." };
 
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             console.error("[RenderVideo] Error:", error);
             throw new functions.https.HttpsError(
                 "internal",
@@ -782,7 +786,8 @@ export const generateSpeech = functions
 
             return { audioContent };
 
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             console.error("[generateSpeech] Error:", error);
             throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
         }
@@ -863,7 +868,8 @@ export const generateContentStream = functions
 
                 res.end();
 
-            } catch (error: any) {
+            } catch (err: unknown) {
+                const error = err instanceof Error ? err : new Error(String(err));
                 console.error("[generateContentStream] Error:", error);
                 if (!res.headersSent) {
                     res.status(500).send(error.message);
@@ -956,7 +962,8 @@ export const ragProxy = functions
                 const data = await response.text();
                 res.status(response.status);
                 try { res.send(JSON.parse(data)); } catch { res.send(data); }
-            } catch (error: any) {
+            } catch (err: unknown) {
+                const error = err instanceof Error ? err : new Error(String(err));
                 res.status(500).send({ error: error.message });
             }
         });
@@ -991,7 +998,8 @@ export const listGKEClusters = functions
 
         try {
             return await gkeService.listClusters(projectId);
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
@@ -1025,7 +1033,8 @@ export const getGKEClusterStatus = functions
 
         try {
             return await gkeService.getClusterStatus(projectId, data.location, data.clusterName);
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
@@ -1045,7 +1054,8 @@ export const scaleGKENodePool = functions
 
         try {
             return await gkeService.scaleNodePool(projectId, data.location, data.clusterName, data.nodePoolName, data.nodeCount);
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
@@ -1065,7 +1075,8 @@ export const listGCEInstances = functions
 
         try {
             return await gceService.listInstances(projectId);
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
@@ -1085,7 +1096,8 @@ export const restartGCEInstance = functions
 
         try {
             return await gceService.resetInstance(projectId, data.zone, data.instanceName);
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
@@ -1125,7 +1137,8 @@ export const getBigQueryTableSchema = functions
 
         try {
             return await bigqueryService.getTableSchema(projectId, data.datasetId, data.tableId);
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
@@ -1145,7 +1158,8 @@ export const listBigQueryDatasets = functions
 
         try {
             return await bigqueryService.listDatasets(projectId);
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
@@ -1382,7 +1396,7 @@ export const enrichFanData = functions
         enforceAppCheck: ENFORCE_APP_CHECK
     })
     // Item 352: Explicit return type annotation
-    .https.onCall(async (data: any, context): Promise<{ results: unknown[]; metadata: { provider: string; count: number; timestamp: string } }> => {
+    .https.onCall(async (data: Record<string, unknown>, context): Promise<{ results: unknown[]; metadata: { provider: string; count: number; timestamp: string } }> => {
         // 1. Security Check
         if (!context.auth) {
             throw new functions.https.HttpsError(
@@ -1405,8 +1419,8 @@ export const enrichFanData = functions
         // 3. Enrichment Logic
         // In production, this calls Clearbit/Apollo API. 
         // For Alpha, we use high-fidelity mock enrichment based on industry benchmarks.
-        const results = fans.map((fan: any) => {
-            const emailDomain = fan.email.split('@')[1] || '';
+        const results = fans.map((fan: Record<string, unknown>) => {
+            const emailDomain = (fan.email as string).split('@')[1] || '';
             const isCorporate = !['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'].includes(emailDomain);
 
             // Heuristic-based enrichment
@@ -1433,3 +1447,6 @@ export const enrichFanData = functions
 
 // MCP SSE Server
 export * from './mcp';
+
+// Agent Orchestration State Machine
+export * from './orchestration';
