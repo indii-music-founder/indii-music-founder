@@ -1,26 +1,44 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { delay, retry } from './async';
 
 describe('async utilities', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('delay', () => {
     it('should resolve after the specified time', async () => {
-      const start = Date.now();
+      let resolved = false;
       const waitTime = 100;
-      await delay(waitTime);
-      const end = Date.now();
-      const elapsed = end - start;
       
-      // Allow for some jitter in timing
-      expect(elapsed).toBeGreaterThanOrEqual(waitTime - 10);
-      expect(elapsed).toBeLessThan(waitTime + 150);
+      const promise = delay(waitTime).then(() => {
+        resolved = true;
+      });
+
+      // Should not be resolved initially
+      expect(resolved).toBe(false);
+
+      // Advance timers just before it should resolve
+      await vi.advanceTimersByTimeAsync(waitTime - 1);
+      expect(resolved).toBe(false);
+
+      // Advance to the exact time
+      await vi.advanceTimersByTimeAsync(1);
+      await promise;
+      expect(resolved).toBe(true);
     });
   });
 
   describe('retry', () => {
     it('should return the result if the function succeeds on the first try', async () => {
       const fn = vi.fn().mockResolvedValue('success');
-      const result = await retry(fn, 3, 10);
+      const promise = retry(fn, 3, 10);
       
+      const result = await promise;
       expect(result).toBe('success');
       expect(fn).toHaveBeenCalledTimes(1);
     });
@@ -31,30 +49,68 @@ describe('async utilities', () => {
         .mockRejectedValueOnce(new Error('fail'))
         .mockResolvedValue('success');
       
-      const result = await retry(fn, 3, 10);
+      const promise = retry(fn, 3, 10);
+
+      // Advance timers for the delays
+      // First wait is 10ms, second is 20ms
+      await vi.advanceTimersByTimeAsync(10);
+      await vi.advanceTimersByTimeAsync(20);
       
+      const result = await promise;
       expect(result).toBe('success');
       expect(fn).toHaveBeenCalledTimes(3);
     });
 
     it('should throw an error if all retries fail', async () => {
-      const fn = vi.fn().mockRejectedValue(new Error('permanent fail'));
+      const error = new Error('permanent fail');
+      const fn = vi.fn().mockRejectedValue(error);
       
-      await expect(retry(fn, 2, 10)).rejects.toThrow('permanent fail');
+      // We don't want the unhandled rejection warning, so we catch it immediately
+      const promise = retry(fn, 2, 10);
+      const catchMock = vi.fn();
+      promise.catch(catchMock);
+
+      // Wait a tick to process initial rejection
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Advance timers to trigger retries
+      await vi.advanceTimersByTimeAsync(10); // 1st retry (10ms wait)
+      await vi.advanceTimersByTimeAsync(0); // process 1st retry
+
+      await vi.advanceTimersByTimeAsync(20); // 2nd retry (20ms wait)
+
+      await expect(promise).rejects.toThrow('permanent fail');
       expect(fn).toHaveBeenCalledTimes(3); // Initial + 2 retries
+      expect(catchMock).toHaveBeenCalledWith(error);
     });
 
-    it('should use exponential backoff (implied by internal calls)', async () => {
+    it('should use exponential backoff', async () => {
       const fn = vi.fn()
+        .mockRejectedValueOnce(new Error('fail'))
         .mockRejectedValueOnce(new Error('fail'))
         .mockResolvedValue('success');
       
-      const start = Date.now();
-      await retry(fn, 1, 50);
-      const end = Date.now();
+      const promise = retry(fn, 2, 50);
+
+      // Initial try failed. It's waiting 50ms for first retry.
+      await vi.advanceTimersByTimeAsync(0); // process initial failure
+      await vi.advanceTimersByTimeAsync(49);
+      expect(fn).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(1); // 50ms total
+      await vi.advanceTimersByTimeAsync(0); // process promise chain
+      expect(fn).toHaveBeenCalledTimes(2);
+
+      // Second try failed. It's waiting 100ms for second retry.
+      await vi.advanceTimersByTimeAsync(99);
+      expect(fn).toHaveBeenCalledTimes(2);
+
+      await vi.advanceTimersByTimeAsync(1); // 100ms total
+      await vi.advanceTimersByTimeAsync(0); // process promise chain
+      expect(fn).toHaveBeenCalledTimes(3);
       
-      // Should have waited at least 50ms once
-      expect(end - start).toBeGreaterThanOrEqual(45);
+      const result = await promise;
+      expect(result).toBe('success');
     });
   });
 });
