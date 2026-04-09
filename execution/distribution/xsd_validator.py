@@ -434,7 +434,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("xml_input", help="XML file path or XML string")
     parser.add_argument("--xsd", help="Path to DDEX ERN XSD schema file")
-    parser.add_argument("--storage-path", help="Path for persistence (unused, for consistency)")
 
     args = parser.parse_args()
 
