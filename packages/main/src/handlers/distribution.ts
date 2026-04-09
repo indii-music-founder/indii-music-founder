@@ -208,11 +208,8 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:execute-waterfall', async (event, data: unknown) => {
         try {
             validateSender(event);
-            const storagePath = getStoragePath();
             const report = await AgentSupervisor.execute('finance', 'waterfall_payout.py', [
-                JSON.stringify(data),
-                '--storage-path',
-                storagePath
+                JSON.stringify(data)
             ], { timeoutMs: 60000 }, undefined, {}, [0]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
