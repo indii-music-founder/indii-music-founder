@@ -71,7 +71,7 @@ class SplitSheetGenerator(Tool):
             markdown_doc = response.text
             
             # --- PandaDoc Integration: Create a signable split sheet ---
-            import requests
+            import aiohttp
             import os
             from dotenv import load_dotenv
             load_dotenv()
@@ -116,17 +116,19 @@ class SplitSheetGenerator(Tool):
                 }
                 
                 try:
-                    pd_res = requests.post(
-                        "https://api.pandadoc.com/public/v1/documents",
-                        json=doc_payload,
-                        headers=headers,
-                        timeout=15
-                    )
-                    if pd_res.ok:
-                        pandadoc_doc_id = pd_res.json().get("id")
-                        workflow_status = f"PandaDoc split sheet {pandadoc_doc_id} created — ready for signing"
-                    else:
-                        workflow_status = f"PandaDoc API Error: {pd_res.status_code}"
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(
+                            "https://api.pandadoc.com/public/v1/documents",
+                            json=doc_payload,
+                            headers=headers,
+                            timeout=aiohttp.ClientTimeout(total=15)
+                        ) as pd_res:
+                            if pd_res.status < 400:
+                                res_json = await pd_res.json()
+                                pandadoc_doc_id = res_json.get("id")
+                                workflow_status = f"PandaDoc split sheet {pandadoc_doc_id} created — ready for signing"
+                            else:
+                                workflow_status = f"PandaDoc API Error: {pd_res.status}"
                 except Exception as pd_e:
                     workflow_status = f"PandaDoc unreachable: {str(pd_e)}"
             elif create_signable:
