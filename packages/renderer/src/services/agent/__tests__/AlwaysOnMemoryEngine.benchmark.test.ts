@@ -6,8 +6,11 @@ const mockUpdateMany = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('../../FirestoreService', () => ({
     FirestoreService: class {
-        constructor(public collectionPath: string) {}
+vi.mock('../../FirestoreService', () => ({
+    FirestoreService: class {
         constructor(public collectionPath: string) { }
+        list = vi.fn().mockResolvedValue(
+            Array.from({ length: 100 }, (_, i) => ({ id: `id-${this.collectionPath}-${i}` }))
         list = vi.fn().mockResolvedValue(
             Array.from({ length: 100 }, (_, i) => ({ id: `id-${this.collectionPath}-${i}` }))
         );
