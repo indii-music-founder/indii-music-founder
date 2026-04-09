@@ -28,8 +28,8 @@ export class CredentialService {
                 const encryptedBuffer = safeStorage.encryptString(secretSerialized);
                 payloadToStore = encryptedBuffer.toString('base64');
             } else {
-                console.warn('[CredentialService] safeStorage not available, falling back to plain keychain storage');
-                payloadToStore = secretSerialized;
+                console.error('[CredentialService] safeStorage not available, refusing to store credentials in plaintext');
+                throw new Error('Encryption is not available. Credentials cannot be stored securely.');
             }
 
             await keytar.setPassword(SERVICE_NAME, distributorId, payloadToStore);
