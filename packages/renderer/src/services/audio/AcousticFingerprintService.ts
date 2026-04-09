@@ -27,11 +27,11 @@ export class AcousticFingerprintService {
 
         try {
             // Dynamically import Node.js modules to prevent Vite/Rollup from bundling them for the browser
-            const { exec } = await import('child_process');
+            const { execFile } = await import('child_process');
             const { promisify } = await import('util');
-            const execPromise = promisify(exec);
+            const execFilePromise = promisify(execFile);
 
-            const { stdout } = await execPromise(`fpcalc -json "${filePath}"`);
+            const { stdout } = await execFilePromise('fpcalc', ['-json', filePath]);
             const data = JSON.parse(stdout);
 
             if (!data.fingerprint) {
