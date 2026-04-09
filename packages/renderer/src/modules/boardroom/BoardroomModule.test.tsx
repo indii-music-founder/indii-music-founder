@@ -39,8 +39,7 @@ vi.mock('@/core/components/chat/ChatMessage', () => ({
 vi.mock('@/components/ui/tooltip', () => ({
     TooltipProvider: ({ children }: React.PropsWithChildren) => <>{children}</>,
     Tooltip: ({ children }: React.PropsWithChildren) => <>{children}</>,
-    TooltipTrigger: React.forwardRef(({ children, ...props }: React.PropsWithChildren<{ asChild?: boolean }>, _ref: React.Ref<HTMLDivElement>) => {
-        const _unused = props;
+    TooltipTrigger: React.forwardRef(({ children }: React.PropsWithChildren<{ asChild?: boolean }>, _ref: React.Ref<HTMLDivElement>) => {
         return <div>{children}</div>;
     }),
     TooltipContent: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
