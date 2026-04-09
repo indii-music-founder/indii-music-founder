@@ -11,7 +11,8 @@ import { XRayPanel } from './XRayPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LayoutGrid, Network } from 'lucide-react';
 
-export function TraceViewer() {
+// Bolt Optimization: Wrapped in React.memo to prevent unnecessary re-renders.
+export const TraceViewer = React.memo(() => {
     const [traces, setTraces] = useState<AgentTrace[]>([]);
     const [selectedTrace, setSelectedTrace] = useState<AgentTrace | null>(null);
 
@@ -155,4 +156,4 @@ export function TraceViewer() {
             </Tabs>
         </div>
     );
-}
+});

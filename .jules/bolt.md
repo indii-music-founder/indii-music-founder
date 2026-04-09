@@ -24,3 +24,6 @@
 ## 2026-01-26 - Context Splitting for Input Performance
 **Learning:** A unified React Context that holds both rapidly changing state (`value`) and stable configuration (`disabled`) forces all consumers to re-render on every keystroke, even those that only depend on the stable props.
 **Action:** Split Contexts into `ValueContext` (volatile) and `StateContext` (stable) so that components like Action Buttons can subscribe only to the stable context and avoid re-rendering during typing.
+## 2025-04-08 - Added React.memo to TraceViewer component
+**Learning:** Found that `TraceViewer` component in `packages/renderer/src/components/studio/observability/TraceViewer.tsx` was not using `React.memo`, even though it manages its own state for traces and selected traces. This component renders a list of traces and can be susceptible to unnecessary re-renders when parent components update.
+**Action:** Wrapped `TraceViewer` with `React.memo` to prevent re-renders when parent components update and its own state remains unchanged.
