@@ -2,6 +2,57 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.49.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.48.0...v1.49.0) (2026-04-09)
+
+
+### Features
+
+* **autoagent:** phase A — sidecar harness for Conductor prompt optimization ([03701c8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/03701c81937867b82d61b4aa428b20ace688d740))
+* **autoagent:** phase B — nightly Jules workflow + prompt sync + setup doc ([a0da45d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a0da45d780e48b8750f7a31466b1923e951b2b16))
+* **http:** add fetchWithTimeout utility and harden external API calls ([4025fda](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4025fda8468004b9a7ed365d49edfe84603c3921))
+* implement scheduled post delivery logic and update core service and test suites ([0b6fbdf](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0b6fbdf39a959876dd5e9ac21198a05f7c6e38de))
+* **modules:** platinum-level decomposition of 9 modules ([7409a10](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7409a1028079de09bb10b54c167d8198d7be4b02))
+* **registration:** build Registration Center — full Phase 1-6 ([ac39745](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ac39745428c4dc7786e562034d5c87a4c4a592dd))
+* **registration:** Registration Center — artist never leaves indiiOS ([ab8115e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ab8115e1dd72929d5fd82020d2f37fba4150814f))
+
+
+### Bug Fixes
+
+* **build:** commit missing MCP dependencies and package-lock.json to resolve CI failures ([6a722c1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6a722c1c0f76270aba566a1780c5e06efc98d7b5))
+* **build:** correct Electron main entry point and Firebase Hosting target directories for npm workspace monorepo ([92ee15b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/92ee15ba0078617e244dd2476a7cc4eb8e26d3f1))
+* **build:** externalize native .node addons in Main, add idb dep to Renderer ([acf060b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/acf060be91b3c674018b1f964d68098bf665a78a))
+* **ci:** correct agent dataset directory path for validation tests post-monorepo migration ([237214e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/237214efc547e220f6ba2a8263050964b1269e21))
+* **ci:** correct mock import path for audio test post-monorepo migration ([59bbfdf](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/59bbfdfe93751465bcf7f00f144acf1a95ab94db))
+* **ci:** correct YAML syntax in build.yml and update landing-page path to packages/landing in deploy.yml ([33d9345](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/33d934569ad91dd1418366540a3d105962a7ac0a))
+* **ci:** fix contradictory test assertion in LensVeoResilience ([69a5d5a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/69a5d5ae1a1f47a31270db74c0e54fec7328b262))
+* **ci:** migrate build workflow to npm and inject missing testing lib ([2319c86](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2319c86ecf6d3cfc6b74ea130234af6ff6a6688a))
+* **ci:** remove destructive nested npm ci causing electron-vite wipe in GitHub Actions deployment workflow ([7c7474f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7c7474f685070776224a14e09384ec9e99ab8d61))
+* **ci:** remove unused vars from firebase test files — admin imports + lint warnings ([8495956](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/84959560d4b344858643ee8627d8f32063e9c4a4))
+* **ci:** resolve TypeScript errors in MCPClientService and AlwaysOnMemoryEngine tests ([85ab7ff](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/85ab7ff6807367f9524dda8bd37490618e42421f))
+* **ci:** resolve unit test failures — defensive store defaults + missing mocks ([efd1893](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/efd1893e92a5213743a00863eecc3d5cf096cffe))
+* **ci:** restore corrupted string literal in KnowledgeChat error message ([f696ae0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f696ae0786663eee80c130132cc5a1c29564a375))
+* **ci:** restore missing parameter name in video_generation.ts ([129b22c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/129b22c715ecac776b51bd1853e701a63f55b267))
+* **ci:** suppress final landing page purity lint errors ([63f4ad5](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/63f4ad544c52f9000293745d20a4a7376250b977))
+* **ci:** update outdated test methods in MCPClientService.test.ts to resolve TS2339 ([15c10cb](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/15c10cbc39a564f057401977a2301d0f2ca2caf7))
+* **deploy:** update Firebase Hosting landing target output directory to new workspace path ([5dde227](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5dde2270df379d52dc24ba354a7888a5270744d7))
+* **deps:** resolve all critical and high-severity dependency vulnerabilities ([9d45082](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9d450829eab8e47565397a587cf36fb74edd2a97))
+* **deps:** upgrade firebase-admin to v13.7.0 and electron-forge to v7.11.1 ([40b3575](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/40b3575ca07b6ad064a98943c12f65d86174fa25))
+* eliminate 668 unused-vars warnings (1486→818) ([3f93a12](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3f93a1205cda197b0dbfa4ff3b78b02243f3dac4))
+* eliminate 71 more unused-vars warnings (859→788) ([f9cb4c1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f9cb4c1aa02563719f0eb252742dee894f76e734))
+* **eslint:** add caughtErrorsIgnorePattern + ignoreRestSiblings (788→641) ([511486f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/511486f13af061a44ecef4adf5dad7738061096e))
+* **main:** type safety hardening — eliminate 28 genuine `any` usages ([0572506](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0572506b14431b6eb56a9dd9655f12c27f585717))
+* manual unused-vars cleanup — batch 2 (7 files, ~50 warnings) ([a19f27c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a19f27cee06a060035df7c28f7e42a28a6b7dee4))
+* manual unused-vars cleanup — batch 3 (3 files, ~14 warnings) ([628a141](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/628a141f0f5b035812b49b049004dbc6b64df7f6))
+* manual unused-vars cleanup — batch 4 (3 files, ~14 warnings) ([3f74652](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3f74652431e0a947736c65a84654606c37f7b9b7))
+* manual unused-vars cleanup — batch 5 (6 files, ~20 warnings) ([86fcfb6](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/86fcfb65c542b0c4510feb0c5cdc28a11f939c66))
+* manual unused-vars cleanup — batch 6 (3 files, 12 warnings) ([2d642ef](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2d642ef9c3e8cface55d376f9420bc77fd1d2abc))
+* manual unused-vars cleanup — top 3 files (583→557) ([c91d1bf](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c91d1bfd23c4903e95f12d8023e2e83f21ea905f))
+* **registration:** resolve all lint violations and TypeScript errors in Registration Center module ([328a273](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/328a27336fdd5b0df236ded949bf9208184fe313))
+* rename catch vars with body refs (641→584 warnings) ([8bf6bb0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8bf6bb09171869e3ec75db3eec4ed059209f861b))
+* renderer tests and test dependencies ([ef9f429](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ef9f4296ca8b0fa8c45d838c1c912e75fe62b0f6))
+* **test:** exclude packages/ from vitest, restore old source dirs for test compat ([c9b3fae](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c9b3fae2a6f64446e79464416e920d2c21700f60))
+* **tests:** resolve latent test suite failures and eliminate NAKED_EXCEPT slop ([5829575](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5829575eb42bdf435d02b2568d3db183d0e7b60e))
+
 ## [1.48.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.47.0...v1.48.0) (2026-04-05)
 
 
