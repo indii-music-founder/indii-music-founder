@@ -679,7 +679,7 @@ JSON FORMAT:
   async clearAllMemories(userId: string): Promise<void> {
     const service = this.getService(userId);
     const memories = await service.list();
-    await Promise.all(memories.map((m) => service.delete(m.id)));
+    await service.deleteMany(memories.map((m) => m.id));
     logger.debug(`[UserMemoryService] Cleared all memories for user ${userId}`);
   }
 
