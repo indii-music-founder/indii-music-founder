@@ -1,7 +1,7 @@
 schema_version = "0.1"
 
 [task]
-name = "routing-finance"
+name = "indii/routing-finance"
 description = "Conductor must route a payout/balance question to the finance specialist."
 
 [verifier]

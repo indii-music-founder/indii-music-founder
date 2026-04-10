@@ -1,7 +1,7 @@
 schema_version = "0.1"
 
 [task]
-name = "routing-isrc"
+name = "indii/routing-isrc"
 description = "Conductor must route an ISRC registration question to the publishing specialist."
 
 [verifier]
