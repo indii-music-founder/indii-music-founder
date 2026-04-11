@@ -61,9 +61,8 @@ describe('ConversationHistoryList Performance', () => {
         // 3. Rerender
         rerender(<ConversationHistoryList onClose={onClose} />);
 
-        // Both items re-render because parent creates new callback closures
-        // (onSelect, onDelete) on each render, which defeats React.memo.
-        // Full optimization would require useCallback in the parent component.
-        expect(LiSpy).toHaveBeenCalledTimes(2);
+        // With optimization (Bolt), the parent uses useCallback for handleSelect,
+        // so React.memo works and the unchanged item (s1) doesn't re-render.
+        expect(LiSpy).toHaveBeenCalledTimes(1);
     });
 });
