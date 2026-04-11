@@ -16,6 +16,13 @@ All notable changes to indiiOS are documented in this file.
 
 * apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
 
+## [1.49.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.49.1) (2026-04-11)
+
+
+### Bug Fixes
+
+* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
+
 ## [1.49.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.48.0...v1.49.0) (2026-04-09)
 
 
