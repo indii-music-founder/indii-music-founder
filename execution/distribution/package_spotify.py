@@ -274,7 +274,6 @@ if __name__ == "__main__":
     parser.add_argument("staging_path", help="Path to staged assets and metadata")
     parser.add_argument("--output", help="Output directory for the package")
     parser.add_argument("--batch-id", help="Optional batch identifier")
-    parser.add_argument("--storage-path", help="Path for logs (unused, for consistency)")
 
     args = parser.parse_args()
 

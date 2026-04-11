@@ -157,7 +157,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Distribution QC Validator")
     parser.add_argument("payload", help="JSON payload containing metadata to validate")
-    parser.add_argument("--storage-path", help="Path to the data store directory (unused but for consistency)")
 
     args = parser.parse_args()
 
