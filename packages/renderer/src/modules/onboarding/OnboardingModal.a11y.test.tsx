@@ -4,6 +4,20 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { OnboardingModal } from './OnboardingModal';
 
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (key: string) => {
+            const keys: Record<string, string> = {
+                'onboarding.closeLabel': 'Close onboarding',
+                'onboarding.attachLabel': 'Attach files',
+                'onboarding.sendLabel': 'Send message',
+            };
+            return keys[key] || key;
+        },
+    }),
+}));
+
+
 // Mock dependencies
 vi.mock('../../core/store', () => ({
     useStore: vi.fn(() => ({
