@@ -89,3 +89,4 @@ dist/
 packages/shared/dist/
 electron/
 functions/
+coverage/
