@@ -2,6 +2,18 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.50.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.50.0) (2026-04-11)
+
+
+### Features
+
+* **autoagent:** phase A — sidecar + loop proof for Conductor system ([#1418](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1418)) ([4e6cb9f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4e6cb9f71cb7d43b43a8e899964c98a93ce0e082))
+
+
+### Bug Fixes
+
+* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
+
 ## [1.49.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.49.1) (2026-04-11)
 
 
