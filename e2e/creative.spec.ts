@@ -10,6 +10,8 @@ import { test, expect } from './fixtures/auth';
  */
 test.describe('Creative Studio', () => {
     test.beforeEach(async ({ authedPage: page }) => {
+        page.on('console', msg => console.log('PAGE LOG:', msg.type(), msg.text()));
+        page.on('pageerror', error => console.log('PAGE ERROR:', error.message));
         // Mock Gemini image generation API
         await page.route('**/generativelanguage.googleapis.com/**', async route => {
             await route.fulfill({

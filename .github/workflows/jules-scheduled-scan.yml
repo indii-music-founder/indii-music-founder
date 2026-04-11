@@ -1,17 +1,28 @@
-name: Jules Global Scanner
+name: Jules Asynchronous Global Scanner
+
 on:
   schedule:
-    - cron: '0 0 * * 0' # Weekly
+    - cron: '0 0 * * 0'
   workflow_dispatch:
 
 jobs:
-  global-scan:
+  jules_scheduled_scan:
     name: AST/RAG Full Codebase Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Run Jules Global Scan
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Trigger Jules Global Scan
+        env:
+          JULES_API_TOKEN: ${{ secrets.JULES_API_TOKEN }}
         run: |
-          echo "Initiating full codebase scan..."
-          # Jules execution logic goes here
-          echo "Scan complete."
+          PAYLOAD='{"analysis_scope": "full_ast", "cve_sync": true, "sandbox_vm_provision": true}'
+
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $JULES_API_TOKEN" \
+            -d "$PAYLOAD" \
+            "https://api.jules.devsecops/scan/global"
+
+          echo "Scheduled global scan triggered."

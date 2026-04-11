@@ -1,4 +1,5 @@
-name: Jules Synchronous PR Scanner
+name: Jules Event-Driven PR Scanner
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -8,11 +9,34 @@ jobs:
     name: Diff-only Analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Run Jules PR Scan
+
+      - name: Execute Jules Synchronous PR Scanner
         run: |
-          echo "Scanning PR diff..."
-          # Jules execution logic goes here
-          echo "Scan complete."
+          echo "Triggering Jules serverless API webhook..."
+
+          PAYLOAD='{"analysis_scope": "diff_only", "execution_timeout_seconds": 300, "network_isolation": "strict"}'
+
+          STATUS_CODE=$(curl -s -o response.json -w "%{http_code}" -X POST https://api.jules.devsecops/webhook/scan \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.JULES_API_TOKEN }}" \
+            -d "$PAYLOAD")
+
+          cat response.json
+
+          if [ "$STATUS_CODE" -ne 200 ]; then
+            echo "Failed to contact Jules API webhook."
+            exit 1
+          fi
+
+          CRITICAL_FOUND=$(jq '.critical_vulnerabilities_detected' response.json)
+          INJECTION_FOUND=$(jq '.unvalidated_injection_vectors_detected' response.json)
+
+          if [ "$CRITICAL_FOUND" = "true" ] || [ "$INJECTION_FOUND" = "true" ]; then
+            echo "Critical vulnerabilities (CVSS > 7.0) or unvalidated injection vectors detected in the PR diff."
+            echo "Failing workflow state."
+            exit 1
+          fi

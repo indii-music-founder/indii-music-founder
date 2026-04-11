@@ -39,8 +39,15 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
 });
 
 // Robust test environment detection early for getEnv logic
+const getProcessEnv = (key: string): string | undefined => {
+    if (typeof process !== 'undefined' && process.env) {
+        return process.env[key];
+    }
+    return undefined;
+};
+
 const isTest =
-    typeof process !== 'undefined' && (
+    typeof process !== 'undefined' && process.env && (
         !!process.env.VITEST ||
         !!process.env.NODE_ENV?.includes('test') ||
         process.env.VITEST_WORKER_ID !== undefined
@@ -64,34 +71,34 @@ const getSafeMetaEnv = (key: string): string | boolean | undefined => {
 
 const processEnv = {
     // 🛡️ Sentinel: Using static lookups for Vite compatibility
-    apiKey: getEnv(getSafeMetaEnv('VITE_API_KEY'), process.env.VITE_API_KEY),
-    projectId: getEnv(getSafeMetaEnv('VITE_VERTEX_PROJECT_ID'), process.env.VITE_VERTEX_PROJECT_ID),
-    location: getEnv(getSafeMetaEnv('VITE_VERTEX_LOCATION'), process.env.VITE_VERTEX_LOCATION) || "us-central1",
-    useVertex: toBoolean(getSafeMetaEnv('VITE_USE_VERTEX') || process.env.VITE_USE_VERTEX),
-    googleMapsApiKey: getEnv(getSafeMetaEnv('VITE_GOOGLE_MAPS_API_KEY'), process.env.VITE_GOOGLE_MAPS_API_KEY),
+    apiKey: getEnv(getSafeMetaEnv('VITE_API_KEY'), getProcessEnv('VITE_API_KEY')),
+    projectId: getEnv(getSafeMetaEnv('VITE_VERTEX_PROJECT_ID'), getProcessEnv('VITE_VERTEX_PROJECT_ID')),
+    location: getEnv(getSafeMetaEnv('VITE_VERTEX_LOCATION'), getProcessEnv('VITE_VERTEX_LOCATION')) || "us-central1",
+    useVertex: toBoolean(getSafeMetaEnv('VITE_USE_VERTEX') || getProcessEnv('VITE_USE_VERTEX')),
+    googleMapsApiKey: getEnv(getSafeMetaEnv('VITE_GOOGLE_MAPS_API_KEY'), getProcessEnv('VITE_GOOGLE_MAPS_API_KEY')),
 
-    VITE_FUNCTIONS_URL: getEnv(getSafeMetaEnv('VITE_FUNCTIONS_URL'), process.env.VITE_FUNCTIONS_URL),
-    VITE_RAG_PROXY_URL: getEnv(getSafeMetaEnv('VITE_RAG_PROXY_URL'), process.env.VITE_RAG_PROXY_URL),
-    DEV: getSafeMetaEnv('DEV') ?? process.env.NODE_ENV !== 'production',
+    VITE_FUNCTIONS_URL: getEnv(getSafeMetaEnv('VITE_FUNCTIONS_URL'), getProcessEnv('VITE_FUNCTIONS_URL')),
+    VITE_RAG_PROXY_URL: getEnv(getSafeMetaEnv('VITE_RAG_PROXY_URL'), getProcessEnv('VITE_RAG_PROXY_URL')),
+    DEV: getSafeMetaEnv('DEV') ?? getProcessEnv('NODE_ENV') !== 'production',
 
     // Firebase specific overrides
-    firebaseApiKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_API_KEY'), process.env.VITE_FIREBASE_API_KEY),
-    firebaseAuthDomain: getEnv(getSafeMetaEnv('VITE_FIREBASE_AUTH_DOMAIN'), process.env.VITE_FIREBASE_AUTH_DOMAIN),
-    firebaseProjectId: getEnv(getSafeMetaEnv('VITE_FIREBASE_PROJECT_ID'), process.env.VITE_FIREBASE_PROJECT_ID),
-    firebaseStorageBucket: getEnv(getSafeMetaEnv('VITE_FIREBASE_STORAGE_BUCKET'), process.env.VITE_FIREBASE_STORAGE_BUCKET),
-    firebaseDatabaseURL: getEnv(getSafeMetaEnv('VITE_FIREBASE_DATABASE_URL'), process.env.VITE_FIREBASE_DATABASE_URL),
-    appCheckKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_KEY'), process.env.VITE_FIREBASE_APP_CHECK_KEY),
-    appCheckDebugToken: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'), process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN),
+    firebaseApiKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_API_KEY'), getProcessEnv('VITE_FIREBASE_API_KEY')),
+    firebaseAuthDomain: getEnv(getSafeMetaEnv('VITE_FIREBASE_AUTH_DOMAIN'), getProcessEnv('VITE_FIREBASE_AUTH_DOMAIN')),
+    firebaseProjectId: getEnv(getSafeMetaEnv('VITE_FIREBASE_PROJECT_ID'), getProcessEnv('VITE_FIREBASE_PROJECT_ID')),
+    firebaseStorageBucket: getEnv(getSafeMetaEnv('VITE_FIREBASE_STORAGE_BUCKET'), getProcessEnv('VITE_FIREBASE_STORAGE_BUCKET')),
+    firebaseDatabaseURL: getEnv(getSafeMetaEnv('VITE_FIREBASE_DATABASE_URL'), getProcessEnv('VITE_FIREBASE_DATABASE_URL')),
+    appCheckKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_KEY'), getProcessEnv('VITE_FIREBASE_APP_CHECK_KEY')),
+    appCheckDebugToken: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'), getProcessEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN')),
 
-    skipOnboarding: toBoolean(getSafeMetaEnv('VITE_SKIP_ONBOARDING') || process.env.VITE_SKIP_ONBOARDING),
-    VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), process.env.VITE_EXPOSE_INTERNALS),
-    VITE_USE_FUNCTIONS_EMULATOR: getEnv(getSafeMetaEnv('VITE_USE_FUNCTIONS_EMULATOR'), process.env.VITE_USE_FUNCTIONS_EMULATOR),
+    skipOnboarding: toBoolean(getSafeMetaEnv('VITE_SKIP_ONBOARDING') || getProcessEnv('VITE_SKIP_ONBOARDING')),
+    VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), getProcessEnv('VITE_EXPOSE_INTERNALS')),
+    VITE_USE_FUNCTIONS_EMULATOR: getEnv(getSafeMetaEnv('VITE_USE_FUNCTIONS_EMULATOR'), getProcessEnv('VITE_USE_FUNCTIONS_EMULATOR')),
 
     // AI Sidecar
-    VITE_A0_BASE_URL: getEnv(getSafeMetaEnv('VITE_A0_BASE_URL'), process.env.VITE_A0_BASE_URL),
-    VITE_A0_RUNTIME_ID: getEnv(getSafeMetaEnv('VITE_A0_RUNTIME_ID'), process.env.VITE_A0_RUNTIME_ID),
-    VITE_A0_AUTH_LOGIN: getEnv(getSafeMetaEnv('VITE_A0_AUTH_LOGIN'), process.env.VITE_A0_AUTH_LOGIN),
-    VITE_A0_AUTH_PASSWORD: getEnv(getSafeMetaEnv('VITE_A0_AUTH_PASSWORD'), process.env.VITE_A0_AUTH_PASSWORD),
+    VITE_A0_BASE_URL: getEnv(getSafeMetaEnv('VITE_A0_BASE_URL'), getProcessEnv('VITE_A0_BASE_URL')),
+    VITE_A0_RUNTIME_ID: getEnv(getSafeMetaEnv('VITE_A0_RUNTIME_ID'), getProcessEnv('VITE_A0_RUNTIME_ID')),
+    VITE_A0_AUTH_LOGIN: getEnv(getSafeMetaEnv('VITE_A0_AUTH_LOGIN'), getProcessEnv('VITE_A0_AUTH_LOGIN')),
+    VITE_A0_AUTH_PASSWORD: getEnv(getSafeMetaEnv('VITE_A0_AUTH_PASSWORD'), getProcessEnv('VITE_A0_AUTH_PASSWORD')),
 };
 
 // isTest moved to top
@@ -156,9 +163,9 @@ export const firebaseConfig = {
     databaseURL: firebaseEnv.firebaseDatabaseURL || "",
     projectId: firebaseEnv.firebaseProjectId || "",
     storageBucket: firebaseEnv.firebaseStorageBucket || "",
-    messagingSenderId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'), process.env.VITE_FIREBASE_MESSAGING_SENDER_ID) || "",
-    appId: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), process.env.VITE_FIREBASE_APP_ID) || "",
-    measurementId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MEASUREMENT_ID'), process.env.VITE_FIREBASE_MEASUREMENT_ID) || ""
+    messagingSenderId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'), getProcessEnv('VITE_FIREBASE_MESSAGING_SENDER_ID')) || "",
+    appId: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), getProcessEnv('VITE_FIREBASE_APP_ID')) || "",
+    measurementId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MEASUREMENT_ID'), getProcessEnv('VITE_FIREBASE_MEASUREMENT_ID')) || ""
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
