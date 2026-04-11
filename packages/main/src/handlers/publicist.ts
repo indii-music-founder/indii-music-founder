@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { validateSender } from '../utils/ipc-security';
@@ -28,7 +29,7 @@ export function registerPublicistHandlers() {
             // Validate input data
             const validated = PressReleasePdfSchema.parse(data);
 
-            console.log(`[PublicistHandler] Generating PDF for: ${validated.headline}`);
+            log.info(`[PublicistHandler] Generating PDF for: ${validated.headline}`);
 
             // Execute Python script
             const result = await AgentSupervisor.execute<{ success: boolean; error?: string; filePath?: string; message?: string }>(
@@ -50,7 +51,7 @@ export function registerPublicistHandlers() {
 
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            console.error('[PublicistHandler] Error:', error);
+            log.error('[PublicistHandler] Error:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: 'Validation failed', details: error.errors };
             }

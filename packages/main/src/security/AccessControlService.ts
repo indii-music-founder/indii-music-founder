@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
@@ -7,7 +8,7 @@ class AccessControlService {
     private authorizedPaths: Set<string> = new Set();
 
     constructor() {
-        console.log('[AccessControl] Initialized');
+        log.info('[AccessControl] Initialized');
     }
 
     /**
@@ -22,9 +23,9 @@ class AccessControlService {
             // So path.resolve is safer for grant.
             const resolved = path.resolve(filePath);
             this.authorizedPaths.add(resolved);
-            console.log(`[AccessControl] Access granted: ${resolved}`);
+            log.info(`[AccessControl] Access granted: ${resolved}`);
         } catch (error) {
-            console.error(`[AccessControl] Failed to grant access to ${filePath}:`, error);
+            log.error(`[AccessControl] Failed to grant access to ${filePath}:`, error);
         }
     }
 
@@ -90,12 +91,12 @@ class AccessControlService {
 
             if (isAllowed) return true;
 
-            console.warn(`[AccessControl] Access denied: ${resolvedPath}`);
+            log.warn(`[AccessControl] Access denied: ${resolvedPath}`);
             return false;
 
         } catch (error) {
             // If realpathSync fails (file not found), we deny access because we can't verify it.
-            console.error(`[AccessControl] Verification failed for ${filePath}:`, error);
+            log.error(`[AccessControl] Verification failed for ${filePath}:`, error);
             return false;
         }
     }

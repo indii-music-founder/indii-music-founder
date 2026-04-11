@@ -28,6 +28,10 @@ export default defineConfig({
                     'ssh2',
                     'keytar',
                     'canvas',
+                    'bufferutil',
+                    'utf-8-validate',
+                    'keytar',
+                    'canvas',
                 ],
             },
         },
@@ -65,9 +69,50 @@ export default defineConfig({
         ],
         build: {
             outDir: resolve(__dirname, 'dist/renderer'),
+            // WO-14: Warn when any chunk exceeds 1 MB (unminified).
+            chunkSizeWarningLimit: 1000,
             rollupOptions: {
                 input: {
                     index: resolve(__dirname, 'packages/renderer/index.html'),
+                },
+                output: {
+                    // WO-14: Split heavy libraries into named chunks so each
+                    // lazy-loaded module only pulls what it needs, and browsers
+                    // can cache these independently across deploys.
+                    manualChunks(id: string) {
+                        // Three.js — 3D module only
+                        if (id.includes('node_modules/three') || id.includes('@react-three')) {
+                            return 'vendor-three';
+                        }
+                        // Remotion — video rendering, only loaded by video module
+                        if (id.includes('node_modules/remotion') || id.includes('@remotion')) {
+                            return 'vendor-remotion';
+                        }
+                        // Fabric.js — canvas, only creative module
+                        if (id.includes('node_modules/fabric')) {
+                            return 'vendor-fabric';
+                        }
+                        // Audio analysis — only audio/tools module
+                        if (id.includes('node_modules/wavesurfer') || id.includes('node_modules/essentia')) {
+                            return 'vendor-audio';
+                        }
+                        // Recharts — data visualisation, only finance/analytics
+                        if (id.includes('node_modules/recharts')) {
+                            return 'vendor-recharts';
+                        }
+                        // Framer Motion — animations, separate for cache stability
+                        if (id.includes('node_modules/framer-motion')) {
+                            return 'vendor-motion';
+                        }
+                        // Firebase SDK — large auth/firestore/storage bundle
+                        if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+                            return 'vendor-firebase';
+                        }
+                        // React ecosystem: core vendor chunk that changes rarely
+                        if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+                            return 'vendor-react';
+                        }
+                    },
                 },
             },
         },

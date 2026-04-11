@@ -165,7 +165,7 @@ export class SidecarService {
         const deadline = Date.now() + timeoutMs;
         while (Date.now() < deadline) {
             try {
-                const res = await fetch(`http://localhost:${SIDECAR_PORT}/health`);
+                const res = await fetch(`http://localhost:${SIDECAR_PORT}/healthz`);
                 if (res.ok) return true;
             } catch {
                 // Not ready yet

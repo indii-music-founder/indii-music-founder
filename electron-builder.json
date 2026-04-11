@@ -50,6 +50,12 @@
       ]
     }
   ],
+  "publish": {
+    "provider": "github",
+    "owner": "the-walking-agency-det",
+    "repo": "indiiOS-Clean",
+    "releaseType": "release"
+  },
   "win": {
     "target": [
       "nsis"

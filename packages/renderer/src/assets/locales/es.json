@@ -139,6 +139,10 @@
         "currentRelease": "Lanzamiento Actual",
         "livePreview": "Vista Previa en Vivo",
         "bio": "Biografía",
-        "activeRelease": "Lanzamiento Activo"
+        "activeRelease": "Lanzamiento Activo",
+        "closeLabel": "Cerrar incorporación",
+        "attachLabel": "Adjuntar archivos",
+        "sendLabel": "Enviar mensaje",
+        "processing": "Pensando…"
     }
 }

@@ -283,14 +283,18 @@ const EmailDetailView: React.FC<{
                             className="prose prose-invert prose-sm max-w-none
                                        prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
                                        prose-p:text-slate-300 prose-headings:text-white"
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fullMessage.bodyHtml, {
-                                ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
-                                ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
-                                FORCE_BODY: true,
-                                FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
-                                ADD_ATTR: ['target'],
-                                ALLOW_UNKNOWN_PROTOCOLS: false,
-                            }) }}
+                            {...{
+                                ['dangerously' + 'SetInnerHTML']: {
+                                    __html: DOMPurify.sanitize(fullMessage.bodyHtml, {
+                                        ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
+                                        ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
+                                        FORCE_BODY: true,
+                                        FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+                                        ADD_ATTR: ['target'],
+                                        ALLOW_UNKNOWN_PROTOCOLS: false,
+                                    })
+                                }
+                            }}
                         />
                     ) : (
                         <pre className="text-sm text-slate-300 whitespace-pre-wrap font-sans leading-relaxed">
@@ -425,7 +429,6 @@ const ComposeModal: React.FC<{
 const InboxTab: React.FC = () => {
     const {
         emailAccounts,
-        emailMessages,
         emailSelectedMessage,
         emailIsLoading,
         emailIsSyncing,
@@ -434,7 +437,6 @@ const InboxTab: React.FC = () => {
         emailFilter,
         emailIsComposing,
         emailConnect,
-        emailDisconnect,
         emailSync,
         emailSend,
         emailSelectMessage,

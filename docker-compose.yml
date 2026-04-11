@@ -1,22 +1,20 @@
 services:
   indii-agent:
-    build:
-      context: .
-      dockerfile: Dockerfile.local
+    image: indiios-alpha-electron-indii-agent:latest
     container_name: indii-agent-working
     ports:
       - "50080:80"
       - "8880:8080"
     working_dir: /a0
-    entrypoint: ["/bin/bash", "/exe/init_agent.sh"]
+    entrypoint: [ "/bin/bash", "/exe/init_agent.sh" ]
     volumes:
-      - ./init_agent.sh:/exe/init_agent.sh
-      - ./run_ui.py:/a0_indii/run_ui.py
+      - ./scripts/init_agent.sh:/exe/init_agent.sh
+      - ./scripts/dev/run_ui.py:/a0_indii/run_ui.py
       - ./python/helpers/mcp_server.py:/a0_indii/mcp_server.py
       - ~/Documents/indii_Workspace:/a0/usr/projects
-      - ./python/tools:/a0/python/tools/custom  # Map custom tools to a subdirectory or overlay
-      - ./prompts:/a0/prompts/custom            # Map custom prompts
-      - ./agents:/a0/agents/custom              # Since agents folder is in root, map it clearly
+      - ./python/tools:/a0/python/tools/custom # Map custom tools to a subdirectory or overlay
+      - ./prompts:/a0/prompts/custom # Map custom prompts
+      - ./agents:/a0/agents/custom # Since agents folder is in root, map it clearly
       # Note: Mapping directly to /a0/python/tools might overwrite default tools if not careful.
       # Agent Zero recursively looks for tools? The user guide says "Default tools: /python/tools/".
       # Best practice for Agent Zero might be to map to the agents folder for agent-specific tools, 
@@ -49,9 +47,17 @@ services:
       - ./python/api/indii_task.py:/a0/python/api/indii_task.py
       - ./python/api/auth_broker.py:/a0/python/api/auth_broker.py
       - ./python/api/healthz.py:/a0/python/api/healthz.py
+      - ./python/api/image_edit.py:/a0/python/api/image_edit.py
+      - ./python/api/image_gen.py:/a0/python/api/image_gen.py
+      - ./python/api/indii_sync.py:/a0/python/api/indii_sync.py
+      - ./python/api/indii_task.py:/a0/python/api/indii_task.py
+      - ./python/api/provision_project.py:/a0/python/api/provision_project.py
+      - ./python/api/test_route.py:/a0/python/api/test_route.py
+      - ./python/api/video_gen.py:/a0/python/api/video_gen.py
       - ./settings.json:/a0/tmp/settings.json
-      - ./agent.py:/a0/agent.py
+      - ./scripts/agent.py:/a0/agent.py
       - ./python/helpers/task_scheduler.py:/a0/python/helpers/task_scheduler.py
+      - ./python/helpers/orchestrator.py:/a0/python/helpers/orchestrator.py
     environment:
       - PORT=80
       - WEB_UI_HOST=0.0.0.0
@@ -63,7 +69,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
+      test: [ "CMD", "curl", "-f", "http://localhost:80/healthz" ]
       interval: 30s
       timeout: 10s
       retries: 3

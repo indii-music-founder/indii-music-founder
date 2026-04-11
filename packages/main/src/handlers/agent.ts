@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain, app, IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
 import { AgentActionSchema, AgentNavigateSchema, AgentHistorySaveSchema, AgentHistoryIdSchema } from '../utils/validation';
@@ -15,7 +16,7 @@ export function registerAgentHandlers() {
             historyStore.save(id, data as Record<string, unknown>);
             return { success: true };
         } catch (error) {
-            console.error('Agent History Save Failed:', error);
+            log.error('Agent History Save Failed:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -31,7 +32,7 @@ export function registerAgentHandlers() {
             const session = historyStore.get(validatedId);
             return { success: true, data: session };
         } catch (error) {
-            console.error('Agent History Get Failed:', error);
+            log.error('Agent History Get Failed:', error);
             return { success: false, error: String(error) };
         }
     });
@@ -44,7 +45,7 @@ export function registerAgentHandlers() {
             historyStore.delete(validatedId);
             return { success: true };
         } catch (error) {
-            console.error('Agent History Delete Failed:', error);
+            log.error('Agent History Delete Failed:', error);
             return { success: false, error: String(error) };
         }
     });
@@ -73,7 +74,7 @@ export function registerAgentHandlers() {
                 await browserAgentService.closeSession();
                 return { success: true, ...snapshot };
             } catch (error) {
-                console.error('Agent Test Failed:', error);
+                log.error('Agent Test Failed:', error);
                 return { success: false, error: String(error) };
             }
         });
@@ -95,7 +96,7 @@ export function registerAgentHandlers() {
                 await browserAgentService.closeSession();
                 return { success: true, ...snapshot };
             } catch (error) {
-                console.error('Agent Navigate Failed:', error);
+                log.error('Agent Navigate Failed:', error);
                 const { browserAgentService } = await import('../services/BrowserAgentService');
                 await browserAgentService.closeSession();
 
@@ -115,7 +116,7 @@ export function registerAgentHandlers() {
                 const { browserAgentService } = await import('../services/BrowserAgentService');
                 return await browserAgentService.performAction(validated.action as "click" | "type" | "hover", validated.selector, validated.text);
             } catch (error) {
-                console.error('Agent Action Failed:', error);
+                log.error('Agent Action Failed:', error);
                 if (error instanceof z.ZodError) {
                     return { success: false, error: `Validation Error: ${error.errors[0].message}` };
                 }

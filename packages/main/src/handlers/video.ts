@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain, app, shell } from 'electron';
 import fs from 'fs';
 import path from 'path';
@@ -71,7 +72,7 @@ export function registerVideoHandlers() {
             // Check if file already exists to avoid overwriting (optional: append index)
             // For now, we overwrite or rely on unique filenames (UUIDs usually)
 
-            console.log(`[VideoHandler] Downloading video to: ${destinationPath}`);
+            log.info(`[VideoHandler] Downloading video to: ${destinationPath}`);
             await downloadFile(url, destinationPath);
 
             // Grant access to the saved file
@@ -80,7 +81,7 @@ export function registerVideoHandlers() {
             // Return the local file path
             return destinationPath;
         } catch (error) {
-            console.error('[VideoHandler] Failed to save asset:', error);
+            log.error('[VideoHandler] Failed to save asset:', error);
             if (error instanceof z.ZodError) {
                 throw new Error(`Validation Error: ${error.errors[0].message}`);
             }
@@ -111,7 +112,7 @@ export function registerVideoHandlers() {
 
             await shell.showItemInFolder(target);
         } catch (error) {
-            console.error('[VideoHandler] Open folder failed:', error);
+            log.error('[VideoHandler] Open folder failed:', error);
             throw error;
         }
     });
@@ -169,7 +170,7 @@ export function registerVideoHandlers() {
             return await electronRenderService.render(config);
 
         } catch (error) {
-            console.error('[VideoHandler] Render failed:', error);
+            log.error('[VideoHandler] Render failed:', error);
             throw error;
         }
     });

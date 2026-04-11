@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { validateSender } from '../utils/ipc-security';
@@ -31,7 +32,7 @@ export function registerSecurityHandlers() {
             const validated = RotationInputSchema.parse(data);
             const { serviceName, vaultData } = validated;
 
-            console.log(`[SecurityHandler] Rotating credentials for: ${serviceName}`);
+            log.info(`[SecurityHandler] Rotating credentials for: ${serviceName}`);
 
             let newKey: string | null = null;
 
@@ -113,7 +114,7 @@ export function registerSecurityHandlers() {
 
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            console.error('[SecurityHandler] Rotation Error:', error);
+            log.error('[SecurityHandler] Rotation Error:', error);
             return { success: false, error: message };
         }
     });
@@ -126,7 +127,7 @@ export function registerSecurityHandlers() {
             const validated = ScanSchema.parse(data);
             const scope = validated.scope || process.cwd();
 
-            console.log(`[SecurityHandler] Running vulnerability scan on: ${scope}`);
+            log.info(`[SecurityHandler] Running vulnerability scan on: ${scope}`);
 
             const result = await AgentSupervisor.execute<{ success?: boolean; status?: string; error?: string; data?: Record<string, unknown>; vulnerabilities?: unknown[] }>(
                 'security',
@@ -152,7 +153,7 @@ export function registerSecurityHandlers() {
 
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            console.error('[SecurityHandler] Scan Error:', error);
+            log.error('[SecurityHandler] Scan Error:', error);
             return { success: false, error: message };
         }
     });

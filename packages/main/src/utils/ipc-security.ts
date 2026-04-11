@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { IpcMainInvokeEvent, app } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -33,9 +34,9 @@ export function validateSender(event: IpcMainInvokeEvent): void {
             // Allow exact match
             if (filePath === appPath) return;
 
-            console.warn(`Security: Blocked unauthorized file URL: ${url}`);
+            log.warn(`Security: Blocked unauthorized file URL: ${url}`);
         } catch (e) {
-            console.error(`Security: Failed to validate file URL: ${url}`, e);
+            log.error(`Security: Failed to validate file URL: ${url}`, e);
         }
         // Fall through to throw error if not returned
     }

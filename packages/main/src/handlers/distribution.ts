@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain, app } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -61,7 +62,7 @@ export const setupDistributionHandlers = () => {
                 // Security Check: Path Traversal
                 // Ensure the resolved destination path starts with the safe staging directory
                 if (!destPath.startsWith(safeStagingPath)) {
-                    console.error(`[Distribution] Security Alert: Blocked path traversal attempt to ${destPath}`);
+                    log.error(`[Distribution] Security Alert: Blocked path traversal attempt to ${destPath}`);
                     throw new Error(`Security Error: Invalid file path "${file.name}" (Path Traversal Detected)`);
                 }
 
@@ -96,11 +97,11 @@ export const setupDistributionHandlers = () => {
                 writtenFiles.push(file.name);
             }
 
-            console.info(`[Distribution] Staged release ${validated.releaseId} at ${stagingPath}`);
+            log.info(`[Distribution] Staged release ${validated.releaseId} at ${stagingPath}`);
             return { success: true, packagePath: stagingPath, files: writtenFiles };
 
         } catch (error) {
-            console.error('[Distribution] Stage release failed:', error);
+            log.error('[Distribution] Stage release failed:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -111,7 +112,7 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:run-forensics', async (event, filePath: string) => {
         try {
             validateSender(event);
-            console.log(`[Distribution] Running audio forensics on: ${filePath}`);
+            log.info(`[Distribution] Running audio forensics on: ${filePath}`);
 
             // Clean path
             const rawPath = filePath.startsWith('file://') ? new URL(filePath).pathname : filePath;
@@ -127,7 +128,7 @@ export const setupDistributionHandlers = () => {
             return { success: true, report };
 
         } catch (error) {
-            console.error('[Distribution] Forensics failed:', error);
+            log.error('[Distribution] Forensics failed:', error);
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
@@ -141,7 +142,7 @@ export const setupDistributionHandlers = () => {
                 throw new Error("Security Error: Invalid releaseId format. Must be a UUID.");
             }
 
-            console.log(`[Distribution] Packaging ITMSP for release: ${releaseId}`);
+            log.info(`[Distribution] Packaging ITMSP for release: ${releaseId}`);
 
             // Resolve the staging path (using the same logic as stage-release)
             const tempDir = os.tmpdir();
@@ -164,7 +165,7 @@ export const setupDistributionHandlers = () => {
             };
 
         } catch (error) {
-            console.error('[Distribution] Packaging failed:', error);
+            log.error('[Distribution] Packaging failed:', error);
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
@@ -490,7 +491,7 @@ export const setupDistributionHandlers = () => {
             }
             if (sftpCfg?.key) {
                 env.SFTP_KEY_PATH = sftpCfg.key;
-                //@ts-ignore - safe cloning
+                // @ts-expect-error - safe cloning of releaseData with key removed
                 releaseData = { ...releaseData, sftpConfig: { ...releaseData.sftpConfig, key: undefined } };
             }
 

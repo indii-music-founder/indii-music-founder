@@ -78,33 +78,43 @@ export const ai = {
  * Data is stored in Firestore (cloud) with automatic IndexedDB caching.
  * No custom IndexedDB schema needed - Firebase handles it internally.
  */
-export const db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-    })
-});
-export const storage = getStorage(app);
-export const functions = getFunctions(app); // Default (us-central1)
-export const functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-west1)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let db: ReturnType<typeof initializeFirestore> | any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let storage: ReturnType<typeof getStorage> | any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let functions: ReturnType<typeof getFunctions> | any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let functionsWest1: ReturnType<typeof getFunctions> | any = null;
 
-// Connect to Functions emulator in development (when running locally)
-// Production builds skip this entirely - they call deployed Cloud Functions
-const isDev = env.DEV;
-const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+try {
+    db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager()
+        })
+    });
+    storage = getStorage(app);
+    functions = getFunctions(app); // Default (us-central1)
+    functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-west1)
 
-if (isDev && useEmulator && typeof window !== 'undefined') {
-    try {
-        connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-        connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
-        logger.debug('[Firebase] Connected to Functions emulator on port 5001');
-    } catch (e: unknown) {
-        // Emulator connection may fail if already connected or emulator not running
-        logger.warn('[Firebase] Functions emulator connection skipped:', e);
+    const isDev = env.DEV;
+    const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+
+    if (isDev && useEmulator && typeof window !== 'undefined') {
+        try {
+            connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+            connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
+            logger.debug('[Firebase] Connected to Functions emulator on port 5001');
+        } catch (e: unknown) {
+            logger.warn('[Firebase] Functions emulator connection skipped:', e);
+        }
     }
+} catch (e) {
+    logger.error('[Firebase] Failed to initialize core services (likely missing config):', e);
 }
 
-// Use initializeAuth to ensure persistence is correctly configured for Electron
-// HINT: Added indexedDBLocalPersistence to fix Bug M1 where localStorage full causes silent auth drop.
+export { db, storage, functions, functionsWest1 };
+
 import { Auth, User } from 'firebase/auth';
 let auth: Auth;
 if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).FIREBASE_E2E_MOCK) {
@@ -118,22 +128,50 @@ if (typeof window !== 'undefined' && (window as unknown as Record<string, unknow
             return () => { };
         },
         signInAnonymously: () => Promise.resolve({ user: mockUser }),
+        signInWithEmailAndPassword: () => Promise.resolve({ user: mockUser }),
+        createUserWithEmailAndPassword: () => Promise.resolve({ user: mockUser }),
+        sendPasswordResetEmail: () => Promise.resolve(),
+        signInWithPopup: () => Promise.resolve({ user: mockUser }),
         signOut: () => Promise.resolve(),
-        // Add other required Auth members for type safety if needed, or cast
     } as unknown as Auth;
 } else {
-    auth = initializeAuth(app, {
-        persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
-    });
+    try {
+        auth = initializeAuth(app, {
+            persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
+        });
+    } catch (e: unknown) {
+        logger.error('[Firebase] Failed to initialize Auth (likely missing API key):', e);
+        auth = {
+            app,
+            currentUser: null,
+            onAuthStateChanged: (cb: (user: User | null) => void) => {
+                setTimeout(() => cb(null), 100);
+                return () => { };
+            },
+            signInAnonymously: () => Promise.reject(new Error("Missing API Key")),
+            signInWithEmailAndPassword: () => Promise.reject(new Error("Missing API Key")),
+            createUserWithEmailAndPassword: () => Promise.reject(new Error("Missing API Key")),
+            sendPasswordResetEmail: () => Promise.reject(new Error("Missing API Key")),
+            signInWithPopup: () => Promise.reject(new Error("Missing API Key")),
+            signOut: () => Promise.resolve(),
+        } as unknown as Auth;
+    }
 }
 export { auth };
 
-// Initialize Remote Config
-export const remoteConfig = getRemoteConfig(app);
-remoteConfig.defaultConfig = {
-    model_name: AI_MODELS.TEXT.FAST,
-    vertex_location: 'global'
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let remoteConfig: any = null;
+try {
+    // Initialize Remote Config
+    remoteConfig = getRemoteConfig(app);
+    remoteConfig.defaultConfig = {
+        model_name: AI_MODELS.TEXT.FAST,
+        vertex_location: 'global'
+    };
+} catch (e) {
+    logger.error('[Firebase] Failed to initialize RemoteConfig:', e);
+}
+export { remoteConfig };
 
 // Initialize Messaging (Client-side only)
 import { getMessaging } from 'firebase/messaging';

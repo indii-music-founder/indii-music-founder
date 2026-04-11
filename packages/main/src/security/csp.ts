@@ -1,3 +1,4 @@
+import log from 'electron-log';
 /**
  * Content Security Policy Configuration for Electron
  * 
@@ -179,10 +180,10 @@ export function applyCSP(): void {
         });
     });
 
-    console.log(`[Security] CSP applied (${isDev ? 'development' : 'production'} mode)`);
+    log.info(`[Security] CSP applied (${isDev ? 'development' : 'production'} mode)`);
 
     if (isDev) {
-        console.log('[Security] WARNING: Development CSP allows unsafe-eval for HMR');
+        log.info('[Security] WARNING: Development CSP allows unsafe-eval for HMR');
     }
 }
 
@@ -238,14 +239,14 @@ export function setupCSPReporting(reportUri?: string): void {
     if (!reportUri) {
         // Log violations to console in development
         if (isDev) {
-            console.log('[Security] CSP violations will be logged to console');
+            log.info('[Security] CSP violations will be logged to console');
         }
         return;
     }
 
     // In production, you'd send reports to a monitoring service
     // The report-uri directive is deprecated, use report-to instead
-    console.log(`[Security] CSP reports will be sent to: ${reportUri}`);
+    log.info(`[Security] CSP reports will be sent to: ${reportUri}`);
 }
 
 export default {

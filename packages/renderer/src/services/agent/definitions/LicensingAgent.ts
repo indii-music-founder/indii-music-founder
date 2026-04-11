@@ -80,7 +80,7 @@ export const LicensingAgent: AgentConfig = {
                 // We should use generateStructuredData or raw generateContent for multimodal.
 
                 // Using generateStructuredData for clean output, passing the file as inline data.
-                const summary = await firebaseAI.generateText(prompt + `\n\n[Attached Document Buffer of type ${args.mime_type}]`);
+
                 // Note: Real multimodal passing requires using generateContent with parts.
                 // Upgrading to use the raw firebaseAI.generateContent to pass image/pdf parts.
 

@@ -198,7 +198,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                         <button
                             onClick={onClose}
                             className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-                            aria-label="Close onboarding"
+                            aria-label={t('onboarding.closeLabel')}
                         >
                             <X size={20} />
                         </button>
@@ -224,7 +224,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                         {isProcessing && (
                             <div className="flex justify-start">
                                 <div className="bg-gray-800 text-gray-400 p-3 rounded-xl rounded-tl-none animate-pulse">
-                                    {secureRandomPick(['Hang on...', 'Let me think...', 'One sec...', 'Mmm...', 'Okay...'])}
+                                    {secureRandomPick([t('onboarding.processing'), 'One sec...', 'Mmm...', 'Okay...'])}
                                 </div>
                             </div>
                         )}
@@ -272,7 +272,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-                                aria-label="Attach files"
+                                aria-label={t('onboarding.attachLabel')}
                             >
                                 <Paperclip size={20} />
                             </button>
@@ -290,7 +290,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 onClick={handleSend}
                                 disabled={isProcessing || (!input.trim() && files.length === 0)}
                                 className="min-w-11 min-h-11 flex items-center justify-center bg-white hover:bg-gray-200 text-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                aria-label="Send message"
+                                aria-label={t('onboarding.sendLabel')}
                             >
                                 <Send size={20} />
                             </button>

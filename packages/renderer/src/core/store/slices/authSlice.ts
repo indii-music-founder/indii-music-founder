@@ -17,6 +17,12 @@ import {
 /** Minimal interface for E2E mock auth objects that provide their own listener */
 interface E2EMockAuth {
     onAuthStateChanged: (callback: (user: User | null) => void) => () => void;
+    signInAnonymously: () => Promise<any>;
+    signInWithEmailAndPassword: (email: string, pass: string) => Promise<any>;
+    createUserWithEmailAndPassword: (email: string, pass: string) => Promise<any>;
+    sendPasswordResetEmail: (email: string) => Promise<any>;
+    signInWithPopup: (provider: any) => Promise<any>;
+    signOut: () => Promise<void>;
 }
 
 /**
@@ -28,6 +34,48 @@ const onAuthStateChanged = (authObj: Auth | E2EMockAuth, callback: (user: User |
         return (authObj as E2EMockAuth).onAuthStateChanged(callback);
     }
     return firebaseOnAuthStateChanged(authObj as Auth, callback);
+};
+
+const wrappedSignInAnonymously = (authObj: Auth | E2EMockAuth) => {
+    if (typeof (authObj as E2EMockAuth).signInAnonymously === 'function') {
+        return (authObj as E2EMockAuth).signInAnonymously();
+    }
+    return signInAnonymously(authObj as Auth);
+};
+
+const wrappedSignInWithEmailAndPassword = (authObj: Auth | E2EMockAuth, email: string, pass: string) => {
+    if (typeof (authObj as E2EMockAuth).signInWithEmailAndPassword === 'function') {
+        return (authObj as E2EMockAuth).signInWithEmailAndPassword(email, pass);
+    }
+    return signInWithEmailAndPassword(authObj as Auth, email, pass);
+};
+
+const wrappedCreateUserWithEmailAndPassword = (authObj: Auth | E2EMockAuth, email: string, pass: string) => {
+    if (typeof (authObj as E2EMockAuth).createUserWithEmailAndPassword === 'function') {
+        return (authObj as E2EMockAuth).createUserWithEmailAndPassword(email, pass);
+    }
+    return createUserWithEmailAndPassword(authObj as Auth, email, pass);
+};
+
+const wrappedSendPasswordResetEmail = (authObj: Auth | E2EMockAuth, email: string) => {
+    if (typeof (authObj as E2EMockAuth).sendPasswordResetEmail === 'function') {
+        return (authObj as E2EMockAuth).sendPasswordResetEmail(email);
+    }
+    return sendPasswordResetEmail(authObj as Auth, email);
+};
+
+const wrappedSignInWithPopup = (authObj: Auth | E2EMockAuth, provider: any) => {
+    if (typeof (authObj as E2EMockAuth).signInWithPopup === 'function') {
+        return (authObj as E2EMockAuth).signInWithPopup(provider);
+    }
+    return signInWithPopup(authObj as Auth, provider);
+};
+
+const wrappedSignOut = (authObj: Auth | E2EMockAuth) => {
+    if (typeof (authObj as E2EMockAuth).signOut === 'function') {
+        return (authObj as E2EMockAuth).signOut();
+    }
+    return signOut(authObj as Auth);
 };
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -127,7 +175,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         try {
             set({ authLoading: true, authError: null });
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
+            await wrappedSignInWithPopup(auth, provider);
             // State update handled by listener
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
@@ -144,7 +192,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     loginWithEmail: async (email: string, pass: string) => {
         try {
             set({ authLoading: true, authError: null });
-            await signInWithEmailAndPassword(auth, email, pass);
+            await wrappedSignInWithEmailAndPassword(auth, email, pass);
             // State update handled by listener
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
@@ -157,7 +205,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     signUpWithEmail: async (email: string, pass: string) => {
         try {
             set({ authLoading: true, authError: null });
-            await createUserWithEmailAndPassword(auth, email, pass);
+            await wrappedCreateUserWithEmailAndPassword(auth, email, pass);
             // State update handled by listener — initializeAuthListener will create the user doc
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
@@ -181,7 +229,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
             // 2. Attempt Anonymous Auth. If Identity Toolkit signups are blocked (which
             // throws the identitytoolkit error), fallback to an injected Mock User.
             try {
-                await signInAnonymously(auth);
+                await wrappedSignInAnonymously(auth);
             } catch (err: unknown) {
                 const firebaseError = err as FirebaseAuthError;
                 if (firebaseError.code === 'auth/admin-restricted-operation' || firebaseError.code?.includes('identitytoolkit')) {
@@ -215,7 +263,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     resetPassword: async (email: string) => {
         try {
             set({ authLoading: true, authError: null, passwordResetSent: false });
-            await sendPasswordResetEmail(auth, email);
+            await wrappedSendPasswordResetEmail(auth, email);
             set({ authLoading: false, passwordResetSent: true });
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
@@ -250,7 +298,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
     logout: async () => {
         try {
-            await signOut(auth);
+            await wrappedSignOut(auth);
 
             // ST9: Clear cache on logout to prevent stale data cross-contamination
             const { cacheService } = await import('@/services/cache/CacheService');
