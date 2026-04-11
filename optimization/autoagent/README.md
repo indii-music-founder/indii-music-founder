@@ -56,7 +56,7 @@ plumbing works end-to-end.
 ```bash
 uv run harbor run \
   -p tasks/ \
-  --task-name routing-isrc \
+  --task-name indii/routing-isrc \
   -l 1 -n 1 \
   --agent-import-path agent:AutoAgent \
   -o jobs --job-name smoke \
