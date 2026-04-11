@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 
-import { Agent } from '@mastra/core';
+import { Agent } from '@mastra/core/agent';
 import { MCPClient } from '@mastra/mcp';
 import { google } from '@ai-sdk/google';
-import { createTool } from '@mastra/core';
+import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { DirectorTools } from '@/services/agent/tools/DirectorTools';
 
@@ -23,9 +23,9 @@ const generateImageTool = createTool({
     referenceAssetIndex: z.number().optional().describe('Index of brand asset (logo) from Brand Kit'),
     uploadedImageIndex: z.number().optional().describe('Index of recent upload to use as reference'),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }: any) => {
     try {
-      const result = await DirectorTools.generate_image(context);
+      const result = await DirectorTools.generate_image!(context);
       return {
         success: result.success,
         data: result.data,
@@ -47,11 +47,11 @@ const searchKnowledgeTool = createTool({
   inputSchema: z.object({
     query: z.string().describe('Search query for the knowledge base')
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }: any) => {
     try {
       // Import knowledge tools from indiiOS system
       const { KnowledgeTools } = await import('@/services/agent/tools/KnowledgeTools');
-      const result = await KnowledgeTools.search_knowledge(context);
+      const result = await KnowledgeTools.search_knowledge!(context);
       return {
         success: true,
         data: result
@@ -73,9 +73,9 @@ const batchEditImagesTool = createTool({
     prompt: z.string().describe('Text instruction for how to edit the images'),
     imageIndices: z.array(z.number()).optional().describe('Specific image indices to edit (edits all if not specified)')
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }: any) => {
     try {
-      const result = await DirectorTools.batch_edit_images(context);
+      const result = await DirectorTools.batch_edit_images!(context);
       return {
         success: result.success,
         data: result.data,
@@ -98,9 +98,9 @@ const generateShowroomMockupTool = createTool({
     productType: z.string().describe('Type of product (e.g., vinyl record, CD, t-shirt)'),
     scenePrompt: z.string().describe('Scene description, lighting, background')
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }: any) => {
     try {
-      const result = await DirectorTools.run_showroom_mockup(context as any);
+      const result = await DirectorTools.run_showroom_mockup!(context as any);
       return {
         success: result.success,
         data: result.data,
@@ -117,12 +117,12 @@ const generateShowroomMockupTool = createTool({
 });
 
 const mcpClient = new MCPClient({
-    id: 'docker-gateway-client',
-    servers: {
-        dockerGateway: {
-            url: new URL(process.env.MCP_DOCKER_GATEWAY_URL || 'http://localhost:8080'),
-        },
+  id: 'docker-gateway-client',
+  servers: {
+    dockerGateway: {
+      url: new URL(process.env.MCP_DOCKER_GATEWAY_URL || 'http://localhost:8080'),
     },
+  },
 });
 
 export const creativeDirector = new Agent({
@@ -168,11 +168,12 @@ export const creativeDirector = new Agent({
     - Maintain brand colors and aesthetic
   `,
   model: google('gemini-3.1-pro-preview'),
-  tools: [
+  tools: {
     generateImageTool,
     searchKnowledgeTool,
     batchEditImagesTool,
     generateShowroomMockupTool
-  ],
+  },
+  // @ts-expect-error - mcpClient property typing is undefined in current mastra/core version
   mcpClient: mcpClient,
 });

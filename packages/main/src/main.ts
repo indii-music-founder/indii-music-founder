@@ -95,7 +95,7 @@ const createWindow = async () => {
         y: windowState.y,
         webPreferences: {
             devTools: !app.isPackaged,
-            preload: path.join(__dirname, 'preload.cjs'),
+            preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: true,
@@ -216,7 +216,7 @@ const MAX_AUTO_RESTARTS = 3;
 const checkSidecarHealth = async (window: BrowserWindow) => {
     try {
         // Fetch is available in Node.js 18+ (Project requires Node 22)
-        const response = await fetch('http://localhost:50080/health');
+        const response = await fetch('http://localhost:50080/healthz');
         if (response.ok) {
             sidecarFailureCount = 0;
             autoRestartCount = 0; // Reset restart count on success

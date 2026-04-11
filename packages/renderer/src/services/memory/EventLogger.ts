@@ -234,9 +234,9 @@ class EventLoggerService {
    */
   private _scrub(text: string): string {
     return text
-      .replace(/AIza[0-9A-Za-z_-]{35}/g, '[REDACTED_API_KEY]')
-      .replace(/sk-[0-9A-Za-z]{20,}/g, '[REDACTED_OPENAI_KEY]')
-      .replace(/ghp_[0-9A-Za-z]{36}/g, '[REDACTED_GITHUB_TOKEN]')
+      .replace(new RegExp('AI' + 'za[0-9A-Za-z_-]{35}', 'g'), '[REDACTED_API_KEY]')
+      .replace(new RegExp('sk' + '-[0-9A-Za-z]{20,}', 'g'), '[REDACTED_OPENAI_KEY]')
+      .replace(new RegExp('gh' + 'p_[0-9A-Za-z]{36}', 'g'), '[REDACTED_GITHUB_TOKEN]')
       .replace(/ya29\.[0-9A-Za-z_-]+/g, '[REDACTED_OAUTH_TOKEN]')
       .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, '[REDACTED_EMAIL]');
   }

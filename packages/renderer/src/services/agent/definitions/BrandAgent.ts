@@ -1,6 +1,4 @@
-
 import { AgentConfig } from "../types";
-import systemPrompt from '@agents/brand/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 
@@ -192,7 +190,7 @@ If a task is outside Brand, say:
             
             Provide a pass/fail assessment and specific feedback.`;
             try {
-                const response = await firebaseAI.generateText(prompt);
+                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { critique: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -215,7 +213,7 @@ If a task is outside Brand, say:
                 
                 Evaluate: Tone of Voice, Visual/Descriptive Alignment, and Core Values.
                 Return a Score (0-100) and actionable feedback.`;
-                const response = await firebaseAI.generateText(prompt);
+                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { analysis: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -231,7 +229,7 @@ If a task is outside Brand, say:
             3. Visual Identity Pillars
             4. Do's and Don'ts`;
             try {
-                const response = await firebaseAI.generateText(prompt);
+                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { guidelines: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };

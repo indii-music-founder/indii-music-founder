@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 
-import { Agent, createTool } from '@mastra/core';
+import { Agent } from '@mastra/core/agent';
+import { createTool } from '@mastra/core/tools';
 import { MCPClient } from '@mastra/mcp';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
@@ -21,9 +22,9 @@ const createCampaignBriefTool = createTool({
         duration: z.string().optional().describe('Duration of campaign'),
         assetIds: z.array(z.string()).optional().describe('Attached asset IDs')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.create_campaign_brief(context);
+            const result = await MarketingTools.create_campaign_brief!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Campaign brief generation failed:', error);
@@ -39,9 +40,9 @@ const analyzeAudienceTool = createTool({
         genre: z.string().describe('The genre to analyze.'),
         similar_artists: z.array(z.string()).optional().describe('List of similar artists')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.analyze_audience(context);
+            const result = await MarketingTools.analyze_audience!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Audience analysis failed:', error);
@@ -58,9 +59,9 @@ const scheduleContentTool = createTool({
         platforms: z.array(z.string()).describe('List of platforms.'),
         frequency: z.string().describe('Frequency string e.g. "daily", "bi-weekly"')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.schedule_content(context);
+            const result = await MarketingTools.schedule_content!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Schedule content failed:', error);
@@ -75,9 +76,9 @@ const trackPerformanceTool = createTool({
     inputSchema: z.object({
         campaignId: z.string().describe('The ID of the campaign to track.')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.track_performance(context);
+            const result = await MarketingTools.track_performance!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Track performance failed:', error);
@@ -92,9 +93,9 @@ const generateCampaignFromAudioTool = createTool({
     inputSchema: z.object({
         uploadedAudioIndex: z.number().describe('Index of audio file in uploads (default 0).')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.generate_campaign_from_audio(context);
+            const result = await MarketingTools.generate_campaign_from_audio!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Campaign from audio failed:', error);
@@ -109,9 +110,9 @@ const analyzeMarketTrendsTool = createTool({
     inputSchema: z.object({
         category: z.string().optional().describe('Category to analyze.')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.analyze_market_trends(context);
+            const result = await MarketingTools.analyze_market_trends!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Analyze market trends failed:', error);
@@ -128,9 +129,9 @@ const createABTestCampaignTool = createTool({
         goal: z.string().describe('Campaign goal.'),
         channels: z.array(z.string()).describe('List of channels.')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.create_ab_test_campaign(context);
+            const result = await MarketingTools.create_ab_test_campaign!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Create A/B test campaign failed:', error);
@@ -146,9 +147,9 @@ const tierSuperfansTool = createTool({
         minSpendForVIP: z.number().describe('Minimum spend threshold for VIP tier.'),
         minSpendForSuperfan: z.number().describe('Minimum spend threshold for Superfan tier.')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.tier_superfans(context);
+            const result = await MarketingTools.tier_superfans!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Tier superfans failed:', error);
@@ -166,9 +167,9 @@ const trackPostReleaseMomentumTool = createTool({
         organicStreams: z.number().describe('Count of organic streams.'),
         dsp: z.string().describe('DSP platform Name.')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await MarketingTools.track_post_release_momentum(context);
+            const result = await MarketingTools.track_post_release_momentum!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] Track momentum failed:', error);
@@ -184,10 +185,10 @@ const indiiImageGenTool = createTool({
         prompt: z.string().describe('Visual description of the image to generate'),
         aspectRatio: z.string().optional().describe('Aspect ratio: 1:1, 16:9, 9:16, 4:3, 3:4, 3:2')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
             // Calls the Director tool explicitly through the bridge
-            const result = await DirectorTools.generate_image(context);
+            const result = await DirectorTools.generate_image!(context);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] indii_image_gen failed:', error);
@@ -207,9 +208,9 @@ const createArtifactDropTool = createTool({
         audioUrl: z.string().optional().describe('Optional public URL of the audio track.'),
         licenseType: z.enum(['Personal', 'Commercial', 'Exclusive']).describe('License type')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await SovereignTools.create_artifact_drop(context as any);
+            const result = await SovereignTools.create_artifact_drop!(context as any);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] create_artifact_drop failed:', error);
@@ -227,9 +228,9 @@ const browserActionTool = createTool({
         selector: z.string().optional().describe('CSS selector for interaction.'),
         text: z.string().optional().describe('Text to type')
     }),
-    execute: async ({ context }) => {
+    execute: async ({ context }: any) => {
         try {
-            const result = await BrowserTools.browser_tool(context as any);
+            const result = await BrowserTools.browser_action!(context as any);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
             console.error('[Mastra Agent] browser_tool failed:', error);
@@ -269,7 +270,7 @@ export const marketingAgent = new Agent({
     Tone: Industry-savvy, narrative-driven, sharp, concise.
   `,
     model: google('gemini-3.1-pro-preview'),
-    tools: [
+    tools: {
         createCampaignBriefTool,
         analyzeAudienceTool,
         scheduleContentTool,
@@ -282,6 +283,7 @@ export const marketingAgent = new Agent({
         indiiImageGenTool,
         createArtifactDropTool,
         browserActionTool
-    ],
+    },
+    // @ts-expect-error - mcpClient property typing is undefined in current mastra/core version
     mcpClient: mcpClient,
 });

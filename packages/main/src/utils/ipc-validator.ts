@@ -1,3 +1,4 @@
+import log from 'electron-log';
 /**
  * IPC Handler Validation Utility
  * 
@@ -19,13 +20,13 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 
 type ValidatorFn<T> = (value: unknown) => T;
 
-interface ValidationResult<T> {
+export interface ValidationResult<T> {
     success: boolean;
     value?: T;
     error?: string;
 }
 
-interface ValidatorOptions {
+export interface ValidatorOptions {
     required?: boolean;
     default?: unknown;
 }
@@ -390,7 +391,7 @@ export function createValidatedHandler<TArgs, TReturn>(
             return await handler(event, validatedArgs);
         } catch (error) {
             // Log validation failures for security monitoring
-            console.error(
+            log.error(
                 `[IPC Security] Validation failed:`,
                 error instanceof Error ? error.message : error
             );
@@ -422,7 +423,7 @@ export function registerValidatedHandler<TArgs, TReturn>(
     handler: HandlerFn<TArgs, TReturn>
 ): void {
     ipcMain.handle(channel, createValidatedHandler(argsValidator, handler));
-    console.log(`[IPC] Registered validated handler: ${channel}`);
+    log.info(`[IPC] Registered validated handler: ${channel}`);
 }
 
 // ============================================================================
@@ -512,7 +513,7 @@ export function checkRateLimit(
     const recentRequests = timestamps.filter(t => t > windowStart);
 
     if (recentRequests.length >= config.maxRequests) {
-        console.warn(
+        log.warn(
             `[IPC Security] Rate limit exceeded: ${channel} from ${identifier}`
         );
         return false;
@@ -545,7 +546,7 @@ export function registerRateLimitedHandler<TArgs, TReturn>(
         return createValidatedHandler(argsValidator, handler)(event, args);
     });
 
-    console.log(`[IPC] Registered rate-limited handler: ${channel}`);
+    log.info(`[IPC] Registered rate-limited handler: ${channel}`);
 }
 
 export default {

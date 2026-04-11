@@ -592,13 +592,12 @@ export const MemoryDashboard: React.FC = () => {
                         {/* ---- DIRECTIVES TAB ---- */}
                         {activeTab === 'directives' && (
                             <div style={{ padding: '12px 24px', opacity: 0, animation: 'fadeIn 0.3s forwards' }}>
-                                <style dangerouslySetInnerHTML={{
-                                    __html: `
+                                <style>{`
                                     @keyframes fadeIn {
                                         from { opacity: 0; transform: translateY(10px); }
                                         to { opacity: 1; transform: translateY(0); }
                                     }
-                                `}} />
+                                `}</style>
                                 {(directives || []).length === 0 ? (
                                     <div style={{
                                         textAlign: 'center',

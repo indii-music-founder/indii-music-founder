@@ -69,6 +69,17 @@ const getSafeMetaEnv = (key: string): string | boolean | undefined => {
     }
 };
 
+const getProcessEnv = (key: string): string | undefined => {
+    try {
+        if (typeof process !== 'undefined' && process.env) {
+            return process.env[key];
+        }
+    } catch {
+        return undefined;
+    }
+    return undefined;
+};
+
 const processEnv = {
     // 🛡️ Sentinel: Using static lookups for Vite compatibility
     apiKey: getEnv(getSafeMetaEnv('VITE_API_KEY'), getProcessEnv('VITE_API_KEY')),

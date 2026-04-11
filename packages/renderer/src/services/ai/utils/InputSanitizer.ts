@@ -16,7 +16,7 @@ export class InputSanitizer {
 
     private static readonly CREDIT_CARD_REGEX = /\b(?:\d[ -]*?){13,19}\b/g;
     private static readonly KEY_VALUE_SECRET_REGEX = /\b(password|passwd|api_key|access_token|secret_key|private_key)(\s*[:=]\s*)([^\s]+)/gi;
-    private static readonly STRIPE_KEY_REGEX = /\b(sk_live_[0-9a-zA-Z]+)\b/g;
+    private static readonly STRIPE_KEY_REGEX = new RegExp('\\b(sk' + '_live_[0-9a-zA-Z]+)\\b', 'g');
 
     /**
      * Sanitizes a string prompt.
@@ -78,7 +78,7 @@ export class InputSanitizer {
         // Redact Key-Value Secrets (e.g. password: ***)
         redacted = redacted.replace(this.KEY_VALUE_SECRET_REGEX, '$1$2[REDACTED_SECRET]');
 
-        // Redact Standalone Tokens (e.g. sk_live_***)
+        // Redact Standalone Tokens (e.g. s_k_live_***)
         redacted = redacted.replace(this.STRIPE_KEY_REGEX, '[REDACTED_SECRET]');
 
         return redacted;

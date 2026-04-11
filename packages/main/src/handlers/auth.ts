@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow, shell, session, app } from 'electron';
+import log from 'electron-log';
+import { ipcMain, BrowserWindow, shell, session } from 'electron';
 import { authStorage } from '../services/AuthStorage';
 import fs from 'fs';
 import path from 'path';
@@ -8,7 +9,7 @@ function logToFile(msg: string) {
     try {
         fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] [Auth] ${msg}\n`);
     } catch (e) {
-        console.error('Failed to write to log file', e);
+        log.error('Failed to write to log file', e);
     }
 }
 
@@ -142,7 +143,7 @@ function checkRateLimit(identifier: string): boolean {
 // Notify helper
 function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null }) {
     const wins = BrowserWindow.getAllWindows();
-    console.log(`[Auth] Notifying ${wins.length} window(s) of successful auth`);
+    log.info(`[Auth] Notifying ${wins.length} window(s) of successful auth`);
     wins.forEach(w => {
         if (!w.isDestroyed()) {
             w.webContents.send('auth:user-update', tokens);
@@ -154,7 +155,7 @@ function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | nul
 
 function notifyAuthError(message: string) {
     const wins = BrowserWindow.getAllWindows();
-    console.log(`[Auth] Notifying ${wins.length} window(s) of auth error: ${message}`);
+    log.info(`[Auth] Notifying ${wins.length} window(s) of auth error: ${message}`);
     wins.forEach(w => {
         if (!w.isDestroyed()) {
             w.webContents.send('auth:error', { message });
@@ -165,12 +166,12 @@ function notifyAuthError(message: string) {
 export function registerAuthHandlers() {
     ipcMain.handle('auth:login-google', async () => {
         const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login-bridge';
-        console.log("[Auth] Redirecting to Login Bridge:", LOGIN_BRIDGE_URL);
+        log.info("[Auth] Redirecting to Login Bridge:", LOGIN_BRIDGE_URL);
         await shell.openExternal(LOGIN_BRIDGE_URL);
     });
 
     ipcMain.handle('auth:logout', async () => {
-        console.log('Logout requested');
+        log.info('Logout requested');
         try {
             await authStorage.deleteToken();
             const ses = session.defaultSession;
@@ -180,14 +181,14 @@ export function registerAuthHandlers() {
             const wins = BrowserWindow.getAllWindows();
             wins.forEach(w => w.webContents.send('auth:user-update', null));
         } catch (e) {
-            console.error("Logout failed:", e);
+            log.error("Logout failed:", e);
         }
     });
 }
 
 export function handleDeepLink(url: string) {
     logToFile(`handleDeepLink received URL: ${url}`);
-    console.log("Deep link received:", url);
+    log.info("Deep link received:", url);
 
     // =========================================================================
     // SECURITY: Validate deep link origin and structure
@@ -195,7 +196,7 @@ export function handleDeepLink(url: string) {
     const originValidation = validateDeepLinkOrigin(url);
     if (!originValidation.valid) {
         logToFile(`SECURITY: Deep link validation failed - ${originValidation.error}`);
-        console.error('[Auth] SECURITY: Blocked invalid deep link:', originValidation.error);
+        log.error('[Auth] SECURITY: Blocked invalid deep link:', originValidation.error);
         notifyAuthError('Invalid authentication callback');
         return;
     }
@@ -205,7 +206,7 @@ export function handleDeepLink(url: string) {
     // =========================================================================
     if (!checkRateLimit('deep-link')) {
         logToFile('SECURITY: Rate limit exceeded for deep link auth');
-        console.error('[Auth] SECURITY: Too many auth attempts');
+        log.error('[Auth] SECURITY: Too many auth attempts');
         notifyAuthError('Too many authentication attempts. Please wait.');
         return;
     }
@@ -218,7 +219,7 @@ export function handleDeepLink(url: string) {
 
         if (error) {
             logToFile(`Auth Error from URL: ${error}`);
-            console.error("Auth Error:", error);
+            log.error("Auth Error:", error);
             notifyAuthError(error);
             return;
         }
@@ -234,7 +235,7 @@ export function handleDeepLink(url: string) {
             const tokenValidation = validateTokenStructure(idToken);
             if (!tokenValidation.valid) {
                 logToFile(`SECURITY: ID token validation failed - ${tokenValidation.error}`);
-                console.error('[Auth] SECURITY: Invalid ID token:', tokenValidation.error);
+                log.error('[Auth] SECURITY: Invalid ID token:', tokenValidation.error);
                 notifyAuthError('Invalid authentication token received');
                 return;
             }
@@ -245,7 +246,7 @@ export function handleDeepLink(url: string) {
             // Access tokens from Google OAuth have different structure, basic check only
             if (accessToken.length < 20) {
                 logToFile('SECURITY: Access token suspiciously short');
-                console.error('[Auth] SECURITY: Invalid access token length');
+                log.error('[Auth] SECURITY: Invalid access token length');
                 notifyAuthError('Invalid access token received');
                 return;
             }
@@ -258,7 +259,7 @@ export function handleDeepLink(url: string) {
 
         if (idToken) {
             logToFile(`Success: Tokens validated and accepted. ID: ${idToken.substring(0, 20)}..., Access: ${!!accessToken}`);
-            console.log("Received and validated tokens via bridge flow, notifying renderer...");
+            log.info("Received and validated tokens via bridge flow, notifying renderer...");
             notifyAuthSuccess({ idToken, accessToken });
             return;
         }
@@ -266,7 +267,7 @@ export function handleDeepLink(url: string) {
         logToFile("No tokens or errors found in deep link.");
     } catch (e) {
         logToFile(`Exception in handleDeepLink: ${String(e)}`);
-        console.error("Failed to parse deep link:", e);
+        log.error("Failed to parse deep link:", e);
         notifyAuthError('Invalid auth callback');
     }
 }

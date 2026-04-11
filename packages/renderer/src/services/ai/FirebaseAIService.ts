@@ -24,13 +24,13 @@ import {
     StreamChunk,
     GenerateVideoRequest,
     GenerateSpeechResponse,
-    GenerateContentOptions,
     GenerateImageOptions,
     EmbedContentOptions,
     GenerationConfig,
     ContentPart,
     SafetySetting,
     ToolConfig,
+    GenerateContentOptions,
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
@@ -761,10 +761,10 @@ export class FirebaseAIService implements AIContext {
      */
     async generateText(
         prompt: string | Part[],
-        thinkingBudgetOrModel?: number | string,
+        thinkingBudgetOrModelOrConfig?: number | string | Record<string, unknown>,
         systemInstructionOrConfig?: string | Record<string, unknown>
     ): Promise<string> {
-        return hlGenerateText(this, prompt, thinkingBudgetOrModel, systemInstructionOrConfig);
+        return hlGenerateText(this, prompt, thinkingBudgetOrModelOrConfig, systemInstructionOrConfig);
     }
 
     /**
@@ -774,11 +774,11 @@ export class FirebaseAIService implements AIContext {
     async generateStructuredData<T>(
         promptOrOptions: string | Part[] | GenerateContentOptions,
         schemaOrConfig?: Schema | Record<string, unknown>,
-        thinkingBudget?: number,
+        thinkingBudgetOrConfig?: number | Record<string, unknown>,
         systemInstruction?: string,
         modelOverride?: string
     ): Promise<T> {
-        return hlGenerateStructuredData<T>(this, promptOrOptions, schemaOrConfig, thinkingBudget, systemInstruction, modelOverride);
+        return hlGenerateStructuredData<T>(this, promptOrOptions, schemaOrConfig, thinkingBudgetOrConfig, systemInstruction, modelOverride);
     }
 
     /**
@@ -1017,7 +1017,6 @@ export class FirebaseAIService implements AIContext {
         signal?: AbortSignal
     ): Promise<T> {
         let lastError: unknown;
-        let currentDelay = initialDelay;
 
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
@@ -1053,7 +1052,6 @@ export class FirebaseAIService implements AIContext {
                         }
                     });
 
-                    currentDelay = waitTime;
                     continue;
                 }
                 throw appException;

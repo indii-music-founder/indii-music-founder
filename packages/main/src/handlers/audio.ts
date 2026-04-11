@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain } from 'electron';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
@@ -19,7 +20,7 @@ const getBinaryPath = (binaryPath: string | null) => {
     const fixedPath = binaryPath.replace('app.asar', 'app.asar.unpacked');
     // Log path for debugging production builds
     if (fixedPath !== binaryPath) {
-        console.log(`[AudioHandler] Adjusted binary path from ${binaryPath} to ${fixedPath}`);
+        log.info(`[AudioHandler] Adjusted binary path from ${binaryPath} to ${fixedPath}`);
     }
     return fixedPath;
 }
@@ -27,13 +28,13 @@ const getBinaryPath = (binaryPath: string | null) => {
 if (ffmpegPath) {
     const fixedFfmpegPath = getBinaryPath(ffmpegPath);
     ffmpeg.setFfmpegPath(fixedFfmpegPath);
-    console.log(`[AudioHandler] FFmpeg path set to: ${fixedFfmpegPath}`);
+    log.info(`[AudioHandler] FFmpeg path set to: ${fixedFfmpegPath}`);
 }
 
 if (ffprobePath.path) {
     const fixedFfprobePath = getBinaryPath(ffprobePath.path);
     ffmpeg.setFfprobePath(fixedFfprobePath);
-    console.log(`[AudioHandler] FFprobe path set to: ${fixedFfprobePath}`);
+    log.info(`[AudioHandler] FFprobe path set to: ${fixedFfprobePath}`);
 }
 
 const calculateFileHash = (filePath: string): Promise<string> => {
@@ -49,7 +50,7 @@ const calculateFileHash = (filePath: string): Promise<string> => {
 
 export function registerAudioHandlers() {
     ipcMain.handle('audio:analyze', async (event, filePath) => {
-        console.log('Audio analysis requested for:', filePath);
+        log.info('Audio analysis requested for:', filePath);
 
         try {
             validateSender(event);
@@ -75,7 +76,7 @@ export function registerAudioHandlers() {
                 })
             ]);
 
-            console.log("Analysis Complete. Hash:", hash.substring(0, 8) + "...");
+            log.info("Analysis Complete. Hash:", hash.substring(0, 8) + "...");
 
             return {
                 status: 'success',
@@ -88,7 +89,7 @@ export function registerAudioHandlers() {
                 streams: probeData.streams ?? []
             };
         } catch (error) {
-            console.error("Audio analysis failed:", error);
+            log.error("Audio analysis failed:", error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -97,7 +98,7 @@ export function registerAudioHandlers() {
     });
 
     ipcMain.handle('audio:lookup-metadata', async (event, hash) => {
-        console.log('[Main] Metadata lookup requested for hash:', hash);
+        log.info('[Main] Metadata lookup requested for hash:', hash);
         try {
             validateSender(event);
             // Schema Validation
@@ -107,7 +108,7 @@ export function registerAudioHandlers() {
             // const token = await authService.getToken(); 
             return await apiService.getSongMetadata(validatedHash);
         } catch (error) {
-            console.error("[Main] Metadata lookup failed:", error);
+            log.error("[Main] Metadata lookup failed:", error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -117,7 +118,7 @@ export function registerAudioHandlers() {
 
     ipcMain.handle('audio:transcode', async (event, options) => {
         const { inputPath, outputPath, targetFormat, bitRate, sampleRate } = options;
-        console.log(`[Main] Transcoding: ${inputPath} -> ${outputPath} (${targetFormat})`);
+        log.info(`[Main] Transcoding: ${inputPath} -> ${outputPath} (${targetFormat})`);
 
         try {
             validateSender(event);
@@ -137,24 +138,24 @@ export function registerAudioHandlers() {
 
                 command
                     .on('end', () => {
-                        console.log('[Main] Transcoding finished');
+                        log.info('[Main] Transcoding finished');
                         resolve({ success: true, path: outputPath });
                     })
                     .on('error', (err) => {
-                        console.error('[Main] Transcoding failed:', err);
+                        log.error('[Main] Transcoding failed:', err);
                         resolve({ success: false, error: err.message });
                     })
                     .save(outputPath);
             });
         } catch (error) {
-            console.error('[Main] Transcode setup failed:', error);
+            log.error('[Main] Transcode setup failed:', error);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     });
 
     ipcMain.handle('audio:master', async (event, options) => {
         const { inputPath, outputPath, style } = options;
-        console.log(`[Main] Mastering: ${inputPath} -> ${outputPath} (Style: ${style})`);
+        log.info(`[Main] Mastering: ${inputPath} -> ${outputPath} (Style: ${style})`);
 
         try {
             validateSender(event);
@@ -180,17 +181,17 @@ export function registerAudioHandlers() {
                 ffmpeg(inputPath)
                     .audioFilters(filter)
                     .on('end', () => {
-                        console.log('[Main] Mastering finished');
+                        log.info('[Main] Mastering finished');
                         resolve({ success: true, path: outputPath });
                     })
                     .on('error', (err) => {
-                        console.error('[Main] Mastering failed:', err);
+                        log.error('[Main] Mastering failed:', err);
                         resolve({ success: false, error: err.message });
                     })
                     .save(outputPath);
             });
         } catch (error) {
-            console.error('[Main] Audio mastering setup failed:', error);
+            log.error('[Main] Audio mastering setup failed:', error);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     });

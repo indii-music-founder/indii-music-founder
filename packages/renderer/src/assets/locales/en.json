@@ -143,6 +143,10 @@
         "currentRelease": "Current Release",
         "livePreview": "Live Preview",
         "bio": "Bio",
-        "activeRelease": "Active Release"
+        "activeRelease": "Active Release",
+        "closeLabel": "Close onboarding",
+        "attachLabel": "Attach files",
+        "sendLabel": "Send message",
+        "processing": "Thinking…"
     }
 }

@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain } from 'electron';
 import { sftpService } from '../services/SFTPService';
 import { SFTPConfigSchema, SftpUploadSchema } from '../utils/validation';
@@ -5,7 +6,6 @@ import { validateSender } from '../utils/ipc-security';
 import { validateSafeHostAsync } from '../utils/network-security';
 import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
-import path from 'path';
 import fs from 'fs';
 import { credentialService } from '../services/CredentialService';
 
@@ -21,7 +21,7 @@ export const registerSFTPHandlers = () => {
             await sftpService.connect(validatedConfig);
             return { success: true };
         } catch (error) {
-            console.error('SFTP Connect Failed:', error);
+            log.error('SFTP Connect Failed:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -53,7 +53,7 @@ export const registerSFTPHandlers = () => {
 
             return { success: true };
         } catch (error) {
-            console.error(`[SFTP] Secure Connect Failed for ${distributorId}:`, error);
+            log.error(`[SFTP] Secure Connect Failed for ${distributorId}:`, error);
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
@@ -77,7 +77,7 @@ export const registerSFTPHandlers = () => {
 
             // SECURITY: Path Authorization Check using AccessControlService
             if (!accessControlService.verifyAccess(realLocalPath)) {
-                console.error(`[Security] Blocked SFTP upload from unauthorized path: ${realLocalPath}`);
+                log.error(`[Security] Blocked SFTP upload from unauthorized path: ${realLocalPath}`);
                 throw new Error("Security: Access Denied. Cannot upload from this directory.");
             }
 
@@ -87,7 +87,7 @@ export const registerSFTPHandlers = () => {
             const files = await sftpService.uploadDirectory(realLocalPath, validated.remotePath);
             return { success: true, files };
         } catch (error) {
-            console.error('SFTP Upload Failed:', error);
+            log.error('SFTP Upload Failed:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -110,7 +110,7 @@ export const registerSFTPHandlers = () => {
         try {
             validateSender(event);
             return sftpService.isConnected();
-        } catch (error) {
+        } catch (_error) {
             return false;
         }
     });

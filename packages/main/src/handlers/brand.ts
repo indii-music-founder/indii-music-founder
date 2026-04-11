@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain } from 'electron';
 import { validateSender } from '../utils/ipc-security';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
@@ -9,7 +10,7 @@ import path from 'path';
  * Registers IPC handlers for Brand Agent capabilities.
  */
 export const registerBrandHandlers = () => {
-    console.log('[Handlers] Registering Brand handlers...');
+    log.info('[Handlers] Registering Brand handlers...');
 
     ipcMain.handle('brand:analyze-consistency', async (event, assetPath: string, brandKit: Record<string, unknown>) => {
         try {
@@ -19,7 +20,7 @@ export const registerBrandHandlers = () => {
             // Validate inputs
             const validated = BrandConsistencySchema.parse({ assetPath, brandKit });
 
-            console.log(`[Brand] Analyzing consistency for: ${path.basename(validated.assetPath)}`);
+            log.info(`[Brand] Analyzing consistency for: ${path.basename(validated.assetPath)}`);
 
             // 2. Execute Python Script via AgentSupervisor
             // Using 60s timeout for vision processing
@@ -38,7 +39,7 @@ export const registerBrandHandlers = () => {
 
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown consistency analysis error';
-            console.error('[Brand] Consistency analysis failed:', error);
+            log.error('[Brand] Consistency analysis failed:', error);
             return {
                 success: false,
                 error: message,

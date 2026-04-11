@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { PythonBridge } from './python-bridge';
 
 export interface PythonExecutionResult<T = unknown> {
@@ -64,7 +65,7 @@ export class AgentSupervisor {
                 return result;
             } catch (error: unknown) {
                 lastError = error instanceof Error ? error : new Error(String(error));
-                console.warn(`[AgentSupervisor] Attempt ${attempts}/${maxRetries + 1} failed for ${scriptName}: ${lastError.message}`);
+                log.warn(`[AgentSupervisor] Attempt ${attempts}/${maxRetries + 1} failed for ${scriptName}: ${lastError.message}`);
 
                 if (attempts <= maxRetries) {
                     // Exponential backoff or simple delay before retry
@@ -165,7 +166,7 @@ export class AgentSupervisor {
 
         // If it doesn't match the strict schema but is JSON, we return it as is for backward compatibility,
         // but log a warning to encourage migration to the strict schema.
-        console.warn(`[AgentSupervisor] IPC Warning: Script output did not match strict schema {status, data}. Returning raw parsed JSON.`);
+        log.warn(`[AgentSupervisor] IPC Warning: Script output did not match strict schema {status, data}. Returning raw parsed JSON.`);
         return output as T;
     }
 }

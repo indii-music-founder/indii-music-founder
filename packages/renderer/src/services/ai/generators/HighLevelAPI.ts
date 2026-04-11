@@ -30,7 +30,7 @@ import type { ChatMessage } from '../types';
 export async function generateText(
     ctx: AIContext,
     prompt: string | Part[],
-    thinkingBudgetOrModel?: number | string,
+    thinkingBudgetOrModelOrConfig?: number | string | Record<string, unknown>,
     systemInstructionOrConfig?: string | Record<string, unknown>
 ): Promise<string> {
     await ctx.ensureInitialized();
@@ -43,25 +43,31 @@ export async function generateText(
         prompt = PromptSanitizer.sanitizeOrThrow(prompt);
     }
 
-    if (typeof thinkingBudgetOrModel === 'string') {
-        model = thinkingBudgetOrModel;
+    if (typeof thinkingBudgetOrModelOrConfig === 'string') {
+        model = thinkingBudgetOrModelOrConfig;
     }
 
     const modelName = model || ctx.getModelName();
     const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
 
-    if (typeof thinkingBudgetOrModel === 'number') {
+    if (typeof thinkingBudgetOrModelOrConfig === 'number') {
         config.thinkingConfig = {
-            thinkingBudget: thinkingBudgetOrModel,
+            thinkingBudget: thinkingBudgetOrModelOrConfig,
             includeThoughts: true
         };
         systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
-    } else if (typeof thinkingBudgetOrModel === 'string') {
+    } else if (typeof thinkingBudgetOrModelOrConfig === 'string') {
         if (typeof systemInstructionOrConfig === 'string') {
             systemInstruction = systemInstructionOrConfig;
         } else {
             config = (systemInstructionOrConfig as Record<string, unknown>) || {};
             systemInstruction = config && typeof config === 'object' && 'systemInstruction' in config ? (config as { systemInstruction: string }).systemInstruction : undefined;
+        }
+    } else if (typeof thinkingBudgetOrModelOrConfig === 'object' && thinkingBudgetOrModelOrConfig !== null) {
+        config = thinkingBudgetOrModelOrConfig as Record<string, unknown>;
+        systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
+        if (!systemInstruction && 'systemInstruction' in config && typeof config.systemInstruction === 'string') {
+            systemInstruction = config.systemInstruction;
         }
     }
 
@@ -92,7 +98,7 @@ export async function generateStructuredData<T>(
     ctx: AIContext,
     promptOrOptions: string | Part[] | GenerateContentOptions,
     schemaOrConfig?: Schema | Record<string, unknown>,
-    thinkingBudget?: number,
+    thinkingBudgetOrConfig?: number | Record<string, unknown>,
     systemInstruction?: string,
     modelOverride?: string
 ): Promise<T> {
@@ -120,11 +126,13 @@ export async function generateStructuredData<T>(
             responseMimeType: 'application/json',
             responseSchema: schema
         };
-        if (thinkingBudget) {
+        if (typeof thinkingBudgetOrConfig === 'number') {
             config.thinkingConfig = {
-                thinkingBudget,
+                thinkingBudget: thinkingBudgetOrConfig,
                 includeThoughts: true
             };
+        } else if (typeof thinkingBudgetOrConfig === 'object' && thinkingBudgetOrConfig !== null) {
+            config = { ...config, ...thinkingBudgetOrConfig };
         }
     }
 

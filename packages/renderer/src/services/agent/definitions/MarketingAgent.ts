@@ -1,9 +1,7 @@
 import { AgentConfig } from "../types";
-import systemPrompt from '@agents/marketing/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { SovereignTools } from '../tools/SovereignTools';
-
 
 export const MarketingAgent: AgentConfig = {
     id: 'marketing',
@@ -234,7 +232,7 @@ Include:
                 - Success Metrics(KPIs)`;
 
             try {
-                const response = await firebaseAI.generateText(prompt);
+                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { brief: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -250,7 +248,7 @@ Provide:
             - Best times to post`;
 
             try {
-                const response = await firebaseAI.generateText(prompt);
+                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { analysis: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -259,7 +257,7 @@ Provide:
         schedule_content: async (args: { posts: Record<string, unknown>[] }) => {
             // Future: Call SocialService.schedulePost
             const prompt = `Simulate scheduling posts.Count: ${args.posts.length}. Return a confirmation message.`;
-            const confirmation = await firebaseAI.generateText(prompt);
+            const confirmation = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return {
                 success: true,
                 data: {

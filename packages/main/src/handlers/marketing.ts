@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { validateSender } from '../utils/ipc-security';
@@ -14,7 +15,7 @@ export function registerMarketingHandlers() {
         try {
             const validated = MarketAnalysisSchema.parse(data);
 
-            console.log(`[MarketingHandler] Analyzing market trends for: ${validated.category || 'general'}`);
+            log.info(`[MarketingHandler] Analyzing market trends for: ${validated.category || 'general'}`);
 
             const result = await AgentSupervisor.execute<{ success: boolean; error?: string; data?: unknown; message?: string }>(
                 'marketing',
@@ -35,7 +36,7 @@ export function registerMarketingHandlers() {
 
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            console.error('[MarketingHandler] Error:', error);
+            log.error('[MarketingHandler] Error:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: 'Validation failed', details: error.errors };
             }

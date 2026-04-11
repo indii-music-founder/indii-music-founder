@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { ipcMain } from 'electron';
 import { CredentialSchema, CredentialIdSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
@@ -22,7 +23,7 @@ export function registerCredentialHandlers() {
             await credentialService.saveCredentials(id, creds);
             return { success: true };
         } catch (error) {
-            console.error('Credential Save Failed:', error);
+            log.error('Credential Save Failed:', error);
              if (error instanceof z.ZodError) {
                  return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -38,7 +39,7 @@ export function registerCredentialHandlers() {
             const { credentialService } = await import('../services/CredentialService');
             return await credentialService.getCredentials(validatedId);
         } catch (error) {
-            console.error('Credential Get Failed:', error);
+            log.error('Credential Get Failed:', error);
             return null;
         }
     });
@@ -52,7 +53,7 @@ export function registerCredentialHandlers() {
             await credentialService.deleteCredentials(validatedId);
             return { success: true };
         } catch (error) {
-            console.error('Credential Delete Failed:', error);
+            log.error('Credential Delete Failed:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }

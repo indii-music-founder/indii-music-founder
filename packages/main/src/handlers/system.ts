@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { app, ipcMain, BrowserWindow, dialog } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -92,7 +93,7 @@ export function registerSystemHandlers() {
             await scan(dirPath);
             return files;
         } catch (err) {
-            console.error(`[System] Error scanning directory: ${err}`);
+            log.error(`[System] Error scanning directory: ${err}`);
             throw err;
         }
     });

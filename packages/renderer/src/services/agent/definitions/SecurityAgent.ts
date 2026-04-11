@@ -120,7 +120,7 @@ If a task is outside Security, say:
         audit_permissions: async (args: { userId: string }) => {
             const prompt = `Audit permissions for user "${args.userId}". Identify risky roles and generate a compliance report. Return as JSON.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema);
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: response };
             } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };
@@ -132,7 +132,7 @@ If a task is outside Security, say:
             
             Return a JSON object with: isSafe (boolean), issues (array of strings), redacted_text (string).`;
             try {
-                const response = await firebaseAI.generateText(prompt);
+                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { scan_result: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -140,12 +140,12 @@ If a task is outside Security, say:
         },
         check_api_status: async (args: { api_name: string }) => {
             const prompt = `Check status for API "${args.api_name}". Generate latency metrics, error rates, and overall health.`;
-            const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema);
+            const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
             return { success: true, data: response };
         },
         rotate_credentials: async (args: { service_name: string }) => {
             const prompt = `Simulate rotating credentials for ${args.service_name}. Generate a detailed audit log of the key exchange and revocation.`;
-            const response = await firebaseAI.generateText(prompt);
+            const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return { success: true, data: { message: response } };
         }
     },
