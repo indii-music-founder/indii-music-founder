@@ -151,10 +151,10 @@ export const ConversationHistoryList = ({ className, onClose }: { className?: st
         }))
     );
 
-    const handleSelect = (id: string) => {
+    const handleSelect = React.useCallback((id: string) => {
         setActiveSession(id);
         setRightPanelView('messages');
-    };
+    }, [setActiveSession, setRightPanelView]);
 
     // Bolt Optimization: Memoize sorted sessions to prevent re-sorting on every render
     const sortedSessions = useMemo(() => {
