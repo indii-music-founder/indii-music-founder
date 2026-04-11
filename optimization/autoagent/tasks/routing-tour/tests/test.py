@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verifier for routing-tour.
+"""Verifier for indii/routing-tour.
 
 Reads /task/answer.txt and checks that the Conductor routed to `road`.
 Tour planning, venue booking, and date routing are the road specialist's
