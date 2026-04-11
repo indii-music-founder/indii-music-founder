@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
-"""Verifier for indii/routing-tour.
-
-Reads /task/answer.txt and checks that the Conductor routed to `road`.
-Tour planning, venue booking, and date routing are the road specialist's
-domain in indiiOS.
-"""
+"""Verifier for routing-distribution."""
 import sys
 from pathlib import Path
 
-EXPECTED = "road"
+EXPECTED = "distribution"
 ANSWER_FILE = Path("/task/answer.txt")
 
 if not ANSWER_FILE.exists():
