@@ -93,7 +93,7 @@ export const GATED_MODULES: Record<string, ModuleId[]> = {
     [FEATURE_FLAG_NAMES.MARKETPLACE]: ['marketplace'],
 
     // Dev-only shell modules — hidden in production, visible in dev mode
-    [FEATURE_FLAG_NAMES.DEV_MODULES]: ['debug', 'files', 'history'],
+    [FEATURE_FLAG_NAMES.DEV_MODULES]: ['debug', 'files', 'history', 'capture', 'desktop', 'memory', 'select-org'],
 };
 
 /**

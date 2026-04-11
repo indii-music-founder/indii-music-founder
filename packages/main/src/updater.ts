@@ -101,6 +101,13 @@ export function setupAutoUpdater(): void {
             autoUpdater.quitAndInstall(false, true);
         }
     });
+
+    ipcMain.handle('updater:set-channel', (_event: unknown, channel: 'stable' | 'beta') => {
+        if (!autoUpdater) return;
+        autoUpdater.allowPrerelease = channel === 'beta';
+        autoUpdater.channel = channel === 'beta' ? 'beta' : 'latest';
+        log.info(`[Updater] Channel changed to: ${channel}`);
+    });
 }
 
 function sendToRenderer(channel: string, data?: Record<string, unknown>): void {

@@ -569,6 +569,16 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Agent Orchestration (Traces & Tasks)
+    // =========================================================================
+    match /agent_traces/{traceId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /agent_tasks/{traceId}/{allPaths=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // =========================================================================
     // Deny all other access by default
     // =========================================================================
     match /{document=**} {

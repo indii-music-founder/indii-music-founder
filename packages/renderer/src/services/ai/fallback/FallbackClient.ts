@@ -207,6 +207,14 @@ export async function streamWithFallback(
     const chunks: GenerateContentResponse[] = [];
     let finalText = '';
 
+    // Create a deferred promise to know when the stream finishes accumulating
+    let resolveStreamComplete: () => void;
+    let rejectStreamComplete: (err: unknown) => void;
+    const streamCompletePromise = new Promise<void>((resolve, reject) => {
+        resolveStreamComplete = resolve;
+        rejectStreamComplete = reject;
+    });
+
     const stream = new ReadableStream<StreamChunk>({
         async start(controller) {
             try {
@@ -233,14 +241,18 @@ export async function streamWithFallback(
                     });
                 }
                 controller.close();
+                resolveStreamComplete();
             } catch (streamError: unknown) {
                 controller.error(streamError);
+                rejectStreamComplete(streamError);
             }
         }
     });
 
     // Build wrapped response from accumulated chunks
     const wrappedResponsePromise = (async () => {
+        await streamCompletePromise;
+
         const lastChunk = chunks[chunks.length - 1];
         // Find the first chunk that had a thoughtSignature
         const firstWithSignature = chunks.find(c => {
@@ -282,5 +294,8 @@ export async function streamWithFallback(
         };
     })();
 
-    return { stream, response: wrappedResponsePromise };
+    return {
+        stream,
+        response: wrappedResponsePromise
+    };
 }

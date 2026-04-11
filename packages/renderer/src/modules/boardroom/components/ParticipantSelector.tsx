@@ -89,8 +89,13 @@ export default function ParticipantSelector() {
                                     )}
                                 </motion.button>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 font-medium tracking-wide">
-                                {agent.name} {isActive ? "(Active)" : "(Drag into table to activate)"}
+                            <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide z-[100]">
+                                <p className="text-white text-xs">
+                                    <span className="font-bold">{agent.name}</span>
+                                    <span className="opacity-70 ml-1">
+                                        {isActive ? "(Active)" : "(Drag into table to activate)"}
+                                    </span>
+                                </p>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>

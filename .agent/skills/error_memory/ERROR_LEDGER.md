@@ -24,3 +24,4 @@
 - FILE: Multiple (src/services/agent/definitions/*, src/services/ai/*)
 - BUG: Unbounded AI token consumption due to missing maxOutputTokens constraints in `firebaseAI` service calls causing rapid budget exhaustion.
 - FIX: Refactored `FirebaseAIService.ts` and `generators/HighLevelAPI.ts` parameter signatures to accept dynamic configuration objects (`{ maxOutputTokens: 8192, temperature: 1.0 }`), and systematically updated all agent tool `functions` to pass these configuration bounds.
+Rule Added: Always cross off checklist items entirely on task files and scratchpads.

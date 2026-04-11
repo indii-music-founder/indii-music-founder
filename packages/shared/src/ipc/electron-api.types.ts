@@ -119,8 +119,9 @@ export interface ElectronRemoteAPI {
 }
 
 export interface ElectronUpdaterAPI {
-    check: () => Promise<unknown>;
-    install: () => Promise<unknown>;
+    check: () => Promise<{ available: boolean; version?: string; error?: string }>;
+    install: () => Promise<void>;
+    setChannel: (channel: 'stable' | 'beta') => Promise<void>;
     onChecking: (callback: () => void) => () => void;
     onAvailable: (callback: (info: unknown) => void) => () => void;
     onNotAvailable: (callback: () => void) => () => void;

@@ -144,6 +144,7 @@ export interface ElectronAPI {
     updater?: {
         check: () => Promise<{ available: boolean; version?: string; error?: string }>;
         install: () => Promise<void>;
+        setChannel: (channel: 'stable' | 'beta') => Promise<void>;
         onChecking: (callback: () => void) => () => void;
         onAvailable: (callback: (info: { version: string }) => void) => () => void;
         onNotAvailable: (callback: () => void) => () => void;
