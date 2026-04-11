@@ -137,7 +137,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Apple ITMSP Bundle Packager")
     parser.add_argument("release_id", help="The ID of the release")
     parser.add_argument("staging_path", help="Path to the staged assets and metadata")
-    parser.add_argument("--storage-path", help="Path to the data store directory (unused but for consistency)")
 
     args = parser.parse_args()
 

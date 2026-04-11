@@ -299,7 +299,6 @@ if __name__ == "__main__":
     parser.add_argument("--apple-id", help="Apple ID (overrides env var)")
     parser.add_argument("--password", help="App-specific password (overrides env var)")
     parser.add_argument("--provider-id", help="Provider short name (overrides env var)")
-    parser.add_argument("--storage-path", help="Path for logs (unused, for consistency)")
 
     args = parser.parse_args()
 
