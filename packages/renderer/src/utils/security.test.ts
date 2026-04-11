@@ -45,6 +45,23 @@ describe('Security Utilities', () => {
       );
     });
 
+    it('should throw an error if crypto is deleted from globalThis', () => {
+      // Temporarily mock globalThis.crypto to not exist using Object.defineProperty
+      // which allows the existing afterEach hook to properly restore it.
+      Object.defineProperty(globalThis, 'crypto', {
+        value: undefined, // this effectively simulates the property being missing
+        writable: true,
+        configurable: true,
+      });
+
+      // To fully simulate deletion and ensure the global proxy handles it as missing:
+      delete (globalThis as any).crypto;
+
+      expect(() => generateSecureHex(10)).toThrow(
+        '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
+      );
+    });
+
     it('should throw an error if crypto is null', () => {
       // Temporarily mock crypto to be null
       Object.defineProperty(globalThis, 'crypto', {
