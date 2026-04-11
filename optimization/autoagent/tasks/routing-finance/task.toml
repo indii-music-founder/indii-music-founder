@@ -2,7 +2,7 @@ schema_version = "0.1"
 
 [task]
 name = "indii/routing-finance"
-description = "Conductor must route a payout/balance question to the finance specialist."
+description = "Conductor must route a royalty split question to the finance specialist."
 
 [verifier]
 timeout_sec = 120.0

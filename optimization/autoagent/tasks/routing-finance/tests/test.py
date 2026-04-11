@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Verifier for routing-finance.
-
-Reads /task/answer.txt and checks that the Conductor routed to `finance`.
-Quarterly earnings, distributor aggregation, and payout schedules are the
-finance specialist's domain in indiiOS.
-"""
+"""Verifier for routing-finance."""
 import sys
 from pathlib import Path
 

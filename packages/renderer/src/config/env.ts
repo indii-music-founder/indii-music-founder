@@ -38,13 +38,7 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     skipOnboarding: z.boolean().default(false),
 });
 
-// Robust test environment detection early for getEnv logic
-const getProcessEnv = (key: string): string | undefined => {
-    if (typeof process !== 'undefined' && process.env) {
-        return process.env[key];
-    }
-    return undefined;
-};
+// Initial test env detection removed to fix duplicate declaration
 
 const isTest =
     typeof process !== 'undefined' && process.env && (
