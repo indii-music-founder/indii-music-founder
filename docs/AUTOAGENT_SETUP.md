@@ -51,7 +51,7 @@ a tiny iteration cap to validate the full pipeline:
 2. Click **Run workflow**
 3. Set:
    - `n_iterations` = `2`
-   - `task_filter` = `routing-isrc`
+   - `task_filter` = `indii/routing-isrc`
 4. Watch the run complete. Expected outcome:
    - `uv sync` installs deps in ~30s
    - Harbor runs 2 iterations × 1 task = ~2 task executions

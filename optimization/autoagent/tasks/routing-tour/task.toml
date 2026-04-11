@@ -1,7 +1,7 @@
 schema_version = "0.1"
 
 [task]
-name = "routing-tour"
+name = "indii/routing-tour"
 description = "Conductor must route a venue-booking question to the road specialist."
 
 [verifier]
