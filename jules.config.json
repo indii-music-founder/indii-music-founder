@@ -1,7 +1,7 @@
 {
-    "remediation": {
-        "branch_naming": "jules-patch-{type}-{timestamp}-{uuid}",
-        "auto_rebase": true,
-        "require_isolated_tests": true
-    }
+  "remediation": {
+    "branch_naming": "jules-patch-{type}-{timestamp}-{uuid}",
+    "auto_rebase": true,
+    "require_isolated_tests": true
+  }
 }
