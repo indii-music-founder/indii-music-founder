@@ -17,6 +17,7 @@ import {
     RefreshCw,
     ChevronRight,
     ScrollText,
+    Rocket,
 } from 'lucide-react';
 import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -121,6 +122,17 @@ const SecuritySection: React.FC = () => {
                     <Toggle
                         enabled={userProfile?.preferences?.wisdomPoolOptIn ?? false}
                         onChange={(enabled) => updatePreferences({ wisdomPoolOptIn: enabled })}
+                    />
+                </SettingRow>
+
+                <SettingRow icon={Rocket} label="Early Access (Beta Channel)" description="Receive early pre-release updates with experimental features before they reach stable.">
+                    <Toggle
+                        enabled={userProfile?.preferences?.updateChannel === 'beta'}
+                        onChange={(enabled) => {
+                            const newChannel = enabled ? 'beta' : 'stable';
+                            updatePreferences({ updateChannel: newChannel });
+                            window.electronAPI?.updater?.setChannel?.(newChannel);
+                        }}
                     />
                 </SettingRow>
 

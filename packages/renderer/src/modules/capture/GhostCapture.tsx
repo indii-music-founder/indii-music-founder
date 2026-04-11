@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -114,9 +114,16 @@ export default function GhostCapture() {
         <div className="fixed inset-0 bg-[#0f141e] text-white overflow-hidden flex flex-col supports-[height:100dvh]:h-[100dvh]">
             {/* Header */}
             <header className="px-6 py-4 flex justify-between items-center z-10">
-                <div className="flex flex-col">
-                    <span className="text-xs text-teal-500 font-mono tracking-widest uppercase">Quick Asset Setup</span>
-                    <h1 className="text-xl font-bold tracking-tight">Rapid Capture</h1>
+                <div className="flex items-center gap-4">
+                    {imagePreview && (
+                        <button onClick={resetCapture} className="p-2 bg-gray-800/50 rounded-full hover:bg-gray-700 transition">
+                            <ArrowLeft size={20} />
+                        </button>
+                    )}
+                    <div className="flex flex-col">
+                        <span className="text-xs text-teal-500 font-mono tracking-widest uppercase">Quick Asset Setup</span>
+                        <h1 className="text-xl font-bold tracking-tight">Rapid Capture</h1>
+                    </div>
                 </div>
                 <button onClick={() => setModule('dashboard')} className="p-2 bg-gray-800/50 rounded-full hover:bg-gray-700 transition">
                     <X size={20} />

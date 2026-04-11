@@ -116,6 +116,9 @@ export interface UserPreferences {
     compactMode?: boolean;
     animationsEnabled?: boolean;
 
+    // App Updates (Settings -> Security)
+    updateChannel?: 'stable' | 'beta';
+
     // Agent Strategy
     wisdomPoolOptIn?: boolean;
 

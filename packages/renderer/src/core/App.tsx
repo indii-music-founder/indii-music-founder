@@ -171,11 +171,12 @@ function DevPortWarning() {
 
 function useAppInitialization() {
     // ⚡ Bolt Optimization: useShallow
-    const { initializeAuthListener, loadUserProfile, user, initializeHistory, loadProjects } = useStore(
+    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects } = useStore(
         useShallow(state => ({
             initializeAuthListener: state.initializeAuthListener,
             loadUserProfile: state.loadUserProfile,
             user: state.user,
+            userProfile: state.userProfile,
             initializeHistory: state.initializeHistory,
             loadProjects: state.loadProjects
         }))
@@ -264,6 +265,16 @@ function useAppInitialization() {
             };
         }
     }, [user, initializeHistory, loadProjects]);
+
+    // Sync Auto-Update Channel preference with Electron Main Process
+    useEffect(() => {
+        if (userProfile?.preferences && window.electronAPI?.updater?.setChannel) {
+            const channel = userProfile.preferences.updateChannel || 'stable';
+            window.electronAPI.updater.setChannel(channel).catch((err: Error) => {
+                logger.warn('[App] Failed to sync update channel:', err);
+            });
+        }
+    }, [userProfile?.preferences]);
 
     // 4. Sidecar Health Listener (Electron only)
     useEffect(() => {

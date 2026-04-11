@@ -393,8 +393,17 @@ export class AgentService {
     ): Promise<void> {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
-        const activeAgents = state.activeAgents || ['orchestrator'];
+        const activeAgents = state.activeAgents && state.activeAgents.length > 0 ? state.activeAgents : [];
         const referencedAssets = state.referencedAssets || [];
+
+        if (activeAgents.length === 0) {
+            useStore.getState().updateBoardroomMessage(initialResponseId, {
+                agentId: 'system',
+                text: '*(Please drag at least one agent onto the table to begin the discussion.)*',
+                isStreaming: false
+            });
+            return;
+        }
 
         // Inject asset context into the prompt
         let assetContext = '';
@@ -412,14 +421,14 @@ export class AgentService {
                 useStore.getState().addBoardroomMessage({
                     id: resId,
                     role: 'model',
-                    text: '',
+                    text: '*(Reviewing request...)*',
                     timestamp: Date.now() + index, // slight offset to maintain order
                     isStreaming: true,
                     thoughts: [],
                     agentId: agentId
                 });
             } else {
-                useStore.getState().updateBoardroomMessage(resId, { agentId });
+                useStore.getState().updateBoardroomMessage(resId, { agentId, text: '*(Reviewing request...)*' });
             }
 
             let currentStreamedText = '';
@@ -465,14 +474,16 @@ export class AgentService {
                         isStreaming: false
                     });
                 } else {
+                    const hasToolCalls = result && result.toolCalls && result.toolCalls.length > 0;
                     useStore.getState().updateBoardroomMessage(resId, {
+                        text: hasToolCalls ? '*(Executed tasks but provided no summary.)*' : '*(No observations or actions required from this department.)*',
                         thoughtSignature: result?.thoughtSignature,
                         isStreaming: false
                     });
                 }
             } catch (err) {
                 logger.error(`[AgentService] Boardroom dispatch failed for agent ${agentId}:`, err);
-                useStore.getState().updateAgentMessage(resId, {
+                useStore.getState().updateBoardroomMessage(resId, {
                     text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
                     isStreaming: false,
                     thoughts: [{
