@@ -43,16 +43,16 @@ test.describe('Creative Studio', () => {
         await page.goto('/creative');
         await page.waitForSelector('[data-testid="app-container"]', { timeout: 15_000 });
 
-        // Wait for the Creative module to fully mount (gallery button is always present in navbar)
-        await page.waitForSelector('[data-testid="gallery-view-btn"]', { state: 'attached', timeout: 30_000 });
+        // Wait for the Creative module to fully mount (direct generation button is always present in navbar)
+        await page.waitForSelector('[data-testid="direct-view-btn"]', { state: 'attached', timeout: 30_000 });
     });
 
-    test('should show gallery by default', async ({ authedPage: page }) => {
-        const galleryBtn = page.locator('[data-testid="gallery-view-btn"]');
-        const isVisible = await galleryBtn.isVisible().catch(() => false);
+    test('should show direct generation by default', async ({ authedPage: page }) => {
+        const viewBtn = page.locator('[data-testid="direct-view-btn"]');
+        const isVisible = await viewBtn.isVisible().catch(() => false);
         if (isVisible) {
-            // Gallery button should be active/selected
-            await expect(galleryBtn).toBeVisible();
+            // Button should be active/selected
+            await expect(viewBtn).toBeVisible();
         }
         // App must not crash regardless
         await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
