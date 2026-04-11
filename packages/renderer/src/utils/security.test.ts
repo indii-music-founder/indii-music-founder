@@ -35,7 +35,20 @@ describe('Security Utilities', () => {
     it('should throw an error if crypto.getRandomValues is not available', () => {
       // Temporarily mock crypto to not have getRandomValues
       Object.defineProperty(globalThis, 'crypto', {
-        value: {},
+        value: { getRandomValues: undefined },
+        writable: true,
+        configurable: true,
+      });
+
+      expect(() => generateSecureHex(10)).toThrow(
+        '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
+      );
+    });
+
+    it('should throw an error if crypto is null', () => {
+      // Temporarily mock crypto to be null
+      Object.defineProperty(globalThis, 'crypto', {
+        value: null,
         writable: true,
         configurable: true,
       });
