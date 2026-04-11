@@ -1,0 +1,17 @@
+name: Jules Global Scanner
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Weekly
+  workflow_dispatch:
+
+jobs:
+  global-scan:
+    name: AST/RAG Full Codebase Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Jules Global Scan
+        run: |
+          echo "Initiating full codebase scan..."
+          # Jules execution logic goes here
+          echo "Scan complete."

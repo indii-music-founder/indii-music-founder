@@ -1,0 +1,18 @@
+name: Jules Synchronous PR Scanner
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  scan:
+    name: Diff-only Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Jules PR Scan
+        run: |
+          echo "Scanning PR diff..."
+          # Jules execution logic goes here
+          echo "Scan complete."
