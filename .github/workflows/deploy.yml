@@ -104,9 +104,13 @@ jobs:
       - name: Bundle size check
         run: |
           TOTAL_JS=$(find dist/renderer/assets -name '*.js' -exec cat {} \; | wc -c)
-          echo "Total JS: $((TOTAL_JS / 1024))KB"
+          TOTAL_KB=$((TOTAL_JS / 1024))
+          echo "Total JS: ${TOTAL_KB}KB ($(echo "scale=1; $TOTAL_KB / 1024" | bc)MB)"
+          # Threshold: 25MB — justified by lazy-loaded vendor chunks:
+          #   vendor-audio (Essentia/Wavesurfer) ~3MB, vendor-three ~2MB,
+          #   vendor-remotion ~1.6MB, vendor-firebase ~1.5MB, vendor-react ~1.3MB
           if [ "$TOTAL_JS" -gt 26214400 ]; then
-            echo "::error::Total JS bundle exceeds 25MB threshold!"
+            echo "::error::Total JS bundle exceeds 25MB threshold! Current: ${TOTAL_KB}KB"
             exit 1
           fi
 
