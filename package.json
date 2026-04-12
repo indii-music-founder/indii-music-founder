@@ -14,11 +14,11 @@
   ],
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:web": "VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4243",
     "build": "electron-vite build",
-    "build:studio": "npm run build",
+    "build:ci": "npm run typecheck && npm run lint && electron-vite build",
     "build:firebase": "npm run build -w packages/firebase",
     "build:landing": "npm run build -w packages/landing",
-    "build:full": "npm run typecheck && npm run lint && electron-vite build",
     "deploy": "electron-vite build && firebase deploy --only hosting:app",
     "deploy:functions": "npm run build -w packages/firebase && firebase deploy --only functions",
     "deploy:landing": "npm run build -w packages/landing && firebase deploy --only hosting:landing",
@@ -26,19 +26,26 @@
     "typecheck": "tsc -b packages/shared packages/main packages/renderer",
     "lint": "eslint packages/*/src --ext .ts,.tsx",
     "lint:fix": "eslint packages/*/src --ext .ts,.tsx --fix",
-    "test": "vitest",
-    "test:renderer": "vitest --project packages/renderer",
-    "test:main": "vitest --project packages/main",
-    "test:e2e": "npx playwright test --project=chromium",
-    "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
     "lint:renderer": "eslint packages/renderer/src --ext .ts,.tsx",
     "lint:main": "eslint packages/main/src --ext .ts,.tsx",
     "typecheck:renderer": "tsc -b packages/renderer",
     "typecheck:main": "tsc -b packages/main",
+    "test": "vitest",
+    "test:renderer": "vitest --project packages/renderer",
+    "test:main": "vitest --project packages/main",
+    "test:e2e": "npx playwright test --project=chromium",
+    "test:e2e:all": "npx playwright test",
+    "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
     "desktop:dev": "electron-vite dev",
-    "electron:build": "electron-vite build && electron-builder --publish never",
+    "build:desktop": "electron-vite build && electron-builder --publish never",
+    "build:desktop:mac": "electron-vite build && electron-builder --mac --publish never",
+    "build:desktop:win": "electron-vite build && electron-builder --win --publish never",
+    "build:desktop:linux": "electron-vite build && electron-builder --linux --publish never",
+    "doctor": "bash scripts/doctor.sh",
     "changelog": "bash scripts/generate-changelog.sh",
-    "changelog:update": "bash scripts/generate-changelog.sh --prepend"
+    "changelog:update": "bash scripts/generate-changelog.sh --prepend",
+    "prepare": "husky",
+    "bootstrap": "npm install && npm run typecheck"
   },
   "devDependencies": {
     "@ai-sdk/google": "^3.0.60",
@@ -57,7 +64,9 @@
     "eslint-plugin-react-hooks": "7.0.1",
     "eslint-plugin-react-refresh": "0.4.24",
     "globals": "16.5.0",
+    "husky": "^9.1.7",
     "lightningcss": "1.30.2",
+    "lint-staged": "^16.4.0",
     "tsx": "^4.21.0",
     "typescript": "^5.8.2",
     "typescript-eslint": "8.48.0",
@@ -116,5 +125,18 @@
     "@genkit-ai/firebase": "1.26.0",
     "@genkit-ai/google-cloud": "1.26.0",
     "fast-xml-parser": "5.5.10"
+  },
+  "lint-staged": {
+    "packages/renderer/src/**/*.{ts,tsx}": [
+      "eslint --ext .ts,.tsx --max-warnings 0",
+      "tsc -b packages/renderer --noEmit"
+    ],
+    "packages/main/src/**/*.{ts,tsx}": [
+      "eslint --ext .ts,.tsx --max-warnings 0",
+      "tsc -b packages/main --noEmit"
+    ],
+    "packages/shared/src/**/*.{ts,tsx}": [
+      "tsc -b packages/shared --noEmit"
+    ]
   }
 }

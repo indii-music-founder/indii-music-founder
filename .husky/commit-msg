@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+# indiiOS commit-msg hook — enforces Conventional Commits format.
+# Pattern: <type>(<optional scope>): <description>
+# Examples: feat(agent): add Conductor retry logic
+#           fix: resolve boardroom pipeline hang
+#           chore(deps): bump husky to 9.1
+
+commit_msg_file="$1"
+commit_msg=$(cat "$commit_msg_file")
+
+# Skip merge commits and fixup commits
+if echo "$commit_msg" | grep -qE "^(Merge|Revert|fixup!|squash!)"; then
+  exit 0
+fi
+
+conventional_pattern="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|wip)(\(.+\))?: .{1,100}$"
+
+if ! echo "$commit_msg" | grep -qE "$conventional_pattern"; then
+  echo ""
+  echo "❌ COMMIT REJECTED — Message doesn't follow Conventional Commits"
+  echo ""
+  echo "  Your message: $commit_msg"
+  echo ""
+  echo "  Required format: <type>(<scope>): <description>"
+  echo "  Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, wip"
+  echo ""
+  echo "  Examples:"
+  echo "    feat(agent): add Conductor retry logic"
+  echo "    fix: resolve boardroom pipeline hang"
+  echo "    chore(deps): bump husky"
+  echo ""
+  exit 1
+fi
