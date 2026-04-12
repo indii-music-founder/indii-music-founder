@@ -3,7 +3,9 @@
     "docker": {
       "command": "docker",
       "args": [
-        "mcp"
+        "mcp",
+        "gateway",
+        "run"
       ]
     },
     "firebase-mcp-server": {
@@ -74,7 +76,8 @@
       ]
     },
     "google-developer-knowledge": {
-      "serverUrl": "https://developerknowledge.googleapis.com/mcp",
+      "type": "http",
+      "url": "https://developerknowledge.googleapis.com/mcp",
       "headers": {
         "X-Goog-Api-Key": "AIzaSyD4637xW1EmNoEfi0tPhQBYtUAeINSVcS0"
       }
@@ -110,15 +113,7 @@
         "INDEX_WORKSPACE": "/Volumes/X SSD 2025/Users/narrowchannel/.openclaw/workspace"
       }
     },
-    "jcodemunch": {
-      "command": "uvx",
-      "args": [
-        "jcodemunch-mcp"
-      ],
-      "env": {
-        "GITHUB_TOKEN": "MOCK_KEY_DO_NOT_USE"
-      }
-    },
+
     "stripe": {
       "command": "npx",
       "args": [

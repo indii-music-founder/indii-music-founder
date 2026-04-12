@@ -384,7 +384,8 @@ export class FirebaseAIService implements AIContext {
                         const result = await (async () => {
                             // FALLBACK MODE
                             if (this.useFallbackMode && this.fallbackClient) {
-                                return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
+                                const fallbackTools = tools ? JSON.parse(JSON.stringify(tools)) : undefined;
+                                return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, fallbackTools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                             }
 
                             // NORMAL MODE
@@ -397,11 +398,21 @@ export class FirebaseAIService implements AIContext {
                                 }
                             }
 
+                            // Deep clone tools to prevent SDK from freezing the caller's array across iterations
+                            let clonedTools: Tool[] | undefined = undefined;
+                            if (tools) {
+                                try {
+                                    clonedTools = JSON.parse(JSON.stringify(tools));
+                                } catch (_e) {
+                                    clonedTools = tools;
+                                }
+                            }
+
                             const modelOptions = {
                                 model: modelName,
                                 generationConfig: mergedConfig as unknown as Record<string, unknown>,
                                 systemInstruction,
-                                tools: (tools as unknown as Tool[]),
+                                tools: clonedTools,
                                 toolConfig: options?.toolConfig,
                                 safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                             };

@@ -1,8 +1,9 @@
 {
   "mcpServers": {
-    "gemini-api-docs-mcp": {
-      "type": "http",
-      "url": "https://gemini-api-docs-mcp.dev"
+    "gemini-api-docs": {
+      "command": "npx",
+      "args": ["-y", "@google/gemini-api-docs-mcp@latest"],
+      "description": "Live Gemini API documentation, SDK references, and model info. Prevents stale API code generation. See: ai.google.dev/gemini-api/docs/coding-agents"
     }
   }
 }

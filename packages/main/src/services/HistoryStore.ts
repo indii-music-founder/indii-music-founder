@@ -2,6 +2,13 @@ import Store from 'electron-store';
 import { app } from 'electron';
 import log from 'electron-log';
 
+// Define a type-safe interface for the underlying store methods to bypass electron-store type resolution issues
+interface IElectronStore {
+    get(key: string): unknown;
+    set(key: string, value: unknown): void;
+    clear(): void;
+}
+
 /**
  * Schema for session data persisted via electron-store.
  * Each session is keyed by its unique ID and stores an arbitrary JSON payload.
@@ -41,37 +48,35 @@ export class HistoryStore {
     }
 
     get(sessionId: string): SessionData | null {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sessions = (this.store as any).get('sessions');
+        const storeSafe = this.store as unknown as IElectronStore;
+        const sessions = storeSafe.get('sessions') as Record<string, SessionData>;
         return sessions[sessionId] || null;
     }
 
     getAll(): SessionData[] {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sessions = (this.store as any).get('sessions');
+        const storeSafe = this.store as unknown as IElectronStore;
+        const sessions = storeSafe.get('sessions') as Record<string, SessionData>;
         return Object.values(sessions);
     }
 
     save(sessionId: string, data: SessionData): void {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sessions = (this.store as any).get('sessions');
+        const storeSafe = this.store as unknown as IElectronStore;
+        const sessions = storeSafe.get('sessions') as Record<string, SessionData>;
         const existing = sessions[sessionId] || {};
         const updated = { ...existing, ...data };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.store as any).set(`sessions.${sessionId}` as keyof HistorySchema, updated);
+        storeSafe.set(`sessions.${sessionId}`, updated);
     }
 
     delete(sessionId: string): void {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sessions = (this.store as any).get('sessions');
+        const storeSafe = this.store as unknown as IElectronStore;
+        const sessions = storeSafe.get('sessions') as Record<string, SessionData>;
         delete sessions[sessionId];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.store as any).set('sessions', sessions);
+        storeSafe.set('sessions', sessions);
     }
 
     clearAll(): void {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.store as any).clear();
+        const storeSafe = this.store as unknown as IElectronStore;
+        storeSafe.clear();
     }
 }
 
