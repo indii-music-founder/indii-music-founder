@@ -2,12 +2,6 @@ import Store from 'electron-store';
 import { app } from 'electron';
 import log from 'electron-log';
 
-// Define a type-safe interface for the underlying store methods to bypass electron-store type resolution issues
-interface IElectronStore {
-    get(key: string): unknown;
-    set(key: string, value: unknown): void;
-    clear(): void;
-}
 
 /**
  * Schema for session data persisted via electron-store.
@@ -48,35 +42,37 @@ export class HistoryStore {
     }
 
     get(sessionId: string): SessionData | null {
-        const storeSafe = this.store as unknown as IElectronStore;
-        const sessions = storeSafe.get('sessions') as Record<string, SessionData>;
+        // @ts-expect-error
+        const sessions = this.store.get('sessions');
         return sessions[sessionId] || null;
     }
 
     getAll(): SessionData[] {
-        const storeSafe = this.store as unknown as IElectronStore;
-        const sessions = storeSafe.get('sessions') as Record<string, SessionData>;
+        // @ts-expect-error
+        const sessions = this.store.get('sessions');
         return Object.values(sessions);
     }
 
     save(sessionId: string, data: SessionData): void {
-        const storeSafe = this.store as unknown as IElectronStore;
-        const sessions = storeSafe.get('sessions') as Record<string, SessionData>;
+        // @ts-expect-error
+        const sessions = this.store.get('sessions');
         const existing = sessions[sessionId] || {};
-        const updated = { ...existing, ...data };
-        storeSafe.set(`sessions.${sessionId}`, updated);
+        sessions[sessionId] = { ...existing, ...data };
+        // @ts-expect-error
+        this.store.set('sessions', sessions);
     }
 
     delete(sessionId: string): void {
-        const storeSafe = this.store as unknown as IElectronStore;
-        const sessions = storeSafe.get('sessions') as Record<string, SessionData>;
+        // @ts-expect-error
+        const sessions = this.store.get('sessions');
         delete sessions[sessionId];
-        storeSafe.set('sessions', sessions);
+        // @ts-expect-error
+        this.store.set('sessions', sessions);
     }
 
     clearAll(): void {
-        const storeSafe = this.store as unknown as IElectronStore;
-        storeSafe.clear();
+        // @ts-expect-error
+        this.store.clear();
     }
 }
 

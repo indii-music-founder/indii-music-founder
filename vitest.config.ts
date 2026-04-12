@@ -1,4 +1,4 @@
-import { defineConfig, configDefaults } from 'vitest/config';
+import { defineConfig } from 'vitest/config';
 import path from 'path';
 
 /**
@@ -29,28 +29,7 @@ export default defineConfig({
     teardownTimeout: 1000,
     hookTimeout: 10000,
     pool: 'forks',
-    // Test discovery: scan packages/renderer/src/ for test files
-    include: ['packages/renderer/src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: [
-      ...configDefaults.exclude,
-      '**/e2e/**',
-      // Non-renderer workspace packages (they have their own test configs)
-      '**/packages/main/**',
-      '**/packages/firebase/**',
-      '**/packages/shared/**',
-      '**/packages/landing/**',
-      '**/_archive_pre_monorepo/**',
-      // Skip integration tests - they trigger deep module chains
-      '**/*.integration.test.ts',
-      '**/*.integration.test.tsx',
-      // Skip torture tests
-      '**/*.torture.test.ts',
-      // Skip tests requiring Firebase emulator
-      'firestore.rules.test.ts',
-      'storage.rules.test.ts',
-      'A2UI/**',
-      '**/.claude/**',
-    ],
+    // Test discovery is now handled by vitest.workspace.ts
     // Item 282: Coverage thresholds — build fails if coverage drops below these
     coverage: {
       provider: 'v8',

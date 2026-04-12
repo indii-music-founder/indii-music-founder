@@ -21,6 +21,9 @@ export default tseslint.config(
             ...reactHooks.configs.recommended.rules,
             'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
             '@typescript-eslint/no-explicit-any': 'warn',
+            // Unused vars: 'warn' — flags dead code without blocking CI.
+            // Prefix with _ to intentionally suppress (e.g. _unused, _event).
+            // TODO: Promote to 'error' after cleaning up ~261 existing violations.
             '@typescript-eslint/no-unused-vars': ['warn', {
                 argsIgnorePattern: '^_',
                 varsIgnorePattern: '^_',

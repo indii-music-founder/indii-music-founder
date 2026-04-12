@@ -3,6 +3,7 @@
   "version": "1.50.0",
   "description": "The Operating System for Independent Artists — npm Workspace Monorepo",
   "author": "IndiiOS LLC <info@indiios.com>",
+  "type": "module",
   "private": true,
   "main": "dist/main/index.js",
   "workspaces": [
@@ -36,16 +37,20 @@
     "test:e2e": "npx playwright test --project=chromium",
     "test:e2e:all": "npx playwright test",
     "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
-    "desktop:dev": "electron-vite dev",
+    "clean": "rm -rf dist packages/*/dist .firebase .genkit coverage test-results playwright-report",
+    "validate": "npm run typecheck && npm run lint && npm run test -- --run",
+    "nuke": "rm -rf node_modules packages/*/node_modules package-lock.json && npm install",
     "build:desktop": "electron-vite build && electron-builder --publish never",
     "build:desktop:mac": "electron-vite build && electron-builder --mac --publish never",
     "build:desktop:win": "electron-vite build && electron-builder --win --publish never",
     "build:desktop:linux": "electron-vite build && electron-builder --linux --publish never",
     "doctor": "bash scripts/doctor.sh",
+    "scripts": "cat scripts/SCRIPTS_CATALOG.md",
+    "scripts:help": "cat scripts/SCRIPTS_CATALOG.md",
     "changelog": "bash scripts/generate-changelog.sh",
     "changelog:update": "bash scripts/generate-changelog.sh --prepend",
     "prepare": "husky",
-    "bootstrap": "npm install && npm run typecheck"
+    "bootstrap": "npm install && cp -n .env.example .env 2>/dev/null || true && npm run typecheck"
   },
   "devDependencies": {
     "@ai-sdk/google": "^3.0.60",

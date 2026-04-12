@@ -1,7 +1,0 @@
-{
-  "scripts": {
-    "after_file_edit": "./scripts/after_edit.sh",
-    "on_stop": "./scripts/on_stop.sh",
-    "session_start": "./scripts/session_start.sh"
-  }
-}

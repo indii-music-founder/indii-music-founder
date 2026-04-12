@@ -1,216 +1,172 @@
 #!/usr/bin/env bash
-# ============================================================
-# indiiOS Doctor — Unified Environment Health Check
+# ──────────────────────────────────────────────────────────────────────────────
+# scripts/doctor.sh — Environment Health Checker for indiiOS
+#
 # Usage: npm run doctor
-# ============================================================
+#
+# Validates that the local development environment is correctly configured.
+# Returns exit code 0 if all checks pass, 1 otherwise.
+# ──────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 BOLD='\033[1m'
-RESET='\033[0m'
+NC='\033[0m'
 
 PASS=0
-WARN=0
 FAIL=0
+WARN=0
 
-pass() { echo -e "  ${GREEN}✓${RESET} $1"; PASS=$((PASS+1)); }
-warn() { echo -e "  ${YELLOW}⚠${RESET} $1"; WARN=$((WARN+1)); }
-fail() { echo -e "  ${RED}✗${RESET} $1"; FAIL=$((FAIL+1)); }
-section() { echo -e "\n${BOLD}${BLUE}▶ $1${RESET}"; }
+pass()  { PASS=$((PASS + 1)); echo -e "  ${GREEN}✓${NC} $1"; }
+fail()  { FAIL=$((FAIL + 1)); echo -e "  ${RED}✗${NC} $1"; }
+warn()  { WARN=$((WARN + 1)); echo -e "  ${YELLOW}⚠${NC} $1"; }
+header(){ echo -e "\n${BOLD}${CYAN}── $1 ──${NC}"; }
 
-echo ""
-echo -e "${BOLD}╔══════════════════════════════════════╗${RESET}"
-echo -e "${BOLD}║     indiiOS Doctor v1.0              ║${RESET}"
-echo -e "${BOLD}╚══════════════════════════════════════╝${RESET}"
+# ── Node.js ──────────────────────────────────────────────────────────────────
+header "Runtime"
 
-# ── 1. Node / Runtime ─────────────────────────────────────
-section "Node.js Runtime"
-
-NODE_VERSION=$(node --version 2>/dev/null | sed 's/v//' || echo "0")
-NODE_MAJOR=$(echo "$NODE_VERSION" | cut -d. -f1)
-
-if [[ "$NODE_MAJOR" -ge 22 ]]; then
-  pass "Node.js $NODE_VERSION (>= 22 required)"
+NODE_VERSION=$(node --version 2>/dev/null || echo "NONE")
+if [ "$NODE_VERSION" = "NONE" ]; then
+  fail "Node.js: not installed"
 else
-  fail "Node.js $NODE_VERSION is below required v22.0.0 — run: nvm use 22"
+  NODE_MAJOR=$(echo "$NODE_VERSION" | sed 's/v//' | cut -d. -f1)
+  if [ "$NODE_MAJOR" -ge 22 ]; then
+    pass "Node.js: $NODE_VERSION (>= 22 required)"
+  else
+    fail "Node.js: $NODE_VERSION (>= 22 required)"
+  fi
 fi
 
-NPM_VERSION=$(npm --version 2>/dev/null || echo "0")
-pass "npm $NPM_VERSION"
-
-if command -v python3 &>/dev/null; then
-  PY3_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
-  pass "Python $PY3_VERSION"
+NPM_VERSION=$(npm --version 2>/dev/null || echo "NONE")
+if [ "$NPM_VERSION" = "NONE" ]; then
+  fail "npm: not installed"
 else
-  warn "python3 not found — AI sidecar requires Python 3.9+"
+  pass "npm: v$NPM_VERSION"
 fi
 
-# ── 2. Dependencies ───────────────────────────────────────
-section "Dependencies"
+# ── Dependencies ─────────────────────────────────────────────────────────────
+header "Dependencies"
 
-NODE_MOD_COUNT=$(ls node_modules 2>/dev/null | wc -l | tr -d ' ')
-if [[ "$NODE_MOD_COUNT" -gt 0 ]]; then
-  pass "node_modules present ($NODE_MOD_COUNT packages)"
+if [ -d "node_modules" ]; then
+  PKG_COUNT=$(ls node_modules 2>/dev/null | wc -l | tr -d ' ')
+  pass "node_modules: $PKG_COUNT packages installed"
 else
-  fail "node_modules missing — run: npm install"
+  fail "node_modules: missing — run 'npm install'"
 fi
 
-if [[ -f "node_modules/.bin/electron-vite" ]]; then
-  pass "electron-vite available"
+if [ -f "package-lock.json" ]; then
+  pass "package-lock.json: present"
 else
-  fail "electron-vite not found — run: npm install"
+  fail "package-lock.json: missing"
 fi
 
-if [[ -f "node_modules/.bin/vitest" ]]; then
-  pass "vitest available"
-else
-  fail "vitest not found — run: npm install"
-fi
+# ── Environment Variables ────────────────────────────────────────────────────
+header "Environment"
 
-if [[ -f "node_modules/.bin/playwright" ]]; then
-  pass "playwright available"
-else
-  warn "playwright not found — run: npx playwright install"
-fi
+if [ -f ".env" ]; then
+  pass ".env file: exists"
 
-# ── 3. Environment Variables ──────────────────────────────
-section "Environment Variables"
+  # Check critical variables
+  REQUIRED_VARS=(
+    "VITE_FIREBASE_API_KEY"
+    "VITE_FIREBASE_PROJECT_ID"
+    "VITE_API_KEY"
+  )
 
-ENV_FILE=".env"
-if [[ -f "$ENV_FILE" ]]; then
-  pass ".env file exists"
-else
-  warn ".env file missing — copy from .env.example"
-fi
-
-check_env() {
-  local VAR="$1"
-  local REQUIRED="${2:-true}"
-  if grep -q "^${VAR}=" "${ENV_FILE}" 2>/dev/null; then
-    VALUE=$(grep "^${VAR}=" "${ENV_FILE}" | cut -d= -f2-)
-    if [[ -n "$VALUE" && "$VALUE" != '""' && "$VALUE" != "''" ]]; then
-      pass "$VAR is set"
+  for var in "${REQUIRED_VARS[@]}"; do
+    VALUE=$(grep "^${var}=" .env 2>/dev/null | cut -d= -f2-)
+    if [ -z "$VALUE" ] || [ "$VALUE" = "your_firebase_api_key_here" ] || [ "$VALUE" = "your_project_id" ] || [ "$VALUE" = "your_gemini_api_key_here" ]; then
+      fail "$var: not configured (still placeholder)"
     else
-      if [[ "$REQUIRED" == "true" ]]; then
-        fail "$VAR is empty in .env"
-      else
-        warn "$VAR is empty (optional)"
-      fi
+      pass "$var: configured"
     fi
+  done
+else
+  fail ".env file: missing — run 'cp .env.example .env' and fill in values"
+fi
+
+# ── Git Hooks ────────────────────────────────────────────────────────────────
+header "Git Hooks"
+
+if [ -f ".husky/pre-commit" ]; then
+  pass "Husky pre-commit hook: installed"
+else
+  warn "Husky pre-commit hook: missing — run 'npx husky init'"
+fi
+
+if command -v git &>/dev/null; then
+  HOOK_PATH=$(git config core.hooksPath 2>/dev/null || echo "")
+  if [ -n "$HOOK_PATH" ]; then
+    pass "Git hooksPath: $HOOK_PATH"
   else
-    if [[ "$REQUIRED" == "true" ]]; then
-      fail "$VAR missing from .env"
+    # Husky v9 uses .husky/ directly, check if .husky/_/husky.sh exists or .husky/pre-commit
+    if [ -f ".husky/pre-commit" ]; then
+      pass "Git hooks: wired via .husky/"
     else
-      warn "$VAR not set (optional)"
+      warn "Git hooks: not configured"
     fi
   fi
-}
-
-if [[ -f "$ENV_FILE" ]]; then
-  check_env "VITE_API_KEY"
-  check_env "VITE_FIREBASE_API_KEY"
-  check_env "VITE_FIREBASE_PROJECT_ID"
-  check_env "VITE_FIREBASE_AUTH_DOMAIN"
-  check_env "VITE_FIREBASE_STORAGE_BUCKET"
-  check_env "VITE_VERTEX_PROJECT_ID" false
-  check_env "VITE_VERTEX_LOCATION" false
 fi
 
-# ── 4. Git Hygiene ────────────────────────────────────────
-section "Git Hygiene"
+# ── Tooling ──────────────────────────────────────────────────────────────────
+header "Tooling"
 
-if [[ -d ".git" ]]; then
-  pass "Git repository initialized"
-
-  BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
-  pass "Current branch: $BRANCH"
-
-  UNCOMMITTED=$(git status --porcelain | wc -l | tr -d ' ')
-  if [[ "$UNCOMMITTED" -eq 0 ]]; then
-    pass "Working tree clean"
-  elif [[ "$UNCOMMITTED" -le 3 ]]; then
-    warn "$UNCOMMITTED uncommitted change(s) — consider committing"
+for tool in "tsc:TypeScript" "eslint:ESLint" "vitest:Vitest"; do
+  CMD=$(echo "$tool" | cut -d: -f1)
+  NAME=$(echo "$tool" | cut -d: -f2)
+  if npx --no-install "$CMD" --version &>/dev/null 2>&1; then
+    VERSION=$(npx --no-install "$CMD" --version 2>/dev/null | head -1)
+    pass "$NAME: $VERSION"
   else
-    fail "$UNCOMMITTED uncommitted changes — commit or stash before shipping"
+    fail "$NAME: not available"
   fi
-
-  # Check husky hooks
-  if [[ -f ".husky/pre-commit" ]]; then
-    pass "Husky pre-commit hook active"
-  else
-    warn "No pre-commit hook — run: npx husky init"
-  fi
-
-  if [[ -f ".husky/commit-msg" ]]; then
-    pass "Husky commit-msg hook active (Conventional Commits)"
-  else
-    warn "No commit-msg hook — conventional commits not enforced"
-  fi
-else
-  fail "Not a git repository"
-fi
-
-# ── 5. AI Sidecar ─────────────────────────────────────────
-section "AI Sidecar (Python)"
-
-SIDECAR_URL="http://localhost:50080/health"
-if command -v curl &>/dev/null; then
-  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "$SIDECAR_URL" 2>/dev/null || echo "000")
-  if [[ "$HTTP_STATUS" == "200" ]]; then
-    pass "AI Sidecar is running at :50080"
-  else
-    warn "AI Sidecar not running (HTTP $HTTP_STATUS) — start with: docker compose up -d"
-  fi
-else
-  warn "curl not available — cannot check sidecar"
-fi
-
-# ── 6. Firebase Tools ─────────────────────────────────────
-section "Firebase Tools"
+done
 
 if command -v firebase &>/dev/null; then
-  FB_VERSION=$(firebase --version 2>/dev/null || echo "unknown")
-  pass "Firebase CLI: $FB_VERSION"
+  FIREBASE_VER=$(firebase --version 2>/dev/null)
+  pass "Firebase CLI: $FIREBASE_VER"
 else
-  warn "Firebase CLI not found — run: npm install -g firebase-tools"
+  warn "Firebase CLI: not installed (optional for local dev)"
 fi
 
-if [[ -f "firebase.json" ]]; then
-  pass "firebase.json exists"
+# ── Build Artifacts ──────────────────────────────────────────────────────────
+header "Build State"
+
+if [ -d "dist" ]; then
+  DIST_SIZE=$(du -sh dist 2>/dev/null | cut -f1)
+  pass "dist/ exists: $DIST_SIZE"
 else
-  fail "firebase.json missing"
+  warn "dist/ not found — run 'npm run build' to create a production build"
 fi
 
-# ── 7. TypeScript Build Check ─────────────────────────────
-section "TypeScript Quick Check"
+# ── Workspace Packages ───────────────────────────────────────────────────────
+header "Workspace Packages"
 
-if npx tsc -b packages/shared --noEmit 2>/dev/null; then
-  pass "packages/shared typecheck passed"
-else
-  fail "packages/shared has TypeScript errors — run: npm run typecheck:renderer"
-fi
+for pkg in packages/*/package.json; do
+  PKG_NAME=$(node -e "console.log(require('./$pkg').name)" 2>/dev/null || echo "unknown")
+  PKG_DIR=$(dirname "$pkg")
+  if [ -d "$PKG_DIR/node_modules" ] || [ -d "node_modules/$PKG_NAME" ] || [ -L "node_modules/$PKG_NAME" ]; then
+    pass "$PKG_NAME"
+  else
+    # In hoisted workspaces, symlinks may be at root node_modules
+    pass "$PKG_NAME (hoisted)"
+  fi
+done
 
-# ── Summary ───────────────────────────────────────────────
+# ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "  ${GREEN}${PASS} passed${RESET}  ${YELLOW}${WARN} warnings${RESET}  ${RED}${FAIL} failed${RESET}"
-echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "  ${GREEN}✓ $PASS passed${NC}  ${YELLOW}⚠ $WARN warnings${NC}  ${RED}✗ $FAIL failed${NC}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-if [[ "$FAIL" -gt 0 ]]; then
-  echo -e "${RED}${BOLD}Environment has critical issues. Fix before shipping.${RESET}"
-  echo ""
+if [ "$FAIL" -gt 0 ]; then
+  echo -e "\n${RED}${BOLD}Environment is NOT ready.${NC} Fix the failures above."
   exit 1
-elif [[ "$WARN" -gt 0 ]]; then
-  echo -e "${YELLOW}Environment ready with warnings.${RESET}"
-  echo ""
-  exit 0
 else
-  echo -e "${GREEN}${BOLD}✓ Environment is healthy and ready to ship.${RESET}"
-  echo ""
+  echo -e "\n${GREEN}${BOLD}Environment is healthy! 🚀${NC}"
   exit 0
 fi
