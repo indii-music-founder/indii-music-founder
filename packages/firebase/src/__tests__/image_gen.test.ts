@@ -215,7 +215,7 @@ describe('Image and Content Generation Functions', () => {
                 method: 'POST',
                 headers: { authorization: 'Bearer token', origin: 'http://localhost:4242' },
                 body: {
-                    model: 'gemini-2.5-pro',
+                    model: 'gemini-3-pro-preview',
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }]
                 }
             };
@@ -229,6 +229,7 @@ describe('Image and Content Generation Functions', () => {
                 status: vi.fn().mockReturnThis(),
                 send: vi.fn(),
                 statusCode: 200,
+                headersSent: false,
             };
 
             // Mock admin.auth().verifyIdToken
@@ -245,10 +246,19 @@ describe('Image and Content Generation Functions', () => {
             mocks.generateContentStream.mockResolvedValue(mockStream());
 
             // The onRequest handler fires corsHandler which runs the async
-            // callback on a microtask. We cannot simply `await` the handler.
-            // Instead, create a deferred that resolves when res.end() is called.
+            // callback on a microtask. We create a deferred that resolves
+            // on EITHER the happy path (res.end) or error path (res.send).
             const done = new Promise<void>((resolve) => {
-                res.end = vi.fn().mockImplementation(() => resolve());
+                const origEnd = res.end;
+                res.end = vi.fn().mockImplementation((...args: unknown[]) => {
+                    origEnd(...args);
+                    resolve();
+                });
+                const origSend = res.send;
+                res.send = vi.fn().mockImplementation((...args: unknown[]) => {
+                    origSend(...args);
+                    resolve();
+                });
             });
 
             generateContentStream(req, res);

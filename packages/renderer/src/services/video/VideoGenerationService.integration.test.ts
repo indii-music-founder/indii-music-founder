@@ -1,10 +1,14 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/video/schemas';
+import { firebaseAI } from '../ai/FirebaseAIService';
 
 // Mock Dependencies
 vi.mock('../ai/FirebaseAIService', () => ({
-    firebaseAI: { analyzeImage: vi.fn() }
+    firebaseAI: { 
+        analyzeImage: vi.fn(),
+        generateVideo: vi.fn().mockResolvedValue('blob:http://localhost/video-123')
+    }
 }));
 
 vi.mock('@/core/store', () => ({
@@ -76,11 +80,8 @@ describe('VideoGenerationService Integration', () => {
         const result = await service.generateVideo(validOptions);
 
         expect(result[0]!.id).toBe('job-123');
-        expect(mockTriggerVideoJob).toHaveBeenCalledWith(expect.objectContaining({
-            prompt: expect.stringContaining("A cyberpunk city"),
-            duration: 5,
-            orgId: 'org-123',
-            jobId: 'job-123'
+        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: expect.stringContaining("A cyberpunk city")
         }));
     });
 

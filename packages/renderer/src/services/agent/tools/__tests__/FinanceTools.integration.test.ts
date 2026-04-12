@@ -82,7 +82,7 @@ describe('FinanceTools', () => {
             expect(result).toBeDefined();
             expect(isToolSuccess(result)).toBe(true);
             // Fallback produces a locally-tracked escrow
-            const data = result as { escrowAccount?: string; status?: string };
+            const data = (result as any).data;
             expect(typeof data.escrowAccount).toBe('string');
             expect(data.status).toBe('FUNDS_TRACKED_LOCALLY');
         });
@@ -102,7 +102,7 @@ describe('FinanceTools', () => {
             });
 
             expect(isToolSuccess(result)).toBe(true);
-            const data = result as { escrowAccount?: string; status?: string };
+            const data = (result as any).data;
             expect(data.escrowAccount).toBe('acct_test123');
             expect(data.status).toBe('PENDING_SIGNATURES');
         });
@@ -118,9 +118,9 @@ describe('FinanceTools', () => {
             });
 
             expect(isToolSuccess(result)).toBe(true);
-            const data = result as { variance?: number; netPosition?: number };
-            // variance = 10000 - 8500 = 1500
-            expect(data.variance).toBe(1500);
+            const data = (result as any).data;
+            // budgetVariance = 10000 - 8500 = 1500
+            expect(data.budgetVariance).toBe(1500);
             // netPosition = 5000 - 8500 = -3500
             expect(data.netPosition).toBe(-3500);
         });

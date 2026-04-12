@@ -117,7 +117,8 @@ export async function generateWithFallback(
         delete (cleanConfig as Record<string, unknown>).safetySettings;
 
         // Remove thinkingConfig for models that don't support it
-        const supportsThinking = resolvedModel.includes('gemini-3') || resolvedModel.includes('gemini-2.0-pro-exp');
+        // Only Gemini 3 family supports thinking — gemini-2.0-pro-exp was removed per MODEL_POLICY.md
+        const supportsThinking = resolvedModel.includes('gemini-3');
         if (!supportsThinking) {
             delete (cleanConfig as Record<string, unknown>).thinkingConfig;
         }
@@ -183,7 +184,8 @@ export async function streamWithFallback(
     delete (cleanConfig as Record<string, unknown>).safetySettings;
 
     // Remove thinkingConfig for models that don't support it
-    const supportsThinking = resolvedModel.includes('gemini-3') || resolvedModel.includes('gemini-2.0-pro-exp');
+    // Only Gemini 3 family supports thinking — gemini-2.0-pro-exp was removed per MODEL_POLICY.md
+    const supportsThinking = resolvedModel.includes('gemini-3');
     if (!supportsThinking) {
         delete (cleanConfig as Record<string, unknown>).thinkingConfig;
     }

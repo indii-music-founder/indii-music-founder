@@ -308,7 +308,7 @@ export const triggerVideoJob = functions
             );
         }
 
-        const { prompt, jobId, orgId, ...options } = inputData;
+        const { prompt, jobId, orgId, ...options } = validation.data;
 
         // SECURITY: Verify Org Access
         await validateOrgAccess(userId, orgId);
@@ -316,10 +316,10 @@ export const triggerVideoJob = functions
         try {
             // Calculate estimated cost
             const estimatedCost = estimateVideoCost({
-                model: options.model,
-                durationSeconds: options.durationSeconds || options.duration,
-                resolution: options.resolution,
-                generateAudio: options.generateAudio
+                model: (options.model as string) ?? undefined,
+                durationSeconds: (options.durationSeconds || options.duration) ? Number(options.durationSeconds || options.duration) : undefined,
+                resolution: (options.resolution as string) ?? undefined,
+                generateAudio: (options.generateAudio as boolean) ?? undefined
             });
 
             // 1. Create Initial Job Record in Firestore (Atomic Create to prevent overwrites)
@@ -605,7 +605,7 @@ export const renderVideo = functions
         const userId = context.auth.uid;
         const safeData = (typeof data === 'object' && data !== null) ? data as Record<string, unknown> : {};
         const { compositionId, inputProps } = safeData as { compositionId?: string; inputProps?: Record<string, unknown> };
-        const project = inputProps?.project;
+        const project = inputProps?.project as any;
 
         if (!project || !project.tracks || !project.clips) {
             throw new functions.https.HttpsError(
@@ -826,12 +826,17 @@ export const generateContentStream = functions
 
             try {
                 const { model, contents, config } = req.body;
-                const modelId = model || "gemini-2.5-pro";
+                const modelId = model || "gemini-3-pro-preview";
 
                 // SECURITY: Strict Model Allowlist (Anti-SSRF / Cost Control)
                 // Only allow approved models for streaming text generation.
-                // See src/core/config/ai-models.ts for the master list.
+                // - Gemini 3 models: current approved generation (see packages/renderer/src/core/config/ai-models.ts)
+                // - Gemini 2.5 models: retained for Vertex AI fine-tuned model endpoints
                 const ALLOWED_MODELS = [
+                    // Gemini 3 — current policy (APPROVED_MODELS)
+                    "gemini-3-pro-preview",
+                    "gemini-3-flash-preview",
+                    // Gemini 2.5 — Vertex AI fine-tuned model support
                     "gemini-2.5-pro",
                     "gemini-2.5-flash",
                     "gemini-2.5-pro-preview",
@@ -1405,7 +1410,7 @@ export const enrichFanData = functions
             );
         }
 
-        const { fans, provider, orgId } = data;
+        const { fans, provider, orgId } = data as { fans?: any[]; provider?: string; orgId?: string };
 
         if (!fans || !Array.isArray(fans)) {
             throw new functions.https.HttpsError("invalid-argument", "Missing fan data array.");

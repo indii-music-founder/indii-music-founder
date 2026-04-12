@@ -4,20 +4,24 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
 vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
     return {
-        Client: vi.fn().mockImplementation(() => ({
-            connect: vi.fn().mockResolvedValue(undefined),
-            callTool: vi.fn().mockResolvedValue({
-                content: [{ type: 'text', text: 'mocked response' }]
-            }),
-        }))
+        Client: vi.fn().mockImplementation(function() {
+            return {
+                connect: vi.fn().mockResolvedValue(undefined),
+                callTool: vi.fn().mockResolvedValue({
+                    content: [{ type: 'text', text: 'mocked response' }]
+                })
+            };
+        })
     };
 });
 
 vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => {
     return {
-        StdioClientTransport: vi.fn().mockImplementation(() => ({
-            close: vi.fn().mockResolvedValue(undefined),
-        }))
+        StdioClientTransport: vi.fn().mockImplementation(function() {
+            return {
+                close: vi.fn().mockResolvedValue(undefined)
+            };
+        })
     };
 });
 
