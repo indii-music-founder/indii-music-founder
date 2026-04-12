@@ -65,14 +65,15 @@ describe('MarketingTools — integration', () => {
     // ── schedule_content ────────────────────────────────────────────────────────
 
     describe('schedule_content', () => {
-        it('generates 4 weekly posts starting from the given date', async () => {
+        it('generates 4 posts per platform starting from the given date', async () => {
             const result = await MarketingTools.schedule_content({
                 campaign_start: '2024-03-01T00:00:00.000Z',
                 platforms: ['Instagram', 'TikTok'],
                 frequency: 'weekly',
             });
             expect(result.success).toBe(true);
-            expect(result.data.schedule).toHaveLength(4);
+            // 4 posts per platform × 2 platforms = 8 total
+            expect(result.data.schedule).toHaveLength(8);
             expect(result.data.status).toBe('scheduled');
         });
 
@@ -83,7 +84,7 @@ describe('MarketingTools — integration', () => {
                 frequency: 'daily',
             });
             expect(result.success).toBe(true);
-            expect(result.data.schedule).toHaveLength(4);
+            expect(result.data.schedule).toHaveLength(4); // 4 posts × 1 platform
             const first = new Date(result.data.schedule[0].date);
             const second = new Date(result.data.schedule[1].date);
             const diffMs = second.getTime() - first.getTime();
@@ -151,11 +152,13 @@ describe('MarketingTools — integration', () => {
     describe('analyze_audience', () => {
         it('returns audience segmentation from AI', async () => {
             const mockAudience = {
-                primarySegment: 'Hip-hop fans 18-24',
-                secondarySegments: ['R&B listeners', 'Playlist curators'],
-                topPlatforms: ['Spotify', 'Apple Music'],
-                recommendedChannels: ['Instagram', 'TikTok'],
-                estimatedReach: 250000,
+                platform: 'Spotify',
+                demographics: {
+                    age: '18-24',
+                    locations: ['US', 'UK', 'Canada']
+                },
+                interests: ['Hip-hop', 'R&B', 'Streetwear'],
+                reach: '250,000'
             };
             (firebaseAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockAudience);
 
@@ -164,9 +167,11 @@ describe('MarketingTools — integration', () => {
                 similar_artists: ['Drake', 'Kendrick Lamar'],
             });
 
+            if (!result.success) console.log('Failure message:', result.error);
             expect(result.success).toBe(true);
             expect(result.data).toMatchObject({
-                primarySegment: expect.any(String),
+                platform: expect.any(String),
+                reach: expect.any(String)
             });
         });
     });

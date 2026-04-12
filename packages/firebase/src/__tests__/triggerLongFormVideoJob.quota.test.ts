@@ -12,28 +12,86 @@ const mockTransaction = {
     update: vi.fn()
 };
 
+const mockDoc = vi.fn();
+
 const mockFirestore = {
     collection: vi.fn(),
-    runTransaction: vi.fn((callback) => callback(mockTransaction))
+    runTransaction: vi.fn((callback) => callback(mockTransaction)),
+    doc: mockDoc
 };
 
 const mockInngestSend = vi.fn();
 
+// Build a firestore mock that works both as fn() and as namespace (admin.firestore.FieldValue)
+const mockFirestoreFn = Object.assign(vi.fn(() => mockFirestore), {
+    FieldValue: {
+        serverTimestamp: vi.fn(() => 'mock-server-timestamp'),
+        increment: vi.fn((n: number) => n),
+        arrayUnion: vi.fn((...args: unknown[]) => args),
+        arrayRemove: vi.fn((...args: unknown[]) => args),
+        delete: vi.fn()
+    },
+    Timestamp: {
+        now: vi.fn(() => ({ seconds: 0, nanoseconds: 0, toDate: () => new Date() })),
+        fromDate: vi.fn((d: Date) => ({ seconds: Math.floor(d.getTime() / 1000), nanoseconds: 0, toDate: () => d }))
+    }
+});
+
 vi.mock('firebase-admin', () => ({
+    default: {
+        initializeApp: vi.fn(),
+        firestore: mockFirestoreFn,
+        auth: vi.fn(),
+        storage: vi.fn(),
+        messaging: vi.fn(),
+        apps: [{ name: '[DEFAULT]' }]
+    },
     initializeApp: vi.fn(),
-    firestore: vi.fn(() => mockFirestore),
+    firestore: mockFirestoreFn,
     auth: vi.fn(),
-    storage: vi.fn()
+    storage: vi.fn(),
+    messaging: vi.fn(),
+    apps: [{ name: '[DEFAULT]' }]
 }));
 
 // Mock firebase-functions/v1 to bypass secrets validation
-const mockBuilder = {
+const mockOnCreateHandler = vi.fn((handler) => handler);
+const mockOnFinalizeHandler = vi.fn((handler) => handler);
+
+const mockScheduleBuilder = {
+    timeZone: vi.fn().mockReturnValue({
+        onRun: vi.fn((handler) => handler)
+    })
+};
+
+const mockBuilder: Record<string, any> = {
     https: {
         onCall: vi.fn((handler) => handler),
         onRequest: vi.fn((handler) => handler)
     },
-    runWith: vi.fn().mockReturnThis()
+    pubsub: {
+        schedule: vi.fn(() => mockScheduleBuilder)
+    },
+    firestore: {
+        document: vi.fn(() => ({
+            onCreate: mockOnCreateHandler,
+            onUpdate: vi.fn((handler) => handler),
+            onDelete: vi.fn((handler) => handler),
+            onWrite: vi.fn((handler) => handler)
+        }))
+    },
+    storage: {
+        object: vi.fn(() => ({
+            onFinalize: mockOnFinalizeHandler,
+            onDelete: vi.fn((handler) => handler),
+            onArchive: vi.fn((handler) => handler),
+            onMetadataUpdate: vi.fn((handler) => handler)
+        }))
+    },
+    runWith: vi.fn()
 };
+// Make runWith return the full builder (including pubsub, firestore, storage)
+mockBuilder.runWith.mockReturnValue(mockBuilder);
 
 vi.mock('firebase-functions/v1', () => ({
     region: vi.fn(() => mockBuilder),
@@ -51,11 +109,7 @@ vi.mock('firebase-functions/v1', () => ({
     config: vi.fn(() => ({}))
 }));
 
-// Augment mockFirestore with FieldValue for Firestore operations
-(mockFirestore as any).FieldValue = {
-    serverTimestamp: vi.fn(),
-    increment: vi.fn((n) => n)
-};
+// FieldValue is now defined on mockFirestoreFn via Object.assign above
 
 // Fix Inngest Mock to be a Class
 vi.mock('inngest', () => ({
@@ -257,13 +311,16 @@ describe('triggerLongFormVideoJob (Ledger Quota Checks)', () => {
         });
         mockTransaction.get.mockImplementation(mockUsageGet);
 
-        // Setup generic mocks
+        // Setup generic mocks — must include create() as implementation uses doc().create()
+        const mockDocInstance = {
+            get: vi.fn().mockResolvedValue({ exists: false, data: () => null }),
+            collection: vi.fn(() => ({ doc: vi.fn(() => mockDocInstance) })),
+            set: vi.fn().mockResolvedValue(undefined),
+            create: vi.fn().mockResolvedValue(undefined),
+            update: vi.fn().mockResolvedValue(undefined)
+        };
         mockFirestore.collection.mockImplementation(() => ({
-            doc: vi.fn(() => ({
-                get: vi.fn(),
-                collection: vi.fn(() => ({ doc: vi.fn() })),
-                set: vi.fn()
-            }))
+            doc: vi.fn(() => mockDocInstance)
         }));
 
         const result = await wrappedFunction(data, context);
