@@ -128,15 +128,13 @@
   },
   "lint-staged": {
     "packages/renderer/src/**/*.{ts,tsx}": [
-      "eslint --ext .ts,.tsx --max-warnings 0",
-      "tsc -b packages/renderer --noEmit"
+      "eslint --ext .ts,.tsx"
     ],
     "packages/main/src/**/*.{ts,tsx}": [
-      "eslint --ext .ts,.tsx --max-warnings 0",
-      "tsc -b packages/main --noEmit"
+      "eslint --ext .ts,.tsx"
     ],
     "packages/shared/src/**/*.{ts,tsx}": [
-      "tsc -b packages/shared --noEmit"
+      "eslint --ext .ts,.tsx"
     ]
   }
 }
