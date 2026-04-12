@@ -26,7 +26,7 @@ test('capture boardroom logs', async ({ authedPage: page }) => {
     await page.waitForTimeout(1000);
 
     console.log('Locating Boardroom input...');
-    const input = page.locator('textarea').first();
+    const input = page.locator('[data-testid="main-prompt-input"]:visible').first();
     await input.waitFor({ state: 'visible', timeout: 15000 }).catch(() => console.log('Timeout waiting for textarea'));
 
     if (await input.isVisible()) {
@@ -40,10 +40,13 @@ test('capture boardroom logs', async ({ authedPage: page }) => {
     }
 
     console.log('Capturing final status...');
-    const messages = await page.locator('.glass-panel').allInnerTexts();
-    console.log('UI Panels:', messages);
+    const uiContent = await page.evaluate(() => {
+        const panels = document.querySelectorAll('.prose');
+        return Array.from(panels).map(p => p.textContent);
+    });
+    console.log('UI Panels:', uiContent);
     console.log('Test complete.');
 
     console.log('--- ALL CAPTURED LOGS ---');
-    console.log(logs.join('\\n'));
+    console.log(logs.join('\n'));
 });

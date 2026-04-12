@@ -196,9 +196,9 @@ if (typeof window !== 'undefined') {
 
 export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
     // Custom set wrapper to broadcast project sync
-    const set: typeof _set = (partial, replace?) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_set as (...args: Parameters<typeof _set>) => void)(partial as any, replace as any);
+    const set: typeof _set = (partial, replace) => {
+        const safeSet = _set as unknown as (p: unknown, r?: boolean) => void;
+        safeSet(partial, replace);
         // After setting, if project was updated, sync it out.
         // Zustand batches updates but we can grab the latest.
         const state = get();

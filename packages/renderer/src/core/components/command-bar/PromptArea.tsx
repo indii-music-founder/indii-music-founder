@@ -234,10 +234,17 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
         try {
+            console.log('[PromptArea] handleSubmit fired!', { commandBarInput });
             e?.preventDefault();
             const input = commandBarInput || '';
-            if (!input.trim() && (commandBarAttachments?.length ?? 0) === 0) return;
-            if (isProcessing) return;
+            if (!input.trim() && (commandBarAttachments?.length ?? 0) === 0) {
+                console.log('[PromptArea] Aborting submit: input is empty');
+                return;
+            }
+            if (isProcessing) {
+                console.log('[PromptArea] Aborting submit: already processing');
+                return;
+            }
 
             setIsProcessing(true);
             const currentInput = input;
@@ -342,6 +349,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${currentModule}...`)}
                     aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
+                    data-testid="main-prompt-input"
                 />
 
                 <AttachmentList attachments={commandBarAttachments} onRemove={removeAttachment} />

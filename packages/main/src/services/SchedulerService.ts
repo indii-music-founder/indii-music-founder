@@ -40,6 +40,19 @@ function getStore(): Store<StoreSchema> {
     return _store;
 }
 
+interface IElectronStore {
+    get(key: string): unknown;
+    set(key: string, value: unknown): void;
+}
+
+function getTasks(): Record<string, ScheduledTask> {
+    return (getStore() as unknown as IElectronStore).get('tasks') as Record<string, ScheduledTask>;
+}
+
+function setTasks(tasks: Record<string, ScheduledTask>): void {
+    (getStore() as unknown as IElectronStore).set('tasks', tasks);
+}
+
 // In-memory timers — not persisted (rebuilt on every start)
 const timers = new Map<string, NodeJS.Timeout>();
 
@@ -139,9 +152,9 @@ export const SchedulerService = {
             nextRunAt: nextRunAt.toISOString(),
         };
 
-        const tasks = (getStore() as any).get('tasks') as Record<string, ScheduledTask>;
+        const tasks = getTasks();
         tasks[id] = task;
-        (getStore() as any).set('tasks', tasks);
+        setTasks(tasks);
 
         if (task.enabled) {
             SchedulerService._scheduleTimer(task);
@@ -153,12 +166,12 @@ export const SchedulerService = {
 
     /** Remove a task permanently. */
     cancel(taskId: string): boolean {
-        const tasks = (getStore() as any).get('tasks') as Record<string, ScheduledTask>;
+        const tasks = getTasks();
         if (!tasks[taskId]) return false;
 
         SchedulerService._clearTimer(taskId);
         delete tasks[taskId];
-        (getStore() as any).set('tasks', tasks);
+        setTasks(tasks);
 
         log.info(`[Scheduler] Cancelled task: ${taskId}`);
         return true;
@@ -166,13 +179,13 @@ export const SchedulerService = {
 
     /** Enable or disable a task without deleting it. */
     setEnabled(taskId: string, enabled: boolean): boolean {
-        const tasks = (getStore() as any).get('tasks') as Record<string, ScheduledTask>;
+        const tasks = getTasks();
         const task = tasks[taskId];
         if (!task) return false;
 
         task.enabled = enabled;
         tasks[taskId] = task;
-        (getStore() as any).set('tasks', tasks);
+        setTasks(tasks);
 
         if (enabled) {
             SchedulerService._scheduleTimer(task);
@@ -186,7 +199,7 @@ export const SchedulerService = {
 
     /** List all tasks with current status. */
     status(): SchedulerStatus {
-        const tasks = Object.values((getStore() as any).get('tasks') as Record<string, ScheduledTask>);
+        const tasks = Object.values(getTasks());
         const activeCount = tasks.filter(t => t.enabled).length;
         const totalFireCount = tasks.reduce((sum, t) => sum + t.runCount, 0);
         return { tasks, activeCount, totalFireCount };
@@ -194,7 +207,7 @@ export const SchedulerService = {
 
     /** Get a single task by id. */
     get(taskId: string): ScheduledTask | null {
-        return ((getStore() as any).get('tasks') as Record<string, ScheduledTask>)[taskId] ?? null;
+        return (getTasks())[taskId] ?? null;
     },
 
     /**
@@ -202,7 +215,7 @@ export const SchedulerService = {
      * Rebuilds all timers from persisted state.
      */
     start(): void {
-        const tasks = (getStore() as any).get('tasks') as Record<string, ScheduledTask>;
+        const tasks = getTasks();
         let count = 0;
 
         for (const task of Object.values(tasks)) {
@@ -244,10 +257,10 @@ export const SchedulerService = {
         if (nextRunAt < new Date()) {
             nextRunAt = computeNextRunAt(task.schedule);
             // Persist the updated nextRunAt
-            const tasks = (getStore() as any).get('tasks') as Record<string, ScheduledTask>;
+            const tasks = getTasks();
             if (tasks[task.id]) {
                 tasks[task.id].nextRunAt = nextRunAt.toISOString();
-                (getStore() as any).set('tasks', tasks);
+                setTasks(tasks);
             }
         }
 
@@ -262,7 +275,7 @@ export const SchedulerService = {
     },
 
     async _fire(taskId: string): Promise<void> {
-        const tasks = (getStore() as any).get('tasks') as Record<string, ScheduledTask>;
+        const tasks = getTasks();
         const task = tasks[taskId];
 
         if (!task || !task.enabled) {
@@ -323,13 +336,13 @@ export const SchedulerService = {
             task.enabled = false;
             task.nextRunAt = undefined;
             tasks[taskId] = task;
-            (getStore() as any).set('tasks', tasks);
+            setTasks(tasks);
             log.info(`[Scheduler] One-time task "${task.name}" completed and disabled`);
         } else {
             const next = computeNextRunAt(task.schedule);
             task.nextRunAt = next.toISOString();
             tasks[taskId] = task;
-            (getStore() as any).set('tasks', tasks);
+            setTasks(tasks);
             SchedulerService._scheduleTimer(task);
         }
     },
@@ -339,7 +352,7 @@ export const SchedulerService = {
      * Called once from main.ts after start().
      */
     registerBuiltInTasks(): void {
-        const tasks = (getStore() as any).get('tasks') as Record<string, ScheduledTask>;
+        const tasks = getTasks();
 
         const builtIns: CreateTaskRequest[] = [
             {
