@@ -38,7 +38,7 @@
     "test:e2e:all": "npx playwright test",
     "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
     "clean": "rm -rf dist packages/*/dist .firebase .genkit coverage test-results playwright-report",
-    "validate": "npm run typecheck && npm run lint && npm run test -- --run",
+    "validate": "npm run lint && npm run typecheck && npm run test -- --run",
     "nuke": "rm -rf node_modules packages/*/node_modules package-lock.json && npm install",
     "build:desktop": "electron-vite build && electron-builder --publish never",
     "build:desktop:mac": "electron-vite build && electron-builder --mac --publish never",
@@ -133,13 +133,22 @@
   },
   "lint-staged": {
     "packages/renderer/src/**/*.{ts,tsx}": [
-      "eslint --ext .ts,.tsx"
+      "eslint"
     ],
     "packages/main/src/**/*.{ts,tsx}": [
-      "eslint --ext .ts,.tsx"
+      "eslint"
     ],
     "packages/shared/src/**/*.{ts,tsx}": [
-      "eslint --ext .ts,.tsx"
+      "eslint"
+    ],
+    "packages/firebase/src/**/*.{ts,tsx}": [
+      "eslint"
+    ],
+    "packages/landing/src/**/*.{ts,tsx}": [
+      "eslint"
+    ],
+    "packages/mcp-server-local/src/**/*.{ts,tsx}": [
+      "eslint"
     ]
   }
 }

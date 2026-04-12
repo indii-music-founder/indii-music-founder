@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "editorconfig.editorconfig",
+    "ms-playwright.playwright",
+    "vitest.explorer",
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens",
+    "aaron-bond.better-comments",
+    "gruntfuggly.todo-tree"
+  ],
+  "unwantedRecommendations": []
+}
