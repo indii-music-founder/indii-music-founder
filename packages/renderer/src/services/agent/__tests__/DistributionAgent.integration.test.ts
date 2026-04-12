@@ -15,14 +15,14 @@ describe('DistributionAgent Integration', () => {
         expect(distributionAgent.name).toBe('Distribution Chief');
     });
 
-    it('should have all 8 distribution tools declared', () => {
+    it('should have all distribution tools declared', () => {
         expect(distributionAgent.tools).toBeDefined();
         expect(distributionAgent.tools.length).toBeGreaterThan(0);
 
         const toolDeclarations = distributionAgent.tools[0]?.functionDeclarations || [];
         const toolNames = toolDeclarations.map((t: any) => t.name);
 
-        // Verify all 8 tools are present
+        // Verify all tools are present
         expect(toolNames).toContain('prepare_release');
         expect(toolNames).toContain('run_audio_qc');
         expect(toolNames).toContain('issue_isrc');
@@ -37,7 +37,7 @@ describe('DistributionAgent Integration', () => {
         expect(toolNames).toContain('payment_gate');
         expect(toolNames).toContain('credential_vault');
 
-        expect(toolNames.length).toBe(12);
+        expect(toolNames.length).toBe(15);
     });
 
     it('should have proper tool schemas for new tools', () => {

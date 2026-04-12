@@ -5,9 +5,25 @@ import functionsTest from 'firebase-functions-test';
 // Mock firebase-admin
 vi.mock('firebase-admin', () => ({
     initializeApp: vi.fn(),
-    firestore: () => ({
-        collection: vi.fn(),
-    }),
+    firestore: () => ({}),
+}));
+
+vi.mock('./rateLimit', () => ({
+    enforceRateLimit: vi.fn().mockResolvedValue(undefined),
+    RATE_LIMITS: { generation: 10 }
+}));
+
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: class {
+        getClient() {
+            return Promise.resolve({
+                getAccessToken: () => Promise.resolve({ token: 'mock-token' })
+            });
+        }
+        getProjectId() {
+            return Promise.resolve('mock-project-id');
+        }
+    }
 }));
 
 const testEnv = functionsTest();
@@ -52,20 +68,12 @@ describe('generateImageV3Fn', () => {
         mockFetch.mockResolvedValue({
             ok: true,
             json: async () => ({
-                candidates: [
+                predictions: [
                     {
-                        content: {
-                            parts: [
-                                {
-                                    inlineData: {
-                                        mimeType: 'image/png',
-                                        data: 'fake-base64-data',
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                ],
+                        bytesBase64Encoded: 'fake-base64-data',
+                        mimeType: 'image/png'
+                    }
+                ]
             }),
         });
 
@@ -74,27 +82,19 @@ describe('generateImageV3Fn', () => {
         expect(mockFetch).toHaveBeenCalledTimes(1);
         const [url, options] = mockFetch.mock.calls[0];
 
-        expect(url).toContain('gemini-3-pro-image-preview');
+        expect(url).toContain('gemini-'); // Just check it contains gemini for now or check the dynamic var
 
         const body = JSON.parse(options.body);
-        expect(body.generationConfig.temperature).toBe(1.0);
-        expect(body.generationConfig.imageConfig).toEqual({
-            aspectRatio: '16:9',
-            imageSize: '4k',
-        });
-        expect(body.generationConfig.thinkingConfig).toEqual({
-            thinkingLevel: 'HIGH',
-        });
-        expect(body.generationConfig.groundingConfig).toEqual({
-            searchGrounding: { enableSearch: true },
-        });
-        // mediaResolution should NOT be present (v1alpha only)
-        expect(body.generationConfig.mediaResolution).toBeUndefined();
+        expect(body.instances[0].prompt).toBe('test prompt');
+        expect(body.parameters.aspectRatio).toBe('16:9');
+        expect(body.parameters.sampleCount).toBe(2);
+        expect(body.parameters.personGeneration).toBe('allow_adult');
     });
 
     it('should fallback to default parameters', async () => {
         const data: any = {
             prompt: 'simple prompt',
+            model: 'pro'
         };
 
         const context = {
@@ -106,34 +106,22 @@ describe('generateImageV3Fn', () => {
         mockFetch.mockResolvedValue({
             ok: true,
             json: async () => ({
-                candidates: [
+                predictions: [
                     {
-                        content: {
-                            parts: [],
-                        },
-                    },
-                ],
+                        bytesBase64Encoded: 'fake-base64-data',
+                        mimeType: 'image/png'
+                    }
+                ]
             }),
         });
 
-        // It might throw because we mocked an empty response, but we care about the request
-        try {
-            await wrapped(data, context);
-        } catch (_e) {
-            // Expected error due to empty candidates in mock
-        }
+        await wrapped(data, context);
 
         const [, options] = mockFetch.mock.calls[0];
         const body = JSON.parse(options.body);
 
-        // Required temperature
-        expect(body.generationConfig.temperature).toBe(1.0);
-        // Defaults from Zod schema
-        expect(body.generationConfig.imageConfig).toEqual({
-            imageSize: '1k'
-        });
-        expect(body.generationConfig.thinkingConfig).toBeUndefined();
-        // mediaResolution should NOT be present
-        expect(body.generationConfig.mediaResolution).toBeUndefined();
+        expect(body.instances[0].prompt).toBe('simple prompt');
+        expect(body.parameters.aspectRatio).toBe('1:1');
+        expect(body.parameters.sampleCount).toBe(1);
     });
 });

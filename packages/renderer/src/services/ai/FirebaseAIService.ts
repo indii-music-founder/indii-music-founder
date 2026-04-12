@@ -274,7 +274,8 @@ export class FirebaseAIService implements AIContext {
         delete configRecord.safetySettings;
 
         // Remove thinkingConfig for models that don't support it (e.g., gemini-2.5-pro)
-        const supportsThinking = modelName.includes('gemini-3') || modelName.includes('gemini-2.0-pro-exp');
+        // Only Gemini 3 family supports thinking — gemini-2.0-pro-exp was removed per MODEL_POLICY.md
+        const supportsThinking = modelName.includes('gemini-3');
         if (!supportsThinking) {
             delete configRecord.thinkingConfig;
         }
@@ -528,7 +529,8 @@ export class FirebaseAIService implements AIContext {
         delete streamConfigRecord.safetySettings;
 
         // Remove thinkingConfig for models that don't support it
-        const supportsThinking = modelName.includes('gemini-3') || modelName.includes('gemini-2.0-pro-exp');
+        // Only Gemini 3 family supports thinking — gemini-2.0-pro-exp was removed per MODEL_POLICY.md
+        const supportsThinking = modelName.includes('gemini-3');
         if (!supportsThinking) {
             delete streamConfigRecord.thinkingConfig;
         }

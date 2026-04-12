@@ -12,6 +12,7 @@ vi.mock('@/services/firebase', () => ({
     db: {},
     auth: { currentUser: { uid: 'test-user-123' } },
     storage: {},
+    remoteConfig: {},
 }));
 
 // Mock store
@@ -89,8 +90,9 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
                 { text: 'Generate a hip-hop beat' },
                 {},
                 undefined
-            ) as unknown as { text: string };
-            expect(result.text).toBe('Generate a hip-hop beat');
+            );
+            const data = (result as any).data;
+            expect(data.text).toBe('Generate a hip-hop beat');
         });
 
         it('check_calendar_notifications returns structured data', async () => {
@@ -99,10 +101,11 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
                 {},
                 {},
                 undefined
-            ) as unknown as { status: string; notifications: unknown[]; newNotifications: number };
-            expect(result.status).toBe('checked');
-            expect(result.notifications).toBeInstanceOf(Array);
-            expect(result.newNotifications).toBeGreaterThanOrEqual(0);
+            );
+            const data = (result as any).data;
+            expect(data.status).toBe('checked');
+            expect(data.notifications).toBeInstanceOf(Array);
+            expect(data.newNotifications).toBeGreaterThanOrEqual(0);
         });
     });
 

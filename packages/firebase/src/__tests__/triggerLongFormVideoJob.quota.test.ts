@@ -94,10 +94,12 @@ const mockBuilder: Record<string, any> = {
 mockBuilder.runWith.mockReturnValue(mockBuilder);
 
 vi.mock('firebase-functions/v1', () => ({
+    ...mockBuilder,
     region: vi.fn(() => mockBuilder),
     runWith: vi.fn(() => mockBuilder),
     https: {
         onCall: vi.fn((handler) => handler),
+        onRequest: vi.fn((handler) => handler),
         HttpsError: class extends Error {
             code: string;
             constructor(code: string, message: string) {
