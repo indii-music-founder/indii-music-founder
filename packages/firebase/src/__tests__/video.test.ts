@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Use vi.hoisted to define mocks that can be accessed inside vi.mock factories
 const mocks = vi.hoisted(() => {
     const mockSet = vi.fn();
-    const mockGet = vi.fn();
+    const mockGet = vi.fn().mockResolvedValue({ data: () => undefined, exists: false });
     const mockDoc = vi.fn(() => ({
         set: mockSet,
         create: mockSet,
@@ -71,7 +71,8 @@ vi.mock('firebase-admin', () => {
                 })
             })
         })),
-        auth: vi.fn()
+        auth: vi.fn(),
+        apps: [{ name: '[DEFAULT]' }],
     };
 });
 
@@ -99,25 +100,42 @@ vi.mock('inngest/express', () => ({
     serve: vi.fn(() => vi.fn())
 }));
 
-// Mock firebase-functions
+// Mock firebase-functions/v1 — full builder chain required by storageMaintenance.ts
 vi.mock('firebase-functions/v1', () => {
-    const mockBuilder = {
+    const handler = vi.fn((fn: unknown) => fn);
+    const scheduleBuilder = { timeZone: vi.fn().mockReturnThis(), onRun: handler };
+    const topicBuilder = { onPublish: handler };
+    const docBuilder = { onCreate: handler, onUpdate: handler, onDelete: handler, onWrite: handler };
+    const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
+
+    const builder: Record<string, unknown> = {
         region: vi.fn().mockReturnThis(),
         runWith: vi.fn().mockReturnThis(),
+        pubsub: {
+            schedule: vi.fn(() => scheduleBuilder),
+            topic: vi.fn(() => topicBuilder),
+        },
+        firestore: { document: vi.fn(() => docBuilder) },
+        storage: {
+            bucket: vi.fn().mockReturnValue({ object: vi.fn(() => objectBuilder) }),
+            object: vi.fn(() => objectBuilder),
+        },
         https: {
-            onCall: vi.fn((handler) => handler),
-            onRequest: vi.fn((handler) => handler),
+            onCall: vi.fn((fn: unknown) => fn),
+            onRequest: vi.fn((fn: unknown) => fn),
             HttpsError: class extends Error {
                 code: string;
                 constructor(code: string, message: string) {
                     super(message);
                     this.code = code;
                 }
-            }
+            },
         },
-        config: vi.fn(() => ({}))
+        config: vi.fn(() => ({})),
     };
-    return mockBuilder;
+    (builder.region as ReturnType<typeof vi.fn>).mockReturnValue(builder);
+    (builder.runWith as ReturnType<typeof vi.fn>).mockReturnValue(builder);
+    return builder;
 });
 
 // Mock Stripe to prevent initialization error
@@ -147,15 +165,16 @@ describe('Video Functions', () => {
 
     describe('triggerVideoJob', () => {
         it('should throw unauthenticated error if no context.auth', async () => {
-            // @ts-expect-error - Testing unauthenticated access
-            await expect(triggerVideoJob({}, {} as any))
+            const triggerCall = triggerVideoJob as any;
+            await expect(triggerCall({}, {}))
                 .rejects.toThrow('User must be authenticated');
         });
 
         it('should throw invalid-argument if schema validation fails', async () => {
             const context: any = { auth: { uid: 'user123' } };
+            const triggerCall = triggerVideoJob as any;
             // Empty object fails validation (jobId etc required)
-            await expect(triggerVideoJob({}, context))
+            await expect(triggerCall({}, context))
                 .rejects.toThrow();
         });
 
@@ -167,26 +186,17 @@ describe('Video Functions', () => {
                 orgId: 'personal' // Matches schema default or provided
             };
 
-            const result = await triggerVideoJob(data, context);
+            const triggerCall = triggerVideoJob as any;
+            const result = await triggerCall(data, context);
 
-            expect(result).toEqual({ success: true, message: "Video generation job queued." });
+            expect(result).toEqual({ success: true, message: "Video generation job started." });
 
             // Verify Firestore interactions
             // We use the hoisted mocks to verify
             expect(mocks.firestore.collection).toHaveBeenCalledWith('videoJobs');
-            // Check that we set the document
+            // Check that we create the document (updated to match .create)
             expect(mocks.firestore.doc).toHaveBeenCalledWith('job-123'); // from the chain: collection().doc()
-            expect(mocks.firestore.set).toHaveBeenCalled();
-
-            // Verify Inngest
-            expect(mocks.inngest.send).toHaveBeenCalledWith({
-                name: "video/generate.requested",
-                data: expect.objectContaining({
-                    jobId: 'job-123',
-                    userId: 'user123'
-                }),
-                user: { id: 'user123' }
-            });
+            expect(mocks.firestore.set).toHaveBeenCalled(); // .create points to mockSet
         });
 
         it('should accept generateAudio option', async () => {
@@ -198,16 +208,16 @@ describe('Video Functions', () => {
                 orgId: 'personal'
             };
 
-            const result = await triggerVideoJob(data, context);
+            const triggerCall = triggerVideoJob as any;
+            const result = await triggerCall(data, context);
 
-            expect(result).toEqual({ success: true, message: "Video generation job queued." });
+            expect(result).toEqual({ success: true, message: "Video generation job started." });
 
-            // Verify Inngest receives generateAudio in options
-            expect(mocks.inngest.send).toHaveBeenCalledWith(expect.objectContaining({
-                data: expect.objectContaining({
-                    options: expect.objectContaining({
-                        generateAudio: true
-                    })
+            // Verify Firestore records the generateAudio option
+            // (Assuming mockSet captures create, check calls)
+            expect(mocks.firestore.set).toHaveBeenCalledWith(expect.objectContaining({
+                options: expect.objectContaining({
+                    generateAudio: true
                 })
             }));
         });

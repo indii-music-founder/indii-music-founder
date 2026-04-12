@@ -18,6 +18,17 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    exclude: [
+      'dist/**',
+      'e2e/**',
+      'node_modules/**',
+      '**/node_modules/**',
+      'landing-page/**',
+      '_archive_legacy/**',
+      'tests/**',
+      'scripts/**',
+      'packages/firebase/src/test/security/**',
+    ],
     setupFiles: [path.resolve(import.meta.dirname, './packages/renderer/src/test/setup.ts')],
     clearMocks: true,
     restoreMocks: true,

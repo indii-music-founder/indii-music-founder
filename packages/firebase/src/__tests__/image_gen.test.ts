@@ -28,30 +28,92 @@ vi.mock('@google/genai', () => {
     };
 });
 
-// Mock firebase-admin
-vi.mock('firebase-admin', () => ({
-    initializeApp: vi.fn(),
-    auth: vi.fn(),
-    firestore: vi.fn()
-}));
+// Mock cors — must return a Promise so onRequest handlers can be awaited
+vi.mock('cors', () => {
+    return {
+        default: () => (_req: any, _res: any, next: any) => Promise.resolve(next())
+    };
+});
 
-// Mock firebase-functions
-vi.mock('firebase-functions/v1', () => ({
-    runWith: vi.fn().mockReturnThis(),
-    region: vi.fn().mockReturnThis(),
-    https: {
-        onCall: vi.fn((handler) => handler),
-        onRequest: vi.fn((handler) => handler),
-        HttpsError: class extends Error {
-            code: string;
-            constructor(code: string, message: string) {
-                super(message);
-                this.code = code;
-            }
+// Mock firebase-admin
+vi.mock('firebase-admin', () => {
+    const mockDocRef = { id: 'mock-doc' };
+    const mockTx = {
+        get: vi.fn().mockResolvedValue({ data: () => undefined, exists: false }),
+        set: vi.fn(),
+        update: vi.fn(),
+    };
+    const firestoreInstance = {
+        collection: vi.fn(() => ({
+            doc: vi.fn(() => mockDocRef),
+        })),
+        runTransaction: vi.fn((fn: (tx: typeof mockTx) => Promise<void>) => fn(mockTx)),
+    };
+    const firestoreFn = Object.assign(
+        vi.fn(() => firestoreInstance),
+        {
+            FieldValue: {
+                serverTimestamp: vi.fn(() => 'TIMESTAMP'),
+                increment: vi.fn((n: number) => n),
+            },
         }
-    },
-    config: vi.fn(() => ({}))
-}));
+    );
+    return {
+        initializeApp: vi.fn(),
+        auth: vi.fn(),
+        firestore: firestoreFn,
+        storage: vi.fn(() => ({
+            bucket: vi.fn(() => ({
+                file: vi.fn(() => ({
+                    save: vi.fn().mockResolvedValue(undefined),
+                    makePublic: vi.fn().mockResolvedValue(undefined),
+                    publicUrl: () => 'https://mock-storage-url.com/image.png',
+                })),
+            })),
+        })),
+        apps: [{ name: '[DEFAULT]' }],
+    };
+});
+
+// Mock firebase-functions/v1 — must include full builder chain because
+// importing from ../index triggers storageMaintenance.ts which uses
+// .region().runWith().pubsub.schedule().timeZone().onRun()
+vi.mock('firebase-functions/v1', () => {
+    const handler = vi.fn((fn: unknown) => fn);
+    const scheduleBuilder = { timeZone: vi.fn().mockReturnThis(), onRun: handler };
+    const topicBuilder = { onPublish: handler };
+    const docBuilder = { onCreate: handler, onUpdate: handler, onDelete: handler, onWrite: handler };
+    const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
+
+    const builder: Record<string, unknown> = {
+        region: vi.fn().mockReturnThis(),
+        runWith: vi.fn().mockReturnThis(),
+        pubsub: {
+            schedule: vi.fn(() => scheduleBuilder),
+            topic: vi.fn(() => topicBuilder),
+        },
+        firestore: { document: vi.fn(() => docBuilder) },
+        storage: {
+            bucket: vi.fn().mockReturnValue({ object: vi.fn(() => objectBuilder) }),
+            object: vi.fn(() => objectBuilder),
+        },
+        https: {
+            onCall: vi.fn((fn: unknown) => fn),
+            onRequest: vi.fn((fn: unknown) => fn),
+            HttpsError: class extends Error {
+                code: string;
+                constructor(code: string, message: string) {
+                    super(message);
+                    this.code = code;
+                }
+            },
+        },
+        config: vi.fn(() => ({})),
+    };
+    (builder.region as ReturnType<typeof vi.fn>).mockReturnValue(builder);
+    (builder.runWith as ReturnType<typeof vi.fn>).mockReturnValue(builder);
+    return builder;
+});
 
 // Mock firebase-functions/params
 vi.mock('firebase-functions/params', () => ({
@@ -67,47 +129,47 @@ describe('Image and Content Generation Functions', () => {
     });
 
     describe('generateImageV3', () => {
-        it('should call REST API via fetch with correct parameters', async () => {
+        it('should call @google/genai SDK with correct parameters', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const data = {
                 prompt: 'a beautiful cat',
                 aspectRatio: '1:1',
-                count: 2
+                count: 2,
+                model: 'fast'
             };
 
-            const mockFetch = vi.fn().mockResolvedValue({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [
-                                { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
-                                { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
-                            ]
-                        }
-                    }]
-                })
+            mocks.generateContent.mockResolvedValue({
+                candidates: [{
+                    content: {
+                        parts: [
+                            { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
+                            { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
+                        ]
+                    }
+                }]
             });
-            global.fetch = mockFetch;
 
-            const result = await generateImageV3(data, context);
+            const generateImageCall = generateImageV3 as any;
+            const result = await generateImageCall(data, context);
 
-            expect(mockFetch).toHaveBeenCalledWith(
-                expect.stringContaining('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent'),
+            expect(mocks.generateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    method: 'POST',
-                    body: expect.stringContaining('"temperature":1')
+                    model: 'gemini-3-flash-preview',
+                    contents: [{ role: "user", parts: [{ text: 'a beautiful cat' }] }],
+                    config: expect.objectContaining({
+                        candidateCount: 2,
+                        responseModalities: ["IMAGE"]
+                    })
                 })
             );
-            // mediaResolution should NOT be present (v1alpha only)
-            const [, fetchOptions] = mockFetch.mock.calls[0];
-            expect(fetchOptions.body).not.toContain('mediaResolution');
 
             expect(result).toEqual({
                 images: [
                     { bytesBase64Encoded: 'base64-image-1', mimeType: 'image/png' },
                     { bytesBase64Encoded: 'base64-image-2', mimeType: 'image/png' }
-                ]
+                ],
+                aiMetadata: expect.any(Object),
+                aiGenerationInfo: expect.any(Object)
             });
         });
     });
@@ -131,13 +193,14 @@ describe('Image and Content Generation Functions', () => {
                 }]
             });
 
-            await editImage(data, context);
+            const editImageCall = editImage as any;
+            await editImageCall(data, context);
 
             expect(mocks.generateContent).toHaveBeenCalledWith(expect.objectContaining({
                 contents: [{
                     role: 'user',
                     parts: expect.arrayContaining([
-                        { text: 'add a hat' },
+                        { text: 'Edit the masked region of this image: add a hat' },
                         { inlineData: { data: 'base64-orig', mimeType: 'image/png' } },
                         { inlineData: { data: 'base64-mask', mimeType: 'image/png' } }
                     ])
@@ -149,17 +212,23 @@ describe('Image and Content Generation Functions', () => {
     describe('generateContentStream', () => {
         it('should yield chunks from SDK stream', async () => {
             const req: any = {
-                headers: { authorization: 'Bearer token' },
+                method: 'POST',
+                headers: { authorization: 'Bearer token', origin: 'http://localhost:4242' },
                 body: {
-                    model: 'gemini-3.1-pro-preview',
+                    model: 'gemini-2.5-pro',
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }]
                 }
             };
+            const headers: Record<string, string> = {};
             const res: any = {
-                setHeader: vi.fn(),
+                setHeader: vi.fn((key: string, val: string) => { headers[key] = val; }),
+                getHeader: vi.fn((key: string) => headers[key]),
+                writeHead: vi.fn(),
                 write: vi.fn(),
                 end: vi.fn(),
-                status: vi.fn().mockReturnThis()
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+                statusCode: 200,
             };
 
             // Mock admin.auth().verifyIdToken
@@ -175,11 +244,20 @@ describe('Image and Content Generation Functions', () => {
 
             mocks.generateContentStream.mockResolvedValue(mockStream());
 
-            await generateContentStream(req, res);
+            // The onRequest handler fires corsHandler which runs the async
+            // callback on a microtask. We cannot simply `await` the handler.
+            // Instead, create a deferred that resolves when res.end() is called.
+            const done = new Promise<void>((resolve) => {
+                res.end = vi.fn().mockImplementation(() => resolve());
+            });
+
+            generateContentStream(req, res);
+            await done;
 
             expect(res.write).toHaveBeenCalledWith(JSON.stringify({ text: 'Hello' }) + '\n');
             expect(res.write).toHaveBeenCalledWith(JSON.stringify({ text: ' world' }) + '\n');
             expect(res.end).toHaveBeenCalled();
+
         });
     });
 });
