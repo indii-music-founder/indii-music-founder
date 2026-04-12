@@ -33,7 +33,7 @@ jobs:
       run: npm run typecheck
 
     - name: Build Electron App
-      run: npm run electron:build
+      run: npm run build
 
   build:
     needs: test
@@ -74,7 +74,7 @@ jobs:
         Remove-Item win_cert.pfx -Force
 
     - name: Build Electron App
-      run: npm run electron:build
+      run: npm run build
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
