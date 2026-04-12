@@ -103,7 +103,7 @@ jobs:
 
       - name: Bundle size check
         run: |
-          TOTAL_JS=$(find dist/assets -name '*.js' -exec cat {} \; | wc -c)
+          TOTAL_JS=$(find dist/renderer/assets -name '*.js' -exec cat {} \; | wc -c)
           echo "Total JS: $((TOTAL_JS / 1024))KB"
           if [ "$TOTAL_JS" -gt 15728640 ]; then
             echo "::error::Total JS bundle exceeds 15MB threshold!"
@@ -113,7 +113,7 @@ jobs:
       - name: Accessibility audit (axe-core)
         run: |
           npm install -g serve @axe-core/cli
-          serve -s dist -l 5000 &
+          serve -s dist/renderer -l 5000 &
           sleep 3
           npx axe --exit http://localhost:5000
           kill %1 || true

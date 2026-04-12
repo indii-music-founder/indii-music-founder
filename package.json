@@ -18,6 +18,7 @@
     "dev:web": "VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4243",
     "build": "electron-vite build",
     "build:ci": "npm run typecheck && npm run lint && electron-vite build",
+    "build:studio": "electron-vite build",
     "build:firebase": "npm run build -w packages/firebase",
     "build:landing": "npm run build -w packages/landing",
     "deploy": "electron-vite build && firebase deploy --only hosting:app",
