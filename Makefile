@@ -3,7 +3,7 @@
 #  Usage: make <target>
 # ============================================================
 
-.PHONY: help prime dev dev-web build ship doctor clean test test-e2e lint fix typecheck seed reset-env deploy
+.PHONY: help prime dev dev-web build ship doctor validate clean test test-e2e lint fix typecheck seed reset-env deploy
 
 # ── Meta ──────────────────────────────────────────────────
 
@@ -51,6 +51,14 @@ doctor: ## Run unified environment health check
 
 test: ## Run Vitest unit tests (watch mode)
 	npm test
+
+validate: ## Pre-PR gate: lint → typecheck → tests (one command)
+	npm run lint
+	npm run typecheck
+	npm test -- --run
+	@echo ""
+	@echo "  ✓ All checks passed. Safe to open a PR."
+	@echo ""
 
 test-ci: ## Run Vitest once (CI mode, no watch)
 	npm test -- --run
