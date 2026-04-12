@@ -32,17 +32,20 @@ Keep these boundaries sacred.
 # 1. Install frontend dependencies
 npm install
 
-# 2. Install Cloud Functions dependencies
+# 2. Verify environment health (IMPORTANT)
+npm run doctor
+
+# 3. Install Cloud Functions dependencies
 cd functions && npm install && cd ..
 
-# 3. Install Python dependencies for the execution layer
+# 4. Install Python dependencies for the execution layer
 cd python && pip install -r requirements.txt && cd ..
 
-# 4. Start the Development Server
+# 5. Start the Development Server
 npm run dev
 
-# 5. Start the Electron Desktop App (in a separate terminal)
-npm run desktop:dev
+# 6. Start the Electron Desktop App (in a separate terminal)
+npm run dev
 ```
 
 ---
@@ -73,7 +76,13 @@ When you run `git push`, a `.git/hooks/pre-push` script automatically intercepts
 ### 🧪 "Trust the Tests"
 
 Manual QA of a 191K LOC application is impossible. We test heavily via Playwright.
-Whenever you alter a core flow or add a module:
+Whenever you alter a core flow or add a module, you MUST run the validation pipeline:
+
+```bash
+npm run validate
+```
+
+This runs type-checking, linting, and all unit tests in CI mode. If this fails, do not push.
 
 1. Ensure unit tests pass (`npm run test`).
 2. Run the E2E suite (`npx playwright test`).

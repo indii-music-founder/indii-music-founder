@@ -39,7 +39,7 @@ export function BoardroomModule() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed inset-0 z-40 bg-[#0d1117] flex flex-col items-center justify-center p-8 pt-16 pb-32"
+                className="fixed inset-0 z-40 bg-bg-dark flex flex-col items-center justify-center p-8 pt-16 pb-32"
             >
                 {/* Exit Boardroom Button */}
                 <button

@@ -81,6 +81,18 @@ __pycache__/
 *.pyc
 .gstack/
 
+# Runtime artifacts
+*.pid
+dev.pid
+dev.log
+diagnose-output.html
+hunter_results.txt
+veo_raw_response.json
+
+# Agent/task tracking (ephemeral, per-session)
+task.md
+implementation_plan.md
+
 # Agent skill tooling (external, not app code)
 .agent/antigravity-awesome-skills/
 _archive_pre_monorepo/

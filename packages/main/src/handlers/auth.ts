@@ -1,17 +1,6 @@
 import log from 'electron-log';
 import { ipcMain, BrowserWindow, shell, session } from 'electron';
 import { authStorage } from '../services/AuthStorage';
-import fs from 'fs';
-import path from 'path';
-const LOG_FILE = path.join(process.cwd(), 'auth-debug.log');
-
-function logToFile(msg: string) {
-    try {
-        fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] [Auth] ${msg}\n`);
-    } catch (e) {
-        log.error('Failed to write to log file', e);
-    }
-}
 
 // ============================================================================
 // SECURITY: Token Validation
@@ -115,6 +104,14 @@ const AUTH_WINDOW_MS = 60000; // 1 minute
 
 function checkRateLimit(identifier: string): boolean {
     const now = Date.now();
+    
+    // Cleanup stale entries
+    for (const [key, record] of authAttempts.entries()) {
+        if (now - record.lastAttempt > AUTH_WINDOW_MS) {
+            authAttempts.delete(key);
+        }
+    }
+
     const record = authAttempts.get(identifier);
 
     if (!record) {
@@ -133,7 +130,7 @@ function checkRateLimit(identifier: string): boolean {
     record.lastAttempt = now;
 
     if (record.count > MAX_AUTH_ATTEMPTS) {
-        logToFile(`Rate limit exceeded for ${identifier}`);
+        log.warn(`[Auth] Rate limit exceeded for ${identifier}`);
         return false;
     }
 
@@ -187,16 +184,14 @@ export function registerAuthHandlers() {
 }
 
 export function handleDeepLink(url: string) {
-    logToFile(`handleDeepLink received URL: ${url}`);
-    log.info("Deep link received:", url);
+    log.info(`[Auth] handleDeepLink received URL: ${url}`);
 
     // =========================================================================
     // SECURITY: Validate deep link origin and structure
     // =========================================================================
     const originValidation = validateDeepLinkOrigin(url);
     if (!originValidation.valid) {
-        logToFile(`SECURITY: Deep link validation failed - ${originValidation.error}`);
-        log.error('[Auth] SECURITY: Blocked invalid deep link:', originValidation.error);
+        log.error(`[Auth] SECURITY: Blocked invalid deep link - ${originValidation.error}`);
         notifyAuthError('Invalid authentication callback');
         return;
     }
@@ -205,8 +200,7 @@ export function handleDeepLink(url: string) {
     // SECURITY: Rate limiting
     // =========================================================================
     if (!checkRateLimit('deep-link')) {
-        logToFile('SECURITY: Rate limit exceeded for deep link auth');
-        log.error('[Auth] SECURITY: Too many auth attempts');
+        log.error('[Auth] SECURITY: Rate limit exceeded for deep link auth');
         notifyAuthError('Too many authentication attempts. Please wait.');
         return;
     }
@@ -218,8 +212,7 @@ export function handleDeepLink(url: string) {
         const error = urlObj.searchParams.get('error');
 
         if (error) {
-            logToFile(`Auth Error from URL: ${error}`);
-            log.error("Auth Error:", error);
+            log.error(`[Auth] Error from URL: ${error}`);
             notifyAuthError(error);
             return;
         }
@@ -234,40 +227,36 @@ export function handleDeepLink(url: string) {
         if (idToken) {
             const tokenValidation = validateTokenStructure(idToken);
             if (!tokenValidation.valid) {
-                logToFile(`SECURITY: ID token validation failed - ${tokenValidation.error}`);
-                log.error('[Auth] SECURITY: Invalid ID token:', tokenValidation.error);
+                log.error(`[Auth] SECURITY: ID token validation failed - ${tokenValidation.error}`);
                 notifyAuthError('Invalid authentication token received');
                 return;
             }
-            logToFile('ID token structure validated successfully');
+            log.info('[Auth] ID token structure validated successfully');
         }
 
         if (accessToken) {
             // Access tokens from Google OAuth have different structure, basic check only
             if (accessToken.length < 20) {
-                logToFile('SECURITY: Access token suspiciously short');
-                log.error('[Auth] SECURITY: Invalid access token length');
+                log.error('[Auth] SECURITY: Access token suspiciously short');
                 notifyAuthError('Invalid access token received');
                 return;
             }
         }
 
         if (refreshToken) {
-            logToFile(`Received Refresh Token (len: ${refreshToken.length})`);
-            authStorage.saveToken(refreshToken).catch((err: unknown) => logToFile("[Auth] Failed to save refresh token: " + String(err)));
+            log.info(`[Auth] Received Refresh Token (len: ${refreshToken.length})`);
+            authStorage.saveToken(refreshToken).catch((err: unknown) => log.error("[Auth] Failed to save refresh token: ", err));
         }
 
         if (idToken) {
-            logToFile(`Success: Tokens validated and accepted. ID: ${idToken.substring(0, 20)}..., Access: ${!!accessToken}`);
-            log.info("Received and validated tokens via bridge flow, notifying renderer...");
+            log.info(`[Auth] Success: Tokens validated and accepted. ID: ${idToken.substring(0, 20)}..., Access: ${!!accessToken}`);
             notifyAuthSuccess({ idToken, accessToken });
             return;
         }
 
-        logToFile("No tokens or errors found in deep link.");
+        log.info("[Auth] No tokens or errors found in deep link.");
     } catch (e) {
-        logToFile(`Exception in handleDeepLink: ${String(e)}`);
-        log.error("Failed to parse deep link:", e);
+        log.error(`[Auth] Exception in handleDeepLink: ${String(e)}`);
         notifyAuthError('Invalid auth callback');
     }
 }

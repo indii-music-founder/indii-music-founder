@@ -18,6 +18,41 @@ indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-ten
 
 ---
 
+## ⚡ Quick Start (15 minutes)
+
+> **New contributor?** You should be running the app in under 15 minutes.
+> If it takes longer, run `make doctor` and share the output — something is misconfigured.
+
+```bash
+# 1. Clone (1 min)
+git clone https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron.git
+cd indiiOS-Alpha-Electron
+
+# 2. Bootstrap environment (5 min)
+make prime                  # installs deps, runs health check
+
+# 3. Configure secrets (3 min)
+cp .env.example .env        # then fill in your VITE_API_KEY + Firebase keys
+
+# 4. Launch (30 sec)
+make dev-web                # Vite-only on :4243 — fastest iteration loop
+# — OR —
+make dev                    # Full Electron + Vite on :4242
+```
+
+| Step | Command | Expected Time |
+|------|---------|---------------|
+| Bootstrap | `make prime` | ~5 min (first run downloads deps) |
+| Configure | Edit `.env` | ~3 min |
+| Health check | `make doctor` | ~10 sec |
+| Start dev | `make dev-web` | ~5 sec (hot reload) |
+| Run tests | `make test` | ~15 sec (Vitest watch) |
+| Ship to prod | `make ship` | ~4 min (lint → typecheck → test → build → deploy) |
+
+> **Pro tip:** Use `make help` to see every available target.
+
+---
+
 ## 💠 The Vision
 
 indiiOS solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools — and 20–30% of their revenue to aggregators who change their TOS whenever they feel like it. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
@@ -531,9 +566,12 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 
 ## 🛠️ Getting Started
 
+> **Fastest path:** See the [⚡ Quick Start](#-quick-start-15-minutes) section at the top.
+
 ### Prerequisites
 
 - **Node.js:** >= 22.0.0
+- **Make:** Pre-installed on macOS/Linux (Windows: use WSL or Git Bash)
 - **Firebase CLI:** `npm install -g firebase-tools`
 - **Docker:** (Optional) Required for Agent Zero Sidecar execution
 
@@ -542,7 +580,7 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 ```bash
 git clone https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron.git
 cd indiiOS-Alpha-Electron
-npm install
+make prime                 # installs deps + runs health check
 ```
 
 ### Environment Setup
@@ -579,23 +617,64 @@ cp .env.example .env
 ### Development
 
 ```bash
-# Start Vite Studio (Port 4242)
-npm run dev
+# Fastest: Vite-only renderer (no Electron overhead)
+make dev-web               # Port 4243, instant hot reload
 
-# Start Electron App (Requires Vite running)
-npm run desktop:dev
+# Full stack: Vite + Electron
+make dev                   # Port 4242 + Electron shell
+
+# Health check (run if anything feels wrong)
+make doctor
 ```
 
 ### Building
 
 ```bash
-npm run build              # Typecheck + lint + Vite production build
-npm run build:studio       # Vite build only (no lint/typecheck)
-npm run build:landing      # Build landing page
+make build                 # Fast production build (Vite only)
+make build-ci              # Gated: typecheck + lint + build
+make ship                  # Full pipeline: lint → typecheck → test → build → deploy
+
+# Desktop targets
 npm run build:desktop:mac  # macOS (DMG/ZIP)
 npm run build:desktop:win  # Windows (NSIS)
 npm run build:desktop:linux # Linux (AppImage)
 ```
+
+### Task Runner (`Makefile`)
+
+All common operations are wrapped in the root `Makefile`. Run `make help` to see every target:
+
+```
+  build           Production build (Vite + electron-vite, fast)
+  build-ci        CI build: typecheck + lint + build (gated)
+  clean           Remove build artifacts and caches
+  dev             Start full Electron dev environment (:4242)
+  dev-web         Start Vite renderer only — no Electron (:4243)
+  doctor          Run unified environment health check
+  fix             ESLint auto-fix all packages
+  lint            ESLint all packages
+  nuke            Nuclear clean: rm node_modules + dist + reinstall
+  prime           Full setup → install, doctor check, start dev server
+  ship            Full ship pipeline: lint → typecheck → test → build → deploy
+  test            Run Vitest unit tests (watch mode)
+  test-ci         Run Vitest once (CI mode, no watch)
+  test-e2e        Run Playwright E2E tests (Chromium)
+  typecheck       TypeScript type check (all packages)
+```
+
+---
+
+## 📜 Automation & Scripts
+
+The project includes a rich catalog of 20+ automation scripts for environment setup, data seeding, and diagnostics.
+
+| Command | Action |
+| :--- | :--- |
+| `npm run doctor` | Run the unified health check (recommended after setup) |
+| `npm run scripts` | View the full **[Scripts Catalog](scripts/SCRIPTS_CATALOG.md)** |
+| `scripts/env-guardian.sh` | Backup/Restore your sensitive environment variables |
+
+**Protip:** Use `npx ts-node scripts/FILENAME.ts` to run any TypeScript utility in the `scripts/` folder.
 
 ---
 
