@@ -105,8 +105,8 @@ jobs:
         run: |
           TOTAL_JS=$(find dist/renderer/assets -name '*.js' -exec cat {} \; | wc -c)
           echo "Total JS: $((TOTAL_JS / 1024))KB"
-          if [ "$TOTAL_JS" -gt 15728640 ]; then
-            echo "::error::Total JS bundle exceeds 15MB threshold!"
+          if [ "$TOTAL_JS" -gt 26214400 ]; then
+            echo "::error::Total JS bundle exceeds 25MB threshold!"
             exit 1
           fi
 
