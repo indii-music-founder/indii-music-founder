@@ -8,7 +8,7 @@
 
 indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, sovereign creative workspace designed to empower independent music producers, visual artists, and labels. By unifying AI-powered asset generation, automated distribution, and intelligent business operations, indiiOS enables creators to own their infrastructure, their data, and their future.
 
-[![Version](https://img.shields.io/badge/Version-0.1.0--beta.2-blue)](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron)
+[![Version](https://img.shields.io/badge/Version-0.1.0--beta.3-blue)](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron)
 [![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indiios-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
@@ -772,7 +772,57 @@ For deep-dives into specific subsystems:
 
 ## 🔄 Recent Updates
 
-### Production Hardening — TypeScript Strict Mode (March 2026)
+### v1.50.0 — Developer Experience & CI/CD Hardening (April 2026)
+
+**42 commits, 196 files changed, +9,628 / −3,524 lines** — this release is a top-to-bottom engineering quality overhaul.
+
+#### 🛠️ 10/10 Developer Experience Overhaul
+
+The entire development workflow has been rebuilt around a single `Makefile` entry point and automated quality gates:
+
+| Tool | Purpose |
+|------|---------|
+| `Makefile` (15 targets) | `make prime`, `make dev-web`, `make ship` — zero guesswork |
+| `scripts/doctor.sh` | Unified health checker — Node, Python, Git, .env, dep sanity |
+| Husky `pre-push` hook | Gates every push behind `typecheck` + `lint` — broken code stays local |
+| Husky `commit-msg` hook | Enforces Conventional Commits — non-conforming messages are rejected |
+| `.editorconfig` | Consistent formatting across all editors |
+| VS Code settings | Recommended extensions, format-on-save, import sorting |
+| `CONTRIBUTING.md` | Complete contribution guide with branch naming, PR checklist, testing standards |
+| `ONBOARDING.md` | Day-1 engineer onboarding — zero-to-running in 15 minutes |
+| `SCRIPTS_CATALOG.md` | Documented catalog of 20+ automation scripts |
+
+#### 🧪 CI/CD Pipeline Stabilization
+
+The deployment pipeline has been hardened from end to end:
+
+- **Vitest Workspace Migration** — Replaced fragile negative-include globs with an explicit `vitest.workspace.ts` pattern, eliminating stale test discovery
+- **533 test files, 2,952 tests passing** — all unit tests green in CI mode
+- **Deploy pipeline fixes** — Added missing `build:studio` script, corrected `dist/` paths, bumped bundle size threshold to 25MB for Electron builds
+- **Legacy workflow cleanup** — Deleted duplicate `main_deploy.yml` to stop double pipeline triggers
+- **firebase-admin / firebase-functions mocks** — Shared centralized mocks prevent import-time crashes in the test environment
+
+#### 🤖 Autoagent Phase A — Sidecar Harness
+
+Introduced the Conductor autoagent experiment loop — a sidecar harness that profiles prompt performance and generates optimization candidates for the indii Conductor routing prompt.
+
+#### 🖥️ Desktop Auto-Update Channel
+
+Electron now supports a UI toggle for auto-update channels (stable/beta), enabling controlled staged rollouts for desktop releases.
+
+#### 📝 Music Training Dataset Rewrite
+
+Rewrote the music agent training dataset to remove DAW/mixing scenarios and enforce baseline audio intelligence capabilities.
+
+#### 🔒 Repository Sealing
+
+- Added `LICENSE` (Proprietary, © 2026 IndiiOS LLC)
+- Added `/1percent` workflow — the "Final 1%" sealing protocol for release readiness
+- Bundle size, branch protection, and secret scanning verified
+
+---
+
+### v1.49.0 — Production Hardening & TypeScript Strict Mode (March–April 2026)
 
 The codebase now enforces a zero-tolerance `any` ban across all production files.
 
