@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterAll } from 'vitest';
 import { generateImageV3Fn } from './image_generation';
 import functionsTest from 'firebase-functions-test';
+import { GoogleGenAI } from '@google/genai';
 
 // Mock firebase-admin
 vi.mock('firebase-admin', () => ({
@@ -26,14 +27,35 @@ vi.mock('google-auth-library', () => ({
     }
 }));
 
+const mockGenerateContent = vi.fn().mockResolvedValue({
+    candidates: [{
+        content: {
+            parts: [{
+                inlineData: {
+                    data: 'fake-base64-data',
+                    mimeType: 'image/png'
+                }
+            }]
+        }
+    }]
+});
+
+vi.mock('@google/genai', () => ({
+    GoogleGenAI: vi.fn(function() {
+        return {
+            models: {
+                generateContent: mockGenerateContent
+            }
+        } as any;
+    })
+}));
+
 const testEnv = functionsTest();
 
 describe('generateImageV3Fn', () => {
     let wrapped: any;
-    const mockFetch = vi.fn();
 
     beforeAll(() => {
-        global.fetch = mockFetch as any;
         // Mock secrets
         process.env.GEMINI_API_KEY = 'test-api-key';
     });
@@ -41,7 +63,7 @@ describe('generateImageV3Fn', () => {
     beforeEach(() => {
         const func = generateImageV3Fn();
         wrapped = testEnv.wrap(func);
-        mockFetch.mockClear();
+        mockGenerateContent.mockClear();
     });
 
     afterAll(() => {
@@ -65,30 +87,15 @@ describe('generateImageV3Fn', () => {
             },
         };
 
-        mockFetch.mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                predictions: [
-                    {
-                        bytesBase64Encoded: 'fake-base64-data',
-                        mimeType: 'image/png'
-                    }
-                ]
-            }),
-        });
-
         await wrapped(data, context);
 
-        expect(mockFetch).toHaveBeenCalledTimes(1);
-        const [url, options] = mockFetch.mock.calls[0];
+        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+        const callArgs = mockGenerateContent.mock.calls[0][0];
 
-        expect(url).toContain('gemini-'); // Just check it contains gemini for now or check the dynamic var
-
-        const body = JSON.parse(options.body);
-        expect(body.instances[0].prompt).toBe('test prompt');
-        expect(body.parameters.aspectRatio).toBe('16:9');
-        expect(body.parameters.sampleCount).toBe(2);
-        expect(body.parameters.personGeneration).toBe('allow_adult');
+        expect(callArgs.contents[0].parts[0].text).toBe('test prompt');
+        expect(callArgs.config.imageConfig.aspectRatio).toBe('16:9');
+        // Note: candidateCount for pro is hardcoded to 1 per changes in library
+        expect(callArgs.config.candidateCount).toBe(1);
     });
 
     it('should fallback to default parameters', async () => {
@@ -103,25 +110,13 @@ describe('generateImageV3Fn', () => {
             },
         };
 
-        mockFetch.mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                predictions: [
-                    {
-                        bytesBase64Encoded: 'fake-base64-data',
-                        mimeType: 'image/png'
-                    }
-                ]
-            }),
-        });
-
         await wrapped(data, context);
 
-        const [, options] = mockFetch.mock.calls[0];
-        const body = JSON.parse(options.body);
+        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+        const callArgs = mockGenerateContent.mock.calls[0][0];
 
-        expect(body.instances[0].prompt).toBe('simple prompt');
-        expect(body.parameters.aspectRatio).toBe('1:1');
-        expect(body.parameters.sampleCount).toBe(1);
+        expect(callArgs.contents[0].parts[0].text).toBe('simple prompt');
+        expect(callArgs.config.imageConfig.aspectRatio).toBe('1:1');
+        expect(callArgs.config.candidateCount).toBe(1);
     });
 });
