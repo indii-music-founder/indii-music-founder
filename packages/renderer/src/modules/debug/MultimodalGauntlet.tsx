@@ -107,7 +107,7 @@ export default function MultimodalGauntlet() {
     const steps = [
         { num: 1, title: "Primary Image Generation", detail: "Bypassing App Check locally for developer verification." },
         { num: 2, title: "Derivative Reference (Consistency)", detail: "Generating last frame from primary context." },
-        { num: 3, title: "Temporal Interpolation (Video)", detail: "Veo 3.1: Startframe -> Endframe mapping." },
+        { num: 3, title: "Temporal Interpolation (Video)", detail: "AI Video: Startframe -> Endframe mapping." },
         { num: 4, title: "Loop Synchronization", detail: "Inverse mapping for seamless loop." },
     ];
 

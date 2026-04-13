@@ -317,7 +317,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                         />
                     </div>
 
-                    {/* Gemini 3 / Veo 3.1 Advanced Controls */}
+                    {/* Advanced Controls */}
                     <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-4 backdrop-blur-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-purple-500/20 transition-all duration-700" />
 

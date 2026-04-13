@@ -27,7 +27,7 @@ export interface BoardroomSlice {
 
 export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => ({
     isBoardroomMode: false,
-    activeAgents: ['orchestrator'], // Conductor/Orchestrator always present initially
+    activeAgents: ['generalist'], // indii Conductor (hub agent) always present initially
     referencedAssets: [],
 
     toggleBoardroomMode: () => set((state) => ({ isBoardroomMode: !state.isBoardroomMode })),

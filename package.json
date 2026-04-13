@@ -151,5 +151,10 @@
     "packages/mcp-server-local/src/**/*.{ts,tsx}": [
       "eslint"
     ]
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/the-walking-agency-det/indiiOS-Clean.git"
   }
 }

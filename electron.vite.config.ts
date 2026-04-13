@@ -30,10 +30,31 @@ export default defineConfig({
                     'canvas',
                     'bufferutil',
                     'utf-8-validate',
-                    'keytar',
-                    'canvas',
+                    // Binary packages that use CJS __dirname / require() internally.
+                    // externalizeDepsPlugin may miss these in workspace hoisting.
+                    'ffmpeg-static',
+                    'ffprobe-static',
+                    'fluent-ffmpeg',
+                    // Native addon (uses require() for .node bindings)
+                    '@ngrok/ngrok',
+                    // CJS packages that break in ESM bundles
+                    'express',
+                    'chokidar',
+                    'ws',
+                    'ssh2-sftp-client',
+                    'electron-store',
+                    'electron-log',
+                    'electron-squirrel-startup',
+                    '@modelcontextprotocol/sdk',
                 ],
             },
+        },
+        // Polyfill __dirname / __filename for ESM output.
+        // When "type":"module" in package.json, Node treats .js as ESM
+        // but some deps still reference these CJS globals.
+        define: {
+            __dirname: 'import.meta.dirname',
+            __filename: 'import.meta.filename',
         },
         resolve: {
             alias: {

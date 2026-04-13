@@ -115,7 +115,7 @@ export const SubscriptionTab = () => {
                                     <span className="text-white font-mono">{usage.videoDurationMinutes.toFixed(1)} / {usage.videoTotalMinutes}m</span>
                                 </div>
                                 <Progress value={(usage.videoDurationMinutes / usage.videoTotalMinutes) * 100} className="h-2 bg-white/5" indicatorClassName="bg-dept-royalties" />
-                                <p className="text-[10px] text-gray-500">Compute minutes for Veo 3.1</p>
+                                <p className="text-[10px] text-gray-500">AI video generation compute</p>
                             </div>
 
                             {/* Tokens */}
@@ -125,7 +125,7 @@ export const SubscriptionTab = () => {
                                     <span className="text-white font-mono">{(usage.aiChatTokensUsed / 1000).toFixed(1)}k / {(usage.aiChatTokensPerMonth / 1000).toFixed(1)}k</span>
                                 </div>
                                 <Progress value={(usage.aiChatTokensUsed / usage.aiChatTokensPerMonth) * 100} className="h-2 bg-white/5" indicatorClassName="bg-dept-marketing" />
-                                <p className="text-[10px] text-gray-500">Gemini 3 sequence length quota</p>
+                                <p className="text-[10px] text-gray-500">AI intelligence token quota</p>
                             </div>
 
                             {/* Storage */}

@@ -14,17 +14,23 @@ import { getDepartmentCssVar } from '@/core/theme/moduleColors';
  */
 const getPositionStyle = (
     position: 'left' | 'center' | 'right',
-    _isCollapsed: boolean
+    _isCollapsed: boolean,
+    isBoardroom: boolean
 ) => {
     // Width is now CSS-driven (w-[42rem] max-w-[...]) instead of hardcoded pixels.
     // This prevents the "mega-size" bug when expanding from collapsed state.
+
+    // Boardroom mode: span the right conversation panel (55%–100%) with symmetric padding.
+    // Using left+right constraints ensures the bar always fills the panel proportionally.
+    if (isBoardroom) {
+        return { left: 'calc(55% + 2rem)', right: '2rem' as const, x: 0 };
+    }
 
     switch (position) {
         case 'left':
             return { left: 32, right: 'auto' as const, x: 0 };
         case 'right':
-            // Right-anchored: tighter edge alignment for boardroom
-            return { left: 'auto' as const, right: 16, x: 0 };
+            return { left: 'auto' as const, right: 32, x: 0 };
         case 'center':
         default:
             return { left: '50%', right: 'auto' as const, x: '-50%' };
@@ -66,7 +72,7 @@ function CommandBar() {
     const activePosition = isBoardroomMode ? 'right' : commandBarPosition;
     // Boardroom mode never collapses — ignore stale collapsed state
     const effectiveCollapsed = isBoardroomMode ? false : isCommandBarCollapsed;
-    const posStyle = getPositionStyle(activePosition, effectiveCollapsed);
+    const posStyle = getPositionStyle(activePosition, effectiveCollapsed, isBoardroomMode);
 
     // Module-aware orb color: use CSS variable from the department color system
     const orbColor = getDepartmentCssVar(currentModule);
@@ -114,16 +120,16 @@ function CommandBar() {
                     dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
                     className={cn(
                         "fixed z-[500] flex items-center justify-center",
-                        isCommandBarDetached ? "cursor-move top-[80%] left-1/2" : "bottom-8",
-                        // In boardroom mode, use right-anchored positioning via CSS
-                        isBoardroomMode && !isCommandBarDetached && "!left-auto right-4"
+                        isCommandBarDetached ? "cursor-move top-[80%] left-1/2" : "bottom-8"
                     )}
                 >
                     <div className={cn(
                         "pointer-events-auto transition-all duration-300",
                         effectiveCollapsed
                             ? "w-12 h-12 flex items-center justify-center"
-                            : "w-[42rem] max-w-[calc(100vw-4rem)]"
+                            : isBoardroomMode
+                                ? "w-full"
+                                : "w-[42rem] max-w-[calc(100vw-4rem)]"
                     )}>
                         {effectiveCollapsed ? (
                             <motion.button

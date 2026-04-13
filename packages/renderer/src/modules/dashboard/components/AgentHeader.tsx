@@ -34,7 +34,7 @@ export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
                                 <span className="text-[10px] font-medium text-amber-400 uppercase tracking-widest">API Missing</span>
                             </div>
                         ) : (
-                            <div className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5" title="Connected to Gemini 3">
+                            <div className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5" title="AI Engine Connected">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                 <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-widest">Online</span>
                             </div>

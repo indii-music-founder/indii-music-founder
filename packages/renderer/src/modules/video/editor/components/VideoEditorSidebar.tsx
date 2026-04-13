@@ -61,7 +61,7 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
                         <h3 className="text-lg font-semibold">Project Settings</h3>
 
                         <div className="bg-purple-900/20 border border-purple-500/30 p-3 rounded-md">
-                            <h4 className="text-xs font-bold text-purple-400 uppercase mb-2">Veo 3.1 Presets</h4>
+                            <h4 className="text-xs font-bold text-purple-400 uppercase mb-2">Video Presets</h4>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     onClick={() => updateProject({ width: 1920, height: 1080, fps: 24 })}

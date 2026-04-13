@@ -41,7 +41,9 @@ vi.mock('@/services/MembershipService', () => ({
             // console.log(`[MockLedger] Recorded spend: $${amount.toFixed(4)}. Total: $${mockUsageState.totalSpend.toFixed(4)}`);
         }),
         getCurrentUserId: vi.fn().mockResolvedValue('ledger-test-user'),
-        getCurrentTier: vi.fn().mockResolvedValue('free')
+        getCurrentTier: vi.fn().mockResolvedValue('free'),
+        getTierDisplayName: vi.fn().mockReturnValue('Free'),
+        getLimits: vi.fn().mockReturnValue({ maxDailySpend: 1.0 })
     }
 }));
 
@@ -168,7 +170,7 @@ describe('Ledger Circuit Breaker (Integration)', () => {
         expect(MembershipService.checkBudget).toHaveBeenCalledTimes(2);
 
         // 3. Verify Agent halted
-        expect(response.error).toContain('Budget exceeded');
+        expect(response.error).toContain('Daily spend limit reached');
 
         // 4. Verify AI was only called once (because 2nd iteration was blocked)
         expect(AI.generateContent).toHaveBeenCalledTimes(1);
