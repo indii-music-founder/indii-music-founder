@@ -2,6 +2,34 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.50.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.50.0) (2026-04-13)
+
+
+### Features
+
+* **autoagent:** phase A — sidecar + loop proof for Conductor system ([#1418](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1418)) ([4e6cb9f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4e6cb9f71cb7d43b43a8e899964c98a93ce0e082))
+* **boardroom:** harden chat overlay + fix test regressions ([3338226](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/33382266816977a6a827502d01ea74c33ceec68c))
+* **wo-16:** implement desktop auto-update channel with UI toggle and boardroom ghost navigation fixes ([e570f93](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e570f930c7d646066ca48b49555d6966af74eda3))
+* **wo-17:** rewrite music training dataset to remove DAW/mixing scenarios and enforce baseline capabilities ([f2ad200](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f2ad2004a3450049b80b1dc88f7e917c56ad477d))
+
+
+### Bug Fixes
+
+* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
+* **boardroom:** tighten right-edge positioning, replace cryptic dot with Users icon ([cdbad3b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cdbad3b94f7e06b251b6931a42cab5fa1f268c9d))
+* **ci:** add missing build:studio script + fix dist paths in deploy workflow ([3ecf18c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3ecf18c15429b627d31c4cd267085b5e3e91954c))
+* **ci:** bump bundle size threshold 15MB → 25MB ([71ed8ed](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/71ed8ed9927b1ed5971dd6c841eb63479b002087))
+* **ci:** raise bundle size threshold to 25MB for Electron app ([0ec1f37](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0ec1f37968f7c70ef1837e6d4c080198b0dcd633))
+* **ci:** resolve 3 pipeline regressions ([763ad28](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/763ad285be56eafec4ff7e4195481d90a72b76bd))
+* **ci:** stabilize test suite — 533 files, 2952 tests passing ([99b655d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/99b655d89ab0606d6be8c5336d1509e2f390f29c))
+* **ci:** sync deploy pipeline — model policy + test assertions ([99b6ad2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/99b6ad23f01cc91dd1c275d7579fe20c998b4939))
+* **firebase:** enforce uppercase imageSize to resolve Sentry error ([9f07c9d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9f07c9d9b79a71cb844b385ddaeb0912bd414563))
+* **firebase:** migrate Gemini Pro image generation to unified SDK ([1fb2fd9](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/1fb2fd93a81859ea5810ab276ac26fe8058b001e))
+* **firebase:** migrate Gemini Pro image generation to unified SDK ([4dc7844](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4dc7844351939f57aec06c5ecac6ea148555f3ed))
+* **firebase:** restrict candidateCount to 1 for Gemini Pro image to resolve Sentry error ([380f21e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/380f21eba5a8f6662b0e0b69da54a0f090024d95))
+* **firebase:** update image_generation test to mock GoogleGenAI correctly for SDK migration ([88ff9d7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/88ff9d7ce725d15afe310b82f4ddd4beca7b2da1))
+* **prod:** resolve infinite spinner — CSP wasm + circular import + env throw ([84db432](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/84db432c94ae3354dd46071f6b62e5d704201123))
+
 ## [1.50.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.50.0) (2026-04-12)
 
 **42 commits · 196 files changed · +9,628 / −3,524 lines**
