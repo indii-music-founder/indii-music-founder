@@ -80,6 +80,9 @@ export function initSentry(): void {
             ],
         });
 
+        // Register on window so Logger.ts can access Sentry without a static import
+        // (which was causing a circular dependency crash in production)
+        (window as unknown as { __sentryInstance?: typeof Sentry }).__sentryInstance = Sentry;
         logger.debug('[Sentry] Initialized for production');
     } catch (error: unknown) {
         logger.error('[Sentry] Initialization failed:', error);
