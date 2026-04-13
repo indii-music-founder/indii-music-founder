@@ -126,7 +126,7 @@ class GeminiImageService {
                     model: proModel,
                     contents: [{ role: "user", parts: [{ text: data.prompt }] }],
                     config: {
-                        candidateCount: Math.min(data.count || 1, 4),
+                                candidateCount: 1, // Gemini 3 Pro image only supports 1 candidate
                         responseModalities: ["IMAGE"],
                         imageConfig: {
                             aspectRatio: data.aspectRatio || "1:1",
