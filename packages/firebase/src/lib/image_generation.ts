@@ -118,59 +118,37 @@ class GeminiImageService {
                     }
                 };
             } else {
-                // --- Pro Path: Vertex AI Gemini Image REST API (full aspect ratio, seed, personGeneration) ---
-                const { GoogleAuth } = await import("google-auth-library");
+                // --- Pro Path: Gemini Pro Image via unified generateContent ---
                 const proModel = FUNCTION_AI_MODELS.IMAGE.GENERATION;
+                const client = this.getClient();
 
-                const auth = new GoogleAuth({
-                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                });
-                const client = await auth.getClient();
-                const projectId = await auth.getProjectId();
-                const accessToken = await client.getAccessToken();
-
-                const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${proModel}:predict`;
-
-                const requestBody = {
-                    instances: [
-                        { prompt: data.prompt }
-                    ],
-                    parameters: {
-                        sampleCount: Math.min(data.count || 1, 4),
-                        aspectRatio: data.aspectRatio || "1:1",
-                        personGeneration: "allow_adult",
-                        addWatermark: false
-                    }
-                };
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken.token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
+                const result = await client.models.generateContent({
+                    model: proModel,
+                    contents: [{ role: "user", parts: [{ text: data.prompt }] }],
+                    config: {
+                        candidateCount: Math.min(data.count || 1, 4),
+                        responseModalities: ["IMAGE"],
+                        imageConfig: {
+                            aspectRatio: data.aspectRatio || "1:1",
+                            imageSize: data.resolution || "2K"
+                        }
+                    } as unknown as Record<string, unknown>
                 });
 
-                if (!response.ok) {
-                    let errorText = await response.text();
-                    try {
-                        const parsedError = JSON.parse(errorText);
-                        errorText = parsedError.error?.message || errorText;
-                    } catch (__e) { /* ignore JSON parse error */ }
-                    throw new Error(`Vertex AI Image API Error: ${response.status} ${errorText}`);
+                if (!result.candidates || result.candidates.length === 0) {
+                    throw new Error("No candidates returned from Gemini Pro Image API");
                 }
 
-                const result = await response.json();
+                const images = result.candidates![0].content!.parts!
+                    .filter(p => !!p.inlineData)
+                    .map(p => ({
+                        bytesBase64Encoded: p.inlineData!.data as string,
+                        mimeType: p.inlineData!.mimeType || "image/png"
+                    }));
 
-                if (!result.predictions || result.predictions.length === 0) {
-                    throw new Error("No images returned from Image API");
+                if (images.length === 0) {
+                    throw new Error("No image data found in candidates");
                 }
-
-                const images = result.predictions.map((p: any) => ({
-                    bytesBase64Encoded: p.bytesBase64Encoded,
-                    mimeType: p.mimeType || "image/png"
-                }));
 
                 return {
                     images,
