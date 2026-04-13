@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
-import { ArrowRight, Loader2, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { ArrowRight, Loader2, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Users } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -52,14 +52,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setCommandBarInput,
         commandBarAttachments,
         setCommandBarAttachments,
-        activeAgentProvider,
         setActiveAgentProvider,
         isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled,
-        isCommandBarCollapsed,
         setCommandBarCollapsed,
-        commandBarPosition,
-        setCommandBarPosition,
         isBoardroomMode
     } = useStore(useShallow(state => ({
         // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
@@ -75,14 +71,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setCommandBarInput: state.setCommandBarInput,
         commandBarAttachments: state.commandBarAttachments,
         setCommandBarAttachments: state.setCommandBarAttachments,
-        activeAgentProvider: state.activeAgentProvider,
         setActiveAgentProvider: state.setActiveAgentProvider,
         isKnowledgeBaseEnabled: state.isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled: state.setKnowledgeBaseEnabled,
-        isCommandBarCollapsed: state.isCommandBarCollapsed,
         setCommandBarCollapsed: state.setCommandBarCollapsed,
-        commandBarPosition: state.commandBarPosition,
-        setCommandBarPosition: state.setCommandBarPosition,
         isBoardroomMode: state.isBoardroomMode
     })));
 
@@ -413,7 +405,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                         !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
                                     )}
                                 >
-                                    <div className={cn("rounded-full", isDocked ? "w-1 h-1" : "w-1.5 h-1.5", !isIndiiMode ? "bg-cyan-400 animate-pulse" : "bg-gray-600")} />
+                                    <Users size={isDocked ? 12 : 14} />
                                 </button>
                                 <DelegateMenu
                                     isOpen={openDelegate}
@@ -460,50 +452,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Dock Position Toggle — desktop only, irrelevant on phone or when docked */}
-                        {!isMobile && !isDocked && (
-                            <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/10">
-                                <button
-                                    onClick={() => setCommandBarPosition('left')}
-                                    className={cn(
-                                        "p-1 rounded-md transition-all",
-                                        commandBarPosition === 'left'
-                                            ? "bg-white/15 text-white"
-                                            : "text-gray-500 hover:text-gray-300"
-                                    )}
-                                    aria-label="Dock left"
-                                    title="Dock left"
-                                >
-                                    <AlignLeft size={12} />
-                                </button>
-                                <button
-                                    onClick={() => setCommandBarPosition('center')}
-                                    className={cn(
-                                        "p-1 rounded-md transition-all",
-                                        commandBarPosition === 'center'
-                                            ? "bg-white/15 text-white"
-                                            : "text-gray-500 hover:text-gray-300"
-                                    )}
-                                    aria-label="Dock center"
-                                    title="Dock center"
-                                >
-                                    <AlignCenter size={12} />
-                                </button>
-                                <button
-                                    onClick={() => setCommandBarPosition('right')}
-                                    className={cn(
-                                        "p-1 rounded-md transition-all",
-                                        commandBarPosition === 'right'
-                                            ? "bg-white/15 text-white"
-                                            : "text-gray-500 hover:text-gray-300"
-                                    )}
-                                    aria-label="Dock right"
-                                    title="Dock right"
-                                >
-                                    <AlignRight size={12} />
-                                </button>
-                            </div>
-                        )}
+                        {/* Dock Position Toggle — removed entirely. Position is now locked to right in boardroom mode. */}
 
                         {/* Agent / indii Mode Toggle */}
                         <button
@@ -521,7 +470,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <IndiiFavicon size={isDocked ? 14 : 18} />
                         </button>
 
-                        {!isDocked && !isMobile && (
+                        {/* Collapse/Detach controls — hidden in boardroom (locked to right, always expanded) */}
+                        {!isDocked && !isMobile && !isBoardroomMode && (
                             <div className="flex items-center gap-1 border-l border-white/10 px-2 mr-1">
                                 <PromptInputAction tooltip="Collapse Chat">
                                     <button
