@@ -2,38 +2,65 @@
 
 All notable changes to indiiOS are documented in this file.
 
-## [1.50.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.50.0) (2026-04-11)
+## [1.50.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.50.0) (2026-04-12)
 
+**42 commits · 196 files changed · +9,628 / −3,524 lines**
 
-### Features
+### 🛠️ Developer Experience — 10/10 Overhaul
 
-* **autoagent:** phase A — sidecar + loop proof for Conductor system ([#1418](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1418)) ([4e6cb9f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4e6cb9f71cb7d43b43a8e899964c98a93ce0e082))
+* **chore(dx):** implement DX hardening — Husky hooks, `doctor.sh`, Scripts Catalog ([ade5dd1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ade5dd12b))
+* **chore(dx):** 10/10 developer experience overhaul — `Makefile`, `CONTRIBUTING.md`, `.editorconfig`, VS Code settings ([7df34a3](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7df34a3d6))
+* **chore(dx):** setup automated quality gates and development scripts ([70ce490](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/70ce4900c))
+* **chore(dx):** complete 10/10 DX hardening with EditorConfig, VSCode, contributing guide ([fa202e2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/fa202e287))
 
+### 🧪 CI/CD Pipeline Stabilization
 
-### Bug Fixes
+* **fix(ci):** stabilize test suite — 533 files, 2,952 tests passing ([99b655d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/99b655d89))
+* **fix(ci):** resolve 3 pipeline regressions ([763ad28](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/763ad285b))
+* **fix(ci):** sync deploy pipeline — model policy + test assertions ([99b6ad2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/99b6ad23f))
+* **fix(ci):** add missing `build:studio` script + fix dist paths in deploy workflow ([3ecf18c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3ecf18c15))
+* **fix(ci):** raise bundle size threshold to 25MB for Electron app ([0ec1f37](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0ec1f3796))
 
-* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
+### ✨ Features
 
-## [1.49.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.49.1) (2026-04-11)
+* **autoagent:** phase A — sidecar + loop proof for Conductor system ([#1418](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1418)) ([4e6cb9f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4e6cb9f71))
+* **autoagent:** optimize indii Conductor prompt for autoagent experiment loop ([#1434](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1434)) ([a5f2e97](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a5f2e97f4))
+* **wo-16:** implement desktop auto-update channel with UI toggle and boardroom ghost navigation fixes ([e570f93](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e570f930c))
+* **wo-17:** rewrite music training dataset to remove DAW/mixing scenarios and enforce baseline capabilities ([f2ad200](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f2ad2004a))
 
+### 🐛 Bug Fixes
 
-### Bug Fixes
+* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30))
+* **test(creative):** restore direct generation locators and fix e2e test suite ([8ad28835](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8ad28835c))
 
-* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
+### 🧹 Code Health
 
-## [1.49.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.49.1) (2026-04-11)
+* ⚡ fix `React.memo` in `ConversationHistoryList` ([#1421](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1421)) ([954ad94](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/954ad94fd))
+* 🧹 remove unused props assignment in Boardroom ([#1417](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1417)) ([7132f4b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7132f4b54))
+* 🧹 implement param addition and history filtering logic in `concat_messages` ([#1422](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1422)) ([3acb539](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3acb539dd))
+* 🧹 remove unused `--storage-path` argument ([#1425](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1425)) ([b5888212](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b85882127))
+* **perf:** optimize `clearAllMemories` with batch delete ([12a9ec3](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/12a9ec314))
+* **perf(TraceViewer):** wrap in `React.memo` to prevent re-renders ([7203c48](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7203c4853))
 
+### 🧪 Test Coverage
 
-### Bug Fixes
+* 🧪 add error path test for `generateSecureHex` ([#1433](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1433)) ([b33eb9a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b33eb9a1d))
+* 🧪 explicit error path test coverage for `generateSecureHex` ([#1419](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1419)) ([2806cc2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2806cc21c))
+* 🧪 add unit tests for `generateSecureHex` in `security.ts` ([0fd904b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0fd904b53))
+* 🧪 add tests for security ID generation utilities ([08207fc](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/08207fc20))
+* **test:** add edge case tests for `splitFirst` and `dateUtils` ([2b73217](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2b732174d))
+* **test(renderer):** replace real timers with Vitest fake timers in async utils tests ([c6857a0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c6857a0a1))
 
-* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
+### 📝 Documentation & DevSecOps
 
-## [1.49.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.49.1) (2026-04-11)
+* **docs:** generate indiiOS compliance docs ([#1420](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1420)) ([ffcb369](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ffcb369e4))
+* Add legal services directory and Founders Program documentation ([#1423](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1423)) ([9e6d16e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9e6d16ef6))
+* Provision Jules DevSecOps zero-trust pipeline ([#1426](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1426)) ([561c3d3](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/561c3d379))
+* Initialize Jules DevSecOps pipeline ([#1427](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1427)) ([b3e1949](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b3e194928))
 
+### 🔒 Repository Sealing
 
-### Bug Fixes
-
-* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
+* **chore(seal):** add `/1percent` workflow + `LICENSE` — final 1% sealing protocol ([fed7493](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/fed749343))
 
 ## [1.49.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.48.0...v1.49.0) (2026-04-09)
 
