@@ -139,7 +139,13 @@ class GeminiImageService {
                     throw new Error("No candidates returned from Gemini Pro Image API");
                 }
 
-                const images = result.candidates![0].content!.parts!
+                const candidate = result.candidates[0];
+                const parts = candidate?.content?.parts;
+                if (!parts || parts.length === 0) {
+                    throw new Error("No content parts in Gemini Pro Image response");
+                }
+
+                const images = parts
                     .filter(p => !!p.inlineData)
                     .map(p => ({
                         bytesBase64Encoded: p.inlineData!.data as string,
