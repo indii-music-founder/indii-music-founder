@@ -123,7 +123,30 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     },
 };
 
+/**
+ * Builder/dev accounts that bypass all budget and quota limits.
+ * Add new test emails here — this is the SINGLE source of truth.
+ */
+const BUILDER_EMAILS = new Set([
+    'the.walking.agency.det@gmail.com',
+    'qa@indiios.com',
+]);
+
 class MembershipServiceImpl {
+    /**
+     * Check if the current user is a builder/dev account.
+     * Uses cached store email — no Firestore call.
+     */
+    private async isBuilderAccount(): Promise<boolean> {
+        try {
+            const { useStore } = await import('@/core/store');
+            const email = useStore.getState().userProfile?.email;
+            return !!email && BUILDER_EMAILS.has(email);
+        } catch {
+            return false;
+        }
+    }
+
     /**
      * Get limits for a specific tier
      */
@@ -213,7 +236,7 @@ class MembershipServiceImpl {
             const state = useStore.getState();
 
             // GOD MODE: Bypass for Builder
-            if (state.userProfile?.email === 'the.walking.agency.det@gmail.com') {
+            if (state.userProfile?.email && BUILDER_EMAILS.has(state.userProfile.email)) {
                 return 'enterprise';
             }
 
@@ -355,6 +378,11 @@ class MembershipServiceImpl {
             return { allowed: false, remainingBudget: 0, requiresApproval: false };
         }
 
+        // GOD MODE: Bypass for Builder
+        if (await this.isBuilderAccount()) {
+            return { allowed: true, remainingBudget: Infinity, requiresApproval: false };
+        }
+
         const tier = await this.getCurrentTier();
         const limits = this.getLimits(tier);
         const usage = await this.getDailyUsage(userId);
@@ -394,14 +422,8 @@ class MembershipServiceImpl {
         }
 
         // GOD MODE: Bypass for Builder
-        try {
-            const { useStore } = await import('@/core/store');
-            const email = useStore.getState().userProfile?.email;
-            if (email === 'the.walking.agency.det@gmail.com') {
-                return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
-            }
-        } catch (_e: unknown) {
-            // Ignore
+        if (await this.isBuilderAccount()) {
+            return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
         }
 
         const tier = await this.getCurrentTier();

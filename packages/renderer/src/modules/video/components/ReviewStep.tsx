@@ -130,7 +130,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
             <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-800">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-white">Ingredients (Character/Style Reference)</h3>
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Veo 3.1</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-wider">AI Video</span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">

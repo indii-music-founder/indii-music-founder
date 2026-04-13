@@ -66,7 +66,7 @@ const AudioAnalyzer: React.FC = () => {
         try {
             const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
 
-            // This runs the full local physics (essentia) + remote deep thinking (Gemini 3 Pro)
+            // This runs the full local audio analysis + remote AI deep analysis
             const resultProfile = await audioIntelligence.analyze(audioFile);
 
             // Populate tags from the semantic output
@@ -85,7 +85,7 @@ const AudioAnalyzer: React.FC = () => {
         } catch (error: unknown) {
             logger.error("Deep Extraction Failed", error);
             toast.dismiss(extractToastId);
-            toast.error("Deep Extraction failed. Gemini 3 limits or connectivity issues detected.");
+            toast.error("Deep Extraction failed. AI service limits or connectivity issues detected.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -143,7 +143,7 @@ const AudioAnalyzer: React.FC = () => {
                                         <ShieldCheck className="text-green-400" size={24} />
                                         Ingestion & Data Extraction
                                     </h2>
-                                    <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via Essentia + Gemini 3 Pro.</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via AI-powered acoustic analysis.</p>
                                 </div>
                                 <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
                                     {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
@@ -194,7 +194,7 @@ const AudioAnalyzer: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Gemini 3 Pro Deep Analysis & DDEX */}
+                            {/* AI Deep Analysis & DDEX */}
                             {profile && (
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-5 duration-600">
 

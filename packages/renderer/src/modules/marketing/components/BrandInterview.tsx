@@ -252,7 +252,7 @@ const BrandInterview: React.FC = () => {
                         accept="image/*,audio/*,.mp3,.wav,.flac,.pdf,text/*"
                     />
                     <p className="mt-2 text-[9px] text-gray-600 font-bold uppercase tracking-[0.15em] text-center">
-                        Secure Interview • AI-Powered by Gemini 3 Pro
+                        Secure Interview • AI-Powered Analysis
                     </p>
                 </div>
             </div>

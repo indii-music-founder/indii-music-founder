@@ -292,7 +292,7 @@ export default function OnboardingPage() {
                                 className="hidden"
                                 accept="image/*,audio/*,.mp3,.wav,.flac,.pdf,text/*"
                             />
-                            <p className="mt-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest text-center lg:text-left ml-2">Secure AI Workspace • Gemini 3 Pro 2M Enabled</p>
+                            <p className="mt-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest text-center lg:text-left ml-2">Secure AI Workspace • Advanced AI Engine</p>
                         </div>
                     </div>
                 </main>

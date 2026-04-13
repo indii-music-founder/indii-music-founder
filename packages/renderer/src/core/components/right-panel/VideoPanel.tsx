@@ -230,7 +230,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                         </div>
                     )}
 
-                    {/* Veo 3.1 Character Consistency */}
+                    {/* Character Consistency */}
                     <CharacterLibrary />
 
                     {/* Advanced Controls Group */}
@@ -352,7 +352,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                 onClick={() => setStudioControls({ thinking: !studioControls.thinking })}>
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-bold text-dept-creative tracking-wider flex items-center gap-2">
-                                        DEEP THINKING (GEMINI 3)
+                                        DEEP THINKING
                                     </label>
                                     <p className="text-[9px] text-gray-500 leading-tight">Apply advanced physics & continuity reasoning before rendering.</p>
                                 </div>

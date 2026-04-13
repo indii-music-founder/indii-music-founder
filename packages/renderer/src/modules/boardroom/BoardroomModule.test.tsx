@@ -2,7 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
+// ── Mock Element.scrollTo (not implemented in jsdom) ─────────────
+// BoardroomConversationPanel calls scrollRef.current.scrollTo() which
+// doesn't exist in the jsdom environment.
+Element.prototype.scrollTo = vi.fn();
+
 // ── Mocks ────────────────────────────────────────────────────────
+// Mock the ChatMessage component (used by MessageFeed)
+vi.mock('@/core/components/chat/ChatMessage', () => ({
+    ChatMessage: ({ msg }: { msg: { id: string; text: string } }) => (
+        <div data-testid={`chat-message-${msg.id}`}>{msg.text}</div>
+    ),
+}));
+
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
     motion: {
@@ -28,13 +40,6 @@ function filterDomProps(props: Record<string, unknown>): Record<string, unknown>
     return filtered;
 }
 
-// Mock the ChatMessage component
-vi.mock('@/core/components/chat/ChatMessage', () => ({
-    ChatMessage: ({ msg }: { msg: { id: string; text: string } }) => (
-        <div data-testid={`chat-message-${msg.id}`}>{msg.text}</div>
-    ),
-}));
-
 // Mock the Tooltip components
 vi.mock('@/components/ui/tooltip', () => ({
     TooltipProvider: ({ children }: React.PropsWithChildren) => <>{children}</>,
@@ -43,6 +48,21 @@ vi.mock('@/components/ui/tooltip', () => ({
         return <div>{children}</div>;
     },
     TooltipContent: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
+}));
+
+// Mock useMobile to return desktop mode by default
+vi.mock('@/hooks/useMobile', () => ({
+    useMobile: () => ({ isAnyPhone: false, isMobile: false }),
+}));
+
+// Mock agent registry for BoardroomConversationPanel's resolveAgentIdentity
+vi.mock('@/services/agent/registry', () => ({
+    agentRegistry: {
+        getAll: vi.fn(() => [
+            { id: 'marketing', name: 'Marketing Agent', color: '#FFE135' },
+            { id: 'finance', name: 'Finance Agent', color: '#4B0082' },
+        ]),
+    },
 }));
 
 // Store mock state
@@ -75,6 +95,7 @@ describe('BoardroomModule', () => {
             activeAgents: [],
             boardroomMessages: [],
             toggleAgent: vi.fn(),
+            setBoardroomMode: vi.fn(),
         };
     });
 
@@ -91,8 +112,12 @@ describe('BoardroomModule', () => {
 
     it('shows the empty state when no messages exist', () => {
         render(<BoardroomModule />);
-        expect(screen.getByText('Awaiting your brief...')).toBeInTheDocument();
-        expect(screen.getByText('Boardroom Active')).toBeInTheDocument();
+        // BoardroomConversationPanel renders "Awaiting discussion..." when empty
+        expect(screen.getByText('Awaiting discussion...')).toBeInTheDocument();
+        // BoardroomTable renders "Drag agents to the table to begin" when activeCount is 0
+        expect(screen.getByText('Drag agents to the table to begin')).toBeInTheDocument();
+        // Top bar renders "Boardroom HQ"
+        expect(screen.getByText('Boardroom HQ')).toBeInTheDocument();
     });
 
     it('shows messages when boardroomMessages is populated', () => {
@@ -102,9 +127,11 @@ describe('BoardroomModule', () => {
         ];
 
         render(<BoardroomModule />);
-        expect(screen.getByTestId('chat-message-msg-1')).toBeInTheDocument();
-        expect(screen.getByTestId('chat-message-msg-2')).toBeInTheDocument();
-        expect(screen.queryByText('Awaiting your brief...')).not.toBeInTheDocument();
+        // BoardroomConversationPanel renders message text directly (not via ChatMessage)
+        expect(screen.getByText('Hello from marketing')).toBeInTheDocument();
+        expect(screen.getByText('Finance agrees')).toBeInTheDocument();
+        // The empty state text should NOT be present
+        expect(screen.queryByText('Awaiting discussion...')).not.toBeInTheDocument();
     });
 });
 
@@ -125,27 +152,30 @@ describe('MessageFeed', () => {
         ];
 
         render(<MessageFeed messages={messages} />);
-        expect(screen.getByTestId('chat-message-a')).toHaveTextContent('First message');
-        expect(screen.getByTestId('chat-message-b')).toHaveTextContent('Second message');
+        expect(screen.getByText('First message')).toBeInTheDocument();
+        expect(screen.getByText('Second message')).toBeInTheDocument();
     });
 
     it('renders nothing when messages array is empty', () => {
         const { container } = render(<MessageFeed messages={[]} />);
-        expect(container.querySelector('[data-testid^="chat-message"]')).toBeNull();
+        // No message text should be present
+        expect(container.textContent).toBe('');
     });
 });
 
 describe('BoardroomTable', () => {
-    it('renders the empty state when no messages exist', () => {
-        render(<BoardroomTable messages={[]} />);
-        expect(screen.getByText('Awaiting your brief...')).toBeInTheDocument();
+    it('shows "Drag agents" prompt when no agents are active', () => {
+        render(<BoardroomTable messages={[]} activeCount={0} />);
+        expect(screen.getByText('Drag agents to the table to begin')).toBeInTheDocument();
     });
 
-    it('renders the message feed when messages exist', () => {
+    it('shows agent count when agents are seated', () => {
         const messages = [
             { id: 'x', role: 'model' as const, text: 'Table message', timestamp: Date.now() },
         ];
-        render(<BoardroomTable messages={messages} />);
-        expect(screen.getByTestId('chat-message-x')).toHaveTextContent('Table message');
+        render(<BoardroomTable messages={messages} activeCount={2} />);
+        // BoardroomTable is now a pure visual ornament — it shows the status indicator
+        expect(screen.getByText('2 Agents Seated')).toBeInTheDocument();
+        expect(screen.getByText(/1 exchange/)).toBeInTheDocument();
     });
 });

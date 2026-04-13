@@ -6,7 +6,7 @@ import { BaseAgent } from '../BaseAgent';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
-import type { WhiskState } from '@/core/store/slices/creative';
+import type { WhiskState as _WhiskState } from '@/core/store/slices/creative';
 import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
 
 /**
@@ -195,9 +195,10 @@ EXECUTION RULES:
         this.functions = TOOL_REGISTRY;
         this.tools = this.buildToolDeclarations();
 
-        // Freeze the configuration after it's build to prevent mutation
-        const { freezeAgentConfig } = await import('../FreezeDiagnostic');
-        freezeAgentConfig(this);
+        // NOTE: freezeAgentConfig was removed here. It deep-froze `this.tools` (and `this` itself),
+        // which caused "Cannot assign to read only property 'parameters'" errors when the Firebase
+        // SDK tried to normalize tool declarations during getGenerativeModel(). The SDK expects
+        // mutable tool objects. Tool integrity is now protected by per-iteration cloning below.
     }
 
 
@@ -514,8 +515,19 @@ CURRENT REQUEST: ${task}
             }
 
             try {
-                // DEBUG: Log tool declarations being sent to model
-                const _toolCount = this.tools?.[0]?.functionDeclarations?.length || 0;
+                // Build a fresh deep-clone of tools on EACH iteration.
+                // The Firebase SDK's getGenerativeModel() may freeze tool objects internally.
+                // Without cloning, the second iteration would fail with:
+                //   "Cannot assign to read only property 'parameters' of object '#<Object>'"
+                const iterationTools: ToolDefinition[] = this.tools.map(toolGroup => ({
+                    functionDeclarations: toolGroup.functionDeclarations?.map(fn => ({
+                        name: fn.name,
+                        description: fn.description,
+                        parameters: typeof structuredClone === 'function'
+                            ? structuredClone(fn.parameters)
+                            : JSON.parse(JSON.stringify(fn.parameters))
+                    }))
+                }));
 
                 const { stream, response: responsePromise } = await AI.generateContentStream(
                     [{
@@ -532,7 +544,7 @@ CURRENT REQUEST: ${task}
                         ...AI_CONFIG.THINKING.HIGH
                     },
                     undefined,
-                    this.tools as Parameters<typeof AI.generateContentStream>[4],
+                    iterationTools as Parameters<typeof AI.generateContentStream>[4],
                     { signal }
                 );
 

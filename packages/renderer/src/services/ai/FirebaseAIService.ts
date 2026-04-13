@@ -399,13 +399,19 @@ export class FirebaseAIService implements AIContext {
                                 }
                             }
 
-                            // Deep clone tools to prevent SDK from freezing the caller's array across iterations
+                            // Deep clone tools to prevent SDK from freezing the caller's array across iterations.
+                            // CRITICAL: The catch path must NOT fall back to the original `tools` reference,
+                            // because those objects may already be frozen from a previous SDK call.
                             let clonedTools: Tool[] | undefined = undefined;
                             if (tools) {
                                 try {
-                                    clonedTools = JSON.parse(JSON.stringify(tools));
+                                    clonedTools = typeof structuredClone === 'function'
+                                        ? structuredClone(tools)
+                                        : JSON.parse(JSON.stringify(tools));
                                 } catch (_e) {
-                                    clonedTools = tools;
+                                    // Last resort: manually reconstruct to avoid passing frozen objects
+                                    logger.warn('[FirebaseAIService] Tool clone failed, reconstructing manually');
+                                    clonedTools = JSON.parse(JSON.stringify(tools));
                                 }
                             }
 
@@ -433,7 +439,7 @@ export class FirebaseAIService implements AIContext {
                             } catch (error: unknown) {
                                 if (isAppCheckError(error) && !this.useFallbackMode) {
                                     await this.triggerGlobalFallback();
-                                    return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
+                                    return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, clonedTools || tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                                 }
                                 throw this.handleError(error);
                             }
@@ -597,11 +603,24 @@ export class FirebaseAIService implements AIContext {
                         }
                     }
 
+                    // Deep clone tools to prevent SDK from freezing the caller's objects
+                    let clonedStreamTools: Tool[] | undefined = undefined;
+                    if (tools) {
+                        try {
+                            clonedStreamTools = typeof structuredClone === 'function'
+                                ? structuredClone(tools)
+                                : JSON.parse(JSON.stringify(tools));
+                        } catch (_e) {
+                            logger.warn('[FirebaseAIService] Stream tool clone failed, reconstructing');
+                            clonedStreamTools = JSON.parse(JSON.stringify(tools));
+                        }
+                    }
+
                     const modelOptions: Record<string, unknown> = {
                         model: modelName,
                         generationConfig: mergedConfig,
                         systemInstruction,
-                        tools,
+                        tools: clonedStreamTools,
                         toolConfig: options?.toolConfig,
                         safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                     };
@@ -1018,6 +1037,29 @@ export class FirebaseAIService implements AIContext {
         // Service Availability
         if (msg.includes('503') || msg.includes('500') || lowerMsg.includes('service unavailable') || lowerMsg.includes('overloaded') || lowerMsg.includes('internal error')) {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
+        }
+
+        // @google/genai ApiError — check HTTP status code directly
+        const httpStatus = (error as { status?: number })?.status;
+        if (httpStatus === 404) {
+            return new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'AI Model Not Found — the requested model is not available on this API endpoint. Check model configuration.',
+                { retryable: false, originalError: msg }
+            );
+        }
+        if (httpStatus === 400) {
+            return new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                `AI Bad Request — invalid model or request configuration. ${msg}`,
+                { retryable: false, originalError: msg }
+            );
+        }
+        if (httpStatus === 429) {
+            return new AppException(AppErrorCode.RATE_LIMITED, 'AI Rate Limit Exceeded', { retryable: true });
+        }
+        if (httpStatus === 503 || httpStatus === 500) {
+            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable', { retryable: true });
         }
 
         return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`, { retryable: false });

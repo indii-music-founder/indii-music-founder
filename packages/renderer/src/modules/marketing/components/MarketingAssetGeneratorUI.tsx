@@ -263,7 +263,7 @@ export default function MarketingAssetGeneratorUI() {
                                 </div>
                                 <h2 className="text-2xl font-black text-white mb-3">Synthesizing Visuals</h2>
                                 <p className="text-gray-400 text-center max-w-sm">
-                                    Rendering highly-detailed frames synced with your audio using Veo 3.1. This normally takes a few minutes via background job...
+                                    Rendering highly-detailed frames synced with your audio. This normally takes a few minutes via background job...
                                 </p>
                             </motion.div>
                         )}

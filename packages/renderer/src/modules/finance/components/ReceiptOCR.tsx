@@ -84,7 +84,7 @@ export function ReceiptOCR() {
         setExtracted(null);
 
         try {
-            // Read the file as base64 for Gemini Vision
+            // Read the file as base64 for AI Vision analysis
             const base64 = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => {
@@ -98,7 +98,7 @@ export function ReceiptOCR() {
 
             const mimeType = uploadedFile.type || 'image/jpeg';
 
-            // Call Gemini Vision via @google/genai
+            // Call AI Vision service for receipt analysis
             const { GoogleGenAI } = await import('@google/genai');
             const apiKey = import.meta.env.VITE_API_KEY;
             if (!apiKey) {
@@ -178,7 +178,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`,
                 </div>
                 <div>
                     <h2 className="text-sm font-bold text-white">Receipt OCR</h2>
-                    <p className="text-[10px] text-gray-500">Powered by Gemini Vision</p>
+                    <p className="text-[10px] text-gray-500">AI-Powered Vision Analysis</p>
                 </div>
             </div>
 
@@ -245,7 +245,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`,
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-sm transition-colors disabled:opacity-60 border border-emerald-500/20"
                 >
                     <Scan size={16} className={isAnalyzing ? 'animate-spin' : ''} />
-                    {isAnalyzing ? 'Analyzing with Gemini Vision…' : 'Analyze with Gemini Vision'}
+                    {isAnalyzing ? 'Analyzing with AI Vision…' : 'Analyze with AI Vision'}
                 </motion.button>
             )}
 
@@ -263,7 +263,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`,
                                 <Scan size={16} className="text-emerald-400 animate-spin" />
                             </div>
                             <div>
-                                <p className="text-xs font-bold text-white">Gemini Vision processing…</p>
+                                <p className="text-xs font-bold text-white">AI Vision processing…</p>
                                 <p className="text-[10px] text-gray-500">Extracting merchant, amount, date, and category</p>
                             </div>
                         </div>

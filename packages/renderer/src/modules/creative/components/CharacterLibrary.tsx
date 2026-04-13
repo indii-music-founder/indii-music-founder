@@ -71,7 +71,7 @@ export const CharacterLibrary: React.FC = () => {
 
         // --- Guard: Max references ---
         if (currentRefCount >= 3) {
-            toast.error("Maximum 3 character references allowed for Veo 3.1.");
+            toast.error("Maximum 3 character references allowed.");
             return false;
         }
 
@@ -248,7 +248,7 @@ export const CharacterLibrary: React.FC = () => {
             )}
             <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-gray-400 tracking-wider flex items-center gap-2">
-                    <User size={14} className="text-blue-400" /> VEO 3.1 CHARACTER PROFILES
+                    <User size={14} className="text-blue-400" /> CHARACTER PROFILES
                 </label>
                 <div className="text-[10px] font-medium text-gray-600">
                     {characterReferences.length}/3 IMAGES
@@ -396,7 +396,7 @@ export const CharacterLibrary: React.FC = () => {
 
             {characterReferences.length > 0 && (
                 <div className="text-[10px] text-gray-500 italic leading-snug">
-                    These images will enforce strict character consistency in your next Veo 3.1 generation. Combine different angles for better structural accuracy.
+                    These images will enforce strict character consistency in your next video generation. Combine different angles for better structural accuracy.
                 </div>
             )}
 

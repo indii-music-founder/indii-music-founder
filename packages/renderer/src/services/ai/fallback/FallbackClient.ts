@@ -17,18 +17,54 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
 
 /**
- * Vertex AI endpoint URLs (projects/.../endpoints/...) cannot be resolved by the
- * Gemini Developer API fallback client. When the primary Firebase AI path is
- * unavailable, fall back to the base agent model so the call succeeds.
+ * Model name mapping for the Gemini Developer API fallback path.
+ *
+ * Some model IDs (e.g. gemini-3-pro-preview) are only available via Vertex AI
+ * or Firebase AI SDK endpoints. When we fall back to the direct @google/genai
+ * SDK (generativelanguage.googleapis.com), we must translate these to model
+ * IDs that the Developer API actually supports.
+ *
+ * This map is the ONLY place where fallback model resolution lives.
+ * Update it whenever new preview models are added or old ones stabilize.
+ */
+const DEVELOPER_API_MODEL_MAP: Record<string, string> = {
+    // Gemini 3 preview → Developer API stable equivalents
+    'gemini-3-pro-preview': 'gemini-2.5-pro',
+    'gemini-3-flash-preview': 'gemini-2.5-flash',
+    'gemini-3-pro-image-preview': 'gemini-2.5-pro',
+    'gemini-3.1-flash-image-preview': 'gemini-2.5-flash',
+};
+
+/**
+ * Resolves a model name to one that works on the Gemini Developer API.
+ *
+ * Handles three cases:
+ *   1. Vertex AI endpoint URLs (projects/.../endpoints/...) → base agent model
+ *   2. Preview model names not available on Developer API → mapped equivalent
+ *   3. Already-valid Developer API model names → passed through unchanged
  */
 function resolveModelForFallback(modelName: string): string {
+    // Case 1: Vertex AI fine-tuned endpoint URLs
     if (modelName.startsWith('projects/') && modelName.includes('/endpoints/')) {
         logger.warn(
             '[FallbackClient] Fine-tuned Vertex endpoint cannot be used via Gemini API fallback. ' +
             `Falling back to base model. Endpoint: ${modelName}`
         );
-        return AI_MODELS.TEXT.AGENT;
+        // Resolve recursively in case the base model itself needs mapping
+        return resolveModelForFallback(AI_MODELS.TEXT.AGENT);
     }
+
+    // Case 2: Preview model names that don't exist on the Developer API
+    const mapped = DEVELOPER_API_MODEL_MAP[modelName];
+    if (mapped) {
+        logger.info(
+            `[FallbackClient] Model "${modelName}" is not available on the Developer API. ` +
+            `Using fallback model "${mapped}" instead.`
+        );
+        return mapped;
+    }
+
+    // Case 3: Model name is already valid for the Developer API
     return modelName;
 }
 import { auth } from '@/services/firebase';
@@ -147,6 +183,18 @@ export async function generateWithFallback(
             } as unknown as GenerateContentResponse
         } as GenerateContentResult;
     } catch (error: unknown) {
+        // DIAGNOSTIC: Log the raw SDK error before any wrapping
+        const rawMsg = error instanceof Error ? error.message : String(error);
+        const rawStack = error instanceof Error ? error.stack : undefined;
+        const rawStatus = (error as { status?: number })?.status;
+        const rawCode = (error as { code?: string | number })?.code;
+        logger.error('[FallbackClient] generateContent FAILED:', {
+            model: resolveModelForFallback(modelName),
+            rawMessage: rawMsg,
+            status: rawStatus,
+            code: rawCode,
+            stack: rawStack?.split('\n').slice(0, 3).join('\n'),
+        });
         if (handleError) {
             throw handleError(error);
         }

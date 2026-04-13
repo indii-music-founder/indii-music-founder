@@ -1,7 +1,6 @@
 import { BaseAgent } from './BaseAgent';
 import { z } from 'zod';
 import { FunctionDeclaration } from './types';
-import { freezeAgentConfig } from './FreezeDiagnostic';
 import { secureRandomInt } from '@/utils/crypto-random';
 
 /**
@@ -673,8 +672,5 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                 }
             }
         });
-
-        // Finalize and freeze the configuration to prevent runtime mutations
-        freezeAgentConfig(this);
     }
 }

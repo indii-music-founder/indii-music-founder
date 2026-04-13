@@ -71,7 +71,10 @@ export class AgentService {
         forcedAgentId?: string,
         options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api' }
     ): Promise<void> {
-        if (this.isProcessing) return;
+        if (this.isProcessing) {
+            logger.warn('[AgentService] sendMessage blocked: already processing');
+            return;
+        }
         this.isProcessing = true;
 
         // Ensure agents are warmed up before processing (non-blocking if already done)
@@ -101,10 +104,13 @@ export class AgentService {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
         const isBoardroomMode = state.isBoardroomMode;
+        logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
 
         if (isBoardroomMode) {
+
             useStore.getState().addBoardroomMessage(userMsg);
         } else {
+
             useStore.getState().addAgentMessage(userMsg);
         }
 
@@ -288,20 +294,23 @@ export class AgentService {
         forcedAgentId?: string
     ): Promise<void> {
         const { useStore } = await import('@/core/store');
-        const { updateAgentMessage, activeAgentProvider } = useStore.getState();
+        const state = useStore.getState();
+        const { updateAgentMessage, activeAgentProvider } = state;
+        const isBoardroomMode = state.isBoardroomMode;
 
-        // 0. Direct Chat: Bypass all orchestration, talk straight to the LLM
-        if (activeAgentProvider === 'direct') {
-            await this.handleDirectChatFlow(text, attachments, context, responseId);
+        // 0. Boardroom Multi-Dispatch — MUST be checked FIRST.
+        // The "direct" provider check used to run before this, which hijacked
+        // all boardroom messages into the regular chat flow (causing empty responses).
+        if (isBoardroomMode) {
+            logger.debug('[AgentService] Routing to boardroom multi-dispatch flow');
+            await this.handleBoardroomMultiDispatchFlow(text, attachments, context, responseId);
             return;
         }
 
-        const state = useStore.getState();
-        const isBoardroomMode = state.isBoardroomMode;
-
-        // Boardroom Multi-Dispatch
-        if (isBoardroomMode) {
-            await this.handleBoardroomMultiDispatchFlow(text, attachments, context, responseId);
+        // 1. Direct Chat: Bypass all orchestration, talk straight to the LLM
+        if (activeAgentProvider === 'direct') {
+            logger.debug('[AgentService] Routing to direct chat flow');
+            await this.handleDirectChatFlow(text, attachments, context, responseId);
             return;
         }
 
@@ -395,8 +404,10 @@ export class AgentService {
         const state = useStore.getState();
         const activeAgents = state.activeAgents && state.activeAgents.length > 0 ? state.activeAgents : [];
         const referencedAssets = state.referencedAssets || [];
+        logger.debug('[AgentService] Boardroom dispatch:', { agentCount: activeAgents.length, agents: activeAgents });
 
         if (activeAgents.length === 0) {
+            logger.warn('[AgentService] Boardroom: No active agents seated');
             useStore.getState().updateBoardroomMessage(initialResponseId, {
                 agentId: 'system',
                 text: '*(Please drag at least one agent onto the table to begin the discussion.)*',
@@ -434,6 +445,7 @@ export class AgentService {
             let currentStreamedText = '';
 
             try {
+                logger.debug(`[AgentService] Boardroom: executing agent ${agentId}`);
                 const result = await this.executor.execute(
                     agentId,
                     enhancedText,
@@ -441,9 +453,11 @@ export class AgentService {
                     (event) => {
                         if (event.type === 'token') {
                             currentStreamedText += event.content;
+
                             useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
                         }
                         if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
+
                             const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
                             const newThought: AgentThought = {
                                 id: uuidv4(),
@@ -467,6 +481,8 @@ export class AgentService {
                     attachments
                 );
 
+                logger.debug(`[AgentService] Boardroom: agent ${agentId} responded (${result?.text?.length || 0} chars)`);
+
                 if (result && result.text) {
                     useStore.getState().updateBoardroomMessage(resId, {
                         text: result.text,
@@ -474,12 +490,22 @@ export class AgentService {
                         isStreaming: false
                     });
                 } else {
-                    const hasToolCalls = result && result.toolCalls && result.toolCalls.length > 0;
-                    useStore.getState().updateBoardroomMessage(resId, {
-                        text: hasToolCalls ? '*(Executed tasks but provided no summary.)*' : '*(No observations or actions required from this department.)*',
-                        thoughtSignature: result?.thoughtSignature,
-                        isStreaming: false
-                    });
+                    logger.warn(`[AgentService] Boardroom: No result.text for ${agentId}, using streamed text (${currentStreamedText.length} chars)`);
+                    // If we streamed text but result.text is empty, USE the streamed text
+                    if (currentStreamedText.length > 0) {
+                        useStore.getState().updateBoardroomMessage(resId, {
+                            text: currentStreamedText,
+                            thoughtSignature: result?.thoughtSignature,
+                            isStreaming: false
+                        });
+                    } else {
+                        const hasToolCalls = result && result.toolCalls && result.toolCalls.length > 0;
+                        useStore.getState().updateBoardroomMessage(resId, {
+                            text: hasToolCalls ? '*(Executed tasks but provided no summary.)*' : '*(No observations or actions required from this department.)*',
+                            thoughtSignature: result?.thoughtSignature,
+                            isStreaming: false
+                        });
+                    }
                 }
             } catch (err) {
                 logger.error(`[AgentService] Boardroom dispatch failed for agent ${agentId}:`, err);

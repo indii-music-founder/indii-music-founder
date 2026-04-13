@@ -395,9 +395,5 @@ When a request falls outside education scope:
                 };
             }
         };
-
-        import('../FreezeDiagnostic').then(({ freezeAgentConfig }) => {
-            freezeAgentConfig(this);
-        });
     }
 }

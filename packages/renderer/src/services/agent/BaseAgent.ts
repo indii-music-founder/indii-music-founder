@@ -392,15 +392,25 @@ export class BaseAgent implements SpecializedAgent {
             }
         );
 
-        const allTools: ToolDefinition[] = allFunctions.length > 0
-            ? [{
+        // IMPORTANT: Tools must be deep-cloned on EACH iteration because the Firebase/Gemini
+        // SDK freezes (Object.freeze) tool declaration objects after the first getGenerativeModel() call.
+        // Reusing frozen objects on subsequent iterations causes:
+        //   "Cannot assign to read only property 'parameters' of object '#<Object>'"
+        // Solution: Build a fresh deep-clone inside the loop (see below).
+        const buildToolsSnapshot = (): ToolDefinition[] => {
+            if (allFunctions.length === 0) return [];
+            return [{
                 functionDeclarations: allFunctions.map(fn => ({
                     name: fn.name,
                     description: fn.description,
-                    parameters: JSON.parse(JSON.stringify(fn.parameters))
+                    // structuredClone produces a fully mutable deep copy, immune to SDK freezing.
+                    // Falls back to JSON round-trip for environments without structuredClone.
+                    parameters: typeof structuredClone === 'function'
+                        ? structuredClone(fn.parameters)
+                        : JSON.parse(JSON.stringify(fn.parameters))
                 }))
-            }]
-            : [];
+            }];
+        };
 
         const _accumulatedResponse = '';
         let iterations = 0;
@@ -428,15 +438,26 @@ export class BaseAgent implements SpecializedAgent {
 
         try {
             while (iterations < MAX_ITERATIONS) {
-                // LEDGER: Circuit Breaker - Check Budget before execution
+                // LEDGER: Circuit Breaker - Check daily spend limit before execution
                 const budgetCheck = await MembershipService.checkBudget(0);
                 if (!budgetCheck.allowed) {
-                    logger.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
-                    // executionContext.rollback() is already synchronous, but for consistency if we ever make it async:
+                    const tier = await MembershipService.getCurrentTier();
+                    const tierName = MembershipService.getTierDisplayName(tier);
+                    const limits = MembershipService.getLimits(tier);
+                    logger.warn(
+                        `[BaseAgent] Daily spend limit reached in ${this.id}. ` +
+                        `Tier: ${tierName}, Max: $${limits.maxDailySpend.toFixed(2)}/day, ` +
+                        `Remaining: $${budgetCheck.remainingBudget.toFixed(2)}`
+                    );
                     executionContext.rollback();
                     return {
-                        text: 'Task halted: Budget exceeded.',
-                        error: 'Budget exceeded',
+                        text: `Task paused: You've reached your daily AI spend limit ` +
+                              `($${limits.maxDailySpend.toFixed(2)}/day on the ${tierName} plan). ` +
+                              `Your budget resets at midnight UTC. ` +
+                              (tier === 'free' ? 'Upgrade to Pro for a $10/day limit.' :
+                               tier === 'pro' ? 'Upgrade to Founder for a $500/day limit.' :
+                               'Contact support if you need a higher limit.'),
+                        error: 'Daily spend limit reached',
                         toolCalls
                     };
                 }
@@ -481,12 +502,15 @@ export class BaseAgent implements SpecializedAgent {
                     logger.info(`[${this.id}] Using fine-tuned endpoint: ${this.modelId}`);
                 }
 
+                // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
+                const iterationTools = buildToolsSnapshot();
+
                 const result = await GenAI.generateContent(
                     requestContents,
                     resolvedModel, // modelOverride — fine-tuned or base
                     { ...AI_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
-                    allTools as unknown as Parameters<import('@/services/ai/FirebaseAIService').FirebaseAIService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
+                    iterationTools as unknown as Parameters<import('@/services/ai/FirebaseAIService').FirebaseAIService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
                     { thoughtSignature: currentThoughtSignature } // options
                 );
 

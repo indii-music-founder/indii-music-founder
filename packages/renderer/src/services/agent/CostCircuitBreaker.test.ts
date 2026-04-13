@@ -20,7 +20,9 @@ vi.mock('@/services/MembershipService', () => ({
         checkBudget: vi.fn(() => Promise.resolve({ allowed: true })),
         recordSpend: vi.fn().mockResolvedValue(true),
         getCurrentUserId: vi.fn().mockResolvedValue('ledger-test-user'),
-        getCurrentTier: vi.fn().mockResolvedValue('free')
+        getCurrentTier: vi.fn().mockResolvedValue('free'),
+        getTierDisplayName: vi.fn().mockReturnValue('Free'),
+        getLimits: vi.fn().mockReturnValue({ maxDailySpend: 1.0 })
     }
 }));
 
@@ -142,8 +144,8 @@ describe('BaseAgent Cost Circuit Breaker', () => {
 
         // Assertions
         expect(MembershipService.checkBudget).toHaveBeenCalledTimes(3);
-        expect(response.error).toContain('Budget exceeded');
-        expect(response.text).toContain('halted');
+        expect(response.error).toContain('Daily spend limit reached');
+        expect(response.text).toContain('paused');
 
         expect(AI.generateContent).toHaveBeenCalledTimes(2);
     });
