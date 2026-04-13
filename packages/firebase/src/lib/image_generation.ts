@@ -130,7 +130,7 @@ class GeminiImageService {
                         responseModalities: ["IMAGE"],
                         imageConfig: {
                             aspectRatio: data.aspectRatio || "1:1",
-                                        imageSize: data.imageSize || (data as any).resolution || "2K"
+                                                    imageSize: (data.imageSize || (data as any).resolution || "2K").toUpperCase()
                         }
                     } as unknown as Record<string, unknown>
                 });
