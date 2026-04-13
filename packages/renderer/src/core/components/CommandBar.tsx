@@ -14,17 +14,17 @@ import { getDepartmentCssVar } from '@/core/theme/moduleColors';
  */
 const getPositionStyle = (
     position: 'left' | 'center' | 'right',
-    isCollapsed: boolean
+    _isCollapsed: boolean
 ) => {
-    const barWidth = isCollapsed ? 48 : 672;
+    // Width is now CSS-driven (w-[42rem] max-w-[...]) instead of hardcoded pixels.
+    // This prevents the "mega-size" bug when expanding from collapsed state.
 
     switch (position) {
         case 'left':
             return { left: 32, right: 'auto' as const, x: 0 };
         case 'right':
-            // Position from the right — use CSS `right` via className, but for Framer 
-            // Motion animation we need `left` in pixels. We'll use a calc approach.
-            return { left: `calc(100vw - ${barWidth + 32}px)`, right: 'auto' as const, x: 0 };
+            // Right-anchored: tighter edge alignment for boardroom
+            return { left: 'auto' as const, right: 16, x: 0 };
         case 'center':
         default:
             return { left: '50%', right: 'auto' as const, x: '-50%' };
@@ -36,7 +36,6 @@ function CommandBar() {
         isCommandBarDetached,
         isCommandBarCollapsed,
         setCommandBarCollapsed,
-        isAgentOpen,
         currentModule,
         commandBarPosition,
         isBoardroomMode
@@ -45,7 +44,6 @@ function CommandBar() {
             isCommandBarDetached: state.isCommandBarDetached,
             isCommandBarCollapsed: state.isCommandBarCollapsed,
             setCommandBarCollapsed: state.setCommandBarCollapsed,
-            isAgentOpen: state.isAgentOpen,
             currentModule: state.currentModule,
             commandBarPosition: state.commandBarPosition,
             isBoardroomMode: state.isBoardroomMode,
@@ -64,9 +62,11 @@ function CommandBar() {
 
     const shouldShow = true;
 
-    // Force center position if in boardroom mode
-    const activePosition = isBoardroomMode ? 'center' : commandBarPosition;
-    const posStyle = getPositionStyle(activePosition, isCommandBarCollapsed);
+    // In boardroom mode: lock to right position, prevent collapse
+    const activePosition = isBoardroomMode ? 'right' : commandBarPosition;
+    // Boardroom mode never collapses — ignore stale collapsed state
+    const effectiveCollapsed = isBoardroomMode ? false : isCommandBarCollapsed;
+    const posStyle = getPositionStyle(activePosition, effectiveCollapsed);
 
     // Module-aware orb color: use CSS variable from the department color system
     const orbColor = getDepartmentCssVar(currentModule);
@@ -79,14 +79,16 @@ function CommandBar() {
             bottom: '2rem',
             top: 'auto',
             left: posStyle.left,
+            right: posStyle.right,
             x: posStyle.x,
             y: 0,
-            width: isCommandBarCollapsed ? 48 : 672,
+            // Don't hardcode width for expanded state — let CSS max-width handle it
+            ...(effectiveCollapsed ? { width: 48 } : {}),
         },
         detached: {
             opacity: 1,
             scale: 1,
-            width: isCommandBarCollapsed ? 48 : 672,
+            ...(effectiveCollapsed ? { width: 48 } : {}),
         }
     };
 
@@ -112,16 +114,18 @@ function CommandBar() {
                     dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
                     className={cn(
                         "fixed z-[500] flex items-center justify-center",
-                        isCommandBarDetached ? "cursor-move top-[80%] left-1/2" : "bottom-8"
+                        isCommandBarDetached ? "cursor-move top-[80%] left-1/2" : "bottom-8",
+                        // In boardroom mode, use right-anchored positioning via CSS
+                        isBoardroomMode && !isCommandBarDetached && "!left-auto right-4"
                     )}
                 >
                     <div className={cn(
                         "pointer-events-auto transition-all duration-300",
-                        isCommandBarCollapsed
+                        effectiveCollapsed
                             ? "w-12 h-12 flex items-center justify-center"
-                            : "w-full max-w-[calc(100vw-4rem)]"
+                            : "w-[42rem] max-w-[calc(100vw-4rem)]"
                     )}>
-                        {isCommandBarCollapsed ? (
+                        {effectiveCollapsed ? (
                             <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
