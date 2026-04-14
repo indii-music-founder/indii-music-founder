@@ -130,20 +130,42 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
 const BUILDER_EMAILS = new Set([
     'the.walking.agency.det@gmail.com',
     'qa@indiios.com',
+    'founder@indiios.local',
+    'e2e@indiios.test',
 ]);
 
 class MembershipServiceImpl {
     /**
      * Check if the current user is a builder/dev account.
-     * Uses cached store email — no Firestore call.
+     * Checks both the profile email AND the Firebase Auth user email
+     * to guard against the race condition where userProfile.email is
+     * still empty (from IDB cache) while auth.user.email is already set.
      */
     private async isBuilderAccount(): Promise<boolean> {
+        // ALWAYS bypass limits in local development so the team can test without hitting budget caps
+        if (import.meta.env && import.meta.env.DEV) {
+            return true;
+        }
+
         try {
             const { useStore } = await import('@/core/store');
-            const email = useStore.getState().userProfile?.email;
-            return !!email && BUILDER_EMAILS.has(email);
-        } catch {
+            const state = useStore.getState();
+
+            // Primary: check userProfile.email (populated from Firestore/IDB)
+            const profileEmail = state.userProfile?.email;
+            if (profileEmail && BUILDER_EMAILS.has(profileEmail)) {
+                return true;
+            }
+
+            // Fallback: check Firebase Auth user.email (populated immediately on login)
+            const authEmail = (state as unknown as { user?: { email?: string | null } }).user?.email;
+            if (authEmail && BUILDER_EMAILS.has(authEmail)) {
+                return true;
+            }
+
             return false;
+        } catch {
+            return (import.meta.env && import.meta.env.DEV) || false;
         }
     }
 
@@ -236,7 +258,7 @@ class MembershipServiceImpl {
             const state = useStore.getState();
 
             // GOD MODE: Bypass for Builder
-            if (state.userProfile?.email && BUILDER_EMAILS.has(state.userProfile.email)) {
+            if (await this.isBuilderAccount()) {
                 return 'enterprise';
             }
 
@@ -373,14 +395,14 @@ class MembershipServiceImpl {
      * Check if estimated cost is within daily budget
      */
     async checkBudget(estimatedCost: number): Promise<{ allowed: boolean; remainingBudget: number; requiresApproval: boolean }> {
-        const userId = await this.getCurrentUserId();
-        if (!userId) {
-            return { allowed: false, remainingBudget: 0, requiresApproval: false };
-        }
-
         // GOD MODE: Bypass for Builder
         if (await this.isBuilderAccount()) {
             return { allowed: true, remainingBudget: Infinity, requiresApproval: false };
+        }
+
+        const userId = await this.getCurrentUserId();
+        if (!userId) {
+            return { allowed: false, remainingBudget: 0, requiresApproval: false };
         }
 
         const tier = await this.getCurrentTier();

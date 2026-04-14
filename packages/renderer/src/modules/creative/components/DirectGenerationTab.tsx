@@ -39,6 +39,14 @@ export default function DirectGenerationTab() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<GeneratedItem[]>([]);
 
+    // Clear prompt when switching between image and video modes to prevent text accumulation
+    const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
+        if (newMode !== mode) {
+            setLocalPrompt('');
+            setMode(newMode);
+        }
+    }, [mode]);
+
     const handleGenerate = useCallback(async () => {
         if (!localPrompt.trim()) return;
 
@@ -151,7 +159,7 @@ export default function DirectGenerationTab() {
                     {/* Mode Switch */}
                     <div className="flex bg-white/5 rounded-lg p-1 border border-white/5 shrink-0">
                         <button
-                            onClick={() => setMode('image')}
+                            onClick={() => handleModeSwitch('image')}
                             data-testid="direct-image-mode-btn"
                             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'image' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
                                 }`}
@@ -160,7 +168,7 @@ export default function DirectGenerationTab() {
                             <span className="text-xs font-bold uppercase tracking-wider">Image</span>
                         </button>
                         <button
-                            onClick={() => setMode('video')}
+                            onClick={() => handleModeSwitch('video')}
                             data-testid="direct-video-mode-btn"
                             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'video' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
                                 }`}

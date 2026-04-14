@@ -155,10 +155,10 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] Creative Director module loaded.');
 
         // E. Verify Key Sub-Modules Are Accessible
-        // The Creative Director has tabs: Gallery, Canvas, Direct, Lab, Release AND Builder, Brand, Library
-        const galleryTab = page.getByRole('button', { name: /gallery/i }).first();
+        // The Creative Director has tabs: Generate, Canvas, Direct, Lab, Release AND Builder, Brand, History
+        const generateTab = page.getByRole('button', { name: /generate/i }).first();
         const builderTab = page.getByRole('button', { name: /builder/i }).first();
-        await expect(galleryTab).toBeVisible({ timeout: 5000 });
+        await expect(generateTab).toBeVisible({ timeout: 5000 });
         await expect(builderTab).toBeVisible({ timeout: 5000 });
         console.log('[Gauntlet] Creative Director sub-tabs verified (Gallery, Builder).');
 
