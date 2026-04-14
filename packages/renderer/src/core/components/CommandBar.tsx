@@ -56,15 +56,8 @@ function CommandBar() {
         }))
     );
 
-    // CommandBar is currently disabled in standard views — recent agentic prompt interactions
-    // have been migrated to the Right Panel's unified prompt area.
-    // 
-    // FUTURE FEATURE: "The Boardroom" / "Office Hours" 
-    // This component will be reactivated for a full-page, ChatGPT-style interface where 
-    // users can have focused ongoing conversations with single or multiple agents simultaneously 
-    // (a virtual boardroom). 
-    // See docs/architecture/command_bar_boardroom.md for the full specification.
-    if (!isCommandBarDetached && !isBoardroomMode) return null;
+    // CommandBar logic: docked in standard views, floating when detached.
+    // Fixed UI deadlock: removed early return that blocked activation in standard views.
 
     const shouldShow = true;
 

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
-import { ArrowRight, Loader2, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Users } from 'lucide-react';
+import { ArrowRight, Loader2, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import type { ModuleId } from '@/core/constants';
+
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -17,7 +17,7 @@ import {
     PromptInputActions,
     PromptInputAction
 } from '@/components/ui/prompt-input';
-import { DelegateMenu } from './DelegateMenu';
+
 import { AttachmentList } from './AttachmentList';
 import { TypeaheadMenu, type TypeaheadContext } from './TypeaheadMenu';
 import { logger } from '@/utils/logger';
@@ -33,7 +33,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const isMobile = useMediaQuery('(max-width: 767px)');
 
     const [isProcessing, setIsProcessing] = useState(false);
-    const [openDelegate, setOpenDelegate] = useState(false);
+
     const [isListening, setIsListening] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +41,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const {
         currentModule,
-        setModule,
         isRightPanelOpen,
         toggleRightPanel,
         chatChannel,
@@ -52,7 +51,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setCommandBarInput,
         commandBarAttachments,
         setCommandBarAttachments,
-        setActiveAgentProvider,
         isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled,
         setCommandBarCollapsed,
@@ -60,7 +58,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     } = useStore(useShallow(state => ({
         // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
         currentModule: state.currentModule,
-        setModule: state.setModule,
         isRightPanelOpen: state.isRightPanelOpen,
         toggleRightPanel: state.toggleRightPanel,
         chatChannel: state.chatChannel,
@@ -71,7 +68,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setCommandBarInput: state.setCommandBarInput,
         commandBarAttachments: state.commandBarAttachments,
         setCommandBarAttachments: state.setCommandBarAttachments,
-        setActiveAgentProvider: state.setActiveAgentProvider,
         isKnowledgeBaseEnabled: state.isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled: state.setKnowledgeBaseEnabled,
         setCommandBarCollapsed: state.setCommandBarCollapsed,
@@ -99,8 +95,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     }, [currentModule, setChatChannel, setCommandBarInput]);
 
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
-    const managerAgents = useMemo(() => allAgents.filter(a => a.category === 'manager' || a.category === 'specialist'), [allAgents]);
-    const departmentAgents = useMemo(() => allAgents.filter(a => a.category === 'department'), [allAgents]);
     const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
 
     const [typeaheadContext, setTypeaheadContext] = useState<TypeaheadContext>(null);
@@ -131,7 +125,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setTypeaheadContext(null);
     }, [commandBarInput, typeaheadContext, setCommandBarInput]);
 
-    const handleCloseDelegate = useCallback(() => setOpenDelegate(false), []);
+
 
     const handleMicClick = useCallback(() => {
         if (isListening) {
@@ -150,37 +144,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         }
     }, [isListening, toast, commandBarInput, setCommandBarInput]);
 
-    const handleDelegate = useCallback((agentId: string) => {
-        // Agent IDs don't always match module IDs — map them
-        const AGENT_TO_MODULE: Record<string, string> = {
-            'director': 'creative',
-            'generalist': 'dashboard',
-        };
-        const moduleId = AGENT_TO_MODULE[agentId] || agentId;
 
-        if (moduleId !== 'dashboard') {
-            setModule(moduleId as ModuleId);
-        }
-        if (!isRightPanelOpen) {
-            toggleRightPanel();
-        }
-        useStore.setState({
-            rightPanelTab: 'agent',
-            rightPanelView: 'messages'
-        });
-        setActiveAgentProvider('native'); // Switch back to Native for specific agents
-        setOpenDelegate(false);
-    }, [isRightPanelOpen, toggleRightPanel, setModule, setActiveAgentProvider]);
-
-    const handleSelectIndii = useCallback(() => {
-        setChatChannel('indii');
-        setModule('dashboard' as ModuleId);
-        setActiveAgentProvider('native');
-        if (!useStore.getState().isRightPanelOpen) {
-            useStore.getState().toggleRightPanel();
-        }
-        useStore.setState({ rightPanelTab: 'agent', rightPanelView: 'messages' });
-    }, [setChatChannel, setModule, setActiveAgentProvider]);
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -267,8 +231,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             setCommandBarAttachments([]);
 
             // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top
+            // In Boardroom mode, messages route to boardroomMessages — DON'T open the right panel
             const isOnAgentModule = currentModule === 'agent';
-            if (!isOnAgentModule) {
+            if (!isOnAgentModule && !isBoardroomMode) {
                 if (!isRightPanelOpen) {
                     toggleRightPanel();
                 }
@@ -294,7 +259,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             logger.error("PromptArea: Fatal crash", fatalError);
             setIsProcessing(false);
         }
-    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, setCommandBarInput, setCommandBarAttachments]);
+    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, isBoardroomMode, setCommandBarInput, setCommandBarAttachments]);
 
     return (
         <div
@@ -389,36 +354,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </button>
                         </PromptInputAction>
 
-                        {!isMobile && (
-                            <div className="relative">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenDelegate(!openDelegate);
-                                    }}
-                                    aria-haspopup="true"
-                                    aria-expanded={openDelegate}
-                                    aria-label="Select active agent"
-                                    className={cn(
-                                        "flex items-center justify-center rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                                        isDocked ? "w-7 h-7" : "w-9 h-9",
-                                        !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
-                                    )}
-                                >
-                                    <Users size={isDocked ? 12 : 14} />
-                                </button>
-                                <DelegateMenu
-                                    isOpen={openDelegate}
-                                    currentModule={currentModule}
-                                    isIndiiMode={isIndiiMode}
-                                    managerAgents={managerAgents}
-                                    departmentAgents={departmentAgents}
-                                    onSelect={handleDelegate}
-                                    onSelectIndii={handleSelectIndii}
-                                    onClose={handleCloseDelegate}
-                                />
-                            </div>
-                        )}
+
 
                         <PromptInputAction tooltip={isKnowledgeBaseEnabled ? "Knowledge Base Active" : "Connect Knowledge Base"}>
                             <button
