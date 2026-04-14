@@ -87,6 +87,11 @@ export const NANO_BANANA_CAPABILITIES = {
     },
 } as const;
 
+/** Normalized membership tier name across the platform. */
 export type NanoBananaTier = 'legacy' | 'fast' | 'pro';
+
+/** Valid model identifiers specifically for image-related operations. */
 export type NanoBananaModelId = typeof FUNCTION_AI_MODELS.IMAGE[keyof typeof FUNCTION_AI_MODELS.IMAGE];
+
+/** Full type metadata for all registered Cloud Function AI models. */
 export type FunctionAIModels = typeof FUNCTION_AI_MODELS;

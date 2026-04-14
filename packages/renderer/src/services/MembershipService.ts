@@ -140,6 +140,8 @@ class MembershipServiceImpl {
      * Checks both the profile email AND the Firebase Auth user email
      * to guard against the race condition where userProfile.email is
      * still empty (from IDB cache) while auth.user.email is already set.
+     * 
+     * @returns True if the account is a whitelisted builder account or in DEV mode.
      */
     private async isBuilderAccount(): Promise<boolean> {
         // ALWAYS bypass limits in local development so the team can test without hitting budget caps
@@ -170,14 +172,19 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Get limits for a specific tier
+     * Get limits for a specific tier.
+     * @param tier - The membership tier.
+     * @returns The TierLimits object for the given tier.
      */
     getLimits(tier: MembershipTier): TierLimits {
         return TIER_LIMITS[tier] || TIER_LIMITS.free;
     }
 
     /**
-     * Get maximum video duration in frames for a tier (at 30fps)
+     * Get maximum video duration in frames for a tier (at specified fps).
+     * @param tier - The membership tier.
+     * @param fps - Frames per second (default 30).
+     * @returns The total number of frames allowed.
      */
     getMaxVideoDurationFrames(tier: MembershipTier, fps: number = 30): number {
         const limits = this.getLimits(tier);
@@ -185,21 +192,29 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Get maximum video duration in seconds for a tier
+     * Get maximum video duration in seconds for a tier.
+     * @param tier - The membership tier.
+     * @returns Maximum duration in seconds.
      */
     getMaxVideoDurationSeconds(tier: MembershipTier): number {
         return this.getLimits(tier).maxVideoDuration;
     }
 
     /**
-     * Check if a duration (in seconds) is within tier limits
+     * Check if a duration (in seconds) is within tier limits.
+     * @param tier - The membership tier.
+     * @param durationSeconds - The duration to check.
+     * @returns True if within limits.
      */
     isWithinVideoDurationLimit(tier: MembershipTier, durationSeconds: number): boolean {
         return durationSeconds <= this.getLimits(tier).maxVideoDuration;
     }
 
     /**
-     * Check if user can perform an action based on tier
+     * Check if user can perform an action based on tier features.
+     * @param tier - The membership tier.
+     * @param feature - The feature key to check.
+     * @returns True if the feature is enabled for the tier.
      */
     canUseFeature(tier: MembershipTier, feature: keyof TierLimits): boolean {
         const limits = this.getLimits(tier);
@@ -208,7 +223,9 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Format duration for display (e.g., "8 minutes", "1 hour")
+     * Format duration for display (e.g., "8 minutes", "1 hour").
+     * @param seconds - Seconds to format.
+     * @returns Formatted string for UI.
      */
     formatDuration(seconds: number): string {
         if (seconds < 60) return `${seconds} seconds`;
@@ -219,7 +236,9 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Get tier display name
+     * Get tier display name.
+     * @param tier - The membership tier.
+     * @returns Human-readable tier name.
      */
     getTierDisplayName(tier: MembershipTier): string {
         return ({
@@ -231,7 +250,10 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Get upgrade message for a limit
+     * Get upgrade message for a specific limit type.
+     * @param currentTier - The user's current tier.
+     * @param limitType - The type of limit being hit.
+     * @returns A string offering an upgrade path.
      */
     getUpgradeMessage(currentTier: MembershipTier, limitType: 'video' | 'images' | 'storage' | 'projects' | 'resolution' | 'export'): string {
         const nextTier = currentTier === 'free' ? 'Pro' : 'Enterprise';
@@ -249,8 +271,10 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Get the current organization's tier from the store
-     * This is a helper that integrates with the Zustand store
+     * Get the current organization's tier from the store.
+     * This is a helper that integrates with the Zustand store.
+     * 
+     * @returns A promise resolving to the current MembershipTier.
      */
     async getCurrentTier(): Promise<MembershipTier> {
         try {
