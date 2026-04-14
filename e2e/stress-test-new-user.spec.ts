@@ -11,7 +11,7 @@ interface TestWindow extends Window {
 
 // Configuration - use environment variables for sensitive data
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
-const TEST_USER_ID = `gauntlet_user_${Date.now()}`;
+const _TEST_USER_ID = `gauntlet_user_${Date.now()}`;
 
 // Test credentials from environment (never hardcode!)
 const TEST_EMAIL = process.env.E2E_TEST_EMAIL || process.env.AUDITOR_EMAIL;
@@ -160,7 +160,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         const builderTab = page.getByRole('button', { name: /builder/i }).first();
         await expect(generateTab).toBeVisible({ timeout: 5000 });
         await expect(builderTab).toBeVisible({ timeout: 5000 });
-        console.log('[Gauntlet] Creative Director sub-tabs verified (Gallery, Builder).');
+        console.log('[Gauntlet] Creative Director sub-tabs verified (Generate, Builder).');
 
         // F. Verify Chat Input is Ready
         // The chat input can be in the right panel (Messages tab) OR the bottom bar (textbox)
