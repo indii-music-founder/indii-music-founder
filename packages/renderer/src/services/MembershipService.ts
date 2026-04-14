@@ -298,14 +298,20 @@ class MembershipServiceImpl {
     // =========================================================================
 
     /**
-     * Get today's date in YYYY-MM-DD format
+    /**
+     * Gets today's date in YYYY-MM-DD format for Firestore document indexing.
+     * Uses the local timezone to match user-perceived daily quotas.
+     * 
+     * @returns A string representing the current date in YYYY-MM-DD format.
      */
     private getTodayKey(): string {
         return new Date().toISOString().split('T')[0]!;
     }
 
     /**
-     * Get the current user ID from the store
+     * Retrieves the current authenticated User ID from the application store.
+     * 
+     * @returns A promise resolving to the user ID string or null if not authenticated.
      */
     private async getCurrentUserId(): Promise<string | null> {
         try {
@@ -318,7 +324,11 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Get daily usage for a user
+     * Retrieves the daily usage record for a specific user.
+     * If no record exists for today, returns a default empty usage object.
+     * 
+     * @param userId - The unique ID of the user to check.
+     * @returns A promise resolving to the user's daily usage statistics.
      */
     async getDailyUsage(userId: string): Promise<DailyUsage> {
         const dateKey = this.getTodayKey();
@@ -346,7 +356,14 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Increment usage counter after successful generation
+     * Increments usage counters (images, videos, or duration) for a user.
+     * Creates a new document if it's the first action of the day.
+     * 
+     * @param userId - The unique ID of the user.
+     * @param type - Which resource type to increment ('image' or 'video').
+     * @param count - Number of units to increment (default: 1).
+     * @param videoSeconds - If type is 'video', the duration in seconds to add.
+     * @returns A promise that resolves when the usage is updated.
      */
     async incrementUsage(
         userId: string,
@@ -397,7 +414,12 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Record monetary spend for a user
+     * Records a monetary spend amount for a user's daily usage.
+     * This is used for budget enforcement and tiered pass-through billing.
+     * 
+     * @param userId - The unique ID of the user.
+     * @param amount - The USD amount to add to the daily spend.
+     * @returns A promise that resolves when the spend is recorded.
      */
     async recordSpend(userId: string, amount: number): Promise<void> {
         const dateKey = this.getTodayKey();
@@ -416,7 +438,11 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Check if estimated cost is within daily budget
+     * Verifies if an estimated operation cost fits within the user's daily budget.
+     * Checks tier-specific limits and current daily spend totals.
+     * 
+     * @param estimatedCost - The predicted cost of the upcoming operation in USD.
+     * @returns A promise resolving to an approval status, remaining budget, and whether explicit user consent is required.
      */
     async checkBudget(estimatedCost: number): Promise<{ allowed: boolean; remainingBudget: number; requiresApproval: boolean }> {
         // GOD MODE: Bypass for Builder
@@ -453,8 +479,12 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Check if user is within quota for a specific resource type
-     * Returns true if allowed, false if quota exceeded
+     * Checks the user's quota for a specific resource type.
+     * Enforces daily caps for images, videos, and project counts.
+     * 
+     * @param type - The resource type to check ('image', 'video', 'storage', 'projects').
+     * @param amount - The number of units being requested (default: 1).
+     * @returns A promise resolving to an 'allowed' status, current usage, and the maximum allowed units.
      */
     async checkQuota(
         type: 'image' | 'video' | 'storage' | 'projects',
@@ -550,7 +580,10 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Check video duration limit
+     * Validates if a proposed video duration is within the tier limits.
+     * 
+     * @param durationSeconds - The total duration in seconds being requested.
+     * @returns A promise resolving to the validation status and tier metadata.
      */
     async checkVideoDurationQuota(durationSeconds: number): Promise<{
         allowed: boolean;
