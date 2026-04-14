@@ -129,9 +129,9 @@ export const analyzeAudioFn = () => functions
 
             return JSON.parse(analysisText);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("[analyzeAudio] Error:", error);
             if (error instanceof functions.https.HttpsError) throw error;
-            throw new functions.https.HttpsError("internal", error.message || "Audio analysis failed");
+            throw new functions.https.HttpsError("internal", (error as Error).message || "Audio analysis failed");
         }
     });
