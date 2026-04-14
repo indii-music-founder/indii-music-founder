@@ -225,10 +225,13 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
 
             // CRITICAL FIX: Handle quota exceeded errors without breaking the session
+            // Catches: Firebase resource-exhausted HttpsError, Gemini API quota strings
             if (
                 errorMessage.includes('quota') ||
                 errorMessage.includes('Quota') ||
-                errorMessage.includes('QUOTA_EXCEEDED')
+                errorMessage.includes('QUOTA_EXCEEDED') ||
+                errorMessage.includes('resource-exhausted') ||
+                errorMessage.includes('RESOURCE_EXHAUSTED')
             ) {
                 return toolError(
                     `Image generation quota exceeded: ${errorMessage}. Suggest the user upgrade their subscription or wait for quota reset.`,

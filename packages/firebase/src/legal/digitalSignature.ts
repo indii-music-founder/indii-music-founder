@@ -7,7 +7,7 @@ export const sendForDigitalSignature = functions
         timeoutSeconds: 60,
         memory: "256MB"
     })
-    .https.onCall(async (data: any, context) => {
+    .https.onCall(async (data: Record<string, unknown>, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -15,7 +15,7 @@ export const sendForDigitalSignature = functions
             );
         }
 
-        const { contractId, signers, provider } = data;
+        const { contractId, signers, provider } = data as { contractId: string; signers: Array<{ email: string }>; provider?: string };
 
         if (!contractId || !Array.isArray(signers)) {
             throw new functions.https.HttpsError(
@@ -34,6 +34,6 @@ export const sendForDigitalSignature = functions
         return {
             envelopeId,
             status: "sent",
-            sentTo: signers.map((s: any) => s.email)
+            sentTo: signers.map((s: { email: string }) => s.email)
         };
     });
