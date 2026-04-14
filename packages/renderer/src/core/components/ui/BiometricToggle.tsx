@@ -61,9 +61,12 @@ export function BiometricToggle({ isMinimized }: { isMinimized?: boolean }) {
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className={`flex items-center ${isMinimized ? 'justify-center p-2' : 'gap-2 p-2'} rounded-md bg-white/5 opacity-50 cursor-not-allowed`}>
-                            <Fingerprint size={16} className="text-gray-500" />
-                            {!isMinimized && <span className="text-xs text-gray-500 font-medium">Biometrics Unavailable</span>}
+                        <div 
+                            aria-disabled="true"
+                            className={`flex items-center ${isMinimized ? 'justify-center p-2' : 'gap-2 p-2'} rounded-md bg-white/5 opacity-50 cursor-not-allowed`}
+                        >
+                            <Fingerprint size={16} className="text-gray-400" />
+                            {!isMinimized && <span className="text-xs text-gray-400 font-medium">Biometrics Unavailable</span>}
                         </div>
                     </TooltipTrigger>
                     <TooltipContent side={isMinimized ? "right" : "bottom"}>

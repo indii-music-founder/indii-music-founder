@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { agentRegistry } from '@/services/agent/registry';
 import { Bot, MessageSquare } from 'lucide-react';
+import { PromptArea } from '@/core/components/command-bar/PromptArea';
 
 interface BoardroomConversationPanelProps {
     messages: AgentMessage[];
@@ -31,14 +32,22 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 
     if (messages.length === 0) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mb-4">
-                    <MessageSquare size={22} className="text-indigo-400/50" />
+            <div className="flex-1 flex flex-col min-h-0">
+                {/* Empty State — centered vertically in the available space */}
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                    <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mb-4">
+                        <MessageSquare size={22} className="text-indigo-400/50" />
+                    </div>
+                    <p className="text-sm font-medium text-white/40">Awaiting discussion...</p>
+                    <p className="text-xs text-white/20 mt-1 max-w-[240px]">
+                        Select agents and submit a brief to start the boardroom session.
+                    </p>
                 </div>
-                <p className="text-sm font-medium text-white/40">Awaiting discussion...</p>
-                <p className="text-xs text-white/20 mt-1 max-w-[240px]">
-                    Select agents and submit a brief to start the boardroom session.
-                </p>
+
+                {/* Prompt Area — always visible so users can start the conversation */}
+                <div className="p-4 border-t border-white/5 bg-white/[0.01] shrink-0">
+                    <PromptArea className="!static !translate-x-0 !w-full !max-w-none" />
+                </div>
             </div>
         );
     }
@@ -140,6 +149,11 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 
                 {/* Scroll anchor */}
                 <div className="h-4 w-full flex-shrink-0" />
+            </div>
+
+            {/* Inline PromptArea for Boardroom */}
+            <div className="p-4 border-t border-white/5 bg-white/[0.01] shrink-0">
+                <PromptArea className="!static !translate-x-0 !w-full !max-w-none" />
             </div>
         </div>
     );

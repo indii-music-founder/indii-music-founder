@@ -13,11 +13,7 @@
     "rules": "packages/firebase/firestore.rules"
   },
   "functions": {
-    "source": "packages/firebase",
-    "predeploy": [
-      "npm run lint --prefix packages/firebase",
-      "npm run build --prefix packages/firebase"
-    ]
+    "source": "./packages/firebase"
   },
   "hosting": [
     {

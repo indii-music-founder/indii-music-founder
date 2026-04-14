@@ -1,10 +1,9 @@
 import { logger } from '@/utils/logger';
 import { withServiceError } from '@/lib/errors';
-import { functionsWest1 as functions } from '@/services/firebase';
+import { functionsWest1 as functions, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { firebaseAI } from '../ai/FirebaseAIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-// isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -13,22 +12,81 @@ import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Nano Banana model tier selector.
+ * Maps to the 3-tier backend model registry.
+ */
+export type NanoBananaTier = 'legacy' | 'fast' | 'pro';
+
+/**
+ * Full image generation options.
+ * All fields are passed through to the Cloud Function without stripping.
+ */
 export interface ImageGenerationOptions {
     prompt: string;
     count?: number;
     aspectRatio?: string;
-    resolution?: string;
+    resolution?: string; // Mapped to imageSize for backend compat
     seed?: number;
     negativePrompt?: string;
-    sourceImages?: { mimeType: string; data: string }[]; // For edit/reference modes
+    sourceImages?: { mimeType: string; data: string }[]; // Reference images for composition
     projectContext?: string;
+
     // Distributor-aware options
     userProfile?: UserProfile;
     isCoverArt?: boolean; // If true, enforces distributor cover art specs
-    // Gemini 3 Configuration
-    model?: 'fast' | 'pro';
+
+    // Nano Banana Model Tier
+    model?: NanoBananaTier;
+
+    // --- Gemini 3 Advanced Configuration ---
+
+    /** Output resolution: "512" | "1K" | "2K" | "4K" (uppercase required by API) */
+    imageSize?: '512' | '1K' | '2K' | '4K';
+
+    /** Thinking level (Flash only — Pro always thinks). "minimal" or "high". */
+    thinkingLevel?: 'minimal' | 'high';
+
+    /** Whether to include thinking process in the response. */
+    includeThoughts?: boolean;
+
+    /** Enable Google Search grounding — model uses real-time search to inform generation. */
+    useGoogleSearch?: boolean;
+
+    /** Enable Image Search grounding (Flash only). Requires useGoogleSearch=true. */
+    useImageSearch?: boolean;
+
+    /** Response format: "image_only" (default) | "image_and_text" (interleaved narration). */
+    responseFormat?: 'image_only' | 'image_and_text';
+
+    /** Previous conversation history for multi-turn editing sessions. */
+    conversationHistory?: { role: string; parts: Record<string, unknown>[] }[];
+
+    /** Thought signature from a previous response for multi-turn continuity. */
+    thoughtSignature?: string;
+
+    // --- Legacy compat (deprecated) ---
+
+    /** @deprecated Use `thinkingLevel` instead. */
     thinking?: boolean;
+    /** @deprecated Use `useGoogleSearch` instead. */
     useGrounding?: boolean;
+}
+
+/**
+ * Extended generation result including Gemini 3 metadata.
+ */
+export interface ImageGenerationResult {
+    id: string;
+    url: string;
+    prompt: string;
+    textNarration?: string;
+    thoughtSignature?: string;
+    groundingMetadata?: Record<string, unknown>;
 }
 
 export interface RemixOptions {
@@ -37,18 +95,34 @@ export interface RemixOptions {
     prompt?: string;
 }
 
+// ============================================================================
+// SERVICE
+// ============================================================================
+
+/**
+ * ImageGenerationService
+ *
+ * Client-side service for managing Nano Banana image generation workflows.
+ * Orchestrates calls to Firebase Cloud Functions and handles
+ * distributor-aware prompt injection and quota pre-flights.
+ */
 export class ImageGenerationService {
 
     /**
-     * Get distributor-aware image constraints
-     * Returns the image specs required by the user's distributor
+     * Retrieves architectural constraints for image generation based on user's distributor.
+     * 
+     * @param profile - The active user profile.
+     * @returns Object containing width, height, and color mode requirements.
      */
     getDistributorConstraints(profile: UserProfile): ImageConstraints {
         return getImageConstraints(profile);
     }
 
     /**
-     * Build a distributor-aware prompt that includes sizing requirements
+     * Constructs a final prompt string by injecting distributor requirements and project context.
+     * 
+     * @param options - Generation options containing prompt and context.
+     * @returns Fully qualified prompt string for the model.
      */
     private buildDistributorAwarePrompt(options: ImageGenerationOptions): string {
         let prompt = options.prompt;
@@ -59,19 +133,22 @@ export class ImageGenerationService {
             const distributorContext = getDistributorPromptContext(options.userProfile);
 
             // Prepend distributor requirements to ensure proper sizing
-            prompt = `[COVER ART REQUIREMENTS: Generate a ${constraints.width}x${constraints.height}px square image.${constraints.colorMode} color mode only.]\n\n${prompt} `;
+            prompt = `[COVER ART REQUIREMENTS: Generate a ${constraints.width}x${constraints.height}px square image.${constraints.colorMode} color mode only.]\n\n${prompt}`;
 
             // Add project context if not already provided
             if (!options.projectContext) {
-                options.projectContext = `\n\n${distributorContext} `;
+                options.projectContext = `\n\n${distributorContext}`;
             }
         }
 
-        return prompt + (options.projectContext || '') + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt} ` : '');
+        return prompt + (options.projectContext || '') + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '');
     }
 
     /**
-     * Get the appropriate aspect ratio for the request
+     * Resolves the target aspect ratio, defaulting to 1:1 square for cover art.
+     * 
+     * @param options - Generation options.
+     * @returns Aspect ratio string (e.g., "16:9").
      */
     private getAspectRatio(options: ImageGenerationOptions): string {
         // If cover art mode, always use 1:1 square
@@ -81,10 +158,43 @@ export class ImageGenerationService {
         return options.aspectRatio || '1:1';
     }
 
-    async generateImages(options: ImageGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
+    /**
+     * Triggers the image generation pipeline via Cloud Functions.
+     * Performs authentication pre-flights and quota checks.
+     * 
+     * @param options - Full configuration for the Generation API.
+     * @returns A promise resolving to an array of generated image results.
+     * @throws {Error} If session is unauthenticated or expired.
+     * @throws {QuotaExceededError} If usage limits are reached.
+     */
+    async generateImages(options: ImageGenerationOptions): Promise<ImageGenerationResult[]> {
         logger.debug('[ImageGen DEBUG] Entering generateImages', options);
-        const results: { id: string, url: string, prompt: string }[] = [];
+        const results: ImageGenerationResult[] = [];
         const count = options.count || 1;
+
+        // ── Auth Pre-Flight ────────────────────────────────────────────────
+        // Verify the user has a valid, non-expired auth session BEFORE
+        // calling the Cloud Function. This catches stale sessions early
+        // and returns a clear error instead of cryptic 401 gRPC failures.
+        if (!auth.currentUser) {
+            logger.error('[ImageGen] No authenticated user — cannot call Cloud Function.');
+            throw new Error(
+                'Your session has expired. Please sign in again to generate images. ' +
+                '(Go to Settings → Account, or refresh the page.)'
+            );
+        }
+
+        try {
+            // Force-refresh the ID token to catch expired refresh tokens
+            await auth.currentUser.getIdToken(/* forceRefresh */ true);
+            logger.debug('[ImageGen] Auth token refreshed successfully.');
+        } catch (tokenError: unknown) {
+            logger.error('[ImageGen] Failed to refresh auth token:', tokenError);
+            throw new Error(
+                'Your authentication session could not be refreshed. ' +
+                'Please sign out and sign back in. (Settings → Account)'
+            );
+        }
 
         // Pre-flight quota check
         const userId = options.userProfile?.id;
@@ -93,7 +203,7 @@ export class ImageGenerationService {
 
         if (!quotaCheck.allowed) {
             logger.error('[ImageGen] Quota exceeded');
-            let tier: SubscriptionTier = 'free' as SubscriptionTier; // Bypassing strict enum mismatch if needed, MembershipTier includes 'free'
+            let tier: SubscriptionTier = 'free' as SubscriptionTier;
             try {
                 const sub = userId
                     ? await subscriptionService.getSubscription(userId)
@@ -119,15 +229,51 @@ export class ImageGenerationService {
             const fullPrompt = this.buildDistributorAwarePrompt(options);
             const aspectRatio = this.getAspectRatio(options);
 
-            const result = await generateImage({
+            // Resolve imageSize: prefer explicit imageSize, fall back to resolution (legacy)
+            const imageSize = options.imageSize || (options.resolution ? options.resolution.toUpperCase() : undefined);
+
+            // Build the full payload — pass ALL config through, no stripping.
+            // The backend Cloud Function + capability registry handles validation.
+            const payload: Record<string, unknown> = {
                 prompt: fullPrompt,
-                aspectRatio: aspectRatio,
-                count: count,
-                // Gemini 3.1 Image models are strictly Text-to-Image for this endpoint.
-                model: options.model === 'pro' ? 'pro' : 'fast',
-                // Gemini Image does not support thinking/grounding - removing from payload to prevent 400s
-                // Removing images: [] as it might trigger invalid argument for T2I
+                aspectRatio,
+                count,
+                model: options.model || 'fast',
+                imageSize,
+                // Reference images (for multi-image composition)
+                images: options.sourceImages,
+                // Gemini 3 advanced config
+                thinkingLevel: options.thinkingLevel,
+                includeThoughts: options.includeThoughts,
+                useGoogleSearch: options.useGoogleSearch,
+                useImageSearch: options.useImageSearch,
+                responseFormat: options.responseFormat,
+                // Multi-turn
+                conversationHistory: options.conversationHistory,
+                thoughtSignature: options.thoughtSignature,
+                // Legacy compat
+                thinking: options.thinking,
+                useGrounding: options.useGrounding,
+            };
+
+            // Clean undefined values to reduce payload size
+            Object.keys(payload).forEach(key => {
+                if (payload[key] === undefined || payload[key] === null) {
+                    delete payload[key];
+                }
             });
+
+            logger.debug('[ImageGen DEBUG] Full payload:', {
+                model: payload.model,
+                aspectRatio: payload.aspectRatio,
+                imageSize: payload.imageSize,
+                hasImages: !!(payload.images as unknown[])?.length,
+                hasThinking: !!payload.thinkingLevel,
+                hasGrounding: !!payload.useGoogleSearch,
+                hasHistory: !!(payload.conversationHistory as unknown[])?.length,
+            });
+
+            const result = await generateImage(payload);
             logger.debug('[ImageGen DEBUG] generateImageV3 returned:', result);
 
             interface GenerateImageResponse {
@@ -135,35 +281,37 @@ export class ImageGenerationService {
                     bytesBase64Encoded?: string;
                     mimeType?: string;
                 }>;
+                textNarration?: string;
+                thoughtSignature?: string;
+                groundingMetadata?: Record<string, unknown>;
             }
             const data = result.data as GenerateImageResponse;
 
-            // Cloud Function returns { images: [{ bytesBase64Encoded, mimeType }] }
+            // Cloud Function returns { images: [...], textNarration?, thoughtSignature?, groundingMetadata? }
             if (!data.images || data.images.length === 0) {
                 return [];
             }
 
-            // Bolt Optimization: Parallelize image processing and uploading
-            // processing images in parallel significantly reduces total latency for batches (count > 1)
+            // Parallelize image processing and uploading
             const promises = data.images.map(async (img) => {
                 if (!img.bytesBase64Encoded) return null;
 
                 const mimeType = img.mimeType || 'image/png';
-                const dataUri = `data:${mimeType}; base64, ${img.bytesBase64Encoded} `;
+                const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
                 const id = crypto.randomUUID();
 
                 let finalUrl = dataUri;
 
                 try {
                     const { useStore } = await import('@/core/store');
-                    const userId = useStore.getState().userProfile?.id;
+                    const storeUserId = useStore.getState().userProfile?.id;
 
-                    if (userId) { // Re-enabled Cloud Storage
+                    if (storeUserId) {
                         const { CloudStorageService } = await import('@/services/CloudStorageService');
-                        const saved = await CloudStorageService.smartSave(dataUri, id, userId);
+                        const saved = await CloudStorageService.smartSave(dataUri, id, storeUserId);
                         finalUrl = saved.url;
                     } else {
-                        // Force compression if not uploading, to respect Firestore 1MB limit for local data
+                        // Force compression if not uploading, to respect Firestore 1MB limit
                         const { CloudStorageService } = await import('@/services/CloudStorageService');
                         const compressed = await CloudStorageService.compressImage(dataUri, {
                             maxWidth: 512,
@@ -190,8 +338,11 @@ export class ImageGenerationService {
                 return {
                     id,
                     url: finalUrl,
-                    prompt: options.prompt
-                };
+                    prompt: options.prompt,
+                    textNarration: data.textNarration,
+                    thoughtSignature: data.thoughtSignature,
+                    groundingMetadata: data.groundingMetadata,
+                } as ImageGenerationResult;
             });
 
             const parallelResults = await Promise.all(promises);
@@ -227,12 +378,14 @@ export class ImageGenerationService {
         if (results.length > 0) {
             try {
                 const { useStore } = await import('@/core/store');
-                const userId = useStore.getState().userProfile?.id;
-                if (userId) {
-                    await usageTracker.trackImageGeneration(userId, results.length, {
+                const trackingUserId = useStore.getState().userProfile?.id;
+                if (trackingUserId) {
+                    await usageTracker.trackImageGeneration(trackingUserId, results.length, {
                         prompt: options.prompt,
                         aspectRatio: options.aspectRatio,
-                        resolution: options.resolution
+                        resolution: options.resolution,
+                        model: options.model,
+                        tier: options.model || 'fast',
                     });
                 }
             } catch (_e: unknown) {
@@ -245,15 +398,18 @@ export class ImageGenerationService {
                     prompt: options.prompt,
                     aspectRatio: options.aspectRatio || '1:1',
                     resolution: options.resolution,
-                    model: options.model || 'pro',
+                    imageSize: options.imageSize,
+                    model: options.model || 'fast',
                     sourceType: 'generation',
                     isCoverArt: options.isCoverArt || false,
                     imageId: image.id,
-                    // Don't store the full URL if it's a data URI (too large)
                     hasDataUri: image.url.startsWith('data:'),
+                    hasGrounding: !!options.useGoogleSearch,
+                    hasThinking: !!options.thinkingLevel,
+                    isMultiTurn: !!(options.conversationHistory && options.conversationHistory.length > 0),
                     generatedAt: new Date().toISOString(),
                 }, {
-                    showToasts: false, // Don't spam toasts for successful saves
+                    showToasts: false,
                     maxRetries: 1,
                     queueOnFailure: true,
                 }).catch(err => {
@@ -266,14 +422,14 @@ export class ImageGenerationService {
     }
 
     /**
-     * Generate cover art with automatic distributor compliance
-     * This is the recommended method for generating release artwork
+     * Generate cover art with automatic distributor compliance.
+     * This is the recommended method for generating release artwork.
      */
     async generateCoverArt(
         prompt: string,
         profile: UserProfile,
         options?: Partial<ImageGenerationOptions>
-    ): Promise<{ id: string, url: string, prompt: string, constraints: ImageConstraints }[]> {
+    ): Promise<(ImageGenerationResult & { constraints: ImageConstraints })[]> {
         const constraints = getImageConstraints(profile);
 
         const results = await this.generateImages({
@@ -290,12 +446,17 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         return withServiceError('ImageGeneration', 'remixImage', async () => {
-                const editImageFn = httpsCallable(functions, 'editImage');
+            const editImageFn = httpsCallable(functions, 'editImage');
 
             const result = await editImageFn({
                 prompt: options.prompt || 'Create a cinematic remix.',
                 image: options.contentImage?.data || '',
                 imageMimeType: options.contentImage?.mimeType || 'image/png',
+                // Pass style image as a reference image for composition
+                referenceImages: options.styleImage ? [{
+                    mimeType: options.styleImage.mimeType,
+                    data: options.styleImage.data,
+                }] : undefined,
             });
 
             const data = result.data as { candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[] };
@@ -316,7 +477,7 @@ export class ImageGenerationService {
                     role: 'user',
                     parts: [
                         { inlineData: { mimeType: image.mimeType, data: image.data } },
-                        { text: `Analyze this image.Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" } ` }
+                        { text: `Analyze this image. Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" }` }
                     ]
                 }],
                 AI_MODELS.TEXT.FAST,
@@ -330,16 +491,20 @@ export class ImageGenerationService {
         });
     }
 
+    /**
+     * Batch remix: apply a style to multiple images.
+     * Now passes source images through as reference images instead of stripping them.
+     */
     async batchRemix(options: {
         styleImage: { mimeType: string; data: string };
         targetImages: { mimeType: string; data: string; width?: number; height?: number }[];
         prompt?: string;
-    }): Promise<{ id: string, url: string, prompt: string }[]> {
-        const results: { id: string, url: string, prompt: string }[] = [];
+    }): Promise<ImageGenerationResult[]> {
+        const results: ImageGenerationResult[] = [];
         const generateImage = httpsCallable(functions, 'generateImageV3');
 
         try {
-            // Bolt Optimization: Parallelize requests to improve batch latency
+            // Parallelize requests
             const promises = options.targetImages.map(async (target) => {
                 try {
                     // Determine aspect ratio based on target image dimensions
@@ -350,10 +515,13 @@ export class ImageGenerationService {
                     }
 
                     const result = await generateImage({
-                        prompt: `Render this content image in the artistic style of the reference image.Maintain the composition and subject from content, apply colors, textures, and mood from style.${options.prompt || 'Restyle'} `,
-                        // Gemini 3.1 Image models are currently Text-to-Image only.
-                        // Passing input images causes INVALID_ARGUMENT (400).
-                        aspectRatio
+                        prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
+                        // Pass both images as reference images for the model to compose
+                        images: [
+                            { mimeType: target.mimeType, data: target.data },
+                            { mimeType: options.styleImage.mimeType, data: options.styleImage.data },
+                        ],
+                        aspectRatio,
                     });
 
                     interface GenerateImageResponse {
@@ -365,9 +533,9 @@ export class ImageGenerationService {
                         const mimeType = data.images[0].mimeType || 'image/png';
                         return {
                             id: crypto.randomUUID(),
-                            url: `data:${mimeType}; base64, ${data.images[0].bytesBase64Encoded} `,
-                            prompt: `Batch Style: ${options.prompt || "Restyle"} `
-                        };
+                            url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
+                            prompt: `Batch Style: ${options.prompt || "Restyle"}`,
+                        } as ImageGenerationResult;
                     }
                     return null;
                 } catch (error: unknown) {
@@ -387,14 +555,24 @@ export class ImageGenerationService {
         return results;
     }
 
+    /**
+     * Edit a single image via the Cloud Function.
+     * Passes all options through including new Gemini 3 fields.
+     */
     async editImage(options: {
         image: string;
         prompt: string;
         mask?: string;
         referenceImage?: string;
+        referenceImages?: { mimeType: string; data: string }[];
         imageMimeType?: string;
         maskMimeType?: string;
         refMimeType?: string;
+        aspectRatio?: string;
+        imageSize?: string;
+        thinkingLevel?: string;
+        thoughtSignature?: string;
+        conversationHistory?: { role: string; parts: Record<string, unknown>[] }[];
     }): Promise<unknown> {
         return withServiceError('ImageGeneration', 'editImage', async () => {
             const editImageFn = httpsCallable(functions, 'editImage');

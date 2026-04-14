@@ -1,6 +1,6 @@
 import { GenAI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { functionsWest1 as functions } from '@/services/firebase';
+import { functionsWest1 as functions, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { InputSanitizer } from '../ai/utils/InputSanitizer';
 import { PromptBuilder } from './PromptBuilderService';
@@ -63,6 +63,16 @@ export class EditingService {
         thoughtSignature?: string;
         useSemanticMap?: boolean;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
+        // Auth pre-flight: fail fast with a clear message instead of a 401 from the Cloud Function
+        if (!auth.currentUser) {
+            throw new Error('Your session has expired. Please sign in again to edit images.');
+        }
+        try {
+            await auth.currentUser.getIdToken(true);
+        } catch {
+            throw new Error('Your session could not be refreshed. Please sign out and sign back in.');
+        }
+
         const editImageFn = httpsCallable(functions, 'editImage');
 
         // Determine Task Label
@@ -78,9 +88,9 @@ export class EditingService {
             task: taskLabel
         });
 
-        // Selection Logic:
+        // Selection Logic: use DIRECT image models (NOT text models)
         const useHighFidelity = options.model === 'pro' || options.forceHighFidelity || !!options.decoratedImage;
-        const modelId = useHighFidelity ? AI_MODELS.IMAGE.GENERATION : AI_MODELS.IMAGE.FAST;
+        const modelId = useHighFidelity ? AI_MODELS.IMAGE.DIRECT_PRO : AI_MODELS.IMAGE.DIRECT_FAST;
 
         // Call backend via Firebase Cloud Function
         const result = await this.withRetry(() => editImageFn({
@@ -142,6 +152,7 @@ export class EditingService {
         for (let i = 0; i < count; i++) {
             let currentImageData = options.image;
             const compositePromptParts: string[] = [];
+            let currentThoughtSignature: string | undefined;
 
             // Sequential Pipeline: Base -> Mask 1 -> Result 1 -> Mask 2 -> ... -> Final
             for (const mask of options.masks) {
@@ -155,7 +166,8 @@ export class EditingService {
                     mask: { mimeType: mask.mimeType, data: mask.data },
                     referenceImage: mask.referenceImage,
                     prompt: variedPrompt,
-                    model: options.model
+                    model: options.model,
+                    thoughtSignature: currentThoughtSignature, // Circulate through chain
                 });
 
                 if (result) {
@@ -164,6 +176,8 @@ export class EditingService {
                     if (match) {
                         currentImageData = { mimeType: match[1]!, data: match[2]! };
                         compositePromptParts.push(mask.prompt);
+                        // Carry thought signature forward through the chain
+                        currentThoughtSignature = result.thoughtSignature;
                     } else {
                         throw new Error("Failed to parse intermediate result data URI");
                     }
@@ -265,10 +279,10 @@ export class EditingService {
         const sanitizedContext = options.projectContext ? InputSanitizer.sanitize(options.projectContext) : '';
         parts.push({ text: `Combine these references. ${sanitizedPrompt} ${sanitizedContext}` });
 
-        // Use rawGenerateContent with image model and responseModalities
+        // Use rawGenerateContent with DIRECT image model (NOT text model)
         const response = await GenAI.rawGenerateContent(
             [{ role: 'user', parts }],
-            AI_MODELS.IMAGE.GENERATION,
+            AI_MODELS.IMAGE.DIRECT_PRO,
             { responseModalities: ['IMAGE'] }
         );
 
@@ -340,10 +354,10 @@ export class EditingService {
             const promptText = `Next keyframe (Time Delta: ${options.timeDeltaLabel}): ${scenes[i]}. \n\nVisual DNA & Temporal Context: ${visualContext}. \n\n${sanitizedContext}`;
             parts.push({ text: promptText });
 
-            // Use rawGenerateContent with image model and responseModalities
+            // Use rawGenerateContent with DIRECT image model (NOT text model)
             const response = await GenAI.rawGenerateContent(
                 [{ role: 'user', parts }],
-                AI_MODELS.IMAGE.GENERATION,
+                AI_MODELS.IMAGE.DIRECT_PRO,
                 { responseModalities: ['IMAGE'] }
             );
 
@@ -359,6 +373,45 @@ export class EditingService {
             }
         }
         return results;
+    }
+    /**
+     * Transfer the artistic style from one image to another.
+     * Uses the Nano Banana reference image capability.
+     */
+    async transferStyle(options: {
+        contentImage: { mimeType: string; data: string };
+        styleImage: { mimeType: string; data: string };
+        prompt?: string;
+        model?: 'pro' | 'flash';
+    }): Promise<{ id: string; url: string; prompt: string } | null> {
+        const modelId = options.model === 'pro'
+            ? AI_MODELS.IMAGE.DIRECT_PRO
+            : AI_MODELS.IMAGE.DIRECT_FAST;
+
+        const parts: import('firebase/ai').Part[] = [
+            { text: options.prompt || 'Render the content image in the artistic style of the style reference. Preserve the subject and composition from the content image. Apply the colors, textures, lighting, and mood from the style reference.' },
+            { inlineData: { mimeType: options.contentImage.mimeType, data: options.contentImage.data } },
+            { text: '[Content Image - preserve this subject/composition]' },
+            { inlineData: { mimeType: options.styleImage.mimeType, data: options.styleImage.data } },
+            { text: '[Style Reference - apply this visual style]' },
+        ];
+
+        const response = await GenAI.rawGenerateContent(
+            [{ role: 'user', parts }],
+            modelId,
+            { responseModalities: ['IMAGE'] }
+        );
+
+        const part = response.response.candidates?.[0]?.content?.parts?.[0];
+        if (part && 'inlineData' in part && part.inlineData) {
+            const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            return {
+                id: crypto.randomUUID(),
+                url,
+                prompt: `Style Transfer: ${options.prompt || 'Applied style reference'}`
+            };
+        }
+        return null;
     }
 }
 
