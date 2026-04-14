@@ -4,22 +4,26 @@ import { z } from "zod";
 import { Client } from "@googlemaps/google-maps-services-js";
 import { geminiApiKey, googleMapsApiKey, getGeminiApiKey } from "../config/secrets";
 
-// Helper for Gemini Calls (similar to generateImageV3 pattern)
-async function generateWithGemini(prompt: string, schema?: any): Promise<any> {
+/**
+ * Helper for Gemini Calls (similar to generateImageV3 pattern)
+ */
+async function generateWithGemini(prompt: string, schema = false): Promise<Record<string, unknown> | string> {
     const modelId = "gemini-2.5-pro";
     // We access the secret value inside the function execution
     const key = getGeminiApiKey();
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${key}`;
 
-    const body: any = {
+    const body: Record<string, unknown> = {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
             responseModalities: ["TEXT"],
         }
     };
 
+    const generationConfig = body.generationConfig as Record<string, unknown>;
+
     if (schema) {
-        body.generationConfig.responseMimeType = "application/json";
+        generationConfig.responseMimeType = "application/json";
         // Gemini 3.1 Pro supports responseSchema for structured JSON output.
         // For simpler "json_mode", we often just ask for JSON in prompt.
     }
@@ -35,14 +39,15 @@ async function generateWithGemini(prompt: string, schema?: any): Promise<any> {
         throw new Error(`Gemini API Error: ${errorText}`);
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error("No content returned from Gemini");
 
     try {
+        if (!schema) return text;
         // Clean up markdown code blocks if present
-        const jsonStr = text.replace(/```json\n?|\n?```/g, "");
-        return JSON.parse(jsonStr);
+        const jsonStr = text.replace(/```json\n?|\n?```/g, "").trim();
+        return JSON.parse(jsonStr) as Record<string, unknown>;
     } catch (_e) {
         console.error("Failed to parse JSON from Gemini:", text);
         throw new Error("Invalid JSON response from AI");
@@ -129,8 +134,8 @@ export const generateItinerary = functions
         try {
             const itinerary = await generateWithGemini(prompt, true);
             return itinerary;
-        } catch (error: any) {
-            throw new functions.https.HttpsError("internal", error.message);
+        } catch (error: unknown) {
+            throw new functions.https.HttpsError("internal", (error as Error).message);
         }
     });
 
@@ -167,8 +172,8 @@ export const checkLogistics = functions
         try {
             const report = await generateWithGemini(prompt, true);
             return report;
-        } catch (error: any) {
-            throw new functions.https.HttpsError("internal", error.message);
+        } catch (error: unknown) {
+            throw new functions.https.HttpsError("internal", (error as Error).message);
         }
     });
 
@@ -222,7 +227,7 @@ export const findPlaces = functions
             })).slice(0, 10); // Limit results
 
             return { places };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Maps API Error:", error);
             if (error instanceof functions.https.HttpsError) {
                 throw error;
