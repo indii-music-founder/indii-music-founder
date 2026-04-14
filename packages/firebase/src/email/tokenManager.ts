@@ -10,6 +10,15 @@
  *   - emailRevokeToken: Revoke and delete stored tokens
  */
 
+/** Interface for normalized token results from providers */
+interface TokenResult {
+    accessToken: string;
+    refreshToken?: string;
+    expiresIn: number;
+    scope: string;
+}
+
+
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { defineSecret } from "firebase-functions/params";
@@ -46,7 +55,7 @@ export const emailExchangeToken = functions
         secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
         timeoutSeconds: 30,
      })
-    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    .https.onCall(async (data: { code?: string; refreshToken?: string; provider?: string }, context: functions.https.CallableContext) => {
         // 1. Authentication required
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
@@ -63,7 +72,7 @@ export const emailExchangeToken = functions
         await enforceRateLimit(userId, "emailExchangeToken", TOKEN_RATE_LIMIT);
 
         try {
-            let tokens: any;
+            let tokens: TokenResult;
 
             if (provider === 'gmail') {
                 tokens = await exchangeGmailCode(code);
@@ -100,9 +109,10 @@ export const emailExchangeToken = functions
                 refreshToken: tokens.refreshToken,
             };
 
-        } catch (error: any) {
-            console.error(`[EmailToken] Exchange failed for ${provider}:`, error);
-            throw new functions.https.HttpsError("internal", `Token exchange failed: ${error.message}`);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error(`[EmailToken] Exchange failed for ${provider}:`, err);
+            throw new functions.https.HttpsError("internal", `Token exchange failed: ${err.message}`);
         }
     });
 
@@ -115,7 +125,7 @@ export const emailRefreshToken = functions
         secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
         timeoutSeconds: 15,
      })
-    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    .https.onCall(async (data: { code?: string; refreshToken?: string; provider?: string }, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
@@ -144,10 +154,10 @@ export const emailRefreshToken = functions
                 if (!tokenDoc.exists) {
                     throw new Error('No stored refresh token. Please reconnect your account.');
                 }
-                actualRefreshToken = tokenDoc.data()?.refreshToken;
+            actualRefreshToken = tokenDoc.data()?.refreshToken;
             }
 
-            let tokens: any;
+            let tokens: TokenResult;
 
             if (provider === 'gmail') {
                 tokens = await refreshGmailToken(actualRefreshToken);
@@ -178,9 +188,10 @@ export const emailRefreshToken = functions
                 provider,
             };
 
-        } catch (error: any) {
-            console.error(`[EmailToken] Refresh failed for ${provider}:`, error);
-            throw new functions.https.HttpsError("internal", `Token refresh failed: ${error.message}`);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error(`[EmailToken] Refresh failed for ${provider}:`, err);
+            throw new functions.https.HttpsError("internal", `Token refresh failed: ${err.message}`);
         }
     });
 
@@ -193,7 +204,7 @@ export const emailRevokeToken = functions
         secrets: [googleOAuthClientId, googleOAuthClientSecret],
         timeoutSeconds: 15,
      })
-    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    .https.onCall(async (data: { code?: string; refreshToken?: string; provider?: string }, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
@@ -238,9 +249,10 @@ export const emailRevokeToken = functions
             console.log(`[EmailToken] Revoked ${provider} tokens for user ${userId}`);
             return { success: true };
 
-        } catch (error: any) {
-            console.error(`[EmailToken] Revoke failed for ${provider}:`, error);
-            throw new functions.https.HttpsError("internal", `Token revocation failed: ${error.message}`);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error(`[EmailToken] Revoke failed for ${provider}:`, err);
+            throw new functions.https.HttpsError("internal", `Token revocation failed: ${err.message}`);
         }
     });
 
@@ -248,7 +260,7 @@ export const emailRevokeToken = functions
 // Gmail Token Helpers
 // ---------------------------------------------------------------------------
 
-async function exchangeGmailCode(code: string): Promise<any> {
+async function exchangeGmailCode(code: string): Promise<TokenResult> {
     const clientId = googleOAuthClientId.value();
     const clientSecret = googleOAuthClientSecret.value();
 
@@ -278,7 +290,7 @@ async function exchangeGmailCode(code: string): Promise<any> {
     };
 }
 
-async function refreshGmailToken(refreshToken: string): Promise<any> {
+async function refreshGmailToken(refreshToken: string): Promise<TokenResult> {
     const clientId = googleOAuthClientId.value();
     const clientSecret = googleOAuthClientSecret.value();
 
@@ -311,7 +323,7 @@ async function refreshGmailToken(refreshToken: string): Promise<any> {
 // Outlook Token Helpers
 // ---------------------------------------------------------------------------
 
-async function exchangeOutlookCode(code: string): Promise<any> {
+async function exchangeOutlookCode(code: string): Promise<TokenResult> {
     const clientId = microsoftClientId.value();
     const clientSecret = microsoftClientSecret.value();
 
@@ -341,7 +353,7 @@ async function exchangeOutlookCode(code: string): Promise<any> {
     };
 }
 
-async function refreshOutlookToken(refreshToken: string): Promise<any> {
+async function refreshOutlookToken(refreshToken: string): Promise<TokenResult> {
     const clientId = microsoftClientId.value();
     const clientSecret = microsoftClientSecret.value();
 

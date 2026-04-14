@@ -39,6 +39,37 @@ interface EditResponse {
     aiGenerationInfo: Record<string, unknown>;
 }
 
+/**
+ * Interface representing a part of the content in a Gemini API request or response.
+ */
+interface GeminiContentPart {
+    text?: string;
+    inlineData?: {
+        mimeType: string;
+        data: string;
+    };
+    thought?: boolean;
+    thought_signature?: string;
+    thoughtSignature?: string;
+}
+
+/**
+ * Interface representing a candidate in the Gemini API response.
+ */
+interface GeminiCandidate {
+    content?: {
+        parts?: GeminiContentPart[];
+    };
+    groundingMetadata?: Record<string, unknown>;
+}
+
+/**
+ * Interface representing the structure of a Gemini generateContent response.
+ */
+interface GeminiGenerateContentResponse {
+    candidates?: GeminiCandidate[];
+}
+
 // ============================================================================
 // SERVICE
 // ============================================================================
@@ -194,6 +225,7 @@ export class GeminiImageService {
      * Build the contents array for the API call.
      * Handles: plain text, reference images, and conversation history.
      * 
+     * @param data - The input data for building contents.
      * @param modelId - The Gemini model ID being used.
      * @returns An array of content objects for the Gemini model.
      */
@@ -262,17 +294,18 @@ export class GeminiImageService {
     /**
      * Extracts results (images, text, thoughts) from the generic model response object.
      * 
-     * @param result - The raw JSON result from the Gemini API.
+     * @param response - The raw JSON result from the Gemini API.
      * @returns Extracted data including images, narrative text, and grounding metadata.
      * @throws {Error} If no candidates or content parts are found in the response.
      */
-    private extractResults(result: Record<string, unknown>): {
+    private extractResults(response: unknown): {
         images: ImageResult[];
         textParts: string[];
         thoughtSignature?: string;
         groundingMetadata?: Record<string, unknown>;
     } {
-        const candidates = result.candidates as any[];
+        const result = response as GeminiGenerateContentResponse;
+        const candidates = result.candidates;
         if (!candidates || candidates.length === 0) {
             throw new Error("No candidates returned from Gemini API");
         }
@@ -327,7 +360,7 @@ export class GeminiImageService {
      * @throws {functions.https.HttpsError} Structured error for the client.
      */
     private handleApiError(error: unknown, context: string): never {
-        const err = error as any;
+        const err = error as Error & { status?: number };
         console.error(`[GeminiImageService:${context}] Error:`, err);
 
         const message = err.message || "Unknown Gemini API error";
@@ -396,13 +429,16 @@ export class GeminiImageService {
                 refImageCount: data.images?.length || 0,
             }));
 
+            // Cast to unexpected 'any' is required because the SDK models.generateContent signature 
+            // is not perfectly aligned with the request object structure for preview models
+            // and we want to preserve the full feature set without runtime type blocking.
             const result = await client.models.generateContent({
                 model: modelId,
-                contents: contents as any,
-                config: config as any,
+                contents: contents as unknown as any,
+                config: config as unknown as any,
             });
 
-            const extracted = this.extractResults(result as any);
+            const extracted = this.extractResults(result);
 
             if (extracted.images.length === 0) {
                 throw new Error("No image data found in response");
@@ -598,13 +634,15 @@ export class GeminiImageService {
                 contents = [{ role: "user", parts }];
             }
 
+            // Cast to unexpected 'any' is required because the SDK models.generateContent signature 
+            // is not perfectly aligned with the request object structure for preview models.
             const result = await client.models.generateContent({
                 model: modelId,
-                contents: contents as any,
-                config: config as any,
+                contents: contents as unknown as any,
+                config: config as unknown as any,
             });
 
-            const extracted = this.extractResults(result as any);
+            const extracted = this.extractResults(result);
 
             if (extracted.images.length === 0) {
                 throw new Error("No image data found in edit response");
@@ -636,7 +674,7 @@ export class GeminiImageService {
                     generatorType: "cloud_function",
                 },
             };
-        } catch (error: any) {
+        } catch (error) {
             return this.handleApiError(error, "edit");
         }
     }
