@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
-import { Wand2, Save, Image as ImageIcon, Play, X, Share2, Star, Download, Sparkles } from 'lucide-react';
+import { Wand2, Save, Image as ImageIcon, Play, X, Star, Sparkles } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
-import { useToast } from '@/core/context/ToastContext';
 
 interface CanvasHeaderProps {
     // Removed isEditing and setIsEditing as they are no longer used
@@ -48,7 +47,6 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     setIsHighFidelity,
     batchExportDimensions
 }) => {
-    const toast = useToast();
 
     return (
         <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-background">
@@ -163,32 +161,6 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     </>
                 )}
 
-                <div className="flex items-center gap-1 bg-gray-800/50 p-1 rounded-lg border border-gray-700">
-                    <button
-                        onClick={() => toast.success("Shared!")}
-                        data-testid="share-btn"
-                        className="p-2 hover:bg-blue-900/40 text-gray-400 hover:text-blue-400 rounded-lg transition-colors"
-                        title="Share"
-                    >
-                        <Share2 size={16} />
-                    </button>
-                    <button
-                        onClick={() => toast.success("Added to Favorites!")}
-                        data-testid="favorite-btn"
-                        className="p-2 hover:bg-yellow-900/40 text-gray-400 hover:text-yellow-400 rounded-lg transition-colors"
-                        title="Add to Favorites"
-                    >
-                        <Star size={16} />
-                    </button>
-                    <button
-                        onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')}
-                        data-testid="download-btn"
-                        className="p-2 hover:bg-green-900/40 text-gray-400 hover:text-green-400 rounded-lg transition-colors"
-                        title="Download"
-                    >
-                        <Download size={16} />
-                    </button>
-                </div>
 
                 <button
                     onClick={onClose}

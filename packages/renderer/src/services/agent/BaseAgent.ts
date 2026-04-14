@@ -444,11 +444,27 @@ export class BaseAgent implements SpecializedAgent {
                     const tier = await MembershipService.getCurrentTier();
                     const tierName = MembershipService.getTierDisplayName(tier);
                     const limits = MembershipService.getLimits(tier);
-                    logger.warn(
-                        `[BaseAgent] Daily spend limit reached in ${this.id}. ` +
-                        `Tier: ${tierName}, Max: $${limits.maxDailySpend.toFixed(2)}/day, ` +
-                        `Remaining: $${budgetCheck.remainingBudget.toFixed(2)}`
-                    );
+
+                    // Diagnostic: capture email state for debugging false-positive denials
+                    try {
+                        const { useStore } = await import('@/core/store');
+                        const state = useStore.getState();
+                        const profileEmail = state.userProfile?.email || '(empty)';
+                        const authEmail = (state as unknown as { user?: { email?: string | null } }).user?.email || '(no auth user)';
+                        logger.warn(
+                            `[BaseAgent] Budget DENIED in ${this.id}. ` +
+                            `profileEmail=${profileEmail}, authEmail=${authEmail}, ` +
+                            `Tier: ${tierName}, Max: $${limits.maxDailySpend.toFixed(2)}/day, ` +
+                            `Remaining: $${budgetCheck.remainingBudget.toFixed(2)}`
+                        );
+                    } catch {
+                        logger.warn(
+                            `[BaseAgent] Daily spend limit reached in ${this.id}. ` +
+                            `Tier: ${tierName}, Max: $${limits.maxDailySpend.toFixed(2)}/day, ` +
+                            `Remaining: $${budgetCheck.remainingBudget.toFixed(2)}`
+                        );
+                    }
+
                     executionContext.rollback();
                     return {
                         text: `Task paused: You've reached your daily AI spend limit ` +

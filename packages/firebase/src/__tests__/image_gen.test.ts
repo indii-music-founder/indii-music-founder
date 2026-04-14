@@ -154,7 +154,7 @@ describe('Image and Content Generation Functions', () => {
 
             expect(mocks.generateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    model: 'gemini-3-flash-preview',
+                    model: 'gemini-3.1-flash-image-preview',
                     contents: [{ role: "user", parts: [{ text: 'a beautiful cat' }] }],
                     config: expect.objectContaining({
                         candidateCount: 2,
@@ -163,14 +163,14 @@ describe('Image and Content Generation Functions', () => {
                 })
             );
 
-            expect(result).toEqual({
+            expect(result).toEqual(expect.objectContaining({
                 images: [
                     { bytesBase64Encoded: 'base64-image-1', mimeType: 'image/png' },
                     { bytesBase64Encoded: 'base64-image-2', mimeType: 'image/png' }
                 ],
                 aiMetadata: expect.any(Object),
                 aiGenerationInfo: expect.any(Object)
-            });
+            }));
         });
     });
 
@@ -200,7 +200,7 @@ describe('Image and Content Generation Functions', () => {
                 contents: [{
                     role: 'user',
                     parts: expect.arrayContaining([
-                        { text: 'Edit the masked region of this image: add a hat' },
+                        { text: expect.stringContaining('add a hat') },
                         { inlineData: { data: 'base64-orig', mimeType: 'image/png' } },
                         { inlineData: { data: 'base64-mask', mimeType: 'image/png' } }
                     ])

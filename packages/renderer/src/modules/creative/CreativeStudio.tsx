@@ -10,10 +10,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
 import { WhiskService } from '@/services/WhiskService';
-import { QuotaExceededError } from '@/shared/types/errors';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import DirectGenerationTab from './components/DirectGenerationTab';
 import { logger } from '@/utils/logger';
+import { useRef } from 'react';
 
 
 // Lazy load CreativePanel for mobile controls tab
@@ -60,16 +60,22 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         }
     }, [initialMode, setGenerationMode]);
 
+    const prevGenerationMode = useRef(generationMode);
+
     useEffect(() => {
         useStore.setState({ isAgentOpen: false });
-        if (generationMode === 'video') {
-            // Allow navigating to editor to pick assets even while in video mode
-            if (viewMode !== 'editor' && viewMode !== 'video_production') {
-                setViewMode('video_production');
+        
+        if (generationMode !== prevGenerationMode.current) {
+            if (generationMode === 'video') {
+                // Allow navigating to editor to pick assets even while in video mode
+                if (viewMode !== 'editor' && viewMode !== 'video_production') {
+                    setViewMode('video_production');
+                }
+            } else if (viewMode === 'video_production') {
+                // If we switched OUT of video mode, go back to direct generation
+                setViewMode('direct');
             }
-        } else if (viewMode === 'video_production') {
-            // If we switched OUT of video mode, go back to direct generation
-            setViewMode('direct');
+            prevGenerationMode.current = generationMode;
         }
     }, [generationMode, viewMode, setViewMode]);
 
@@ -124,7 +130,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 duration: 4,
                                 cameraMovement: 'Dynamic',
                                 motionStrength: 0.8,
-                                model: 'pro'
+                                model: studioControls.model
                             })
                         );
 
@@ -276,7 +282,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 item={selectedItem}
                                 onClose={() => {
                                     setSelectedItem(null);
-                                    setViewMode('direct');
+                                    setViewMode(generationMode === 'video' ? 'video_production' : 'direct');
                                 }}
                                 onSendToWorkflow={(type, item) => {
                                     const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();

@@ -150,7 +150,7 @@ export function buildCreativeControlsState(
             duration: 6,
             shotList: [],
             isCoverArtMode: false,
-            model: 'pro',
+            model: 'fast',
             thinking: false,
             mediaResolution: 'medium',
             generateAudio: true,
