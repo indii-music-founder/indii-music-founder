@@ -1,3 +1,11 @@
+/**
+ * Nano Banana Image Schema Definitions
+ * 
+ * This module defines the Zod schemas used for validating image generation
+ * and editing requests both on the client and in Cloud Functions.
+ * It strictly adheres to the Gemini 3.1 capability map.
+ */
+
 import { z } from "zod";
 
 // ============================================================================
@@ -78,6 +86,9 @@ const ConversationTurnSchema = z.object({
 // GENERATE IMAGE REQUEST
 // ============================================================================
 
+/**
+ * Schema for standard text-to-image generation requests.
+ */
 export const GenerateImageRequestSchema = z.object({
     /** The text prompt describing what to generate */
     prompt: z.string().min(1, "Prompt is required"),
@@ -162,6 +173,9 @@ export const GenerateImageRequestSchema = z.object({
 // EDIT IMAGE REQUEST
 // ============================================================================
 
+/**
+ * Schema for image editing requests (inpainting, outpainting, composition).
+ */
 export const EditImageRequestSchema = z.object({
     /** Base image to edit (Base64) */
     image: z.string().min(1, "Base image is required"),

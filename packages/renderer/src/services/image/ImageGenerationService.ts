@@ -99,18 +99,30 @@ export interface RemixOptions {
 // SERVICE
 // ============================================================================
 
+/**
+ * ImageGenerationService
+ *
+ * Client-side service for managing Nano Banana image generation workflows.
+ * Orchestrates calls to Firebase Cloud Functions and handles
+ * distributor-aware prompt injection and quota pre-flights.
+ */
 export class ImageGenerationService {
 
     /**
-     * Get distributor-aware image constraints.
-     * Returns the image specs required by the user's distributor.
+     * Retrieves architectural constraints for image generation based on user's distributor.
+     * 
+     * @param profile - The active user profile.
+     * @returns Object containing width, height, and color mode requirements.
      */
     getDistributorConstraints(profile: UserProfile): ImageConstraints {
         return getImageConstraints(profile);
     }
 
     /**
-     * Build a distributor-aware prompt that includes sizing requirements.
+     * Constructs a final prompt string by injecting distributor requirements and project context.
+     * 
+     * @param options - Generation options containing prompt and context.
+     * @returns Fully qualified prompt string for the model.
      */
     private buildDistributorAwarePrompt(options: ImageGenerationOptions): string {
         let prompt = options.prompt;
@@ -133,7 +145,10 @@ export class ImageGenerationService {
     }
 
     /**
-     * Get the appropriate aspect ratio for the request.
+     * Resolves the target aspect ratio, defaulting to 1:1 square for cover art.
+     * 
+     * @param options - Generation options.
+     * @returns Aspect ratio string (e.g., "16:9").
      */
     private getAspectRatio(options: ImageGenerationOptions): string {
         // If cover art mode, always use 1:1 square
@@ -144,11 +159,13 @@ export class ImageGenerationService {
     }
 
     /**
-     * Generate images using the Nano Banana Cloud Function.
-     *
-     * ALL configuration parameters are passed through to the backend.
-     * No parameter stripping — the backend Cloud Function handles validation
-     * and capability gating per model tier.
+     * Triggers the image generation pipeline via Cloud Functions.
+     * Performs authentication pre-flights and quota checks.
+     * 
+     * @param options - Full configuration for the Generation API.
+     * @returns A promise resolving to an array of generated image results.
+     * @throws {Error} If session is unauthenticated or expired.
+     * @throws {QuotaExceededError} If usage limits are reached.
      */
     async generateImages(options: ImageGenerationOptions): Promise<ImageGenerationResult[]> {
         logger.debug('[ImageGen DEBUG] Entering generateImages', options);
