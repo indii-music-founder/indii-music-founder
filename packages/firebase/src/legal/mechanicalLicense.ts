@@ -7,7 +7,7 @@ export const verifyMechanicalLicense = functions
         timeoutSeconds: 60,
         memory: "256MB"
     })
-    .https.onCall(async (data: any, context) => {
+    .https.onCall(async (data: Record<string, unknown>, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -15,7 +15,7 @@ export const verifyMechanicalLicense = functions
             );
         }
 
-        const { trackTitle, originalArtist } = data;
+        const { trackTitle, originalArtist } = data as { trackTitle: string; originalArtist: string };
 
         if (!trackTitle || !originalArtist) {
             throw new functions.https.HttpsError(

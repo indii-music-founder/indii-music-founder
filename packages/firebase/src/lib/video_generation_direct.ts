@@ -45,7 +45,7 @@ export interface DirectVideoGenerationParams {
     userId: string;
     orgId: string;
     prompt: string;
-    options: Record<string, any>;
+    options: Record<string, unknown>;
 }
 
 /**
@@ -58,7 +58,8 @@ export interface DirectVideoGenerationParams {
  *   4. Extract video URI and update Firestore
  */
 export async function generateVideoDirect(params: DirectVideoGenerationParams): Promise<void> {
-    const { jobId, userId, prompt, options } = params;
+    const { jobId, userId, prompt, options: rawOptions } = params;
+    const options = rawOptions as Record<string, unknown>;
     const isThinking = options?.thinking === true;
     let finalPrompt = isThinking
         ? `[Think CINEMATIC PHYSICS & CONTINUITY]: ${prompt}`
@@ -97,7 +98,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ── Step 3: Build config ───────────────────────────────────────────
         // Only include parameters confirmed by official docs:
         // aspectRatio, durationSeconds, personGeneration, resolution, numberOfVideos
-        const config: Record<string, any> = {
+        const config: Record<string, unknown> = {
             numberOfVideos: 1,
         };
 
@@ -110,9 +111,9 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         }
 
         // Duration — must be 4, 5, 6, or 8
-        const rawDuration = options?.durationSeconds || options?.duration;
+        const rawDuration = options.durationSeconds || options.duration;
         if (rawDuration) {
-            let dur = typeof rawDuration === 'string' ? parseInt(rawDuration) : rawDuration;
+            let dur = typeof rawDuration === 'string' ? parseInt(rawDuration) : (rawDuration as number);
             if (dur <= 4) dur = 4;
             else if (dur <= 6) dur = 6; // strictly 4, 6, or 8 for Veo 3.1
             else dur = 8;
@@ -120,12 +121,12 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         }
 
         // Person generation — Veo 3.1 supports allow_adult, allow_all
-        if (options?.personGeneration) {
+        if (options.personGeneration) {
             config.personGeneration = options.personGeneration;
         }
 
         // Resolution — 720p, 1080p, 4k
-        if (options?.resolution && ['720p', '1080p', '4k'].includes(options.resolution)) {
+        if (options.resolution && ['720p', '1080p', '4k'].includes(options.resolution as string)) {
             config.resolution = options.resolution;
         }
 
@@ -133,10 +134,11 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         let imageInput: { imageBytes: string; mimeType: string } | undefined;
 
         let startImageBytes: string | undefined;
-        if (options?.image?.imageBytes) {
-            startImageBytes = options.image.imageBytes;
+        const optImage = (options.image as Record<string, unknown>) || {};
+        if (optImage.imageBytes) {
+            startImageBytes = optImage.imageBytes as string;
         } else {
-            startImageBytes = await fetchImageAsBase64(options?.firstFrame);
+            startImageBytes = await fetchImageAsBase64(options.firstFrame as string);
         }
         if (startImageBytes) {
             imageInput = {
@@ -189,10 +191,11 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
 
             try {
                 operation = await ai.operations.getVideosOperation({ operation });
-            } catch (pollErr: any) {
-                console.warn(`[VideoGenDirect] Poll attempt ${attempts} failed: ${pollErr.message}`);
+            } catch (pollErr: unknown) {
+                const err = pollErr as Error;
+                console.warn(`[VideoGenDirect] Poll attempt ${attempts} failed: ${err.message}`);
                 if (attempts >= maxAttempts) {
-                    throw new Error(`Polling failed after ${attempts} attempts: ${pollErr.message}`);
+                    throw new Error(`Polling failed after ${attempts} attempts: ${err.message}`);
                 }
             }
         }
@@ -204,7 +207,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         console.log(`[VideoGenDirect] Operation complete for ${jobId}`);
 
         // ── Step 7: Extract video from response ────────────────────────────
-        const response = operation.response as unknown as { generatedVideos?: Array<Record<string, any>> };
+        const response = operation.response as unknown as { generatedVideos?: Array<Record<string, unknown>> };
         if (!response) {
             const opAny = operation as unknown as { error?: { message?: string } };
             if (opAny.error) {
@@ -237,7 +240,8 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         const targetBucketName = (process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indiios-alpha-electron.appspot.com').replace('.appspot.com', '');
 
         // Check for bytesBase64Encoded or videoBytes inline first
-        const base64Data = video?.bytesBase64Encoded || video?.videoBytes;
+        const videoObj = video as Record<string, unknown>;
+        const base64Data = videoObj.bytesBase64Encoded || videoObj.videoBytes;
         if (base64Data) {
             console.log(`[VideoGenDirect] Got inline base64 video, uploading to Storage ${targetBucketName}...`);
             const bucket = admin.storage().bucket(targetBucketName);
@@ -250,7 +254,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             if (typeof base64Data === 'string') {
                 buffer = Buffer.from(base64Data, 'base64');
             } else {
-                buffer = Buffer.from(base64Data);
+                buffer = Buffer.from(base64Data as Uint8Array);
             }
 
             await file.save(buffer, {
@@ -262,11 +266,12 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         }
 
         // Otherwise, download via SDK file API
-        if (!videoUrl && video?.name) {
-            console.log(`[VideoGenDirect] Attempting SDK file download for: ${video.name}`);
+        if (!videoUrl && videoObj.name) {
+            console.log(`[VideoGenDirect] Attempting SDK file download for: ${videoObj.name}`);
             try {
                 const tmpPath = `/tmp/${jobId}.mp4`;
-                await ai.files.download({ file: video, downloadPath: tmpPath });
+                // Cast to any for the external API call where the SDK type is complex
+                await ai.files.download({ file: videoObj as any, downloadPath: tmpPath });
 
                 // Read from tmp and upload to Storage
                 const fs = await import("fs");
@@ -285,17 +290,18 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
                 if (fs.existsSync(tmpPath)) {
                     fs.unlinkSync(tmpPath);
                 }
-            } catch (downloadErr: any) {
+            } catch (downloadErr: unknown) {
                 console.error(`[VideoGenDirect] SDK file download failed:`, downloadErr);
             }
         }
 
         // Fallback: If it gave us a URI, try fetching it directly with the API key or ADC
-        if (!videoUrl && video?.uri) {
-            console.log(`[VideoGenDirect] Attempting fetch fallback from URI: ${video.uri}`);
+        if (!videoUrl && videoObj.uri) {
+            const vUri = videoObj.uri as string;
+            console.log(`[VideoGenDirect] Attempting fetch fallback from URI: ${vUri}`);
             try {
                 const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-                const fetchUrl = apiKey && !video.uri.includes('key=') ? `${video.uri}&key=${apiKey}` : video.uri;
+                const fetchUrl = apiKey && !vUri.includes('key=') ? `${vUri}&key=${apiKey}` : vUri;
                 const res = await fetch(fetchUrl);
                 if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`);
                 const arrayBuf = await res.arrayBuffer();
@@ -310,14 +316,14 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
                 });
                 videoUrl = file.publicUrl();
                 console.log(`[VideoGenDirect] Fetched directly from URI and uploaded: ${videoUrl}`);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error(`[VideoGenDirect] URI fetch fallback failed:`, err);
             }
         }
 
         if (!videoUrl) {
             // Strip out massive buffers to prevent Firestore 1MB document limit crashes
-            const safeOutputKeys = generatedVideos.map((v: any) => Object.keys(v?.video || {}));
+            const safeOutputKeys = generatedVideos.map((v: Record<string, unknown>) => Object.keys((v?.video as Record<string, unknown>) || {}));
             throw new Error(`No video URL or downloadable video in response. Available keys: ${JSON.stringify(safeOutputKeys)}`);
         }
 
@@ -340,11 +346,12 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
 
         console.log(`[VideoGenDirect] ✅ Job ${jobId} completed. Video: ${videoUrl}`);
 
-    } catch (error: any) {
-        console.error(`[VideoGenDirect] ❌ Error in Video Generation (${jobId}):`, error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error(`[VideoGenDirect] ❌ Error in Video Generation (${jobId}):`, err);
         await admin.firestore().collection("videoJobs").doc(jobId).set({
             status: "failed",
-            error: error.message || "Unknown error during video generation",
+            error: err.message || "Unknown error during video generation",
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
     }

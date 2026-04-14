@@ -2,10 +2,35 @@ import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
 import { FUNCTION_AI_MODELS } from "../config/models";
 
-export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => inngestClient.createFunction(
+interface VideoGenerateEventData {
+    jobId: string;
+    prompt: string;
+    userId: string;
+    options?: {
+        thinking?: boolean;
+        model?: string;
+        generateAudio?: boolean;
+        aspectRatio?: string;
+        personGeneration?: string;
+        resolution?: string;
+        durationSeconds?: number | string;
+        duration?: number | string;
+        inputVideo?: string;
+        image?: { imageBytes?: string };
+        firstFrame?: string;
+        lastFrame?: string;
+        referenceImages?: Array<string | Record<string, unknown>>;
+        ingredients?: Array<string | Record<string, unknown>>;
+        fps?: number;
+    };
+}
+
+export const generateVideoFn = (inngestClient: {
+    createFunction: (config: Record<string, unknown>, trigger: Record<string, unknown>, handler: (ctx: { event: { data: VideoGenerateEventData }, step: any }) => Promise<unknown>) => unknown
+}, _geminiApiKey: string | undefined) => inngestClient.createFunction(
     { id: "generate-video-logic" },
     { event: "video/generate.requested" },
-    async ({ event, step }: any) => {
+    async ({ event, step }: { event: { data: VideoGenerateEventData }, step: any }) => {
         const { jobId, prompt, userId, options } = event.data;
         const isThinking = options?.thinking === true;
         let finalPrompt = isThinking
@@ -50,12 +75,35 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
 
                 const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
 
-                const requestBody: any = {
+                interface VertexVideoRequest {
+                    instances: Array<{
+                        prompt: string;
+                        video?: { bytesBase64Encoded: string };
+                        image?: { bytesBase64Encoded: string };
+                    }>;
+                    parameters: {
+                        sampleCount: number;
+                        aspectRatio: string;
+                        personGeneration: string;
+                        generateAudio: boolean;
+                        resolution?: string;
+                        durationSeconds?: number;
+                        lastFrame?: { bytesBase64Encoded: string };
+                        referenceImages?: Array<{
+                            image: { bytesBase64Encoded: string };
+                            referenceType: string;
+                        }>;
+                        duration?: number;
+                    };
+                    safetySettings: Array<{ category: string; threshold: string }>;
+                }
+
+                const requestBody: VertexVideoRequest = {
                     instances: [{ prompt: finalPrompt }],
                     parameters: {
                         sampleCount: 1,
-                        aspectRatio: options?.aspectRatio || "16:9",
-                        personGeneration: options?.personGeneration || "allow_adult",
+                        aspectRatio: (options?.aspectRatio as string) || "16:9",
+                        personGeneration: (options?.personGeneration as string) || "allow_adult",
                         generateAudio: requestedAudio ?? true
                     },
                     safetySettings: [
@@ -75,14 +123,14 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
                 const rawDuration = options?.durationSeconds || options?.duration;
                 if (rawDuration) {
                     // Clamp to supported values or default to 8
-                    let dur = typeof rawDuration === 'string' ? parseInt(rawDuration) : rawDuration;
+                    let dur = typeof rawDuration === 'string' ? parseInt(rawDuration) : (rawDuration as number);
                     if (dur <= 4) dur = 4;
                     else if (dur <= 6) dur = 6;
                     else dur = 8;
                     requestBody.parameters.durationSeconds = dur;
 
                     // Force 8s for 1080p/4k
-                    if (['1080p', '4k'].includes(options?.resolution)) {
+                    if (options?.resolution && ['1080p', '4k'].includes(options.resolution)) {
                         requestBody.parameters.durationSeconds = 8;
                     }
                 }
@@ -168,9 +216,9 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
                 }
 
                 // VEO 3.1: Ingredients (Reference Images - Up to 3)
-                const refImages = options?.referenceImages || options?.ingredients;
+                const refImages = options?.referenceImages || (options?.ingredients as Array<string | Record<string, unknown>>);
                 if (refImages && Array.isArray(refImages)) {
-                    requestBody.parameters.referenceImages = await Promise.all(refImages.slice(0, 3).map(async (ref: any) => {
+                    requestBody.parameters.referenceImages = await Promise.all(refImages.slice(0, 3).map(async (ref: string | Record<string, unknown>) => {
                         // Handle both old schema (string) and new schema (object)
                         let rawContent = "";
                         let refType = "ASSET";
@@ -179,8 +227,10 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
                             rawContent = ref;
                         } else {
                             // New schema
-                            rawContent = ref.image?.imageBytes || ref.image?.uri || ref.data || "";
-                            refType = ref.referenceType || "ASSET";
+                            const refObj = ref as Record<string, unknown>;
+                            const refImage = (refObj.image as Record<string, unknown>) || {};
+                            rawContent = (refImage.imageBytes as string) || (refImage.uri as string) || (refObj.data as string) || "";
+                            refType = (refObj.referenceType as string) || "ASSET";
                         }
 
                         const cleanBytes = await fetchImageAsBase64(rawContent);
@@ -192,7 +242,7 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
                             referenceType: refType
                         };
                     }));
-                    requestBody.parameters.personGeneration = options?.personGeneration || "allow_adult";
+                    requestBody.parameters.personGeneration = (options?.personGeneration as string) || "allow_adult";
                     // Reference images force 8s
                     requestBody.parameters.duration = 8;
                 }
@@ -211,19 +261,19 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
                     throw new Error(`Vertex AI Trigger Error: ${response.status} ${errorText}`);
                 }
 
-                const result = await response.json();
+                const result = (await response.json()) as Record<string, unknown>;
                 if (!result.name) throw new Error("No operation name returned from Vertex AI");
                 return result;
             });
 
-            const operationName = operation.name;
+            const operationName = operation.name as string;
             console.log(`[Inngest] Operation started: ${operationName}`);
 
             // Polling Loop
             let isCompleted = false;
             let attempts = 0;
             const maxAttempts = 60; // 5 minutes (5s * 60)
-            let finalResult = null;
+            let finalResult: Record<string, unknown> | null = null;
 
             while (!isCompleted && attempts < maxAttempts) {
                 attempts++;
@@ -257,7 +307,7 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
                         return null;
                     }
 
-                    const statusData = await statusResponse.json();
+                    const statusData = (await statusResponse.json()) as Record<string, unknown>;
                     if (statusData.done) return statusData;
                     return null;
                 });
@@ -272,7 +322,8 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
             }
 
             if (finalResult.error) {
-                throw new Error(`Vertex AI Operation Failed: ${finalResult.error.code} - ${finalResult.error.message}`);
+                const error = finalResult.error as Record<string, unknown>;
+                throw new Error(`Vertex AI Operation Failed: ${error.code} - ${error.message}`);
             }
 
             if (!finalResult.response) {
@@ -281,7 +332,7 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
 
             // Process Result
             const { videoUri, metadata } = await step.run("process-video-output", async () => {
-                const responseData = finalResult.response;
+                const responseData = finalResult?.response as Record<string, unknown>;
                 console.log("[Inngest] Final Result from Google AI:", JSON.stringify(finalResult, null, 2));
 
                 if (!responseData) {
@@ -289,23 +340,27 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
                 }
 
                 // Veo 3.1 Response Structure
-                const generatedSamples = responseData.generateVideoResponse?.generatedSamples;
+                const generateVideoResponse = responseData.generateVideoResponse as Record<string, unknown>;
+                const generatedSamples = generateVideoResponse?.generatedSamples as Record<string, unknown>[];
                 if (generatedSamples && generatedSamples.length > 0) {
                     const sample = generatedSamples[0];
-                    if (sample.video && sample.video.uri) {
-                        console.log(`[Inngest] Found video URI: ${sample.video.uri}`);
+                    const video = sample.video as Record<string, unknown>;
+                    if (video && video.uri) {
+                        const videoUri = video.uri as string;
+                        console.log(`[Inngest] Found video URI: ${videoUri}`);
 
                         // Extract metadata
-                        const videoMetadata = sample.videoMetadata || {};
+                        const videoMetadata = (sample.videoMetadata as Record<string, unknown>) || {};
                         let durationSeconds = 5;
-                        if (videoMetadata.duration && typeof videoMetadata.duration === 'string') {
-                            const match = videoMetadata.duration.match(/([\d.]+)s$/);
+                        const duration = videoMetadata.duration as string;
+                        if (duration) {
+                            const match = duration.match(/([\d.]+)s$/);
                             if (match) {
                                 durationSeconds = parseFloat(match[1]);
                             }
                         }
 
-                        let downloadUrl = sample.video.uri;
+                        let downloadUrl = videoUri;
 
                         // Convert gs:// to public HTTPS URL if needed
                         if (downloadUrl.startsWith('gs://')) {
@@ -327,24 +382,25 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
                 }
 
                 // Fallback for older models
-                const outputs = responseData.outputs;
+                const outputs = responseData.outputs as Record<string, unknown>[];
                 if (outputs && outputs.length > 0) {
                     const output = outputs[0];
-                    let uri = null;
+                    const video = output.video as Record<string, unknown>;
+                    let uri: string | null = null;
 
                     // If it returns bytes
-                    if (output.video && output.video.bytesBase64Encoded) {
+                    if (video && video.bytesBase64Encoded) {
                         const bucket = admin.storage().bucket();
                         const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                        await file.save(Buffer.from(output.video.bytesBase64Encoded, 'base64'), {
+                        await file.save(Buffer.from(video.bytesBase64Encoded as string, 'base64'), {
                             metadata: { contentType: 'video/mp4' },
                             public: true
                         });
                         uri = file.publicUrl();
                     } else if (output.videoUri) {
-                        uri = output.videoUri;
+                        uri = output.videoUri as string;
                     } else if (output.gcsUri) {
-                        uri = output.gcsUri;
+                        uri = output.gcsUri as string;
                     }
 
                     if (uri) {
@@ -384,16 +440,17 @@ export const generateVideoFn = (inngestClient: any, _geminiApiKey: any) => innge
 
             return { success: true, videoUrl: videoUri };
 
-        } catch (error: any) {
-            console.error(`[Inngest] Error in Video Generation (${jobId}):`, error);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error(`[Inngest] Error in Video Generation (${jobId}):`, err);
             await step.run("update-status-failed", async () => {
                 await admin.firestore().collection("videoJobs").doc(jobId).set({
                     status: "failed",
-                    error: error.message || "Unknown error during video generation",
+                    error: err.message || "Unknown error during video generation",
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             });
-            throw error;
+            throw err;
         }
     }
 );
