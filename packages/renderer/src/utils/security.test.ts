@@ -3,20 +3,8 @@ import { generateSecureId, generateSecureHex } from './security';
 
 describe('Security Utilities', () => {
   describe('generateSecureHex', () => {
-    let originalCrypto: Crypto;
-
-    beforeEach(() => {
-      // Save original crypto
-      originalCrypto = globalThis.crypto;
-    });
-
     afterEach(() => {
-      // Restore original crypto
-      Object.defineProperty(globalThis, 'crypto', {
-        value: originalCrypto,
-        writable: true,
-        configurable: true,
-      });
+      vi.unstubAllGlobals();
     });
 
     it('should generate a string of the exact requested length', () => {
@@ -33,12 +21,7 @@ describe('Security Utilities', () => {
     });
 
     it('should throw an error if crypto.getRandomValues is not available', () => {
-      // Temporarily mock crypto to not have getRandomValues
-      Object.defineProperty(globalThis, 'crypto', {
-        value: { getRandomValues: undefined },
-        writable: true,
-        configurable: true,
-      });
+      vi.stubGlobal('crypto', { getRandomValues: undefined });
 
       expect(() => generateSecureHex(10)).toThrow(
         '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
@@ -46,16 +29,7 @@ describe('Security Utilities', () => {
     });
 
     it('should throw an error if crypto is deleted from globalThis', () => {
-      // Temporarily mock globalThis.crypto to not exist using Object.defineProperty
-      // which allows the existing afterEach hook to properly restore it.
-      Object.defineProperty(globalThis, 'crypto', {
-        value: undefined, // this effectively simulates the property being missing
-        writable: true,
-        configurable: true,
-      });
-
-      // To fully simulate deletion and ensure the global proxy handles it as missing:
-      delete (globalThis as any).crypto;
+      vi.stubGlobal('crypto', undefined);
 
       expect(() => generateSecureHex(10)).toThrow(
         '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
@@ -63,12 +37,7 @@ describe('Security Utilities', () => {
     });
 
     it('should throw an error if crypto is null', () => {
-      // Temporarily mock crypto to be null
-      Object.defineProperty(globalThis, 'crypto', {
-        value: null,
-        writable: true,
-        configurable: true,
-      });
+      vi.stubGlobal('crypto', null);
 
       expect(() => generateSecureHex(10)).toThrow(
         '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
@@ -76,12 +45,7 @@ describe('Security Utilities', () => {
     });
 
     it('should throw an error if crypto itself is undefined', () => {
-      // Temporarily mock crypto to be undefined
-      Object.defineProperty(globalThis, 'crypto', {
-        value: undefined,
-        writable: true,
-        configurable: true,
-      });
+      vi.stubGlobal('crypto', undefined);
 
       expect(() => generateSecureHex(10)).toThrow(
         '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
