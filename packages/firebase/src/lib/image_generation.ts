@@ -194,15 +194,21 @@ export class GeminiImageService {
      * Build the contents array for the API call.
      * Handles: plain text, reference images, and conversation history.
      * 
-     * @param data - The request data containing prompt, images, and history.
+     * @param modelId - The Gemini model ID being used.
      * @returns An array of content objects for the Gemini model.
      */
-    private buildContents(data: {
-        prompt: string;
-        images?: { mimeType: string; data: string }[] | null;
-        conversationHistory?: { role: string; parts: Record<string, unknown>[] }[] | null;
-        thoughtSignature?: string | null;
-    }): Record<string, unknown>[] {
+    private buildContents(
+        data: {
+            prompt: string;
+            images?: { mimeType: string; data: string }[] | null;
+            conversationHistory?: { role: string; parts: Record<string, unknown>[] }[] | null;
+            thoughtSignature?: string | null;
+        },
+        modelId: string
+    ): Record<string, unknown>[] {
+        const caps = NANO_BANANA_CAPABILITIES[modelId as keyof typeof NANO_BANANA_CAPABILITIES];
+        const maxRefImages = caps?.maxReferenceImages ?? 0;
+
         // Multi-turn: if conversation history is provided, use it as the base
         // and append the new user message at the end
         if (data.conversationHistory && data.conversationHistory.length > 0) {
@@ -211,9 +217,10 @@ export class GeminiImageService {
             // Build the new user turn
             const userParts: Record<string, unknown>[] = [];
 
-            // Add reference images first
-            if (data.images && data.images.length > 0) {
-                for (const img of data.images) {
+            // Add reference images first (if supported)
+            if (maxRefImages > 0 && data.images && data.images.length > 0) {
+                const imagesToAdd = data.images.slice(0, maxRefImages);
+                for (const img of imagesToAdd) {
                     userParts.push({
                         inlineData: {
                             mimeType: img.mimeType,
@@ -236,9 +243,10 @@ export class GeminiImageService {
         // Text prompt first
         parts.push({ text: data.prompt });
 
-        // Reference images
-        if (data.images && data.images.length > 0) {
-            for (const img of data.images) {
+        // Reference images (if supported)
+        if (maxRefImages > 0 && data.images && data.images.length > 0) {
+            const imagesToAdd = data.images.slice(0, maxRefImages);
+            for (const img of imagesToAdd) {
                 parts.push({
                     inlineData: {
                         mimeType: img.mimeType,
@@ -376,7 +384,7 @@ export class GeminiImageService {
         try {
             const client = this.getClient();
             const config = this.buildConfig(data, modelId);
-            const contents = this.buildContents(data);
+            const contents = this.buildContents(data, modelId);
 
             console.log(`[GeminiImageService:generate] Config:`, JSON.stringify({
                 model: modelId,
@@ -561,9 +569,13 @@ export class GeminiImageService {
                     });
                 }
 
+                const caps = NANO_BANANA_CAPABILITIES[modelId as keyof typeof NANO_BANANA_CAPABILITIES];
+                const maxRefs = caps?.maxReferenceImages ?? 0;
+
                 // Reference images (new array field)
-                if (data.referenceImages && data.referenceImages.length > 0) {
-                    for (const ref of data.referenceImages) {
+                if (maxRefs > 0 && data.referenceImages && data.referenceImages.length > 0) {
+                    const imagesToAdd = data.referenceImages.slice(0, maxRefs);
+                    for (const ref of imagesToAdd) {
                         parts.push({
                             inlineData: {
                                 mimeType: ref.mimeType,
@@ -574,7 +586,7 @@ export class GeminiImageService {
                 }
 
                 // Legacy single reference image
-                if (data.referenceImage && !data.referenceImages?.length) {
+                if (maxRefs > 1 && data.referenceImage && !data.referenceImages?.length) {
                     parts.push({
                         inlineData: {
                             mimeType: data.refMimeType || "image/png",
