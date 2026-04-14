@@ -60,6 +60,11 @@ interface EditResponse {
 export class GeminiImageService {
     private client: GoogleGenAI | null = null;
 
+    /**
+     * Lazily initializes and returns the Google Gen AI client.
+     * @returns The initialized GoogleGenAI instance.
+     * @throws {functions.https.HttpsError} If the API key is missing or invalid.
+     */
     private getClient(): GoogleGenAI {
         if (!this.client) {
             const apiKey = getGeminiApiKey();
@@ -75,7 +80,9 @@ export class GeminiImageService {
     }
 
     /**
-     * Resolve the model tier string to an actual model ID.
+     * Resolves a NanoBananaTier to its corresponding model ID string.
+     * @param tier - The tier to resolve.
+     * @returns The model ID string (e.g., 'gemini-3.1-flash-image-preview').
      */
     private resolveModelId(tier: NanoBananaTier | undefined | null): string {
         switch (tier) {
@@ -92,6 +99,10 @@ export class GeminiImageService {
     /**
      * Build the SDK config object from request parameters.
      * Maps our schema fields to the exact Gemini SDK config shape.
+     * 
+     * @param data - The raw request data from the client.
+     * @param modelId - The resolved model ID string.
+     * @returns A configuration object compatible with the Google Gen AI SDK.
      */
     private buildConfig(data: {
         aspectRatio?: string | null;
@@ -182,6 +193,9 @@ export class GeminiImageService {
     /**
      * Build the contents array for the API call.
      * Handles: plain text, reference images, and conversation history.
+     * 
+     * @param data - The request data containing prompt, images, and history.
+     * @returns An array of content objects for the Gemini model.
      */
     private buildContents(data: {
         prompt: string;
@@ -238,8 +252,11 @@ export class GeminiImageService {
     }
 
     /**
-     * Extract results from the API response.
-     * Handles: image parts, text parts, thinking parts, thought signatures, grounding metadata.
+     * Extracts results (images, text, thoughts) from the generic model response object.
+     * 
+     * @param result - The raw JSON result from the Gemini API.
+     * @returns Extracted data including images, narrative text, and grounding metadata.
+     * @throws {Error} If no candidates or content parts are found in the response.
      */
     private extractResults(result: Record<string, unknown>): {
         images: ImageResult[];
@@ -294,7 +311,12 @@ export class GeminiImageService {
     }
 
     /**
-     * Map Gemini API errors to Firebase HTTPS Errors
+     * Maps low-level Gemini API errors to structured Firebase Cloud Function errors.
+     * 
+     * @param error - The raw error object caught from the SDK.
+     * @param context - Descriptive context (e.g., 'generate' or 'edit') for logging.
+     * @returns This method never returns normally; it always throws.
+     * @throws {functions.https.HttpsError} Structured error for the client.
      */
     private handleApiError(error: unknown, context: string): never {
         const err = error as any;
@@ -421,6 +443,9 @@ export class GeminiImageService {
      * - Multi-turn conversation history for iterative editing
      * - Full config passthrough (imageConfig, thinkingConfig, tools)
      * - Thought signature circulation
+     * 
+     * @param data - The edit request containing source image, mask, and instructions.
+     * @returns A promise resolving to the edited image and narration.
      */
     async edit(data: EditImageRequest): Promise<EditResponse> {
         // Resolve model — accept tier string or full model ID
@@ -605,18 +630,22 @@ export class GeminiImageService {
     }
 }
 
+/** Singleton instance of GeminiImageService used by Cloud Functions */
 const service = new GeminiImageService();
 
-// ============================================================================
-// CLOUD FUNCTION ENTRY POINTS
-// ============================================================================
-
+/**
+ * Cloud Function: Text-to-Image Generation (V3)
+ * 
+ * Scalable entry point for generating images with Gemini 3.1+.
+ * Enforces authentication, rate limits, and schema validation.
+ */
 export const generateImageV3Fn = () => functions
     .region("us-west1")
     .runWith({
         enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
+        // Pro needs more overhead for 4K and long-context history
         memory: "512MB"
     })
     .https.onCall(async (data: unknown, context) => {
@@ -641,6 +670,12 @@ export const generateImageV3Fn = () => functions
         return await service.generate(validation.data);
     });
 
+/**
+ * Cloud Function: Image Editing (Inpainting/Outpainting)
+ * 
+ * Scalable entry point for editing images using Gemini.
+ * Supports reference images, masks, and iterative turns.
+ */
 export const editImageFn = () => functions
     .region("us-west1")
     .runWith({
