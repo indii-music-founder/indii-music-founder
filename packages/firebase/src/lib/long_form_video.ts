@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
 import { z } from "zod";
 import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
+import { Inngest } from "inngest";
 import { FUNCTION_AI_MODELS } from "../config/models";
 
 /**
@@ -125,11 +126,12 @@ const FRAME_EXTRACTION_MAX_POLL_ATTEMPTS = 20;
  * Uses Veo to generate each segment. If a startImage is provided (or extracted
  * from previous segment), it uses it for continuity.
  */
-export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) => inngestClient.createFunction(
+export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: string) => inngestClient.createFunction(
     { id: "generate-long-form-video" },
     { event: "video/long_form.requested" },
-    async ({ event, step }: any) => {
-        const { jobId, prompts, userId, startImage, options, orgId } = event.data;
+    async ({ event, step }) => {
+        const data = event.data as LongFormVideoJobInput;
+        const { jobId, prompts, userId, startImage, options, orgId } = data;
         const segmentUrls: string[] = [];
 
         // Initialize currentStartImage
@@ -211,12 +213,12 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                         throw new Error(`Veo Trigger Segment ${i} failed: ${triggerResponse.status} ${errorText}`);
                     }
 
-                    const triggerResult = await triggerResponse.json();
-                    return triggerResult.name;
+                    const triggerResult = (await triggerResponse.json()) as Record<string, unknown>;
+                    return triggerResult.name as string;
                 });
 
                 // Polling Loop
-                let segmentResult: any = null;
+                let segmentResult: Record<string, unknown> | null = null;
                 let isDone = false;
 
                 for (let attempt = 0; attempt < SEGMENT_MAX_POLL_ATTEMPTS; attempt++) {
@@ -244,10 +246,10 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                             }
                             return { done: false };
                         }
-                        return await statusResponse.json();
+                        return (await statusResponse.json()) as Record<string, unknown>;
                     });
 
-                    if (segmentResult.done) {
+                    if (segmentResult?.done) {
                         isDone = true;
                         break;
                     }
@@ -259,12 +261,15 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
 
                 // Store segment in Cloud Storage
                 const segmentUrl = await step.run(`store-segment-${i}`, async () => {
-                    const prediction = segmentResult.response.outputs[0];
+                    const response = segmentResult?.response as Record<string, unknown>;
+                    const outputs = response?.outputs as Record<string, unknown>[];
+                    const prediction = outputs?.[0];
                     const bucket = admin.storage().bucket();
                     const file = bucket.file(`videos/${userId}/${segmentId}.mp4`);
 
-                    if (prediction.video && prediction.video.bytesBase64Encoded) {
-                        await file.save(Buffer.from(prediction.video.bytesBase64Encoded, 'base64'), {
+                    const video = prediction?.video as Record<string, unknown>;
+                    if (video?.bytesBase64Encoded) {
+                        await file.save(Buffer.from(video.bytesBase64Encoded as string, 'base64'), {
                             metadata: { contentType: 'video/mp4' },
                             public: true
                         });
@@ -339,7 +344,7 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                                                 }
                                             }
                                         });
-                                        return job.name;
+                                        return job.name as string;
                                     } finally {
                                         await transcoder.close();
                                     }
@@ -356,8 +361,8 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                                         try {
                                             const [status] = await transcoder.getJob({ name: jobName });
                                             return status.state as string;
-                                        } catch (err: any) {
-                                            console.warn(`[FrameExtraction] Polling error: ${err.message}`);
+                                        } catch (err: unknown) {
+                                            console.warn(`[FrameExtraction] Polling error: ${(err as Error).message}`);
                                             return 'PROCESSING';
                                         } finally {
                                             await transcoder.close();
@@ -388,16 +393,16 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                                 });
 
                                 break; // Success - exit retry loop
-                            } catch (e: any) {
+                            } catch (e: unknown) {
                                 extractionAttempts++;
-                                console.warn(`[LongForm] Frame extraction attempt ${extractionAttempts} failed for segment ${i}:`, e.message);
+                                console.warn(`[LongForm] Frame extraction attempt ${extractionAttempts} failed for segment ${i}:`, (e as Error).message);
 
                                 if (extractionAttempts >= maxExtractionAttempts) {
                                     console.error(`[LongForm] All frame extraction attempts failed for segment ${i}. Continuing without visual continuity.`);
                                     await step.run(`log-extraction-failure-${i}`, async () => {
                                         await admin.firestore().collection("videoJobs").doc(jobId).set({
                                             warnings: admin.firestore.FieldValue.arrayUnion(
-                                                `Frame extraction failed for segment ${i}: ${e.message}. Visual continuity may be affected.`
+                                                `Frame extraction failed for segment ${i}: ${(e as Error).message}. Visual continuity may be affected.`
                                             ),
                                             updatedAt: admin.firestore.FieldValue.serverTimestamp()
                                         }, { merge: true });
@@ -421,7 +426,7 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                 resolution: options?.aspectRatio === "9:16" ? "720x1280" : "1280x720"
             };
 
-            await step.sendEvent({
+            await step.sendEvent("trigger-stitch", {
                 name: "video/stitch.requested",
                 data: {
                     jobId,
@@ -451,21 +456,21 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
  *
  * FIX #5: Now supports audio when source videos have audio tracks
  */
-export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunction(
+export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFunction(
     { id: "stitch-video-segments" },
     { event: "video/stitch.requested" },
-    async ({ event, step }: any) => {
+    async ({ event, step }) => {
         const { jobId, userId, segmentUrls, includeAudio } = event.data;
         const transcoder = new TranscoderServiceClient();
         try {
-            const projectId = await admin.app().options.projectId;
+            const projectId = admin.app().options.projectId;
             const location = 'us-central1';
             const bucket = admin.storage().bucket();
             const outputDir = `gs://${bucket.name}/videos/${userId}/${jobId}_output/`;
 
             const jobName = await step.run("create-transcoder-job", async () => {
                 // FIX #5: Build elementary streams dynamically based on audio availability
-                const elementaryStreams: any[] = [
+                const elementaryStreams: Record<string, unknown>[] = [
                     {
                         key: "video_stream0",
                         videoStream: {
@@ -521,8 +526,9 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                         }
                     }
                 });
-                const job = (jobResult as Record<string, unknown>[])[0];
-                return job.name;
+                const jobList = jobResult as Record<string, unknown>[];
+                const job = jobList[0];
+                return job.name as string;
             });
 
             // Update status to stitching
@@ -534,7 +540,6 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                 }, { merge: true });
             });
 
-            // Poll with step.sleep
             // Poll with step.sleep to avoid timeout (using constants)
             let jobStatus = "PENDING";
             let retries = 0;
@@ -543,7 +548,8 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                 await step.sleep(`wait-for-transcoder-${retries}`, `${STITCH_POLL_INTERVAL_SECONDS}s`);
 
                 jobStatus = await step.run(`check-status-${retries}`, async () => {
-                    const [job] = await transcoder.getJob({ name: jobName });
+                    const result = await transcoder.getJob({ name: jobName });
+                    const job = result[0];
                     if (job.state === "FAILED") {
                         throw new Error(`Transcoder job failed: ${job.error?.message}`);
                     }
@@ -564,12 +570,13 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
 
             // Update status to completed
             await step.run("mark-completed", async () => {
+                const eventData = event.data as Record<string, unknown>;
                 await admin.firestore().collection("videoJobs").doc(jobId).set({
                     status: "completed",
                     videoUrl: finalVideoUrl,
                     output: {
                         url: finalVideoUrl,
-                        metadata: event.data.metadata || {
+                        metadata: (eventData.metadata as Record<string, unknown>) || {
                             // Fallback if metadata missing in event
                             duration_seconds: segmentUrls.length * 5,
                             fps: 30,
