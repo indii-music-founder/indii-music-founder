@@ -64,7 +64,7 @@ function CommandBar() {
     // users can have focused ongoing conversations with single or multiple agents simultaneously 
     // (a virtual boardroom). 
     // See docs/architecture/command_bar_boardroom.md for the full specification.
-    if (!isCommandBarDetached && !isBoardroomMode) return null;
+    if (!isCommandBarDetached) return null;
 
     const shouldShow = true;
 

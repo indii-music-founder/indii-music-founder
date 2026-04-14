@@ -6,7 +6,6 @@ import { Editing } from '@/services/image/EditingService';
 import { Loader2 } from 'lucide-react';
 import { InfiniteCanvasHUD } from './InfiniteCanvasHUD';
 import { useToast } from '@/core/context/ToastContext';
-import { QuotaExceededError } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
 
 export default function InfiniteCanvas() {
@@ -312,6 +311,44 @@ export default function InfiniteCanvas() {
         requestDraw();
     };
 
+    /**
+     * Draws the canvas content cleanly (no selection box, no selection borders, no tool overlays).
+     * Used for capturing clean image data before sending to AI editing.
+     */
+    const drawClean = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const scale = scaleRef.current;
+        const offset = offsetRef.current;
+
+        // Clear
+        ctx.fillStyle = '#151515';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.translate(offset.x, offset.y);
+        ctx.scale(scale, scale);
+
+        // Grid (background only)
+        drawGrid(ctx, canvas.width, canvas.height, scale, offset);
+
+        // Images — NO selection borders, NO tool overlays
+        canvasImages.forEach(img => {
+            const image = imageCache.current.get(img.id);
+            if (image && image.complete && image.naturalWidth > 0) {
+                const w = img.width ?? 0;
+                const h = img.height ?? 0;
+                ctx.drawImage(image, img.x, img.y, w, h);
+            }
+        });
+
+        ctx.restore();
+        // NO selection box drawn — this is a clean capture pass
+    };
+
     const handleGeneration = async (sx: number, sy: number, w: number, h: number, prompt: string) => {
         setIsGenerating(true);
         const scale = scaleRef.current;
@@ -324,26 +361,30 @@ export default function InfiniteCanvas() {
             const ww = w / scale;
             const wh = h / scale;
 
-            // Capture Context
+            // Capture Context — CRITICAL: draw a clean pass without overlays first
             const canvas = canvasRef.current;
             if (!canvas) throw new Error("No canvas");
 
-            // Create a temp canvas to crop the selection
+            // STEP 1: Draw clean canvas (no selection borders, no purple box)
+            drawClean();
+
+            // STEP 2: Capture the clean canvas
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = w;
             tempCanvas.height = h;
             const tCtx = tempCanvas.getContext('2d');
             if (!tCtx) throw new Error("No temp context");
 
-            // Draw the visible canvas onto temp canvas
-            // We need to map screen coords (sx, sy) to the temp canvas (0, 0)
+            // Draw the CLEAN visible canvas onto temp canvas
             tCtx.drawImage(canvas, sx, sy, w, h, 0, 0, w, h);
 
             const contextDataUrl = tempCanvas.toDataURL('image/png');
             const base64Data = contextDataUrl.split(',')[1] ?? '';
 
+            // STEP 3: Restore normal draw with overlays
+            requestDraw();
+
             // Use ImageService for generation (Edit Mode / Magic Fill)
-            // We use editImage to include the context
             const result = await Editing.editImage({
                 image: { mimeType: 'image/png', data: base64Data },
                 prompt: prompt
