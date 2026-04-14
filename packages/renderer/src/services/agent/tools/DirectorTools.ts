@@ -172,7 +172,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 resolution: args.resolution || studioControls.resolution,
                 aspectRatio: effectiveAspectRatio,
                 negativePrompt: args.negativePrompt || studioControls.negativePrompt,
-                model: 'pro', // Default to pro for agent-driven creative tasks
+                model: studioControls.model || 'fast', // Respect user's model preference (cost protection)
                 thinking: true,
                 seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
                 sourceImages,
@@ -205,6 +205,34 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 return toolError(
                     "Subscription verification failed. Please check your network connection or subscription status. Do not retry immediately.",
                     "SUBSCRIPTION_ERROR"
+                );
+            }
+
+            // CRITICAL FIX: Gracefully handle 401/Unauthenticated errors
+            // so the agent loop continues and the agent can still respond with text.
+            if (
+                errorMessage.includes('unauthenticated') ||
+                errorMessage.includes('Unauthenticated') ||
+                errorMessage.includes('UNAUTHENTICATED') ||
+                errorMessage.includes('401') ||
+                errorMessage.includes('permission-denied') ||
+                errorMessage.includes('App Check')
+            ) {
+                return toolError(
+                    "Image generation requires authentication. The user may need to sign in again or ensure App Check is configured. Generation was skipped — please provide text-only guidance instead.",
+                    "AUTH_ERROR"
+                );
+            }
+
+            // CRITICAL FIX: Handle quota exceeded errors without breaking the session
+            if (
+                errorMessage.includes('quota') ||
+                errorMessage.includes('Quota') ||
+                errorMessage.includes('QUOTA_EXCEEDED')
+            ) {
+                return toolError(
+                    `Image generation quota exceeded: ${errorMessage}. Suggest the user upgrade their subscription or wait for quota reset.`,
+                    "QUOTA_EXCEEDED"
                 );
             }
 

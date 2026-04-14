@@ -39,6 +39,7 @@ import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useMobile } from '@/hooks/useMobile';
+import { useAuthHealth } from '@/hooks/useAuthHealth';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
 import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
@@ -191,6 +192,10 @@ function useAppInitialization() {
             unsubscribe();
         };
     }, [initializeAuthListener]);
+
+    // Auth session health: periodically refreshes the ID token
+    // to catch expired sessions before they cause silent failures
+    useAuthHealth();
 
 
     // 2. Load User Profile when User is Authenticated
