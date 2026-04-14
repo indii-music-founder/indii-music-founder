@@ -572,8 +572,8 @@ export class GeminiImageService {
                     }
                 }
 
-                // Legacy single reference image
-                if (data.referenceImage && !data.referenceImages?.length) {
+                // Legacy single reference image (gate on maxRefs > 0 for consistency with single-turn)
+                if (maxRefs > 0 && data.referenceImage && !data.referenceImages?.length) {
                     newParts.push({
                         inlineData: {
                             mimeType: data.refMimeType || "image/png",
@@ -595,21 +595,10 @@ export class GeminiImageService {
 
                 contents.push({ role: "user", parts: newParts });
             } else {
-                // Single-turn edit
+                // Single-turn edit — images before text to match multi-turn ordering
                 const parts: Record<string, unknown>[] = [];
 
-                // Prompt first
-                const promptText = data.mask
-                    ? `Edit the masked region of this image according to this instruction: ${data.prompt}`
-                    : data.prompt;
-                parts.push({ text: promptText });
-
-                // Thought signature (single turn edit)
-                if (data.thoughtSignature) {
-                    parts.push({ thought_signature: data.thoughtSignature });
-                }
-
-                // Source image
+                // Source image first (consistent with multi-turn ordering)
                 if (data.image) {
                     parts.push({
                         inlineData: {
@@ -653,6 +642,17 @@ export class GeminiImageService {
                             data: data.referenceImage,
                         },
                     });
+                }
+
+                // Prompt text last (after images — consistent with multi-turn ordering)
+                const promptText = data.mask
+                    ? `Edit the masked region of this image according to this instruction: ${data.prompt}`
+                    : data.prompt;
+                parts.push({ text: promptText });
+
+                // Thought signature
+                if (data.thoughtSignature) {
+                    parts.push({ thought_signature: data.thoughtSignature });
                 }
 
                 contents = [{ role: "user", parts }];
@@ -721,8 +721,8 @@ export const generateImageV3Fn = () => functions
         enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
-        // Pro needs more overhead for 4K and long-context history
-        memory: "512MB"
+        // Bumped to 1GB: Pro 4K generation + long-context history needs parity with editImageFn
+        memory: "1GB"
     })
     .https.onCall(async (data: unknown, context) => {
         // 1. Authenticate

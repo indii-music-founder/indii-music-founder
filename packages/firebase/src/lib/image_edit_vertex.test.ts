@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GeminiImageService } from './image_generation';
 
 // Mock getGeminiApiKey
@@ -42,6 +42,11 @@ describe('GeminiImageService Dual-Client Logic', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         service = new GeminiImageService();
+    });
+
+    afterEach(() => {
+        // Clean up env vars to prevent test pollution
+        delete process.env.GCLOUD_PROJECT;
     });
 
     it('should use standard client (API Key) when no mask is provided', async () => {
