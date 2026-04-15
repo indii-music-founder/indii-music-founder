@@ -55,7 +55,7 @@ export interface CreativeControlsSlice {
         duration: number;
         shotList: ShotItem[];
         isCoverArtMode: boolean;
-        model: 'fast' | 'pro';
+        model: 'lite' | 'fast' | 'pro';
         thinking: boolean;
         mediaResolution: 'low' | 'medium' | 'high';
         generateAudio: boolean;
@@ -163,7 +163,7 @@ export function buildCreativeControlsState(
         enableCoverArtMode: () => set((state) => ({
             studioControls: {
                 ...state.studioControls,
-                aspectRatio: '1:1',
+                aspectRatio: '9:16', // Veo 3.1 only supports 16:9 and 9:16; portrait is closest to cover art
                 isCoverArtMode: true
             }
         })),

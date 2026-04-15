@@ -11,11 +11,9 @@ export interface ApprovalRequest {
 }
 
 export interface AgentUISlice {
-    // Agent Window
     isAgentOpen: boolean;
     toggleAgentWindow: () => void;
 
-    // Command Bar
     isCommandBarDetached: boolean;
     isCommandBarCollapsed: boolean;
     commandBarPosition: 'left' | 'center' | 'right';
@@ -28,46 +26,39 @@ export interface AgentUISlice {
     setCommandBarAttachments: (attachments: File[]) => void;
     resetCommandBar: () => void;
 
-    // Mode & Processing
     agentMode: AgentMode;
     setAgentMode: (mode: AgentMode) => void;
     isAgentProcessing: boolean;
     setAgentProcessing: (isProcessing: boolean) => void;
 
-    // Approval
+    agentAbortController: AbortController | null;
+    startAgentExecution: () => AbortSignal;
+    stopAgent: () => void;
+
     pendingApproval: ApprovalRequest | null;
     requestApproval: (content: string, type: string) => Promise<boolean>;
     resolveApproval: (approved: boolean) => void;
 
-    // Right Panel
     rightPanelView: 'messages' | 'archives';
     setRightPanelView: (view: 'messages' | 'archives') => void;
 
-    // Chat Channel & Provider
     chatChannel: 'indii' | 'agent';
     setChatChannel: (channel: 'indii' | 'agent') => void;
     activeAgentProvider: 'direct' | 'native';
     setActiveAgentProvider: (provider: 'direct' | 'native') => void;
 
-    // Knowledge Base
     isKnowledgeBaseEnabled: boolean;
     setKnowledgeBaseEnabled: (enabled: boolean) => void;
 
-    // Window Size
     agentWindowSize: { width: number; height: number };
     setAgentWindowSize: (size: { width: number; height: number }) => void;
 }
 
-/**
- * Factory that returns the UI portion of the agent slice.
- * Accepts the full Zustand set/get to allow cross-slice reads if needed.
- */
 export function buildAgentUIState(
     set: Parameters<StateCreator<AgentUISlice>>[0],
     get: Parameters<StateCreator<AgentUISlice>>[1]
 ): AgentUISlice {
     return {
-        // Initial State
         isAgentOpen: false,
         isCommandBarDetached: false,
         isCommandBarCollapsed: false,
@@ -76,6 +67,7 @@ export function buildAgentUIState(
         commandBarAttachments: [],
         agentMode: 'assistant',
         isAgentProcessing: false,
+        agentAbortController: null,
         pendingApproval: null,
         rightPanelView: 'messages',
         chatChannel: 'indii',
@@ -83,7 +75,6 @@ export function buildAgentUIState(
         isKnowledgeBaseEnabled: true,
         agentWindowSize: { width: 500, height: 800 },
 
-        // Actions
         toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
         setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
         setCommandBarCollapsed: (collapsed) => set({ isCommandBarCollapsed: collapsed }),
@@ -98,6 +89,21 @@ export function buildAgentUIState(
         resetCommandBar: () => set({ isCommandBarDetached: false, isCommandBarCollapsed: false, commandBarPosition: 'center' }),
         setAgentMode: (mode) => set({ agentMode: mode }),
         setAgentProcessing: (isProcessing) => set({ isAgentProcessing: isProcessing }),
+
+        startAgentExecution: () => {
+            const existing = get().agentAbortController;
+            if (existing) existing.abort('New execution started');
+            const controller = new AbortController();
+            set({ agentAbortController: controller, isAgentProcessing: true });
+            return controller.signal;
+        },
+
+        stopAgent: () => {
+            const { agentAbortController } = get();
+            if (agentAbortController) agentAbortController.abort('User requested stop');
+            set({ agentAbortController: null, isAgentProcessing: false });
+        },
+
         setRightPanelView: (view) => set({ rightPanelView: view }),
         setChatChannel: (channel) => set({ chatChannel: channel }),
         setActiveAgentProvider: (provider) => set({ activeAgentProvider: provider }),

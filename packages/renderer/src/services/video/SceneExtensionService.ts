@@ -27,25 +27,25 @@ export interface ExtendedVideoProject {
     prompt: string;
     totalDurationSeconds: number;
     segmentDurationSeconds: number;
-    aspectRatio: '16:9' | '9:16' | '1:1';
+    aspectRatio: '16:9' | '9:16';
     resolution: '720p' | '1080p';
     segments: SceneSegment[];
     status: 'idle' | 'generating' | 'completed' | 'failed';
     firstFrame?: { mimeType: string; data: string };
     lastFrame?: { mimeType: string; data: string };
     referenceImages?: { mimeType: string; data: string }[];
-    generateAudio?: boolean;
+    // NOTE: Audio is always-on for Veo 3.1 — no generateAudio parameter exists
 }
 
 export interface SceneExtensionOptions {
     prompt: string;
     totalDurationSeconds: number;
     segmentDurationSeconds?: number; // Default 8s per segment
-    aspectRatio?: '16:9' | '9:16' | '1:1';
+    aspectRatio?: '16:9' | '9:16';
     resolution?: '720p' | '1080p';
     firstFrame?: { mimeType: string; data: string };
     referenceImages?: { mimeType: string; data: string }[];
-    generateAudio?: boolean;
+    // NOTE: Audio is always-on for Veo 3.1 — no generateAudio parameter exists
     onProgress?: (project: ExtendedVideoProject) => void;
 }
 
@@ -94,7 +94,7 @@ class SceneExtensionServiceImpl {
             status: 'generating',
             firstFrame: options.firstFrame,
             referenceImages: options.referenceImages,
-            generateAudio: options.generateAudio ?? true,
+            // Audio is always-on for Veo 3.1 — no config needed
         };
 
         options.onProgress?.(project);
@@ -121,7 +121,7 @@ class SceneExtensionServiceImpl {
                     resolution: project.resolution,
                     firstFrame: previousLastFrame,
                     referenceImages: project.referenceImages,
-                    generateAudio: project.generateAudio && i === 0, // Audio only on first segment
+                    // Audio is always-on for Veo 3.1 — no parameter needed
                 });
 
                 segment.videoUri = uri;
@@ -166,9 +166,9 @@ class SceneExtensionServiceImpl {
         prompt: string,
         additionalSeconds: number,
         options?: {
-            aspectRatio?: '16:9' | '9:16' | '1:1';
+            aspectRatio?: '16:9' | '9:16';
             resolution?: '720p' | '1080p';
-            generateAudio?: boolean;
+            // NOTE: Audio is always-on for Veo 3.1
             onProgress?: (status: string) => void;
         }
     ): Promise<string> {
@@ -189,7 +189,7 @@ class SceneExtensionServiceImpl {
             aspectRatio: options?.aspectRatio || '16:9',
             resolution: options?.resolution || '720p',
             firstFrame: lastFrame,
-            generateAudio: options?.generateAudio,
+            // Audio is always-on for Veo 3.1
         });
 
         // Track usage
@@ -206,11 +206,11 @@ class SceneExtensionServiceImpl {
     private async generateSegment(config: {
         prompt: string;
         durationSeconds: number;
-        aspectRatio: '16:9' | '9:16' | '1:1';
+        aspectRatio: '16:9' | '9:16';
         resolution: '720p' | '1080p';
         firstFrame?: { mimeType: string; data: string };
         referenceImages?: { mimeType: string; data: string }[];
-        generateAudio?: boolean;
+        // NOTE: Audio is always-on for Veo 3.1
     }): Promise<string> {
         const generationConfig: Record<string, unknown> = {
             aspectRatio: config.aspectRatio,
@@ -219,17 +219,15 @@ class SceneExtensionServiceImpl {
         };
 
         // Add reference images if provided
+        // Official API only supports referenceType: 'asset' (lowercase, no 'style' mode)
         if (config.referenceImages && config.referenceImages.length > 0) {
-            generationConfig.referenceImages = config.referenceImages.map((img, index) => ({
+            generationConfig.referenceImages = config.referenceImages.map((img) => ({
                 image: { imageBytes: img.data, mimeType: img.mimeType },
-                referenceType: index === 0 ? 'STYLE' : 'ASSET',
+                referenceType: 'asset' as const,
             }));
         }
 
-        // Enable native audio generation
-        if (config.generateAudio) {
-            generationConfig.generateAudio = true;
-        }
+        // Audio is always-on for Veo 3.1 — no generateAudio parameter exists in API
 
         const uri = await AI.generateVideo({
             model: AI_MODELS.VIDEO.GENERATION,

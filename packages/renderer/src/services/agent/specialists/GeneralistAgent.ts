@@ -400,6 +400,24 @@ EXECUTION RULES:
                     },
                     required: ['orgId']
                 }
+            },
+            {
+                name: 'report_bug',
+                description: 'Report a bug or issue encountered during the session. Use this when you detect an error, the user describes a bug, or something is not working as expected. Creates a structured bug report saved to the project tracker.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        title: { type: 'STRING', description: 'Clear, concise bug title.' },
+                        description: { type: 'STRING', description: 'Detailed description of the bug.' },
+                        stepsToReproduce: { type: 'STRING', description: 'Steps to reproduce the bug.' },
+                        expectedBehavior: { type: 'STRING', description: 'What should have happened.' },
+                        actualBehavior: { type: 'STRING', description: 'What actually happened.' },
+                        severity: { type: 'STRING', description: 'Bug severity: critical, major, minor, or cosmetic.' },
+                        module: { type: 'STRING', description: 'Which module the bug occurred in.' },
+                        errorMessage: { type: 'STRING', description: 'Any error message or stack trace.' }
+                    },
+                    required: ['title', 'description']
+                }
             }
         ];
 

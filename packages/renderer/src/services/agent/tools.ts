@@ -42,6 +42,7 @@ import { HiveTools } from './tools/HiveTools';
 import { CanvasTools } from './tools/CanvasTools';
 import { CodeExecutionTools } from './tools/CodeExecutionTools';
 import { NotificationTools } from './tools/NotificationTools';
+import { BugReportTools } from './tools/BugReportTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -92,6 +93,8 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CanvasTools,
     ...CodeExecutionTools,
     ...NotificationTools,
+    // Bug Reporting
+    ...BugReportTools,
 };
 
 

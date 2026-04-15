@@ -15,7 +15,7 @@ export const VideoResolutionSchema = z.enum([
 ]);
 
 export const VideoAspectRatioSchema = z.enum([
-    '16:9', '9:16', '1:1', '4:3', '3:4'
+    '16:9', '9:16'
 ]);
 
 export const ReferenceImageSchema = z.object({
@@ -23,7 +23,8 @@ export const ReferenceImageSchema = z.object({
         imageBytes: z.string().optional(),
         uri: z.string().optional()
     }).optional(),
-    referenceType: z.enum(["ASSET", "STYLE"]).optional().default("ASSET")
+    // Official Veo 3.1 API only supports lowercase 'asset' — no 'style' mode exists
+    referenceType: z.literal('asset').optional().default('asset')
 });
 
 export const VideoGenerationOptionsSchema = z.object({
@@ -50,7 +51,8 @@ export const VideoGenerationOptionsSchema = z.object({
     cameraMovement: z.string().optional(),
     motionStrength: z.number().min(0).max(1).optional(),
     shotList: z.array(z.unknown()).optional(), // Can refine later
-    generateAudio: z.boolean().optional(),
+    // NOTE: Audio is always-on for Veo 3.1 — generateAudio is not a valid API parameter
+    // Retained in schema for UI state only, never sent to API
     inputAudio: z.string().optional(), // For custom soundtracks (URL or Base64)
     thinking: z.boolean().optional(),
     orgId: z.string().optional(),

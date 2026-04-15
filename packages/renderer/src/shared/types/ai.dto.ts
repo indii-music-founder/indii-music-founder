@@ -181,7 +181,7 @@ export interface GenerateVideoRequest {
     config?: GenerationConfig & VideoGenerationConfig;
     apiKey?: string;
     jobId?: string;
-    generateAudio?: boolean;
+    // Audio is always-on for Veo 3.1 — no generateAudio param exists
 }
 
 /** Veo SDK-compatible video generation config fields */
@@ -191,7 +191,7 @@ export interface VideoGenerationConfig {
     resolution?: string;
     personGeneration?: string;
     negativePrompt?: string;
-    generateAudio?: boolean;
+    // Audio is always-on for Veo 3.1 — no generateAudio param exists
     enhancePrompt?: boolean;
     fps?: number;
     seed?: number;
@@ -200,7 +200,7 @@ export interface VideoGenerationConfig {
     pubsubTopic?: string;
     referenceImages?: Array<{
         image?: { uri?: string; imageBytes?: string; mimeType?: string };
-        referenceType: 'ASSET' | 'STYLE';
+        referenceType: 'asset'; // Official API only supports lowercase 'asset'
     }>;
     lastFrame?: string | { mimeType: string; imageBytes: string };
 }

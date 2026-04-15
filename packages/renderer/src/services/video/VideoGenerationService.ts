@@ -183,7 +183,7 @@ export class VideoGenerationService {
                 aspectRatio: targetAspectRatio,
                 resolution: options.resolution,
                 duration: options.duration || options.durationSeconds || 8,
-                generateAudio: options.generateAudio || false,
+                // Audio is always-on for Veo 3.1
                 model: options.model || DEFAULT_VIDEO_MODEL,
             }),
         }));
@@ -199,7 +199,7 @@ export class VideoGenerationService {
             duration: options.duration || 4,
             hasFirstFrame: !!options.firstFrame,
             hasLastFrame: !!options.lastFrame,
-            generateAudio: options.generateAudio || false,
+            // Audio is always-on for Veo 3.1
             model: options.model,
             status: 'processing',
             generatedAt: new Date().toISOString(),
@@ -452,7 +452,7 @@ export class VideoGenerationService {
         seed?: number;
         negativePrompt?: string;
         firstFrame?: string;
-        generateAudio?: boolean;
+        // NOTE: Audio is always-on for Veo 3.1 — no generateAudio parameter exists
         thinking?: boolean;
         inputAudio?: string;
         model?: string;
@@ -461,7 +461,7 @@ export class VideoGenerationService {
         personGeneration?: "dont_allow" | "allow_adult" | "allow_all";
         referenceImages?: {
             image: { uri: string };
-            referenceType: "ASSET" | "STYLE";
+            referenceType: 'asset'; // Official API only supports lowercase 'asset'
         }[];
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         // Security: Sanitize Prompt (Redact PII)
@@ -515,24 +515,41 @@ export class VideoGenerationService {
             updatedAt: serverTimestamp(),
         });
 
-        // Generate each segment sequentially
+        // =====================================================================
+        // DAISY CHAIN ENGINE: Sequential generation with visual continuity
+        //
+        // Pipeline per segment:
+        //   1. Generate video (with firstFrame from previous segment's last frame)
+        //   2. Extract last frame from completed video
+        //   3. Analyze frame with Gemini to generate continuation prompt
+        //   4. Use analysis + base prompt for next segment
+        //   5. Repeat until all segments are generated
+        // =====================================================================
         const segmentUrls: string[] = [];
+        let previousLastFrame: string | undefined = options.firstFrame; // Start with user-provided first frame
+        let chainContext = ''; // Accumulates narrative context across segments
+
         try {
             for (let i = 0; i < prompts.length; i++) {
                 options.onProgress?.(i, numBlocks);
 
+                // Build segment prompt with chain context
+                let segmentPrompt = prompts[i]!;
+                if (chainContext && i > 0) {
+                    segmentPrompt = `${segmentPrompt}\n\nVisual Continuity Context (from previous segment): ${chainContext}`;
+                }
+
+                // Generate segment — with firstFrame from previous segment's last frame
                 const videoUrl = await firebaseAI.generateVideo({
-                    prompt: prompts[i]!,
+                    prompt: segmentPrompt,
                     model: options.model || DEFAULT_VIDEO_MODEL,
-                    image: i === 0 && options.firstFrame
-                        ? { imageBytes: options.firstFrame, mimeType: 'image/jpeg' }
+                    image: previousLastFrame
+                        ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
                         : undefined,
                     config: stripUndefined({
                         aspectRatio: targetAspectRatio || '16:9',
                         resolution: options.resolution,
                         durationSeconds: BLOCK_DURATION,
-                        // NOTE: generateAudio and personGeneration are NOT supported in Veo 3.1 preview.
-                        // Including them causes 400 errors. Do NOT add them back without API verification.
                         negativePrompt: options.negativePrompt,
                         seed: options.seed,
                     }),
@@ -547,6 +564,46 @@ export class VideoGenerationService {
                     segmentUrls,
                     updatedAt: serverTimestamp(),
                 });
+
+                // ─── DAISY CHAIN: Extract last frame & analyze for next segment ───
+                if (i < prompts.length - 1) {
+                    try {
+                        // Step 1: Extract the last frame from the completed segment
+                        const { extractLastFrameForAPI } = await import('@/utils/video');
+                        const lastFrameResult = await extractLastFrameForAPI(videoUrl);
+                        previousLastFrame = lastFrameResult.imageBytes;
+
+                        logger.info(`[DaisyChain] Segment ${i + 1}/${numBlocks}: Last frame extracted (${lastFrameResult.mimeType})`);
+
+                        // Step 2: Analyze the frame with Gemini to understand scene state
+                        const analysisResult = await this.analyzeTemporalContext(
+                            lastFrameResult.dataUrl,
+                            BLOCK_DURATION, // Looking forward by one block
+                            options.prompt
+                        );
+
+                        if (analysisResult) {
+                            chainContext = analysisResult;
+                            logger.info(`[DaisyChain] Segment ${i + 1}/${numBlocks}: Scene analysis complete — "${analysisResult.substring(0, 80)}..."`);
+                        }
+
+                        // Update Firestore with chain state for resume capability
+                        await updateDoc(jobRef, {
+                            'chainState.lastFrameSegment': i,
+                            'chainState.lastAnalysis': chainContext.substring(0, 500),
+                            updatedAt: serverTimestamp(),
+                        });
+                    } catch (chainError: unknown) {
+                        // Daisy chain enhancement is best-effort — don't block generation
+                        logger.warn(
+                            `[DaisyChain] Frame extraction/analysis failed for segment ${i + 1}. Continuing without visual continuity.`,
+                            chainError
+                        );
+                        // Reset chain state so next segment generates fresh
+                        previousLastFrame = undefined;
+                        chainContext = '';
+                    }
+                }
             }
 
             options.onProgress?.(numBlocks, numBlocks);
@@ -560,6 +617,8 @@ export class VideoGenerationService {
                 'output.url': segmentUrls[0]!,
                 'output.metadata.quality': 'pro',
                 'output.metadata.mime_type': 'video/mp4',
+                'chainState.complete': true,
+                'chainState.totalSegments': numBlocks,
                 updatedAt: serverTimestamp(),
                 completedAt: serverTimestamp(),
             });
@@ -577,6 +636,7 @@ export class VideoGenerationService {
                 status: 'failed',
                 error: errorMsg,
                 segmentUrls,
+                'chainState.failedAtSegment': segmentUrls.length,
                 updatedAt: serverTimestamp(),
             }).catch(e => logger.warn('[VideoGeneration] Failed to update long-form job status:', e));
 

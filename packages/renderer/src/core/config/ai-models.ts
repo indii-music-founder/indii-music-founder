@@ -22,7 +22,8 @@ export const APPROVED_MODELS = {
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-tts',
     VIDEO_PRO: 'veo-3.1-generate-preview',
-    VIDEO_FAST: 'veo-3.1-generate-preview',
+    VIDEO_FAST: 'veo-3.1-fast-generate-preview',   // Fast mode — lower latency, lower cost
+    VIDEO_LITE: 'veo-3.1-lite-generate-preview',   // Lite mode — lowest cost, good quality
     VIDEO_GEN: 'veo-3.1-generate-preview',    // Alias for backward compatibility
     BROWSER_AGENT: 'gemini-3-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
@@ -48,6 +49,7 @@ export const AI_MODELS = {
     VIDEO: {
         PRO: APPROVED_MODELS.VIDEO_PRO,
         FAST: APPROVED_MODELS.VIDEO_FAST,
+        LITE: APPROVED_MODELS.VIDEO_LITE,
         EDIT: APPROVED_MODELS.VIDEO_PRO,
         GENERATION: APPROVED_MODELS.VIDEO_PRO // Backward compatibility
     },
@@ -129,6 +131,10 @@ export const MODEL_PRICING = {
         perSecond: 0.10,     // 720p/1080p Video Only
         perSecond4K: 0.30,   // 4K Video Only
         audioAddOn: 0.05     // Flat add-on for audio
+    },
+    'veo-3.1-lite-generate-preview': {
+        perSecond: 0.05,     // 720p/1080p Video Only — lowest cost tier
+        audioAddOn: 0.02     // Flat add-on for audio
     },
     'gemini-2.5-pro-tts': { input: 0.60, output: 4.00 },
     // Direct mode image models (token-based pricing, same tier as text)

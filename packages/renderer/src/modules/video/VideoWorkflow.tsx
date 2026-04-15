@@ -331,7 +331,7 @@ export default function VideoWorkflow() {
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
-                    generateAudio: studioControls.generateAudio,
+                    // Audio is always-on for Veo 3.1 — omit generateAudio
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinking: studioControls.thinking,
                     model: studioControls.model,
@@ -356,13 +356,13 @@ export default function VideoWorkflow() {
                     timeOffset: videoInputs.timeOffset,
                     referenceImages: characterReferences?.map(ref => ({
                         image: { uri: ref.image.url },
-                        referenceType: ref.referenceType === 'style' ? 'STYLE' as const : 'ASSET' as const
+                        referenceType: 'asset' as const  // Official API only supports lowercase 'asset'
                     })),
                     personGeneration: studioControls.personGeneration,
                     orgId: currentOrganizationId,
                     duration: studioControls.duration,
                     durationSeconds: studioControls.duration,
-                    generateAudio: studioControls.generateAudio,
+                    // Audio is always-on for Veo 3.1 — omit generateAudio
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinking: studioControls.thinking,
                     model: studioControls.model

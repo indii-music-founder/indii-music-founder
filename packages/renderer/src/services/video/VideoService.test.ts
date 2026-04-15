@@ -236,7 +236,7 @@ describe('VideoService', () => {
                     config: expect.objectContaining({
                         referenceImages: expect.arrayContaining([
                             expect.objectContaining({
-                                referenceType: 'ASSET'
+                                referenceType: 'asset'
                             })
                         ])
                     })
@@ -301,7 +301,10 @@ describe('VideoService', () => {
                         imageBytes: 'startData'
                     }),
                     config: expect.objectContaining({
-                        lastFrame: expect.stringContaining('base64')
+                        lastFrame: expect.objectContaining({
+                            imageBytes: 'endData',
+                            mimeType: 'image/png'
+                        })
                     })
                 })
             );

@@ -20,7 +20,7 @@ import { metadataPersistenceService } from '@/services/persistence/MetadataPersi
  * Nano Banana model tier selector.
  * Maps to the 3-tier backend model registry.
  */
-export type NanoBananaTier = 'legacy' | 'fast' | 'pro';
+export type NanoBananaTier = 'legacy' | 'lite' | 'fast' | 'pro';
 
 /**
  * Full image generation options.
@@ -151,11 +151,39 @@ export class ImageGenerationService {
      * @returns Aspect ratio string (e.g., "16:9").
      */
     private getAspectRatio(options: ImageGenerationOptions): string {
-        // If cover art mode, always use 1:1 square
         if (options.isCoverArt) {
             return '1:1';
         }
         return options.aspectRatio || '1:1';
+    }
+
+    /**
+     * Maps video-style resolution strings to Gemini image API values.
+     * The studioControls store uses VideoResolution ('720p', '1080p', '4k')
+     * but the image API expects '512' | '1K' | '2K' | '4K'.
+     */
+    private normalizeImageResolution(resolution?: string): string | undefined {
+        if (!resolution) return undefined;
+
+        const RESOLUTION_MAP: Record<string, string> = {
+            '720p':  '1K',
+            '1080p': '2K',
+            '4k':    '4K',
+            // Direct passthrough for already-correct values
+            '512':   '512',
+            '1k':    '1K',
+            '1K':    '1K',
+            '2k':    '2K',
+            '2K':    '2K',
+            '4K':    '4K',
+        };
+
+        const mapped = RESOLUTION_MAP[resolution] || RESOLUTION_MAP[resolution.toLowerCase()];
+        if (!mapped) {
+            logger.warn(`[ImageGen] Unknown resolution "${resolution}", defaulting to 1K`);
+            return '1K';
+        }
+        return mapped;
     }
 
     /**
@@ -229,8 +257,10 @@ export class ImageGenerationService {
             const fullPrompt = this.buildDistributorAwarePrompt(options);
             const aspectRatio = this.getAspectRatio(options);
 
-            // Resolve imageSize: prefer explicit imageSize, fall back to resolution (legacy)
-            const imageSize = options.imageSize || (options.resolution ? options.resolution.toUpperCase() : undefined);
+            // Resolve imageSize: prefer explicit imageSize, fall back to resolution.
+            // The studioControls store uses video-style values ('720p', '1080p', '4k')
+            // but the Gemini image API expects '512' | '1K' | '2K' | '4K'.
+            const imageSize = options.imageSize || this.normalizeImageResolution(options.resolution);
 
             // Build the full payload — pass ALL config through, no stripping.
             // The backend Cloud Function + capability registry handles validation.
