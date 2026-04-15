@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import firebaseFunctionsTest from 'firebase-functions-test';
 
 // Initialize test environment
@@ -152,12 +152,42 @@ vi.mock('../stripe/config', () => ({
     stripe: {}
 }));
 
+// Mock MCP module — initializes @modelcontextprotocol/sdk Server at load time which
+// creates a listener and blocks when loaded in a vi.resetModules() context.
+vi.mock('../mcp', () => ({
+    mcpHttpHandler: vi.fn((req: unknown, res: unknown) => res)
+}));
+
+// Mock Orchestration module — calls admin.initializeApp() unconditionally at load time.
+vi.mock('../orchestration', () => ({
+    orchestrationListener: vi.fn()
+}));
+
+// Mock relay/email/analytics/devops modules that may have network-touching side effects.
+vi.mock('../relay/relayCommandProcessor', () => ({ processRelayCommand: vi.fn() }));
+vi.mock('../relay/telegramWebhook', () => ({ telegramWebhook: vi.fn() }));
+vi.mock('../relay/telegramLink', () => ({ generateTelegramLinkCode: vi.fn(), getTelegramLinkStatus: vi.fn() }));
+vi.mock('../email/sendEmail', () => ({ sendEmail: vi.fn() }));
+vi.mock('../email/tokenManager', () => ({ emailExchangeToken: vi.fn(), emailRefreshToken: vi.fn(), emailRevokeToken: vi.fn() }));
+vi.mock('../analytics/platformTokenExchange', () => ({ analyticsExchangeToken: vi.fn(), analyticsRefreshToken: vi.fn(), analyticsRevokeToken: vi.fn() }));
+vi.mock('../devops/storageMaintenance', () => ({ cleanupOrphanedVideos: vi.fn(), trackStorageQuotas: vi.fn(), flagVideosForArchival: vi.fn() }));
+
 
 describe('triggerLongFormVideoJob (Ledger Quota Checks)', () => {
     let triggerLongFormVideoJob: any;
     let wrappedFunction: any;
 
-    beforeEach(async () => {
+    // Import the barrel index ONCE per test file (beforeAll) rather than per test (beforeEach).
+    // Under heavy shard parallelism, transpiling the 1461-line index.ts 3 times exceeds the
+    // 30s hookTimeout. The handler reference is stable across tests — module state is reset
+    // per-test by vi.clearAllMocks() + the Firestore mock re-init below.
+    beforeAll(async () => {
+        const mod = await import('../index');
+        triggerLongFormVideoJob = mod.triggerLongFormVideoJob;
+        wrappedFunction = triggerLongFormVideoJob;
+    }, 60000);
+
+    beforeEach(() => {
         vi.clearAllMocks();
 
         // Reset Firestore Mocks
@@ -173,13 +203,6 @@ describe('triggerLongFormVideoJob (Ledger Quota Checks)', () => {
                 doc: vi.fn()
             }))
         });
-
-        // Import the function dynamically to ensure mocks are applied
-        const mod = await import('../index');
-        triggerLongFormVideoJob = mod.triggerLongFormVideoJob;
-        // Since we mocked firebase-functions to return the handler directly, we don't need to wrap it
-        // wrappedFunction = testEnv.wrap(triggerLongFormVideoJob);
-        wrappedFunction = triggerLongFormVideoJob;
     });
 
     afterEach(() => {
