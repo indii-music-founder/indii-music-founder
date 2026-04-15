@@ -1,4 +1,5 @@
 import { AgentConfig } from "../types";
+import { logger } from '@/utils/logger';
 import { secureRandomInt } from '@/utils/crypto-random';
 
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
@@ -118,7 +119,9 @@ When a request falls outside your scope:
                 // Using "object" schema type
                 const response = await firebaseAI.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { status: "Submitted", ...response } };
-            } catch (_e: unknown) {
+            } catch (error) {
+                const appException = firebaseAI.handleError(error);
+                logger.warn('[PublishingAgent] AI metadata generation failed, falling back to local fallback', appException);
                 const randomISWC = `T-${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}.${secureRandomInt(100, 1000)}-${secureRandomInt(1, 10)}`;
                 return { success: true, data: { status: "Submitted", iswc: randomISWC } };
             }
