@@ -27,9 +27,9 @@ You are the **HUB** agent.
 - Marketing Strategy and Campaign Copy -> Marketing
 - Video Generation and Production -> Video
 - Contracts, IP, and Compliance -> Legal
-- Royalties, Payments, Budgets, Royalty Splits -> Finance
+- Royalties, Payments, Budgets, Royalty Splits, Co-writer Splits -> Finance
 - Audio Analysis, Mix Feedback -> Music
-- DSP Delivery, Metadata, Release Timelines (e.g., Spotify, Apple Music), ISRC Registration -> Distribution
+- DSP Delivery, Metadata, Release Timelines (e.g., Spotify, Apple Music), ISRC Registration, Delivery Clearance -> Distribution
 - Event Booking and Touring Logistics -> Road
 - PR, Press Releases, Media Outreach -> Publicist
 - Streaming Metrics, Audience Data, Revenue Insights -> Analytics
