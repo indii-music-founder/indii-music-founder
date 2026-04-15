@@ -23,6 +23,7 @@ import { ArrowLeft, Users } from 'lucide-react';
  * - BoardroomTable            → Glassmorphic oval with core glow + status
  * - ParticipantSelector       → Draggable agent icons around the perimeter
  * - BoardroomConversationPanel → Full-height scrollable message feed
+ *
  */
 export function BoardroomModule() {
     const { isBoardroomMode, boardroomMessages, activeAgents, setBoardroomMode } = useStore(
@@ -51,7 +52,7 @@ export function BoardroomModule() {
                 className="fixed inset-0 z-40 bg-bg-dark flex flex-col"
             >
                 {/* Top Bar */}
-                <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 flex-shrink-0">
+                <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 shrink-0">
                     <button
                         onClick={() => setBoardroomMode(false)}
                         className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all border border-white/10"
@@ -80,7 +81,7 @@ export function BoardroomModule() {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1, type: 'spring', damping: 25, stiffness: 200 }}
-                            className="relative w-[55%] flex-shrink-0 flex items-center justify-center p-6"
+                            className="relative w-[55%] shrink-0 flex items-center justify-center p-6"
                         >
                             <div className="relative w-full h-full max-w-2xl max-h-[70vh]">
                                 <BoardroomTable
@@ -97,11 +98,13 @@ export function BoardroomModule() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.15, type: 'spring', damping: 25, stiffness: 200 }}
-                        className={`flex flex-col min-h-0 ${isAnyPhone ? 'flex-1' : 'flex-1 border-l border-white/5'} bg-white/[0.01]`}
+                        className={`flex flex-col min-h-0 ${isAnyPhone ? 'flex-1' : 'flex-1 border-l border-white/5'} bg-white/1`}
                     >
                         <BoardroomConversationPanel messages={boardroomMessages} />
                     </motion.div>
                 </div>
+
+
             </motion.div>
         </AnimatePresence>
     );
