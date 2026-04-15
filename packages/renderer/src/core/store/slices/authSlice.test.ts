@@ -387,6 +387,9 @@ describe('AuthSlice', () => {
             (auth as unknown as Record<string, unknown>).currentUser = mockUser;
             authCallback(mockUser);
 
+            // Fast-forward debounce
+            vi.advanceTimersByTime(500);
+
             expect(useStore.getState().user).toEqual(mockUser);
             expect(useStore.getState().authLoading).toBe(false);
 
@@ -455,6 +458,7 @@ describe('AuthSlice', () => {
             const mockUser = { uid: '123', email: 'test@example.com' };
             (auth as unknown as Record<string, unknown>).currentUser = mockUser;
             authCallback(mockUser);
+            vi.advanceTimersByTime(500);
             expect(useStore.getState().user).toEqual(mockUser);
 
             // Trigger null (token refresh)

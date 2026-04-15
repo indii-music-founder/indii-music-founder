@@ -382,7 +382,46 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                 return;
             }
 
-            // Clear any pending debounce if we received a valid user
+            // BUG-002 FIX: Debounce rapid null→user transitions during token refresh.
+            // Firebase may briefly emit null between token refresh cycles,
+            // causing spurious logouts under rapid load (100+ clicks/sec).
+            if (user && !lastKnownUser) {
+                logger.debug('[Auth] User went from null to valid — debouncing for 500ms to guard against rapid transitions...');
+                debounceTimer = setTimeout(async () => {
+                    const currentUser = auth.currentUser || user;
+                    if (currentUser) {
+                        logger.info('[Auth] Confirmed login after debounce.');
+                        lastKnownUser = currentUser;
+                        set({ user: currentUser, authLoading: false });
+
+                        // Optional: Ensure user document exists in Firestore
+                        try {
+                            const userRef = doc(db, 'users', currentUser.uid);
+                            const userSnap = await getDoc(userRef);
+
+                            if (!userSnap.exists()) {
+                                await setDoc(userRef, {
+                                    email: currentUser.email,
+                                    displayName: currentUser.displayName,
+                                    photoURL: currentUser.photoURL,
+                                    createdAt: serverTimestamp(),
+                                    lastLogin: serverTimestamp()
+                                }, { merge: true });
+                            } else {
+                                // Update last login
+                                await setDoc(userRef, {
+                                    lastLogin: serverTimestamp()
+                                }, { merge: true });
+                            }
+                        } catch (e: unknown) {
+                            logger.error("[Auth] Failed to sync user to Firestore", e);
+                        }
+                    }
+                }, 500);
+                return;
+            }
+
+            // Clear any pending debounce if we received a steady state
             if (debounceTimer) {
                 clearTimeout(debounceTimer);
                 debounceTimer = null;
