@@ -397,7 +397,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         <button
                             onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
                             className={cn(
-                                "rounded-lg transition-all border flex items-center justify-center overflow-hidden",
+                                "rounded-lg transition-all border flex items-center justify-center overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                                 isDocked ? "w-7 h-7" : "w-8 h-8",
                                 isIndiiMode
                                     ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50"

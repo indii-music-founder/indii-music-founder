@@ -88,16 +88,21 @@ describe('PromptArea Accessibility', () => {
     const dictateBtn = screen.getByRole('button', { name: /voice input/i });
     expect(dictateBtn).toBeInTheDocument();
 
-    // 3. Agent selector button (module selector)
-    // The delegate button uses aria-label "Select active agent"
-    const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
-    expect(delegateBtn).toBeInTheDocument();
+    // 3. Agent / indii mode toggle button
+    // The PromptArea refactor replaced the agent-selector dropdown with a
+    // mode-toggle button whose aria-label is either "Switch to Agent mode" or
+    // "Switch to indii mode" depending on whether indii mode is active.
+    // Our mock has chatChannel='agent' (not 'indii'), so isIndiiMode=false,
+    // meaning the button reads "Switch to indii mode".
+    const modeToggleBtn = screen.getByRole('button', { name: /switch to (agent|indii) mode/i });
+    expect(modeToggleBtn).toBeInTheDocument();
 
-    // 4. Dock/Detach Button
-    const dockBtn = screen.getByRole('button', { name: /detach from agent/i }); // isCommandBarDetached=false by default
+    // 4. Dock/Detach Button (only shown when !isDocked && !isMobile && !isBoardroomMode)
+    // Our mock: currentModule='dashboard' (not boardroom), isCommandBarDetached=false → "Detach from Agent"
+    const dockBtn = screen.getByRole('button', { name: /detach from agent/i });
     expect(dockBtn).toBeInTheDocument();
 
-    // 5. Run Command Button
+    // 5. Send/Run Button — aria-label is "Run command" (tooltip is "Send Message (Enter)")
     const runBtn = screen.getByRole('button', { name: /run command/i });
     expect(runBtn).toBeInTheDocument();
 
@@ -105,7 +110,7 @@ describe('PromptArea Accessibility', () => {
     // Expected classes: focus-visible:ring-2
     // We expect these to be MISSING initially.
 
-    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, delegateBtn, runBtn];
+    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, modeToggleBtn, runBtn];
 
     // We assert that they DO NOT have the classes yet (to confirm reproduction of "issue")
     // Or we can just try to assert they DO have them and let it fail.
