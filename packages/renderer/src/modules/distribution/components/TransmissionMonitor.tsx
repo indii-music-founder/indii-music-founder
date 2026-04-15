@@ -3,6 +3,7 @@ import { distributionService, DistributionTask } from '@/services/distribution/D
 import { CheckCircle, XCircle, Loader2, Activity, Package, HardDrive, Shield } from 'lucide-react';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const TransmissionMonitor: React.FC = () => {
     const [tasks, setTasks] = useState<DistributionTask[]>([]);
@@ -58,15 +59,7 @@ export const TransmissionMonitor: React.FC = () => {
             // Mark as unmounted BEFORE calling unsubscribe,
             // so any final callback invocations during teardown are ignored.
             isMountedRef.current = false;
-            if (unsubscribe) {
-                try {
-                    unsubscribe();
-                } catch (err: unknown) {
-                    // Swallow errors during unsubscribe — the Firestore SDK may
-                    // throw if the listener is already in an invalid state.
-                    logger.warn('[TransmissionMonitor] Error during unsubscribe (swallowed):', err);
-                }
-            }
+            safeUnsubscribe(unsubscribe);
         };
     }, []);
 
