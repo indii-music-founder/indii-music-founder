@@ -98,16 +98,11 @@ export interface ThinkingConfig {
     thinkingBudget?: number;
 }
 
-export interface PersonGenerationConfig {
-    dontAllowPeople?: boolean;
-    allowAdult?: boolean;
-    allowAll?: boolean;
-}
-
 export interface ImageConfig {
     imageSize?: '1K' | '2K' | '4K' | string;
     aspectRatio?: string;
-    personGenerationConfig?: PersonGenerationConfig;
+    /** Person generation policy — maps to Gemini SDK's personGeneration field. */
+    personGeneration?: 'ALLOW_ALL' | 'ALLOW_ADULT' | 'ALLOW_NONE' | string;
 }
 
 export interface PrebuiltVoiceConfig {

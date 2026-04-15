@@ -136,7 +136,6 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
             aspectRatio: '16:9',
             model: 'fast',
             negativePrompt: '',
-            seed: '',
             thinking: false,
             useGrounding: false,
             mediaResolution: 'medium',
@@ -268,20 +267,6 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                             className="w-full bg-white/3 border border-white/6 rounded-md px-2.5 py-1
                                 text-[10px] text-gray-300 placeholder:text-gray-600 focus:outline-none
                                 focus:border-purple-500/30 transition-colors"
-                        />
-                    </div>
-
-                    {/* Seed */}
-                    <div className="w-20">
-                        <input
-                            type="text"
-                            value={studioControls.seed}
-                            onChange={(e) => setStudioControls({ seed: e.target.value.replace(/\D/g, '') })}
-                            placeholder="Seed"
-                            data-testid="settings-seed"
-                            className="w-full bg-white/3 border border-white/6 rounded-md px-2.5 py-1
-                                text-[10px] text-gray-300 placeholder:text-gray-600 font-mono text-center
-                                focus:outline-none focus:border-purple-500/30 transition-colors"
                         />
                     </div>
                 </div>

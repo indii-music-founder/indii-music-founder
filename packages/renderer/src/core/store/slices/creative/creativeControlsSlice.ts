@@ -48,6 +48,7 @@ export interface CreativeControlsSlice {
         aspectRatio: VideoAspectRatio;
         resolution: VideoResolution;
         negativePrompt: string;
+        /** Seed for reproducible video generation (Veo 3.1 only — not supported by Gemini Image API). */
         seed: string;
         cameraMovement: string;
         motionStrength: number;

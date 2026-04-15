@@ -16,9 +16,16 @@ export interface DirectImageOptions {
     model?: typeof APPROVED_MODELS.DIRECT_PRO | typeof APPROVED_MODELS.DIRECT_FAST;
     aspectRatio?: string; // "1:1", "16:9", "9:16", "4:3", "3:4"
     numberOfImages?: number; // 1-4
-    personGeneration?: 'allow_adult' | 'dont_allow';
+    personGeneration?: 'allow_adult' | 'dont_allow' | 'allow_all';
     negativePrompt?: string; // Only supported on Pro
 }
+
+/** Map UI-friendly person generation values to Gemini API uppercase constants. */
+const PERSON_GEN_API_MAP: Record<string, string> = {
+    'allow_adult': 'ALLOW_ADULT',
+    'dont_allow': 'ALLOW_NONE',
+    'allow_all': 'ALLOW_ALL',
+};
 
 /**
  * Direct call to Gemini 3.1 Image generation via the @google/genai SDK.
@@ -58,7 +65,7 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
         }
 
         if (options.personGeneration) {
-            imageConfig.personGenerationConfig = options.personGeneration;
+            imageConfig.personGeneration = PERSON_GEN_API_MAP[options.personGeneration] ?? 'ALLOW_ADULT';
         }
 
         // Negative prompt is only supported on the Pro model (Nano Banana Pro)
