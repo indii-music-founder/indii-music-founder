@@ -84,7 +84,8 @@ vi.mock('firebase/messaging', () => ({
     serverTimestamp: vi.fn(),
   })),
   getToken: vi.fn(),
-  onMessage: vi.fn()
+  onMessage: vi.fn(),
+  isSupported: vi.fn(() => Promise.resolve(true))
 }));
 
 describe('Firebase App Check Initialization', () => {
