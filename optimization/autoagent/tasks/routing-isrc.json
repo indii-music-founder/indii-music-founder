@@ -1,0 +1,6 @@
+{
+    "type": "routing",
+    "input": "I just finished mastering my new single. How do I register it for an ISRC code so I can get paid when it streams?",
+    "expected_agent": "publishing",
+    "description": "Conductor must route an ISRC registration question to the publishing specialist."
+}
