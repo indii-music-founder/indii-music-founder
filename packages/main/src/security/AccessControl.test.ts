@@ -9,11 +9,11 @@ const mockIndiiOS = path.join(mockDocuments, 'IndiiOS');
 
 vi.mock('electron', () => ({
     app: {
-        getPath: (name: string) => {
+        getPath: vi.fn((name: string) => {
             if (name === 'userData') return mockUserData;
             if (name === 'documents') return mockDocuments;
             return '';
-        }
+        })
     }
 }));
 
@@ -25,11 +25,7 @@ vi.mock('os', () => ({
 
 vi.mock('fs', () => ({
     default: {
-        realpathSync: (p: string) => {
-            // Simulate existence for our test paths
-            // We strip any symlink logic for this mock, assuming inputs are canonical for the test cases
-            // or the mock returns the canonical path.
-
+        realpathSync: vi.fn((p: string) => {
             // Allow test paths
             if (p.startsWith(mockUserData) ||
                 p.startsWith(mockTmpDir) ||
@@ -38,20 +34,30 @@ vi.mock('fs', () => ({
                 return p;
             }
             throw new Error(`ENOENT: no such file or directory, realpath '${p}'`);
-        }
+        })
+    }
+}));
+
+// We must also mock electron-log since we're verifying if log.error is called
+vi.mock('electron-log', () => ({
+    default: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn()
     }
 }));
 
 import { accessControlService } from './AccessControlService';
+import log from 'electron-log';
 
 describe('AccessControlService', () => {
     beforeEach(() => {
         // Reset the singleton state
         (accessControlService as any).authorizedPaths.clear();
+        vi.clearAllMocks();
     });
 
     it('should deny arbitrary paths by default', () => {
-        // /random/file.txt is not in allowlist mock, so realpathSync throws, verifying deny logic handles errors
         expect(accessControlService.verifyAccess('/random/file.txt')).toBe(false);
     });
 
@@ -68,8 +74,6 @@ describe('AccessControlService', () => {
     });
 
     it('should deny paths in Documents outside IndiiOS', () => {
-        // Documents itself is mocked to exist, so realpath works.
-        // But logic should deny it.
         expect(accessControlService.verifyAccess(path.join(mockDocuments, 'secret.txt'))).toBe(false);
     });
 
@@ -86,7 +90,82 @@ describe('AccessControlService', () => {
     });
 
     it('should deny files that do not exist (realpath failure)', () => {
-        // /nonexistent/file.txt -> realpath throws -> returns false
         expect(accessControlService.verifyAccess('/nonexistent/file.txt')).toBe(false);
+    });
+
+    it('should log an error when grantAccess fails', () => {
+        const resolveSpy = vi.spyOn(path, 'resolve').mockImplementationOnce(() => {
+            throw new Error('Resolve failed');
+        });
+
+        accessControlService.grantAccess('/some/path');
+
+        expect(resolveSpy).toHaveBeenCalled();
+        expect(log.error).toHaveBeenCalledWith(
+            expect.stringContaining('[AccessControl] Failed to grant access'),
+            expect.any(Error)
+        );
+    });
+
+    it('should use path.resolve as fallback when fs.realpathSync fails for allowed directories', async () => {
+        const fs = await import('fs');
+        const originalRealpathSync = (fs.default.realpathSync as any).getMockImplementation();
+
+        (fs.default.realpathSync as any).mockImplementation((p: string) => {
+            // Trigger failure during the allowRoots mapping map
+            if (p === mockUserData) {
+                throw new Error('realpathSync failed');
+            }
+            return originalRealpathSync(p);
+        });
+
+        const fileInUserData = path.join(mockUserData, 'config.json');
+
+        // userData will fallback to path.resolve(userData), which is an allowed root.
+        // Therefore verification should pass.
+        expect(accessControlService.verifyAccess(fileInUserData)).toBe(true);
+
+        // Ensure that our mock actually caught the error logic
+        expect(fs.default.realpathSync).toHaveBeenCalledWith(mockUserData);
+
+        // Reset the mock
+        (fs.default.realpathSync as any).mockImplementation(originalRealpathSync);
+    });
+
+    it('should handle explicitly granted paths with a trailing separator', () => {
+        const dirWithSep = '/authorized/dir-with-sep/';
+        accessControlService.grantAccess(dirWithSep);
+        expect(accessControlService.verifyAccess('/authorized/dir-with-sep/file.txt')).toBe(true);
+    });
+
+    it('should handle authorized roots with a trailing separator', async () => {
+        const electron = await import('electron');
+        const originalGetPath = (electron.app.getPath as any).getMockImplementation();
+
+        (electron.app.getPath as any).mockImplementation((name: string) => {
+            if (name === 'userData') return mockUserData + '/';
+            if (name === 'documents') return mockDocuments + '/';
+            return '';
+        });
+
+        expect(accessControlService.verifyAccess(path.join(mockUserData, 'config.json'))).toBe(true);
+
+        (electron.app.getPath as any).mockImplementation(originalGetPath);
+    });
+
+    it('should handle explicitly granted files that end with path separator logic gracefully', () => {
+        const file = '/authorized/weird-file';
+        accessControlService.grantAccess(file);
+        expect(accessControlService.verifyAccess(file)).toBe(true);
+
+        const fileWithSep = '/authorized/weird-file/';
+        accessControlService.grantAccess(fileWithSep);
+        expect(accessControlService.verifyAccess(fileWithSep)).toBe(true);
+    });
+
+    it('should deny paths that prefix match but are not in the directory', () => {
+        const dir = '/authorized/dir';
+        accessControlService.grantAccess(dir);
+        expect(accessControlService.verifyAccess('/authorized/dir-suffix/file.txt')).toBe(false);
     });
 });
