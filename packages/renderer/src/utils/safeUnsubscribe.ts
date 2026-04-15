@@ -20,7 +20,7 @@
  * };
  * ```
  */
-export function safeUnsubscribe(unsubscribe: (() => void) | undefined): void {
+export function safeUnsubscribe(unsubscribe: (() => void) | undefined | null): void {
     if (!unsubscribe) return;
     try {
         unsubscribe();
