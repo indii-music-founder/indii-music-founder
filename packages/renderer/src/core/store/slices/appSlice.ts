@@ -50,6 +50,8 @@ export interface AppSlice {
     setHasUnsavedChanges: (hasUnsaved: boolean) => void;
     /** @internal Debounce tracker for toggleRightPanel */
     _lastRightPanelToggle?: number;
+    /** @internal Debounce tracker for toggleSidebar */
+    _lastSidebarToggle?: number;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
@@ -131,13 +133,18 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     isSidebarOpen: typeof window !== 'undefined' ? localStorage.getItem('indiiOS_sidebarOpen') !== 'false' : true,
     isRightPanelOpen: false,
     rightPanelTab: 'context',
-    toggleSidebar: () => set((state) => {
+    toggleSidebar: () => {
+        const now = Date.now();
+        const state = get();
+        if (state._lastSidebarToggle && now - state._lastSidebarToggle < 200) {
+            return; // Ignore rapid-fire toggles
+        }
         const newState = !state.isSidebarOpen;
         if (typeof window !== 'undefined') {
             localStorage.setItem('indiiOS_sidebarOpen', String(newState));
         }
-        return { isSidebarOpen: newState };
-    }),
+        set({ isSidebarOpen: newState, _lastSidebarToggle: now });
+    },
     toggleRightPanel: () => {
         // BUG-006 FIX: Debounce rapid toggle clicks.
         // The AnimatePresence mode="wait" in RightPanel can get stuck
