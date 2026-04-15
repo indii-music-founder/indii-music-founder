@@ -222,7 +222,7 @@ describe('DJ Axiom Power User — Roosevelt Park Event Prep', () => {
 
     describe('Generation Mode Context Switching', () => {
         it('image mode hides the audio toggle', () => {
-            const generationMode: 'image' | 'video' = 'image';
+            const generationMode = ('image' as 'image' | 'video');
             const showAudioToggle = generationMode === 'video';
             expect(showAudioToggle).toBe(false);
         });
@@ -247,7 +247,7 @@ describe('DJ Axiom Power User — Roosevelt Park Event Prep', () => {
         });
 
         it('Director tab hidden in image mode', () => {
-            const generationMode: 'image' | 'video' = 'image';
+            const generationMode = ('image' as 'image' | 'video');
             const tabs = [
                 { id: 'direct', always: true, showWhen: true },
                 { id: 'canvas', always: true, showWhen: true },
