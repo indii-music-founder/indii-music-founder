@@ -174,7 +174,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 negativePrompt: args.negativePrompt || studioControls.negativePrompt,
                 model: studioControls.model || 'fast', // Respect user's model preference (cost protection)
                 thinking: true,
-                seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
+                personGeneration: { 'allow_adult': 'ALLOW_ADULT', 'dont_allow': 'ALLOW_NONE', 'allow_all': 'ALLOW_ALL' }[studioControls.personGeneration] ?? 'ALLOW_ADULT',
                 sourceImages,
                 userProfile
             });

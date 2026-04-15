@@ -15,6 +15,12 @@ import DirectGenerationTab from './components/DirectGenerationTab';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 
+/** Map UI-friendly person generation values to Gemini API uppercase constants. */
+const PERSON_GEN_API_MAP: Record<string, string> = {
+    'allow_adult': 'ALLOW_ADULT',
+    'dont_allow': 'ALLOW_NONE',
+    'allow_all': 'ALLOW_ALL',
+};
 
 // Lazy load CreativePanel for mobile controls tab
 const CreativePanel = lazy(() => import('@/core/components/right-panel/CreativePanel'));
@@ -113,7 +119,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 resolution: studioControls.resolution,
                                 aspectRatio: studioControls.aspectRatio,
                                 negativePrompt: studioControls.negativePrompt,
-                                seed: undefined, // Force random seeds for variety
+                                personGeneration: PERSON_GEN_API_MAP[studioControls.personGeneration] ?? 'ALLOW_ADULT',
                                 sourceImages: sourceImages,
                                 model: studioControls.model,
                                 thinking: studioControls.thinking,
@@ -195,7 +201,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             resolution: studioControls.resolution,
                             aspectRatio: isCoverArt ? '1:1' : studioControls.aspectRatio,
                             negativePrompt: studioControls.negativePrompt,
-                            seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                            personGeneration: PERSON_GEN_API_MAP[studioControls.personGeneration] ?? 'ALLOW_ADULT',
                             sourceImages: sourceImages,
                             // Pass distributor context for cover art mode
                             userProfile: isCoverArt ? userProfile : undefined,
