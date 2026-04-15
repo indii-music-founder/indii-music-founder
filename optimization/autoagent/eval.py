@@ -65,7 +65,7 @@ ROUTING_TABLE = {
     ],
     "distribution": [
         "dsp delivery", "metadata", "ddex", "spotify upload", "apple music",
-        "release delivery", "isrc", "upc", "distribution pipeline",
+        "release delivery", "upc", "distribution pipeline",
     ],
     "road": [
         "event booking", "touring", "venue", "tour logistics", "road manager",
@@ -85,7 +85,7 @@ ROUTING_TABLE = {
         "sample i used", "clear a sample",
     ],
     "publishing": [
-        "composition rights", "pro", "mechanical license", "songwriter splits",
+        "composition rights", "pro", "mechanical license", "songwriter splits", "isrc", "iswc",
         "publishing royalties", "ascap", "bmi", "sesac", "song registration",
     ],
     "social": [

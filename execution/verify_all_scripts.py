@@ -7,7 +7,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def run_script(path, args=[]):
     cmd = ["python3", os.path.join(BASE_DIR, path)] + args
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    env = os.environ.copy()
+    env["ISRC_REGISTRANT_CODE"] = "XXX"
+    env["GS1_COMPANY_PREFIX"] = "123456789"
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     return result
 
 
@@ -33,7 +36,8 @@ def test_qc_validator():
     input_data = json.dumps({
         "title": "Good Title",
         "artist": "Good Artist",
-        "artwork_url": "http://example.com/art.jpg"
+        "artwork_url": "http://example.com/art.jpg",
+        "tracks": [{"title": "Good Track", "duration": 180}]
     })
     res = run_script("execution/distribution/qc_validator.py", [input_data])
     if res.returncode == 0:
