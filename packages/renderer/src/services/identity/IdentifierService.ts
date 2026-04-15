@@ -14,6 +14,10 @@ export class IdentifierService {
     // In a real system, this would be dynamic per user or org
     private static readonly DEFAULT_COUNTRY_CODE = 'US';
     private static readonly DEFAULT_REGISTRANT_CODE = 'QY1'; // Example Registrant
+    private static readonly DEFAULT_ISRC_START_YEAR = 26;
+    private static readonly DEFAULT_ISRC_SEQUENCE_START = 100;
+    private static readonly DEFAULT_UPC_SEQUENCE_START = 10000000000;
+
 
     /**
      * Fetch and increment the next sequence number from Firestore.
@@ -28,8 +32,8 @@ export class IdentifierService {
             if (!seqDoc.exists()) {
                 // Initialize if not exists
                 const initialData = {
-                    isrc: { lastYear: year || 26, sequence: 100 }, // Start at 100 for padding
-                    upc: { sequence: 10000000000 } // 11 digits start
+                    isrc: { lastYear: year || IdentifierService.DEFAULT_ISRC_START_YEAR, sequence: IdentifierService.DEFAULT_ISRC_SEQUENCE_START }, // Start at 100 for padding
+                    upc: { sequence: IdentifierService.DEFAULT_UPC_SEQUENCE_START } // 11 digits start
                 };
                 transaction.set(seqDocRef, initialData);
                 return type === 'isrc' ? initialData.isrc.sequence : initialData.upc.sequence;
@@ -38,7 +42,7 @@ export class IdentifierService {
             const data = seqDoc.data();
 
             if (type === 'isrc') {
-                const isrcData = data.isrc || { lastYear: year || 26, sequence: 100 };
+                const isrcData = data.isrc || { lastYear: year || IdentifierService.DEFAULT_ISRC_START_YEAR, sequence: IdentifierService.DEFAULT_ISRC_SEQUENCE_START };
                 let currentSeq = isrcData.sequence + 1;
                 let lastYear = isrcData.lastYear;
 
@@ -54,7 +58,7 @@ export class IdentifierService {
                 });
                 return currentSeq;
             } else {
-                const upcData = data.upc || { sequence: 10000000000 };
+                const upcData = data.upc || { sequence: IdentifierService.DEFAULT_UPC_SEQUENCE_START };
                 const currentSeq = upcData.sequence + 1;
                 transaction.update(seqDocRef, { 'upc.sequence': currentSeq });
                 return currentSeq;
