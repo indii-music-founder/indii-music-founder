@@ -18,9 +18,126 @@ export interface PreparedMasks {
 
 export class CanvasOperationsService {
     private canvas: fabric.Canvas | null = null;
+    private _pathCreatedHandler: ((e: { path: fabric.FabricObject }) => void) | null = null;
+    private _activeColorId: string = '';
+    /** Track blob URLs so we can revoke them on dispose to prevent memory leaks */
+    private _activeBlobUrls: string[] = [];
 
     /**
-     * Initialize a Fabric.js canvas with optional image
+     * Load a Fabric.js Image from URL with automatic CORS fallback.
+     *
+     * Strategy:
+     *  1. Try fabric.Image.fromURL with crossOrigin:'anonymous' (works for data URIs
+     *     and correctly-configured CORS origins).
+     *  2. On failure (CORS block, network error), fetch the image bytes via
+     *     `safeStorageFetch`, create a blob URL, and retry — blob URLs are same-origin
+     *     so CORS is irrelevant.
+     */
+    private async loadImageSafe(url: string): Promise<fabric.Image> {
+        // Fast path for data URIs — no CORS issues possible
+        if (url.startsWith('data:')) {
+            return fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
+        }
+
+        // Attempt 1: Direct load
+        try {
+            const img = await fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
+            // Verify the image actually loaded (width/height > 0)
+            if (img.width && img.width > 0 && img.height && img.height > 0) {
+                return img;
+            }
+            throw new Error('Image loaded but has zero dimensions');
+        } catch (directErr: unknown) {
+            logger.warn('[CanvasOps] Direct image load failed (likely CORS), attempting blob fallback:', directErr);
+        }
+
+        // Attempt 2: Fetch via safeStorageFetch → blob URL (bypasses CORS)
+        try {
+            const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+            const { blob } = await safeStorageFetch(url);
+            const blobUrl = URL.createObjectURL(blob);
+            this._activeBlobUrls.push(blobUrl);
+
+            const img = await fabric.Image.fromURL(blobUrl, { crossOrigin: 'anonymous' });
+            if (img.width && img.width > 0 && img.height && img.height > 0) {
+                logger.info('[CanvasOps] Image loaded via blob URL fallback');
+                return img;
+            }
+            throw new Error('Blob-loaded image has zero dimensions');
+        } catch (blobErr: unknown) {
+            logger.warn('[CanvasOps] Blob fallback also failed, trying Image element:', blobErr);
+        }
+
+        // Attempt 3: Raw Image element load → canvas → data URL → Fabric
+        return new Promise<fabric.Image>((resolve, reject) => {
+            const htmlImg = new Image();
+            htmlImg.crossOrigin = 'anonymous';
+            htmlImg.onload = async () => {
+                try {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = htmlImg.naturalWidth;
+                    tempCanvas.height = htmlImg.naturalHeight;
+                    const ctx = tempCanvas.getContext('2d');
+                    if (!ctx) throw new Error('Canvas 2D context unavailable');
+                    ctx.drawImage(htmlImg, 0, 0);
+                    const dataUrl = tempCanvas.toDataURL('image/png');
+                    const fabricImg = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
+                    resolve(fabricImg);
+                } catch (canvasErr) {
+                    reject(canvasErr);
+                }
+            };
+            htmlImg.onerror = () => {
+                // Final fallback: try without crossOrigin for display-only (won't be exportable)
+                const fallbackImg = new Image();
+                fallbackImg.onload = async () => {
+                    try {
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = fallbackImg.naturalWidth;
+                        tempCanvas.height = fallbackImg.naturalHeight;
+                        const ctx = tempCanvas.getContext('2d');
+                        if (!ctx) throw new Error('Canvas 2D context unavailable');
+                        ctx.drawImage(fallbackImg, 0, 0);
+                        const dataUrl = tempCanvas.toDataURL('image/png');
+                        const fabricImg = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
+                        logger.info('[CanvasOps] Image loaded via no-crossOrigin fallback');
+                        resolve(fabricImg);
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+                fallbackImg.onerror = () => reject(new Error(`All image load strategies failed for: ${url}`));
+                fallbackImg.src = url;
+            };
+            htmlImg.src = url;
+        });
+    }
+
+    /**
+     * Place a loaded Fabric image onto the canvas, sizing it to fit.
+     */
+    private placeImageOnCanvas(
+        img: fabric.Image,
+        maxWidth: number,
+        maxHeight: number
+    ): void {
+        if (!this.canvas) return;
+
+        const imgW = img.width ?? 800;
+        const imgH = img.height ?? 600;
+        const fitScale = Math.min(maxWidth / imgW, maxHeight / imgH, 1);
+        const canvasW = Math.round(imgW * fitScale);
+        const canvasH = Math.round(imgH * fitScale);
+        this.canvas.setDimensions({ width: canvasW, height: canvasH });
+
+        scaleImageToCanvas(img, this.canvas);
+        this.canvas.add(img);
+        this.canvas.renderAll();
+    }
+
+    /**
+     * Initialize a Fabric.js canvas with optional image.
+     * Includes CORS-resilient image loading with automatic fallback.
      */
     initialize(
         canvasElement: HTMLCanvasElement,
@@ -28,20 +145,29 @@ export class CanvasOperationsService {
         onReady?: () => void,
         onChange?: () => void
     ): fabric.Canvas {
+        // Dynamic sizing: read container dimensions instead of hardcoded 800x600
+        const container = canvasElement.parentElement;
+        const maxWidth = container ? Math.max(container.clientWidth - 24, 400) : 800;
+        const maxHeight = container ? Math.max(container.clientHeight - 24, 300) : 600;
+
         this.canvas = new fabric.Canvas(canvasElement, {
-            width: 800,
-            height: 600,
+            width: maxWidth,
+            height: maxHeight,
             backgroundColor: '#1a1a1a',
         });
 
         if (imageUrl) {
-            fabric.Image.fromURL(imageUrl, { crossOrigin: 'anonymous' }).then((img: fabric.Image) => {
-                if (!this.canvas) return;
-                scaleImageToCanvas(img, this.canvas);
-                this.canvas.add(img);
-                this.canvas.renderAll();
-                onReady?.();
-            });
+            this.loadImageSafe(imageUrl)
+                .then((img: fabric.Image) => {
+                    if (!this.canvas) return;
+                    this.placeImageOnCanvas(img, maxWidth, maxHeight);
+                    onReady?.();
+                })
+                .catch((err: unknown) => {
+                    logger.error('[CanvasOps] All image load strategies failed:', err);
+                    // Still call onReady so UI doesn't hang, but canvas will be empty
+                    onReady?.();
+                });
         } else {
             onReady?.();
         }
@@ -57,13 +183,35 @@ export class CanvasOperationsService {
     }
 
     /**
+     * Check if canvas has meaningful content (not just an empty dark background).
+     * Used to prevent saving blank canvases.
+     */
+    hasContent(): boolean {
+        if (!this.canvas) return false;
+        // A canvas has content if it has at least one visible object
+        const objects = this.canvas.getObjects();
+        return objects.some(obj => obj.visible !== false);
+    }
+
+    /**
      * Dispose of the canvas and cleanup
      */
     dispose(): void {
         if (this.canvas) {
+            // Clean up path:created handler to prevent memory leaks
+            if (this._pathCreatedHandler) {
+                this.canvas.off('path:created', this._pathCreatedHandler);
+                this._pathCreatedHandler = null;
+            }
             this.canvas.dispose();
             this.canvas = null;
         }
+        // Revoke blob URLs created during CORS fallback to free memory
+        this._activeBlobUrls.forEach(url => {
+            try { URL.revokeObjectURL(url); } catch { /* ignore */ }
+        });
+        this._activeBlobUrls = [];
+        this._activeColorId = '';
     }
 
     /**
@@ -268,8 +416,26 @@ export class CanvasOperationsService {
             this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
             this.canvas.freeDrawingBrush.width = 30;
             this.canvas.freeDrawingBrush.color = hexToRgba(color.hex, 0.5);
+            this._activeColorId = color.id;
+
+            // Remove previous handler if any
+            if (this._pathCreatedHandler) {
+                this.canvas.off('path:created', this._pathCreatedHandler);
+            }
+
+            // Stamp colorId on every new path so mask extraction can reliably identify them
+            this._pathCreatedHandler = (e: { path: fabric.FabricObject }) => {
+                if (e.path) {
+                    e.path.set('data', { colorId: this._activeColorId });
+                }
+            };
+            this.canvas.on('path:created', this._pathCreatedHandler);
         } else {
             this.canvas.isDrawingMode = false;
+            if (this._pathCreatedHandler) {
+                this.canvas.off('path:created', this._pathCreatedHandler);
+                this._pathCreatedHandler = null;
+            }
         }
     }
 
@@ -277,8 +443,17 @@ export class CanvasOperationsService {
      * Update brush color for magic fill mode
      */
     updateBrushColor(color: CreativeColor): void {
-        if (!this.canvas?.isDrawingMode || !this.canvas.freeDrawingBrush) return;
-        this.canvas.freeDrawingBrush.color = hexToRgba(color.hex, 0.5);
+        if (!this.canvas) return;
+        this._activeColorId = color.id;
+
+        if (this.canvas.isDrawingMode) {
+            // Ensure brush exists — handles edge case where color changes before brush is created
+            if (!this.canvas.freeDrawingBrush) {
+                this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
+                this.canvas.freeDrawingBrush.width = 30;
+            }
+            this.canvas.freeDrawingBrush.color = hexToRgba(color.hex, 0.5);
+        }
     }
 
     /**
@@ -346,9 +521,16 @@ export class CanvasOperationsService {
             const colorDef = STUDIO_COLORS.find(c => c.id === colorId);
             if (!colorDef) continue;
 
-            const targetRgbaStart = hexToRgba(colorDef.hex, 0.5).slice(0, -4);
-
+            // Primary: match by stamped colorId (reliable across save/restore cycles)
+            // Fallback: legacy string-matching for paths drawn before this fix
             const colorPaths = maskObjects.filter(obj => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const data = (obj as any).data;
+                if (data?.colorId) {
+                    return data.colorId === colorId;
+                }
+                // Fallback: legacy paths without colorId — try approximate stroke matching
+                const targetRgbaStart = hexToRgba(colorDef.hex, 0.5).slice(0, -4);
                 const stroke = obj.stroke;
                 return stroke && typeof stroke === 'string' && stroke.startsWith(targetRgbaStart);
             });
@@ -404,7 +586,7 @@ export class CanvasOperationsService {
     ): Promise<void> {
         if (!this.canvas) return;
 
-        const img = await fabric.Image.fromURL(candidateUrl, { crossOrigin: 'anonymous' });
+        const img = await this.loadImageSafe(candidateUrl);
 
         // Ensure standard dimensions
         img.scaleToWidth(this.canvas.width!);
@@ -559,7 +741,9 @@ export class CanvasOperationsService {
      */
     async toJSON(): Promise<string | null> {
         if (!this.canvas) return null;
-        const json = this.canvas.toJSON();
+        // Include 'data' property so colorId survives serialization/deserialization
+        // Fabric 6: toJSON() takes no args; use toObject() for custom property inclusion
+        const json = this.canvas.toObject(['data']);
         return JSON.stringify(json);
     }
 }
