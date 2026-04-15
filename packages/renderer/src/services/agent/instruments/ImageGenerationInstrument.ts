@@ -111,13 +111,14 @@ export class ImageGenerationInstrument implements Instrument {
       }
     },
     {
-      name: 'seed',
-      description: 'Random seed for reproducibility',
+      name: 'personGeneration',
+      description: 'Person generation policy: ALLOW_ALL (any people), ALLOW_ADULT (adults only, default), ALLOW_NONE (no people)',
       required: false,
+      defaultValue: 'ALLOW_ADULT',
       schema: {
-        type: 'number',
-        minimum: 0,
-        maximum: 4294967295
+        type: 'string',
+        enum: ['ALLOW_ALL', 'ALLOW_ADULT', 'ALLOW_NONE'],
+        default: 'ALLOW_ADULT'
       }
     }
   ];
@@ -203,8 +204,7 @@ export class ImageGenerationInstrument implements Instrument {
         aspectRatio: params.aspectRatio || '1:1',
         count: params.count || 1,
         negativePrompt: params.negativePrompt,
-        seed: params.seed
-      });
+        personGeneration: params.personGeneration || 'ALLOW_ADULT'});
 
       if (!results || results.length === 0) {
         return {
@@ -275,12 +275,11 @@ export class ImageGenerationInstrument implements Instrument {
       }
     }
 
-    // Validate seed
-    if (params.seed !== undefined) {
-      if (typeof params.seed !== 'number') {
-        errors.push('Seed must be a number');
-      } else if (params.seed < 0 || params.seed > 4294967295) {
-        errors.push('Seed must be between 0 and 4294967295');
+    // Validate personGeneration
+    if (params.personGeneration !== undefined) {
+      const validValues = ['ALLOW_ALL', 'ALLOW_ADULT', 'ALLOW_NONE'];
+      if (!validValues.includes(params.personGeneration)) {
+        errors.push(`personGeneration must be one of: ${validValues.join(', ')}`);
       }
     }
 
