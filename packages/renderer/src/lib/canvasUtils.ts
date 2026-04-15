@@ -34,6 +34,9 @@ export function scaleImageToCanvas(
         top: canvas.height! / 2,
         originX: 'center',
         originY: 'center',
-        selectable: false
+        selectable: false,
+        evented: false,
+        hasControls: false,
+        hasBorders: false,
     });
 }
