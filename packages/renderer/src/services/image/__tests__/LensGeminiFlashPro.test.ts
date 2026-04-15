@@ -3,14 +3,13 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImageGeneration } from '../ImageGenerationService';
-import { httpsCallable } from 'firebase/functions';
 
 // Hoisted Mocks
 const mocks = vi.hoisted(() => ({
     httpsCallable: vi.fn(),
     canPerformAction: vi.fn(),
     trackImageGeneration: vi.fn(),
-    auth: { currentUser: { uid: 'lens-tester' } },
+    auth: { currentUser: { uid: 'lens-tester', getIdToken: vi.fn().mockResolvedValue('mock-id-token') } },
     useStore: {
         getState: vi.fn(() => ({ userProfile: { id: 'lens-tester' } }))
     }
