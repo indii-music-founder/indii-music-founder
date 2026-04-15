@@ -56,8 +56,10 @@ function CommandBar() {
         }))
     );
 
-    // CommandBar logic: docked in standard views, floating when detached.
-    // Fixed UI deadlock: removed early return that blocked activation in standard views.
+    // Hide from global shell when Boardroom is active — it renders inside BoardroomModule instead.
+    // This prevents the double-render caused by Framer Motion opacity animations creating a
+    // new stacking context that traps fixed-position elements in browser (not Electron).
+    if (isBoardroomMode) return null;
 
     const shouldShow = true;
 
