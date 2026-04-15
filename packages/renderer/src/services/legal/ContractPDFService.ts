@@ -71,6 +71,19 @@ export class ContractPDFService {
         return doc.output('blob');
     }
 
+    /**
+     * Generate a PDF and return it as a Base64-encoded string (for email attachments).
+     * Returns pure Base64 without the data URI prefix.
+     */
+    static toBase64(options: PDFGenerateOptions): string {
+        const doc = ContractPDFService.generate(options);
+        // jsPDF output('datauristring') returns "data:application/pdf;filename=generated.pdf;base64,<BASE64>"
+        const dataUri = doc.output('datauristring');
+        // Strip the data URI prefix to get raw Base64
+        const base64 = dataUri.split(',')[1] ?? dataUri;
+        return base64;
+    }
+
     // ── Core renderer ──────────────────────────────────────────────────
     private static generate(options: PDFGenerateOptions): jsPDF {
         const doc = new jsPDF({ unit: 'mm', format: 'a4' });

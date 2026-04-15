@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Download, Eye, Trash2, Clock, ChevronRight, Loader2, FilePlus, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { FileText, Download, Eye, Trash2, Clock, ChevronRight, Loader2, FilePlus, AlertTriangle, Send, X } from 'lucide-react';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractPDFService } from '@/services/legal/ContractPDFService';
+import { ResendEmailService } from '@/services/email/ResendEmailService';
 import type { LegalContract } from '@/modules/legal/types';
 import { ContractStatus } from '@/modules/legal/types';
 import { useToast } from '@/core/context/ToastContext';
@@ -23,6 +24,9 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
     const [loading, setLoading] = useState(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [sendingId, setSendingId] = useState<string | null>(null);
+    const [emailDialog, setEmailDialog] = useState<{ contract: LegalContract; recipientEmail: string; message: string } | null>(null);
+    const emailInputRef = useRef<HTMLInputElement>(null);
 
     // Load contracts on mount
     const loadContracts = useCallback(async () => {
@@ -85,6 +89,55 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
         }
     };
 
+    const openSendDialog = (contract: LegalContract) => {
+        setEmailDialog({ contract, recipientEmail: '', message: '' });
+        // Focus the email input after the dialog renders
+        setTimeout(() => emailInputRef.current?.focus(), 100);
+    };
+
+    const handleSendEmail = async () => {
+        if (!emailDialog) return;
+        const { contract, recipientEmail, message } = emailDialog;
+
+        if (!recipientEmail.trim() || !recipientEmail.includes('@')) {
+            toast.error('Please enter a valid email address.');
+            return;
+        }
+
+        setSendingId(contract.id);
+        try {
+            // Generate PDF as Base64
+            const pdfBase64 = ContractPDFService.toBase64({
+                title: contract.title,
+                content: contract.content,
+                subtitle: contract.status === ContractStatus.DRAFT ? 'DRAFT — For Review Only' : undefined,
+            });
+
+            const filename = `${contract.title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_')}.pdf`;
+
+            const result = await ResendEmailService.sendContract({
+                to: recipientEmail.trim(),
+                contractType: contract.type || contract.title,
+                parties: 'As specified in the attached document',
+                pdfBase64,
+                filename,
+                message: message.trim() || undefined,
+            });
+
+            if (result.success) {
+                toast.success(`Contract sent to ${recipientEmail}`);
+                setEmailDialog(null);
+            } else {
+                toast.error(result.error || 'Failed to send email.');
+            }
+        } catch (err) {
+            logger.error('[MyContracts] Email send failed:', err);
+            toast.error('Failed to send contract via email.');
+        } finally {
+            setSendingId(null);
+        }
+    };
+
     const statusColors: Record<ContractStatus, { bg: string; text: string; label: string }> = {
         [ContractStatus.DRAFT]: { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', label: 'Draft' },
         [ContractStatus.REVIEW]: { bg: 'bg-blue-500/10 border-blue-500/20', text: 'text-blue-400', label: 'In Review' },
@@ -125,7 +178,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                 )}
                 <div className="mt-8 rounded-xl bg-amber-500/5 border border-amber-500/10 p-4 max-w-sm">
                     <div className="flex items-start gap-2 text-xs text-amber-300/70">
-                        <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+                        <AlertTriangle size={12} className="shrink-0 mt-0.5" />
                         <span>Tip: Use the chat below to say "Draft a DJ performance agreement for…" and the AI will generate and save a contract here automatically.</span>
                     </div>
                 </div>
@@ -167,7 +220,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                 return (
                     <div
                         key={contract.id}
-                        className="rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all overflow-hidden"
+                        className="rounded-xl bg-white/2 border border-white/5 hover:border-white/10 transition-all overflow-hidden"
                     >
                         {/* Row: Title + Status + Actions */}
                         <div
@@ -175,7 +228,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                             onClick={() => setExpandedId(isExpanded ? null : contract.id)}
                         >
                             {/* Icon */}
-                            <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                            <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
                                 <FileText size={16} className="text-blue-400" />
                             </div>
 
@@ -197,7 +250,17 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                             </div>
 
                             {/* Action buttons */}
-                            <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                                <button
+                                    onClick={() => openSendDialog(contract)}
+                                    disabled={sendingId === contract.id}
+                                    className="p-1.5 rounded-lg hover:bg-purple-500/10 text-gray-500 hover:text-purple-400 transition-colors"
+                                    title="Send via Email"
+                                    aria-label={`Send ${contract.title} via email`}
+                                    data-testid={`send-contract-${contract.id}`}
+                                >
+                                    {sendingId === contract.id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                                </button>
                                 <button
                                     onClick={() => handleDownloadPDF(contract)}
                                     disabled={isDownloading}
@@ -229,7 +292,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                             <ChevronRight
                                 size={14}
                                 className={cn(
-                                    'text-gray-600 transition-transform flex-shrink-0',
+                                    'text-gray-600 transition-transform shrink-0',
                                     isExpanded && 'rotate-90'
                                 )}
                             />
@@ -247,6 +310,13 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                     )}
                                 </div>
                                 <div className="flex gap-2 mt-4 pt-3 border-t border-white/5">
+                                    <button
+                                        onClick={() => openSendDialog(contract)}
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold rounded-lg transition-colors"
+                                    >
+                                        <Send size={11} />
+                                        Send via Email
+                                    </button>
                                     <button
                                         onClick={() => handleDownloadPDF(contract)}
                                         className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-lg transition-colors"
@@ -267,6 +337,99 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                     </div>
                 );
             })}
+
+            {/* ── Email Send Dialog ──────────────────────────────────── */}
+            {emailDialog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div
+                        className="bg-[#1a1a2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 animate-in zoom-in-95 fade-in duration-200"
+                        role="dialog"
+                        aria-label="Send Contract via Email"
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                    <Send size={14} className="text-purple-400" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-white">Send Contract</h4>
+                                    <p className="text-[10px] text-gray-500 truncate max-w-[250px]">{emailDialog.contract.title}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setEmailDialog(null)}
+                                className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
+                                aria-label="Close dialog"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Recipient Email */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Recipient Email *</label>
+                            <input
+                                ref={emailInputRef}
+                                type="email"
+                                value={emailDialog.recipientEmail}
+                                onChange={e => setEmailDialog(prev => prev ? { ...prev, recipientEmail: e.target.value } : null)}
+                                onKeyDown={e => e.key === 'Enter' && handleSendEmail()}
+                                placeholder="recipient@example.com"
+                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                                data-testid="send-contract-email-input"
+                            />
+                        </div>
+
+                        {/* Optional Message */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Message (optional)</label>
+                            <textarea
+                                value={emailDialog.message}
+                                onChange={e => setEmailDialog(prev => prev ? { ...prev, message: e.target.value } : null)}
+                                placeholder="Add a personal note..."
+                                rows={3}
+                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all resize-none"
+                                data-testid="send-contract-message-input"
+                            />
+                        </div>
+
+                        {/* Info note */}
+                        <div className="flex items-start gap-2 text-[10px] text-gray-500 px-1">
+                            <AlertTriangle size={10} className="shrink-0 mt-0.5 text-amber-400/50" />
+                            <span>The contract will be attached as a PDF. Recipient will receive an email from noreply@indiios.com.</span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-2">
+                            <button
+                                onClick={() => setEmailDialog(null)}
+                                className="flex-1 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-xl transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSendEmail}
+                                disabled={!emailDialog.recipientEmail.trim() || sendingId === emailDialog.contract.id}
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-xl transition-colors"
+                                data-testid="send-contract-submit"
+                            >
+                                {sendingId === emailDialog.contract.id ? (
+                                    <>
+                                        <Loader2 size={12} className="animate-spin" />
+                                        Sending…
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={12} />
+                                        Send Contract
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

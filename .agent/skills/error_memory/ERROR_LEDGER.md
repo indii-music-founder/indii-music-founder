@@ -55,3 +55,21 @@ When a CI shard fails:
 4. If local passes but CI fails → the failure is likely a missing mock for a dynamic import, a timing-sensitive assertion, or a Ubuntu-only resource issue.
 5. NOTE: `build.yml` (Build and Test) and `deploy.yml` (Deploy to Firebase Hosting) are BOTH triggered on push to main and both run unit tests independently. A failure in one does not mean the other is broken.
 
+---
+
+## 2026-04-15 Creative Studio Blank Canvas (CORS)
+
+### Pattern — Firebase Storage CORS Blocks fabric.Image.fromURL
+
+- SEVERITY: Critical (entire Creative Studio editor non-functional)
+- FILE: `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
+- BUG: `fabric.Image.fromURL(url, { crossOrigin: 'anonymous' })` silently fails when Firebase Storage doesn't return `Access-Control-Allow-Origin` headers. The promise had NO `.catch()` handler, so the canvas stayed blank with zero user feedback. Clicking "Save" then persisted an empty canvas to the gallery, cluttering it with blank assets.
+- ROOT CAUSE: Firebase Storage bucket `gs://indiios-v-1-1.firebasestorage.app` had no CORS policy applied (the `config/cors.json` file existed but was never deployed via `gsutil`).
+- FIX (server): `gsutil cors set config/cors.json gs://indiios-v-1-1.firebasestorage.app`
+- FIX (client): Added `loadImageSafe()` with 3-tier fallback:
+  1. Direct `fabric.Image.fromURL` with `crossOrigin: 'anonymous'`
+  2. Fetch via `safeStorageFetch` → `URL.createObjectURL(blob)` (blob URLs are same-origin, bypass CORS)
+  3. Raw `Image` element → temp canvas → `toDataURL` → Fabric
+- FIX (guard): Added `hasContent()` method + check in `saveCanvas()` to block saving empty canvases.
+- FIX (memory): Blob URLs tracked in `_activeBlobUrls[]` and revoked in `dispose()`.
+- RULE: **Never call `fabric.Image.fromURL` without a `.catch()` handler.** Always use `loadImageSafe()` which handles CORS gracefully. When adding new Firebase Storage buckets or projects, run `gsutil cors set config/cors.json gs://<bucket>` immediately.

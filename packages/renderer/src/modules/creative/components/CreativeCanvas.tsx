@@ -41,9 +41,11 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         setGeneratedCandidates,
 
         toggleMagicFill,
+        handleDetectObjects,
         handleUpdateDefinition,
         handleUpdateReferenceImage,
         handleMagicFill,
+        handleClearDetections,
         handleAnimate,
         handleCandidateSelect,
         saveCanvas,
@@ -92,6 +94,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             addCircle={() => canvasOps.addCircle()}
                             addText={() => canvasOps.addText()}
                             toggleMagicFill={toggleMagicFill}
+                            handleDetectObjects={handleDetectObjects}
+                            handleClearDetections={handleClearDetections}
                             isMagicFillMode={isMagicFillMode}
                         />
                         <div className="flex-1 overflow-y-auto w-full custom-scrollbar py-4 px-2">

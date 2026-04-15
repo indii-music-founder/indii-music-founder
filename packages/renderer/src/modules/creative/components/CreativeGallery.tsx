@@ -130,7 +130,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <Anchor size={14} />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                            onClick={(e) => { e.stopPropagation(); setSelectedItem(item); setViewMode('editor'); }}
                             data-testid="view-fullsize-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="View Fullsize"

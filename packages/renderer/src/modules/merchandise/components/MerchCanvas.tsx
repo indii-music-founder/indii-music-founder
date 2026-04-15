@@ -130,9 +130,8 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
         },
         addImage: (url: string) => {
             if (!fabricCanvas.current) return;
-            fabric.Image.fromURL(url, {
-                crossOrigin: 'anonymous'
-            }).then((img) => {
+
+            const placeImage = (img: fabric.Image) => {
                 if (!fabricCanvas.current) return;
                 img.scaleToWidth(200);
                 img.set({
@@ -145,8 +144,34 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
                 fabricCanvas.current.setActiveObject(img);
                 fabricCanvas.current.renderAll();
                 saveHistory();
-            }).catch(err => {
-                logger.error("Failed to load image", err);
+            };
+
+            // Attempt 1: Direct load (works for data URIs and CORS-configured origins)
+            fabric.Image.fromURL(url, {
+                crossOrigin: 'anonymous'
+            }).then((img) => {
+                if (img.width && img.width > 0) {
+                    placeImage(img);
+                } else {
+                    throw new Error('Zero-dimension image');
+                }
+            }).catch(() => {
+                // Attempt 2: Fetch as blob to bypass CORS
+                import('@/services/storage/safeStorageFetch').then(({ safeStorageFetch }) => {
+                    safeStorageFetch(url).then(({ blob }) => {
+                        const blobUrl = URL.createObjectURL(blob);
+                        fabric.Image.fromURL(blobUrl, { crossOrigin: 'anonymous' }).then((img) => {
+                            placeImage(img);
+                            // Revoke after a delay to allow Fabric to finish with the URL
+                            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+                        }).catch(err => {
+                            URL.revokeObjectURL(blobUrl);
+                            logger.error("[MerchCanvas] All image load strategies failed", err);
+                        });
+                    }).catch(err => {
+                        logger.error("[MerchCanvas] Blob fetch fallback failed", err);
+                    });
+                });
             });
         },
         changeColor: (color: string) => {

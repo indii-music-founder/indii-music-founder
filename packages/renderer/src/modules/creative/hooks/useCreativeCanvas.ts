@@ -9,6 +9,7 @@ import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { Candidate } from '../components/CandidatesCarousel';
+import { imageAnalysisService } from '@/services/image/ImageAnalysisService';
 import { logger } from '@/utils/logger';
 
 // Basic debounce helper
@@ -150,6 +151,58 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const handleUpdateReferenceImage = (colorId: string, image: { mimeType: string, data: string } | null) => {
         setReferenceImages(prev => ({ ...prev, [colorId]: image }));
+    };
+
+    const handleDetectObjects = async () => {
+        if (!item || !canvasOps.isInitialized()) return;
+        
+        try {
+            setIsProcessing(true);
+            setProcessingStatus('Analyzing Image...');
+            toast.info('Detecting objects using Gemini Vision...');
+
+            const base64 = canvasOps.getBaseImageBase64();
+            if (!base64) throw new Error('Could not extract base image.');
+
+            const objects = await imageAnalysisService.detectObjects(base64);
+            if (objects && objects.length > 0) {
+                canvasOps.addBoundingBoxes(objects, async (label: string) => {
+                    try {
+                        setIsProcessing(true);
+                        setProcessingStatus(`Extracting mask for: ${label}...`);
+                        toast.info(`Smart selecting ${label}...`);
+                        
+                        const currentBase64 = canvasOps.getBaseImageBase64();
+                        if (!currentBase64) return;
+                        
+                        const maskBase64 = await imageAnalysisService.extractSegmentationMask(currentBase64, label);
+                        await canvasOps.addSegmentationMask(maskBase64, activeColor);
+                        toast.success(`Successfully selected ${label}.`);
+                    } catch (err: any) {
+                        logger.error('[CreativeStudio] Segmentation failed', err);
+                        toast.error(err.message || 'Segmentation failed.');
+                    } finally {
+                        setIsProcessing(false);
+                        setProcessingStatus('');
+                    }
+                });
+                toast.success(`Detected ${objects.length} objects.`);
+            } else {
+                toast.info('No prominent objects detected.');
+            }
+        } catch (error: any) {
+            logger.error('[CreativeStudio] Object detection failed', error);
+            toast.error(error.message || 'Object detection failed.');
+        } finally {
+            setIsProcessing(false);
+            setProcessingStatus('');
+        }
+    };
+
+    const handleClearDetections = () => {
+        if (!canvasOps.isInitialized()) return;
+        canvasOps.clearDetections();
+        toast.info('Cleared detections from canvas.');
     };
 
     const handleMagicFill = async () => {
@@ -437,7 +490,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 download(results.instagram, '1-1-ig');
                 download(results.youtube, '16-9-yt');
             }
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             toast.error("Batch export failed.");
         } finally {
             setIsProcessing(false);
@@ -477,6 +530,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleUpdateDefinition,
         handleUpdateReferenceImage,
         handleMagicFill,
+        handleDetectObjects,
+        handleClearDetections,
         handleAnimate,
         handleCandidateSelect,
         saveCanvas,
