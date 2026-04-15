@@ -46,7 +46,15 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         setVideoInput: mockSetVideoInput,
         selectedItem: null,
         setSelectedItem: mockSetSelectedItem,
-        addCharacterReference: vi.fn()
+        addCharacterReference: vi.fn(),
+        setPrompt: vi.fn(),
+        setViewMode: vi.fn(),
+        playTrack: vi.fn(),
+        pauseTrack: vi.fn(),
+        resumeTrack: vi.fn(),
+        stopTrack: vi.fn(),
+        currentTrack: null,
+        isPlaying: false
     };
 
     beforeEach(() => {

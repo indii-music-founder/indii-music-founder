@@ -12,7 +12,28 @@ vi.mock('@/services/agent/SessionService', () => ({
         updateSession: mockUpdateSession,
         getSessionsForUser: vi.fn().mockResolvedValue([]),
         createSession: vi.fn().mockResolvedValue(true),
-        deleteSession: vi.fn().mockResolvedValue(true)
+        deleteSession: vi.fn().mockResolvedValue(true),
+        subscribeToSessions: vi.fn((_cb: unknown) => () => {})
+    }
+}));
+
+// Prevent shard-ordering contamination from Firebase mock state leakage.
+// agentOrchestrationSlice has a static `import { db, auth } from '@/services/firebase'`
+// which is evaluated at module load. If a prior test corrupted the firebase mock, the
+// agentOrchestrationSlice's onSnapshot listener setup can throw, causing
+// addAgentMessage's dynamic import to fail silently (error swallowed by .catch).
+vi.mock('@/services/firebase', () => ({
+    db: {},
+    auth: { currentUser: null },
+    functionsWest1: {},
+    storage: {}
+}));
+
+// Prevent loadSessions -> registerSubscription from calling the real root store
+// (which may not be initialized in this isolated createStore test context).
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(() => ({ registerSubscription: vi.fn() }))
     }
 }));
 

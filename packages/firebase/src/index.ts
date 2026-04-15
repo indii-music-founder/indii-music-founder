@@ -82,6 +82,9 @@ export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
 // Email OAuth Token Manager (Gmail / Outlook — server-side token exchange & refresh)
 export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email/tokenManager';
 
+// Email Delivery Service (Resend — transactional emails, contract PDFs, notifications)
+export { sendEmail } from './email/sendEmail';
+
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 

@@ -22,14 +22,16 @@ export default function DirectGenerationTab() {
         addToHistory,
         currentProjectId,
         whiskState,
-        setSelectedItem
+        setSelectedItem,
+        setViewMode
     } = useStore(useShallow(state => ({
         studioControls: state.studioControls,
         setPrompt: state.setPrompt,
         addToHistory: state.addToHistory,
         currentProjectId: state.currentProjectId,
         whiskState: state.whiskState,
-        setSelectedItem: state.setSelectedItem
+        setSelectedItem: state.setSelectedItem,
+        setViewMode: state.setViewMode
     })));
     const toast = useToast();
 
@@ -89,6 +91,7 @@ export default function DirectGenerationTab() {
 
                     // Open the FIRST generated image in CreativeCanvas for editing
                     setSelectedItem(newItems[0] as HistoryItem);
+                    setViewMode('editor');
 
                     toast.success('Image generated directly successfully');
                 }
@@ -149,7 +152,7 @@ export default function DirectGenerationTab() {
         } finally {
             setIsGenerating(false);
         }
-    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem]);
+    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode]);
 
     return (
         <div className="flex flex-col h-full w-full bg-background text-foreground">
@@ -236,7 +239,24 @@ export default function DirectGenerationTab() {
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
                         {results.map((item) => (
-                            <div key={item.id} className="group relative aspect-square bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all">
+                            <div
+                                key={item.id}
+                                className="group relative aspect-square bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all cursor-pointer"
+                                onClick={() => {
+                                    setSelectedItem(item as unknown as HistoryItem);
+                                    setViewMode('editor');
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setSelectedItem(item as unknown as HistoryItem);
+                                        setViewMode('editor');
+                                    }
+                                }}
+                                data-testid={`direct-result-${item.id}`}
+                            >
                                 {item.type === 'video' ? (
                                     item.url ? (
                                         <video src={item.url} className="w-full h-full object-cover" controls loop muted />
@@ -254,7 +274,7 @@ export default function DirectGenerationTab() {
                                     <p className="text-white text-xs line-clamp-2 mb-2">{item.prompt}</p>
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] uppercase font-bold text-gray-400">{item.type}</span>
-                                        <button aria-label="Download image" className="text-gray-400 hover:text-white transition-colors">
+                                        <button aria-label="Download image" className="text-gray-400 hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>
                                             <Download size={14} />
                                         </button>
                                     </div>

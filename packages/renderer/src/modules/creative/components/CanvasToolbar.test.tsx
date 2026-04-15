@@ -8,6 +8,8 @@ describe('CanvasToolbar', () => {
         addCircle: vi.fn(),
         addText: vi.fn(),
         toggleMagicFill: vi.fn(),
+        handleDetectObjects: vi.fn(),
+        handleClearDetections: vi.fn(),
         isMagicFillMode: false,
     };
 

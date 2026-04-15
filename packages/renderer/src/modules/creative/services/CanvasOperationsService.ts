@@ -58,7 +58,7 @@ export class CanvasOperationsService {
             const blobUrl = URL.createObjectURL(blob);
             this._activeBlobUrls.push(blobUrl);
 
-            const img = await fabric.Image.fromURL(blobUrl, { crossOrigin: 'anonymous' });
+            const img = await fabric.Image.fromURL(blobUrl);
             if (img.width && img.width > 0 && img.height && img.height > 0) {
                 logger.info('[CanvasOps] Image loaded via blob URL fallback');
                 return img;
@@ -219,6 +219,162 @@ export class CanvasOperationsService {
      */
     getCanvas(): fabric.Canvas | null {
         return this.canvas;
+    }
+
+    /**
+     * Retrieves the base image as a data URI (excluding annotations like paths).
+     */
+    getBaseImageBase64(): string | null {
+        if (!this.canvas) return null;
+        
+        const originalObjects = this.canvas.getObjects();
+        const maskObjects = originalObjects.filter(obj => obj.type === 'path' || (obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data?.isBoundingBox);
+        
+        // Hide masks
+        maskObjects.forEach(obj => (obj.visible = false));
+        
+        const originalBg = this.canvas.backgroundColor;
+        this.canvas.backgroundColor = '#000000';
+        
+        this.canvas.renderAll();
+        
+        const baseDataUrl = this.canvas.toDataURL({ format: 'png', multiplier: 1 });
+        
+        // Restore
+        maskObjects.forEach(obj => (obj.visible = true));
+        this.canvas.backgroundColor = originalBg;
+        this.canvas.renderAll();
+        
+        return baseDataUrl;
+    }
+
+    /**
+     * Draw bounding boxes on the canvas.
+     */
+    addBoundingBoxes(objects: Array<{ label: string, box: { ymin: number, xmin: number, ymax: number, xmax: number } }>, onSelect?: (label: string) => void): void {
+        if (!this.canvas) return;
+        const width = this.canvas.getWidth();
+        const height = this.canvas.getHeight();
+
+        // Clear existing bounding boxes
+        const existingBoxes = this.canvas.getObjects().filter(obj => (obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data?.isBoundingBox);
+        existingBoxes.forEach(obj => this.canvas?.remove(obj));
+
+        objects.forEach(obj => {
+            const left = (obj.box.xmin / 1000) * width;
+            const top = (obj.box.ymin / 1000) * height;
+            const boxWidth = ((obj.box.xmax - obj.box.xmin) / 1000) * width;
+            const boxHeight = ((obj.box.ymax - obj.box.ymin) / 1000) * height;
+
+            const rect = new fabric.Rect({
+                left,
+                top,
+                width: boxWidth,
+                height: boxHeight,
+                fill: 'rgba(0, 255, 0, 0.1)',
+                stroke: '#00ff00',
+                strokeWidth: 2,
+                strokeDashArray: [5, 5],
+                selectable: true,
+                hasControls: false,
+                data: { isBoundingBox: true, label: obj.label }
+            });
+            
+            // When user clicks the box
+            if (onSelect) {
+                rect.on('mousedown', () => {
+                    onSelect(obj.label);
+                });
+            }
+
+            this.canvas?.add(rect);
+            
+            // Add label text
+            const text = new fabric.Text(obj.label, {
+                left,
+                top: top - 20,
+                fontSize: 16,
+                fill: '#00ff00',
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                selectable: false,
+                data: { isBoundingBox: true }
+            });
+            this.canvas?.add(text);
+        });
+        
+        this.canvas.renderAll();
+    }
+
+    /**
+     * Clear all detected bounding boxes and segmentation masks.
+     */
+    clearDetections(): void {
+        if (!this.canvas) return;
+        const objects = this.canvas.getObjects();
+        const detections = objects.filter(obj => {
+            const data = (obj as fabric.Object & { data?: Record<string, unknown> }).data;
+            return data?.isBoundingBox || data?.isSegmentationMask;
+        });
+        
+        detections.forEach(obj => this.canvas?.remove(obj));
+        this.canvas.renderAll();
+    }
+
+    /**
+     * Requirement X: Render Segmentation Mask
+     * Loads a base64 PNG mask, tints it to the active color, and applies it as a non-interactive canvas object overlay
+     */
+    async addSegmentationMask(base64Png: string, colorDef: CreativeColor): Promise<void> {
+        if (!this.canvas) return;
+
+        try {
+            const dataUrl = `data:image/png;base64,${base64Png}`;
+            const img = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
+
+            if (!img) {
+                throw new Error('Failed to load segmentation mask image');
+            }
+
+            const canvasW = this.canvas!.getWidth();
+            const canvasH = this.canvas!.getHeight();
+
+            const scaleX = canvasW / (img.width || canvasW);
+            const scaleY = canvasH / (img.height || canvasH);
+            const scale = Math.min(scaleX, scaleY);
+            
+            img.set({
+                left: canvasW / 2,
+                top: canvasH / 2,
+                originX: 'center',
+                originY: 'center',
+                scaleX: scale,
+                scaleY: scale,
+                opacity: 0.6,
+                selectable: false,
+                evented: false,
+                data: {
+                    colorId: colorDef.id,
+                    isSegmentationMask: true,
+                }
+            });
+
+            // We use BlendColor filter
+            const filter = new fabric.filters.BlendColor({
+                color: colorDef.hex,
+                mode: 'multiply',
+                alpha: 1.0
+            });
+
+            img.filters = [filter];
+            img.applyFilters();
+            
+            this.canvas?.add(img);
+
+            this.canvas?.renderAll();
+        } catch (err) {
+            console.error('Failed to add segmentation mask', err);
+            throw err;
+        }
     }
 
     /**
@@ -468,6 +624,8 @@ export class CanvasOperationsService {
         const objects = this.canvas.getObjects();
         objects.forEach(obj => (obj.visible = true));
 
+        this.canvas.renderAll();
+
         // Export flattened canvas at 1x multiplier for prompt precision
         const dataUrl = this.canvas.toDataURL({
             format: 'png',
@@ -507,6 +665,8 @@ export class CanvasOperationsService {
         // Store original canvas background
         const originalBg = this.canvas.backgroundColor;
         this.canvas.backgroundColor = '#000000'; // Black background for clean content extraction if transparent
+
+        this.canvas.renderAll();
 
         const baseDataUrl = this.canvas.toDataURL({ format: 'png', multiplier: 1 });
         const baseImage = {
@@ -549,6 +709,7 @@ export class CanvasOperationsService {
 
                 // Clear background to pure BLACK for strict binary mask
                 this.canvas.backgroundColor = '#000000';
+                this.canvas.renderAll();
                 const maskDataUrl = this.canvas.toDataURL({ format: 'png', multiplier: 1 });
 
                 masks.push({
