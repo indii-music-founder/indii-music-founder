@@ -128,8 +128,6 @@ def setup_args():
     parser.add_argument("--host", required=True, help="SFTP Host")
     parser.add_argument("--port", type=int, default=22, help="SFTP Port")
     parser.add_argument("--user", required=True, help="SFTP Username")
-    parser.add_argument("--password", help="SFTP Password")
-    parser.add_argument("--key", help="Path to Private Key file")
     parser.add_argument("--local", required=True, help="Local file or directory to upload")
     parser.add_argument("--remote", default=".", help="Remote directory path")
     parser.add_argument("--storage-path", help="Path for logs and session data")
@@ -138,12 +136,9 @@ def setup_args():
 if __name__ == "__main__":
     args = setup_args()
 
-    # Security: Prioritize Environment Variables
-    password = os.environ.get("SFTP_PASSWORD", args.password)
-    key_path = os.environ.get("SFTP_KEY_PATH", args.key)
-    # Prioritize environment variables for secrets if arguments are not provided
-    password = args.password or os.environ.get("SFTP_PASSWORD")
-    key_path = args.key or os.environ.get("SFTP_KEY")
+    # Security: Strictly require Environment Variables for secrets
+    password = os.environ.get("SFTP_PASSWORD")
+    key_path = os.environ.get("SFTP_KEY_PATH") or os.environ.get("SFTP_KEY")
 
     uploader = SFTPUploader(storage_path=args.storage_path)
     result = uploader.upload(
