@@ -23,6 +23,7 @@ import { logger } from '@/utils/logger';
 const VIDEO_MODEL_ALIASES: Record<string, string> = {
     'pro': AI_MODELS.VIDEO.PRO,
     'fast': AI_MODELS.VIDEO.FAST,
+    'lite': AI_MODELS.VIDEO.LITE,
     'edit': AI_MODELS.VIDEO.EDIT,
     'generation': AI_MODELS.VIDEO.GENERATION,
 };

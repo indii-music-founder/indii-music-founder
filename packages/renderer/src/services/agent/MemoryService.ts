@@ -43,7 +43,6 @@ function cosineSimilarity(a: number[], b: number[]): number {
 class MemoryService {
     private embeddingModel = APPROVED_MODELS.EMBEDDING_DEFAULT;
 
-    // Batcher for embedding requests to save tokens and improve performance
     private embeddingBatcher = new RequestBatcher<string, number[]>(
         async (texts) => {
             try {
@@ -67,7 +66,6 @@ class MemoryService {
 
     private async getEmbedding(text: string): Promise<number[]> {
         try {
-            // Use the batcher instead of direct call
             return await this.embeddingBatcher.add(text);
         } catch (error: unknown) {
             logger.warn('[MemoryService] Failed to get embedding, falling back to keyword search:', error);
@@ -95,7 +93,7 @@ class MemoryService {
     ): Promise<void> {
         const service = this.getService(projectId);
 
-        // Check for duplicates using vector similarity (simple dedup)
+        // Exact-match dedup
         let existingMemories: MemoryItem[] = [];
         try {
             existingMemories = await service.list();
@@ -107,7 +105,6 @@ class MemoryService {
             return;
         }
 
-        // Generate embedding for the new memory
         const embedding = await this.getEmbedding(content);
 
         const item: Omit<MemoryItem, 'id'> = {
@@ -138,7 +135,7 @@ class MemoryService {
             filters?: {
                 tags?: string[];
                 types?: MemoryItem['type'][];
-                dateRange?: [number, number]; // timestamps
+                dateRange?: [number, number];
                 sessionId?: string;
             };
             limit?: number;
@@ -149,13 +146,16 @@ class MemoryService {
             const service = this.getService(projectId);
             let memories: MemoryItem[] = [];
             try {
-                memories = await service.list(); // In production, push filters to DB query if possible
+                memories = await service.list();
             } catch (e: unknown) {
-                logger.warn('[MemoryService] Failed to list memories for retrieval: (Non-blocking)', e);
+                logger.warn('[MemoryService] Failed to list memories for retrieval:', e);
                 return [];
             }
 
-            if (memories.length === 0) return [];
+            if (memories.length === 0) {
+                logger.info('[MemoryService] Memory store is empty for this project.');
+                return [];
+            }
 
             const options = typeof queryOrOptions === 'string'
                 ? { query: queryOrOptions, limit: limitIdx }
@@ -163,97 +163,125 @@ class MemoryService {
 
             const { query, filters, limit = 5 } = options;
 
-            // 1. Apply Metadata Filters
+            logger.info(`[MemoryService] Searching ${memories.length} memories for: "${query.substring(0, 80)}"`);
+
             let candidates = memories;
             if (filters) {
                 candidates = candidates.filter(m => {
                     if (filters.types && !filters.types.includes(m.type)) return false;
-                    if (filters.tags && filters.tags.length > 0) {
-                        const hasTag = m.tags?.some(t => filters.tags!.includes(t));
-                        if (!hasTag) return false;
-                    }
-                    if (filters.dateRange) {
-                        if (m.timestamp < filters.dateRange[0] || m.timestamp > filters.dateRange[1]) return false;
-                    }
+                    if (filters.tags?.length && !m.tags?.some(t => filters.tags!.includes(t))) return false;
+                    if (filters.dateRange && (m.timestamp < filters.dateRange[0] || m.timestamp > filters.dateRange[1])) return false;
                     if (filters.sessionId && m.sessionId !== filters.sessionId) return false;
                     return true;
                 });
             }
 
-            if (candidates.length === 0) return [];
-
-            // 2. Try vector search if embeddings are available
-            const queryEmbedding = await this.getEmbedding(query);
-            const hasVectorSupport = queryEmbedding.length > 0 && candidates.some(m => m.embedding && m.embedding.length > 0);
-
-            let scored: { item: MemoryItem; score: number }[];
-
-            if (hasVectorSupport) {
-                // Semantic Search + Importance + Recency
-                scored = candidates.map(m => {
-                    let vectorScore = 0;
-                    if (m.embedding && m.embedding.length > 0) {
-                        vectorScore = cosineSimilarity(queryEmbedding, m.embedding);
-                    }
-
-                    // Recency Score (Decay over 30 days)
-                    const daysOld = (Date.now() - m.timestamp) / (1000 * 60 * 60 * 24);
-                    const recencyScore = 1 / (1 + 0.1 * daysOld); // Hyperbolic decay
-
-                    // Final Score Formula
-                    // content relevance * 0.6 + importance * 0.2 + recency * 0.2
-                    // Boost 'rule' types always
-                    let totalScore = (vectorScore * 0.6) + (m.importance * 0.2) + (recencyScore * 0.2);
-
-                    // Extra boost if filter matched specifically? No, filter is hard constraint.
-                    if (m.type === 'rule') totalScore += 0.15;
-
-                    return { item: m, score: totalScore };
-                });
-            } else {
-                // Keyword Search Fallback
-                const keywords = query.toLowerCase().split(' ').filter(w => w.length > 3);
-                scored = candidates.map(m => {
-                    let matchCount = 0;
-                    const content = m.content.toLowerCase();
-                    keywords.forEach(k => {
-                        if (content.includes(k)) matchCount++;
-                    });
-
-                    let totalScore = matchCount > 0 ? (0.5 + Math.min(matchCount * 0.1, 0.4)) : 0;
-                    if (m.type === 'rule') totalScore += 0.2;
-                    return { item: m, score: totalScore };
-                });
+            if (candidates.length === 0) {
+                logger.info('[MemoryService] All memories excluded by metadata filters.');
+                return [];
             }
 
-            // Sort by score
-            scored.sort((a, b) => b.score - a.score);
+            // Kick off background repair for memories saved without embeddings
+            const broken = candidates.filter(m => !m.embedding?.length);
+            if (broken.length > 0) {
+                logger.info(`[MemoryService] ${broken.length}/${candidates.length} memories missing embeddings — repairing in background.`);
+                this.repairEmbeddings(projectId, broken).catch(e =>
+                    logger.warn('[MemoryService] Background embedding repair failed:', e)
+                );
+            }
 
-            // Filter threshold
-            const threshold = hasVectorSupport ? 0.6 : 0.1;
-            const relevantItems = scored
-                .filter(s => s.score > threshold)
+            const queryEmbedding = await this.getEmbedding(query);
+            const hasVectors = queryEmbedding.length > 0 && candidates.some(m => m.embedding?.length);
+            const keywords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
+            // Unified hybrid scoring — every candidate gets vector + keyword + importance + recency
+            const scored = candidates.map(m => {
+                let vecScore = 0;
+                if (hasVectors && m.embedding?.length) {
+                    vecScore = cosineSimilarity(queryEmbedding, m.embedding);
+                }
+
+                let kwHits = 0;
+                const lc = m.content.toLowerCase();
+                for (const k of keywords) {
+                    if (lc.includes(k)) kwHits++;
+                }
+                const kwScore = keywords.length > 0 ? Math.min(kwHits / keywords.length, 1.0) : 0;
+
+                const daysOld = (Date.now() - m.timestamp) / 86_400_000;
+                const recency = 1 / (1 + 0.1 * daysOld);
+
+                let total: number;
+                if (hasVectors && vecScore > 0) {
+                    total = vecScore * 0.50 + kwScore * 0.20 + m.importance * 0.15 + recency * 0.15;
+                } else {
+                    total = kwScore * 0.50 + m.importance * 0.25 + recency * 0.25;
+                }
+
+                if (m.type === 'rule') total += 0.15;
+                if (m.type === 'preference') total += 0.10;
+
+                return { item: m, total, vecScore, kwScore };
+            });
+
+            scored.sort((a, b) => b.total - a.total);
+
+            // 0.35 replaces the old 0.6 which was too aggressive for real-world cosine scores
+            const threshold = hasVectors ? 0.35 : 0.10;
+            let results = scored
+                .filter(s => s.total > threshold)
                 .slice(0, limit)
                 .map(s => s.item);
 
-            // Async: Update access stats for retrieved items (fire and forget)
-            this.updateAccessStats(projectId, relevantItems);
-
-            // Fallback if nothing relevant found (Relax filters? No, strict filters should be respected)
-            // But if generic query failed, we fallback to recent rules
-            if (relevantItems.length === 0 && !filters) {
-                return memories
-                    .filter(m => m.type === 'rule' || m.importance > 0.8)
-                    .sort((a, b) => b.timestamp - a.timestamp)
-                    .slice(0, 3)
-                    .map(m => m.content);
+            if (scored.length > 0) {
+                const top = scored.slice(0, 5).map(s =>
+                    `"${s.item.content.substring(0, 40)}…" (${s.total.toFixed(3)} vec=${s.vecScore.toFixed(3)} kw=${s.kwScore.toFixed(3)})`
+                );
+                logger.info(`[MemoryService] Top scores: ${top.join(' | ')}`);
+                logger.info(`[MemoryService] Threshold=${threshold}, matched=${results.length}`);
             }
 
-            return relevantItems.map(m => m.content);
+            if (results.length > 0) {
+                this.updateAccessStats(projectId, results);
+            }
+
+            // Last resort: surface recent rules / high-importance items so the agent isn't empty-handed
+            if (results.length === 0 && !filters) {
+                logger.info('[MemoryService] Below threshold — falling back to recent rules/high-importance.');
+                results = memories
+                    .filter(m => m.type === 'rule' || m.importance > 0.7)
+                    .sort((a, b) => b.timestamp - a.timestamp)
+                    .slice(0, Math.min(3, limit));
+            }
+
+            return results.map(m => m.content);
 
         } catch (error: unknown) {
-            logger.error('[MemoryService] Error retrieving memories:', error);
+            logger.error('[MemoryService] Retrieval failed:', error);
             return [];
+        }
+    }
+
+    /**
+     * Background repair for memories that were saved when embedding generation
+     * was unavailable. Processes at most 5 per invocation to avoid API pressure.
+     */
+    private async repairEmbeddings(projectId: string, items: MemoryItem[]): Promise<void> {
+        const service = this.getService(projectId);
+        let repaired = 0;
+        for (const item of items.slice(0, 5)) {
+            try {
+                const embedding = await this.getEmbedding(item.content);
+                if (embedding.length > 0) {
+                    await service.update(item.id, { embedding });
+                    repaired++;
+                }
+            } catch {
+                // Individual failure shouldn't block the rest of the batch
+            }
+        }
+        if (repaired > 0) {
+            logger.info(`[MemoryService] Repaired ${repaired} embeddings in background.`);
         }
     }
 

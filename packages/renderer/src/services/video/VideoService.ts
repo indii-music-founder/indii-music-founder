@@ -11,13 +11,13 @@ export interface VideoGenerationOptions {
     mask?: { mimeType: string; data: string }; // Base64 data
     anchors?: { mimeType: string; data: string }[];
     resolution?: '720p' | '1080p';
-    aspectRatio?: '16:9' | '9:16' | '1:1';
+    aspectRatio?: '16:9' | '9:16';
     durationSeconds?: number;
     // Veo 3.1 enhanced options
     firstFrame?: { mimeType: string; data: string }; // Explicit first frame control
     lastFrame?: { mimeType: string; data: string }; // Explicit last frame control
     referenceImages?: { mimeType: string; data: string }[]; // Up to 3 reference images
-    generateAudio?: boolean; // Enable native audio generation
+    // NOTE: Audio is always-on for Veo 3.1 — there is no generateAudio parameter
 }
 
 
@@ -123,17 +123,18 @@ export class VideoService {
             const model = AI_MODELS.VIDEO.GENERATION;
 
             // Build reference images (up to 3 per Veo 3.1 limit)
+            // Official API only supports referenceType: 'asset' (lowercase, no 'style' mode)
             const refImages = options.referenceImages || options.anchors;
             const referenceImages = refImages && refImages.length > 0
-                ? refImages.slice(0, 3).map((img, index) => ({
+                ? refImages.slice(0, 3).map((img) => ({
                     image: { imageBytes: img.data, mimeType: img.mimeType },
-                    referenceType: (index === 0 ? 'STYLE' : 'ASSET') as 'STYLE' | 'ASSET',
+                    referenceType: 'asset' as const,
                 }))
                 : undefined;
 
-            // Build last frame config
+            // Build last frame config — must be an Image object, not a data URI string
             const lastFrame = options.lastFrame
-                ? `data:${options.lastFrame.mimeType};base64,${options.lastFrame.data}`
+                ? { imageBytes: options.lastFrame.data, mimeType: options.lastFrame.mimeType }
                 : undefined;
 
             // Determine input image (firstFrame takes priority over image)
@@ -154,7 +155,7 @@ export class VideoService {
                     durationSeconds,
                     referenceImages,
                     lastFrame,
-                    generateAudio: options.generateAudio || false,
+                    // Audio is always-on for Veo 3.1 — no generateAudio parameter exists
                 },
             }));
 
@@ -188,7 +189,7 @@ export class VideoService {
                 config: {
                     aspectRatio: '16:9',
                     durationSeconds: 4,
-                    lastFrame: `data:${endImage.mimeType};base64,${endImage.data}`
+                    lastFrame: { imageBytes: endImage.data, mimeType: endImage.mimeType }
                 }
             }));
             return uri || null;

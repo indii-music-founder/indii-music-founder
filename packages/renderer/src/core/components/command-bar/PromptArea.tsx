@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
-import { ArrowRight, Loader2, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database } from 'lucide-react';
+import { ArrowRight, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Square } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -54,9 +54,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled,
         setCommandBarCollapsed,
-        isBoardroomMode
+        isBoardroomMode,
+        stopAgent,
+        isAgentProcessing
     } = useStore(useShallow(state => ({
-        // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
         currentModule: state.currentModule,
         isRightPanelOpen: state.isRightPanelOpen,
         toggleRightPanel: state.toggleRightPanel,
@@ -71,7 +72,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isKnowledgeBaseEnabled: state.isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled: state.setKnowledgeBaseEnabled,
         setCommandBarCollapsed: state.setCommandBarCollapsed,
-        isBoardroomMode: state.isBoardroomMode
+        isBoardroomMode: state.isBoardroomMode,
+        stopAgent: state.stopAgent,
+        isAgentProcessing: state.isAgentProcessing
     })));
 
     const isIndiiMode = chatChannel === 'indii';
@@ -437,28 +440,45 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </div>
                         )}
 
-                        <PromptInputAction tooltip="Send Message (Enter)">
-                            <button
-                                onClick={(e) => handleSubmit(e)}
-                                disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0) || isProcessing}
-                                aria-label="Run command"
-                                className={cn(
-                                    "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white",
-                                    (!isMobile && !isDocked) ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0"),
-                                    isIndiiMode
-                                        ? "bg-purple-600 hover:bg-purple-500 shadow-purple-500/20"
-                                        : "bg-white/20 hover:bg-white/30 border border-white/10"
-                                )}
-                                data-testid="command-bar-run-btn"
-                            >
-                                {isProcessing ? (
-                                    <Loader2 size={isDocked ? 14 : 16} className="animate-spin" data-testid="run-loader" />
-                                ) : (
+                        {isProcessing || isAgentProcessing ? (
+                            <PromptInputAction tooltip="Stop Agent (Esc)">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        stopAgent();
+                                    }}
+                                    aria-label="Stop agent"
+                                    className={cn(
+                                        "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white",
+                                        (!isMobile && !isDocked) ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0"),
+                                        "bg-red-600 hover:bg-red-500 shadow-red-500/30 animate-pulse"
+                                    )}
+                                    data-testid="command-bar-stop-btn"
+                                >
+                                    <Square size={isDocked ? 12 : 14} fill="currentColor" />
+                                    {(!isMobile && !isDocked) && <span className="ml-0.5">Stop</span>}
+                                </button>
+                            </PromptInputAction>
+                        ) : (
+                            <PromptInputAction tooltip="Send Message (Enter)">
+                                <button
+                                    onClick={(e) => handleSubmit(e)}
+                                    disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0)}
+                                    aria-label="Run command"
+                                    className={cn(
+                                        "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white",
+                                        (!isMobile && !isDocked) ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0"),
+                                        isIndiiMode
+                                            ? "bg-purple-600 hover:bg-purple-500 shadow-purple-500/20"
+                                            : "bg-white/20 hover:bg-white/30 border border-white/10"
+                                    )}
+                                    data-testid="command-bar-run-btn"
+                                >
                                     <ArrowRight size={isDocked ? 14 : 16} />
-                                )}
-                                {(!isMobile && !isDocked) && <span className="ml-0.5">Run</span>}
-                            </button>
-                        </PromptInputAction>
+                                    {(!isMobile && !isDocked) && <span className="ml-0.5">Run</span>}
+                                </button>
+                            </PromptInputAction>
+                        )}
                     </div>
                 </PromptInputActions>
             </PromptInput>

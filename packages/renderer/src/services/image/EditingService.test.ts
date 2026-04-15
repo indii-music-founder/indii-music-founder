@@ -11,7 +11,11 @@ vi.mock('firebase/functions', () => ({
 vi.mock('@/services/firebase', () => ({
     functionsWest1: {},
     auth: {
-        currentUser: { uid: 'test-user', email: 'test@example.com' }
+        currentUser: {
+            uid: 'test-user',
+            email: 'test@example.com',
+            getIdToken: vi.fn().mockResolvedValue('mock-id-token'),
+        }
     },
     db: {},
     storage: {},
@@ -36,6 +40,8 @@ vi.mock('@/core/config/ai-models', () => ({
         IMAGE: {
             GENERATION: 'gemini-3-pro-image-preview',
             FAST: 'gemini-2.5-flash-image',
+            DIRECT_PRO: 'gemini-3-pro-image-preview',
+            DIRECT_FAST: 'gemini-3.1-flash-image-preview',
         },
     },
 }));
