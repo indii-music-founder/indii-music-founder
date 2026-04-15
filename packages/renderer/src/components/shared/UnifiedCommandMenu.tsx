@@ -34,8 +34,8 @@ export function UnifiedCommandMenu() {
             }
         };
 
-        document.addEventListener('keydown', down);
-        return () => document.removeEventListener('keydown', down);
+        document.addEventListener('keydown', down, { capture: true });
+        return () => document.removeEventListener('keydown', down, { capture: true });
     }, [isCommandMenuOpen, setCommandMenuOpen]);
 
     // Run a command and close the menu
