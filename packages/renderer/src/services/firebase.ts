@@ -174,15 +174,41 @@ try {
 export { remoteConfig };
 
 // Initialize Messaging (Client-side only)
-import { getMessaging } from 'firebase/messaging';
-export const messaging = typeof window !== 'undefined' ? (() => {
+// LAZY: Use isSupported() guard to prevent FirebaseError on browsers that lack
+// Service Worker / Push API (e.g. Chrome iOS). Sentry fix 2026-04-15.
+import { getMessaging, isSupported as isMessagingSupported } from 'firebase/messaging';
+import type { Messaging } from 'firebase/messaging';
+
+let _messagingInstance: Messaging | null = null;
+let _messagingChecked = false;
+
+/**
+ * Get Firebase Messaging instance. Returns null on unsupported browsers
+ * (Chrome iOS, in-app WebViews, etc.) without throwing.
+ */
+export async function getFirebaseMessaging(): Promise<Messaging | null> {
+    if (_messagingChecked) return _messagingInstance;
+    _messagingChecked = true;
+
+    if (typeof window === 'undefined') return null;
+
     try {
-        return getMessaging(app);
+        const supported = await isMessagingSupported();
+        if (!supported) {
+            logger.debug('[Firebase] Messaging not supported in this browser — skipping FCM init.');
+            return null;
+        }
+        _messagingInstance = getMessaging(app);
+        logger.debug('[Firebase] Messaging initialized successfully.');
+        return _messagingInstance;
     } catch (e: unknown) {
-        logger.warn('Firebase Messaging not supported:', e);
+        logger.warn('[Firebase] Messaging init failed:', e);
         return null;
     }
-})() : null;
+}
+
+// Backwards-compat: eager reference (null until first async call)
+export const messaging = null as Messaging | null;
 
 // Item 259: Initialize Firebase Performance Monitoring
 // Lazy-loaded to avoid adding to the critical path

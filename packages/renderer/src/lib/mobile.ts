@@ -8,7 +8,7 @@ import { logger } from '@/utils/logger';
 // Haptic Feedback
 // ============================================================================
 
-import { messaging } from '@/services/firebase';
+import { getFirebaseMessaging } from '@/services/firebase';
 import { getToken, onMessage } from 'firebase/messaging';
 
 export type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
@@ -375,31 +375,30 @@ export const getBatteryStatus = async () => {
  * Request permission for push notifications
  */
 export const requestNotificationPermission = async (): Promise<boolean> => {
-    if (!messaging || typeof window === 'undefined' || !('Notification' in window)) {
-        logger.warn('[Notifications] Messaging not supported');
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+        logger.warn('[Notifications] Notifications not supported in this environment');
         return false;
     }
 
     try {
+        const messaging = await getFirebaseMessaging();
+        if (!messaging) {
+            logger.warn('[Notifications] Messaging not supported');
+            return false;
+        }
+
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             logger.debug('[Notifications] Permission granted');
 
-            // Try to get token if VAPID key exists (not strictly required for local/PWA display, but needed for FCN)
-            if (messaging) {
-                try {
-                    // Start token retrieval but don't block if it fails (e.g. missing VAPID)
-                    // We use a dummy VAPID if none provided just to triggering the flow if possible, 
-                    // though it will likely fail for FCN without correct key.
-                    // Ideally we should have VITE_FIREBASE_VAPID_KEY in env.
-                    const vapidKey = (import.meta as unknown as { env: Record<string, string> }).env.VITE_FIREBASE_VAPID_KEY;
-                    if (vapidKey) {
-                        const token = await getToken(messaging, { vapidKey });
-                        if (token) logger.debug('[Notifications] Token:', token);
-                    }
-                } catch (e: unknown) {
-                    logger.warn('[Notifications] Token retrieval warning:', e);
+            try {
+                const vapidKey = (import.meta as unknown as { env: Record<string, string> }).env.VITE_FIREBASE_VAPID_KEY;
+                if (vapidKey) {
+                    const token = await getToken(messaging, { vapidKey });
+                    if (token) logger.debug('[Notifications] Token:', token);
                 }
+            } catch (e: unknown) {
+                logger.warn('[Notifications] Token retrieval warning:', e);
             }
 
             return true;
@@ -415,16 +414,19 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
  * Listen for foreground messages
  */
 export const onMessageListener = (callback: (payload: unknown) => void) => {
-    if (!messaging) return () => { };
-    try {
-        return onMessage(messaging, (payload) => {
-            logger.debug('[Notifications] Foreground message received:', payload);
-            callback(payload);
-        });
-    } catch (e: unknown) {
-        logger.error('[Notifications] Error setting up listener:', e);
-        return () => { };
-    }
+    // Fire-and-forget async setup
+    getFirebaseMessaging().then((messaging) => {
+        if (!messaging) return;
+        try {
+            onMessage(messaging, (payload) => {
+                logger.debug('[Notifications] Foreground message received:', payload);
+                callback(payload);
+            });
+        } catch (e: unknown) {
+            logger.error('[Notifications] Error setting up listener:', e);
+        }
+    });
+    return () => { };
 };
 
 // ============================================================================

@@ -149,7 +149,8 @@ vi.mock('@/services/firebase', () => ({
     messaging: null,
     appCheck: null,
     ai: { instance: null },
-    getFirebaseAI: vi.fn(() => null)
+    getFirebaseAI: vi.fn(() => null),
+    getFirebaseMessaging: vi.fn(() => Promise.resolve(null))
 }));
 
 // Mock Firebase App
@@ -355,7 +356,8 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('firebase/messaging', () => ({
     getMessaging: vi.fn(() => ({})),
     getToken: vi.fn(() => Promise.resolve('mock-fcm-token')),
-    onMessage: vi.fn(() => () => { })
+    onMessage: vi.fn(() => () => { }),
+    isSupported: vi.fn(() => Promise.resolve(true))
 }));
 
 // Mock Firebase App Check
