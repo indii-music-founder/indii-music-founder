@@ -1,7 +1,7 @@
-import { getMessaging, getToken, onMessage, Messaging, MessagePayload } from 'firebase/messaging';
+import { getToken, onMessage, type Messaging, type MessagePayload } from 'firebase/messaging';
 import { getAuth } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { app, db } from '@/services/firebase';
+import { app, db, getFirebaseMessaging } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
 /**
@@ -12,16 +12,20 @@ import { logger } from '@/utils/logger';
 export class PushNotificationService {
     private messaging: Messaging | null = null;
     private vapidKey = import.meta.env.VITE_FCM_VAPID_KEY;
+    private initPromise: Promise<void> | null = null;
 
-    constructor() {
-        try {
-            // Messaging is only supported in browser contexts that support service workers
-            if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                this.messaging = getMessaging(app);
-            }
-        } catch (e: unknown) {
-            logger.warn('[PushNotificationService] FCM not supported in this environment.', e);
+    /**
+     * Lazy-init messaging to avoid synchronous getMessaging() on unsupported browsers.
+     */
+    private async ensureMessaging(): Promise<Messaging | null> {
+        if (this.messaging) return this.messaging;
+        if (!this.initPromise) {
+            this.initPromise = getFirebaseMessaging().then((m) => {
+                this.messaging = m;
+            });
         }
+        await this.initPromise;
+        return this.messaging;
     }
 
     /**
@@ -29,13 +33,14 @@ export class PushNotificationService {
      * Saves the token to the user's Firestore profile to enable targeted backend push.
      */
     public async requestPermissionAndGetToken(): Promise<string | null> {
-        if (!this.messaging) return null;
+        const messaging = await this.ensureMessaging();
+        if (!messaging) return null;
 
         try {
             const permission = await Notification.requestPermission();
 
             if (permission === 'granted') {
-                const token = await getToken(this.messaging, { vapidKey: this.vapidKey });
+                const token = await getToken(messaging, { vapidKey: this.vapidKey });
 
                 if (token) {
                     logger.info('[PushNotificationService] Retrieved FCM token successfully.');
@@ -59,9 +64,17 @@ export class PushNotificationService {
      * Listens for foreground messages when the app is active.
      */
     public onForegroundMessage(callback: (payload: MessagePayload) => void): () => void {
-        if (!this.messaging) return () => { };
+        // Kick off async init; if not ready yet, return no-op
+        const messaging = this.messaging;
+        if (!messaging) {
+            // Try to init lazily and set up listener once ready
+            this.ensureMessaging().then((m) => {
+                if (m) onMessage(m, callback);
+            });
+            return () => { };
+        }
 
-        return onMessage(this.messaging, (payload) => {
+        return onMessage(messaging, (payload) => {
             logger.info('[PushNotificationService] Received foreground message:', payload);
 
             // Optionally, we can manually trigger a local browser notification here
