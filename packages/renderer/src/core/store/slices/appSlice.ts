@@ -48,6 +48,8 @@ export interface AppSlice {
     setCommandMenuOpen: (open: boolean) => void;
     hasUnsavedChanges: boolean;
     setHasUnsavedChanges: (hasUnsaved: boolean) => void;
+    /** @internal Debounce tracker for toggleSidebar */
+    _lastSidebarToggle?: number;
     /** @internal Debounce tracker for toggleRightPanel */
     _lastRightPanelToggle?: number;
     /** @internal Debounce tracker for toggleSidebar */
