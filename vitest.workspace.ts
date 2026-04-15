@@ -38,6 +38,10 @@ export default [
       ],
       exclude: ['dist/**', 'e2e/**', 'node_modules/**', 'packages/firebase/src/test/security/**'],
       setupFiles: [path.resolve(import.meta.dirname, './packages/firebase/src/test/setup.ts')],
+      // Firebase functions tests do a dynamic `import('../index')` in beforeEach which
+      // barrel-loads the entire package (MCP server, orchestration, etc). Under shard
+      // ordering where AgentStreaming runs first, the node resolution can take >10s.
+      hookTimeout: 30000,
     }
   },
 ];

@@ -102,8 +102,8 @@ describe('Router Context Verification', () => {
                 <App />
             </BrowserRouter>
         );
-        // Use findByText to wait for Suspense to resolve
-        expect(await screen.findByText('Dashboard Loaded')).toBeInTheDocument();
+        // Use findByText to wait for Suspense to resolve — 5s timeout to handle shard CPU pressure
+        expect(await screen.findByText('Dashboard Loaded', {}, { timeout: 5000 })).toBeInTheDocument();
     });
 
     it('throws error if rendered without BrowserRouter (negative test)', async () => {
