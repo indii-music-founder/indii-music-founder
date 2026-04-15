@@ -202,7 +202,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
         });
     });
 
-    it('Scenario 1: Verifies "Processing" state disables input and shows loader', async () => {
+    it('Scenario 1: Verifies "Processing" state disables input and shows stop button', async () => {
         render(<CommandBar />);
 
         const input = screen.getByPlaceholderText(/Launch a campaign/i) as HTMLTextAreaElement;
@@ -215,13 +215,13 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
             expect(submitBtn).toBeEnabled();
         });
 
-        // 2. Submit - triggers internal isProcessing in PromptArea
+        // 2. Submit — run button is replaced by stop button when isProcessing=true
         fireEvent.click(submitBtn);
 
-        // Wait for loader to appear (handleSubmit sets isProcessing=true)
+        // When processing, the stop button appears and the run button is unmounted
         await waitFor(() => {
-            expect(screen.getByTestId('run-loader')).toBeInTheDocument();
-            expect(submitBtn).toBeDisabled();
+            expect(screen.getByTestId('command-bar-stop-btn')).toBeInTheDocument();
+            expect(screen.queryByTestId('command-bar-run-btn')).not.toBeInTheDocument();
         });
     });
 

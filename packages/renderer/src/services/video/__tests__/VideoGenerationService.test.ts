@@ -70,6 +70,14 @@ vi.mock('@/services/ai/utils/InputSanitizer', () => ({
     }
 }));
 
+// Mock video utils to prevent HTMLMediaElement frame extraction timeout in jsdom
+vi.mock('@/utils/video', () => ({
+    extractLastFrameForAPI: vi.fn().mockResolvedValue({
+        data: 'fake-frame-base64',
+        mimeType: 'image/png',
+    }),
+}));
+
 describe('VideoGenerationService', () => {
     beforeEach(() => {
         vi.clearAllMocks();

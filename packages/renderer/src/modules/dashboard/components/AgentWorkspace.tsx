@@ -1,7 +1,3 @@
-import React from 'react';
-
-/* ── UI Components ── */
-import CommandBar from '@/core/components/CommandBar';
 import { AgentHeader } from './AgentHeader';
 import { EmptyState } from './EmptyState';
 import { WorkspaceCanvas } from './WorkspaceCanvas';
@@ -11,7 +7,6 @@ import { useAgentWorkspace } from '../hooks/useAgentWorkspace';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';
-import { useMobile } from '@/hooks/useMobile';
 
 /* ================================================================== */
 /*  Agent Workspace — Core AI Orchestration Interface                  */
@@ -37,7 +32,6 @@ export default function AgentWorkspace() {
         canvasItems: s.canvasItems,
         removeCanvasItem: s.removeCanvasItem
     })));
-    const { isAnyPhone } = useMobile();
 
     return (
         <div className="flex-1 flex flex-col h-full bg-grid-white/[0.02] relative overflow-hidden">
@@ -49,7 +43,7 @@ export default function AgentWorkspace() {
             <AgentHeader uptime={uptime} isProcessing={isAgentProcessing} />
 
             {/* Center: Canvas or Empty State */}
-            <div className={`flex-1 overflow-hidden ${isAnyPhone ? 'pb-4' : 'pb-32'}`}>
+            <div className="flex-1 overflow-hidden pb-32">
                 {canvasItems.length === 0 ? (
                     <EmptyState
                         onCommandClick={(cmd) => setCommandInput(cmd)}
@@ -62,15 +56,6 @@ export default function AgentWorkspace() {
                     />
                 )}
             </div>
-
-            {/* Floating Command Bar — hidden on phone (tab bar handles nav, chat handles prompt) */}
-            {!isAnyPhone && (
-                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 pointer-events-none flex justify-center z-50">
-                    <div className="w-full max-w-4xl pointer-events-auto">
-                        <CommandBar />
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

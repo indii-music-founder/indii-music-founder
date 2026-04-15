@@ -1,15 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ImageGeneration } from "../ImageGenerationService";
-import { functions } from "@/services/firebase";
-import { httpsCallable } from "firebase/functions";
 
-import { GenAI as AI } from "@/services/ai/GenAI";
+import { httpsCallable } from "firebase/functions";
 
 // Mock Firebase functions
 vi.mock("@/services/firebase", () => ({
   functions: {},
-  functionsWest1: {}, // Added mock for functionsWest1
-  auth: { currentUser: { uid: 'test-user' } },
+  functionsWest1: {},
+  auth: {
+    currentUser: {
+      uid: 'test-user',
+      email: 'test@example.com',
+      getIdToken: vi.fn().mockResolvedValue('mock-id-token'),
+    }
+  },
   remoteConfig: {},
   storage: {},
   db: {},
