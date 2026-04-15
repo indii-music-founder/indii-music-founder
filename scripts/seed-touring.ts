@@ -83,7 +83,6 @@ async function seed() {
         console.log(`Authenticated as UID: ${userId}`);
 
         // Seed Vehicle Stats
-        // Note: VehicleStats is usually one-per-user, but for seeding we just add one.
         const vehiclesRef = collection(db, 'tour_vehicles');
         await addDoc(vehiclesRef, { ...vehicleStats, userId });
         console.log('Added vehicle stats.');
