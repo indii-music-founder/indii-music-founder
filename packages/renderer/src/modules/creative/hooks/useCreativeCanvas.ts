@@ -314,6 +314,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const saveCanvas = async () => {
         if (!item) return;
+
+        // Guard: prevent saving an empty canvas (e.g. image failed to load due to CORS)
+        if (!canvasOps.hasContent()) {
+            toast.error('Cannot save: canvas is empty. The image may have failed to load.');
+            return;
+        }
+
         // 1. Trigger browser download (preserve existing UX)
         const dataUrl = canvasOps.saveCanvas(`edited-${item.id}.png`);
 
