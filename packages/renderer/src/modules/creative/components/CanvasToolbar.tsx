@@ -1,11 +1,13 @@
 import React from 'react';
-import { Square, Circle as CircleIcon, Type, Wand2 } from 'lucide-react';
+import { Square, Circle as CircleIcon, Type, Wand2, Scan } from 'lucide-react';
 
 interface CanvasToolbarProps {
     addRectangle: () => void;
     addCircle: () => void;
     addText: () => void;
     toggleMagicFill: () => void;
+    handleDetectObjects: () => void;
+    handleClearDetections: () => void;
     isMagicFillMode: boolean;
 }
 
@@ -14,6 +16,8 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     addCircle,
     addText,
     toggleMagicFill,
+    handleDetectObjects,
+    handleClearDetections,
     isMagicFillMode
 }) => {
     const baseButtonClass = "p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none";
@@ -48,6 +52,24 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                 <Type size={20} aria-hidden="true" />
             </button>
             <div className="w-8 h-px bg-gray-800 my-2" role="separator" />
+            <button
+                onClick={handleDetectObjects}
+                data-testid="detect-objects-btn"
+                className={baseButtonClass}
+                title="Detect Objects via Gemini Vision"
+                aria-label="Detect Objects"
+            >
+                <Scan size={20} aria-hidden="true" />
+            </button>
+            <button
+                onClick={handleClearDetections}
+                data-testid="clear-detections-btn"
+                className={baseButtonClass}
+                title="Clear AI Detections"
+                aria-label="Clear AI Detections"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
             <button
                 onClick={toggleMagicFill}
                 data-testid="magic-fill-toggle"

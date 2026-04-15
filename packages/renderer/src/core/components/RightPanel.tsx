@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronLeft, ChevronRight, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal } from 'lucide-react';
 import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
 import WorkflowPanel from './right-panel/WorkflowPanel';
@@ -20,7 +20,7 @@ export default function RightPanel() {
 
     const {
         currentModule,
-        setModule,
+
         isRightPanelOpen,
         toggleRightPanel,
         rightPanelTab,
@@ -34,7 +34,7 @@ export default function RightPanel() {
     } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
-            setModule: state.setModule,
+
             isRightPanelOpen: state.isRightPanelOpen,
             toggleRightPanel: state.toggleRightPanel,
             rightPanelTab: state.rightPanelTab,
@@ -49,6 +49,7 @@ export default function RightPanel() {
     );
 
     const chatEndRef = React.useRef<HTMLDivElement>(null);
+    const [isCreationsCollapsed, setIsCreationsCollapsed] = React.useState(true);
 
     React.useEffect(() => {
         if (view === 'messages') {
@@ -149,19 +150,43 @@ export default function RightPanel() {
 
                                 {/* Inline PromptArea for Right Panel */}
                                 <div className="p-4 border-t border-border bg-black/20">
-                                    <PromptArea isDocked className="!static !translate-x-0 !w-full !max-w-none shadow-none border-none bg-transparent" />
+                                    <PromptArea isDocked className="static! translate-x-0! w-full! max-w-none! shadow-none border-none bg-transparent" />
                                 </div>
 
                                 {/* Maestro Batching Status */}
                                 <BatchingStatus />
 
-                                {/* Asset Spotlight integration */}
-                                <div className="border-t border-white/5 p-4 bg-black/20 shrink-0">
-                                    <h4 className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3 flex items-center gap-2">
-                                        <Sparkles size={10} className="text-purple-400" />
-                                        Your Creations
-                                    </h4>
-                                    <AssetSpotlight />
+                                {/* Asset Spotlight integration — collapsible */}
+                                <div className="border-t border-white/5 bg-black/20 shrink-0">
+                                    <button
+                                        onClick={() => setIsCreationsCollapsed(prev => !prev)}
+                                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors group"
+                                        aria-label={isCreationsCollapsed ? 'Expand Your Creations' : 'Collapse Your Creations'}
+                                        data-testid="toggle-creations-btn"
+                                    >
+                                        <h4 className="text-[10px] uppercase tracking-wider text-gray-500 font-bold flex items-center gap-2 group-hover:text-gray-300 transition-colors">
+                                            <Sparkles size={10} className="text-purple-400" />
+                                            Your Creations
+                                        </h4>
+                                        {isCreationsCollapsed ? (
+                                            <ChevronUp size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                                        ) : (
+                                            <ChevronDown size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                                        )}
+                                    </button>
+                                    <motion.div
+                                        initial={false}
+                                        animate={{
+                                            height: isCreationsCollapsed ? 0 : 'auto',
+                                            opacity: isCreationsCollapsed ? 0 : 1
+                                        }}
+                                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-4 pb-4">
+                                            <AssetSpotlight />
+                                        </div>
+                                    </motion.div>
                                 </div>
                             </div>
                         )}
@@ -215,8 +240,8 @@ export default function RightPanel() {
                                 <h3 className="text-sm font-medium text-gray-300">No Tool Selected</h3>
                                 <p className="text-xs text-gray-500 mt-1 max-w-[200px] mx-auto">Select a tool from the sidebar to view its controls.</p>
                                 <div className="mt-4 flex items-center justify-center text-[10px] text-gray-500 font-medium">
-                                    <kbd className="px-1.5 py-[1px] bg-white/5 border border-white/10 rounded font-mono mr-1">⌘</kbd>
-                                    <kbd className="px-1.5 py-[1px] bg-white/5 border border-white/10 rounded font-mono mr-2 text-gray-400">K</kbd>
+                                    <kbd className="px-1.5 py-px bg-white/5 border border-white/10 rounded font-mono mr-1">⌘</kbd>
+                                    <kbd className="px-1.5 py-px bg-white/5 border border-white/10 rounded font-mono mr-2 text-gray-400">K</kbd>
                                     Quick Search / Commands
                                 </div>
                             </div>
@@ -238,7 +263,7 @@ export default function RightPanel() {
             initial={false}
             animate={{ width: isRightPanelOpen ? 320 : 48 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full border-l border-border bg-card/80 backdrop-blur-xl flex-shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
+            className="h-full border-l border-border bg-card/80 backdrop-blur-xl shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
         >
             <AnimatePresence mode="wait">
                 {!isRightPanelOpen ? (

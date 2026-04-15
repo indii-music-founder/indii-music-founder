@@ -29,6 +29,7 @@
         "google-auth-library": "10.5.0",
         "googleapis": "170.0.0",
         "inngest": "3.22.12",
+        "resend": "^6.11.0",
         "sharp": "0.34.5",
         "stripe": "20.1.2",
         "zod": "3.25.76"

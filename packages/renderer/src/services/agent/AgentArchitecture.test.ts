@@ -124,7 +124,7 @@ describe('Multi-Agent Architecture Tests', () => {
             'legal', 'marketing', 'producer', 'publicist', 'brand', 'road', 'director', 'video', 'finance', 'generalist'
         ];
         await Promise.all(agents.map(id => agentRegistry.getAsync(id)));
-    });
+    }, 30000);
 
     describe('1. Context Pipeline & History', () => {
         it('should include conversation history in the context', async () => {

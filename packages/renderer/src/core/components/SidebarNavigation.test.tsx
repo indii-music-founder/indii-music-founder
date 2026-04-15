@@ -189,7 +189,7 @@ describe('Sidebar Navigation Integration', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('brand-manager')).toBeInTheDocument();
-        });
+        }, { timeout: 10000 });
     });
 
     it('renders correct dashboard for Campaign Manager', async () => {

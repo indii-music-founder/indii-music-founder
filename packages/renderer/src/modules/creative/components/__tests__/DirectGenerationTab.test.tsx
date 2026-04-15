@@ -37,7 +37,8 @@ vi.mock('@/core/store', () => ({
         addToHistory: vi.fn(),
         currentProjectId: 'test-project',
         whiskState: {},
-        setSelectedItem: vi.fn()
+        setSelectedItem: vi.fn(),
+        setViewMode: vi.fn()
     }),
     logger: {
         error: vi.fn(),
