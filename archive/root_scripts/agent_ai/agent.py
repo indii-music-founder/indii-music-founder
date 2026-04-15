@@ -666,9 +666,54 @@ class Agent:
         return self.hist_add_message(False, content=data)
 
     def concat_messages(
-        self, messages
-    ):  # TODO add param for message range, topic, history
-        return self.history.output_text(human_label="user", ai_label="assistant")
+        self, messages, start_index: int = 0, topic: str | None = None, history: list | None = None
+    ):
+        target_messages = history if history is not None else messages
+
+        # Safely fallback to the default history text if we don't have a list to filter,
+        # or if the caller passed a plain string or something we shouldn't manually parse.
+        if not isinstance(target_messages, list):
+            return self.history.output_text(human_label="user", ai_label="assistant")
+
+        filtered = target_messages[start_index:]
+
+        if topic is not None:
+            filtered_by_topic = []
+            for m in filtered:
+                m_topic = None
+                if hasattr(m, "additional_kwargs") and isinstance(m.additional_kwargs, dict):
+                    m_topic = m.additional_kwargs.get("topic")
+                elif isinstance(m, dict):
+                    m_topic = m.get("topic")
+                elif hasattr(m, "topic"):
+                    m_topic = getattr(m, "topic")
+
+                if m_topic == topic or m_topic is None:
+                    filtered_by_topic.append(m)
+            filtered = filtered_by_topic
+
+        output = ""
+        for msg in filtered:
+            # Format according to standard LangChain BaseMessage or fallback to dict
+            role = "user"
+            content_msg = ""
+
+            if hasattr(msg, "type"):
+                # Langchain BaseMessage
+                msg_type = msg.type
+                role = "user" if msg_type in ("human", "user") else "assistant"
+                content_msg = getattr(msg, "content", str(msg))
+            elif isinstance(msg, dict):
+                # Fallback dictionary format
+                role = "user" if msg.get("human", False) else "assistant"
+                content_msg = msg.get("content", str(msg))
+            else:
+                # Absolute fallback
+                content_msg = str(msg)
+
+            output += f"{role}: {content_msg}\n\n"
+
+        return output.strip()
 
     def get_chat_model(self):
         return models.get_chat_model(
