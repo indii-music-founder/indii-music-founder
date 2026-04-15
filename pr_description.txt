@@ -1,0 +1,13 @@
+test(main): add tests for IndiiRemoteService startup error handling
+
+🎯 **What:** The testing gap addressed
+The `IndiiRemoteService` lacked automated tests to verify its `start()` functionality and startup error handling. Since the service is stateful, it is critical to ensure that invalid configurations (e.g., missing or empty passwords) reject properly without modifying the service state.
+
+📊 **Coverage:** What scenarios are now tested
+- Starting the service without a password (`INVALID_CONFIG` error).
+- Starting the service with an empty or whitespace-only password (`INVALID_CONFIG` error).
+- Startup mutex logic to prevent multiple concurrent internal `_doStart()` calls.
+- Successful start cases, including resolving existing URLs if already running.
+
+✨ **Result:** The improvement in test coverage
+Test coverage is introduced for the `packages/main/src/services/IndiiRemoteService.ts` module with Vitest. The test suite correctly identifies early configuration exits before underlying services (`express`, `ws`, `electron`, `ngrok`) are instantiated.
