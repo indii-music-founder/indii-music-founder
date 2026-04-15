@@ -1,19 +1,8 @@
 import { z } from "zod";
-import * as fs from "fs";
-import * as path from "path";
 import * as dotenv from "dotenv";
-import { fileURLToPath } from "url";
 
 // Load env vars from .env file
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Read the schema (for verification that file exists/is valid JSON, though not directly used for Zod creation here)
-const schemaPath = path.resolve(__dirname, "../env-schema.json");
-const schemaContent = fs.readFileSync(schemaPath, "utf-8");
-const jsonSchema = JSON.parse(schemaContent);
 
 // Helper to convert JSON schema to Zod schema (simplified for this specific use case)
 // Manually mapped to match env-schema.json
