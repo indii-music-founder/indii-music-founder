@@ -107,10 +107,10 @@ describe('PromptArea State Feedback', () => {
 
     render(<PromptArea />);
 
-    // Verify initial state: Button enabled (due to input), No loader
+    // Verify initial state: run button visible, stop button absent
     const runBtn = screen.getByTestId('command-bar-run-btn');
     expect(runBtn).not.toBeDisabled();
-    expect(screen.queryByTestId('run-loader')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('command-bar-stop-btn')).not.toBeInTheDocument();
 
     // Click run - use act to flush state updates from the async handler
     await act(async () => {
@@ -119,19 +119,17 @@ describe('PromptArea State Feedback', () => {
       await new Promise(r => setTimeout(r, 0));
     });
 
-    // Verify loading state: Loader visible
-    expect(screen.getByTestId('run-loader')).toBeInTheDocument();
-
-    // Also verify the button is disabled while processing
-    expect(runBtn).toBeDisabled();
+    // When processing: stop button appears, run button is unmounted
+    expect(screen.getByTestId('command-bar-stop-btn')).toBeInTheDocument();
+    expect(screen.queryByTestId('command-bar-run-btn')).not.toBeInTheDocument();
 
     // Resolve the promise
     await act(async () => {
       resolveMessage!();
     });
 
-    // Verify success state: Loader gone, input cleared
-    expect(screen.queryByTestId('run-loader')).not.toBeInTheDocument();
+    // After completion: stop button gone, input cleared via store
+    expect(screen.queryByTestId('command-bar-stop-btn')).not.toBeInTheDocument();
     expect(storeState.setCommandBarInput).toHaveBeenCalledWith(''); // Input cleared via store
   });
 });

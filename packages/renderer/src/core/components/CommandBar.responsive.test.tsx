@@ -154,23 +154,24 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
     it('adapts layout for mobile devices (JS-driven adaptation)', () => {
         render(<CommandBar />);
 
-        // 1. Verify Input Field is visible (Core Feature)
-        const input = screen.getByPlaceholderText(/message dashboard/i);
+        // 1. Verify Input Field is visible (use actual placeholder or role)
+        const input = screen.getByTestId('main-prompt-input') ?? screen.queryByPlaceholderText(/launch a campaign/i);
         expect(input).toBeInTheDocument();
 
         // 2. Verify "Send" (Run) button is visible
         const runButton = screen.getByRole('button', { name: /run command/i });
         expect(runButton).toBeVisible();
 
-        // 3. Verify Desktop-only features are hidden via JS logic
-        const delegateButton = screen.queryByRole('button', { name: /select active agent/i });
-        expect(delegateButton).toBeInTheDocument();
+        // 3. The mode toggle is always present (indii/agent toggle replaced delegate menu)
+        const modeToggle = screen.queryByRole('button', { name: /switch to indii mode/i })
+            ?? screen.queryByRole('button', { name: /switch to agent mode/i });
+        expect(modeToggle).toBeInTheDocument();
 
-        // "Attach" button should be hidden
+        // "Attach" button should be hidden on mobile
         const attachButton = screen.queryByText('Attach');
         expect(attachButton).not.toBeInTheDocument();
 
-        // "Camera" button should be hidden
+        // "Camera" button should be hidden on mobile
         const cameraButton = screen.queryByTitle('Take a picture');
         expect(cameraButton).not.toBeInTheDocument();
     });

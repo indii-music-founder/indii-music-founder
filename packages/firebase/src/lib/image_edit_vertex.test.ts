@@ -64,7 +64,7 @@ describe('GeminiImageService Dual-Client Logic', () => {
         expect(mockGenerateContent).toHaveBeenCalled();
     });
 
-    it('should use Vertex AI client (ADC) when mask is provided', async () => {
+    it('should use the standard API-key client when mask is provided', async () => {
         const data = {
             prompt: 'test prompt',
             image: 'base64-source',
@@ -72,17 +72,13 @@ describe('GeminiImageService Dual-Client Logic', () => {
         };
 
         process.env.GCLOUD_PROJECT = 'test-project';
-        
+
         await service.edit(data);
 
-        // Verify Vertex client was initialized in the second call (or first call)
-        // Since we clear mocks and create a new service, it should be the only call or the second if standard was called by mistake
-        const vertexCall = mockConstructor.mock.calls.find(call => call[0].vertexai === true);
-        expect(vertexCall).toBeDefined();
-        expect(vertexCall[0]).toEqual({
-            vertexai: true,
-            project: 'test-project',
-            location: 'us-central1'
-        });
+        // The service uses a single apiKey-based client for all edit operations
+        expect(mockConstructor).toHaveBeenCalledWith(
+            expect.objectContaining({ apiKey: 'mock-api-key' })
+        );
+        expect(mockGenerateContent).toHaveBeenCalled();
     });
 });

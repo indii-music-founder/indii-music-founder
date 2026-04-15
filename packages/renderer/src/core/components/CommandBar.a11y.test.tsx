@@ -3,8 +3,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import CommandBar from './CommandBar';
-import { useStore } from '@/core/store';
-import { useToast } from '@/core/context/ToastContext';
 
 // Extend expect with jest-axe
 expect.extend(toHaveNoViolations);
@@ -170,51 +168,47 @@ describe('CommandBar Accessibility', () => {
         expect(results).toHaveNoViolations();
     });
 
-    it('should have no accessibility violations when Delegate Menu is open', async () => {
+    it('should have no accessibility violations when in agent mode', async () => {
         const { container } = render(<CommandBar />);
 
-        const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
-        fireEvent.click(delegateBtn);
-
-        expect(screen.getByRole('menu')).toBeInTheDocument();
+        // The mode toggle button is always visible — click to ensure agent mode is active
+        const toggleBtn = screen.queryByRole('button', { name: /switch to indii mode/i })
+            ?? screen.queryByRole('button', { name: /switch to agent mode/i });
+        if (toggleBtn) fireEvent.click(toggleBtn);
 
         const results = await axe(container);
         expect(results).toHaveNoViolations();
     });
 
-    it('should close Delegate Menu when Escape key is pressed', async () => {
+    it('should toggle between agent and indii mode when toggle button is clicked', async () => {
         render(<CommandBar />);
 
-        const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
-        fireEvent.click(delegateBtn);
-
-        expect(screen.getByRole('menu')).toBeInTheDocument();
-
-        fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
-
-        await waitFor(() => {
-            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-        });
+        // Start in agent mode (chatChannel='agent' from store)
+        const agentToggle = screen.queryByRole('button', { name: /switch to indii mode/i });
+        if (agentToggle) {
+            fireEvent.click(agentToggle);
+            // After click, should now show 'Switch to Agent mode'
+            await waitFor(() => {
+                expect(
+                    screen.queryByRole('button', { name: /switch to agent mode/i })
+                ).toBeInTheDocument();
+            });
+        } else {
+            // Already in indii mode
+            expect(
+                screen.queryByRole('button', { name: /switch to agent mode/i })
+            ).toBeInTheDocument();
+        }
     });
 
-    it('should return focus to the trigger button when Delegate Menu is closed', async () => {
-        render(<CommandBar />);
+    it('should have no accessibility violations in agent channel mode', async () => {
+        const storeModule = await import('@/core/store') as any;
+        const store = storeModule.store;
+        const { act } = await import('@testing-library/react');
+        act(() => { store.setState({ chatChannel: 'agent' }); });
 
-        const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
-        delegateBtn.focus();
-        fireEvent.click(delegateBtn);
-
-        expect(screen.getByRole('menu')).toBeInTheDocument();
-
-        // Close by clicking backdrop (simulated) or Escape if implemented
-        // Here we simulate Escape as tested above
-        fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
-
-        await waitFor(() => {
-            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-        });
-
-        // We expect focus to return to the trigger
-        expect(document.activeElement).toBe(delegateBtn!);
+        const { container } = render(<CommandBar />);
+        const results = await axe(container);
+        expect(results).toHaveNoViolations();
     });
 });
