@@ -103,3 +103,4 @@ packages/shared/dist/
 electron/
 functions/
 coverage/
+scripts/daisy-chain-output/
