@@ -144,8 +144,6 @@ if __name__ == "__main__":
     parser.add_argument("--host", required=True, help="Aspera Host")
     parser.add_argument("--port", type=int, default=33001, help="Aspera Port")
     parser.add_argument("--user", required=True, help="Aspera Username")
-    parser.add_argument("--password", help="Aspera Password")
-    parser.add_argument("--key", help="Path to Private Key file")
     parser.add_argument("--local", required=True, help="Local file or directory to upload")
     parser.add_argument("--remote", default=".", help="Remote directory path")
     parser.add_argument("--rate", default="100M", help="Target transfer rate (e.g., 100M)")
@@ -153,12 +151,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Security: Prioritize Environment Variables
-    password = os.environ.get("ASPERA_PASSWORD", args.password)
-    key_path = os.environ.get("ASPERA_KEY_PATH", args.key)
-    # Prioritize environment variables for secrets if arguments are not provided
-    password = args.password or os.environ.get("ASPERA_SCP_PASS")
-    key_path = args.key or os.environ.get("ASPERA_KEY")
+    # Security: Strictly require Environment Variables for secrets
+    password = os.environ.get("ASPERA_PASSWORD") or os.environ.get("ASPERA_SCP_PASS")
+    key_path = os.environ.get("ASPERA_KEY_PATH") or os.environ.get("ASPERA_KEY")
 
     uploader = AsperaUploader(storage_path=args.storage_path)
     result = uploader.upload(
