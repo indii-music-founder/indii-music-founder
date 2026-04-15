@@ -302,11 +302,56 @@ export class WorkflowEngine {
 
                 if (condition) {
                     try {
-                        // Safe eval: interpolate only the data value into a boolean expression
                         const dataStr = typeof inputs.data === 'string' ? inputs.data : JSON.stringify(inputs.data);
-                        // Replace token $data with the stringified value
-                        const expr = condition.replace(/\$data/g, JSON.stringify(dataStr));
-                        result = Boolean(new Function(`return (${expr})`)());
+
+                        if (condition === 'true') {
+                            result = true;
+                        } else if (condition === 'false') {
+                            result = false;
+                        } else {
+                            // Safe expression evaluation for $data
+                            let evaluated = false;
+                            let matched = false;
+
+                            // Handle $data.includes("...")
+                            const includeMatch = condition.match(/^\$data\.includes\((['"])(.*?)\1\)$/);
+                            if (includeMatch && includeMatch[2]) {
+                                evaluated = dataStr.includes(includeMatch[2]);
+                                matched = true;
+                            }
+
+                            // Handle basic comparisons: $data === "value", $data > 5
+                            if (!matched) {
+                                const cmpMatch = condition.match(/^\$data\s*(===|!==|==|!=|>|<|>=|<=)\s*(.+)$/);
+                                if (cmpMatch && cmpMatch[1] && cmpMatch[2]) {
+                                    const op = cmpMatch[1];
+                                    let right = cmpMatch[2].trim();
+
+                                    // Remove quotes if present
+                                    if (/^['"].*['"]$/.test(right)) {
+                                        right = right.slice(1, -1);
+                                    }
+
+                                    const dataNum = Number(dataStr);
+                                    const rightNum = Number(right);
+                                    const isNumeric = !isNaN(dataNum) && !isNaN(rightNum);
+
+                                    switch (op) {
+                                        case '===': evaluated = dataStr === right; break;
+                                        case '!==': evaluated = dataStr !== right; break;
+                                        case '==': evaluated = dataStr == right; break; // eslint-disable-line eqeqeq
+                                        case '!=': evaluated = dataStr != right; break; // eslint-disable-line eqeqeq
+                                        case '>': evaluated = isNumeric ? dataNum > rightNum : dataStr > right; break;
+                                        case '<': evaluated = isNumeric ? dataNum < rightNum : dataStr < right; break;
+                                        case '>=': evaluated = isNumeric ? dataNum >= rightNum : dataStr >= right; break;
+                                        case '<=': evaluated = isNumeric ? dataNum <= rightNum : dataStr <= right; break;
+                                    }
+                                    matched = true;
+                                }
+                            }
+
+                            result = matched ? evaluated : Boolean(inputs.data);
+                        }
                     } catch {
                         result = Boolean(inputs.data);
                     }
