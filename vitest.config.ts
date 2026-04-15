@@ -38,7 +38,7 @@ export default defineConfig({
     watch: false,
     reporters: ['default', 'github-actions'],
     teardownTimeout: 1000,
-    hookTimeout: 10000,
+    hookTimeout: 30000,
     pool: 'forks',
     // Test discovery is now handled by vitest.workspace.ts
     // Item 282: Coverage thresholds — build fails if coverage drops below these

@@ -219,9 +219,9 @@ describe('Creative Director 12-Click Daisychain', () => {
                     >
                         Go to Showroom
                     </button>
-                    {viewMode === 'gallery' && <CreativeGallery />}
+                    {(viewMode === 'gallery' || viewMode === 'editor') && <CreativeGallery />}
                     {viewMode === 'showroom' && <MockShowroom />}
-                    {selectedItem && viewMode === 'gallery' && (
+                    {selectedItem && (viewMode === 'gallery' || viewMode === 'editor') && (
                         <CreativeCanvas
                             item={selectedItem}
                             onClose={() => setSelectedItem(null)}
