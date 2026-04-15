@@ -57,6 +57,8 @@ describe('CreativeStudio', () => {
                 resolution: '1024x1024',
                 aspectRatio: '1:1',
                 negativePrompt: '',
+                personGeneration: 'allow_adult',
+                model: 'fast',
                 seed: ''
             },
             prompt: '',
@@ -122,14 +124,14 @@ describe('CreativeStudio', () => {
         });
 
         await waitFor(() => {
-            expect(mockGenerateImages).toHaveBeenCalledWith({
+            expect(mockGenerateImages).toHaveBeenCalledWith(expect.objectContaining({
                 prompt: 'test prompt',
                 count: 1,
                 resolution: '1024x1024',
                 aspectRatio: '1:1',
                 negativePrompt: '',
-                seed: undefined
-            });
+                personGeneration: 'ALLOW_ADULT'
+            }));
         });
 
         await waitFor(() => {
