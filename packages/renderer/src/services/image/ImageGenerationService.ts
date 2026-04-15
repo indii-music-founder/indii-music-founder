@@ -31,8 +31,9 @@ export interface ImageGenerationOptions {
     count?: number;
     aspectRatio?: string;
     resolution?: string; // Mapped to imageSize for backend compat
-    seed?: number;
     negativePrompt?: string;
+    /** Person generation policy: ALLOW_ALL | ALLOW_ADULT | ALLOW_NONE */
+    personGeneration?: string;
     sourceImages?: { mimeType: string; data: string }[]; // Reference images for composition
     projectContext?: string;
 
@@ -284,6 +285,8 @@ export class ImageGenerationService {
                 // Legacy compat
                 thinking: options.thinking,
                 useGrounding: options.useGrounding,
+                // Person generation safety filter
+                personGeneration: options.personGeneration,
             };
 
             // Clean undefined values to reduce payload size

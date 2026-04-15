@@ -48,7 +48,7 @@ export async function generateImage(
             imageConfig: {
                 aspectRatio: config?.aspectRatio || '1:1',
                 imageSize: '4K', // "Perfect" quality
-                personGenerationConfig: config?.imageConfig?.personGenerationConfig
+                personGeneration: config?.imageConfig?.personGeneration
             }
         };
 
