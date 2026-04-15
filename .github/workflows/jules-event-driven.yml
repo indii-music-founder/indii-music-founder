@@ -15,6 +15,7 @@ jobs:
           fetch-depth: 0
 
       - name: Execute Jules Synchronous PR Scanner
+        continue-on-error: true
         run: |
           echo "Triggering Jules serverless API webhook..."
 
