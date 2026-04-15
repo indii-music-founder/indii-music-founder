@@ -56,20 +56,34 @@ vi.mock('@/core/config/ai-models', () => ({
     ModelIdSchema: { parse: (v: string) => v },
 }));
 
+// Mock MyContracts since it's now the default tab and has Firebase dependencies
+vi.mock('./components/MyContracts', () => ({
+    MyContracts: ({ onNewContract: _ }: { onNewContract?: () => void }) => <div data-testid="my-contracts">My Contracts Mock</div>,
+}));
+
 describe('LegalDashboard', () => {
     it('renders the dashboard title', () => {
         render(<LegalDashboard />);
         expect(screen.getByText('legal.title')).toBeInTheDocument();
     });
 
-    it('renders upload options', () => {
+    it('defaults to My Contracts tab', () => {
         render(<LegalDashboard />);
+        expect(screen.getByTestId('my-contracts')).toBeInTheDocument();
+    });
+
+    it('renders upload options when Contract Analysis tab is selected', () => {
+        render(<LegalDashboard />);
+        // Switch to Contract Analysis tab using data-testid
+        fireEvent.click(screen.getByTestId('legal-tab-analyzer'));
         expect(screen.getByText('Drop contract here')).toBeInTheDocument();
         expect(screen.getByText('Scan Document')).toBeInTheDocument();
     });
 
     it('shows analysis loading state when file is uploaded', async () => {
         const { container } = render(<LegalDashboard />);
+        // Switch to Contract Analysis tab first
+        fireEvent.click(screen.getByTestId('legal-tab-analyzer'));
 
         const file = new File(['dummy content'], 'test.pdf', { type: 'application/pdf' });
 
@@ -84,6 +98,8 @@ describe('LegalDashboard', () => {
 
     it('handles scan document button click', () => {
         const { container } = render(<LegalDashboard />);
+        // Switch to Contract Analysis tab first
+        fireEvent.click(screen.getByTestId('legal-tab-analyzer'));
 
         // The scan document input is the second file input
         const scanInput = container.querySelectorAll('input[type="file"]')[1];

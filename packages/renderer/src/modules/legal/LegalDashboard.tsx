@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award, FolderOpen } from 'lucide-react';
 import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
+import { MyContracts } from './components/MyContracts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
 import { GenAI as AI } from '@/services/ai/GenAI';
@@ -33,7 +34,7 @@ export default function LegalDashboard() {
     }>(null);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
     const [analysisHistory, setAnalysisHistory] = useState<Array<{ name: string; score: number; date: string }>>([]);
-    const [activeTab, setActiveTab] = useState('analyzer');
+    const [activeTab, setActiveTab] = useState('contracts');
     const toast = useToast();
 
     // Load persisted analysis history on mount
@@ -137,6 +138,10 @@ Only return valid JSON.
         }
     };
 
+    const handleSwitchToContracts = useCallback(() => {
+        setActiveTab('contracts');
+    }, []);
+
     const handleGenerateNDA = async () => {
         setIsGenerating('NDA');
         try {
@@ -144,7 +149,8 @@ Only return valid JSON.
             const purpose = 'general business discussion and project collaboration';
 
             await LegalService.generateNDA(parties, purpose);
-            toast.success("NDA Template generated! Check console for output.");
+            toast.success("NDA generated! View it in My Contracts tab.");
+            setActiveTab('contracts');
         } catch (_error: unknown) {
             toast.error("Failed to generate NDA.");
         } finally {
@@ -160,7 +166,8 @@ Only return valid JSON.
             const terms = 'Transfer of all rights, title, and interest in and to the specified creative works.';
 
             await LegalService.draftContract(type, parties, terms);
-            toast.success("IP Assignment generated! Check console for output.");
+            toast.success("IP Assignment generated! View it in My Contracts tab.");
+            setActiveTab('contracts');
         } catch (_error: unknown) {
             toast.error("Failed to generate IP Assignment.");
         } finally {
@@ -203,6 +210,9 @@ Only return valid JSON.
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
                     <TabsList className="bg-transparent gap-6 p-0 h-12">
+                        <TabsTrigger value="contracts" data-testid="legal-tab-contracts" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <FolderOpen size={14} /> My Contracts
+                        </TabsTrigger>
                         <TabsTrigger value="analyzer" data-testid="legal-tab-analyzer" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <FileText size={14} /> {t('legal.tabs.analyzer')}
                         </TabsTrigger>
@@ -214,6 +224,10 @@ Only return valid JSON.
                         </TabsTrigger>
                     </TabsList>
                 </div>
+
+                <TabsContent value="contracts" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0">
+                    <MyContracts onNewContract={handleSwitchToContracts} />
+                </TabsContent>
 
                 <TabsContent value="analyzer" className="flex-1 flex flex-col min-h-0 overflow-y-auto p-4 md:p-6">
                     {!analysisResult && !isAnalyzing && (
