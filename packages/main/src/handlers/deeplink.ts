@@ -12,8 +12,12 @@ function isDeepLinkSafe(url: string): boolean {
         // Block any hostname that looks like an internal IP
         const host = parsed.hostname;
         if (host && PRIVATE_HOSTNAMES.test(host)) return false;
-        // Sanitize path: only alphanumeric, hyphens, slashes, and query params
-        if (!/^[a-zA-Z0-9\-_/?.=&%]*$/.test(parsed.pathname + (parsed.search || ''))) return false;
+
+        // Block directory traversal attempts
+        if (url.includes('..') || url.includes('\u0000')) return false;
+
+        // Sanitize host and path: only alphanumeric, hyphens, slashes, and query params
+        if (!/^[a-zA-Z0-9\-_/?.=&%]*$/.test((parsed.host || '') + parsed.pathname + (parsed.search || ''))) return false;
         return true;
     } catch {
         return false;
