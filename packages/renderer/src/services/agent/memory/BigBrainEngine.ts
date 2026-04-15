@@ -241,13 +241,20 @@ class BigBrainEngine {
     private async fetchVaultFacts(userId: string, agentId: string, maxChars: number): Promise<string> {
         const targetCategories = AGENT_VAULT_MAP[agentId] || ['artist_identity', 'preferences', 'goals'];
 
+        // Fetch all categories concurrently to avoid N+1 queries
+        const categoryPromises = targetCategories.map(async (category) => {
+            const { facts } = await coreVaultService.readVault(userId, category);
+            return { category, facts };
+        });
+
+        const resolvedCategories = await Promise.all(categoryPromises);
+
         const factLines: string[] = [];
         let currentChars = 0;
 
-        for (const category of targetCategories) {
+        for (const { category, facts } of resolvedCategories) {
             if (currentChars >= maxChars) break;
 
-            const { facts } = await coreVaultService.readVault(userId, category);
             for (const fact of facts) {
                 const line = `- [${category}] ${fact.fact}`;
                 if (currentChars + line.length > maxChars) break;
