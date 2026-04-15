@@ -28,7 +28,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
-import type { ModuleId } from '@/core/constants';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
@@ -547,7 +546,11 @@ export function useRemoteCommandListener() {
         return unsubscribe;
     }, []);
 
-    // Use Firestore relay when authenticated, HTTP fallback when not
+    // Use Firestore relay when authenticated, HTTP fallback only when
+    // unauthenticated AND Electron IPC is available (the local relay server).
+    // Without the IPC guard, pure-browser dev mode floods the console with
+    // 404s because there's no /api/remote/* endpoint on the Vite dev server.
+    const hasElectronBridge = typeof window !== 'undefined' && !!(window as unknown as { electronAPI?: unknown }).electronAPI;
     useFirestoreRelay(isAuthenticated);
-    useHttpRelayFallback(!isAuthenticated);
+    useHttpRelayFallback(!isAuthenticated && hasElectronBridge);
 }

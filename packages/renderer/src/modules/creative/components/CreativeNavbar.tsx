@@ -4,13 +4,14 @@ import { useShallow } from 'zustand/react/shallow';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, FlaskConical, Wand2, Rocket
+    Palette, Clock, FlaskConical, Wand2, Rocket, Settings2
 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import DaisyChainControls from './DaisyChainControls';
 import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import PromptHistoryDrawer from './PromptHistoryDrawer';
+import StudioSettingsPanel from './StudioSettingsPanel';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
@@ -42,6 +43,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const [showBrandAssets, setShowBrandAssets] = useState(false);
     const [showPromptHistory, setShowPromptHistory] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
     const tabs = [
@@ -52,20 +54,20 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     ] as const;
 
     return (
-        <div {...props} className={`flex flex-col z-20 relative bg-[#060608]/90 backdrop-blur-xl border-b border-white/[0.06] select-none ${props.className || ''}`}>
+        <div {...props} className={`flex flex-col z-20 relative bg-[#060608]/90 backdrop-blur-xl border-b border-white/6 select-none ${props.className || ''}`}>
             {/* Single Compact Header Row */}
             <div className="flex items-center justify-between px-3 md:px-4 py-2 h-12 gap-2">
                 {/* Left: Branding & Tabs */}
                 <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                    <div className="flex items-center gap-2 text-gray-400 flex-shrink-0">
+                    <div className="flex items-center gap-2 text-gray-400 shrink-0">
                         <Palette size={15} className="text-purple-400" />
                         <h1 className="text-xs font-bold text-gray-300 tracking-tight hidden sm:block">Creative Director</h1>
                     </div>
 
-                    <div className="h-3.5 w-px bg-white/[0.08] mx-0.5" />
+                    <div className="h-3.5 w-px bg-white/8 mx-0.5" />
 
                     {/* View Mode Switcher */}
-                    <div className="flex bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.06] overflow-x-auto no-scrollbar">
+                    <div className="flex bg-white/4 p-0.5 rounded-lg border border-white/6 overflow-x-auto no-scrollbar">
                         {tabs.map(tab => {
                             if (!tab.always && tab.showWhen === false) return null;
                             const Icon = tab.icon;
@@ -77,7 +79,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                     data-testid={tab.testId}
                                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${isActive
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.04]'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'
                                         }`}
                                 >
                                     <Icon size={11} className={isActive ? 'text-purple-400' : ''} />
@@ -98,7 +100,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
                                     ${showPromptBuilder
                                         ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
-                                        : 'bg-white/[0.03] border-white/[0.06] text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]'}`}
+                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
                             >
                                 <MessageSquare size={10} /> Builder
                             </button>
@@ -107,7 +109,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
                                     ${showBrandAssets
                                         ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
-                                        : 'bg-white/[0.03] border-white/[0.06] text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]'}`}
+                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
                             >
                                 <Sparkles size={10} /> Brand
                             </button>
@@ -116,7 +118,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
                                     ${showPromptHistory
                                         ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
-                                        : 'bg-white/[0.03] border-white/[0.06] text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]'}`}
+                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
                             >
                                 <Clock size={10} /> History
                             </button>
@@ -130,7 +132,20 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         />
                     )}
 
-                    <div className="h-3.5 w-px bg-white/[0.08] mx-0.5" />
+                    <div className="h-3.5 w-px bg-white/8 mx-0.5" />
+
+                    {/* Studio Settings Toggle */}
+                    <button
+                        onClick={() => setShowSettings(!showSettings)}
+                        data-testid="settings-btn"
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                            ${showSettings
+                                ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
+                                : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                    >
+                        <Settings2 size={10} />
+                        <span className="hidden lg:inline">Settings</span>
+                    </button>
 
                     {/* Andromeda Mode Toggle */}
                     <button
@@ -147,16 +162,16 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all text-[10px] font-bold uppercase tracking-wider
                             ${studioControls.isAndromedaMode
                                 ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.3)] animate-pulse'
-                                : 'bg-white/[0.03] border-white/[0.06] text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]'}`}
+                                : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
                     >
                         <Rocket size={11} className={studioControls.isAndromedaMode ? "text-indigo-400" : ""} />
                         <span className="hidden lg:inline">Andromeda</span>
                     </button>
 
-                    <div className="h-3.5 w-px bg-white/[0.08] mx-0.5" />
+                    <div className="h-3.5 w-px bg-white/8 mx-0.5" />
 
                     {/* System Status */}
-                    <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-white/[0.03] rounded-md border border-white/[0.06]" title="AI Systems Status">
+                    <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6" title="AI Systems Status">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
                         <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest hidden lg:block">ONLINE</span>
                     </div>
@@ -192,6 +207,11 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             {/* Prompt History Drawer */}
             {showPromptHistory && (
                 <PromptHistoryDrawer onClose={() => setShowPromptHistory(false)} />
+            )}
+
+            {/* Studio Settings Panel */}
+            {showSettings && (
+                <StudioSettingsPanel onClose={() => setShowSettings(false)} />
             )}
 
             <FrameSelectionModal

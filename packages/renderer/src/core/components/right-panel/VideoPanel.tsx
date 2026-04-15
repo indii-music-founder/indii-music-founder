@@ -25,7 +25,6 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
 
     const {
         addToHistory,
-        updateHistoryItem,
         currentProjectId,
         studioControls,
         setStudioControls,
@@ -36,7 +35,6 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
         characterReferences
     } = useStore(useShallow(state => ({
         addToHistory: state.addToHistory,
-        updateHistoryItem: state.updateHistoryItem,
         currentProjectId: state.currentProjectId,
         studioControls: state.studioControls,
         setStudioControls: state.setStudioControls,
@@ -49,7 +47,12 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     const toast = useToast();
 
     const getEstimatedCost = () => {
-        let basePerSec = studioControls.model === 'pro' ? 0.20 : 0.10;
+        const MODEL_COST_PER_SEC: Record<string, number> = {
+            'pro': 0.20,
+            'fast': 0.10,
+            'lite': 0.05,
+        };
+        let basePerSec = MODEL_COST_PER_SEC[studioControls.model] ?? 0.20;
         if (studioControls.resolution === '4k') {
             basePerSec *= 2;
         }
@@ -84,13 +87,13 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     resolution: studioControls.resolution,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                    generateAudio: studioControls.generateAudio,
+                    // Audio is always-on for Veo 3.1 — omit generateAudio
                     model: studioControls.model,
                     firstFrame: videoInputs.firstFrame?.url, // H6 Fix: Wire up firstFrame
                     personGeneration: studioControls.personGeneration,
                     referenceImages: characterReferences.map(ref => ({
                         image: { uri: ref.image.url },
-                        referenceType: ref.referenceType === 'subject' ? 'ASSET' : 'STYLE'
+                        referenceType: 'asset' as const
                     }))
                 });
             } else {
@@ -107,13 +110,13 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     fps: studioControls.fps,
                     cameraMovement: studioControls.cameraMovement,
                     motionStrength: studioControls.motionStrength,
-                    generateAudio: studioControls.generateAudio,
+                    // Audio is always-on for Veo 3.1 — omit generateAudio
                     model: studioControls.model,
                     orgId: currentOrganizationId,
                     personGeneration: studioControls.personGeneration,
                     referenceImages: characterReferences.map(ref => ({
                         image: { uri: ref.image.url },
-                        referenceType: ref.referenceType === 'subject' ? 'ASSET' : 'STYLE'
+                        referenceType: 'asset' as const
                     }))
                 });
             }
@@ -258,10 +261,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                         className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                     >
                                         <option value="16:9" data-testid="aspect-ratio-option-16-9">16:9 Landscape</option>
-                                        <option value="1:1" data-testid="aspect-ratio-option-1-1">1:1 Square</option>
                                         <option value="9:16" data-testid="aspect-ratio-option-9-16">9:16 Portrait</option>
-                                        <option value="4:3">4:3 Standard</option>
-                                        <option value="3:4">3:4 Vertical</option>
                                     </select>
                                     <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
                                 </div>
@@ -302,18 +302,27 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                     <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
                                         <Sparkles size={12} className="text-purple-400" /> GENERATION TIER
                                     </label>
-                                    <p className="text-[8px] text-gray-600 uppercase font-medium">FAST IS ~50% CHEAPER</p>
+                                    <p className="text-[8px] text-gray-600 uppercase font-medium">LITE ~75% · FAST ~50% CHEAPER</p>
                                 </div>
                                 <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
                                     <button
+                                        onClick={() => setStudioControls({ model: 'lite' })}
+                                        data-testid="model-tier-lite"
+                                        className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'lite' ? 'bg-emerald-500/20 text-emerald-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                    >
+                                        LITE
+                                    </button>
+                                    <button
                                         onClick={() => setStudioControls({ model: 'fast' })}
-                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'fast' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                        data-testid="model-tier-fast"
+                                        className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'fast' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
                                     >
                                         FAST
                                     </button>
                                     <button
                                         onClick={() => setStudioControls({ model: 'pro' })}
-                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'pro' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                        data-testid="model-tier-pro"
+                                        className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'pro' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
                                     >
                                         PRO
                                     </button>

@@ -9,7 +9,7 @@ import type { AnyToolFunction } from '../types';
 // FIX #10: Input Validation Constants
 // ============================================================================
 
-const VALID_ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4'] as const;
+const VALID_ASPECT_RATIOS = ['16:9', '9:16'] as const; // Veo 3.1 only supports these two
 type ValidAspectRatio = typeof VALID_ASPECT_RATIOS[number];
 const VALID_RESOLUTIONS = ['1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024'] as const;
 type ValidResolution = typeof VALID_RESOLUTIONS[number];

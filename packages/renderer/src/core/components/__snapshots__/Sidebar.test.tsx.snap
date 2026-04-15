@@ -23,11 +23,12 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     class="px-4 pt-4 pb-2 w-full border-b border-white/5 border-dashed"
   >
     <div
+      aria-disabled="true"
       class="flex items-center justify-center p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
       data-state="closed"
     >
       <svg
-        class="text-gray-500"
+        class="text-gray-400"
         data-testid="icon-Fingerprint"
         size="16"
       />
@@ -544,16 +545,17 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
     class="px-4 pt-4 pb-2 w-full border-b border-white/5 border-dashed"
   >
     <div
+      aria-disabled="true"
       class="flex items-center gap-2 p-2 rounded-md bg-white/5 opacity-50 cursor-not-allowed"
       data-state="closed"
     >
       <svg
-        class="text-gray-500"
+        class="text-gray-400"
         data-testid="icon-Fingerprint"
         size="16"
       />
       <span
-        class="text-xs text-gray-500 font-medium"
+        class="text-xs text-gray-400 font-medium"
       >
         Biometrics Unavailable
       </span>
