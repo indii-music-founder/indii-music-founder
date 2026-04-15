@@ -61,6 +61,16 @@ vi.mock('@/services/ai/utils/InputSanitizer', () => ({
     }
 }));
 
+// Mock video utils — extractLastFrameForAPI is called in the daisy-chain loop
+// and will block/timeout if not mocked (it attempts real video frame extraction).
+vi.mock('@/utils/video', () => ({
+    extractLastFrameForAPI: vi.fn().mockResolvedValue({
+        imageBytes: 'mock-base64-frame-data',
+        mimeType: 'image/jpeg',
+        dataUrl: 'data:image/jpeg;base64,mock-base64-frame-data',
+    }),
+}));
+
 import type { UserProfile } from '@/types/User';
 
 // Helper to create mock profile with distributor
