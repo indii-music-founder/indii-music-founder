@@ -385,7 +385,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                         whileHover={{ scale: 1.01 }}
                                         className="group relative bg-black/40 rounded-xl border border-white/10 p-2 flex gap-3 hover:border-blue-500/30 transition-all cursor-pointer shadow-sm"
                                     >
-                                        <div className="w-16 h-16 bg-white/5 rounded-lg flex items-center justify-center flex-shrink-0 border border-white/5">
+                                        <div className="w-16 h-16 bg-white/5 rounded-lg flex items-center justify-center shrink-0 border border-white/5">
                                             <Video size={16} className="text-gray-600" />
                                         </div>
                                         <div className="flex-1 min-w-0 py-1">

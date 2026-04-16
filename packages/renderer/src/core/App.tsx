@@ -158,7 +158,7 @@ function DevPortWarning() {
     if (!import.meta.env.DEV || port === '4242') return null;
 
     return (
-        <div className="fixed bottom-4 right-4 z-[9999] bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-bold border border-red-400 animate-pulse">
+        <div className="fixed bottom-4 right-4 z-9999 bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-bold border border-red-400 animate-pulse">
             Wrong Port: {port}
             <br />
             <span className="font-normal opacity-80">Use :4242 for Studio</span>

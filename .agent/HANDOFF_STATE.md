@@ -1,30 +1,29 @@
 # Handoff State
-**Updated:** 2026-04-16 09:50 EDT
+**Updated:** 2026-04-16 10:35 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-083c6604c fix(test): add electron/electron-log mocks to ipc-validator.test.ts
-cbbe13404 fix(appSlice): remove duplicate _lastSidebarToggle from AppSlice interface
-9531d8f3c fix(distribution): Use safeUnsubscribe in TransmissionMonitor for BUG-001 (#1484)
-55e3cfa08 🔒 fix(distribution): remove password and key command-line arguments (#1483)
-81f265b32 test(security): add tests for security configuration and cookie auditing (#1482)
+0616167e9 test(snapshot): update Sidebar snapshots after Tailwind bg-linear-to-* migration
+30859aa1d refactor(ui): migrate Tailwind bg-gradient-to-* to bg-linear-to-* (v4 syntax)
+a26e7faf7 docs(agent): encode April 2026 sprint lessons into ci-validate + HANDOFF_STATE
+bcca51f83 🔒 fix(distribution): remove hardcoded secret argument exposure in delivery scripts
+48c8afb49 🔒 test(security): add CSP policy tests for Electron main process
 ```
 
 ## Working State
 Clean. No uncommitted changes on main.
 
-## Open PRs (as of 2026-04-16 09:50 EDT)
-- **#1435** — `chore(main): release 1.50.0` (release-please PR, ready to merge when you want to cut the official v1.50.0 tag)
+## Session Work (2026-04-16 09:00–10:35 EDT)
+### Creative Studio UI Hardening
+- **SectionCard render fix:** Extracted `SectionCard` from inside `CreativePanel` render to module-level to fix React "Cannot create components during render" hydration error
+- **Annotation pipeline wiring:** Connected `AnnotationPalette` → `EditDefinitionsPanel` in `VideoEditor.tsx` with full state (`colorDefinitions`, `referenceImages`, `isDefinitionsOpen`)
+- **Tailwind v4 migration:** Complete — 0 legacy `bg-gradient-to-*` classes remain in the monorepo
+- **Code integrity:** 0 TS errors, 0 ESLint errors, 348 ESLint warnings (all pre-existing)
+- **Test suite:** 546 files, 3122 tests — all passing
 
-## Merged This Session (2026-04-15 → 2026-04-16)
-- #1489 — ⚡ Bolt: Optimize ISO date sorting ✅
-- #1488 — Fix Conductor agent routing ambiguities ✅
-- #1490 — 🔒 Remove hardcoded secret arg exposure in distribution ✅ (was orphan branch, PR created + conflict resolved)
-- #1486 — 🧪 CSP policy tests for Electron main ✅
-- #1484 — Fix: safeUnsubscribe in TransmissionMonitor ✅
-- #1483 — 🔒 Remove password/key CLI args ✅
-- #1482 — test(security): cookie auditing ✅
+## Open PRs (as of 2026-04-16 10:35 EDT)
+- **#1435** — `chore(main): release 1.50.0` (release-please PR, ready to merge when you want to cut the official v1.50.0 tag)
 
 ---
 
