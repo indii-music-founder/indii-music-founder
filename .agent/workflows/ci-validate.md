@@ -40,6 +40,42 @@ test file has `vi.mock('@/some/module', ...)`. If not — **add the mock before 
 
 ---
 
+## Step 2b — Audit `packages/main/` Tests for Missing Electron Mocks
+
+> **When this matters:** Any test file under `packages/main/src/` that imports (directly or transitively) from `electron` or `electron-log`.
+> The CI unit-test runner has **no Electron binary**. Loading those modules without mocks crashes the entire shard before a single test runs.
+
+// turbo
+```bash
+# Find all test files in packages/main that DON'T already mock electron
+grep -rL "vi.mock.*electron" packages/main/src --include="*.test.ts" | \
+  xargs grep -l "electron" 2>/dev/null
+```
+
+If the above prints any filenames — **add `vi.mock('electron', ...)` and `vi.mock('electron-log', ...)`** at the top of each before pushing.
+
+See **Error Ledger Pattern 4** for the exact mock shape to use.
+
+---
+
+## Step 2c — Post Batch-Merge Duplicate Identifier Check
+
+> **When this matters:** Any session where you merged 3+ PRs in quick succession (e.g., mass Jules scanner cleanup or feature branch catchup). Squash-merging multiple branches that touched the same file can silently introduce duplicate TypeScript interface fields that only surface as `TS2300` on the *next* typecheck — blocking ALL CI jobs globally.
+
+// turbo
+```bash
+# Quick check for duplicate field patterns in key interface files
+grep -rn "^  _last\|^  _cached\|^  current\|^  is" \
+  packages/renderer/src/core/store/slices/appSlice.ts | \
+  sort | uniq -d
+```
+
+If output is non-empty — you have duplicate fields. Remove all but the last occurrence of each before pushing.
+
+See **Error Ledger Pattern 5** for the full diagnosis.
+
+---
+
 ## Step 3 — Audit for A11y Test Drift
 
 // turbo
@@ -153,3 +189,5 @@ curl -sL -H "Accept: application/vnd.github+json" \
 | `window.getComputedStyle` not implemented | Expected JSDOM noise. All component tests emit this. Not a failure. |
 | `localstorage-file was provided without a valid path` | Electron keytar warning in test env. Harmless. |
 | `Real-time sync failed / Fetch failed` | Expected stderr from mocked services. Not a failure. |
+| `Keeper_Persistence.test.ts > should persist... expected vi.fn() to be called at least once` | Shard-ordering isolation flakiness. Passes immediately when run alone (`npm test -- --run Keeper_Persistence`). Pre-existing, not caused by your changes. |
+| `test: FAILURE` shown on a PR that is marked `MERGEABLE` | Stale CI status from a previous run. GitHub recomputed overall mergeability from the latest run. Safe to merge if the **latest** run for that branch is `success`. Verify with `gh run list --branch <branch>`. |
