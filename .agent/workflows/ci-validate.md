@@ -4,8 +4,8 @@ description: Pre-push CI validation — run all 4 shards locally and audit for k
 
 # /ci-validate — Pre-Push CI Validation
 
-Run this before any push to `main` that touches test files, service files, or 
-UI components. Prevents the class of failures that cause multi-hour CI debugging 
+Run this before any push to `main` that touches test files, service files, or
+UI components. Prevents the class of failures that cause multi-hour CI debugging
 sessions. Each step is fast. All 4 shards take ~2 minutes total on macOS.
 
 ---
@@ -13,11 +13,12 @@ sessions. Each step is fast. All 4 shards take ~2 minutes total on macOS.
 ## Step 1 — Check the Error Ledger First
 
 // turbo
+
 ```bash
 grep -A 3 "Pattern\|RULE:\|BUG:" .agent/skills/error_memory/ERROR_LEDGER.md | head -60
 ```
 
-Read the known patterns. If your change touches a service with dynamic imports 
+Read the known patterns. If your change touches a service with dynamic imports
 or a component with aria-labels, those patterns apply to you.
 
 ---
@@ -25,6 +26,7 @@ or a component with aria-labels, those patterns apply to you.
 ## Step 2 — Audit for Missing Dynamic Import Mocks
 
 // turbo
+
 ```bash
 # Find all dynamic import() calls in service files
 grep -rn "await import(" packages/renderer/src/services packages/main/src \
@@ -34,8 +36,8 @@ grep -rn "await import(" packages/renderer/src/services packages/main/src \
 For each `await import('@/some/module')` found in source, verify the corresponding
 test file has `vi.mock('@/some/module', ...)`. If not — **add the mock before pushing**.
 
-> **Why this matters:** Vitest hoists `vi.mock()` calls at parse time. A dynamic 
-> `import()` inside a function body bypasses this and executes for real in CI, 
+> **Why this matters:** Vitest hoists `vi.mock()` calls at parse time. A dynamic
+> `import()` inside a function body bypasses this and executes for real in CI,
 > causing timeouts or network errors from mocked environments.
 
 ---
@@ -46,6 +48,7 @@ test file has `vi.mock('@/some/module', ...)`. If not — **add the mock before 
 > The CI unit-test runner has **no Electron binary**. Loading those modules without mocks crashes the entire shard before a single test runs.
 
 // turbo
+
 ```bash
 # Find all test files in packages/main that DON'T already mock electron
 grep -rL "vi.mock.*electron" packages/main/src --include="*.test.ts" | \
@@ -63,6 +66,7 @@ See **Error Ledger Pattern 4** for the exact mock shape to use.
 > **When this matters:** Any session where you merged 3+ PRs in quick succession (e.g., mass Jules scanner cleanup or feature branch catchup). Squash-merging multiple branches that touched the same file can silently introduce duplicate TypeScript interface fields that only surface as `TS2300` on the *next* typecheck — blocking ALL CI jobs globally.
 
 // turbo
+
 ```bash
 # Quick check for duplicate field patterns in key interface files
 grep -rn "^  _last\|^  _cached\|^  current\|^  is" \
@@ -79,23 +83,25 @@ See **Error Ledger Pattern 5** for the full diagnosis.
 ## Step 3 — Audit for A11y Test Drift
 
 // turbo
+
 ```bash
 # Find all a11y test files
 find packages -name "*.a11y.test.tsx" | head -20
 ```
 
 // turbo
+
 ```bash
 # For each a11y test, extract the aria-label queries and cross-check against source
 grep -h "getByRole.*name" packages/renderer/src/core/components/command-bar/PromptArea.a11y.test.tsx \
   packages/renderer/src/modules/*/components/**/*.a11y.test.tsx 2>/dev/null | head -20
 ```
 
-Compare the queried `name:` patterns against the actual `aria-label=` values in 
+Compare the queried `name:` patterns against the actual `aria-label=` values in
 the source components. If they don't match — **update the test before pushing**.
 
-> **Why this matters:** Aria-label mismatches produce cryptic `Unable to find 
-> role=button with name /pattern/` errors that look nothing like "component 
+> **Why this matters:** Aria-label mismatches produce cryptic `Unable to find
+> role=button with name /pattern/` errors that look nothing like "component
 > refactor broke the test", making them very slow to diagnose.
 
 ---
@@ -105,6 +111,7 @@ the source components. If they don't match — **update the test before pushing*
 Run them in parallel (4 separate terminals or background jobs):
 
 // turbo
+
 ```bash
 npm test -- --run --reporter=dot --pool=forks --testTimeout=30000 --bail=3 --shard=1/4 &
 npm test -- --run --reporter=dot --pool=forks --testTimeout=30000 --bail=3 --shard=2/4 &
@@ -114,6 +121,7 @@ wait && echo "ALL SHARDS DONE"
 ```
 
 All 4 must exit 0 before pushing. If any fail:
+
 1. Rerun the failing shard with `--reporter=verbose` to see the full failure
 2. Check the Error Ledger for a matching pattern
 3. Fix, then re-run only the failing shard to confirm before pushing
@@ -123,6 +131,7 @@ All 4 must exit 0 before pushing. If any fail:
 ## Step 5 — Quick Typecheck
 
 // turbo
+
 ```bash
 npm run typecheck 2>&1 | grep "error TS" | head -10; echo "Exit: $?"
 ```
@@ -142,6 +151,7 @@ git push origin main
 Then monitor CI with:
 
 // turbo
+
 ```bash
 sleep 30 && for i in 1 2 3 4 5 6; do
   curl -sL \
@@ -184,7 +194,7 @@ curl -sL -H "Accept: application/vnd.github+json" \
 ## Known False Alarms (do NOT investigate these)
 
 | Symptom | Why it's a false alarm |
-|---|---|
+| --- | --- |
 | `git exit code 128` annotation on unit-test job | Phantom annotation from gitleaks in a prior build job. Not related to your tests. |
 | `window.getComputedStyle` not implemented | Expected JSDOM noise. All component tests emit this. Not a failure. |
 | `localstorage-file was provided without a valid path` | Electron keytar warning in test env. Harmless. |

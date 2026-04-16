@@ -252,7 +252,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                 <CreativeNavbar data-testid="creative-navbar" />
 
                 {/* Mobile Tab Switcher */}
-                <div className="md:hidden flex border-b border-white/10 bg-background flex-shrink-0">
+                <div className="md:hidden flex border-b border-white/10 bg-background shrink-0">
                     <button
                         onClick={() => setActiveMobileTab('controls')}
                         className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileTab === 'controls' ? 'text-dept-creative border-b-2 border-dept-creative bg-white/5' : 'text-muted-foreground'}`}

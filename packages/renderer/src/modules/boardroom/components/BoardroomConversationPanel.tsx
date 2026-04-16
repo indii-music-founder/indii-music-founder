@@ -35,7 +35,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
             <div className="flex-1 flex flex-col min-h-0">
                 {/* Empty State — centered vertically in the available space */}
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                    <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-4">
                         <MessageSquare size={22} className="text-indigo-400/50" />
                     </div>
                     <p className="text-sm font-medium text-white/40">Awaiting discussion...</p>
@@ -45,8 +45,8 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                 </div>
 
                 {/* Prompt Area — always visible so users can start the conversation */}
-                <div className="p-4 border-t border-white/5 bg-white/[0.01] shrink-0">
-                    <PromptArea className="!static !translate-x-0 !w-full !max-w-none" />
+                <div className="p-4 border-t border-white/5 bg-white/1 shrink-0">
+                    <PromptArea className="static! translate-x-0! w-full! max-w-none!" />
                 </div>
             </div>
         );
@@ -55,7 +55,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     return (
         <div className="flex-1 flex flex-col min-h-0">
             {/* Panel Header */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 flex-shrink-0">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 shrink-0">
                 <MessageSquare size={14} className="text-indigo-400" />
                 <span className="text-xs font-bold uppercase tracking-wider text-white/60">
                     Discussion
@@ -81,10 +81,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                 initial={{ opacity: 0, y: 12 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                className={`flex items-start gap-3 py-3 px-3 rounded-xl transition-colors ${isUser ? 'bg-white/[0.02]' : 'hover:bg-white/[0.02]'}`}
+                                className={`flex items-start gap-3 py-3 px-3 rounded-xl transition-colors ${isUser ? 'bg-white/2' : 'hover:bg-white/2'}`}
                             >
                                 {/* Avatar */}
-                                <div className="flex-shrink-0 mt-0.5">
+                                <div className="shrink-0 mt-0.5">
                                     {isUser ? (
                                         <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
                                             <span className="text-[10px] font-bold text-indigo-300">You</span>
@@ -126,7 +126,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                     )}
 
                                     {/* Message Text */}
-                                    <div className="text-sm text-white/80 leading-relaxed break-words whitespace-pre-wrap">
+                                    <div className="text-sm text-white/80 leading-relaxed wrap-break-word whitespace-pre-wrap">
                                         {msg.text || (msg as { content?: string }).content || ''}
                                     </div>
 
@@ -148,12 +148,12 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                 </AnimatePresence>
 
                 {/* Scroll anchor */}
-                <div className="h-4 w-full flex-shrink-0" />
+                <div className="h-4 w-full shrink-0" />
             </div>
 
             {/* Inline PromptArea for Boardroom */}
-            <div className="p-4 border-t border-white/5 bg-white/[0.01] shrink-0">
-                <PromptArea className="!static !translate-x-0 !w-full !max-w-none" />
+            <div className="p-4 border-t border-white/5 bg-white/1 shrink-0">
+                <PromptArea className="static! translate-x-0! w-full! max-w-none!" />
             </div>
         </div>
     );
