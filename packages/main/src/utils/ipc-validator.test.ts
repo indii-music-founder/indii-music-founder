@@ -1,3 +1,26 @@
+// Mock electron modules — ipc-validator.ts imports 'electron' and 'electron-log' at module
+// level. Without these mocks, Vitest attempts to load the real Electron binary in CI,
+// which fails with "Electron failed to install correctly" before any test runs.
+import { vi } from 'vitest';
+
+vi.mock('electron', () => ({
+    ipcMain: {
+        handle: vi.fn(),
+        on: vi.fn(),
+        removeHandler: vi.fn(),
+    },
+    IpcMainInvokeEvent: {},
+}));
+
+vi.mock('electron-log', () => ({
+    default: {
+        warn: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn(),
+    },
+}));
+
 import { describe, it, expect } from 'vitest';
 import { validators } from './ipc-validator';
 
