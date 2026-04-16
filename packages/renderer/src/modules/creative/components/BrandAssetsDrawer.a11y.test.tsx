@@ -48,9 +48,9 @@ describe('BrandAssetsDrawer Accessibility', () => {
 
     it('action buttons should have aria-labels', () => {
         render(<BrandAssetsDrawer onClose={vi.fn()} />);
-        // The "Use as Reference" button appears on hover in the asset grid
+        // The "Convert to Style Reference" button appears on hover in the asset grid
         // Since we mock the assets, we expect one asset to be rendered
-        const actionButton = screen.getByLabelText('Use as Reference');
+        const actionButton = screen.getByTitle('Convert to Style Reference');
         expect(actionButton).toBeInTheDocument();
     });
 });

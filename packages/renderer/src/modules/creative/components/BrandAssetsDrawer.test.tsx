@@ -84,14 +84,14 @@ describe('BrandAssetsDrawer', () => {
         // The button wrapper has `group-hover:opacity-100`.
         // The button itself doesn't have `pointer-events-none`.
 
-        // Find the "Use as Reference" button.
-        // It has title "Use as Reference".
-        const addButton = screen.getByTitle('Use as Reference');
+        // Find the "Use as Style Input" button.
+        // It has title "Use as Style Input".
+        const addButton = screen.getByTitle('Use as Style Input');
         fireEvent.click(addButton);
 
         expect(mockSetActiveReferenceImage).toHaveBeenCalledWith(expect.objectContaining({
-            url: 'http://test.com/asset1.png',
-            prompt: 'Asset 1'
+            url: 'http://test.com/ref1.png',
+            prompt: 'Ref 1'
         }));
         expect(mockToast.success).toHaveBeenCalled();
     });

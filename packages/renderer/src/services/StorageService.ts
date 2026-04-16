@@ -1,12 +1,12 @@
 import { logger } from '@/utils/logger';
 
 import { storage } from './firebase';
-import { collection, query, orderBy, limit, Timestamp, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { Timestamp, where, orderBy, limit, query, onSnapshot, Unsubscribe, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
 import { HistoryItem } from '@/core/types/history';
-import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
 import { CloudStorageService } from './CloudStorageService';
+import { OrganizationService } from './OrganizationService';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
 
@@ -64,9 +64,39 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
      * @returns The download URL.
      */
     async uploadFile(file: Blob | File, path: string): Promise<string> {
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
-        return await getDownloadURL(storageRef);
+        const { auth } = await import('./firebase');
+        
+        // Helper to create a local URL for dev fallback
+        const createLocalFallback = async (): Promise<string> => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+        };
+
+        // DEV BYPASS: If explicitly unauthenticated in dev, short-circuit early
+        if (import.meta.env.DEV && !auth.currentUser) {
+            logger.warn(`StorageService: Mocking upload for ${path} (Unauthenticated Dev)`);
+            return createLocalFallback();
+        }
+
+        try {
+            const storageRef = ref(storage, path);
+            await uploadBytes(storageRef, file);
+            return await getDownloadURL(storageRef);
+        } catch (error: unknown) {
+            // DEV FAILOVER: If upload fails due to permissions in dev, fall back to local URL
+            // This handles cases where auth.currentUser exists but lacks permissions for the path.
+            if (import.meta.env.DEV) {
+                const storageError = error as { code?: string; message?: string };
+                if (storageError.code === 'storage/unauthorized' || storageError.message?.includes('permission')) {
+                    logger.warn(`StorageService: Permission denied for ${path} in DEV. Falling back to local URL.`);
+                    return createLocalFallback();
+                }
+            }
+            throw error;
+        }
     }
 
     /**
@@ -77,6 +107,17 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         path: string,
         onProgress: (progress: number) => void
     ): Promise<string> {
+        const { auth } = await import('./firebase');
+
+        // DEV BYPASS: Progress mock
+        if (import.meta.env.DEV && !auth.currentUser) {
+            logger.warn(`StorageService: Mocking progress upload for ${path}`);
+            onProgress(50);
+            const url = await this.uploadFile(file, path);
+            onProgress(100);
+            return url;
+        }
+
         const { uploadBytesResumable } = await import('firebase/storage');
         const storageRef = ref(storage, path);
         const uploadTask = uploadBytesResumable(storageRef, file);
@@ -334,13 +375,13 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         let unsubscribe: Unsubscribe | null = null;
         let isUnsubscribed = false;
 
-        const originalUnsubscribe = onSnapshot(q, (snapshot) => {
-            const items = snapshot.docs.map(doc => {
+        const originalUnsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+            const items = snapshot.docs.map((doc: any) => {
                 const data = doc.data() as HistoryDocument;
                 return this.mapDocumentToItem({ ...data, id: doc.id });
             });
             onUpdate(items);
-        }, (error) => {
+        }, (error: any) => {
             // Check if it's an index error, fallback to un-ordered query if so
             if (error.code === 'failed-precondition' || error.message.includes('index')) {
                 logger.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
@@ -356,14 +397,14 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
                 const fallbackQ = query(this.collection, ...fallbackConstraints);
 
-                unsubscribe = onSnapshot(fallbackQ, (fallbackSnap) => {
-                    const items = fallbackSnap.docs.map(doc => {
+                unsubscribe = onSnapshot(fallbackQ, (fallbackSnap: any) => {
+                    const items = fallbackSnap.docs.map((doc: any) => {
                         const data = doc.data() as HistoryDocument;
                         return this.mapDocumentToItem({ ...data, id: doc.id });
                     });
 
                     // Client-side sort
-                    items.sort((a, b) => b.timestamp - a.timestamp);
+                    items.sort((a: any, b: any) => b.timestamp - a.timestamp);
                     onUpdate(items);
                 }, onError);
 

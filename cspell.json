@@ -38,7 +38,11 @@
     "shadcn",
     "inngest",
     "favicon",
-    "preload"
+    "preload",
+    "genai",
+    "inpainting",
+    "daisychaining",
+    "veo"
   ],
   "ignorePaths": [
     "node_modules",

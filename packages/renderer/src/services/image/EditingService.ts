@@ -5,6 +5,7 @@ import { httpsCallable } from 'firebase/functions';
 import { InputSanitizer } from '../ai/utils/InputSanitizer';
 import { PromptBuilder } from './PromptBuilderService';
 import { logger } from '@/utils/logger';
+import { ContentPart } from '@/shared/types/ai.dto';
 
 
 // Data URI regex - strict pattern for image MIME types
@@ -293,7 +294,7 @@ export class EditingService {
         const part = response.response.candidates?.[0]?.content?.parts?.[0];
         if (part && 'inlineData' in part && part.inlineData) {
             const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            const signature = (part as any).thoughtSignature;
+            const signature = (part as ContentPart).thoughtSignature;
             return {
                 id: crypto.randomUUID(),
                 url,
@@ -374,7 +375,7 @@ export class EditingService {
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
             if (part && 'inlineData' in part && part.inlineData && part.inlineData.mimeType && part.inlineData.data) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                const signature = (part as any).thoughtSignature;
+                const signature = (part as ContentPart).thoughtSignature;
                 previousImage = { mimeType: part.inlineData.mimeType, data: part.inlineData.data };
                 results.push({
                     id: crypto.randomUUID(),
@@ -421,7 +422,7 @@ export class EditingService {
         const part = response.response.candidates?.[0]?.content?.parts?.[0];
         if (part && 'inlineData' in part && part.inlineData) {
             const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            const signature = (part as any).thoughtSignature;
+            const signature = (part as ContentPart).thoughtSignature;
             return {
                 id: crypto.randomUUID(),
                 url,

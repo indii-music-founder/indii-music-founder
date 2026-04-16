@@ -608,7 +608,13 @@ export const renderVideo = functions
         const userId = context.auth.uid;
         const safeData = (typeof data === 'object' && data !== null) ? data as Record<string, unknown> : {};
         const { compositionId, inputProps } = safeData as { compositionId?: string; inputProps?: Record<string, unknown> };
-        const project = inputProps?.project as any;
+        interface ProjectData {
+            width: number;
+            height: number;
+            tracks: unknown[];
+            clips: unknown[];
+        }
+        const project = inputProps?.project as ProjectData | undefined;
 
         if (!project || !project.tracks || !project.clips) {
             throw new functions.https.HttpsError(
@@ -698,10 +704,10 @@ export const inngestApi = functions
         const inngestClient = getInngestClient();
 
         // 1. Single Video Generation Logic using Veo
-        const generateVideo = generateVideoFn(inngestClient, geminiApiKey);
+        const generateVideo = generateVideoFn(inngestClient, geminiApiKey.value());
 
         // 2. Long Form Video Generation Logic (Daisychaining)
-        const generateLongFormVideo = generateLongFormVideoFn(inngestClient, geminiApiKey);
+        const generateLongFormVideo = generateLongFormVideoFn(inngestClient, geminiApiKey.value());
 
         // 3. Stitching Function (Server-Side using Google Transcoder)
         const stitchVideo = stitchVideoFn(inngestClient);
@@ -1413,7 +1419,7 @@ export const enrichFanData = functions
             );
         }
 
-        const { fans, provider, orgId } = data as { fans?: any[]; provider?: string; orgId?: string };
+        const { fans, provider, orgId } = data as { fans?: Record<string, unknown>[]; provider?: string; orgId?: string };
 
         if (!fans || !Array.isArray(fans)) {
             throw new functions.https.HttpsError("invalid-argument", "Missing fan data array.");

@@ -97,7 +97,7 @@ export class VideoRenderOrchestrator {
      * Clean up all polling (e.g., on app close or user logout)
      */
     cleanup() {
-        for (const [id, interval] of this.activeIntervals.entries()) {
+        for (const [_id, interval] of this.activeIntervals.entries()) {
             clearInterval(interval);
         }
         this.activeIntervals.clear();
