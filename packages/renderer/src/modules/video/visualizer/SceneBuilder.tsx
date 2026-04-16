@@ -124,7 +124,7 @@ export const SceneBuilder = () => {
         <div className="flex flex-col h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800 relative">
 
             {/* Toolbar */}
-            <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-auto">
+            <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 bg-linear-to-b from-black/80 to-transparent pointer-events-auto">
                 <div className="flex items-center gap-3">
                     <BoxSelect className="w-6 h-6 text-blue-400" />
                     <h2 className="text-white font-semibold text-lg">3D Stage Builder</h2>

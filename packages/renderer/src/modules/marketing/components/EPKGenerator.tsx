@@ -127,7 +127,7 @@ export default function EPKGenerator() {
                     <ImageIcon size={10} /> Press Photo
                 </label>
                 <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-dept-marketing/30 to-purple-600/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-20 h-20 rounded-xl bg-linear-to-br from-dept-marketing/30 to-purple-600/20 border border-white/10 flex items-center justify-center flex-shrink-0">
                         <ImageIcon size={20} className="text-gray-600" />
                     </div>
                     <label className="flex-1 flex flex-col items-center py-3 rounded-xl border border-dashed border-white/10 hover:border-dept-marketing/30 text-xs text-gray-500 cursor-pointer hover:text-gray-400 transition-all bg-white/[0.02]">
@@ -254,7 +254,7 @@ export default function EPKGenerator() {
                                 <ExternalLink size={9} className="text-gray-600" />
                             </div>
                             <div className="p-5 flex gap-4">
-                                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-dept-marketing/30 to-purple-600/20 border border-white/10 flex-shrink-0 flex items-center justify-center">
+                                <div className="w-16 h-16 rounded-xl bg-linear-to-br from-dept-marketing/30 to-purple-600/20 border border-white/10 flex-shrink-0 flex items-center justify-center">
                                     <ImageIcon size={18} className="text-gray-600" />
                                 </div>
                                 <div className="flex-1 min-w-0">

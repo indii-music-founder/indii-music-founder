@@ -289,7 +289,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     </div>
 
                                     {/* Hover overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-end p-1.5">
+                                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-end p-1.5">
                                         <p className="text-[9px] text-white/80 line-clamp-2 leading-tight">
                                             {asset.prompt || 'Untitled'}
                                         </p>

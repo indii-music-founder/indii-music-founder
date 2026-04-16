@@ -36,7 +36,7 @@ interface IndustryInsightCardProps {
 }
 
 export const IndustryInsightCard = ({ insight, action_suggestion }: IndustryInsightCardProps) => (
-    <div className="mt-4 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-lg shadow-amber-900/5">
+    <div className="mt-4 bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-lg shadow-amber-900/5">
         <div className="flex items-start gap-4">
             <div className="p-2.5 bg-amber-500/10 rounded-lg border border-amber-500/30">
                 <Lightbulb size={20} className="text-amber-400" />
@@ -62,7 +62,7 @@ interface CreativeDirectionCardProps {
 }
 
 export const CreativeDirectionCard = ({ suggestion, rationale, examples }: CreativeDirectionCardProps) => (
-    <div className="mt-4 bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-500/20 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-lg shadow-purple-900/5">
+    <div className="mt-4 bg-linear-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-500/20 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-lg shadow-purple-900/5">
         <div className="flex items-start gap-4">
             <div className="p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/30">
                 <Zap size={20} className="text-purple-400" />
@@ -95,7 +95,7 @@ export const DistributorInfoCard = ({ distributorName }: DistributorInfoCardProp
     if (!distro) return null;
 
     return (
-        <div className="mt-4 bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent border border-cyan-500/20 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-lg shadow-cyan-900/5">
+        <div className="mt-4 bg-linear-to-br from-cyan-500/10 via-cyan-500/5 to-transparent border border-cyan-500/20 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-lg shadow-cyan-900/5">
             <div className="flex items-start gap-4 mb-5 border-b border-cyan-500/10 pb-4">
                 <div className="p-2.5 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
                     <BookOpen size={20} className="text-cyan-400" />

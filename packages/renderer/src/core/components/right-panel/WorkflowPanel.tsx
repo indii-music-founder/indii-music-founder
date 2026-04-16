@@ -11,7 +11,7 @@ export default function WorkflowPanel({ toggleRightPanel }: WorkflowPanelProps) 
     const toast = useToast();
 
     return (
-        <div className="flex flex-col h-full bg-gradient-to-b from-bg-dark to-bg-dark/90">
+        <div className="flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="p-1.5 bg-orange-500/10 rounded-lg">
@@ -33,7 +33,7 @@ export default function WorkflowPanel({ toggleRightPanel }: WorkflowPanelProps) 
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => toast.success("Workflow execution started")}
-                        className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 border border-orange-400/20"
+                        className="w-full bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 border border-orange-400/20"
                     >
                         <Play size={16} />
                         Run Workflow

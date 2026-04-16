@@ -57,7 +57,7 @@ export default function FinanceDashboard() {
             title={t('finance.title')}
             subtitle={t('finance.subtitle')}
             bgBlobClass="bg-dept-royalties/8"
-            iconBgClass="bg-gradient-to-br from-dept-royalties to-dept-royalties-glow"
+            iconBgClass="bg-linear-to-br from-dept-royalties to-dept-royalties-glow"
             iconShadowClass="shadow-dept-royalties/20"
             leftPanel={
                 <>
@@ -488,7 +488,7 @@ function RevenueByPlatformPanel({ earningsSummary, loading }: RevenueByPlatformP
                                 </p>
                                 <div className="w-full h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
                                     <motion.div
-                                        className="h-full bg-gradient-to-r from-dept-royalties to-dept-royalties-glow rounded-full"
+                                        className="h-full bg-linear-to-r from-dept-royalties to-dept-royalties-glow rounded-full"
                                         initial={{ width: 0 }}
                                         animate={{ width: `${percentage}%` }}
                                         transition={{ duration: 1, delay: 0.3 }}

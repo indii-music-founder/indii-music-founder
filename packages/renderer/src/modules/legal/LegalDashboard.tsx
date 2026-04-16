@@ -186,7 +186,7 @@ Only return valid JSON.
             title={t('legal.title')}
             subtitle={t('legal.subtitle')}
             bgBlobClass="bg-blue-500/8"
-            iconBgClass="bg-gradient-to-br from-blue-500 to-blue-400"
+            iconBgClass="bg-linear-to-br from-blue-500 to-blue-400"
             iconShadowClass="shadow-blue-500/20"
             leftPanel={
                 <>
@@ -482,7 +482,7 @@ function RiskScoresPanel({ result }: { result: { score: number; risks: string[] 
 
 function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
     return (
-        <div className="rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/5 border border-blue-500/20 p-3 space-y-3">
+        <div className="rounded-xl bg-linear-to-br from-blue-500/10 to-purple-500/5 border border-blue-500/20 p-3 space-y-3">
             {/* Partner badge */}
             <div className="flex items-center justify-between">
                 <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Platform Legal Partner</h3>
@@ -495,7 +495,7 @@ function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
 
             {/* Avatar + name */}
             <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/30">
+                <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/30">
                     <Scale size={16} className="text-white" />
                 </div>
                 <div className="min-w-0">
@@ -535,7 +535,7 @@ function FindCounselPanel() {
         <div className="space-y-6 max-w-2xl mx-auto">
 
             {/* ── Featured Attorney Card ─────────────────────────── */}
-            <div className="relative rounded-2xl overflow-hidden border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent">
+            <div className="relative rounded-2xl overflow-hidden border border-blue-500/30 bg-linear-to-br from-blue-500/10 via-purple-500/5 to-transparent">
                 {/* Glow */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 blur-[60px] pointer-events-none rounded-full" />
 
@@ -544,7 +544,7 @@ function FindCounselPanel() {
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
                             {/* Avatar */}
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/40 shadow-lg shadow-blue-500/20">
+                            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-blue-400 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/40 shadow-lg shadow-blue-500/20">
                                 <Scale size={24} className="text-white" />
                             </div>
                             <div>

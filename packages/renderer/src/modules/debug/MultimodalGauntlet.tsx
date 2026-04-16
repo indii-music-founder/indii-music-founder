@@ -120,7 +120,7 @@ export default function MultimodalGauntlet() {
     return (
         <div className="p-8 max-w-4xl mx-auto space-y-8 bg-background min-h-screen">
             <header className="space-y-2">
-                <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+                <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-600">
                     MULTIMODAL GAUNTLET
                 </h1>
                 <p className="text-muted-foreground font-mono text-sm">
@@ -148,7 +148,7 @@ export default function MultimodalGauntlet() {
                     <Button
                         onClick={runGauntlet}
                         disabled={loading}
-                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-6"
+                        className="w-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-6"
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Play className="w-5 h-5 mr-2" />}
                         {loading ? 'EXECUTING GAUNTLET...' : 'START PROOF OF LIFE'}

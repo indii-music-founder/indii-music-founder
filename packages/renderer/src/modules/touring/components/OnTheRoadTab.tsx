@@ -154,7 +154,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                         } : undefined}
                         rangeRadiusMiles={range}
                     />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-4 flex justify-between items-end backdrop-blur-sm">
+                    <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 to-transparent p-4 flex justify-between items-end backdrop-blur-sm">
                         <div>
                             <h3 className="text-white font-bold text-sm">Live Route Tracking</h3>
                             <p className="text-xs text-blue-400 font-mono">Satellite Uplink Active</p>

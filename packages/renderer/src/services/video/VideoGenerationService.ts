@@ -73,7 +73,7 @@ export class VideoGenerationService {
         }
     }
 
-    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number, thinking?: boolean }, userProfile?: UserProfile): string {
+    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number, thinkingLevel?: 'none' | 'minimal' | 'low' | 'medium' | 'high' }, userProfile?: UserProfile): string {
         let prompt = basePrompt;
 
         if (userProfile) {
@@ -155,7 +155,7 @@ export class VideoGenerationService {
             camera: options.cameraMovement,
             motion: options.motionStrength,
             fps: options.fps,
-            thinking: options.thinking
+            thinkingLevel: options.thinkingLevel
         }, options.userProfile);
 
         if (temporalContext) {
@@ -453,7 +453,7 @@ export class VideoGenerationService {
         negativePrompt?: string;
         firstFrame?: string;
         // NOTE: Audio is always-on for Veo 3.1 — no generateAudio parameter exists
-        thinking?: boolean;
+        thinkingLevel?: 'none' | 'minimal' | 'low' | 'medium' | 'high';
         inputAudio?: string;
         model?: string;
         onProgress?: (current: number, total: number) => void;
@@ -486,7 +486,7 @@ export class VideoGenerationService {
 
         // Enrich prompt with distributor context
         const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
-            thinking: options.thinking
+            thinkingLevel: options.thinkingLevel
         }, options.userProfile);
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);

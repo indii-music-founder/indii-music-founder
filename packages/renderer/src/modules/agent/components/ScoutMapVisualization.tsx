@@ -16,7 +16,7 @@ export const ScoutMapVisualization: React.FC<{ status: string }> = ({ status }) 
 
             {/* Scanning Radar Line */}
             <div className="absolute inset-0 animate-[spin_4s_linear_infinite]">
-                <div className="w-full h-1/2 bg-gradient-to-t from-cyan-500/20 to-transparent border-b border-cyan-500/50 origin-bottom transform rotate-0" />
+                <div className="w-full h-1/2 bg-linear-to-t from-cyan-500/20 to-transparent border-b border-cyan-500/50 origin-bottom transform rotate-0" />
             </div>
 
             {/* Central Pulse */}

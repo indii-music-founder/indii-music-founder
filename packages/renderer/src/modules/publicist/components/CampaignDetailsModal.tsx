@@ -83,7 +83,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                                 alt="Cover"
                                 className="w-full h-full object-cover opacity-60"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent" />
+                            <div className="absolute inset-0 bg-linear-to-t from-slate-950 to-transparent" />
                             <button
                                 onClick={onClose}
                                 className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-white/10 rounded-full text-white backdrop-blur-sm transition-colors"

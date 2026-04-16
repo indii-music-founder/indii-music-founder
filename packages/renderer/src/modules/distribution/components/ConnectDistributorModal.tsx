@@ -120,7 +120,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                         <div className="p-8 pb-4">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-coral-500 to-magenta-600 flex items-center justify-center text-white shadow-lg shadow-coral-500/20">
+                                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-coral-500 to-magenta-600 flex items-center justify-center text-white shadow-lg shadow-coral-500/20">
                                         <ShieldCheck size={28} />
                                     </div>
                                     <div>
@@ -189,7 +189,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                                         className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-coral-500/50 focus:ring-4 focus:ring-coral-500/10 transition-all placeholder:text-gray-700"
                                                         required={activeTab === 'identity' && !auth.apiKey}
                                                     />
-                                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-coral-500/10 to-magenta-600/10 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
+                                                    <div className="absolute inset-0 rounded-2xl bg-linear-to-r from-coral-500/10 to-magenta-600/10 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
                                                 </div>
                                             </div>
 
@@ -340,7 +340,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                         <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                     </>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-r from-coral-500 to-magenta-600 opacity-0 group-hover:opacity-10 transition-opacity" />
+                                <div className="absolute inset-0 bg-linear-to-r from-coral-500 to-magenta-600 opacity-0 group-hover:opacity-10 transition-opacity" />
                             </button>
                         </div>
                     </motion.div>

@@ -288,7 +288,7 @@ export default function UnifiedAssetLibrary({
                                 decoding="async"
                                 className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
                                 <p className="text-[10px] font-bold text-white truncate">{asset.description}</p>
                                 <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">{asset.category || 'other'}</span>
                             </div>

@@ -21,7 +21,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
     >
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-dept-royalties/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-linear-to-br from-dept-royalties/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400">Total Revenue</h3>
                 <div className="w-8 h-8 rounded-full bg-dept-royalties/10 flex items-center justify-center text-dept-royalties">
@@ -38,7 +38,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
         </div>
 
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-dept-creative/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-linear-to-br from-dept-creative/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400">Total Streams</h3>
                 <div className="w-8 h-8 rounded-full bg-dept-creative/10 flex items-center justify-center text-dept-creative">
@@ -52,7 +52,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
         </div>
 
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-dept-distribution/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-linear-to-br from-dept-distribution/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400">Top Territory</h3>
                 <div className="w-8 h-8 rounded-full bg-dept-distribution/10 flex items-center justify-center text-dept-distribution">
@@ -84,7 +84,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
         </div>
 
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-dept-touring/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-linear-to-br from-dept-touring/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400">Total Downloads</h3>
                 <div className="w-8 h-8 rounded-full bg-dept-touring/10 flex items-center justify-center text-dept-touring">

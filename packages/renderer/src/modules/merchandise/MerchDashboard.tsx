@@ -499,7 +499,7 @@ function ConversionFunnelPanel({ stats }: { stats: MerchStats }) {
 
 function CampaignReadyPanel({ products }: { products: Array<{ id: string }> }) {
     return (
-        <div className="rounded-xl bg-gradient-to-br from-[#FFE135]/10 to-transparent border border-[#FFE135]/20 p-3">
+        <div className="rounded-xl bg-linear-to-br from-[#FFE135]/10 to-transparent border border-[#FFE135]/20 p-3">
             <h3 className="text-[10px] font-bold text-[#FFE135] uppercase tracking-widest mb-2 px-1">Campaign Ready</h3>
             <p className="text-[11px] text-neutral-400 px-1 mb-3">
                 {products.length} approved designs ready for production.

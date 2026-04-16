@@ -20,7 +20,7 @@ export const ThoughtChain = memo(({ thoughts, messageId, compact }: ThoughtChain
 
     return (
         <div className={compact ? "mb-2 relative" : "mb-5 relative"}>
-            <div className={cn("absolute left-0 w-px bg-gradient-to-b from-purple-500/30 to-transparent", compact ? "top-6 bottom-0" : "top-8 bottom-0")} />
+            <div className={cn("absolute left-0 w-px bg-linear-to-b from-purple-500/30 to-transparent", compact ? "top-6 bottom-0" : "top-8 bottom-0")} />
             <button
                 id={buttonId}
                 onClick={() => setIsOpen(!isOpen)}

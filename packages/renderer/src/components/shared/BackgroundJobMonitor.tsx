@@ -101,7 +101,7 @@ export const BackgroundJobMonitor: React.FC = () => {
                                                 {item.status === 'running' && (
                                                     <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
                                                         <div
-                                                            className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-300 relative"
+                                                            className="h-full bg-linear-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-300 relative"
                                                             style={{ width: `${Math.max(item.progress, 5)}%` }}
                                                         >
                                                             <div className="absolute inset-0 bg-white/20 animate-pulse" />

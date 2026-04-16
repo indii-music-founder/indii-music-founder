@@ -228,7 +228,7 @@ const AudioAnalyzer: React.FC = () => {
                                     </div>
 
                                     {/* Box 2: Visual & Agent Hooks */}
-                                    <div className="lg:col-span-2 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-2xl p-6">
+                                    <div className="lg:col-span-2 bg-linear-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-2xl p-6">
                                         <h3 className="text-sm font-bold text-indigo-100 uppercase tracking-widest flex items-center gap-2 mb-6">
                                             <BrainCircuit size={16} className="text-indigo-400" />
                                             Prompt Genetics (For GenAI Agents)
@@ -284,7 +284,7 @@ const AudioAnalyzer: React.FC = () => {
                                     </div>
 
                                     {/* Audit Logging */}
-                                    <div id="tour-audio-knowledge" className="lg:col-span-4 bg-gradient-to-br from-black/40 to-primary/10 rounded-2xl border border-white/5 flex flex-col p-6 justify-between">
+                                    <div id="tour-audio-knowledge" className="lg:col-span-4 bg-linear-to-br from-black/40 to-primary/10 rounded-2xl border border-white/5 flex flex-col p-6 justify-between">
                                         <div>
                                             <div className="flex items-center justify-between mb-4">
                                                 <div className="flex items-center gap-2">

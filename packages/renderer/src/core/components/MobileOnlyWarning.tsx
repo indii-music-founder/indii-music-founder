@@ -38,7 +38,7 @@ export const MobileOnlyWarning: React.FC<MobileOnlyWarningProps> = ({
             <div className="flex flex-col gap-3 w-full max-w-xs">
                 <Button
                     onClick={() => setModule(suggestedModule as ModuleId)}
-                    className="w-full bg-gradient-to-r from-neon-blue to-neon-purple hover:opacity-90"
+                    className="w-full bg-linear-to-r from-neon-blue to-neon-purple hover:opacity-90"
                 >
                     <ArrowRight size={16} className="mr-2" />
                     Go to Recommended Feature

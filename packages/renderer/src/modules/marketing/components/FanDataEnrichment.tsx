@@ -145,7 +145,7 @@ export default function FanDataEnrichment() {
                             </label>
                             <label className={`flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer bg-black/20 group h-48 relative overflow-hidden ${file ? 'border-dept-marketing/50' : 'border-white/10 hover:border-dept-marketing/30'
                                 }`}>
-                                <div className="absolute inset-0 bg-gradient-to-br from-dept-marketing/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 bg-linear-to-br from-dept-marketing/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
                                 <AnimatePresence mode="wait">
                                     {file ? (
@@ -227,7 +227,7 @@ export default function FanDataEnrichment() {
                             disabled={!file || parsedFans.length === 0 || isProcessing || isCompleted}
                             className="w-full relative group overflow-hidden py-4 rounded-2xl bg-dept-marketing text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-dept-marketing/20 disabled:opacity-30 disabled:grayscale transition-all hover:scale-[1.02] active:scale-[0.98]"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                             <div className="flex items-center justify-center gap-2 relative z-10">
                                 {isProcessing ? (
                                     <>

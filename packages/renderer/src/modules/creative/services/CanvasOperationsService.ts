@@ -655,8 +655,9 @@ export class CanvasOperationsService {
         if (activeDefinitions.length === 0) return null;
 
         const originalObjects = this.canvas.getObjects();
-        const maskObjects = originalObjects.filter(obj => obj.type === 'path');
-        const contentObjects = originalObjects.filter(obj => obj.type !== 'path');
+        const isMask = (obj: fabric.Object) => obj.type === 'path' || !!(obj as fabric.Object & { data?: { isSegmentationMask?: boolean } }).data?.isSegmentationMask;
+        const maskObjects = originalObjects.filter(isMask);
+        const contentObjects = originalObjects.filter(obj => !isMask(obj));
 
         // Step 1: Generate Base Image (Content only, hide all annotations)
         maskObjects.forEach(obj => (obj.visible = false));
@@ -684,8 +685,7 @@ export class CanvasOperationsService {
             // Primary: match by stamped colorId (reliable across save/restore cycles)
             // Fallback: legacy string-matching for paths drawn before this fix
             const colorPaths = maskObjects.filter(obj => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const data = (obj as any).data;
+                const data = (obj as fabric.Object & { data?: { colorId?: string } }).data;
                 if (data?.colorId) {
                     return data.colorId === colorId;
                 }
@@ -702,9 +702,22 @@ export class CanvasOperationsService {
                 // Show only matching paths and transform them to pure WHITE
                 colorPaths.forEach(obj => {
                     obj.visible = true;
-                    // Store original properties to restore later
-                    (obj as fabric.Object & { _originalStroke?: typeof obj.stroke })._originalStroke = obj.stroke;
-                    obj.set({ stroke: '#ffffff', fill: '' });
+                    if (obj.type === 'path') {
+                        // Store original properties to restore later
+                        (obj as fabric.Object & { _originalStroke?: typeof obj.stroke })._originalStroke = obj.stroke;
+                        obj.set({ stroke: '#ffffff', fill: '' });
+                    } else if (obj.type === 'image' && (obj as fabric.Object & { data?: { isSegmentationMask?: boolean } }).data?.isSegmentationMask) {
+                        // For AI masks, bypass tint explicitly so it becomes pure binary
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const imgObj = obj as fabric.Image & { _originalOpacity?: number, _originalFilters?: any[] };
+                        imgObj._originalOpacity = obj.opacity;
+                        obj.set({ opacity: 1.0 });
+                        if (imgObj.filters) {
+                            imgObj._originalFilters = [...imgObj.filters];
+                            imgObj.filters = [];
+                            imgObj.applyFilters();
+                        }
+                    }
                 });
 
                 // Clear background to pure BLACK for strict binary mask
@@ -720,9 +733,19 @@ export class CanvasOperationsService {
                     referenceImage: referenceImages[colorId] || undefined
                 });
 
-                // Restore original stroke for these paths
+                // Restore original properties for these objects
                 colorPaths.forEach(obj => {
-                    obj.set({ stroke: (obj as fabric.Object & { _originalStroke?: typeof obj.stroke })._originalStroke });
+                    if (obj.type === 'path') {
+                        obj.set({ stroke: (obj as fabric.Object & { _originalStroke?: typeof obj.stroke })._originalStroke });
+                    } else if (obj.type === 'image' && (obj as fabric.Object & { data?: { isSegmentationMask?: boolean } }).data?.isSegmentationMask) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const imgObj = obj as fabric.Image & { _originalOpacity?: number, _originalFilters?: any[] };
+                        obj.set({ opacity: imgObj._originalOpacity });
+                        if (imgObj._originalFilters) {
+                            imgObj.filters = imgObj._originalFilters;
+                            imgObj.applyFilters();
+                        }
+                    }
                 });
             }
         }
@@ -858,10 +881,12 @@ export class CanvasOperationsService {
         this.canvas.backgroundColor = "#000000";
 
         originalObjects.forEach(obj => {
-            if (obj.type === 'path') {
+            const isMask = obj.type === 'path' || !!(obj as fabric.Object & { data?: { isSegmentationMask?: boolean } }).data?.isSegmentationMask;
+            if (isMask) {
                 // Determine the "True Color" (Opaque) from the stroke
                 // Usually stroke is rgba(r,g,b,0.5). We want rgb(r,g,b) or hex.
                 // For now, we trust the stroke color but pump opacity to 1.0
+                // For segmentation masks, they already have a color filter, just pump opacity to 1.0
                 obj.set({
                     opacity: 1.0,
                     visible: true

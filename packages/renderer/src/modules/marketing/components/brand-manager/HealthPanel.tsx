@@ -256,7 +256,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                                     { position: { lat: 52.5200, lng: 13.4050 }, title: "Berlin Cluster", type: 'venue' }
                                 ]}
                             />
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#111] pointer-events-none" />
+                            <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-[#111] pointer-events-none" />
                             <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
                                 <div className="bg-dept-marketing/20 backdrop-blur-md border border-dept-marketing/30 px-3 py-1.5 rounded-full flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-dept-marketing animate-pulse" />

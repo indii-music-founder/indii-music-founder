@@ -27,7 +27,7 @@ export function GatedModuleFallback({ moduleName }: { moduleName: string }) {
                 <motion.div
                     animate={{ y: [0, -6, 0] }}
                     transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600/20 to-indigo-600/20 border border-purple-500/20 flex items-center justify-center"
+                    className="w-20 h-20 rounded-2xl bg-linear-to-br from-purple-600/20 to-indigo-600/20 border border-purple-500/20 flex items-center justify-center"
                 >
                     <Rocket size={36} className="text-purple-400" />
                 </motion.div>

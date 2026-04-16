@@ -115,7 +115,7 @@ export function FirstRunTooltip({
             className={`absolute z-50 ${positionClasses[position]} ${className}`}
             role="tooltip"
         >
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-purple-900/30 max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-linear-to-r from-purple-600 to-blue-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-purple-900/30 max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <p className="leading-relaxed">{message}</p>
                 <button
                     onClick={onDismiss}

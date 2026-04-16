@@ -13,7 +13,7 @@ export const StandardMerch: React.FC = () => {
 
             {/* Hero Section */}
             <div className="relative rounded-3xl overflow-hidden h-72 border border-primary/20 group shadow-2xl transition-all duration-500 hover:shadow-primary/10">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 z-10" />
+                <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 z-10" />
                 {/* ⚡ Bolt Optimization: Prioritize LCP image loading */}
                 <img
                     src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2000&q=80"
@@ -109,13 +109,13 @@ export const StandardMerch: React.FC = () => {
 
             {/* Collections Banner */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
-                <div className="bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-3xl p-8 border border-yellow-500/20 h-48 flex items-end">
+                <div className="bg-linear-to-br from-yellow-400/20 to-orange-400/20 rounded-3xl p-8 border border-yellow-500/20 h-48 flex items-end">
                     <div>
                         <h4 className="text-2xl font-black text-foreground tracking-tighter uppercase">Flash Drops</h4>
                         <p className="text-muted-foreground text-sm font-bold">New drops every Sunday 10AM EST.</p>
                     </div>
                 </div>
-                <div className="bg-gradient-to-br from-indigo-400/20 to-purple-400/20 rounded-3xl p-8 border border-indigo-500/20 h-48 flex items-end">
+                <div className="bg-linear-to-br from-indigo-400/20 to-purple-400/20 rounded-3xl p-8 border border-indigo-500/20 h-48 flex items-end">
                     <div>
                         <h4 className="text-2xl font-black text-foreground tracking-tighter uppercase">Artist Collabs</h4>
                         <p className="text-muted-foreground text-sm font-bold">Limited run exclusively for fans.</p>

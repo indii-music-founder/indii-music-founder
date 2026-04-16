@@ -74,7 +74,7 @@ export default function LicensingDashboard() {
             title="Licensing"
             subtitle="REAL-TIME RIGHTS & CLEARANCES"
             bgBlobClass="bg-indigo-500/8"
-            iconBgClass="bg-gradient-to-br from-indigo-500 to-indigo-400"
+            iconBgClass="bg-linear-to-br from-indigo-500 to-indigo-400"
             iconShadowClass="shadow-indigo-500/20"
             leftPanel={
                 <>

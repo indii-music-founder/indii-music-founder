@@ -102,7 +102,7 @@ export class EditingService {
             refMimeType: options.referenceImage?.mimeType,
             prompt: structuredPrompt,
             model: modelId,
-            thoughtSignature: options.thoughtSignature
+            thoughtSignature: options.thoughtSignature || "context_engineering_is_the_way_to_go"
         }));
 
         const data = result.data as unknown as {
@@ -267,7 +267,8 @@ export class EditingService {
         images: { mimeType: string; data: string }[];
         prompt: string;
         projectContext?: string;
-    }): Promise<{ id: string; url: string; prompt: string } | null> {
+        thoughtSignature?: string;
+    }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         const parts: import('firebase/ai').Part[] = [];
         options.images.forEach((img, idx) => {
             parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
@@ -283,16 +284,21 @@ export class EditingService {
         const response = await GenAI.rawGenerateContent(
             [{ role: 'user', parts }],
             AI_MODELS.IMAGE.DIRECT_PRO,
-            { responseModalities: ['IMAGE'] }
+            { responseModalities: ['IMAGE'] },
+            undefined,
+            undefined,
+            { thoughtSignature: options.thoughtSignature || "context_engineering_is_the_way_to_go" }
         );
 
         const part = response.response.candidates?.[0]?.content?.parts?.[0];
         if (part && 'inlineData' in part && part.inlineData) {
             const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            const signature = (part as any).thoughtSignature;
             return {
                 id: crypto.randomUUID(),
                 url,
-                prompt: "Composite"
+                prompt: "Composite",
+                thoughtSignature: signature
             };
         }
         return null;
@@ -308,8 +314,9 @@ export class EditingService {
         timeDeltaLabel: string;
         startImage?: { mimeType: string; data: string };
         projectContext?: string;
-    }): Promise<{ id: string; url: string; prompt: string }[]> {
-        const results: { id: string; url: string; prompt: string }[] = [];
+        thoughtSignature?: string;
+    }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string }[]> {
+        const results: { id: string; url: string; prompt: string; thoughtSignature?: string }[] = [];
 
         // Sanitize inputs
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
@@ -358,17 +365,22 @@ export class EditingService {
             const response = await GenAI.rawGenerateContent(
                 [{ role: 'user', parts }],
                 AI_MODELS.IMAGE.DIRECT_PRO,
-                { responseModalities: ['IMAGE'] }
+                { responseModalities: ['IMAGE'] },
+                undefined,
+                undefined,
+                { thoughtSignature: options.thoughtSignature || "context_engineering_is_the_way_to_go" }
             );
 
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
             if (part && 'inlineData' in part && part.inlineData && part.inlineData.mimeType && part.inlineData.data) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                const signature = (part as any).thoughtSignature;
                 previousImage = { mimeType: part.inlineData.mimeType, data: part.inlineData.data };
                 results.push({
                     id: crypto.randomUUID(),
                     url,
-                    prompt: `Chain (${options.timeDeltaLabel}): ${scenes[i]}`
+                    prompt: `Chain (${options.timeDeltaLabel}): ${scenes[i]}`,
+                    thoughtSignature: signature
                 });
             }
         }
@@ -383,7 +395,8 @@ export class EditingService {
         styleImage: { mimeType: string; data: string };
         prompt?: string;
         model?: 'pro' | 'flash';
-    }): Promise<{ id: string; url: string; prompt: string } | null> {
+        thoughtSignature?: string;
+    }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         const modelId = options.model === 'pro'
             ? AI_MODELS.IMAGE.DIRECT_PRO
             : AI_MODELS.IMAGE.DIRECT_FAST;
@@ -399,16 +412,21 @@ export class EditingService {
         const response = await GenAI.rawGenerateContent(
             [{ role: 'user', parts }],
             modelId,
-            { responseModalities: ['IMAGE'] }
+            { responseModalities: ['IMAGE'] },
+            undefined,
+            undefined,
+            { thoughtSignature: options.thoughtSignature || "context_engineering_is_the_way_to_go" }
         );
 
         const part = response.response.candidates?.[0]?.content?.parts?.[0];
         if (part && 'inlineData' in part && part.inlineData) {
             const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            const signature = (part as any).thoughtSignature;
             return {
                 id: crypto.randomUUID(),
                 url,
-                prompt: `Style Transfer: ${options.prompt || 'Applied style reference'}`
+                prompt: `Style Transfer: ${options.prompt || 'Applied style reference'}`,
+                thoughtSignature: signature
             };
         }
         return null;

@@ -15,7 +15,7 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ data }) => {
 
     return (
         <div className="my-4 p-4 bg-black/40 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-linear-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <button
                 id={buttonId}
                 onClick={() => setIsOpen(!isOpen)}

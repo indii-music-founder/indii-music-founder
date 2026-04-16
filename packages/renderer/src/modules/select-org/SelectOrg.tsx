@@ -51,7 +51,7 @@ export default function SelectOrg() {
             {/* Left Panel - Branding & Context */}
             <div className="hidden md:flex w-1/3 max-w-md relative flex-col justify-between p-12 border-r border-white/5 bg-black/40 backdrop-blur-xl z-10">
                 <div>
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center mb-8 shadow-lg shadow-purple-900/20">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-purple-600 to-blue-600 flex items-center justify-center mb-8 shadow-lg shadow-purple-900/20">
                         <Activity className="text-white" size={24} />
                     </div>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -176,7 +176,7 @@ export default function SelectOrg() {
                                 exit={{ opacity: 0, x: -20 }}
                                 className="bg-surface/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden"
                             >
-                                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-blue-500" />
+                                <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-purple-500 to-blue-500" />
 
                                 <div className="mb-8">
                                     <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-6">

@@ -130,7 +130,7 @@ export default function PublishingDashboard() {
                         <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-blue-500/8 blur-[100px] pointer-events-none rounded-full" />
                         <div className="relative z-10 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
                                     <Book size={18} className="text-white" />
                                 </div>
                                 <div onClick={() => setModule('dashboard')} className="cursor-pointer">
@@ -467,7 +467,7 @@ function PerformancePanel({ releases }: { releases: ClientReleaseRecord[] }) {
                     <p className="text-lg font-black text-white">{liveCount} / {totalCount}</p>
                     <div className="w-full h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
                         <motion.div
-                            className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"
+                            className="h-full bg-linear-to-r from-blue-500 to-blue-400 rounded-full"
                             initial={{ width: 0 }}
                             animate={{ width: `${pct}%` }}
                             transition={{ duration: 1, delay: 0.3 }}

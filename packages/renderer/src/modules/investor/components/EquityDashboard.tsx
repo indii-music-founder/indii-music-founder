@@ -31,7 +31,7 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
             {/* Header / ID Card (Elevated Brutalism) */}
             <div className="md:col-span-12 border-2 border-[#ff3366] bg-black p-6 flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden group">
                 {/* Dopamine Shimmer */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff3366]/10 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-r from-transparent via-[#ff3366]/10 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col md:flex-row gap-6 w-full justify-between items-start md:items-center">
                     <div>
@@ -145,7 +145,7 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
 
                 {/* Priority Node - Distribution Interface */}
                 <div className="border-2 border-[#1a1a1a] p-6 hover:border-[#00ff66] transition-colors relative group overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#00ff66]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <div className="absolute inset-0 bg-linear-to-br from-[#00ff66]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                     {/* Scanline effect for terminal */}
                     <div className="absolute left-0 right-0 h-1 bg-[#00ff66]/20 shadow-[0_0_15px_#00ff66] z-0 animate-scanline opacity-0 group-hover:opacity-50 pointer-events-none" />
 
@@ -182,7 +182,7 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
 
                 {/* Strategic Advisor (Ghost Advisory) Chat */}
                 <div className="border-2 border-[#1a1a1a] p-6 hover:border-[#ff3366] transition-colors relative group flex flex-col h-full">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#ff3366]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <div className="absolute inset-0 bg-linear-to-br from-[#ff3366]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                     <h3 className="text-sm font-bold font-mono tracking-widest text-[#ff3366] mb-6 flex items-center gap-2">
                         <MessageSquare className="w-5 h-5" />
                         GHOST ADVISORY // STRATEGIC LINK
@@ -229,7 +229,7 @@ const StatCard = ({ label, value, subvalue, icon: Icon, delay, highlight }: any)
         className={`p-6 border-2 relative overflow-hidden group ${highlight ? 'border-[#ff3366] bg-[#ff3366]/10' : 'border-[#1a1a1a] bg-black'} hover:border-[#00ff66] transition-colors cursor-crosshair`}
     >
         {/* Hover Dopamine Effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#00ff66]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-linear-to-br from-[#00ff66]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
         <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">

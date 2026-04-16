@@ -11,7 +11,7 @@ export const ProMerch: React.FC = () => {
             {/* Pro Hero */}
             <div className="relative h-[450px] rounded-2xl overflow-hidden border border-border/20 group">
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center opacity-40 mix-blend-overlay scale-110 group-hover:scale-100 transition-transform duration-[3000ms]" />
-                <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/40 to-background z-10" />
+                <div className="absolute inset-0 bg-linear-to-b from-background/0 via-background/40 to-background z-10" />
 
                 <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-center max-w-3xl mx-auto">
                     <div className="flex items-center justify-center gap-3 mb-8 animate-pulse">
@@ -21,7 +21,7 @@ export const ProMerch: React.FC = () => {
                     <div className="space-y-2 mb-8">
                         <span className="text-[10px] tracking-[0.8em] text-primary font-black uppercase mb-4 block">Archive Series // 2025</span>
                         <h2 className="text-7xl md:text-9xl font-black tracking-tighter text-foreground italic leading-none">
-                            MERCH <span className="text-outline text-transparent bg-clip-text bg-gradient-to-b from-foreground to-foreground/20">PRO</span>
+                            MERCH <span className="text-outline text-transparent bg-clip-text bg-linear-to-b from-foreground to-foreground/20">PRO</span>
                         </h2>
                     </div>
 

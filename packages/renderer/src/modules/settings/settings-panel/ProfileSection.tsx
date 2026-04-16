@@ -80,7 +80,7 @@ const ProfileSection: React.FC = () => {
                             className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-700"
                         />
                     ) : (
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center border-2 border-slate-700">
+                        <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center border-2 border-slate-700">
                             <span className="text-2xl font-bold text-white">{getInitials()}</span>
                         </div>
                     )}

@@ -221,7 +221,7 @@ export default function MemoryDashboard() {
                 <div className="flex-shrink-0 border-b border-white/5 bg-[#0d1117]/80 backdrop-blur-xl">
                     <div className="flex items-center justify-between px-6 py-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-600/30 to-violet-600/30 border border-purple-500/20">
+                            <div className="p-2 rounded-xl bg-linear-to-br from-purple-600/30 to-violet-600/30 border border-purple-500/20">
                                 <Brain size={20} className="text-purple-400" />
                             </div>
                             <div>

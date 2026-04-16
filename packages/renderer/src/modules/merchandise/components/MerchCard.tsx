@@ -20,7 +20,7 @@ export const MerchCard = React.forwardRef<HTMLDivElement, MerchCardProps>(
                 {...props}
             >
                 {/* Subtle sheen layer */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent pointer-events-none" />
 
                 {/* Content */}
                 <div className="relative z-10 w-full h-full">
