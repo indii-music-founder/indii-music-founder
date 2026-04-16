@@ -126,7 +126,7 @@ const FRAME_EXTRACTION_MAX_POLL_ATTEMPTS = 20;
  * Uses Veo to generate each segment. If a startImage is provided (or extracted
  * from previous segment), it uses it for continuity.
  */
-export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: string) => inngestClient.createFunction(
+export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: string | undefined) => inngestClient.createFunction(
     { id: "generate-long-form-video" },
     { event: "video/long_form.requested" },
     async ({ event, step }) => {

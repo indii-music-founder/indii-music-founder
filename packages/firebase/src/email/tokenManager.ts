@@ -157,6 +157,10 @@ export const emailRefreshToken = functions
             actualRefreshToken = tokenDoc.data()?.refreshToken;
             }
 
+            if (!actualRefreshToken) {
+                throw new functions.https.HttpsError("not-found", "Refresh token was not found for this provider.");
+            }
+
             let tokens: TokenResult;
 
             if (provider === 'gmail') {
@@ -210,6 +214,9 @@ export const emailRevokeToken = functions
         }
 
         const { provider } = data;
+        if (!provider) {
+            throw new functions.https.HttpsError("invalid-argument", "Missing provider.");
+        }
         const userId = context.auth.uid;
 
         try {
