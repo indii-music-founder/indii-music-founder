@@ -13,6 +13,7 @@
  * Pattern: Same step.run() / step.sleep() pattern as video_generation.ts
  */
 
+import { Inngest } from "inngest";
 import * as admin from 'firebase-admin';
 import { GoogleGenAI } from '@google/genai';
 import { FUNCTION_AI_MODELS } from '../config/models';
@@ -24,6 +25,34 @@ const getDb = () => admin.firestore();
 // Types
 // ============================================================================
 
+interface TimelineMilestone {
+    id: string;
+    phaseId: string;
+    phaseName: string;
+    scheduledAt: number;
+    type: string;
+    instruction: string;
+    assetStrategy: string;
+    status: string;
+    agentId: string;
+    platform?: string;
+    result?: string;
+    error?: string;
+    executedAt?: number;
+    completedAt?: number;
+    retryCount?: number;
+}
+
+interface TimelineDocument {
+    milestones: TimelineMilestone[];
+    status: string;
+    completedCount: number;
+    updatedAt: number | admin.firestore.FieldValue;
+    title: string;
+    goal: string;
+    domain: string;
+}
+
 interface MilestoneEventData {
     userId: string;
     timelineId: string;
@@ -33,7 +62,7 @@ interface MilestoneEventData {
     assetStrategy: string;
     phaseName: string;
     type: string;
-    platform?: string;
+    platform: string | null;
     goal: string;
     title: string;
     domain: string;
@@ -65,7 +94,9 @@ function getSystemPromptForAgent(agentId: string): string {
 // Inngest Function
 // ============================================================================
 
-export const executeMilestoneFn = (inngestClient: any) =>
+// Using MilestoneEventData for the Inngest event payload
+
+export const executeMilestoneFn = (inngestClient: Inngest) =>
     inngestClient.createFunction(
         {
             id: 'execute-timeline-milestone',
@@ -75,7 +106,7 @@ export const executeMilestoneFn = (inngestClient: any) =>
             },
         },
         { event: 'timeline/milestone.due' },
-        async ({ event, step }: any) => {
+        async ({ event, step }) => {
             const data = event.data as MilestoneEventData;
             const {
                 userId,
@@ -108,15 +139,15 @@ export const executeMilestoneFn = (inngestClient: any) =>
                         .collection('items')
                         .doc(timelineId);
 
-                    await getDb().runTransaction(async (transaction: any) => {
+                    await getDb().runTransaction(async (transaction) => {
                         const snap = await transaction.get(timelineRef);
                         if (!snap.exists) {
                             throw new Error(`Timeline ${timelineId} not found for user ${userId}`);
                         }
 
-                        const timeline = snap.data()!;
+                        const timeline = snap.data() as TimelineDocument;
                         const milestones = timeline.milestones || [];
-                        const idx = milestones.findIndex((m: any) => m.id === milestoneId);
+                        const idx = milestones.findIndex((m) => m.id === milestoneId);
 
                         if (idx === -1) {
                             throw new Error(`Milestone ${milestoneId} not found in timeline ${timelineId}`);
@@ -127,7 +158,7 @@ export const executeMilestoneFn = (inngestClient: any) =>
 
                         transaction.update(timelineRef, {
                             milestones,
-                            updatedAt: Date.now(),
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                         });
                     });
 
@@ -206,15 +237,15 @@ export const executeMilestoneFn = (inngestClient: any) =>
                     let completedCount = 0;
                     let totalMilestones = 0;
 
-                    await getDb().runTransaction(async (transaction: any) => {
+                    await getDb().runTransaction(async (transaction) => {
                         const snap = await transaction.get(timelineRef);
                         if (!snap.exists) {
                             throw new Error(`Timeline ${timelineId} not found`);
                         }
 
-                        const timeline = snap.data()!;
+                        const timeline = snap.data() as TimelineDocument;
                         const milestones = timeline.milestones || [];
-                        const idx = milestones.findIndex((m: any) => m.id === milestoneId);
+                        const idx = milestones.findIndex((m) => m.id === milestoneId);
 
                         if (idx === -1) {
                             throw new Error(`Milestone ${milestoneId} not found`);
@@ -226,21 +257,21 @@ export const executeMilestoneFn = (inngestClient: any) =>
 
                         // Update completion count
                         completedCount = milestones.filter(
-                            (m: any) => m.status === 'completed'
+                            (m) => m.status === 'completed'
                         ).length;
                         totalMilestones = milestones.length;
 
                         // Check if all milestones are finished
                         const allDone = milestones.every(
-                            (m: any) =>
+                            (m) =>
                                 m.status === 'completed' ||
                                 m.status === 'skipped' ||
                                 m.status === 'failed'
                         );
 
-                        const updates: Record<string, any> = {
+                        const updates: Partial<TimelineDocument> & { updatedAt: admin.firestore.FieldValue } = {
                             milestones,
-                            updatedAt: Date.now(),
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                             completedCount,
                         };
 
@@ -282,7 +313,8 @@ export const executeMilestoneFn = (inngestClient: any) =>
                     milestoneId,
                     resultPreview: agentResult.text.slice(0, 200),
                 };
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 console.error(
                     `[MilestoneExecution] Error executing milestone ${milestoneId}:`,
                     error
@@ -297,22 +329,22 @@ export const executeMilestoneFn = (inngestClient: any) =>
                             .collection('items')
                             .doc(timelineId);
 
-                        await getDb().runTransaction(async (transaction: any) => {
+                        await getDb().runTransaction(async (transaction: FirebaseFirestore.Transaction) => {
                             const snap = await transaction.get(timelineRef);
                             if (!snap.exists) return;
 
-                            const timeline = snap.data()!;
+                            const timeline = snap.data() as TimelineDocument;
                             const milestones = timeline.milestones || [];
-                            const idx = milestones.findIndex((m: any) => m.id === milestoneId);
+                            const idx = milestones.findIndex((m) => m.id === milestoneId);
 
                             if (idx !== -1) {
                                 milestones[idx].status = 'failed';
-                                milestones[idx].error = error.message || 'Unknown error';
+                                milestones[idx].error = errorMessage || 'Unknown error';
                                 milestones[idx].retryCount = (milestones[idx].retryCount || 0) + 1;
 
                                 transaction.update(timelineRef, {
                                     milestones,
-                                    updatedAt: Date.now(),
+                                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                                 });
                             }
                         });
@@ -326,7 +358,7 @@ export const executeMilestoneFn = (inngestClient: any) =>
                             phaseName,
                             type,
                             instruction,
-                            error: error.message || 'Unknown error',
+                            error: errorMessage || 'Unknown error',
                             status: 'failed',
                             executedAt: admin.firestore.FieldValue.serverTimestamp(),
                         });

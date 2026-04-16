@@ -22,7 +22,6 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
 
 // Import the mocked service to set return values
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { useStore } from '@/core/store';
 
 describe('VideoTools Feature', () => {
   beforeEach(() => {

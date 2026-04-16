@@ -264,11 +264,17 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         }
     }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, isBoardroomMode, setCommandBarInput, setCommandBarAttachments]);
 
+    const actionButtonBase = "flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+    const submitButtonBase = "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white";
+    const submitButtonSize = (!isMobile && !isDocked) 
+        ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" 
+        : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0");
+
     return (
         <div
             data-testid="command-bar-input-container"
             className={cn(
-                "glass transition-all relative focus-within:ring-2 backdrop-blur-xl",
+                "glass transition-all relative focus-within:ring-2",
                 isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-3xl",
                 isIndiiMode
                     ? "border-purple-500/50 ring-purple-500/20 shadow-[0_0_30px_rgba(168,85,247,0.15)] bg-purple-950/30"
@@ -331,7 +337,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
                                         className={cn(
-                                            "flex items-center justify-center rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                            actionButtonBase,
+                                            "text-gray-400 hover:bg-white/10 hover:text-gray-200",
                                             isDocked ? "p-1.5" : "p-2"
                                         )}
                                     >
@@ -345,7 +352,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <button
                                 onClick={handleMicClick}
                                 className={cn(
-                                    "flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    actionButtonBase,
                                     isDocked ? "p-1.5" : "p-2",
                                     isListening
                                         ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
@@ -449,8 +456,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     }}
                                     aria-label="Stop agent"
                                     className={cn(
-                                        "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white",
-                                        (!isMobile && !isDocked) ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0"),
+                                        submitButtonBase,
+                                        submitButtonSize,
                                         "bg-red-600 hover:bg-red-500 shadow-red-500/30 animate-pulse"
                                     )}
                                     data-testid="command-bar-stop-btn"
@@ -460,24 +467,30 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 </button>
                             </PromptInputAction>
                         ) : (
-                            <PromptInputAction tooltip="Send Message (Enter)">
-                                <button
-                                    onClick={(e) => handleSubmit(e)}
-                                    disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0)}
-                                    aria-label="Run command"
-                                    className={cn(
-                                        "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white",
-                                        (!isMobile && !isDocked) ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0"),
-                                        isIndiiMode
-                                            ? "bg-purple-600 hover:bg-purple-500 shadow-purple-500/20"
-                                            : "bg-white/20 hover:bg-white/30 border border-white/10"
-                                    )}
-                                    data-testid="command-bar-run-btn"
-                                >
-                                    <ArrowRight size={isDocked ? 14 : 16} />
-                                    {(!isMobile && !isDocked) && <span className="ml-0.5">Run</span>}
-                                </button>
-                            </PromptInputAction>
+                            (() => {
+                                const themeClasses = isIndiiMode
+                                    ? "bg-purple-600 hover:bg-purple-500 shadow-purple-500/20"
+                                    : "bg-white/20 hover:bg-white/30 border border-white/10";
+
+                                return (
+                                    <PromptInputAction tooltip="Send Message (Enter)">
+                                        <button
+                                            onClick={(e) => handleSubmit(e)}
+                                            disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0)}
+                                            aria-label="Run command"
+                                            className={cn(
+                                                submitButtonBase,
+                                                submitButtonSize,
+                                                themeClasses
+                                            )}
+                                            data-testid="command-bar-run-btn"
+                                        >
+                                            <ArrowRight size={isDocked ? 14 : 16} />
+                                            {(!isMobile && !isDocked) && <span className="ml-0.5">Run</span>}
+                                        </button>
+                                    </PromptInputAction>
+                                );
+                            })()
                         )}
                     </div>
                 </PromptInputActions>

@@ -9,6 +9,7 @@
 
 import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { VideoGenerationConfig } from '@/shared/types/ai.dto';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
@@ -212,7 +213,7 @@ class SceneExtensionServiceImpl {
         referenceImages?: { mimeType: string; data: string }[];
         // NOTE: Audio is always-on for Veo 3.1
     }): Promise<string> {
-        const generationConfig: Record<string, unknown> = {
+        const generationConfig: VideoGenerationConfig = {
             aspectRatio: config.aspectRatio,
             durationSeconds: config.durationSeconds,
             resolution: config.resolution,
@@ -235,7 +236,7 @@ class SceneExtensionServiceImpl {
             image: config.firstFrame
                 ? { imageBytes: config.firstFrame.data, mimeType: config.firstFrame.mimeType }
                 : undefined,
-            config: generationConfig as unknown as Record<string, unknown>,
+            config: generationConfig,
         });
 
         return uri;
@@ -366,7 +367,7 @@ class SceneExtensionServiceImpl {
             if (userId) {
                 await MembershipService.incrementUsage(userId, 'video', numSegments, totalDurationSeconds);
             }
-        } catch (e: unknown) {
+        } catch (_e: unknown) {
             // Usage tracking failure should not block generation
         }
     }

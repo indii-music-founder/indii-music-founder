@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Core infrastructure types */
 import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { initSentry, setSentryUser, clearSentryUser } from '@/services/observability/SentryService';
@@ -9,7 +8,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
-import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -105,8 +103,13 @@ const RegistrationCenter = lazy(() => import('../modules/registration/Registrati
 // Module Router - Maps module IDs to components
 // ============================================================================
 
-// Use flexible type to accommodate different component prop signatures
-const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<any>>>> = {
+// Use flexible but safe type to accommodate module component props (e.g. CreativeStudio's initialMode)
+interface ModuleProps {
+    initialMode?: 'image' | 'video';
+    [key: string]: unknown;
+}
+
+const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<ModuleProps>>>> = {
     'dashboard': Dashboard,
     'creative': CreativeStudio,
     'video': VideoStudio,
@@ -602,13 +605,6 @@ export default function App() {
                                 <PWAInstallPrompt />
                                 <TransmissionMonitor />
                                 <UpdaterMonitor />
-
-                                {/* Global Command Bar — hidden on phone viewports (chat tab handles prompt) */}
-                                {showChrome && !isAnyPhone && (
-                                    <ErrorBoundary>
-                                        <CommandBar />
-                                    </ErrorBoundary>
-                                )}
 
                                 {/* Global Command Menu (CMD+K) */}
                                 <UnifiedCommandMenu />

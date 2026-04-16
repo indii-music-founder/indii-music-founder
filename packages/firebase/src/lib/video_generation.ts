@@ -1,3 +1,4 @@
+import { Inngest } from "inngest";
 import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
 import { FUNCTION_AI_MODELS } from "../config/models";
@@ -25,13 +26,11 @@ interface VideoGenerateEventData {
     };
 }
 
-export const generateVideoFn = (inngestClient: {
-    createFunction: (config: Record<string, unknown>, trigger: Record<string, unknown>, handler: (ctx: { event: { data: VideoGenerateEventData }, step: any }) => Promise<unknown>) => unknown
-}, _geminiApiKey: string | undefined) => inngestClient.createFunction(
+export const generateVideoFn = (inngestClient: Inngest, _geminiApiKey: string | undefined) => inngestClient.createFunction(
     { id: "generate-video-logic" },
     { event: "video/generate.requested" },
-    async ({ event, step }: { event: { data: VideoGenerateEventData }, step: any }) => {
-        const { jobId, prompt, userId, options } = event.data;
+    async ({ event, step }) => {
+        const { jobId, prompt, userId, options } = event.data as VideoGenerateEventData;
         const isThinking = options?.thinking === true;
         let finalPrompt = isThinking
             ? `[Think CINEMATIC PHYSICS & CONTINUITY]: ${prompt}`

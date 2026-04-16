@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { functions, functionsWest1 } from '@/services/firebase';
+import { functionsWest1 } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { X, Upload, Image as ImageIcon, Plus, Camera } from 'lucide-react';
+import { X, Image as ImageIcon, Plus, Camera, ArrowRightLeft, Trash2, Tag } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
 import type { BrandAsset } from '@/types/User';
+import { AI_CONFIG } from '@/core/config/ai-models';
+import type { StoreState } from '@/core/store';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
@@ -21,7 +23,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         addUploadedImage,
         currentProjectId,
         setActiveReferenceImage
-    } = useStore(useShallow(state => ({
+    } = useStore(useShallow((state: StoreState) => ({
         userProfile: state.userProfile,
         updateBrandKit: state.updateBrandKit,
         addUploadedImage: state.addUploadedImage,
@@ -29,8 +31,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         setActiveReferenceImage: state.setActiveReferenceImage
     })));
     const toast = useToast();
-    const [isDragging, setIsDragging] = useState(false);
     const [activeTab, setActiveTab] = useState<'upload' | 'generate'>('upload');
+    const [targetCategory, setTargetCategory] = useState<'style_reference' | 'logo'>('style_reference');
     const [prompt, setPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -38,22 +40,6 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     const assets = userProfile?.brandKit?.brandAssets || [];
     const refImages = userProfile?.brandKit?.referenceImages || [];
 
-    // Drag and drop handlers
-    const _handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const _handleDragLeave = () => {
-        setIsDragging(false);
-    };
-
-    const _handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-        await processFiles(files);
-    };
 
     const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -63,18 +49,39 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     };
 
     const processFiles = async (files: File[]) => {
+        // For uploads, we'll default to style_reference if under limit, else logo
+        const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+        const currentCount = userProfile?.brandKit?.referenceImages?.length || 0;
+
         setIsGenerating(true);
         try {
-            const newAssets = [];
-            const newUploadedImages: { id: string, type: 'image', url: string, prompt: string, timestamp: number, projectId: string }[] = [];
+            const newRefImages: BrandAsset[] = [];
+            const newLogos: BrandAsset[] = [];
+            const newUploadedImages = [];
             const timestamp = Date.now();
 
             for (const file of files) {
                 const assetId = crypto.randomUUID();
-                const path = `users/${userProfile?.id || 'guest'}/brand_assets/${assetId}`;
+                const userId = userProfile?.id || 'guest';
+                const path = `users/${userId}/brand_assets/${assetId}`;
+                
+                logger.debug(`[BrandAssets] Uploading: ${file.name} to ${path}`);
                 const downloadUrl = await StorageService.uploadFile(file, path);
 
-                newAssets.push({ url: downloadUrl, description: file.name });
+                const asset: BrandAsset = { 
+                    url: downloadUrl, 
+                    description: file.name,
+                    category: 'other'
+                };
+
+                // Logic: prioritize filling Style References (up to 14)
+                if (currentCount + newRefImages.length < MAX_REF) {
+                    newRefImages.push(asset);
+                } else {
+                    asset.category = 'logo';
+                    newLogos.push(asset);
+                }
+
                 newUploadedImages.push({
                     id: assetId,
                     type: 'image' as const,
@@ -85,18 +92,76 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 });
             }
 
-            if (newAssets.length > 0) {
-                updateBrandKit({
-                    brandAssets: [...(userProfile?.brandKit?.brandAssets || []), ...newAssets]
-                });
-                newUploadedImages.forEach(img => addUploadedImage(img));
-                toast.success(`${files.length} asset(s) uploaded`);
-            }
+            const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
+            
+            updateBrandKit({
+                referenceImages: [...(currentKit.referenceImages || []), ...newRefImages],
+                brandAssets: [...(currentKit.brandAssets || []), ...newLogos]
+            });
+
+            newUploadedImages.forEach(img => addUploadedImage({
+                ...img,
+                prompt: img.prompt || ''
+            }));
+
+            if (newRefImages.length > 0) toast.success(`${newRefImages.length} style reference(s) added`);
+            if (newLogos.length > 0) toast.success(`${newLogos.length} logo/graphic(s) added`);
+
         } catch (error: unknown) {
-            logger.error("Upload failed layout:", error);
-            toast.error("Failed to upload assets");
+            const err = error as { message?: string; code?: string; stack?: string };
+            logger.error("[BrandAssets] Upload failed:", err);
+            toast.error(`Upload failed: ${err.message || 'Unknown error'}`);
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const moveAsset = async (asset: BrandAsset, from: 'style' | 'logo') => {
+        const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
+        
+        if (from === 'style') {
+            // Move from Style References to Logos
+            const newRefImages = (currentKit.referenceImages || []).filter((a: BrandAsset) => a.url !== asset.url);
+            const newLogos = [...(currentKit.brandAssets || []), { ...asset, category: 'logo' as const }];
+            
+            await updateBrandKit({
+                referenceImages: newRefImages,
+                brandAssets: newLogos
+            });
+            toast.success("Moved to Logos & Graphics");
+        } else {
+            // Move from Logos to Style References
+            const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+            if ((currentKit.referenceImages || []).length >= MAX_REF) {
+                toast.error(`Limit reached. You can only have up to ${MAX_REF} style references.`);
+                return;
+            }
+
+            const newLogos = (currentKit.brandAssets || []).filter((a: BrandAsset) => a.url !== asset.url);
+            const newRefImages = [...(currentKit.referenceImages || []), { ...asset, category: 'other' as const }];
+            
+            await updateBrandKit({
+                referenceImages: newRefImages,
+                brandAssets: newLogos
+            });
+            toast.success("Moved to Style References");
+        }
+    };
+
+    const deleteAsset = async (asset: BrandAsset, from: 'style' | 'logo') => {
+        const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
+        
+        try {
+            if (from === 'style') {
+                const newRefImages = (currentKit.referenceImages || []).filter((a: BrandAsset) => a.url !== asset.url);
+                await updateBrandKit({ referenceImages: newRefImages });
+            } else {
+                const newLogos = (currentKit.brandAssets || []).filter((a: BrandAsset) => a.url !== asset.url);
+                await updateBrandKit({ brandAssets: newLogos });
+            }
+            toast.success("Asset removed matching project settings");
+        } catch (_error) {
+            toast.error("Failed to remove asset");
         }
     };
 
@@ -104,53 +169,83 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         if (!prompt.trim()) return;
         setIsGenerating(true);
         try {
-            const { httpsCallable } = await import('firebase/functions');
-            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
+            const { auth } = await import('@/services/firebase');
+            let downloadUrl = '';
+            const assetId = crypto.randomUUID();
 
-            const response = await generateImage({
-                prompt: prompt + " -- style: high quality, professional brand asset",
-                count: 1,
-                aspectRatio: '1:1'
-            });
+            // Check if we should use mock generation (either no auth or explicit guest)
+            const isGuest = !auth.currentUser || userProfile?.id === 'guest';
+            
+            if (import.meta.env.DEV && isGuest) {
+                logger.warn("[BrandAssets] Mocking generation for guest session:", prompt);
+                downloadUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(prompt)}`;
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            } else {
+                try {
+                    const { httpsCallable } = await import('firebase/functions');
+                    const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
-            interface CloudFunctionResponse {
-                candidates?: Array<{
-                    content?: {
-                        parts?: Array<{
-                            inlineData?: {
-                                mimeType: string;
-                                data: string;
-                            };
-                            text?: string;
-                        }>;
-                    };
-                }>;
+                    const response = await generateImage({
+                        prompt: prompt + " -- style: high quality, professional brand asset",
+                        count: 1,
+                        aspectRatio: '1:1'
+                    });
+
+                    const data = response.data as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType: string; data: string } }> } }> };
+                    const candidate = data.candidates?.[0];
+                    const part = candidate?.content?.parts?.find(p => p.inlineData);
+
+                    if (part?.inlineData) {
+                        const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                        const res = await fetch(base64Url);
+                        const blob = await res.blob();
+                        const path = `users/${userProfile?.id}/brand_assets/${assetId}`;
+                        
+                        // StorageService now handles DEV-mode permission fallbacks internally
+                        downloadUrl = await StorageService.uploadFile(blob, path);
+                    } else {
+                        throw new Error("No image data in AI response");
+                    }
+                } catch (apiError: unknown) {
+                    if (import.meta.env.DEV) {
+                        logger.error("[BrandAssets] AI API failed in dev, falling back to mock", apiError);
+                        downloadUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(prompt)}`;
+                    } else {
+                        throw apiError;
+                    }
+                }
             }
-            const data = response.data as CloudFunctionResponse;
 
-            // Parse Gemini response for images
-            const candidate = data.candidates?.[0];
-            const part = candidate?.content?.parts?.find((p) => p.inlineData);
-
-            if (part && part.inlineData) {
-                const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-
-                // Convert Base64 string to Blob
-                const res = await fetch(base64Url);
-                const blob = await res.blob();
-
-                const assetId = crypto.randomUUID();
-                const path = `users/${userProfile?.id || 'guest'}/brand_assets/${assetId}`;
-                const downloadUrl = await StorageService.uploadFile(blob, path);
-
-                const newAsset = {
+            if (downloadUrl) {
+                const newAsset: BrandAsset = {
                     url: downloadUrl,
-                    description: prompt
+                    description: prompt,
+                    category: targetCategory === 'logo' ? 'logo' : 'other'
                 };
 
-                updateBrandKit({
-                    brandAssets: [...(userProfile?.brandKit?.brandAssets || []), newAsset]
-                });
+                const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
+
+                if (targetCategory === 'style_reference') {
+                    const MAX_REF = AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+                    const currentCount = currentKit.referenceImages?.length || 0;
+
+                    if (currentCount >= MAX_REF) {
+                        toast.warning("Limit reached. Asset generated but could not be added to Style References. Adding to Graphics instead.");
+                        updateBrandKit({
+                            brandAssets: [...(currentKit.brandAssets || []), { ...newAsset, category: 'logo' as const }]
+                        });
+                    } else {
+                        updateBrandKit({
+                            referenceImages: [...(currentKit.referenceImages || []), newAsset]
+                        });
+                        toast.success("Style reference generated and added");
+                    }
+                } else {
+                    updateBrandKit({
+                        brandAssets: [...(currentKit.brandAssets || []), newAsset]
+                    });
+                    toast.success("Brand asset generated and added");
+                }
 
                 addUploadedImage({
                     id: assetId,
@@ -158,20 +253,17 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                     url: downloadUrl,
                     prompt: prompt,
                     timestamp: Date.now(),
-                    projectId: currentProjectId
+                    projectId: currentProjectId || 'personal'
                 });
 
-                toast.success("Asset generated and added");
                 setPrompt('');
-                setActiveTab('upload'); // Switch back to view it
-            } else {
-                logger.error("No image data in response", data);
-                toast.error("Failed to generate image");
+                setActiveTab('upload');
             }
 
         } catch (error: unknown) {
-            logger.error("Generation failed:", error);
-            toast.error("Generation failed");
+            const err = error as { message?: string };
+            logger.error("[BrandAssets] Generation flow failed:", error);
+            toast.error(`Generation failed: ${err.message || 'Unknown error'}`);
         } finally {
             setIsGenerating(false);
         }
@@ -212,15 +304,17 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 {activeTab === 'upload' ? (
                     /* Upload Area */
                     <div className="space-y-4">
-                        <FileUpload
-                            onUploadSuccess={(file) => {
-                                processFiles([file]);
-                            }}
-                            acceptedFileTypes={['image/*']}
-                            multiple={true}
-                            immediate={true}
-                            className="bg-transparent border-none p-0"
-                        />
+                        <div>
+                            <FileUpload
+                                onFilesSelected={(files: File[]) => {
+                                    processFiles(files);
+                                }}
+                                acceptedFileTypes={['image/*']}
+                                multiple={true}
+                                immediate={true}
+                                className="bg-transparent border-none p-0"
+                            />
+                        </div>
 
                         {/* Mobile Camera Option */}
                         <div className="md:hidden">
@@ -244,63 +338,110 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 ) : (
                     /* Generate Area */
                     <div className="mb-6 space-y-3">
+                        {/* Target Category Selector */}
+                        <div className="flex gap-2 p-1 bg-[#0a0a0a] rounded-lg border border-gray-800">
+                            <button
+                                onClick={() => setTargetCategory('style_reference')}
+                                className={`flex-1 py-1 text-[10px] font-bold rounded flex items-center justify-center gap-1.5 transition-all ${targetCategory === 'style_reference' ? 'bg-white text-black shadow-lg scale-[1.02]' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <Tag size={10} /> Styles
+                            </button>
+                            <button
+                                onClick={() => setTargetCategory('logo')}
+                                className={`flex-1 py-1 text-[10px] font-bold rounded flex items-center justify-center gap-1.5 transition-all ${targetCategory === 'logo' ? 'bg-white text-black shadow-lg scale-[1.02]' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <ImageIcon size={10} /> Logos
+                            </button>
+                        </div>
+
                         <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder="Describe the asset..."
-                            className="w-full h-24 bg-[#0f0f0f] border border-gray-700 rounded-lg p-3 text-xs text-white focus:border-white outline-none resize-none"
+                            className="w-full h-24 bg-[#0f0f0f] border border-gray-700 rounded-lg p-3 text-xs text-white focus:border-white outline-none resize-none placeholder:text-gray-600"
                         />
                         <button
                             onClick={handleGenerate}
                             disabled={isGenerating || !prompt.trim()}
-                            className="w-full py-2 bg-white text-black text-xs font-bold rounded hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                            className="w-full py-2 bg-white text-black text-xs font-bold rounded hover:bg-gray-200 disabled:opacity-50 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                         >
-                            {isGenerating ? 'Generating...' : 'Generate New Asset'}
+                            {isGenerating ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                    Generating...
+                                </>
+                            ) : (
+                                <>
+                                    <ImageIcon size={14} />
+                                    Generate {targetCategory === 'logo' ? 'Logo' : 'Style'}
+                                </>
+                            ) }
                         </button>
                     </div>
                 )}
 
                 {/* Assets Grid */}
                 <div className="space-y-6">
-                    {/* Brand Assets Section */}
+                    {/* Reference Images Section */}
                     <div>
-                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Logos & Graphics</h4>
-                        {assets.length === 0 ? (
-                            <p className="text-xs text-gray-600 italic text-center py-4">No assets yet.</p>
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex justify-between">
+                            Style References
+                            <span className={refImages.length >= AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages ? 'text-orange-500' : 'text-gray-400'}>
+                                {refImages.length}/{AI_CONFIG.IMAGE.DEFAULT.maxReferenceImages}
+                            </span>
+                        </h4>
+                        {refImages.length === 0 ? (
+                            <p className="text-xs text-gray-600 italic text-center py-4">No reference images.</p>
                         ) : (
                             <div className="grid grid-cols-3 gap-2">
-                                {assets.map((asset, i) => (
-                                    <div key={i} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 p-1 group relative">
-                                        <img src={asset.url} alt={asset.description} className="w-full h-full object-contain" />
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                                            {onSelect ? (
+                                {refImages.map((img: BrandAsset, i: number) => (
+                                    <div key={i} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 overflow-hidden group relative">
+                                        <img src={img.url} alt={img.description} title={img.description} className="w-full h-full object-cover" />
+                                        
+                                        {/* Persistent bottom label */}
+                                        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-1.5 pt-4 pointer-events-none group-hover:opacity-0 transition-opacity">
+                                            <span className="text-[9px] text-gray-300 line-clamp-1 leading-tight tracking-wide font-medium drop-shadow-md">
+                                                {img.description || 'Uploaded File'}
+                                            </span>
+                                        </div>
+
+                                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                            <div className="flex gap-1.5">
                                                 <button
-                                                    className="p-1 bg-white rounded hover:bg-gray-200 text-black transition-colors"
-                                                    title="Select Asset"
-                                                    onClick={() => onSelect(asset)}
-                                                >
-                                                    <Plus size={12} /> Select
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    className="p-1 bg-gray-700 rounded hover:bg-white hover:text-black text-white transition-colors"
-                                                    title="Use as Reference"
-                                                    aria-label="Use as Reference"
+                                                    className="p-1.5 bg-white rounded text-black hover:bg-gray-200 shadow-xl transition-transform active:scale-90"
+                                                    title="Use as Style Input"
                                                     onClick={() => {
                                                         setActiveReferenceImage({
-                                                            id: crypto.randomUUID(),
+                                                            id: img.id || crypto.randomUUID(),
                                                             type: 'image',
-                                                            url: asset.url,
-                                                            prompt: asset.description,
+                                                            url: img.url,
+                                                            prompt: img.description,
                                                             timestamp: Date.now(),
-                                                            projectId: currentProjectId
+                                                            projectId: currentProjectId || 'personal'
                                                         });
-                                                        toast.success("Added to Reference Image");
+                                                        toast.success("Style reference selected");
                                                     }}
                                                 >
                                                     <Plus size={12} />
                                                 </button>
-                                            )}
+                                                <button
+                                                    className="p-1.5 bg-gray-800 rounded text-white hover:bg-white hover:text-black shadow-xl transition-transform active:scale-90"
+                                                    title="Move to Logos & Graphics"
+                                                    onClick={() => moveAsset(img, 'style')}
+                                                >
+                                                    <ArrowRightLeft size={12} />
+                                                </button>
+                                                <button
+                                                    className="p-1.5 bg-red-900/50 rounded text-red-100 hover:bg-red-500 hover:text-white shadow-xl transition-transform active:scale-90"
+                                                    title="Delete Asset"
+                                                    onClick={() => deleteAsset(img, 'style')}
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </div>
+                                            <span className="text-[8px] text-gray-400 px-2 text-center line-clamp-2 leading-tight">
+                                                {img.description}
+                                            </span>
                                         </div>
                                     </div>
                                 ))}
@@ -308,16 +449,54 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                         )}
                     </div>
 
-                    {/* Reference Images Section */}
+                    {/* Brand Assets Section */}
                     <div>
-                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Style References</h4>
-                        {refImages.length === 0 ? (
-                            <p className="text-xs text-gray-600 italic text-center py-4">No reference images.</p>
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Logos & Graphics</h4>
+                        {assets.length === 0 ? (
+                            <p className="text-xs text-gray-600 italic text-center py-4">No assets yet.</p>
                         ) : (
                             <div className="grid grid-cols-3 gap-2">
-                                {refImages.map((img, i) => (
-                                    <div key={i} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 overflow-hidden group relative">
-                                        <img src={img.url} alt={img.description} className="w-full h-full object-cover" />
+                                {assets.map((asset: BrandAsset, i: number) => (
+                                    <div key={i} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 overflow-hidden p-1 group relative">
+                                        <img src={asset.url} alt={asset.description} title={asset.description} className="w-full h-full object-contain" />
+                                        
+                                        {/* Persistent bottom label */}
+                                        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-1.5 pt-4 pointer-events-none group-hover:opacity-0 transition-opacity">
+                                            <span className="text-[9px] text-gray-300 line-clamp-1 leading-tight tracking-wide font-medium drop-shadow-md">
+                                                {asset.description || 'Uploaded File'}
+                                            </span>
+                                        </div>
+
+                                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                            <div className="flex gap-1.5">
+                                                {onSelect ? (
+                                                    <button
+                                                        className="p-1.5 bg-white rounded text-black hover:bg-gray-200 shadow-xl transition-transform active:scale-90 flex items-center gap-1 text-[10px] font-bold"
+                                                        onClick={() => onSelect(asset)}
+                                                    >
+                                                        <Plus size={10} /> Select
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        className="p-1.5 bg-gray-800 rounded text-white hover:bg-white hover:text-black shadow-xl transition-transform active:scale-90"
+                                                        title="Convert to Style Reference"
+                                                        onClick={() => moveAsset(asset, 'logo')}
+                                                    >
+                                                        <ArrowRightLeft size={12} />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    className="p-1.5 bg-red-900/50 rounded text-red-100 hover:bg-red-500 hover:text-white shadow-xl transition-transform active:scale-90"
+                                                    title="Delete Asset"
+                                                    onClick={() => deleteAsset(asset, 'logo')}
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </div>
+                                            <span className="text-[8px] text-gray-400 px-2 text-center line-clamp-2 leading-tight">
+                                                {asset.description}
+                                            </span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
