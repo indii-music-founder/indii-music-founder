@@ -269,10 +269,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             data-testid="command-bar-input-container"
             className={cn(
                 "glass transition-all relative focus-within:ring-2 backdrop-blur-xl",
-                isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-[1.5rem]",
+                isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-3xl",
                 isIndiiMode
                     ? "border-purple-500/50 ring-purple-500/20 shadow-[0_0_30px_rgba(168,85,247,0.15)] bg-purple-950/30"
-                    : `${colors.border} ${colors.ring} bg-white/[0.04] shadow-[0_8px_32px_rgba(0,0,0,0.4)]`,
+                    : `${colors.border} ${colors.ring} bg-white/4 shadow-[0_8px_32px_rgba(0,0,0,0.4)]`,
                 isDragging && "ring-4 ring-blue-500/50 bg-blue-500/20",
                 className
             )}

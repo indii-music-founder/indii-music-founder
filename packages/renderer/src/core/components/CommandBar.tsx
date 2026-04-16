@@ -114,7 +114,7 @@ function CommandBar() {
                     dragElastic={0.1}
                     dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
                     className={cn(
-                        "fixed z-[500] flex items-center justify-center",
+                        "fixed z-500 flex items-center justify-center",
                         isCommandBarDetached ? "cursor-move top-[80%] left-1/2" : "bottom-8"
                     )}
                 >
@@ -124,7 +124,7 @@ function CommandBar() {
                             ? "w-12 h-12 flex items-center justify-center"
                             : isBoardroomMode
                                 ? "w-full"
-                                : "w-[42rem] max-w-[calc(100vw-4rem)]"
+                                : "w-2xl max-w-[calc(100vw-4rem)]"
                     )}>
                         {effectiveCollapsed ? (
                             <motion.button

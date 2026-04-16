@@ -433,7 +433,7 @@ export default function VideoWorkflow() {
             >
 
                 {/* Director Prompt Bar Container */}
-                <div className="w-full pt-8 pb-6 px-8 flex-shrink-0 z-20">
+                <div className="w-full pt-8 pb-6 px-8 shrink-0 z-20">
                     <div className="relative">
                         <DirectorPromptBar
                             prompt={localPrompt}

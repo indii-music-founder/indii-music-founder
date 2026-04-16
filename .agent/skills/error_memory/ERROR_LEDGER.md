@@ -49,6 +49,7 @@ Rule Added: Always cross off checklist items entirely on task files and scratchp
 ### Pattern 3 — CI Shard Diagnosis Procedure
 
 When a CI shard fails:
+
 1. Get the failing job: `curl /actions/runs/{run_id}/jobs` → filter `conclusion=failure`
 2. Get annotations: `curl /check-runs/{job_id}/annotations` → ignore "git exit code 128" (phantom gitleaks annotation from prior runs)
 3. Run locally: `npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --shard=N/4 2>&1 | tail -30`
