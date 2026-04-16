@@ -52,8 +52,6 @@ export interface AppSlice {
     _lastSidebarToggle?: number;
     /** @internal Debounce tracker for toggleRightPanel */
     _lastRightPanelToggle?: number;
-    /** @internal Debounce tracker for toggleSidebar */
-    _lastSidebarToggle?: number;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
