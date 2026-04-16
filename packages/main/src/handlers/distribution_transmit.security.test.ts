@@ -41,18 +41,30 @@ describe('Distribution Security - Argument Leakage', () => {
         vi.restoreAllMocks();
     });
 
-    it('leaks password in logs when passed as argument', async () => {
+    it('does not pass password as argument and it is not in logs', async () => {
         const password = 'SUPER_SECRET_PASSWORD';
 
         await PythonBridge.runScript('distribution', 'sftp_uploader.py', [
+            '--host', 'localhost',
             '--user', 'testuser',
-            '--password', password
-        ]);
+            '--local', 'test.xml'
+        ], undefined, { SFTP_PASSWORD: password });
 
         // Check if the password was logged
         const logCalls = consoleSpy.mock.calls.map((c: unknown[]) => (c as string[]).join(' '));
         const leaked = logCalls.some((log: string) => log.includes(password));
 
         expect(leaked).toBe(false);
+
+        // Verify spawn was called, and --password was NOT in the arguments
+        const spawnMock = spawn as unknown as ReturnType<typeof vi.fn>;
+        expect(spawnMock).toHaveBeenCalled();
+        const [command, args] = spawnMock.mock.calls[0];
+        expect(args).not.toContain('--password');
+        expect(args).not.toContain(password);
+
+        // Check that password IS in the environment
+        const options = spawnMock.mock.calls[0][2];
+        expect(options.env.SFTP_PASSWORD).toBe(password);
     });
 });
