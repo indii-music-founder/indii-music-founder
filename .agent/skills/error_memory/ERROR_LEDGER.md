@@ -73,3 +73,29 @@ When a CI shard fails:
 - FIX (guard): Added `hasContent()` method + check in `saveCanvas()` to block saving empty canvases.
 - FIX (memory): Blob URLs tracked in `_activeBlobUrls[]` and revoked in `dispose()`.
 - RULE: **Never call `fabric.Image.fromURL` without a `.catch()` handler.** Always use `loadImageSafe()` which handles CORS gracefully. When adding new Firebase Storage buckets or projects, run `gsutil cors set config/cors.json gs://<bucket>` immediately.
+
+---
+
+## 2026-04-16 Vitest VS Code Extension Crash (Config Auto-Discovery)
+
+### Pattern — Extension spawns processes for every vite/vitest config file in workspace
+
+- SEVERITY: Medium (IDE noise, error toasts, extension crash loop)
+- FILE: `.vscode/settings.json`, `packages/landing/package.json`
+- BUG: The `vitest.explorer` extension auto-discovers ALL `vite.config.ts` and `vitest*.config.ts` files in the workspace tree. It spawns a separate Vitest process for each one. This causes:
+  1. `packages/landing/vite.config.ts` — crashes with `Failed to resolve entry for package "vite"` because landing has no `node_modules` (deps hoisted to root, but esbuild's `externalize-deps` plugin can't resolve them from the package dir)
+  2. `config/vitest/*.config.ts` — CI shard configs that spawn, immediately fail WebSocket connection, and log `Vitest WebSocket connection closed, cannot call RPC anymore`
+  3. `vitest.rules.config.ts` — Security rules config that requires Firebase Emulator
+- ROOT CAUSE: No `vitest.configSearchPatterns` set → extension defaults to globbing `**/vitest.config.*` and `**/vite.config.*`
+- FIX:
+  1. Remove `vitest`, `@testing-library/*`, `jsdom` from `packages/landing/package.json` (zero test files exist)
+  2. Add to `.vscode/settings.json`:
+
+     ```json
+     "vitest.workspaceConfig": "./vitest.workspace.ts",
+     "vitest.configSearchPatterns": ["vitest.workspace.ts"],
+     "vitest.exclude": ["**/packages/landing/**", "**/config/vitest/**"]
+     ```
+
+  3. `configSearchPatterns` is the critical setting — it stops auto-discovery entirely
+- RULE: **When adding a new `vite.config.ts` or `vitest*.config.ts` anywhere in the repo, do NOT expect the Vitest extension to ignore it.** Either add it to `vitest.workspace.ts` or add its directory to `vitest.exclude` in `.vscode/settings.json`.
