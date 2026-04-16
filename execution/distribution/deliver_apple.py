@@ -297,16 +297,6 @@ if __name__ == "__main__":
 
     # Global options
     parser.add_argument("--apple-id", help="Apple ID (overrides env var)")
-    parser.add_argument("--provider-id", help="Provider short name (overrides env var)")
-
-    args = parser.parse_args()
-
-    if not args.command:
-        parser.print_help()
-        sys.exit(1)
-
-    transporter = AppleTransporter(
-        apple_id=args.apple_id,
         provider_id=args.provider_id
     )
 
