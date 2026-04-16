@@ -57,5 +57,17 @@
     "editor.wordWrap": "on",
     "editor.trimAutoWhitespace": false,
     "files.trimTrailingWhitespace": false
-  }
+  },
+  "vitest.workspaceConfig": "./vitest.workspace.ts",
+  "vitest.enable": true,
+  "vitest.exclude": [
+    "**/landing-page/**",
+    "**/packages/landing/**",
+    "**/config/vitest/**",
+    "**/dist/**",
+    "**/e2e/**"
+  ],
+  "vitest.configSearchPatterns": [
+    "vitest.workspace.ts"
+  ]
 }
