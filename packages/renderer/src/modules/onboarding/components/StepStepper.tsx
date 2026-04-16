@@ -42,7 +42,7 @@ export function StepStepper({ currentPhase }: StepStepperProps) {
             {/* Connection Line */}
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white/5 -translate-y-1/2 z-0" />
             <motion.div
-                className="absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-500 -translate-y-1/2 z-0"
+                className="absolute top-1/2 left-0 h-0.5 bg-linear-to-r from-purple-500 to-cyan-500 -translate-y-1/2 z-0"
                 initial={{ width: '0%' }}
                 animate={{ width: `${(activeIndex / (STEPS.length - 1)) * 100}%` }}
                 transition={{ duration: 0.8, ease: "easeInOut" }}

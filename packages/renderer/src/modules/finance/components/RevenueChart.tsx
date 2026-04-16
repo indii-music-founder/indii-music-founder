@@ -49,7 +49,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
                                     initial={{ height: 0 }}
                                     animate={{ height: `${(point.value / maxValue) * 100}%` }}
                                     transition={{ duration: 1, delay: index * 0.1, ease: [0.23, 1, 0.32, 1] }}
-                                    className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-purple-600/60 to-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.3)] group-hover:from-purple-500 group-hover:to-purple-300 transition-colors"
+                                    className="absolute bottom-0 left-0 w-full bg-linear-to-t from-purple-600/60 to-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.3)] group-hover:from-purple-500 group-hover:to-purple-300 transition-colors"
                                 />
                             </div>
                         </div>

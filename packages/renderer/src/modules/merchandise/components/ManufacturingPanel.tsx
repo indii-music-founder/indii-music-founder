@@ -205,7 +205,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
     return (
         <div className="flex flex-col h-full relative font-sans text-left">
             <div className="flex items-center gap-3 mb-6">
-                <div className={`h-8 w-1 rounded-full bg-gradient-to-b ${theme.name === 'pro' ? 'from-yellow-400 to-yellow-600' : 'from-yellow-400 to-orange-500'}`} />
+                <div className={`h-8 w-1 rounded-full bg-linear-to-b ${theme.name === 'pro' ? 'from-yellow-400 to-yellow-600' : 'from-yellow-400 to-orange-500'}`} />
                 <h2 className={`text-xl font-bold tracking-tight ${theme.colors.text}`}>Production</h2>
             </div>
 

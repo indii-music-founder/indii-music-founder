@@ -103,7 +103,7 @@ export const UpdaterMonitor: React.FC = () => {
                             <div className="space-y-2">
                                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                                     <motion.div
-                                        className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                                        className="h-full bg-linear-to-r from-purple-500 to-blue-500"
                                         initial={{ width: 0 }}
                                         animate={{ width: `${progress.percent}%` }}
                                         transition={{ type: 'spring', damping: 20, stiffness: 100 }}
@@ -123,7 +123,7 @@ export const UpdaterMonitor: React.FC = () => {
                                 </p>
                                 <button
                                     onClick={handleInstall}
-                                    className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-purple-900/20 active:scale-[0.98]"
+                                    className="w-full py-2.5 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-purple-900/20 active:scale-[0.98]"
                                 >
                                     Restart and Install
                                 </button>

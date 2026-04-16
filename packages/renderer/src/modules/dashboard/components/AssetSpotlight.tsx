@@ -148,7 +148,7 @@ export default function AssetSpotlight() {
                                         decoding="async"
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+                                    <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-800 to-gray-900">
                                         <BadgeIcon size={24} className="text-gray-600" />
                                     </div>
                                 )}

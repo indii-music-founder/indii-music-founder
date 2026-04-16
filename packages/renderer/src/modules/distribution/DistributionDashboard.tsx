@@ -50,7 +50,7 @@ export default function DistributionDashboard() {
                     {/* Header */}
                     <div className="px-4 md:px-6 py-5 border-b border-white/5 flex-shrink-0 bg-black/10 backdrop-blur-sm">
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dept-publishing to-purple-600 flex items-center justify-center shadow-xl shadow-dept-publishing/20 border border-white/10">
+                            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-dept-publishing to-purple-600 flex items-center justify-center shadow-xl shadow-dept-publishing/20 border border-white/10">
                                 <Radio size={22} className="text-white" />
                             </div>
                             <div className="flex-1">

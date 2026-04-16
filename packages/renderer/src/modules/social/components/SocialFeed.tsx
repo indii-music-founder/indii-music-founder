@@ -105,7 +105,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                     </div>
 
                     <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex-shrink-0 relative overflow-hidden text-white flex items-center justify-center font-bold">
+                        <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500 to-blue-500 flex-shrink-0 relative overflow-hidden text-white flex items-center justify-center font-bold">
                             {userProfile?.photoURL ? (
                                 <img src={userProfile.photoURL} alt="Me" className="w-full h-full object-cover" />
                             ) : (
@@ -272,7 +272,7 @@ const FeedItem = React.memo(({ post }: { post: SocialPost }) => {
                     {post.authorAvatar ? (
                         <img src={post.authorAvatar} alt={post.authorName} className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-600" />
+                        <div className="w-full h-full bg-linear-to-br from-gray-700 to-gray-600" />
                     )}
                 </div>
                 <div className="flex-1 min-w-0">

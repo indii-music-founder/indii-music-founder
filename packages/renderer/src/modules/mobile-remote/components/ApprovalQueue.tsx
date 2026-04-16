@@ -79,7 +79,7 @@ export default function ApprovalQueue({ onSendCommand }: ApprovalQueueProps) {
             {/* Approval Card */}
             <div className="rounded-2xl border border-[#30363d]/40 bg-[#161b22]/70 backdrop-blur-xl overflow-hidden">
                 {/* Header */}
-                <div className="h-16 bg-gradient-to-br from-amber-900/30 to-red-900/20 flex items-center justify-center">
+                <div className="h-16 bg-linear-to-br from-amber-900/30 to-red-900/20 flex items-center justify-center">
                     <Shield className="w-8 h-8 text-amber-400" />
                 </div>
 

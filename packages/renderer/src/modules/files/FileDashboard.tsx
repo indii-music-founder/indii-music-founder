@@ -60,7 +60,7 @@ export default function FileDashboard() {
             {/* Left Sidebar (Internal Navigation) */}
             <div className="w-64 border-r border-white/5 bg-surface/30 backdrop-blur-xl flex flex-col z-10">
                 <div className="p-6">
-                    <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+                    <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-purple-500">
                         ASSETS
                     </h1>
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-1">Project Vault</p>

@@ -31,7 +31,7 @@ export const GenerativeUIMorpher: React.FC = () => {
                         animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
                         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                        className="w-full max-w-2xl bg-gradient-to-br from-purple-900/40 to-black border border-purple-500/20 p-8 rounded-3xl"
+                        className="w-full max-w-2xl bg-linear-to-br from-purple-900/40 to-black border border-purple-500/20 p-8 rounded-3xl"
                     >
                         <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Creative Studio</h2>
                         <p className="text-purple-200/60 mb-8">Your canvas is ready. Let's make some magic.</p>
@@ -47,7 +47,7 @@ export const GenerativeUIMorpher: React.FC = () => {
                         animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
                         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                        className="w-full max-w-2xl bg-gradient-to-br from-blue-900/40 to-black border border-blue-500/20 p-8 rounded-3xl"
+                        className="w-full max-w-2xl bg-linear-to-br from-blue-900/40 to-black border border-blue-500/20 p-8 rounded-3xl"
                     >
                         <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Executive Dashboard</h2>
                         <p className="text-blue-200/60 mb-8">Global telemetry and financial forecasting active.</p>

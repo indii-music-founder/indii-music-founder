@@ -81,7 +81,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                 className="relative w-full max-w-4xl bg-bg-dark border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="p-8 border-b border-gray-800 bg-gradient-to-r from-blue-500/10 to-transparent flex items-center justify-between">
+                <div className="p-8 border-b border-gray-800 bg-linear-to-r from-blue-500/10 to-transparent flex items-center justify-between">
                     <div className="flex items-center gap-5">
                         <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center ring-1 ring-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
                             <Calendar className="text-blue-400" size={28} />

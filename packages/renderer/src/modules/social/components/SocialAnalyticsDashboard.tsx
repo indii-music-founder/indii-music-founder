@@ -223,7 +223,7 @@ export default function SocialAnalyticsDashboard() {
                 {cards.map(card => (
                     <div key={card.platform} className="flex items-center gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
                         {/* Platform badge */}
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center text-white shrink-0`}>
+                        <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${card.color} flex items-center justify-center text-white shrink-0`}>
                             {card.icon}
                         </div>
 

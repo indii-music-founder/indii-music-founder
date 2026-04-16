@@ -157,7 +157,7 @@ export default function PreSaveCampaignBuilder() {
                     {/* Page Content */}
                     <div className="p-6 flex flex-col items-center gap-4 min-h-40">
                         {/* Album art placeholder */}
-                        <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-dept-marketing/30 to-purple-600/30 border border-white/10 flex items-center justify-center">
+                        <div className="w-24 h-24 rounded-xl bg-linear-to-br from-dept-marketing/30 to-purple-600/30 border border-white/10 flex items-center justify-center">
                             <Music size={28} className="text-dept-marketing/60" />
                         </div>
                         <div className="text-center">

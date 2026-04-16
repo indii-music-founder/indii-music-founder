@@ -57,7 +57,7 @@ export function CapturePreview({ imagePreview, isScanning, scanComplete, onTrans
                     >
                         <button
                             onClick={onTransmit}
-                            className="w-full max-w-sm bg-gradient-to-r from-teal-500 to-indigo-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 active:scale-95 transition-transform"
+                            className="w-full max-w-sm bg-linear-to-r from-teal-500 to-indigo-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 active:scale-95 transition-transform"
                         >
                             Transmit to Studio <ArrowRight size={20} />
                         </button>

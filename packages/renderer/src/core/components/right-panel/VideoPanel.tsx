@@ -83,7 +83,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                 results = await VideoGeneration.generateLongFormVideo({
                     prompt: prompt,
                     totalDuration: studioControls.duration,
-                    aspectRatio: studioControls.aspectRatio,
+                    aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     resolution: studioControls.resolution,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
@@ -100,7 +100,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                 // Trigger Single Shot
                 results = await VideoGeneration.generateVideo({
                     prompt: prompt,
-                    aspectRatio: studioControls.aspectRatio,
+                    aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     resolution: studioControls.resolution,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
@@ -157,7 +157,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gradient-to-b from-bg-dark to-bg-dark/90">
+        <div className="flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="p-1.5 bg-blue-500/10 rounded-lg">
@@ -255,7 +255,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                 <label className="text-[10px] font-bold text-gray-500 tracking-wider">ASPECT RATIO</label>
                                 <div className="relative group">
                                     <select
-                                        value={studioControls.aspectRatio}
+                                        value={studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16' ? studioControls.aspectRatio : '16:9'}
                                         onChange={(e) => setStudioControls({ aspectRatio: e.target.value as VideoAspectRatio })}
                                         data-testid="aspect-ratio-select"
                                         className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
@@ -358,15 +358,15 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                             </div>
 
                             <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 group hover:border-dept-creative/30 transition-all cursor-pointer"
-                                onClick={() => setStudioControls({ thinking: !studioControls.thinking })}>
+                                onClick={() => setStudioControls({ thinkingLevel: studioControls.thinkingLevel === 'none' ? 'high' : 'none' })}>
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-bold text-dept-creative tracking-wider flex items-center gap-2">
                                         DEEP THINKING
                                     </label>
                                     <p className="text-[9px] text-gray-500 leading-tight">Apply advanced physics & continuity reasoning before rendering.</p>
                                 </div>
-                                <div className={`w-10 h-5 rounded-full relative transition-colors ${studioControls.thinking ? 'bg-dept-creative' : 'bg-white/10'}`}>
-                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${studioControls.thinking ? 'left-6' : 'left-1'}`} />
+                                <div className={`w-10 h-5 rounded-full relative transition-colors ${studioControls.thinkingLevel !== 'none' ? 'bg-dept-creative' : 'bg-white/10'}`}>
+                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${studioControls.thinkingLevel !== 'none' ? 'left-6' : 'left-1'}`} />
                                 </div>
                             </div>
                         </div>
@@ -489,7 +489,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                 onClick={handleRender}
                                 disabled={isGenerating || !prompt.trim()}
                                 data-testid="render-sequence-btn"
-                                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                                className="w-full bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                             >
                                 {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />}
                                 {isGenerating ? 'Rendering...' : 'Render Sequence'}

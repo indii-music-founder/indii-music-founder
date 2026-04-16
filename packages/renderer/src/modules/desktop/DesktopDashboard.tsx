@@ -37,7 +37,7 @@ export default function DesktopDashboard() {
                 {/* Header */}
                 <div className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-surface/30 backdrop-blur-md">
                     <div>
-                        <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center gap-3">
+                        <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-cyan-400 to-blue-500 flex items-center gap-3">
                             <Monitor size={28} className="text-cyan-500" />
                             DESKTOP INTEGRATION
                         </h1>

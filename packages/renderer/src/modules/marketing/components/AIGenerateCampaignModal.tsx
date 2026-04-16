@@ -145,7 +145,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-800">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg">
+                        <div className="p-2 bg-linear-to-br from-pink-500 to-purple-600 rounded-lg">
                             <Sparkles className="text-white" size={20} aria-hidden="true" />
                         </div>
                         <div>
@@ -431,7 +431,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-lg transition-all flex items-center gap-2"
+                                className="px-6 py-2 bg-linear-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-lg transition-all flex items-center gap-2"
                             >
                                 <Check size={16} aria-hidden="true" />
                                 Create Campaign
@@ -448,7 +448,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                             <button
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !topic.trim() || selectedPlatforms.length === 0}
-                                className="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-6 py-2 bg-linear-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isGenerating ? (
                                     <>

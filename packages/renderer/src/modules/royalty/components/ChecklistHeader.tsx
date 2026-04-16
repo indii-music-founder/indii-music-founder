@@ -27,7 +27,7 @@ export const ChecklistHeader: React.FC<ChecklistHeaderProps> = ({ profile }) => 
     };
 
     return (
-        <div className="p-6 bg-gradient-to-br from-indigo-50 to-white border border-gray-200 rounded-xl shadow-sm mb-6">
+        <div className="p-6 bg-linear-to-br from-indigo-50 to-white border border-gray-200 rounded-xl shadow-sm mb-6">
             <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-1">Royalty Collection Setup</h2>

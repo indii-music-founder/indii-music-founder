@@ -175,7 +175,7 @@ export default function AILab() {
                             disabled={status === 'running' || !seedImage}
                             className="relative group bg-dept-creative hover:bg-dept-creative/80 text-white px-8 py-8 h-auto overflow-hidden transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:scale-100"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-50 group-hover:opacity-80 transition-opacity" />
+                            <div className="absolute inset-0 bg-linear-to-r from-purple-600 to-pink-600 opacity-50 group-hover:opacity-80 transition-opacity" />
                             <div className="relative flex flex-col items-center gap-1">
                                 <Zap className={`w-8 h-8 ${status === 'running' ? 'animate-bounce' : 'group-hover:rotate-12 transition-transform'}`} />
                                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Architect End-Frame</span>
@@ -272,9 +272,9 @@ export default function AILab() {
 
                         {/* Bridge */}
                         <div className="flex flex-col items-center gap-4">
-                            <div className={`w-16 h-1 bg-gradient-to-r ${status === 'running' ? 'from-dept-creative to-transparent animate-pulse' : 'from-white/10 to-white/10'}`} />
+                            <div className={`w-16 h-1 bg-linear-to-r ${status === 'running' ? 'from-dept-creative to-transparent animate-pulse' : 'from-white/10 to-white/10'}`} />
                             <ArrowRight className={`w-10 h-10 ${status === 'running' ? 'text-dept-creative animate-bounce' : 'text-white/10'}`} />
-                            <div className={`w-16 h-1 bg-gradient-to-l ${status === 'running' ? 'from-dept-creative to-transparent animate-pulse' : 'from-white/10 to-white/10'}`} />
+                            <div className={`w-16 h-1 bg-linear-to-l ${status === 'running' ? 'from-dept-creative to-transparent animate-pulse' : 'from-white/10 to-white/10'}`} />
                         </div>
 
                         {/* Frame B */}

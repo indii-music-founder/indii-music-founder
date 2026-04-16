@@ -1,9 +1,9 @@
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { z } from 'zod';
-import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
+import { AspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
 
-type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
+type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
 
 export interface SavedPrompt {
@@ -45,7 +45,7 @@ export interface WhiskState {
 export interface CreativeControlsSlice {
     // Studio Controls
     studioControls: {
-        aspectRatio: VideoAspectRatio;
+        aspectRatio: AspectRatio;
         resolution: VideoResolution;
         negativePrompt: string;
         /** Seed for reproducible video generation (Veo 3.1 only — not supported by Gemini Image API). */
@@ -57,7 +57,7 @@ export interface CreativeControlsSlice {
         shotList: ShotItem[];
         isCoverArtMode: boolean;
         model: 'lite' | 'fast' | 'pro';
-        thinking: boolean;
+        thinkingLevel: 'none' | 'minimal' | 'low' | 'medium' | 'high';
         mediaResolution: 'low' | 'medium' | 'high';
         generateAudio: boolean;
         useGrounding: boolean;
@@ -152,7 +152,7 @@ export function buildCreativeControlsState(
             shotList: [],
             isCoverArtMode: false,
             model: 'fast',
-            thinking: false,
+            thinkingLevel: 'none',
             mediaResolution: 'medium',
             generateAudio: true,
             useGrounding: false,
@@ -164,7 +164,7 @@ export function buildCreativeControlsState(
         enableCoverArtMode: () => set((state) => ({
             studioControls: {
                 ...state.studioControls,
-                aspectRatio: '9:16', // Veo 3.1 only supports 16:9 and 9:16; portrait is closest to cover art
+                aspectRatio: '1:1', // Cover art mode enforces 1:1 format
                 isCoverArtMode: true
             }
         })),

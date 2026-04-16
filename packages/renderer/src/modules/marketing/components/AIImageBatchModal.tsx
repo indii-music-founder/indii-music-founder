@@ -182,7 +182,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-800">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                        <div className="p-2 bg-linear-to-br from-green-500 to-emerald-600 rounded-lg">
                             <ImageIcon className="text-white" size={20} />
                         </div>
                         <div>
@@ -212,7 +212,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
                         </div>
                         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-300"
+                                className="h-full bg-linear-to-r from-green-500 to-emerald-500 transition-all duration-300"
                                 style={{ width: `${progressPercent}%` }}
                             />
                         </div>
@@ -346,7 +346,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
                         {!isGenerating && pendingCount > 0 && (
                             <button
                                 onClick={handleStartGeneration}
-                                className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-lg transition-all flex items-center gap-2"
+                                className="px-6 py-2 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-lg transition-all flex items-center gap-2"
                             >
                                 <Play size={16} />
                                 Generate {pendingCount} Images

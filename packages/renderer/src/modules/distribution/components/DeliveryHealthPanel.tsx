@@ -33,7 +33,7 @@ export function DeliveryHealthPanel({ releases }: { releases: DashboardRelease[]
                 </div>
                 <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                     <motion.div
-                        className={`h-full bg-gradient-to-r ${barColor} rounded-full`}
+                        className={`h-full bg-linear-to-r ${barColor} rounded-full`}
                         initial={{ width: 0 }}
                         animate={{ width: `${rate}%` }}
                         transition={{ duration: 1 }}

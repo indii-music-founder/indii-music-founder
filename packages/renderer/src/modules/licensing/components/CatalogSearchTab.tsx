@@ -133,7 +133,7 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
                                 className="group relative bg-[#0f0f0f]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-4 hover:border-indigo-500/30 transition-all cursor-pointer overflow-hidden flex flex-col"
                             >
                                 {/* Background glow effect */}
-                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-transparent to-indigo-500/0 group-hover:from-indigo-500/5 group-hover:to-transparent transition-all pointer-events-none" />
+                                <div className="absolute inset-0 bg-linear-to-br from-indigo-500/0 via-transparent to-indigo-500/0 group-hover:from-indigo-500/5 group-hover:to-transparent transition-all pointer-events-none" />
 
                                 <div className="relative z-10 flex gap-4 w-full">
                                     {/* Album Art Placeholder icon */}

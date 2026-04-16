@@ -46,7 +46,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
                             alt={venue.name}
                             className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" // Reduced opacity for readability if text over it, though text is below
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+                        <div className="absolute inset-0 bg-linear-to-t from-slate-900 via-transparent to-transparent" />
                     </React.Fragment>
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-slate-800/50">

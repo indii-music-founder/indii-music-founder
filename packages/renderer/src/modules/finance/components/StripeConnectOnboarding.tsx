@@ -77,7 +77,7 @@ export function StripeConnectOnboarding() {
                 </div>
                 <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                     <motion.div
-                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        className="h-full bg-linear-to-r from-indigo-500 to-purple-500 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${progressPct}%` }}
                         transition={{ duration: 0.8 }}
@@ -121,7 +121,7 @@ export function StripeConnectOnboarding() {
                             >
                                 <div className="flex items-center gap-3">
                                     {/* Avatar */}
-                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-full bg-linear-to-br from-indigo-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center flex-shrink-0">
                                         <span className="text-xs font-bold text-white">
                                             {collab.name.split(' ').map((n) => n[0]).join('')}
                                         </span>

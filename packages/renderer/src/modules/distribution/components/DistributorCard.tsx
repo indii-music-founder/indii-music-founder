@@ -24,12 +24,12 @@ export const DistributorCard: React.FC<DistributorCardProps> = ({ connection, on
             className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-dept-distribution/30 transition-all duration-300 backdrop-blur-sm"
         >
             {/* Top Gradient Banner */}
-            <div className={`h-1.5 w-full bg-gradient-to-r ${getDistributorColor(connection.distributorId)} transition-opacity duration-300 opacity-80 group-hover:opacity-100`} />
+            <div className={`h-1.5 w-full bg-linear-to-r ${getDistributorColor(connection.distributorId)} transition-opacity duration-300 opacity-80 group-hover:opacity-100`} />
 
             <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getDistributorColor(connection.distributorId)} flex items-center justify-center text-white shadow-lg shadow-black/20`}>
+                        <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${getDistributorColor(connection.distributorId)} flex items-center justify-center text-white shadow-lg shadow-black/20`}>
                             <span className="text-xl font-black italic">
                                 {connection.distributorId.charAt(0).toUpperCase()}
                             </span>

@@ -42,7 +42,7 @@ export const OrganizationSelector = () => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-3 px-4 py-2 bg-[#1a1a1a] border border-gray-800 rounded-xl hover:border-gray-600 transition-colors"
             >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
                     {currentOrg.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="text-left hidden md:block">

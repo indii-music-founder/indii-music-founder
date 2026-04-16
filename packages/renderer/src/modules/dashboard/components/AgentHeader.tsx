@@ -17,7 +17,7 @@ export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
     return (
         <header className="h-20 flex-shrink-0 border-b border-white/5 bg-black/20 backdrop-blur-xl px-10 flex items-center justify-between z-40">
             <div className="flex items-center gap-5">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/40 to-purple-600/40 flex items-center justify-center shadow-lg shadow-indigo-500/10 border border-white/10 overflow-hidden">
+                <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-indigo-500/40 to-purple-600/40 flex items-center justify-center shadow-lg shadow-indigo-500/10 border border-white/10 overflow-hidden">
                     <IndiiFavicon size={26} />
                 </div>
                 <div className="flex flex-col">

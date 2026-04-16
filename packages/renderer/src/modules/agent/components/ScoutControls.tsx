@@ -24,7 +24,7 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
 }) => {
     return (
         <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-teal-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+            <div className="absolute -inset-1 bg-linear-to-r from-cyan-500/20 via-teal-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition duration-1000"></div>
             <div className="relative bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 p-1.5 rounded-2xl shadow-2xl flex items-center gap-2">
 
                 {/* City Input */}
@@ -89,7 +89,7 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
                         flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm tracking-wide shadow-lg transition-all outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
                         ${isScanning
                             ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
-                            : 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:brightness-110 active:scale-[0.98] shadow-cyan-500/20'}
+                            : 'bg-linear-to-r from-cyan-500 to-teal-500 text-white hover:brightness-110 active:scale-[0.98] shadow-cyan-500/20'}
                     `}
                 >
                     {isScanning ? (

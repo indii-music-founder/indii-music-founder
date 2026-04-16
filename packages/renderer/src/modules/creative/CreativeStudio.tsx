@@ -122,7 +122,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 personGeneration: PERSON_GEN_API_MAP[studioControls.personGeneration] ?? 'ALLOW_ADULT',
                                 sourceImages: sourceImages,
                                 model: studioControls.model,
-                                thinking: studioControls.thinking,
+                                thinkingLevel: studioControls.thinkingLevel === 'none' ? undefined : studioControls.thinkingLevel,
                                 useGrounding: studioControls.useGrounding
                             })
                         );
@@ -132,7 +132,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             VideoGeneration.generateVideo({
                                 prompt: `${finalPrompt}, cinematic motion variant ${i + 1}`,
                                 resolution: studioControls.resolution,
-                                aspectRatio: studioControls.aspectRatio,
+                                aspectRatio: ['9:16', '10:16', '9:21', '3:4'].includes(studioControls.aspectRatio) ? '9:16' : '16:9',
                                 duration: 4,
                                 cameraMovement: 'Dynamic',
                                 motionStrength: 0.8,
@@ -208,7 +208,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             isCoverArt,
                             // Gemini 3 Params
                             model: studioControls.model,
-                            thinking: studioControls.thinking,
+                            thinkingLevel: studioControls.thinkingLevel === 'none' ? undefined : studioControls.thinkingLevel,
                             useGrounding: studioControls.useGrounding
                         });
 

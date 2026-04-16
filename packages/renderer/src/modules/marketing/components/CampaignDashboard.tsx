@@ -135,7 +135,7 @@ const CampaignDashboard: React.FC = () => {
                     />
 
                     <div className="flex-1 overflow-hidden relative">
-                        <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-dept-marketing/10 to-transparent pointer-events-none" />
+                        <div className="absolute top-0 inset-x-0 h-64 bg-linear-to-b from-dept-marketing/10 to-transparent pointer-events-none" />
 
                         {activeTab === 'campaigns' || activeTab === 'overview' ? (
                             isLoading ? (

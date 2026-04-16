@@ -96,7 +96,7 @@ export const PWAInstallPrompt: React.FC = () => {
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-[100]"
             >
-                <div className="bg-gradient-to-br from-neon-blue/10 to-neon-purple/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
+                <div className="bg-linear-to-br from-neon-blue/10 to-neon-purple/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
                     {/* Close Button */}
                     <button
                         onClick={handleDismiss}
@@ -108,7 +108,7 @@ export const PWAInstallPrompt: React.FC = () => {
 
                     <div className="flex items-start gap-4">
                         {/* Icon */}
-                        <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-neon-blue to-neon-purple rounded-xl flex items-center justify-center">
+                        <div className="flex-shrink-0 w-12 h-12 bg-linear-to-br from-neon-blue to-neon-purple rounded-xl flex items-center justify-center">
                             <Download size={24} className="text-white" />
                         </div>
 
@@ -124,7 +124,7 @@ export const PWAInstallPrompt: React.FC = () => {
                             {/* Install Button */}
                             <button
                                 onClick={handleInstall}
-                                className="w-full px-4 py-2 bg-gradient-to-r from-neon-blue to-neon-purple text-white text-sm font-medium rounded-xl hover:opacity-90 active:scale-95 transition-all"
+                                className="w-full px-4 py-2 bg-linear-to-r from-neon-blue to-neon-purple text-white text-sm font-medium rounded-xl hover:opacity-90 active:scale-95 transition-all"
                             >
                                 Install Now
                             </button>

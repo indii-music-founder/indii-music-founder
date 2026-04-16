@@ -542,7 +542,7 @@ export const RoadMode: React.FC = () => {
                         onClick={toggleListening}
                         className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm transition-all ${isListening
                             ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
-                            : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
+                            : 'bg-linear-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
                             }`}
                     >
                         {isListening ? (

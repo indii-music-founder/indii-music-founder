@@ -35,7 +35,7 @@ export const MissionBrief = ({ onAccept }: MissionBriefProps) => {
             </motion.h1>
 
             <div className="space-y-6 text-lg md:text-xl mb-12 font-mono text-left bg-black/80 p-8 border border-[#00FF00]/50 rounded-lg shadow-[0_0_30px_rgba(0,255,0,0.15)] relative overflow-hidden backdrop-blur-md">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00FF00] to-transparent opacity-50" />
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-[#00FF00] to-transparent opacity-50" />
                 <DecodeText text="> ATTENTION FOUNDING ARCHITECT..." delay={1000} />
                 <DecodeText text="> THE SOVEREIGN ENGINE REQUIRES IGNITION." delay={2500} />
                 <DecodeText text="> PROTOCOL: DETROIT 8 INIT." delay={4000} />

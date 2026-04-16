@@ -11,7 +11,7 @@ interface StatsTickerProps {
 
 export function StatsTicker({ stats }: StatsTickerProps) {
     return (
-        <div className="flex items-center gap-6 px-4 py-2 bg-gradient-to-r from-sonic-purple/10 to-sonic-blue/10 border border-sonic-purple/10 rounded-full backdrop-blur-md">
+        <div className="flex items-center gap-6 px-4 py-2 bg-linear-to-r from-sonic-purple/10 to-sonic-blue/10 border border-sonic-purple/10 rounded-full backdrop-blur-md">
             <div className="flex items-center gap-2 border-r border-white/5 pr-6">
                 <Globe size={14} className="text-sonic-blue" />
                 <span className="text-xs text-muted-foreground font-medium">Global Reach:</span>

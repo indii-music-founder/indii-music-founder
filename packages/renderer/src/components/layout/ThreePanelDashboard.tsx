@@ -17,7 +17,7 @@ export interface ThreePanelDashboardProps {
     /** Full tailwind class for the background blur (e.g. "bg-blue-500/8") */
     bgBlobClass: string;
 
-    /** Full tailwind class for the icon background (e.g. "bg-gradient-to-br from-blue-500 to-blue-400") */
+    /** Full tailwind class for the icon background (e.g. "bg-linear-to-br from-blue-500 to-blue-400") */
     iconBgClass: string;
 
     /** Full tailwind class for the icon shadow (e.g. "shadow-blue-500/20") */

@@ -696,7 +696,7 @@ const InboxTab: React.FC = () => {
                     <div className="flex flex-col items-center justify-center h-full">
                         <div className="w-full max-w-sm space-y-4">
                             <div className="text-center mb-6">
-                                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-cyan-900/50 to-cyan-950/30
+                                <div className="w-16 h-16 mx-auto rounded-2xl bg-linear-to-br from-cyan-900/50 to-cyan-950/30
                                                 border border-cyan-800/30 flex items-center justify-center mb-4">
                                     <Inbox size={28} className="text-cyan-400" />
                                 </div>
@@ -711,7 +711,7 @@ const InboxTab: React.FC = () => {
                                 provider="gmail"
                                 label="Gmail"
                                 icon="📧"
-                                gradient="bg-gradient-to-br from-red-600 to-orange-500"
+                                gradient="bg-linear-to-br from-red-600 to-orange-500"
                                 onConnect={() => handleConnect('gmail')}
                                 isLoading={connectingProvider === 'gmail'}
                             />
@@ -719,7 +719,7 @@ const InboxTab: React.FC = () => {
                                 provider="outlook"
                                 label="Outlook"
                                 icon="📬"
-                                gradient="bg-gradient-to-br from-blue-600 to-blue-400"
+                                gradient="bg-linear-to-br from-blue-600 to-blue-400"
                                 onConnect={() => handleConnect('outlook')}
                                 isLoading={connectingProvider === 'outlook'}
                             />

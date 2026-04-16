@@ -49,8 +49,8 @@ export interface ImageGenerationOptions {
     /** Output resolution: "512" | "1K" | "2K" | "4K" (uppercase required by API) */
     imageSize?: '512' | '1K' | '2K' | '4K';
 
-    /** Thinking level (Flash only — Pro always thinks). "minimal" or "high". */
-    thinkingLevel?: 'minimal' | 'high';
+    /** Thinking level (Flash only — Pro always thinks). */
+    thinkingLevel?: 'minimal' | 'low' | 'medium' | 'high';
 
     /** Whether to include thinking process in the response. */
     includeThoughts?: boolean;

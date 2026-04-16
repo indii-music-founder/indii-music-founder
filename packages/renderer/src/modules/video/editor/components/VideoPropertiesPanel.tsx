@@ -88,7 +88,7 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                         )}
                     </>
                 ) : (
-                    <div className="p-4 bg-gradient-to-br from-gray-800/40 to-gray-900/40 m-2 rounded-lg border border-gray-800 shadow-xl space-y-4 md:col-span-2 xl:col-span-3">
+                    <div className="p-4 bg-linear-to-br from-gray-800/40 to-gray-900/40 m-2 rounded-lg border border-gray-800 shadow-xl space-y-4 md:col-span-2 xl:col-span-3">
                         <h3 className="text-sm font-semibold text-white tracking-tight">Studio Editor Workflow</h3>
                         <ul className="text-[11px] font-medium text-gray-400 text-left space-y-2">
                             <li className="flex items-start gap-2"><span className="text-blue-400 mt-0.5">&bull;</span> <span className="leading-snug"><strong>Add clips:</strong> Drag items from your Asset Library (left) onto the timeline below.</span></li>

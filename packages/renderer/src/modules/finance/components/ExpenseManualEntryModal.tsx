@@ -148,7 +148,7 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50"
+                                className="w-full bg-linear-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50"
                             >
                                 {isSubmitting ? 'Recording Transaction...' : 'Confirm Ledger Entry'}
                             </motion.button>
