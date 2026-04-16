@@ -177,11 +177,11 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             alt="AI"
                         />
                     ) : agentIdentity ? (
-                        <div className={`${variant === 'compact' ? 'w-6 h-6 text-[8px]' : 'w-9 h-9 text-xs'} rounded-full bg-gradient-to-br from-${agentIdentity.color}-600 to-${agentIdentity.color}-800 flex items-center justify-center font-bold relative z-10 border border-${agentIdentity.color}-500/30 text-white shadow-lg`}>
+                        <div className={`${variant === 'compact' ? 'w-6 h-6 text-[8px]' : 'w-9 h-9 text-xs'} rounded-full bg-linear-to-br from-${agentIdentity.color}-600 to-${agentIdentity.color}-800 flex items-center justify-center font-bold relative z-10 border border-${agentIdentity.color}-500/30 text-white shadow-lg`}>
                             {agentIdentity.initials}
                         </div>
                     ) : (
-                        <div className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30`}>
+                        <div className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full bg-linear-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30`}>
                             <Bot size={variant === 'compact' ? 12 : 18} className="text-purple-200" />
                         </div>
                     )}
@@ -192,10 +192,10 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                 data-testid={msg.role === 'model' ? 'agent-message' : 'user-message'}
                 aria-live={msg.role === 'model' && msg.isStreaming ? 'polite' : undefined}
                 className={`max-w-[90%] rounded-[1.2rem] ${variant === 'compact' ? 'px-3 py-2 text-xs' : 'px-5 py-4'} relative group transition-all duration-300 ${msg.role === 'user'
-                    ? 'bg-gradient-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
+                    ? 'bg-linear-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
                     : msg.role === 'system'
                         ? 'bg-white/5 backdrop-blur-sm text-gray-400 text-[10px] font-mono tracking-wider uppercase border border-white/5 w-full text-center rounded-xl p-1.5'
-                        : 'bg-gradient-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
+                        : 'bg-linear-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
                     }`}>
 
                 {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} compact={variant === 'compact'} />}

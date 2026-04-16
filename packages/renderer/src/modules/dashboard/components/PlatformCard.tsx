@@ -36,7 +36,7 @@ export function PlatformCard() {
     if (isElectron) {
         return (
             <div className="relative overflow-hidden border-b border-white/5 bg-[#050505]">
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-900/10 via-transparent to-orange-900/5 pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-r from-amber-900/10 via-transparent to-orange-900/5 pointer-events-none" />
                 <div className="relative z-10 px-6 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <Monitor size={16} className="text-amber-500 flex-shrink-0" />
@@ -92,7 +92,7 @@ export function PlatformCard() {
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="relative overflow-hidden border-b border-white/5"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-linear-to-r from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
 
                     {/* Dismiss button — top right */}
                     <button

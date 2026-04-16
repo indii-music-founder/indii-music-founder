@@ -102,7 +102,7 @@ export default function DirectGenerationTab() {
                 const generated = await VideoGeneration.generateVideo({
                     prompt: finalPrompt,
                     resolution: studioControls.resolution,
-                    aspectRatio: studioControls.aspectRatio,
+                    aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     duration: Math.max(6, studioControls.duration || 6), // Veo API requires >= 6
                     durationSeconds: Math.max(6, studioControls.duration || 6),
                     model: studioControls.model, // Will be resolved by FirebaseAIService
@@ -183,7 +183,7 @@ export default function DirectGenerationTab() {
 
                     {/* Prompt Input */}
                     <div className="flex-1 relative group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-dept-creative/10 to-dept-marketing/10 rounded-xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-linear-to-r from-dept-creative/10 to-dept-marketing/10 rounded-xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity" />
                         <input
                             type="text"
                             value={localPrompt}
@@ -270,7 +270,7 @@ export default function DirectGenerationTab() {
                                     <img src={item.url} alt={item.prompt} className="w-full h-full object-cover" />
                                 )}
 
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
                                     <p className="text-white text-xs line-clamp-2 mb-2">{item.prompt}</p>
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] uppercase font-bold text-gray-400">{item.type}</span>

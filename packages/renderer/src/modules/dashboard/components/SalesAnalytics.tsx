@@ -20,7 +20,7 @@ const LineChart = ({ data }: { data: number[] }) => (
 
         {/* Data points */}
         {data.length > 0 ? data.map((h, i) => (
-            <div key={i} className="w-8 bg-gradient-to-t from-purple-600/20 to-purple-500/50 rounded-t-sm relative group" style={{ height: `${Math.min(h, 100)}%` }}>
+            <div key={i} className="w-8 bg-linear-to-t from-purple-600/20 to-purple-500/50 rounded-t-sm relative group" style={{ height: `${Math.min(h, 100)}%` }}>
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full bg-black text-white text-[10px] px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
                     {h}
                 </div>

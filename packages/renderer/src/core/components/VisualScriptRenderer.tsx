@@ -52,7 +52,7 @@ export default function VisualScriptRenderer({ data }: VisualScriptRendererProps
 
     return (
         <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 overflow-hidden my-4 shadow-2xl">
-            <div className="bg-gradient-to-r from-purple-900/50 to-gray-900/50 p-4 border-b border-gray-700 flex items-center gap-3">
+            <div className="bg-linear-to-r from-purple-900/50 to-gray-900/50 p-4 border-b border-gray-700 flex items-center gap-3">
                 <div className="p-2 bg-purple-600 rounded-lg">
                     <Clapperboard size={20} className="text-white" />
                 </div>

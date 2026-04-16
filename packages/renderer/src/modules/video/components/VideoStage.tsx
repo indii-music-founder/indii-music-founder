@@ -188,7 +188,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 <Sparkles size={24} className="text-purple-400 animate-pulse" />
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse capitalize">
+                        <h3 className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-600 animate-pulse capitalize">
                             {jobStatus === 'stitching' ? 'Stitching Masterpiece...' : 'Imaginating Scene...'}
                         </h3>
                         <p className="text-gray-400 text-sm mt-2 font-medium">
@@ -199,7 +199,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         {/* Progress Bar */}
                         <div className="w-64 h-1.5 bg-white/5 rounded-full mt-6 overflow-hidden">
                             <motion.div
-                                className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
+                                className="h-full bg-linear-to-r from-purple-500 to-indigo-500"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${displayProgress}%` }}
                                 transition={{ duration: 0.5 }}

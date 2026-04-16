@@ -192,7 +192,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             </div>
 
             {/* Body */}
-            <div className="flex relative z-0 bg-gradient-to-b from-transparent to-black/40">
+            <div className="flex relative z-0 bg-linear-to-b from-transparent to-black/40">
                 {/* Input Handles Column */}
                 <div className="flex flex-col justify-center py-4 gap-4 border-r border-white/5 bg-black/20 w-10 relative">
                     {inputs.map((input, _i) => (
@@ -221,7 +221,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                 {/* Content Preview */}
                 <div className="flex-grow p-0 overflow-hidden relative group">
                     {/* Prompt/Config Preview Overlay */}
-                    <div className="absolute top-0 left-0 right-0 p-2 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div className="absolute top-0 left-0 right-0 p-2 bg-linear-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <p className="text-[10px] text-gray-300 line-clamp-2">
                             {isLogic ? 'Configure Node' : ('prompt' in data ? data.prompt : 'No prompt')}
                         </p>

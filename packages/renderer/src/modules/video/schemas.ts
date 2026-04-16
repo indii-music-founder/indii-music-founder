@@ -14,6 +14,10 @@ export const VideoResolutionSchema = z.enum([
     '720p', '1080p', '4k'
 ]);
 
+export const AspectRatioSchema = z.enum([
+    '1:1', '3:4', '4:3', '9:16', '16:9', '21:9', '9:21', '2:3', '3:2', '4:5', '5:4', '7:9', '9:7', '16:10', '10:16'
+]);
+
 export const VideoAspectRatioSchema = z.enum([
     '16:9', '9:16'
 ]);
@@ -54,7 +58,7 @@ export const VideoGenerationOptionsSchema = z.object({
     // NOTE: Audio is always-on for Veo 3.1 — generateAudio is not a valid API parameter
     // Retained in schema for UI state only, never sent to API
     inputAudio: z.string().optional(), // For custom soundtracks (URL or Base64)
-    thinking: z.boolean().optional(),
+    thinkingLevel: z.enum(['none', 'minimal', 'low', 'medium', 'high']).optional(),
     orgId: z.string().optional(),
     userProfile: z.custom<UserProfile>().optional() // Typed UserProfile for service compatibility
 });

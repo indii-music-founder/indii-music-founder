@@ -41,7 +41,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
             className="group relative overflow-hidden rounded-2xl bg-black/40 border border-white/5 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-purple-500/30 hover:shadow-2xl hover:shadow-purple-900/10 hover:bg-black/60 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 focus-visible:outline-none"
         >
             {/* Background Gradient Mesh - Brand Accent */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-transparent to-pink-500/10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-500" />
 
             <div className="p-6 relative z-10 space-y-4">
                 {/* Header */}
@@ -104,7 +104,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                             animate={{ width: `${progress}%` }}
                             transition={{ duration: 1, ease: "easeOut" }}
                             className={`h-full rounded-full ${isDone ? 'bg-emerald-500' :
-                                isActive ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                                isActive ? 'bg-linear-to-r from-purple-500 to-pink-500' :
                                     'bg-gray-600'
                                 }`}
                         />

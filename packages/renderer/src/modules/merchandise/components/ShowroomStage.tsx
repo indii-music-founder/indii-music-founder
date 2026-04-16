@@ -24,10 +24,10 @@ export default function ShowroomStage({
     return (
         <div className="flex flex-col h-full bg-[#0a0a0a] p-6 relative overflow-hidden backdrop-blur-2xl">
             {/* Background Glows */}
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-900/10 via-black to-purple-900/10 pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-blue-900/10 via-black to-purple-900/10 pointer-events-none" />
 
             <div className="flex items-center gap-3 mb-8 relative z-10">
-                <div className="h-8 w-1 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-full" />
+                <div className="h-8 w-1 bg-linear-to-b from-blue-400 to-indigo-500 rounded-full" />
                 <h2 className="text-xl font-bold text-white tracking-tight">The Stage</h2>
             </div>
 
@@ -97,7 +97,7 @@ export default function ShowroomStage({
                             : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/5'}
                     `}
                 >
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+                    <div className="absolute inset-0 rounded-xl bg-linear-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
                     <Camera className={`w-5 h-5 ${canGenerate ? 'text-white' : 'text-gray-600'}`} />
                     <span className="tracking-wide">Generate Mockup</span>
                 </motion.button>
@@ -117,7 +117,7 @@ export default function ShowroomStage({
                     `}
                 >
                     {canAnimate && (
-                        <div className="absolute inset-0 bg-[size:200%_200%] animate-gradient bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-[size:200%_200%] animate-gradient bg-linear-to-r from-purple-600 via-pink-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                     )}
                     <span className="relative z-10 flex items-center gap-3">
                         <Play className={`w-5 h-5 ${canAnimate ? 'text-white fill-current' : 'text-gray-600'}`} />

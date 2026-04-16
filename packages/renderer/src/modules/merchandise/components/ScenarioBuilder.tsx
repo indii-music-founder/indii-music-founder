@@ -41,7 +41,7 @@ export default function ScenarioBuilder({ scenePrompt, motionPrompt, onSceneChan
     return (
         <div className={`flex flex-col h-full p-6 relative transition-colors duration-500 ${containerClass}`}>
             <div className="flex items-center gap-3 mb-8">
-                <div className="h-8 w-1 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
+                <div className="h-8 w-1 bg-linear-to-b from-purple-500 to-pink-500 rounded-full" />
                 <h2 className={`text-xl font-bold tracking-tight ${textClass}`}>The Scenario</h2>
             </div>
 

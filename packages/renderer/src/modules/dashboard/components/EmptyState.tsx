@@ -55,7 +55,7 @@ export function EmptyState({ onCommandSubmit }: EmptyStateProps) {
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/40 to-purple-600/40 flex items-center justify-center shadow-2xl shadow-indigo-500/10 border border-white/10 mb-6 overflow-hidden"
+                className="w-16 h-16 rounded-2xl bg-linear-to-br from-indigo-500/40 to-purple-600/40 flex items-center justify-center shadow-2xl shadow-indigo-500/10 border border-white/10 mb-6 overflow-hidden"
             >
                 <IndiiFavicon size={44} />
             </motion.div>

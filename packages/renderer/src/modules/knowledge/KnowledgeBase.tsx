@@ -113,7 +113,7 @@ export default function KnowledgeBase() {
                             <div className="flex items-center gap-3 mb-3">
                                 <h1 className="text-4xl font-black flex items-center gap-3">
                                     <Book className="text-[#FFE135]" size={36} />
-                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">
+                                    <span className="bg-clip-text text-transparent bg-linear-to-r from-white to-gray-500">
                                         Knowledge Base
                                     </span>
                                 </h1>

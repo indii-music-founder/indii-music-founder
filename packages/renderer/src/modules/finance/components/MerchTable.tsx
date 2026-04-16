@@ -117,7 +117,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setIsMinting(!isMinting)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-dept-creative to-dept-royalties hover:from-dept-creative/80 hover:to-dept-royalties/80 text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all shadow-xl shadow-dept-creative/20 border border-white/10"
+                    className="flex items-center gap-2 bg-linear-to-r from-dept-creative to-dept-royalties hover:from-dept-creative/80 hover:to-dept-royalties/80 text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all shadow-xl shadow-dept-creative/20 border border-white/10"
                 >
                     {isMinting ? <Trash2 size={16} /> : <Plus size={16} />}
                     {isMinting ? 'Cancel' : 'Mint New Item'}
@@ -226,7 +226,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                                     whileHover={selectedAsset ? { scale: 1.02 } : {}}
                                     whileTap={selectedAsset ? { scale: 0.98 } : {}}
                                     onClick={handleMint}
-                                    className={`px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-2xl flex items-center gap-3 ${!selectedAsset ? 'bg-gray-800 opacity-30 cursor-not-allowed' : 'bg-gradient-to-r from-dept-licensing to-dept-royalties hover:from-dept-licensing/80 hover:to-dept-royalties/80 shadow-dept-royalties/20'
+                                    className={`px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-2xl flex items-center gap-3 ${!selectedAsset ? 'bg-gray-800 opacity-30 cursor-not-allowed' : 'bg-linear-to-r from-dept-licensing to-dept-royalties hover:from-dept-licensing/80 hover:to-dept-royalties/80 shadow-dept-royalties/20'
                                         }`}
                                 >
                                     Confirm & Dispatch to Store
@@ -265,7 +265,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                                             transition={{ delay: (index % pageSize) * 0.05 }}
                                             className="group flex items-center gap-6 p-5 bg-white/5 backdrop-blur-sm rounded-[1.5rem] border border-white/5 hover:border-dept-royalties/30 hover:bg-white/10 transition-all cursor-default relative overflow-hidden shadow-xl"
                                         >
-                                            <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-dept-royalties/5 to-transparent pointer-events-none group-hover:from-dept-royalties/10 transition-all" />
+                                            <div className="absolute top-0 right-0 w-24 h-full bg-linear-to-l from-dept-royalties/5 to-transparent pointer-events-none group-hover:from-dept-royalties/10 transition-all" />
 
                                             <div className="w-16 h-16 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-dept-royalties/30 transition-all shadow-inner">
                                                 {product.images[0] ? (

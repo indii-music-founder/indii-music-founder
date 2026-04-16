@@ -80,7 +80,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                             decoding="async"
                         />
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+                        <div className="w-full h-full bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
                             <ShoppingBag className="text-white/20" size={24} aria-hidden="true" />
                         </div>
                     )}
@@ -141,7 +141,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         decoding="async"
                     />
                 ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-colors">
+                    <div className="w-full h-full bg-linear-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-colors">
                         <ShoppingBag className="text-white/20 group-hover:text-white/40 transition-colors" size={48} aria-hidden="true" />
                     </div>
                 )}

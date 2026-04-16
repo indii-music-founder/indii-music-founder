@@ -30,7 +30,7 @@ export const EmptyActionState: React.FC<EmptyActionStateProps> = ({
             className="group relative overflow-hidden rounded-3xl border border-white/5 bg-[#1c2128] p-8 md:p-12 text-center"
         >
             {/* Ambient Background Glow */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-3xl`} />
+            <div className={`absolute inset-0 bg-linear-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-3xl`} />
 
             <div className="relative z-10 flex flex-col items-center max-w-lg mx-auto">
                 <div className="relative mb-6">

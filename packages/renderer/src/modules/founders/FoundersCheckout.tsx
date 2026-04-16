@@ -83,7 +83,7 @@ export default function FoundersCheckout() {
     if (activationResult) {
         return (
             <div className="flex flex-col items-center justify-center h-full p-8 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-purple-900/10 pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-br from-amber-500/10 to-purple-900/10 pointer-events-none" />
                 <button
                     onClick={() => setModule('dashboard')}
                     className="absolute top-6 left-6 z-20 flex items-center gap-2 text-xs text-gray-500 hover:text-gray-200 transition-colors group"
@@ -137,7 +137,7 @@ export default function FoundersCheckout() {
                     )}
 
                     <div className="bg-white/[0.02] border border-white/10 p-8 rounded-[2rem] w-full max-w-md mx-auto relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+                        <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-amber-500/50 to-transparent" />
                         <label className="block text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Public Name</label>
                         <input
                             type="text"
@@ -200,7 +200,7 @@ export default function FoundersCheckout() {
                     className="group relative overflow-hidden px-10 py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg rounded-2xl transition-all shadow-[0_0_60px_rgba(245,158,11,0.2)] hover:shadow-[0_0_80px_rgba(245,158,11,0.4)] disabled:opacity-50"
                 >
                     {isProcessing ? 'Connecting secured channel...' : 'Support The Vision ($2,500)'}
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                    <div className="absolute inset-0 rounded-2xl bg-linear-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                 </button>
                 <p className="mt-8 text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
                     Genesis investment guarantees lifetime access and <span className="text-amber-500/80">permanently acts as a credited basis</span> toward any future investment rounds.

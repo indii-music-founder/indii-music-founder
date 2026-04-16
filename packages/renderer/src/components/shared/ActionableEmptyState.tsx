@@ -37,7 +37,7 @@ export const ActionableEmptyState: React.FC<ActionableEmptyStateProps> = ({
             className={`w-full flex justify-center items-center py-24 px-6 rounded-[2.5rem] border border-dashed ${colorClasses.border} ${colorClasses.bg} relative overflow-hidden group`}
         >
             {/* Ambient Background Glow on Hover */}
-            <div className={`absolute inset-0 bg-gradient-to-t ${(colorClasses.bg || 'bg-white/5').replace('/5', '/0')} to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none`} />
+            <div className={`absolute inset-0 bg-linear-to-t ${(colorClasses.bg || 'bg-white/5').replace('/5', '/0')} to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none`} />
 
             <div className="relative z-10 flex flex-col items-center max-w-sm text-center">
                 <motion.div

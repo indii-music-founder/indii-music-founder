@@ -176,7 +176,7 @@ export default function GenerationMonitor() {
                                     className="w-full h-full object-cover"
                                     loading="lazy"
                                 />
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
+                                <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-1.5">
                                     <p className="text-[9px] text-white/70 truncate">{img.prompt}</p>
                                 </div>
                             </div>
@@ -200,7 +200,7 @@ export default function GenerationMonitor() {
                                 {isSending ? inputPrompt : (storePrompt || 'Processing...')}
                             </p>
                             <div className="mt-2 h-1 rounded-full bg-[#21262d] overflow-hidden">
-                                <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse w-2/3" />
+                                <div className="h-full rounded-full bg-linear-to-r from-blue-500 to-purple-500 animate-pulse w-2/3" />
                             </div>
                         </div>
                     </div>
@@ -303,7 +303,7 @@ export default function GenerationMonitor() {
                         disabled={!inputPrompt.trim() || isSending}
                         className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all
                             ${inputPrompt.trim() && !isSending
-                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500'
+                                ? 'bg-linear-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500'
                                 : 'bg-[#21262d] text-[#484f58]'
                             }`}
                     >

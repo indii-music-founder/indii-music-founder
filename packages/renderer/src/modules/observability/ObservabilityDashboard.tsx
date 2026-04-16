@@ -45,7 +45,7 @@ function MetricCard({ icon, label, value, subtitle, trend, accentColor = 'purple
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <Card className={`bg-gradient-to-br ${colors} border backdrop-blur-sm`}>
+            <Card className={`bg-linear-to-br ${colors} border backdrop-blur-sm`}>
                 <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                         <div className="space-y-1">

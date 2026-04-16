@@ -8,6 +8,9 @@ import { StudioToolbar } from '@/components/studio/StudioToolbar';
 import { useTimelineDrag } from './hooks/useTimelineDrag';
 import { VideoEditorSidebar } from './components/VideoEditorSidebar';
 import { useVideoEditor } from './hooks/useVideoEditor';
+import AnnotationPalette from '../../creative/components/AnnotationPalette';
+import EditDefinitionsPanel from '../../creative/components/EditDefinitionsPanel';
+import { STUDIO_COLORS, CreativeColor } from '../../creative/constants';
 
 interface VideoEditorProps {
     initialVideo?: HistoryItem;
@@ -43,6 +46,20 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
     const handleFrameUpdate = React.useCallback((frame: number) => setCurrentTime(frame), [setCurrentTime]);
+
+    // Annotation Palette State
+    const [activeColor, setActiveColor] = React.useState<CreativeColor>(STUDIO_COLORS[0]!);
+    const [colorDefinitions, _setColorDefinitions] = React.useState<Record<string, string>>({});
+    const [isDefinitionsOpen, setIsDefinitionsOpen] = React.useState(false);
+    const [referenceImages, setReferenceImages] = React.useState<Record<string, { mimeType: string; data: string } | null>>({});
+
+    const handleUpdateDefinition = React.useCallback((colorId: string, prompt: string) => {
+        _setColorDefinitions(prev => ({ ...prev, [colorId]: prompt }));
+    }, []);
+
+    const handleUpdateReferenceImage = React.useCallback((colorId: string, image: { mimeType: string; data: string } | null) => {
+        setReferenceImages(prev => ({ ...prev, [colorId]: image }));
+    }, []);
 
     return (
         <div className="flex flex-col h-full bg-[--background] text-[--foreground]">
@@ -84,11 +101,28 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 />
 
                 {!isPopoutActive && (
-                    <div className="flex-1 flex items-center justify-center bg-black relative transition-all duration-300">
-                        <VideoPreview
-                            playerRef={playerRef}
-                            project={project}
-                            onFrameUpdate={handleFrameUpdate}
+                    <div className="flex-1 flex bg-black relative transition-all duration-300 overflow-hidden">
+                        {/* 8-Color Semantic Annotation Palette per Gemini 3 Architecture */}
+                        <AnnotationPalette
+                            activeColor={activeColor}
+                            onColorSelect={setActiveColor}
+                            colorDefinitions={colorDefinitions}
+                            onOpenDefinitions={() => setIsDefinitionsOpen(true)}
+                        />
+                        <div className="flex-1 flex items-center justify-center relative">
+                            <VideoPreview
+                                playerRef={playerRef}
+                                project={project}
+                                onFrameUpdate={handleFrameUpdate}
+                            />
+                        </div>
+                        <EditDefinitionsPanel
+                            isOpen={isDefinitionsOpen}
+                            onClose={() => setIsDefinitionsOpen(false)}
+                            definitions={colorDefinitions}
+                            onUpdateDefinition={handleUpdateDefinition}
+                            referenceImages={referenceImages}
+                            onUpdateReferenceImage={handleUpdateReferenceImage}
                         />
                     </div>
                 )}

@@ -274,7 +274,7 @@ export const CharacterLibrary: React.FC = () => {
                             )}
                         </div>
                         {/* Character label (editable) + Reference Type Toggle */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5 flex items-center justify-between">
+                        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent px-2 py-1.5 flex items-center justify-between">
                             {editingNameId === ref.image.id ? (
                                 <input
                                     ref={nameInputRef}

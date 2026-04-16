@@ -180,7 +180,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
-                                    className="mb-2 p-2 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30"
+                                    className="mb-2 p-2 rounded-lg bg-linear-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30"
                                 >
                                     <p className="text-[9px] text-yellow-400 font-bold mb-1.5 uppercase tracking-wider">✨ AI Suggestions</p>
                                     <div className="space-y-1">
@@ -277,7 +277,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0, scale: 0.9 }}
                                             className={`group relative flex items-center gap-3 p-2 rounded-lg transition-all ${item.checked
-                                                ? 'bg-gradient-to-r from-purple-900/30 to-purple-900/10 border border-purple-500/40 shadow-[0_0_10px_rgba(147,51,234,0.15)]'
+                                                ? 'bg-linear-to-r from-purple-900/30 to-purple-900/10 border border-purple-500/40 shadow-[0_0_10px_rgba(147,51,234,0.15)]'
                                                 : 'bg-[#1a1a1a] border border-gray-800/50 opacity-50'
                                                 }`}
                                         >

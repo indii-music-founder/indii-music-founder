@@ -35,7 +35,7 @@ const MapUnavailableFallback: React.FC<{ reason: 'missing_key' | 'auth_failure' 
         <div className="w-full h-full bg-[#161b22] flex flex-col items-center justify-center rounded-xl border border-gray-800 text-gray-500 gap-4 p-8 text-center relative overflow-hidden group">
             {/* Abstract grid background for pro look */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]" />
+            <div className="absolute inset-0 bg-linear-to-b from-transparent to-[#161b22]" />
 
             {/* Decorative map silhouette */}
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">

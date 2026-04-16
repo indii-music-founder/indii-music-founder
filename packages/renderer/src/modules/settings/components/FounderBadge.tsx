@@ -65,7 +65,7 @@ export default function FounderBadge() {
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 rounded-2xl overflow-hidden border border-amber-500/30 bg-gradient-to-br from-amber-950/20 via-black/40 to-amber-950/10"
+            className="mt-6 rounded-2xl overflow-hidden border border-amber-500/30 bg-linear-to-br from-amber-950/20 via-black/40 to-amber-950/10"
         >
             {/* Header bar */}
             <div className="flex items-center justify-between px-5 py-3 bg-amber-500/10 border-b border-amber-500/20">

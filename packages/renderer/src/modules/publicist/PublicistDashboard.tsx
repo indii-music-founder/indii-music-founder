@@ -78,7 +78,7 @@ export default function PublicistDashboard() {
                     {/* Brand */}
                     <div className="p-6 pb-2">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dept-marketing/20 to-dept-marketing-glow flex items-center justify-center border border-white/10 shadow-lg shadow-dept-marketing/10">
+                            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-dept-marketing/20 to-dept-marketing-glow flex items-center justify-center border border-white/10 shadow-lg shadow-dept-marketing/10">
                                 <Mic size={20} className="text-white" />
                             </div>
                             <div>

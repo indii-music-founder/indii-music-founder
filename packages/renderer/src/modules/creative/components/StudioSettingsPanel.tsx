@@ -136,7 +136,7 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
             aspectRatio: '16:9',
             model: 'fast',
             negativePrompt: '',
-            thinking: false,
+            thinkingLevel: 'none',
             useGrounding: false,
             mediaResolution: 'medium',
             personGeneration: 'allow_adult',
@@ -218,8 +218,8 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                     <label className="flex items-center gap-2 cursor-pointer" data-testid="settings-thinking-toggle">
                         <input
                             type="checkbox"
-                            checked={studioControls.thinking}
-                            onChange={(e) => setStudioControls({ thinking: e.target.checked })}
+                            checked={studioControls.thinkingLevel !== 'none'}
+                            onChange={(e) => setStudioControls({ thinkingLevel: e.target.checked ? 'high' : 'none' })}
                             className="sr-only peer"
                         />
                         <div className="w-7 h-4 bg-white/10 peer-checked:bg-purple-500/50 rounded-full relative transition-colors">

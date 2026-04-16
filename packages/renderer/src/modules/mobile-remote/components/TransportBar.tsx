@@ -112,7 +112,7 @@ export default function TransportBar({ onSendCommand }: TransportBarProps) {
             <div className="mb-3">
                 <div className="w-full h-1.5 rounded-full bg-[#21262d] overflow-hidden">
                     <div
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                        className="h-full rounded-full bg-linear-to-r from-blue-500 to-purple-500 transition-all duration-300"
                         style={{ width: `${progress}%` }}
                     />
                 </div>

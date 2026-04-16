@@ -194,7 +194,7 @@ export default function CommandPad({ onSendCommand }: CommandPadProps) {
                         <button
                             key={action.id}
                             onClick={action.action}
-                            className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-gradient-to-b ${action.color} border backdrop-blur-sm transition-all active:scale-95`}
+                            className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-linear-to-b ${action.color} border backdrop-blur-sm transition-all active:scale-95`}
                         >
                             <action.icon className="w-5 h-5" />
                             <span className="text-[10px] font-semibold">{action.label}</span>
@@ -213,7 +213,7 @@ export default function CommandPad({ onSendCommand }: CommandPadProps) {
                         <button
                             key={action.id}
                             onClick={action.action}
-                            className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-gradient-to-b ${action.color} border backdrop-blur-sm transition-all active:scale-95`}
+                            className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-linear-to-b ${action.color} border backdrop-blur-sm transition-all active:scale-95`}
                         >
                             <action.icon className="w-4 h-4" />
                             <span className="text-[10px] font-medium">{action.label}</span>

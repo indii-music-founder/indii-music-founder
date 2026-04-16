@@ -36,6 +36,7 @@ export interface VideoJobUpdateData {
 // Lazy load the heavy Editor
 const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const processJobUpdate = (
     data: VideoJobUpdateData | null,
     currentJobId: string,
@@ -207,7 +208,7 @@ export default function VideoWorkflow() {
     }, [setStudioControls]);
 
     // Stable handler for drag start
-    const handleDragStart = React.useCallback((e: React.DragEvent, item: HistoryItem) => {
+    const handleDragStart = React.useCallback((_e: React.DragEvent, _item: HistoryItem) => {
         // Drag logic
     }, []);
 
@@ -315,7 +316,7 @@ export default function VideoWorkflow() {
 
             // 🧠 Thinking Mode: Incorporate advanced reasoning into the prompt for now
             // until a native 'thinking' parameter is supported for Veo models.
-            if (studioControls.thinking) {
+            if (studioControls.thinkingLevel !== 'none') {
                 finalPrompt = `[Think CINEMATIC PHYSICS & CONTINUITY]: ${finalPrompt}`;
             }
 
@@ -326,14 +327,14 @@ export default function VideoWorkflow() {
                 results = await VideoGeneration.generateLongFormVideo({
                     prompt: finalPrompt,
                     totalDuration: studioControls.duration,
-                    aspectRatio: studioControls.aspectRatio,
+                    aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     resolution: studioControls.resolution,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
                     // Audio is always-on for Veo 3.1 — omit generateAudio
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
-                    thinking: studioControls.thinking,
+                    thinkingLevel: studioControls.thinkingLevel,
                     model: studioControls.model,
                     onProgress: (current, total) => {
                         // Optional: Could wire this up to a local progress update if store supports it
@@ -344,7 +345,7 @@ export default function VideoWorkflow() {
                 results = await VideoGeneration.generateVideo({
                     prompt: finalPrompt,
                     resolution: studioControls.resolution,
-                    aspectRatio: studioControls.aspectRatio,
+                    aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     fps: studioControls.fps,
@@ -364,7 +365,7 @@ export default function VideoWorkflow() {
                     durationSeconds: studioControls.duration,
                     // Audio is always-on for Veo 3.1 — omit generateAudio
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
-                    thinking: studioControls.thinking,
+                    thinkingLevel: studioControls.thinkingLevel,
                     model: studioControls.model
                 });
             }

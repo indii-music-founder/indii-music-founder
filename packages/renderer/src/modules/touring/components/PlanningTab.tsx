@@ -287,7 +287,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             exit={{ opacity: 0, scale: 0.95 }}
                             className="bg-[#161b22] border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg p-6 relative overflow-hidden"
                         >
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50" />
+                            <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-yellow-500 to-transparent opacity-50" />
 
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold text-white flex items-center gap-2">

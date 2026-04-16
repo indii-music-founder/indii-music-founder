@@ -53,7 +53,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, trend, icon: Icon
         whileHover={{ y: -5 }}
         className="relative overflow-hidden bg-[#1c2128] border border-white/5 rounded-2xl p-6 group"
     >
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+        <div className={`absolute inset-0 bg-linear-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
         <div className="relative z-10">
             <div className="flex justify-between items-start mb-4">
                 <div className={`p-3 rounded-xl bg-white/5 ${color}`}>

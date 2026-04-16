@@ -41,7 +41,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({ activeTool, onTool
 
             <div className="mt-auto">
                 <button
-                    className="p-3 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition-all duration-300 group relative overflow-hidden"
+                    className="p-3 rounded-xl bg-linear-to-br from-cyan-400 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition-all duration-300 group relative overflow-hidden"
                     title="AI Synthesis"
                 >
                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />

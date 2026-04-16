@@ -48,7 +48,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
     };
 
     return (
-        <div className="flex flex-col h-full bg-gradient-to-b from-[#0a0a0f] to-[#050508]">
+        <div className="flex flex-col h-full bg-linear-to-b from-[#0a0a0f] to-[#050508]">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="p-1.5 bg-indigo-500/10 rounded-lg">
@@ -121,7 +121,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
                         whileTap={{ scale: 0.98 }}
                         disabled={isDeploying}
                         onClick={handleDeploy}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-indigo-900/20 flex items-center justify-center gap-2 border border-indigo-400/20"
+                        className="w-full bg-linear-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-indigo-900/20 flex items-center justify-center gap-2 border border-indigo-400/20"
                     >
                         {isDeploying ? (
                             <>

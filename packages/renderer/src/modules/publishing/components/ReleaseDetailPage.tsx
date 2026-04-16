@@ -99,7 +99,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                 <Music size={64} />
                             </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-60" />
                         <div className="absolute bottom-6 left-6 right-6">
                             <div className="flex items-center gap-2">
                                 <span className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-[10px] font-black text-white uppercase tracking-widest">

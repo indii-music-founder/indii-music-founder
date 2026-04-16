@@ -101,7 +101,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
     return (
         <div className="relative bg-bg-dark border-b border-gray-800">
             {/* Banner */}
-            <div className="h-48 w-full overflow-hidden bg-gradient-to-r from-purple-900 to-blue-900">
+            <div className="h-48 w-full overflow-hidden bg-linear-to-r from-purple-900 to-blue-900">
                 {bannerUrl && (
                     <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover opacity-60" />
                 )}
@@ -115,7 +115,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
                             {photoURL ? (
                                 <img src={photoURL} alt={displayName || 'User'} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-3xl font-bold text-white">
+                                <div className="w-full h-full bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-3xl font-bold text-white">
                                     {displayName?.[0] || 'U'}
                                 </div>
                             )}

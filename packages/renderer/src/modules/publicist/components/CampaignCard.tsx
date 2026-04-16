@@ -44,7 +44,7 @@ export function CampaignCard({ campaign, onClick }: CampaignCardProps) {
                             <Disc className="text-gray-600" size={24} />
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                 </div>
 
                 {/* Header */}
@@ -72,7 +72,7 @@ export function CampaignCard({ campaign, onClick }: CampaignCardProps) {
                             initial={{ width: 0 }}
                             animate={{ width: `${campaign.progress}%` }}
                             transition={{ duration: 1, ease: "easeOut" }}
-                            className="h-full bg-gradient-to-r from-dept-campaign to-dept-marketing"
+                            className="h-full bg-linear-to-r from-dept-campaign to-dept-marketing"
                         />
                     </div>
                 </div>

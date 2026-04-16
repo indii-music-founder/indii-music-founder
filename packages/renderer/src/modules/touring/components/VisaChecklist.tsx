@@ -168,7 +168,7 @@ export function VisaChecklist() {
                 </div>
                 <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-500"
+                        className="h-full bg-linear-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-500"
                         style={{ width: `${progressPct}%` }}
                     />
                 </div>

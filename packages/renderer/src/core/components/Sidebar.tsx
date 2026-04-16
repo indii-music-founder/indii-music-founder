@@ -104,7 +104,7 @@ const NavItem = React.memo(function NavItem({
                             <motion.div
                                 animate={{ x: ['-100%', '200%'] }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent skew-x-12"
+                                className="absolute inset-0 w-1/2 bg-linear-to-r from-transparent via-white/[0.05] to-transparent skew-x-12"
                             />
                         )}
                     </button>
@@ -275,7 +275,7 @@ export default function Sidebar() {
                         "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
                         isBoardroomMode
                             ? "bg-indigo-500/20 border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
-                            : "bg-gradient-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)]",
+                            : "bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)]",
                         isSidebarOpen ? "gap-3" : ""
                     )}
                     aria-label="Enter Boardroom"
@@ -300,7 +300,7 @@ export default function Sidebar() {
                     ) : null}
 
                     {/* Shimmer sweep */}
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-indigo-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                    <div className="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-indigo-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
                 </button>
             </div>
 
@@ -312,7 +312,7 @@ export default function Sidebar() {
                         "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
                         currentModule === 'founders-checkout'
                             ? "bg-amber-500/20 border border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
-                            : "bg-gradient-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)]",
+                            : "bg-linear-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)]",
                         isSidebarOpen ? "gap-3" : ""
                     )}
                     aria-label="Back the Vision — Invest"
@@ -340,7 +340,7 @@ export default function Sidebar() {
                     )}
 
                     {/* Shimmer sweep */}
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                    <div className="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
                 </button>
             </div>
 

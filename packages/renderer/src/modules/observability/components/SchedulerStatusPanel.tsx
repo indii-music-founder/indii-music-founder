@@ -201,7 +201,7 @@ export function SchedulerStatusPanel() {
 
     if (!available) {
         return (
-            <Card className="bg-gradient-to-br from-slate-500/10 to-slate-900/5 border-slate-500/20">
+            <Card className="bg-linear-to-br from-slate-500/10 to-slate-900/5 border-slate-500/20">
                 <CardContent className="p-6 text-center text-muted-foreground text-sm">
                     <Activity size={24} className="mx-auto mb-2 opacity-40" />
                     Scheduler only available in Electron context
@@ -214,7 +214,7 @@ export function SchedulerStatusPanel() {
 
     if (loading) {
         return (
-            <Card className="bg-gradient-to-br from-purple-500/10 to-slate-900/5 border-purple-500/20">
+            <Card className="bg-linear-to-br from-purple-500/10 to-slate-900/5 border-purple-500/20">
                 <CardContent className="p-6 flex items-center justify-center gap-2 text-muted-foreground text-sm">
                     <RefreshCw size={14} className="animate-spin" />
                     Loading scheduler…
@@ -229,7 +229,7 @@ export function SchedulerStatusPanel() {
     // ── Render: full panel ──────────────────────────────────────────────────
 
     return (
-        <Card className="bg-gradient-to-br from-purple-500/10 to-slate-900/5 border-purple-500/20">
+        <Card className="bg-linear-to-br from-purple-500/10 to-slate-900/5 border-purple-500/20">
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2 text-purple-300">

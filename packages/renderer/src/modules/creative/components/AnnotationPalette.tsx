@@ -19,7 +19,7 @@ export default function AnnotationPalette({
     return (
         <div className="flex flex-col gap-2 p-2 bg-[#111] border-r border-gray-800 h-full w-14 items-center">
             <div className="mb-4 mt-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-purple-600 flex items-center justify-center shadow-lg">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-yellow-400 to-purple-600 flex items-center justify-center shadow-lg">
                     <span className="text-[10px] font-bold text-white">ID</span>
                 </div>
             </div>

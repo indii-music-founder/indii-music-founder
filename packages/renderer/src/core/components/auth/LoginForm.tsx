@@ -129,7 +129,7 @@ export default function LoginForm() {
     return (
         <div className="flex flex-col items-center justify-center h-screen w-screen bg-black text-white relative overflow-hidden">
             {/* Background Aesthetics */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20 pointer-events-none" />
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse-slow" />
 
@@ -230,7 +230,7 @@ export default function LoginForm() {
                                                 <span>Send Reset Link</span>
                                             </>
                                         )}
-                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                                        <div className="absolute inset-0 rounded-2xl bg-linear-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                                     </button>
                                 </form>
                             )}
@@ -383,7 +383,7 @@ export default function LoginForm() {
                                                 <span>Sign In</span>
                                             </>
                                         )}
-                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                                        <div className="absolute inset-0 rounded-2xl bg-linear-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                                     </button>
                                 </div>
 
@@ -411,7 +411,7 @@ export default function LoginForm() {
                                     onClick={loginAsGuest}
                                     disabled={authLoading}
                                     data-testid="guest-login-btn"
-                                    className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-500/20 to-purple-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                    className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-amber-500/20 to-purple-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                                 >
                                     <User className="w-5 h-5 text-amber-400" />
                                     <span>Explore as Guest</span>
