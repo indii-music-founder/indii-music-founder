@@ -27,8 +27,14 @@ export class ModuleErrorBoundary extends Component<Props, State> {
     }
 
     private handleRetry = () => {
-        this.setState({ hasError: false, error: null });
-        // Optional: Force reload or specialized recovery
+        if (
+            this.state.error?.message &&
+            this.state.error.message.includes('Failed to fetch dynamically imported module')
+        ) {
+            window.location.reload();
+        } else {
+            this.setState({ hasError: false, error: null });
+        }
     };
 
     public render() {
