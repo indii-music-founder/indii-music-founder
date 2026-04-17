@@ -84,58 +84,37 @@ export function ReceiptOCR() {
         setExtracted(null);
 
         try {
-            // Read the file as base64 for AI Vision analysis
-            const base64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const result = reader.result as string;
-                    // Strip the data URL prefix to get raw base64
-                    resolve(result.split(',')[1] || result);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(uploadedFile);
-            });
+            // Call AI Vision service for receipt analysis via the GeminiFileService
+            const { firebaseAI } = await import('@/services/ai/FirebaseAIService');
 
-            const mimeType = uploadedFile.type || 'image/jpeg';
+            // 1. Upload the file using resumable upload
+            const fileMeta = await firebaseAI.fileService.uploadFile(uploadedFile);
 
-            // Call AI Vision service for receipt analysis
-            const { GoogleGenAI } = await import('@google/genai');
-            const apiKey = import.meta.env.VITE_API_KEY;
-            if (!apiKey) {
-                logger.warn('[ReceiptOCR] No API key configured — cannot analyze receipt');
-                setIsAnalyzing(false);
-                return;
-            }
+            // 2. Wait for it to be active
+            await firebaseAI.fileService.waitForActive(fileMeta.name);
 
-            const ai = new GoogleGenAI({ apiKey });
-            const result = await ai.models.generateContent({
-                model: AI_MODELS.TEXT.FAST,
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [
-                            {
-                                inlineData: {
-                                    mimeType,
-                                    data: base64,
-                                },
-                            },
-                            {
-                                text: `Analyze this receipt image and extract the following fields as JSON:
+            // 3. Analyze the URI
+            const jsonPrompt = `
+Analyze this receipt image and extract the following fields as JSON:
 {
   "merchant": "Store/business name",
   "amount": "$XX.XX format",
   "date": "YYYY-MM-DD format",
   "category": "One of: Equipment, Software, Studio, Meals, Travel, Other"
 }
-Return ONLY valid JSON, no markdown fences or extra text.`,
-                            },
-                        ],
-                    },
-                ],
+Return ONLY valid JSON, no markdown fences or extra text.`;
+
+            const responseText = await firebaseAI.analyzeFileURI(
+                fileMeta.uri,
+                fileMeta.mimeType,
+                jsonPrompt
+            );
+
+            // 4. Cleanup the file (fire and forget)
+            firebaseAI.fileService.deleteFile(fileMeta.name).catch((ce) => {
+                logger.warn('[ReceiptOCR] Failed to cleanup Gemini file', ce);
             });
 
-            const responseText = result.text?.trim() || '';
             // Strip potential markdown code fences
             const cleanJson = responseText.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '').trim();
             const parsed = JSON.parse(cleanJson) as ExtractedReceipt;
