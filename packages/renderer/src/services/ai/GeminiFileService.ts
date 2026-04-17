@@ -123,6 +123,8 @@ export class GeminiFileService {
                 throw new Error('API returned successfully but missing file/uri payload.');
             }
 
+            if (onProgress) onProgress(100);
+
             logger.info(`[GeminiFileService] Upload complete! URI: ${data.file.uri}`);
             return data.file as GeminiFile;
 
@@ -224,4 +226,5 @@ export class GeminiFileService {
             throw new AppException(AppErrorCode.NETWORK_ERROR, `Failed to list Gemini Files: ${msg}`);
         }
     }
+}
 }
