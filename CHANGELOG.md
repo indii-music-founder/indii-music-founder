@@ -2,6 +2,74 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.50.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.50.0) (2026-04-16)
+
+
+### Features
+
+* **autoagent:** phase A — sidecar + loop proof for Conductor system ([#1418](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1418)) ([4e6cb9f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4e6cb9f71cb7d43b43a8e899964c98a93ce0e082))
+* **boardroom:** harden chat overlay + fix test regressions ([3338226](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/33382266816977a6a827502d01ea74c33ceec68c))
+* **creative+email+legal:** Gemini vision pipeline, email service, canvas ops & QA hardening ([#1443](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1443)) ([901c8b1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/901c8b1f8d3eec1aae0e872f4922b2003c2f1c91))
+* **creative:** Studio settings panel, resolution normalizer, relay fix ([13133a4](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/13133a4f8c36fe7060dc159e7b7beea8a0fee4d4))
+* **legal:** contract pipeline with PDF generation & My Contracts ([d2da62d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d2da62d590d82b2cbc7b3e8e9e6149f9d7ebb530))
+* optimize conductor routing for finance, distribution, and publishing edge cases ([dd732f0](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/dd732f0379b36738ac0683c224ad744afd0c44e8))
+* **wo-16:** implement desktop auto-update channel with UI toggle and boardroom ghost navigation fixes ([e570f93](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e570f930c7d646066ca48b49555d6966af74eda3))
+* **wo-17:** rewrite music training dataset to remove DAW/mixing scenarios and enforce baseline capabilities ([f2ad200](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f2ad2004a3450049b80b1dc88f7e917c56ad477d))
+
+
+### Bug Fixes
+
+* **a11y+tests:** update PromptArea a11y test for refactored CommandBar ([a62835a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a62835a83fa25962609afe6d235cfd90625dea54))
+* address CodeRabbit review findings across consolidated branch ([4da7338](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4da7338148c454ee7fe53a1c0f571af4e9b67bd0))
+* **agent:** optimize Conductor routing by resolving prompt ambiguities ([c1227b4](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c1227b41262a43aa967b31c8bec60b4e6e40f4e4))
+* apply CodeRabbit auto-fixes ([cd842af](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd842af30f8f1352dd22bf7e15f4986763e067bd))
+* **appSlice:** debounce rapid sidebar toggle clicks (BUG-006) ([#1463](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1463)) ([b53f291](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b53f29162f895abd6d0e95b2118db19fb2dd2742))
+* **appSlice:** remove duplicate _lastSidebarToggle from AppSlice interface ([cbbe134](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cbbe13404c7960716751ffcfc89b8ccaab775d02))
+* **auth:** debounce rapid null-&gt;user transitions during token refresh to fix BUG-002 ([#1475](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1475)) ([fb52d22](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/fb52d22afca03d66f9e4daf847fc63cdbd8ac57f))
+* **autoagent:** update ISRC routing and add music coverage ([#1447](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1447)) ([8956b42](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8956b42c08f0482b2d235859eeef740675fc660a))
+* **boardroom:** tighten right-edge positioning, replace cryptic dot with Users icon ([cdbad3b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cdbad3b94f7e06b251b6931a42cab5fa1f268c9d))
+* **ci:** add missing build:studio script + fix dist paths in deploy workflow ([3ecf18c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3ecf18c15429b627d31c4cd267085b5e3e91954c))
+* **ci:** bump bundle size threshold 15MB → 25MB ([71ed8ed](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/71ed8ed9927b1ed5971dd6c841eb63479b002087))
+* **ci:** eliminate persistent shard flakiness in all 4 CI shards ([f252860](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f252860137d1f837f8d01eaa8c744fd361454342))
+* **ci:** hardening and quality audit cleanup ([65498ff](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/65498ff4383bf73f08ae58b05d706867841e8287))
+* **ci:** make Jules PR scanner non-blocking with continue-on-error ([3edbd6c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3edbd6c08849d40f0df096675ebca66c60a29743))
+* **ci:** raise bundle size threshold to 25MB for Electron app ([0ec1f37](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0ec1f37968f7c70ef1837e6d4c080198b0dcd633))
+* **ci:** resolve 3 pipeline regressions ([763ad28](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/763ad285be56eafec4ff7e4195481d90a72b76bd))
+* **ci:** stabilize test suite — 533 files, 2952 tests passing ([99b655d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/99b655d89ab0606d6be8c5336d1509e2f390f29c))
+* **ci:** sync deploy pipeline — model policy + test assertions ([99b6ad2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/99b6ad23f01cc91dd1c275d7579fe20c998b4939))
+* **creative:** Fabric.js 6 API compatibility & CORS resilience ([3a05b95](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3a05b95a526acee5d1c47b3034e6cb5263eb9026))
+* **distribution:** Use safeUnsubscribe in TransmissionMonitor for BUG-001 ([#1484](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1484)) ([9531d8f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9531d8f3cf7180995604f024d551911196bfa669))
+* **dx:** silence Vitest extension config auto-discovery crashes ([8dbf842](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8dbf842ba078b39f5e48cb12e97cad11d0e37cf5))
+* **fcm:** async lazy messaging init with isSupported guard ([3a45d2b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3a45d2b8788a6f843d3a6b7095f4ef2f4f2c3c8a))
+* **firebase:** enforce uppercase imageSize to resolve Sentry error ([9f07c9d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9f07c9d9b79a71cb844b385ddaeb0912bd414563))
+* **firebase:** migrate Gemini Pro image generation to unified SDK ([1fb2fd9](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/1fb2fd93a81859ea5810ab276ac26fe8058b001e))
+* **firebase:** migrate Gemini Pro image generation to unified SDK ([4dc7844](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4dc7844351939f57aec06c5ecac6ea148555f3ed))
+* **firebase:** restrict candidateCount to 1 for Gemini Pro image to resolve Sentry error ([380f21e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/380f21eba5a8f6662b0e0b69da54a0f090024d95))
+* **firebase:** update image_generation test to mock GoogleGenAI correctly for SDK migration ([88ff9d7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/88ff9d7ce725d15afe310b82f4ddd4beca7b2da1))
+* **image-gen:** enforce maxReferenceImages per model tier and fix legacy model API errors ([99ce696](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/99ce6966315516d5900dfea6eba078abe144b4b8))
+* **prod:** resolve infinite spinner — CSP wasm + circular import + env throw ([84db432](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/84db432c94ae3354dd46071f6b62e5d704201123))
+* remove dead seed from image pipeline, wire personGeneration to real API ([9b9b70b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9b9b70b881bfa1701d657e36e05e217b16d9e2cf))
+* **renderer:** implement dedicated Escape handler to force-close command menu ([#1455](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1455)) ([0c31526](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0c315268c3157ef4119f42ba561fcd1a9d90dff3))
+* replace dead seed with personGeneration in ImageGenerationInstrument ([0809435](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/08094359ba97c9c430c5971d34267ea77ea17bae))
+* **store:** debounce rapid toggle clicks on sidebar ([#1451](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1451)) ([ea2487e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ea2487edd0f94344659b7456a40513f4f2af2b73))
+* **store:** debounce rapid toggleSidebar clicks ([#1461](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1461)) ([a71bce8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a71bce8b7e6942d5c4684bbd0130f8127b9c0d13))
+* **test:** add electron/electron-log mocks to ipc-validator.test.ts ([083c660](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/083c6604c69242c8e6a5e41d7d729e30bddb6b1f))
+* **tests:** add getIdToken mock to LensGeminiFlashPro + daisy chain E2E script ([4468427](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/446842747ba5aed974ea7bd1eb95d5cbc4e84ac5))
+* **tests:** add missing extractLastFrameForAPI mock — eliminates shard 3 CI timeout ([081ae80](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/081ae80bb3961ba3a262e532986b54477324d0d0))
+* **tests:** eliminate TS2367 comparison errors (cold typecheck clean) ([d13279f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d13279f1cdea4a48f568b7abc97dd5f99618beb4))
+* **tests:** resolve TS2367 type comparison errors in DJAxiomPowerUser ([5b005ae](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5b005ae8262ac42209f26c03a94b66049b1ecd23))
+* **tests:** update CreativeStudio test assertion for personGeneration ([4fdd95b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4fdd95b73a8656e426d409f84259980c70b87c3b))
+* **ui+tests:** remove duplicate CommandBar overlay + resolve all shard CI failures ([336094f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/336094ff4e1c2a8f0dc6b1088d7c0c7ecddc05dc))
+* **UI:** fix BrandAssetsDrawer and a11y tests, resolve validation failures ([9ea0f91](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9ea0f912f9fc8a2ab9984ba3f48d12edeaeb6e64))
+* **ui:** resolve duplicate CommandBar in Boardroom mode ([5c7e054](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5c7e054e7c28535d6010152985c3d528e4b62a49))
+* **UnifiedCommandMenu:** force close on Escape key\n\nThis fixes BUG-005 by setting the event listener for 'Escape' key on the document level with capture: true. This ensures that the event is intercepted during the capture phase, preventing child elements like cmdk from stopping the event propagation and missing the force-close action. ([#1445](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1445)) ([62fef46](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/62fef46ab08ed4249e27d6e00f60b37ca23e7f8d))
+
+
+### Performance Improvements
+
+* **agent:** optimize fetchVaultFacts to prevent N+1 queries ([#1458](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1458)) ([d1f1628](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d1f162836ebd0b5bff6948e371ca927429ccd542))
+* **api:** optimize indii_sync file processing ([#1477](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1477)) ([02f937c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/02f937cb05759b790717fb2243ac6f4bc53eee7f))
+
 ## [1.50.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.50.0) (2026-04-13)
 
 
