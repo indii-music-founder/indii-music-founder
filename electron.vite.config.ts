@@ -97,42 +97,77 @@ export default defineConfig({
                     index: resolve(__dirname, 'packages/renderer/index.html'),
                 },
                 output: {
-                    // WO-14: Split heavy libraries into named chunks so each
-                    // lazy-loaded module only pulls what it needs, and browsers
-                    // can cache these independently across deploys.
+                    // WO-14 + Incident 2026-04-16: Split heavy libraries into named
+                    // chunks so each lazy-loaded module only pulls what it needs.
+                    //
+                    // CRITICAL: Use strict package-name matching, NOT substring.
+                    // A previous version used `id.includes('node_modules/react')`
+                    // which matched `node_modules/reactflow`, sweeping reactflow
+                    // (and its d3-* transitive deps) into vendor-react. Recharts
+                    // also uses d3-interpolate, creating a 3-way circular chunk
+                    // import:
+                    //   vendor-react → vendor-recharts (d3) → vendor-react (React)
+                    //   vendor-react → vendor-three (zustand/use-sync) → vendor-react
+                    // ESM cycles leave imported bindings `undefined` at top-level
+                    // evaluation time, producing
+                    //   `Cannot read properties of undefined (reading 'forwardRef')`
+                    // inside vendor-recharts and silently killing React before mount.
+                    //
+                    // Rule: every named vendor chunk must contain ONLY true leaf
+                    // packages that don't import anything belonging to another
+                    // named vendor chunk.
                     manualChunks(id: string) {
+                        // Extract the package name from the id. Handles:
+                        //   /node_modules/foo/...            → foo
+                        //   /node_modules/@scope/foo/...     → @scope/foo
+                        //   /node_modules/.pnpm/foo@x/...    → foo
+                        const m = id.match(/[\\/]node_modules[\\/](?:\.pnpm[\\/](?:@[^\\/]+\+)?[^\\/]+[\\/]node_modules[\\/])?(@[^\\/]+[\\/][^\\/]+|[^\\/]+)/);
+                        if (!m) return undefined;
+                        const pkg = m[1];
+
                         // Three.js — 3D module only
-                        if (id.includes('node_modules/three') || id.includes('@react-three')) {
+                        if (pkg === 'three' || pkg.startsWith('@react-three/')) {
                             return 'vendor-three';
                         }
                         // Remotion — video rendering, only loaded by video module
-                        if (id.includes('node_modules/remotion') || id.includes('@remotion')) {
+                        if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
                             return 'vendor-remotion';
                         }
                         // Fabric.js — canvas, only creative module
-                        if (id.includes('node_modules/fabric')) {
+                        if (pkg === 'fabric') {
                             return 'vendor-fabric';
                         }
                         // Audio analysis — only audio/tools module
-                        if (id.includes('node_modules/wavesurfer') || id.includes('node_modules/essentia')) {
+                        if (pkg === 'wavesurfer.js' || pkg === 'wavesurfer' || pkg === 'essentia.js' || pkg.startsWith('essentia')) {
                             return 'vendor-audio';
                         }
                         // Recharts — data visualisation, only finance/analytics
-                        if (id.includes('node_modules/recharts')) {
+                        if (pkg === 'recharts') {
                             return 'vendor-recharts';
                         }
                         // Framer Motion — animations, separate for cache stability
-                        if (id.includes('node_modules/framer-motion')) {
+                        if (pkg === 'framer-motion' || pkg === 'motion') {
                             return 'vendor-motion';
                         }
                         // Firebase SDK — large auth/firestore/storage bundle
-                        if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+                        if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                             return 'vendor-firebase';
                         }
-                        // React ecosystem: core vendor chunk that changes rarely
-                        if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+                        // React ecosystem: ONLY the core React runtime + router.
+                        // Do NOT include anything that depends on d3, zustand, or
+                        // use-sync-external-store — those must live in the default
+                        // chunks to prevent cyclic chunk imports.
+                        if (
+                            pkg === 'react' ||
+                            pkg === 'react-dom' ||
+                            pkg === 'react-router' ||
+                            pkg === 'react-router-dom' ||
+                            pkg === 'scheduler' ||
+                            pkg === 'react-is'
+                        ) {
                             return 'vendor-react';
                         }
+                        return undefined;
                     },
                 },
             },
