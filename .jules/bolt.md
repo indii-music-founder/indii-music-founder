@@ -42,3 +42,8 @@
 
 **Learning:** Found that `TraceViewer` component in `packages/renderer/src/components/studio/observability/TraceViewer.tsx` was not using `React.memo`, even though it manages its own state for traces and selected traces. This component renders a list of traces and can be susceptible to unnecessary re-renders when parent components update.
 **Action:** Wrapped `TraceViewer` with `React.memo` to prevent re-renders when parent components update and its own state remains unchanged.
+
+## 2026-04-17 - Error Boundary Chunk Load Recovery
+
+**Learning:** When deploying a new version of the application, dynamically imported chunks may be invalidated by the bundler (e.g., Vite/Rollup), leading to "Failed to fetch dynamically imported module" errors in lazy-loaded routes if the user hasn't refreshed their browser.
+**Action:** Detect chunk load errors (by matching the specific error message string) within the global `ModuleErrorBoundary` and trigger an automatic `window.location.reload()` to silently recover from version mismatch errors instead of showing an unactionable generic error screen.
