@@ -1,26 +1,12 @@
-// Updated code for ReceiptOCR component
+// 1. Upload the file using resumable upload
+const fileMeta = await firebaseAI.fileService.uploadFile(uploadedFile);
 
-import React, { useEffect, useState } from 'react';
-import { analyzeFileURI } from 'some-analyze-library';
+// 2. Wait for it to be active
+await firebaseAI.fileService.waitForActive(fileMeta.name);
 
-const ReceiptOCR = () => {
-    // State initialization...
-
-    // Removed duplicate declaration of fileMeta
-    useEffect(() => {
-        // Some effect for file handling
-    }, []);
-
-    const handleFileChange = (uri) => {
-        // Corrected analyzeFileURI method call
-        analyzeFileURI(uri, parameter1, parameter2);
-    };
-
-    return (
-        <div>
-            // JSX content here
-        </div>
-    );
-};
-
-export default ReceiptOCR;
+// 3. Analyze the URI
+const responseText = await firebaseAI.analyzeFileURI(
+    fileMeta.uri,
+    fileMeta.mimeType,
+    jsonPrompt
+);
