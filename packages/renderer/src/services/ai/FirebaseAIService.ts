@@ -61,6 +61,7 @@ import {
     generateGroundedContent as hlGenerateGroundedContent,
     captionImage as hlCaptionImage,
     analyzeAudio as hlAnalyzeAudio,
+    analyzeFileURI as hlAnalyzeFileURI,
     parseJSON as hlParseJSON,
 } from './generators/HighLevelAPI';
 import { generateImage as imgGenerate } from './generators/ImageGenerator';
@@ -69,6 +70,7 @@ import {
     embedContent as embeddingEmbed,
     batchEmbedContents as embeddingBatchEmbed,
 } from './generators/EmbeddingGenerator';
+import { GeminiFileService } from './GeminiFileService';
 import type { AIContext } from './AIContext';
 import type {
     FileDataPart,
@@ -92,6 +94,9 @@ export class FirebaseAIService implements AIContext {
     public fallbackClient: GoogleGenAI | null = null;
     public useFallbackMode = false;
     public activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
+
+    // File Service (Gemini API 2GB limit)
+    public fileService = GeminiFileService.getInstance();
 
     // Default: 60 RPM (adjust based on quota)
     public rateLimiter: RateLimiter = new RateLimiter(60);
@@ -870,6 +875,18 @@ export class FirebaseAIService implements AIContext {
      */
     async analyzeAudio(audio: string | ArrayBuffer, prompt: string = 'Analyze this audio content in detail...'): Promise<string> {
         return hlAnalyzeAudio(this, audio, prompt);
+    }
+
+    /**
+     * MULTIMODAL: Analyze a file URI (Gemini Files API).
+     * @see generators/HighLevelAPI.ts
+     */
+    async analyzeFileURI(
+        fileUri: string,
+        mimeType: string,
+        prompt: string = 'Analyze this document in detail...'
+    ): Promise<string> {
+        return hlAnalyzeFileURI(this, fileUri, mimeType, prompt);
     }
 
     /**
