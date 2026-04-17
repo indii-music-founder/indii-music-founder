@@ -149,9 +149,6 @@ export class AudioAnalysisService {
         return this.analyzeDeep(file, fileHash);
     }
 
-    /**
-     * Deep Analysis (Downgraded to Basic due to architecture constraints)
-     */
     async analyzeDeep(file: File | Blob, precalculatedHash?: string): Promise<{ features: DeepAudioFeatures, fromCache: boolean }> {
         await this.init();
         if (!this.essentia) throw new Error("Essentia not initialized");
@@ -193,6 +190,16 @@ export class AudioAnalysisService {
             );
 
             if (result && typeof result === 'string') {
+            const result = await firebaseAI.analyzeFileURI(fileMeta.uri, fileMeta.mimeType, `
+                Analyze this audio track and extract its musical DNA.
+                Return a JSON object containing:
+                1. "genre": an object with up to 3 genre names as keys and confidence values (0 to 1) as values. (e.g. {"Synthpop": 0.9, "Cyberpunk": 0.7})
+                2. "moods": an object with standard moods as keys and values 0 to 1. E.g. happy, aggressive, relaxed, sad.
+                3. "danceability_ml": A float between 0 and 1 representing how danceable it is.
+                Return ONLY valid JSON.
+            `);
+
+            if (result) {
                 try {
                     const parsed = JSON.parse(result);
                     features.genre = parsed.genre || features.genre;
@@ -380,10 +387,6 @@ export class AudioAnalysisService {
             }
         }
     }
-
-    /**
-     * Saves analysis result to Firestore using the centralized persistence service.
-     */
     async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string, semantic?: Record<string, unknown>): Promise<void> {
         const result = await metadataPersistenceService.save('audio', {
             filename,
