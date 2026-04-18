@@ -318,7 +318,8 @@ class MembershipServiceImpl {
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
-            return state.userProfile?.id || null;
+            // Fallback to auth.user.uid if profile is still loading/syncing
+            return state.userProfile?.id || state.userProfile?.uid || (state as any).user?.uid || null;
         } catch {
             return null;
         }

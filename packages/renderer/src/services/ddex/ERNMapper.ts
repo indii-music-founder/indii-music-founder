@@ -37,6 +37,7 @@ export class ERNMapper {
             recipient: DPID;
             createdDateTime: string;
             messageControlType?: 'LiveMessage' | 'TestMessage';
+            action?: 'NewRelease' | 'Update' | 'Takedown';
         },
         assets?: ReleaseAssets
     ): ERNMessage {
@@ -60,11 +61,12 @@ export class ERNMapper {
         mainRelease.releaseResourceReferenceList = resourceReferences;
 
         // 4. Build Deal List
-        const deals = this.buildDeals(metadata, releaseReference);
+        const deals = this.buildDeals(metadata, releaseReference, options.action);
 
         return {
             messageSchemaVersionId: '4.3',
             messageHeader,
+            action: options.action || 'NewRelease',
             releaseList: [mainRelease],
             resourceList: resources,
             dealList: deals,
@@ -85,7 +87,13 @@ export class ERNMapper {
             titleType: 'DisplayTitle',
         };
 
-        const contributors = this.mapContributors(metadata.splits, metadata.artistName);
+        const contributors = this.mapContributors(
+            metadata.splits, 
+            metadata.artistName, 
+            metadata.artistIsni, 
+            metadata.artistSpotifyId, 
+            metadata.artistAppleMusicId
+        );
 
         // Determine ReleaseType
         const RELEASE_TYPE_MAP: Record<string, ReleaseType> = {
@@ -204,17 +212,20 @@ export class ERNMapper {
                     titleType: 'DisplayTitle',
                 },
                 displayArtistName: track.artistName,
-                contributors: this.mapContributors(track.splits, track.artistName),
+                contributors: this.mapContributors(
+                    track.splits, 
+                    track.artistName,
+                    (track as ExtendedGoldenMetadata).artistIsni,
+                    (track as ExtendedGoldenMetadata).artistSpotifyId,
+                    (track as ExtendedGoldenMetadata).artistAppleMusicId
+                ),
                 duration: track.durationDDEXFormatted || this.formatDuration(track.durationFormatted),
                 parentalWarningType: track.explicit ? 'Explicit' : 'NotExplicit',
                 soundRecordingDetails: {
                     soundRecordingType: 'MusicalWorkSoundRecording',
                     isInstrumental: track.isInstrumental || false,
                     languageOfPerformance: track.language,
-                    lyrics: track.lyrics ? {
-                        lyricsText: track.lyrics,
-                        isExplicit: track.explicit
-                    } : undefined,
+                    immersiveAudioProfile: (track as ExtendedGoldenMetadata).immersiveAudioProfile,
                     bpm: track.bpm,
                     key: track.key,
                     energy: track.energy
@@ -223,10 +234,35 @@ export class ERNMapper {
 
             // Map Lyrics (Metadata to ERN Detail)
             // Note: ERN 4.3 typically handles lyrics as a Text Resource or DetailsByTerritory.
-            // For simplicity in this 'Gold Standard' pass, we'll attach it if the schema allows,
-            // or implicitly rely on it being present in the package.
-            // Here we assume it might be added to details if we had a field for it in Resource.
             // (DDEX 4.3 encourages Lyrics as a separate Text Resource linked to the SoundRecording)
+            if (track.lyrics) {
+                const lyricsRef = `T${resourceCounter++}`;
+                resourceReferences.push(lyricsRef);
+                const textResource: Resource = {
+                    resourceReference: lyricsRef,
+                    resourceType: 'Text',
+                    resourceId: {
+                        proprietaryId: {
+                            proprietaryIdType: 'PartySpecific',
+                            id: `LYR-${track.isrc || Date.now()}`
+                        }
+                    },
+                    resourceTitle: {
+                        titleText: `Lyrics for ${track.trackTitle}`,
+                        titleType: 'DisplayTitle'
+                    },
+                    displayArtistName: track.artistName,
+                    contributors: [],
+                    textDetails: {
+                        textType: 'Lyrics',
+                        languageOfText: track.language || 'en'
+                    },
+                    technicalDetails: {
+                        fileName: `${lyricsRef}.txt`
+                    }
+                };
+                resources.push(textResource);
+            }
 
             // AI Info for Resource
             if (track.aiGeneratedContent) {
@@ -323,7 +359,8 @@ export class ERNMapper {
 
     private static buildDeals(
         metadata: ExtendedGoldenMetadata,
-        _releaseReference: string
+        _releaseReference: string,
+        action?: 'NewRelease' | 'Update' | 'Takedown'
     ): Deal[] {
         const deals: Deal[] = [];
         let dealCounter = 1;
@@ -349,7 +386,7 @@ export class ERNMapper {
                     }],
                     territoryCode,
                     validityPeriod,
-                    takeDown: false,
+                    takeDown: action === 'Takedown',
                 },
             };
 
@@ -422,7 +459,7 @@ export class ERNMapper {
                     usage: [{ useType, distributionChannelType: 'Stream' }],
                     territoryCode,
                     validityPeriod,
-                    takeDown: false,
+                    takeDown: action === 'Takedown',
                     releaseDisplayStartDate: metadata.releaseDate,
                 },
                 youtubeContentIdPolicy: contentIdPolicy,
@@ -433,7 +470,13 @@ export class ERNMapper {
         return deals;
     }
 
-    private static mapContributors(splits: RoyaltySplit[], displayArtist: string): Contributor[] {
+    private static mapContributors(
+        splits: RoyaltySplit[], 
+        displayArtist: string,
+        artistIsni?: string,
+        artistSpotifyId?: string,
+        artistAppleMusicId?: string
+    ): Contributor[] {
         const contributors: Contributor[] = [];
 
         // Ensure Display Artist is included
@@ -443,7 +486,10 @@ export class ERNMapper {
             contributors.push({
                 name: displayArtist,
                 role: 'MainArtist',
-                sequenceNumber: 1
+                sequenceNumber: 1,
+                isni: artistIsni,
+                spotifyId: artistSpotifyId,
+                appleMusicId: artistAppleMusicId
             });
         }
 
@@ -462,11 +508,23 @@ export class ERNMapper {
                 role = 'MainArtist';
             }
 
-            contributors.push({
+            const contributor: Contributor = {
                 name: split.legalName,
                 role: role,
-                sequenceNumber: index + 2 // Start after inferred main artist if added
-            });
+                sequenceNumber: index + 2, // Start after inferred main artist if added
+                isni: split.isni,
+                spotifyId: split.spotifyId,
+                appleMusicId: split.appleMusicId
+            };
+
+            // If this is the main artist and we have top-level disambiguation, prioritize it
+            if (role === 'MainArtist') {
+                if (artistIsni && !contributor.isni) contributor.isni = artistIsni;
+                if (artistSpotifyId && !contributor.spotifyId) contributor.spotifyId = artistSpotifyId;
+                if (artistAppleMusicId && !contributor.appleMusicId) contributor.appleMusicId = artistAppleMusicId;
+            }
+
+            contributors.push(contributor);
         });
 
         return contributors;
