@@ -83,8 +83,10 @@ export function setupAutoUpdater(): void {
         log.error('[Updater] Error:', message);
         sendToRenderer('updater:error', { message });
     });
+}
 
-    // IPC handlers for renderer control
+export function registerUpdaterHandlers(): void {
+    // IPC handlers for renderer control - registered unconditionally
     ipcMain.handle('updater:check', async () => {
         if (!autoUpdater) return { available: false };
         try {
