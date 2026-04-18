@@ -77,7 +77,7 @@ export interface AudioSemanticData {
 
 export interface AudioIntelligenceProfile {
     id: string;             // Content hash — fingerprint from FingerprintService
-    technical: AudioFeatures; // BPM, Key, Energy — from Essentia.js WASM
+    technical: DeepAudioFeatures; // BPM, Key, Energy — from Essentia.js WASM
     semantic: AudioSemanticData; // Mood, Genre, Imagery, Prompts — from Gemini 3 Pro
     analyzedAt: number;
     modelVersion: string;   // e.g., "gemini-3-pro-preview"
