@@ -21,35 +21,51 @@ describe('Security Utilities', () => {
     });
 
     it('should throw an error if crypto.getRandomValues is not available', () => {
-      vi.stubGlobal('crypto', { getRandomValues: undefined });
-
-      expect(() => generateSecureHex(10)).toThrow(
-        '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
-      );
+      const originalCrypto = globalThis.crypto;
+      try {
+        Object.defineProperty(globalThis, 'crypto', { value: { getRandomValues: undefined }, configurable: true });
+        expect(() => generateSecureHex(10)).toThrow(
+          '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
+        );
+      } finally {
+        Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true });
+      }
     });
 
     it('should throw an error if crypto is deleted from globalThis', () => {
-      vi.stubGlobal('crypto', undefined);
-
-      expect(() => generateSecureHex(10)).toThrow(
-        '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
-      );
+      const originalCrypto = globalThis.crypto;
+      try {
+        Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true });
+        expect(() => generateSecureHex(10)).toThrow(
+          '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
+        );
+      } finally {
+        Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true });
+      }
     });
 
     it('should throw an error if crypto is null', () => {
-      vi.stubGlobal('crypto', null);
-
-      expect(() => generateSecureHex(10)).toThrow(
-        '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
-      );
+      const originalCrypto = globalThis.crypto;
+      try {
+        Object.defineProperty(globalThis, 'crypto', { value: null, configurable: true });
+        expect(() => generateSecureHex(10)).toThrow(
+          '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
+        );
+      } finally {
+        Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true });
+      }
     });
 
     it('should throw an error if crypto itself is undefined', () => {
-      vi.stubGlobal('crypto', undefined);
-
-      expect(() => generateSecureHex(10)).toThrow(
-        '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
-      );
+      const originalCrypto = globalThis.crypto;
+      try {
+        Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true });
+        expect(() => generateSecureHex(10)).toThrow(
+          '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
+        );
+      } finally {
+        Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true });
+      }
     });
   });
 
