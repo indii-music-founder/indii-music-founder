@@ -415,10 +415,18 @@ class DDEXParserImpl {
       : [dealList.ReleaseDeal as Record<string, unknown>];
 
     return releaseDeals.map((rd) => {
-      const deal = (rd.Deal || {}) as Record<string, unknown>;
-      const dealTerms = (deal.DealTerms || {}) as Record<string, unknown>;
+      const dealsArray = Array.isArray(rd.Deal) ? rd.Deal : [rd.Deal || {}];
+      const deal = dealsArray[0] as Record<string, unknown>;
+      const dealTermsArray = Array.isArray(deal.DealTerms) ? deal.DealTerms : [deal.DealTerms || {}];
+      const dealTerms = dealTermsArray[0] as Record<string, unknown>;
       const usage = (dealTerms.Usage || []) as Record<string, unknown>[];
-      const territories = dealTerms.TerritoryCode || dealTerms.Territory || ['Worldwide'];
+      let youtubeContentIdPolicy: string | undefined = undefined;
+      if (dealTerms.ProprietaryExtension) {
+        const propExt = dealTerms.ProprietaryExtension as Record<string, unknown>;
+        if (propExt.ExtensionCode === 'YouTubeContentIdPolicy') {
+          youtubeContentIdPolicy = String(propExt.ExtensionPayload || '');
+        }
+      }
 
       return {
         dealReference: String(rd['@_DealReference'] || ''),
@@ -427,12 +435,13 @@ class DDEXParserImpl {
           usage: (Array.isArray(usage) ? usage : [usage]).map((u) => ({
             useType: (u.UseType as ERNMessage['dealList'][0]['dealTerms']['usage'][0]['useType']) || 'OnDemandStream',
           })),
-          territoryCode: (Array.isArray(territories) ? territories : [territories]) as string[],
+          territoryCode: (Array.isArray(dealTerms.TerritoryCode) ? dealTerms.TerritoryCode : [dealTerms.TerritoryCode]) as string[],
           validityPeriod: {
             startDate: String(dealTerms.ValidityPeriod ? (dealTerms.ValidityPeriod as Record<string, unknown>).StartDate : ''),
             endDate: dealTerms.ValidityPeriod ? String((dealTerms.ValidityPeriod as Record<string, unknown>).EndDate || '') || undefined : undefined,
           },
         },
+        youtubeContentIdPolicy
       };
     });
   }
@@ -452,6 +461,12 @@ class DDEXParserImpl {
               StartDate: d.dealTerms.validityPeriod.startDate,
               EndDate: d.dealTerms.validityPeriod.endDate,
             },
+            ...(d.youtubeContentIdPolicy ? {
+              ProprietaryExtension: {
+                ExtensionCode: 'YouTubeContentIdPolicy',
+                ExtensionPayload: d.youtubeContentIdPolicy,
+              },
+            } : {}),
           },
         },
       })),

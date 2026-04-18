@@ -425,9 +425,8 @@ export class ERNMapper {
                     takeDown: false,
                     releaseDisplayStartDate: metadata.releaseDate,
                 },
+                youtubeContentIdPolicy: contentIdPolicy,
             };
-            // Annotate the deal with the YouTube-specific policy in a proprietary extension field
-            (contentIdDeal as unknown as Record<string, unknown>)['youtubeContentIdPolicy'] = contentIdPolicy;
             deals.push(contentIdDeal);
         }
 

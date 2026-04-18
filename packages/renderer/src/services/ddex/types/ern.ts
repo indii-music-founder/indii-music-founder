@@ -153,6 +153,7 @@ export interface SoundRecordingDetails {
 export interface Deal {
   dealReference: string;
   dealTerms: DealTerms;
+  youtubeContentIdPolicy?: string;
 }
 
 export interface DealTerms {
