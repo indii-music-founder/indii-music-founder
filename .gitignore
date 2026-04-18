@@ -104,3 +104,8 @@ electron/
 functions/
 coverage/
 scripts/daisy-chain-output/
+*.lock
+*.tsbuildinfo
+*.cache
+*HANDOFF*
+*CHECKPOINT*

@@ -25,7 +25,7 @@ import { configureSecurity, auditSessionCookies } from './security';
 import { applyCSP } from './security/csp';
 import { SidecarService } from './services/SidecarService';
 import { mcpClientService } from './services/mcp/MCPClientService';
-import { setupAutoUpdater } from './updater';
+import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
 import Store from 'electron-store';
 
 // Configure logging — app.getPath may not be available in dev CJS bundles
@@ -484,6 +484,7 @@ if (!gotTheLock) {
         });
 
         // Auto-updater (production only)
+        registerUpdaterHandlers();
         if (app.isPackaged) {
             setupAutoUpdater();
         }
