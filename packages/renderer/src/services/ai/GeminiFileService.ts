@@ -110,6 +110,8 @@ export class GeminiFileService {
                 body: file,
             });
 
+            if (onProgress) onProgress(100);
+
             if (!uploadResponse.ok) {
                 const errorText = await uploadResponse.text();
                 throw new Error(`Upload failed: ${uploadResponse.status} ${errorText}`);
