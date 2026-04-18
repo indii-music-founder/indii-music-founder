@@ -100,3 +100,71 @@ When a CI shard fails:
 
   3. `configSearchPatterns` is the critical setting — it stops auto-discovery entirely
 - RULE: **When adding a new `vite.config.ts` or `vitest*.config.ts` anywhere in the repo, do NOT expect the Vitest extension to ignore it.** Either add it to `vitest.workspace.ts` or add its directory to `vitest.exclude` in `.vscode/settings.json`.
+
+---
+
+## 2026-04-18 stupefied-faraday Review — 7 Regression Patterns
+
+Single branch (`claude/stupefied-faraday-aa0be2`) surfaced seven distinct classes of regression. Each is now codified in `docs/PLATINUM_QUALITY_STANDARDS.md` as an anti-pattern, with detect/prevent rules. Ledger entries below are the actionable mnemonic form — search this ledger before any debug per the Error Memory Protocol.
+
+### Pattern 1 — Reverting a recently-merged fix
+
+- SEVERITY: Critical (reintroduces a bug that just shipped)
+- FILE: `packages/renderer/src/modules/finance/components/ReceiptOCR.tsx` (example case)
+- BUG: Branch replaced `/^` + backticks + `(?:json)?\s*\n?/i` with `/^` + backticks + `json?\n?/i`. `json?` means "jso" + optional `n` — NOT optional "json". Undid PR #1497 (commit `228d47875`) which shipped two commits earlier.
+- FIX: Always run `git log -p <file> --since="2 weeks ago"` before editing a parser, regex, schema, or error-handler. If a recent commit subject contains `fix`, `improve`, or a PR number, read its diff before you touch those lines.
+- RULE: **Before rewriting any parser / regex / schema / error-handler, confirm you are not about to undo a recently-merged fix.** If you are, the commit message must explain why.
+
+### Pattern 2 — Removing recovery code without a replacement
+
+- SEVERITY: High (user-visible UX regression; can create infinite retry loops)
+- FILE: `packages/renderer/src/core/components/ModuleErrorBoundary.tsx`
+- BUG: Branch removed the `"Failed to fetch dynamically imported module"` → `window.location.reload()` branch in `handleRetry`, replacing it with a plain `setState({ hasError: false })`. The comment `// Optional: Force reload or specialized recovery` was left behind — author admitting capability was removed without replacement. Result: after a deploy that changes chunk hashes, stale clients re-fire the same failing lazy import forever.
+- FIX: Restore the conditional reload. Never trust `router.refresh()` or `navigate(0)` for stale-chunk recovery — only `window.location.reload()` re-fetches `index.html`.
+- RULE: **Any diff that shrinks an `if/else`, `try/catch`, `switch`, or removes `reload()` / `retry()` / `rollback()` / `fallback()` must be justified in the commit message.** A `// Optional:` comment is an admission, not a fix.
+
+### Pattern 3 — Agent-routing typos or silent route deletions in `agents/*/prompt.md`
+
+- SEVERITY: High (silent capability drop — hub drops tasks with no error)
+- FILE: `agents/agent0/prompt.md` (example case)
+- BUG: Branch changed `Creative Director` (matches `agents/creative-director/`) to lowercase `director` (no such directory), deleted the `Analytics` routing line entirely, and deleted tool-docs for `synthesize_plan` and `track_status` without confirming the tools were removed from the runtime registry.
+- FIX: When editing any hub/spoke prompt, `ls agents/` to confirm every name you write resolves. For each route deleted, either (a) grep the codebase to prove the spoke no longer exists, or (b) explain in the commit message.
+- RULE: **Agent names in prompts are case-sensitive and resolve to directory names under `agents/`.** Never edit an agent prompt without a directory-listing cross-check. Never delete a route without documented justification.
+
+### Pattern 4 — Duplicate comment / JSDoc blocks (copy-paste residue)
+
+- SEVERITY: Low (code smell, lint noise, signals a sloppy merge)
+- FILE: `packages/renderer/src/services/ai/GeminiFileService.ts` (example case)
+- BUG: Three-line comment block duplicated consecutively (first copy with trailing space, second without — classic rebase / copy-paste artifact). Same file had `* Polls the file until its state is ACTIVE.` twice in a JSDoc.
+- FIX: Read the final file top-to-bottom (not just the diff) before committing. `grep -n "^[[:space:]]*//" <file>` or `grep -n "^[[:space:]]*\*" <file>` to spot adjacent identical lines.
+- RULE: **After any refactor that moves code blocks, scan for adjacent identical comment / JSDoc lines.** Diff viewers collapse matching lines sometimes — read the file, not just the hunk.
+
+### Pattern 5 — Prompt template whitespace bloat
+
+- SEVERITY: Medium (token waste at scale, no functional gain)
+- FILE: `packages/renderer/src/services/audio/AudioAnalysisService.ts` (example case)
+- BUG: Branch reformatted a prompt from clean inline text to a template literal with ~16 spaces of leading whitespace on every line, plus leading / trailing blank lines. Those spaces travel to Gemini as literal prompt tokens.
+- FIX: For template-literal prompts, either hand-align the string so indentation is intentional AND minimal, or strip leading whitespace with `.replace(/^\s+/gm, '')` before sending.
+- RULE: **Whitespace inside a template literal that ends up in an LLM call is prompt content.** If a diff shows `+                 <text>`, that leading whitespace is in the prompt — justify or remove.
+
+### Pattern 6 — Losing file mode bits (exec bit on shell / python scripts)
+
+- SEVERITY: High (silent break — scripts fail with `Permission denied` when invoked)
+- FILE: `.claude/scripts/checkpoint.sh` (example case)
+- BUG: Branch changed mode from `100755` to `100644`. Hooks / cron / git aliases that invoke the script directly (not via `bash <script>`) now fail silently. `git diff --stat` does NOT show mode changes.
+- FIX: Use `git update-index --chmod=+x <path>` — `chmod +x` on the filesystem does not always record in git, especially on exFAT / NTFS / some SSDs that don't preserve exec bit.
+- RULE: **For any `.sh`, `.py`, `.mjs` with a shebang, confirm mode `100755` after editing via `git ls-files --stage <path>`.** Use `git diff --summary` or `git log --raw` to spot mode changes — they are invisible to `--stat`.
+
+### Pattern 7 — Staging runtime lock / state files
+
+- SEVERITY: Medium (repo pollution, merge conflicts, leaked state)
+- FILE: `.claude/scheduled_tasks.lock`, `packages/renderer/tsconfig.tsbuildinfo` (example cases)
+- BUG: Branch staged a scheduled-task runtime lock file and a TypeScript incremental build cache. Both are per-machine runtime state, never source.
+- FIX: Add each offending pattern to `.gitignore` BEFORE committing. If already staged, `git rm --cached <path>` and commit the `.gitignore` update + removal together. Never `git add .` or `git add -A` blindly — always name files.
+- RULE: **Any filename ending in `.lock`, `.tsbuildinfo`, `.log`, `.cache`, or `.DS_Store`, or containing `HANDOFF` / `CHECKPOINT`, must be gitignored.** Run `git diff --cached --name-only | grep -E '\.(lock|tsbuildinfo|log|cache)$'` before every commit.
+
+---
+
+## Meta-rule: /plat
+
+Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It executes the Pre-commit checklist from `docs/PLATINUM_QUALITY_STANDARDS.md` and cross-references this ledger. Any agent that skips `/plat` on a substantive branch has violated the Error Memory Protocol.
