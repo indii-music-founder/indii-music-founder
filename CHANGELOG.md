@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.51.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.50.1...v1.51.0) (2026-04-18)
+
+
+### Features
+
+* **slash:** add /plat finishing-touches workflow ([fd9ad8a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/fd9ad8aa15a3721ee56c123df05a3b58725a552c))
+
 ## [1.50.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.50.0...v1.50.1) (2026-04-18)
 
 
