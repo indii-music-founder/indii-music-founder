@@ -178,14 +178,16 @@ export class AudioAnalysisService {
             await firebaseAI.fileService.waitForActive(fileMeta.name);
 
             // Analyze the URI
-            const result = await firebaseAI.analyzeFileURI(fileMeta.uri, fileMeta.mimeType, `
-                Analyze this audio track and extract its musical DNA.
-                Return a JSON object containing:
-                1. "genre": an object with up to 3 genre names as keys and confidence values (0 to 1) as values. (e.g. {"Synthpop": 0.9, "Cyberpunk": 0.7})
-                2. "moods": an object with standard moods as keys and values 0 to 1. E.g. happy, aggressive, relaxed, sad.
-                3. "danceability_ml": A float between 0 and 1 representing how danceable it is.
-                Return ONLY valid JSON.
-            `);
+            const result = await firebaseAI.analyzeFileURI(
+                fileMeta.uri,
+                fileMeta.mimeType,
+                `Analyze this audio track and extract its musical DNA.
+                 Return a JSON object containing:
+                 1. "genre": an object with up to 3 genre names as keys and confidence values (0 to 1) as values. (e.g. {"Synthpop": 0.9, "Cyberpunk": 0.7})
+                 2. "moods": an object with standard moods as keys and values 0 to 1. E.g. happy, aggressive, relaxed, sad.
+                 3. "danceability_ml": A float between 0 and 1 representing how danceable it is.
+                 Return ONLY valid JSON.`
+            );
 
             if (result) {
                 try {
