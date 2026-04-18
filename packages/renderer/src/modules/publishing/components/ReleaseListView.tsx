@@ -285,6 +285,12 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                                             <div>
                                                 <p className="font-bold text-white text-sm tracking-tight">{release.metadata.trackTitle}</p>
                                                 <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">{release.metadata.artistName}</p>
+                                                {(release.metadata.bpm || release.metadata.key) && (
+                                                    <div className="flex gap-2 mt-1">
+                                                        {release.metadata.bpm && <span className="text-[10px] text-gray-400 bg-gray-800/50 px-1.5 py-0.5 rounded-sm">{release.metadata.bpm} BPM</span>}
+                                                        {release.metadata.key && <span className="text-[10px] text-gray-400 bg-gray-800/50 px-1.5 py-0.5 rounded-sm">{release.metadata.key}</span>}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </td>

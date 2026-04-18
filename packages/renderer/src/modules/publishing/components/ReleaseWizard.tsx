@@ -247,6 +247,51 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
         </div>
 
+        {/* BPM */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            BPM
+          </label>
+          <input
+            type="number"
+            value={metadata.bpm || ''}
+            onChange={e => updateMetadata({ bpm: parseFloat(e.target.value) || undefined })}
+            placeholder="e.g. 120"
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
+        {/* Key */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Key
+          </label>
+          <input
+            type="text"
+            value={metadata.key || ''}
+            onChange={e => updateMetadata({ key: e.target.value })}
+            placeholder="e.g. C minor, 8A"
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
+        {/* Energy */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Energy
+          </label>
+          <input
+            type="number"
+            value={metadata.energy || ''}
+            onChange={e => updateMetadata({ energy: parseFloat(e.target.value) || undefined })}
+            placeholder="0.0 to 1.0 (e.g. 0.85)"
+            step="0.01"
+            min="0"
+            max="1"
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
         {/* Release Date */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -636,6 +681,24 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
               <dt className="text-gray-400">Label</dt>
               <dd className="text-white">{metadata.labelName || '-'}</dd>
             </div>
+            {metadata.bpm && (
+              <div className="flex justify-between">
+                <dt className="text-gray-400">BPM</dt>
+                <dd className="text-white">{metadata.bpm}</dd>
+              </div>
+            )}
+            {metadata.key && (
+              <div className="flex justify-between">
+                <dt className="text-gray-400">Key</dt>
+                <dd className="text-white">{metadata.key}</dd>
+              </div>
+            )}
+            {metadata.energy && (
+              <div className="flex justify-between">
+                <dt className="text-gray-400">Energy</dt>
+                <dd className="text-white capitalize">{metadata.energy}</dd>
+              </div>
+            )}
           </dl>
         </div>
 
