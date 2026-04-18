@@ -458,6 +458,19 @@ mcp_mem0_add-memory(
 
 **Failure to check the ledger first is a protocol violation.**
 
+### 6. PLATINUM QUALITY STANDARDS (MANDATORY FOR EVERY DIFF)
+
+Every code change, review, and agent-authored diff must meet the standards in the platinum documents:
+
+- `docs/PLATINUM_QUALITY_STANDARDS.md` — Code-review / diff discipline. The Seven Anti-Patterns, pre-commit checklist, pitfall library. **Read this before you edit anything.**
+- `docs/PLATINUM_POLISH_REPORT.md` — Codebase audit snapshot (type safety, log hygiene, error handling).
+- `docs/DATABASE_PLATINUM_PROTOCOL.md` — Database-layer platinum protocol.
+- `docs/TOP_50_PLATINUM_RELEASE.md` — Release-readiness checklist.
+
+**Before every `git push`**, run `/plat` (see `.claude/commands/plat.md`). It executes the Pre-commit checklist from `docs/PLATINUM_QUALITY_STANDARDS.md`, cross-references the Error Ledger, and produces an explicit GO / NO-GO verdict. Skipping `/plat` on a substantive branch is treated the same as skipping the Error Ledger check — a protocol violation.
+
+Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a novel variant, add new entries to BOTH `.agent/skills/error_memory/ERROR_LEDGER.md` AND `docs/PLATINUM_QUALITY_STANDARDS.md` before ending the session.
+
 ---
 
 ## Key Files Quick Reference
@@ -479,6 +492,12 @@ mcp_mem0_add-memory(
 | `docker-compose.yml` | AI Sidecar + Ollama containers |
 | `.env.example` | Environment variable template |
 | `src/test/setup.ts` | Vitest global test setup and Firebase mocks |
+| `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Seven Anti-Patterns, pre-commit checklist |
+| `docs/PLATINUM_POLISH_REPORT.md` | Codebase audit snapshot (type safety, log hygiene) |
+| `docs/DATABASE_PLATINUM_PROTOCOL.md` | Database-layer platinum protocol |
+| `docs/TOP_50_PLATINUM_RELEASE.md` | Release-readiness checklist |
+| `.agent/skills/error_memory/ERROR_LEDGER.md` | Living log of past regressions — MANDATORY check before debug |
+| `.claude/commands/plat.md` | `/plat` slash command — platinum finishing touches before every push |
 
 ---
 
