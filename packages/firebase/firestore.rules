@@ -71,6 +71,7 @@ service cloud.firestore {
         allow update: if isOwner(userId) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
         allow delete: if false;
+      }
 
       // =========================================================================
       // Cross-Device Handoff (user-scoped subcollection)
@@ -156,7 +157,6 @@ service cloud.firestore {
 
       match /styleMemory/{memoryId} {
       allow read, write: if isOwner(userId);
-      }
       }
 
       // ── Media & Workflow Assets ──────────────────────────
