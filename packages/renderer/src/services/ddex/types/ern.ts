@@ -23,6 +23,7 @@ export type { Contributor };
 
 // ERN Message - top level
 export interface ERNMessage {
+  action?: 'NewRelease' | 'Update' | 'Takedown';
   messageSchemaVersionId: '4.3';
   messageHeader: DDEXMessageHeader;
   releaseList: Release[];

@@ -93,6 +93,9 @@ export interface Contributor {
   role: ContributorRole;
   sequenceNumber?: number;
   partyId?: string;  // ISNI or proprietary ID
+  isni?: string;
+  spotifyId?: string;
+  appleMusicId?: string;
 }
 
 // Technical Details for audio resources
