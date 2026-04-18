@@ -285,16 +285,20 @@ export class AudioAnalysisService {
 
         try {
             const rhythm = this.essentia.RhythmExtractor2013(signal);
+            await new Promise(r => setTimeout(r, 0)); // Yield to unblock UI
             const bpm = rhythm.bpm;
 
             const keyData = this.essentia.KeyExtractor(signal);
+            await new Promise(r => setTimeout(r, 0)); // Yield to unblock UI
             const key = keyData.key;
             const scale = keyData.scale;
 
             const rms = this.essentia.RMS(signal);
+            await new Promise(r => setTimeout(r, 0)); // Yield to unblock UI
             const energyValue = rms.rms;
 
             const danceabilityValue = this.essentia.Danceability(signal).danceability;
+            await new Promise(r => setTimeout(r, 0)); // Yield to unblock UI
 
             // TECHNICAL AUDIT
             let maxPeak = 0;
