@@ -420,6 +420,42 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           })}
         </div>
       </div>
+
+      {/* YouTube Content ID */}
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">YouTube Content ID</h3>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700 cursor-pointer hover:border-gray-600 transition-all">
+            <input
+              type="checkbox"
+              checked={metadata.youtubeContentIdOptIn || false}
+              onChange={e => updateMetadata({ youtubeContentIdOptIn: e.target.checked })}
+              className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-white font-medium">Opt-in to YouTube Content ID</span>
+              <p className="text-sm text-gray-400">Monetize videos using your music across YouTube (requires eligible content)</p>
+            </div>
+          </label>
+
+          {metadata.youtubeContentIdOptIn && (
+            <div className="pl-12">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Content ID Policy
+              </label>
+              <select
+                value={metadata.youtubeContentIdPolicy || 'monetize'}
+                onChange={e => updateMetadata({ youtubeContentIdPolicy: e.target.value as 'monetize' | 'track' | 'block' })}
+                className="w-full max-w-xs px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              >
+                <option value="monetize">Monetize (Show Ads)</option>
+                <option value="track">Track Only (No Ads)</option>
+                <option value="block">Block Copies</option>
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 
@@ -757,6 +793,12 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
               <dt className="text-gray-400 mb-1">Channels</dt>
               <dd className="text-white capitalize">
                 {metadata.distributionChannels?.join(', ') || '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-400 mb-1">Content ID</dt>
+              <dd className="text-white">
+                {metadata.youtubeContentIdOptIn ? `Enabled (${metadata.youtubeContentIdPolicy})` : 'Disabled'}
               </dd>
             </div>
           </dl>

@@ -220,6 +220,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                     <DetailRow label="P Line" value={`℗ ${new Date().getFullYear()} ${metadata.labelName || metadata.artistName}`} />
                                     <DetailRow label="Explicit Content" value={metadata.explicit ? 'Explicit' : 'Clean'} />
                                     <DetailRow label="Language" value={metadata.language || 'English'} />
+                                    {metadata.youtubeContentIdOptIn && <DetailRow label="Content ID" value={metadata.youtubeContentIdPolicy ? metadata.youtubeContentIdPolicy.charAt(0).toUpperCase() + metadata.youtubeContentIdPolicy.slice(1) : 'Monetize'} />}
                                 </div>
                             </div>
                         </div>

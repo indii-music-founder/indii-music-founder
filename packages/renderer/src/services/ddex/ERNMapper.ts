@@ -214,7 +214,10 @@ export class ERNMapper {
                     lyrics: track.lyrics ? {
                         lyricsText: track.lyrics,
                         isExplicit: track.explicit
-                    } : undefined
+                    } : undefined,
+                    bpm: track.bpm,
+                    key: track.key,
+                    energy: track.energy
                 }
             };
 

@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from './VideoGenerationService';
-import { subscriptionService } from '@/services/subscription/SubscriptionService';
-import { useStore } from '@/core/store';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 // --- MOCKS ---
