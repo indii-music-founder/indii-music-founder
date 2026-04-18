@@ -23,6 +23,7 @@ export type { Contributor };
 
 // ERN Message - top level
 export interface ERNMessage {
+  action?: 'NewRelease' | 'Update' | 'Takedown';
   messageSchemaVersionId: '4.3';
   messageHeader: DDEXMessageHeader;
   releaseList: Release[];
@@ -144,12 +145,16 @@ export interface SoundRecordingDetails {
     lyricsText: string;
     isExplicit: boolean;
   };
+  bpm?: number;
+  key?: string;
+  energy?: number;
 }
 
 // Deal - commercial terms for distribution
 export interface Deal {
   dealReference: string;
   dealTerms: DealTerms;
+  youtubeContentIdPolicy?: string;
 }
 
 export interface DealTerms {

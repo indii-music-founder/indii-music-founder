@@ -247,6 +247,51 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
         </div>
 
+        {/* BPM */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            BPM
+          </label>
+          <input
+            type="number"
+            value={metadata.bpm || ''}
+            onChange={e => updateMetadata({ bpm: parseFloat(e.target.value) || undefined })}
+            placeholder="e.g. 120"
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
+        {/* Key */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Key
+          </label>
+          <input
+            type="text"
+            value={metadata.key || ''}
+            onChange={e => updateMetadata({ key: e.target.value })}
+            placeholder="e.g. C minor, 8A"
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
+        {/* Energy */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Energy
+          </label>
+          <input
+            type="number"
+            value={metadata.energy || ''}
+            onChange={e => updateMetadata({ energy: parseFloat(e.target.value) || undefined })}
+            placeholder="0.0 to 1.0 (e.g. 0.85)"
+            step="0.01"
+            min="0"
+            max="1"
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
         {/* Release Date */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -373,6 +418,42 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* YouTube Content ID */}
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">YouTube Content ID</h3>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700 cursor-pointer hover:border-gray-600 transition-all">
+            <input
+              type="checkbox"
+              checked={metadata.youtubeContentIdOptIn || false}
+              onChange={e => updateMetadata({ youtubeContentIdOptIn: e.target.checked })}
+              className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-white font-medium">Opt-in to YouTube Content ID</span>
+              <p className="text-sm text-gray-400">Monetize videos using your music across YouTube (requires eligible content)</p>
+            </div>
+          </label>
+
+          {metadata.youtubeContentIdOptIn && (
+            <div className="pl-12">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Content ID Policy
+              </label>
+              <select
+                value={metadata.youtubeContentIdPolicy || 'monetize'}
+                onChange={e => updateMetadata({ youtubeContentIdPolicy: e.target.value as 'monetize' | 'track' | 'block' })}
+                className="w-full max-w-xs px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              >
+                <option value="monetize">Monetize (Show Ads)</option>
+                <option value="track">Track Only (No Ads)</option>
+                <option value="block">Block Copies</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -636,6 +717,24 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
               <dt className="text-gray-400">Label</dt>
               <dd className="text-white">{metadata.labelName || '-'}</dd>
             </div>
+            {metadata.bpm && (
+              <div className="flex justify-between">
+                <dt className="text-gray-400">BPM</dt>
+                <dd className="text-white">{metadata.bpm}</dd>
+              </div>
+            )}
+            {metadata.key && (
+              <div className="flex justify-between">
+                <dt className="text-gray-400">Key</dt>
+                <dd className="text-white">{metadata.key}</dd>
+              </div>
+            )}
+            {metadata.energy && (
+              <div className="flex justify-between">
+                <dt className="text-gray-400">Energy</dt>
+                <dd className="text-white capitalize">{metadata.energy}</dd>
+              </div>
+            )}
           </dl>
         </div>
 
@@ -694,6 +793,12 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
               <dt className="text-gray-400 mb-1">Channels</dt>
               <dd className="text-white capitalize">
                 {metadata.distributionChannels?.join(', ') || '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-400 mb-1">Content ID</dt>
+              <dd className="text-white">
+                {metadata.youtubeContentIdOptIn ? `Enabled (${metadata.youtubeContentIdPolicy})` : 'Disabled'}
               </dd>
             </div>
           </dl>
