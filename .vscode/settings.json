@@ -59,6 +59,15 @@
     "files.trimTrailingWhitespace": false
   },
   "vitest.enable": true,
-  "vitest.workspaceConfig": "vitest.workspace.ts",
-  "vitest.configSearchPatternExclude": "{**/node_modules/**,**/.*/**,**/landing-page/**,**/packages/landing/**,**/config/vitest/**,**/dist/**,**/e2e/**,electron.vite.config.ts,vite.config.ts}"
+  "vitest.workspaceConfig": "./vitest.workspace.ts",
+  "vitest.exclude": [
+    "**/landing-page/**",
+    "**/packages/landing/**",
+    "**/config/vitest/**",
+    "**/dist/**",
+    "**/e2e/**"
+  ],
+  "vitest.configSearchPatterns": [
+    "vitest.workspace.ts"
+  ]
 }
