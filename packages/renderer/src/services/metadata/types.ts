@@ -97,6 +97,9 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     keywords?: string[];
     language?: string; // ISO 639-2 (e.g., 'eng', 'spa')
     isInstrumental?: boolean;
+    bpm?: number;
+    key?: string;
+    energy?: number;
 
     // Marketing
     marketingComment?: string;

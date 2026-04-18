@@ -326,7 +326,53 @@ vi.mock('firebase/firestore', () => {
 // Mock Firebase Functions
 vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn(() => ({})),
-    httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: {} }))
+    httpsCallable: vi.fn((_functions, name) => {
+        return vi.fn().mockImplementation(() => {
+            if (name === 'getUsageStats') {
+                return Promise.resolve({
+                    data: {
+                        userId: 'test-uid',
+                        tier: 'free',
+                        resetDate: Date.now(),
+                        imagesGenerated: 0,
+                        imagesRemaining: 10,
+                        imagesPerMonth: 10,
+                        videoDurationSeconds: 0,
+                        videoDurationMinutes: 0,
+                        videoRemainingMinutes: 10,
+                        videoTotalMinutes: 10,
+                        aiChatTokensUsed: 0,
+                        aiChatTokensRemaining: 1000,
+                        aiChatTokensPerMonth: 1000,
+                        storageUsedGB: 0,
+                        storageRemainingGB: 10,
+                        storageTotalGB: 10,
+                        projectsCreated: 0,
+                        projectsRemaining: 3,
+                        maxProjects: 3,
+                        teamMembersUsed: 0,
+                        teamMembersRemaining: 1,
+                        maxTeamMembers: 1
+                    }
+                });
+            } else if (name === 'getSubscription') {
+                return Promise.resolve({
+                    data: {
+                        id: 'sub-123',
+                        userId: 'test-uid',
+                        tier: 'free',
+                        status: 'active',
+                        currentPeriodStart: Date.now(),
+                        currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
+                        cancelAtPeriodEnd: false,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now()
+                    }
+                });
+            }
+            return Promise.resolve({ data: {} });
+        });
+    })
 }));
 
 // Mock Firebase Storage
