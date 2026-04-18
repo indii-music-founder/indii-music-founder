@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.50.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.50.0...v1.50.1) (2026-04-18)
+
+
+### Bug Fixes
+
+* **AudioAnalysisService:** align with analyzeFileURI return type ([#1498](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1498)) ([2bdb595](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2bdb59527c5397796c66b1a4bf13a3e4aa38e8a0))
+* **audio:** pass correct arguments to analyzeFileURI and pull missing fileService methods ([84bc659](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/84bc6591af310f81cf3fb17e065791a04ad9a951))
+* **audio:** pass correct arguments to analyzeFileURI and pull missing fileService methods ([e1c0d08](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e1c0d081510a71d3d6041f8abf64aba57d363af1))
+* **finance:** resolve duplicate fileMeta and analyzeFileURI args in ReceiptOCR ([3962457](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/396245711719bd6dfed7abafda6a2bccd6b76d9f))
+* **finance:** resolve duplicate fileMeta and analyzeFileURI args in ReceiptOCR ([97de6ad](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/97de6ad7ef0423b089fcb5ef4829bcae0b5c9ab9))
+* **renderer:** auto-reload on chunk load error in error boundary ([b8ffc94](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b8ffc94a4347fb1c5b64804ffe9fa9ba99476bdf))
+* **renderer:** auto-reload on chunk load error in error boundary ([d5a8603](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d5a86039d44db8804220a8761032a055d82bfd97))
+* resolve merge conflicts in audio and Gemini file services ([b7b3616](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b7b36162cb7222d45b340fcc29f184cd301cac8d))
+
 ## [1.50.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.49.0...v1.50.0) (2026-04-13)
 
 
