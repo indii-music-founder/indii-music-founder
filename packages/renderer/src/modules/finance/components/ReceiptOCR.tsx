@@ -117,7 +117,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`;
             });
 
             // Strip potential markdown code fences
-            const cleanJson = responseText.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '').trim();
+            const cleanJson = responseText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?\s*```$/i, '').trim();
             const parsed = JSON.parse(cleanJson) as ExtractedReceipt;
 
             setExtracted({
