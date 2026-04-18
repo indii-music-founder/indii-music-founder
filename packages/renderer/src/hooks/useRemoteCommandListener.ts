@@ -552,5 +552,5 @@ export function useRemoteCommandListener() {
     // 404s because there's no /api/remote/* endpoint on the Vite dev server.
     const hasElectronBridge = typeof window !== 'undefined' && !!(window as unknown as { electronAPI?: unknown }).electronAPI;
     useFirestoreRelay(isAuthenticated);
-    useHttpRelayFallback(!isAuthenticated && hasElectronBridge);
+    useHttpRelayFallback(false); // HTTP relay fallback disabled to prevent 404 spam in dev
 }

@@ -481,6 +481,18 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
     }
+    match /projects/{projectId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+    }
+    match /proactive_tasks/{taskId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
     match /videoJobs/{jobId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
       allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));

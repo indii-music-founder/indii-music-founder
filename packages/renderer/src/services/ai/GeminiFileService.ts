@@ -81,7 +81,7 @@ export class GeminiFileService {
             );
 
             if (!startResponse.ok) {
-                const errorText = await startResponse.text();
+                const errorText = typeof startResponse.text === 'function' ? await startResponse.text() : JSON.stringify(startResponse);
                 throw new Error(`Failed to initialize upload: ${startResponse.status} ${errorText}`);
             }
 
@@ -113,7 +113,7 @@ export class GeminiFileService {
             if (onProgress) onProgress(100);
 
             if (!uploadResponse.ok) {
-                const errorText = await uploadResponse.text();
+                const errorText = typeof uploadResponse.text === 'function' ? await uploadResponse.text() : JSON.stringify(uploadResponse);
                 throw new Error(`Upload failed: ${uploadResponse.status} ${errorText}`);
             }
 
