@@ -94,12 +94,15 @@ class DDEXParserImpl {
    * Build ERN XML from JSON
    */
   buildERN(ern: ERNMessage): string {
+    const rootTagName = ern.action === 'Takedown' ? 'ern:PurgeReleaseMessage' : 'ern:NewReleaseMessage';
+
     const xmlObj = {
-      'ern:NewReleaseMessage': {
+      [rootTagName]: {
         '@_xmlns:ern': 'http://ddex.net/xml/ern/43',
         '@_xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
         '@_MessageSchemaVersionId': ern.messageSchemaVersionId,
         '@_LanguageAndScriptCode': 'en',
+        ...(ern.action === 'Update' ? { UpdateIndicator: 'UpdateMessage' } : {}),
         MessageHeader: this.buildMessageHeader(ern.messageHeader),
         ReleaseList: this.buildReleaseList(ern.releaseList),
         ResourceList: this.buildResourceList(ern.resourceList),
@@ -389,6 +392,7 @@ class DDEXParserImpl {
           },
           DisplayArtistName: r.displayArtistName,
           LanguageOfPerformance: r.soundRecordingDetails?.languageOfPerformance,
+          ImmersiveAudioProfile: r.soundRecordingDetails?.immersiveAudioProfile,
           Lyrics: r.soundRecordingDetails?.lyrics ? {
             LyricsText: { '#text': r.soundRecordingDetails.lyrics.lyricsText },
             IsExplicit: r.soundRecordingDetails.lyrics.isExplicit
@@ -400,8 +404,39 @@ class DDEXParserImpl {
       })),
       Image: resources.filter((r) => r.resourceType === 'Image').map((r) => ({
         '@_ResourceReference': r.resourceReference,
+        ResourceId: {
+          ProprietaryId: {
+            '@_Namespace': r.resourceId.proprietaryId?.proprietaryIdType || 'LabelInternal',
+            Id: r.resourceId.proprietaryId?.id,
+          },
+        },
+        ReferenceTitle: {
+          TitleText: r.resourceTitle.titleText,
+        },
         ImageDetailsByTerritory: {
           TerritoryCode: 'Worldwide',
+          TechnicalImageDetails: r.technicalDetails ? {
+            FileAvailabilityDescription: {
+              FilePath: r.technicalDetails.fileName,
+            },
+          } : undefined,
+        },
+      })),
+      Text: resources.filter((r) => r.resourceType === 'Text').map((r) => ({
+        '@_ResourceReference': r.resourceReference,
+        ResourceId: {
+          ProprietaryId: {
+            '@_Namespace': r.resourceId.proprietaryId?.proprietaryIdType || 'LabelInternal',
+            Id: r.resourceId.proprietaryId?.id,
+          },
+        },
+        ReferenceTitle: {
+          TitleText: r.resourceTitle.titleText,
+        },
+        TextDetailsByTerritory: {
+          TerritoryCode: 'Worldwide',
+          TextType: r.textDetails?.textType,
+          LanguageOfText: r.textDetails?.languageOfText,
         },
       })),
     };
@@ -440,6 +475,7 @@ class DDEXParserImpl {
             startDate: String(dealTerms.ValidityPeriod ? (dealTerms.ValidityPeriod as Record<string, unknown>).StartDate : ''),
             endDate: dealTerms.ValidityPeriod ? String((dealTerms.ValidityPeriod as Record<string, unknown>).EndDate || '') || undefined : undefined,
           },
+          takeDown: dealTerms.TakeDown === true || dealTerms.TakeDown === 'true' || undefined,
         },
         youtubeContentIdPolicy
       };
@@ -461,6 +497,7 @@ class DDEXParserImpl {
               StartDate: d.dealTerms.validityPeriod.startDate,
               EndDate: d.dealTerms.validityPeriod.endDate,
             },
+            ...(d.dealTerms.takeDown !== undefined ? { TakeDown: d.dealTerms.takeDown } : {}),
             ...(d.youtubeContentIdPolicy ? {
               ProprietaryExtension: {
                 ExtensionCode: 'YouTubeContentIdPolicy',

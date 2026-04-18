@@ -141,8 +141,12 @@ export class AudioIntelligenceService {
      * Uses Gemini to "listen" to the track and generate semantic metadata.
      */
     private async analyzeSemantic(file: File, bpm: number, key: string): Promise<AudioSemanticData> {
-        // Convert file to base64 for Gemini
-        const base64Audio = await this.fileToBase64(file);
+        // Upload the file via resumable upload to avoid base64 memory issues
+        Logger.info('AudioIntelligence', 'Uploading audio to Gemini File API...');
+        const fileMeta = await firebaseAI.fileService.uploadFile(file);
+        
+        Logger.info('AudioIntelligence', `Gemini file uploaded: ${fileMeta.uri}, waiting for processing...`);
+        await firebaseAI.fileService.waitForActive(fileMeta.name);
 
         const systemPrompt = `
 You are a world-class Musicologist, A&R Director, and Mastering Engineer with 20 years of experience at major labels.
@@ -184,38 +188,34 @@ CRITICAL RULES:
 - 'aiArtifacts' must be based on audio evidence, not assumption.
 `;
 
-        const response = await firebaseAI.generateStructuredData<AudioSemanticData>(
-            [
-                { text: systemPrompt },
-                {
-                    inlineData: {
-                        mimeType: file.type || 'audio/mp3',
-                        data: base64Audio
+        try {
+            const response = await firebaseAI.generateStructuredData<AudioSemanticData>(
+                [
+                    { text: systemPrompt },
+                    {
+                        fileData: {
+                            mimeType: fileMeta.mimeType || 'audio/mp3',
+                            fileUri: fileMeta.uri
+                        }
                     }
-                }
-            ],
-            SEMANTIC_SCHEMA,
-            8192, // Maps to thinkingLevel: 'HIGH' for Gemini 3.x (deep musicology analysis)
-            "You are an expert musicologist and audio analyst.",
-            AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
-        );
-
-        return response;
+                ],
+                SEMANTIC_SCHEMA,
+                8192, // Maps to thinkingLevel: 'HIGH' for Gemini 3.x (deep musicology analysis)
+                "You are an expert musicologist and audio analyst.",
+                AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
+            );
+            return response;
+        } finally {
+            try {
+                await firebaseAI.fileService.deleteFile(fileMeta.name);
+                Logger.info('AudioIntelligence', 'Cleaned up Gemini file.');
+            } catch (ce) {
+                Logger.warn('AudioIntelligence', `Failed to cleanup Gemini file: ${ce}`);
+            }
+        }
     }
 
-    private fileToBase64(file: File): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                const result = reader.result as string;
-                // Remove data URL prefix (e.g., "data:audio/mp3;base64,")
-                const base64 = result.split(',')[1]!;
-                resolve(base64);
-            };
-            reader.onerror = error => reject(error);
-        });
-    }
+
 }
 
 export const audioIntelligence = new AudioIntelligenceService();

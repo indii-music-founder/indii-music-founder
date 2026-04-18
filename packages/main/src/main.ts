@@ -43,6 +43,11 @@ let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
 
+// Disable security warnings in development (suppresses unsafe-eval CSP warning from Vite HMR)
+if (!app.isPackaged || !!process.env.VITE_DEV_SERVER_URL) {
+    process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+}
+
 // Item 374: Crash reporter (no PII — only crash metadata is submitted)
 if (app.isPackaged) {
     crashReporter.start({
@@ -98,7 +103,7 @@ const createWindow = async () => {
         y: windowState.y,
         webPreferences: {
             devTools: !app.isPackaged,
-            preload: path.join(__dirname, 'preload.js'),
+            preload: path.join(__dirname, '../preload/index.cjs'),
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: true,
