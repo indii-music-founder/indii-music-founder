@@ -205,7 +205,7 @@ export class ERNMapper {
                 },
                 displayArtistName: track.artistName,
                 contributors: this.mapContributors(track.splits, track.artistName),
-                duration: this.formatDuration(track.durationFormatted),
+                duration: track.durationDDEXFormatted || this.formatDuration(track.durationFormatted),
                 parentalWarningType: track.explicit ? 'Explicit' : 'NotExplicit',
                 soundRecordingDetails: {
                     soundRecordingType: 'MusicalWorkSoundRecording',
@@ -214,7 +214,10 @@ export class ERNMapper {
                     lyrics: track.lyrics ? {
                         lyricsText: track.lyrics,
                         isExplicit: track.explicit
-                    } : undefined
+                    } : undefined,
+                    bpm: track.bpm,
+                    key: track.key,
+                    energy: track.energy
                 }
             };
 
@@ -422,9 +425,8 @@ export class ERNMapper {
                     takeDown: false,
                     releaseDisplayStartDate: metadata.releaseDate,
                 },
+                youtubeContentIdPolicy: contentIdPolicy,
             };
-            // Annotate the deal with the YouTube-specific policy in a proprietary extension field
-            (contentIdDeal as unknown as Record<string, unknown>)['youtubeContentIdPolicy'] = contentIdPolicy;
             deals.push(contentIdDeal);
         }
 

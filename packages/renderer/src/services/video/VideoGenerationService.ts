@@ -217,8 +217,9 @@ export class VideoGenerationService {
         if (options.firstFrame) {
             firstFrameBytes = options.firstFrame;
             // Strip data URI prefix if present (e.g. "data:image/jpeg;base64,...")
-            if (firstFrameBytes.startsWith('data:')) {
-                firstFrameBytes = firstFrameBytes.split(',')[1] || firstFrameBytes;
+            const commaIndex = firstFrameBytes.indexOf(',');
+            if (firstFrameBytes.startsWith('data:') && commaIndex !== -1) {
+                firstFrameBytes = firstFrameBytes.substring(commaIndex + 1);
             }
         }
 
@@ -234,9 +235,10 @@ export class VideoGenerationService {
         let lastFrameConfig: { imageBytes: string; mimeType: string } | undefined;
         if (options.lastFrame) {
             let lastFrameBytes = options.lastFrame;
-            // Strip data URI prefix if present
-            if (lastFrameBytes.startsWith('data:')) {
-                lastFrameBytes = lastFrameBytes.split(',')[1] || lastFrameBytes;
+            // Strip data URI prefix if present safely
+            const commaIndex = lastFrameBytes.indexOf(',');
+            if (lastFrameBytes.startsWith('data:') && commaIndex !== -1) {
+                lastFrameBytes = lastFrameBytes.substring(commaIndex + 1);
             }
             lastFrameConfig = {
                 imageBytes: lastFrameBytes,
