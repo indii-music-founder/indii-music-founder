@@ -198,5 +198,7 @@ export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     aiGeneratedContent: {
         isFullyAIGenerated: false,
         isPartiallyAIGenerated: false
-    }
+    },
+    youtubeContentIdOptIn: false,
+    youtubeContentIdPolicy: 'monetize'
 };
