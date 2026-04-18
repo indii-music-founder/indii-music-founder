@@ -168,3 +168,15 @@ Single branch (`claude/stupefied-faraday-aa0be2`) surfaced seven distinct classe
 ## Meta-rule: /plat
 
 Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It executes the Pre-commit checklist from `docs/PLATINUM_QUALITY_STANDARDS.md` and cross-references this ledger. Any agent that skips `/plat` on a substantive branch has violated the Error Memory Protocol.
+
+---
+
+## 2026-04-18 Firestore Subcollection Nesting (Syntax Error)
+
+### Pattern — Missing Closing Brace Nests Subcollections
+
+- SEVERITY: High (Permission denied errors for legitimate requests)
+- FILE: `packages/firebase/firestore.rules`
+- BUG: A missing closing brace `}` on a `match` block (e.g., `match /memoryInbox/{itemId}`) caused all subsequent top-level subcollections (like `alwaysOnMemories`, `remote-relay`) to be inadvertently nested underneath it. Client requests to the correct paths (e.g. `users/{userId}/alwaysOnMemories`) failed with `permission-denied` because the rules expected them at `users/{userId}/memoryInbox/{itemId}/alwaysOnMemories/{memoryId}`.
+- FIX: Re-added the missing closing brace and removed the extraneous brace at the bottom of the rules file.
+- RULE: **When editing `firestore.rules`, always verify that braces are properly matched.** A missing brace will silently nest all following rules without throwing a compilation error if an extra brace exists at the bottom.
