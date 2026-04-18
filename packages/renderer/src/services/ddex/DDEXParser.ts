@@ -392,7 +392,10 @@ class DDEXParserImpl {
           Lyrics: r.soundRecordingDetails?.lyrics ? {
             LyricsText: { '#text': r.soundRecordingDetails.lyrics.lyricsText },
             IsExplicit: r.soundRecordingDetails.lyrics.isExplicit
-          } : undefined
+          } : undefined,
+          BPM: r.soundRecordingDetails?.bpm,
+          Key: r.soundRecordingDetails?.key,
+          Energy: r.soundRecordingDetails?.energy
         },
       })),
       Image: resources.filter((r) => r.resourceType === 'Image').map((r) => ({

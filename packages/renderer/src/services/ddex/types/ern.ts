@@ -144,6 +144,9 @@ export interface SoundRecordingDetails {
     lyricsText: string;
     isExplicit: boolean;
   };
+  bpm?: number;
+  key?: string;
+  energy?: number;
 }
 
 // Deal - commercial terms for distribution
