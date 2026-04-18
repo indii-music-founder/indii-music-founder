@@ -208,6 +208,9 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                     <DetailRow label="UPC/EAN" value={metadata.upc || 'Pending'} />
                                     <DetailRow label="Primary Genre" value={metadata.genre} />
                                     <DetailRow label="Sub Genre" value={metadata.subGenre || 'N/A'} />
+                                    {metadata.bpm && <DetailRow label="BPM" value={metadata.bpm.toString()} />}
+                                    {metadata.key && <DetailRow label="Key" value={metadata.key} />}
+                                    {metadata.energy && <DetailRow label="Energy" value={metadata.energy} />}
                                 </div>
                             </div>
                             <div className="space-y-6">
@@ -255,9 +258,9 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
     );
 };
 
-const DetailRow: React.FC<{ label: string; value?: string | boolean }> = ({ label, value }) => (
+const DetailRow: React.FC<{ label: string; value?: string | boolean | number }> = ({ label, value }) => (
     <div className="flex items-center justify-between py-1">
         <span className="text-xs font-bold text-gray-500 uppercase tracking-tight">{label}</span>
-        <span className="text-sm font-bold text-gray-200 tracking-tight">{value || '—'}</span>
+        <span className="text-sm font-bold text-gray-200 tracking-tight">{value !== undefined ? String(value) : '—'}</span>
     </div>
 );
