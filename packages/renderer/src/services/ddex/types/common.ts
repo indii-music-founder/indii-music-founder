@@ -49,14 +49,17 @@ export type UseType =
   | 'TimeDelimitedStream'
   | 'NonInteractiveStream'
   | 'Broadcast'
-  | 'Simulcast';
+  | 'Simulcast'
+  | 'UserMadeContentDelivery';
 
 // Commercial Model Types
 export type CommercialModelType =
   | 'AdvertisementSupportedModel'
   | 'PayAsYouGoModel'
   | 'SubscriptionModel'
-  | 'FreeOfChargeModel';
+  | 'FreeOfChargeModel'
+  | 'UserMakeAvailableLabelProvided'
+  | 'UserMakeAvailableUserProvided';
 
 // Price Types
 export interface Price {

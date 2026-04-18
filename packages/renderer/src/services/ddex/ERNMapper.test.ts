@@ -318,4 +318,39 @@ describe('ERNMapper', () => {
         expect(imageResource?.aiGenerationInfo?.isFullyAIGenerated).toBe(true);
         expect(imageResource?.aiGenerationInfo?.disclosureType).toBe('AI_Generated');
     });
+
+    it('should generate a YouTube Content ID deal when opted in with monetize policy', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            youtubeContentIdOptIn: true,
+            youtubeContentIdPolicy: 'monetize'
+        };
+
+        const deals = getDeals(metadata);
+        
+        const youtubeDeal = deals.find(d => 
+            d.dealTerms.commercialModelType === 'UserMakeAvailableLabelProvided'
+        );
+        expect(youtubeDeal).toBeDefined();
+        expect(youtubeDeal!.dealTerms.usage[0]!.useType).toBe('UserMadeContentDelivery');
+        expect((youtubeDeal as unknown as Record<string, unknown>)['youtubeContentIdPolicy']).toBe('monetize');
+    });
+
+    it('should generate a YouTube Content ID deal when opted in with block policy', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            youtubeContentIdOptIn: true,
+            youtubeContentIdPolicy: 'block'
+        };
+
+        const deals = getDeals(metadata);
+        
+        const youtubeDeal = deals.find(d => 
+            d.dealTerms.commercialModelType === 'UserMakeAvailableLabelProvided'
+        );
+        expect(youtubeDeal).toBeDefined();
+        // For block policy, we use NonInteractiveStream
+        expect(youtubeDeal!.dealTerms.usage[0]!.useType).toBe('NonInteractiveStream');
+        expect((youtubeDeal as unknown as Record<string, unknown>)['youtubeContentIdPolicy']).toBe('block');
+    });
 });
