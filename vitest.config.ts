@@ -23,6 +23,8 @@ export default defineConfig({
       'e2e/**',
       'node_modules/**',
       '**/node_modules/**',
+      '.claude/**',
+      '.agent/**',
       'landing-page/**',
       '_archive_legacy/**',
       'tests/**',

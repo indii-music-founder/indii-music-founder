@@ -75,6 +75,11 @@ export class TrackIngestionService {
             mood: semantic.mood,
             keywords: semantic.marketingHooks.keywords,
 
+            // Audio Technical Features
+            bpm: technical.bpm,
+            key: technical.key,
+            energy: technical.energy,
+
             // Marketing — prefer dedicated field from Sonic Cortex Session 1
             marketingComment: semantic.marketingComment || semantic.marketingHooks.oneLiner,
 
