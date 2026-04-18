@@ -811,7 +811,8 @@ export class CanvasOperationsService {
             visible: obj.visible,
             stroke: obj.stroke,
             fill: obj.fill,
-            opacity: obj.opacity
+            opacity: obj.opacity,
+            filters: obj.type === 'image' ? [...((obj as fabric.Image).filters || [])] : undefined
         }));
 
         // 2. Transform to Binary Mask Mode
@@ -819,16 +820,36 @@ export class CanvasOperationsService {
         // this.canvas.backgroundImage = null; // CanvasOperationsService uses an image object, not backgroundImage property usually
 
         originalObjects.forEach(obj => {
-            // Only mask "path" objects (user drawings) -> White
+            const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean, isSegmentationMask?: boolean } }).data;
+            
             if (obj.type === 'path') {
                 obj.set({
                     stroke: "#FFFFFF",
-                    fill: (obj.fill && obj.fill !== 'transparent') ? "#FFFFFF" : undefined, // Keep fill logic if present
+                    fill: (obj.fill && obj.fill !== 'transparent') ? "#FFFFFF" : undefined,
                     opacity: 1,
                     visible: true
                 });
+            } else if (data?.isBoundingBox) {
+                obj.set({
+                    stroke: "#FFFFFF",
+                    fill: "#FFFFFF",
+                    opacity: 1,
+                    visible: true
+                });
+            } else if (data?.isSegmentationMask) {
+                const imgObj = obj as fabric.Image;
+                const whiteFilter = new fabric.filters.BlendColor({
+                    color: '#FFFFFF',
+                    mode: 'add',
+                    alpha: 1.0
+                });
+                imgObj.filters = [whiteFilter];
+                imgObj.applyFilters();
+                imgObj.set({
+                    opacity: 1.0,
+                    visible: true
+                });
             } else {
-                // Hide other content (base image, etc)
                 obj.visible = false;
             }
         });
@@ -853,6 +874,11 @@ export class CanvasOperationsService {
                 fill: state.fill,
                 opacity: state.opacity
             });
+            if (obj.type === 'image' && state.filters) {
+                const imgObj = obj as fabric.Image;
+                imgObj.filters = state.filters;
+                imgObj.applyFilters();
+            }
         });
 
         this.canvas.renderAll();
@@ -881,16 +907,23 @@ export class CanvasOperationsService {
         this.canvas.backgroundColor = "#000000";
 
         originalObjects.forEach(obj => {
-            const isMask = obj.type === 'path' || !!(obj as fabric.Object & { data?: { isSegmentationMask?: boolean } }).data?.isSegmentationMask;
+            const data = (obj as fabric.Object & { data?: { isSegmentationMask?: boolean, isBoundingBox?: boolean } }).data;
+            const isMask = obj.type === 'path' || !!data?.isSegmentationMask || !!data?.isBoundingBox;
+            
             if (isMask) {
-                // Determine the "True Color" (Opaque) from the stroke
-                // Usually stroke is rgba(r,g,b,0.5). We want rgb(r,g,b) or hex.
-                // For now, we trust the stroke color but pump opacity to 1.0
-                // For segmentation masks, they already have a color filter, just pump opacity to 1.0
-                obj.set({
-                    opacity: 1.0,
-                    visible: true
-                });
+                if (data?.isBoundingBox) {
+                    // For bounding boxes, we want a solid color, not just a border
+                    obj.set({
+                        fill: obj.stroke, // Use the bounding box color
+                        opacity: 1.0,
+                        visible: true
+                    });
+                } else {
+                    obj.set({
+                        opacity: 1.0,
+                        visible: true
+                    });
+                }
             } else {
                 obj.visible = false;
             }
@@ -910,6 +943,15 @@ export class CanvasOperationsService {
         originalObjects.forEach((obj, index) => {
             const state = originalState[index];
             if (!state) return;
+            
+            const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data;
+            if (data?.isBoundingBox) {
+                // Restore bounding box transparent fill
+                obj.set({
+                    fill: 'rgba(0, 255, 0, 0.1)',
+                });
+            }
+            
             obj.set({
                 visible: state.visible,
                 stroke: state.stroke,

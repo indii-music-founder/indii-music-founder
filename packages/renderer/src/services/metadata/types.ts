@@ -108,6 +108,15 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     // Duration (computed from audio)
     durationSeconds?: number;
     durationFormatted?: string; // "3:45"
+    durationDDEXFormatted?: string; // e.g. "PT3M4S.123"
+
+    // Confidence Scores
+    confidenceScores?: {
+        genre?: number;
+        mood?: number;
+        danceability?: number;
+        [key: string]: number | undefined;
+    };
 
     // Rights & Publishing (PRO Registration)
     composerName?: string; // Composer legal name (may differ from artistName)
