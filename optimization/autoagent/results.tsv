@@ -20,3 +20,5 @@ bb4a565	1.0	26	26	baseline	manual run
 9ea0f91	1.0	26	26	baseline	manual run
 9ea0f91	1.000	26	26	keep	Consolidate Conductor routing table and out-of-scope sections for simplicity
 c9e8f56	1.0	26	26	baseline	manual run
+84bc659	1.0	26	26	keep	Reformatted Conductor routing table to Markdown table
+84bc659	1.0	26	26	keep	manual run
