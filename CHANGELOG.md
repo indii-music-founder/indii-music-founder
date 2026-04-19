@@ -2,6 +2,23 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.52.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.52.0...v1.52.1) (2026-04-19)
+
+
+### Bug Fixes
+
+* address final CodeRabbit audit findings (3/3) ([95090b1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/95090b18d1bcb0298f2ac3dd7b8ef8473bf18282))
+* **audio:** enhance ddex distribution pipeline and resolve startup permission errors ([dce1476](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/dce14766e4ab9b303203caca2864af33605d1d94))
+* **audio:** resolve CORS blocker, enforce lossless uploads, scrub vendor branding ([92d9abf](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/92d9abf5fc3750c4cb4f86b1d42bb62eca2aab39))
+* **ci:** use public getState() instead of private .state on CircuitBreaker ([7ad10dd](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7ad10dd60576124a8529c57da1fb80d5e3ccffd1))
+* **firestore:** add missing closing brace for memoryInbox rule ([cf3cada](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cf3cada384afee0e81cb94b00e4ce1e845da6d88))
+* harden DDEX contributor dedup, ProactiveService isolation, Firestore usage rules ([9efd5d8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9efd5d8a7f162dd40286e1e8ec1561cef99d89ca))
+* **pr-1510:** resolve all 12 CodeRabbit audit findings ([f2915d9](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f2915d9bc2a70552454641c72df930d65b9719c9))
+* **security:** harden Firestore rules, fix GeminiFileService typeof guard, add artist ID fallback ([0762233](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0762233c6a7f17f0765fe97772bb61f0c4d1dcb1))
+* **security:** resolve final CodeRabbit PR-1510 findings ([c5db35e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c5db35eaf2c7d451d34d3bd5bddd5e63d4fb7935))
+* **sentry:** resolve founder tier quota bug and empty displayArtist guard ([850273e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/850273ed8565c5c34bd325abd8f4dff0a01cdbe0))
+* **updater:** register IPC handlers unconditionally ([4048479](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4048479984132faaacd0da09e5eb94f12e0f8b4e))
+
 ## [1.52.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.51.0...v1.52.0) (2026-04-18)
 
 
