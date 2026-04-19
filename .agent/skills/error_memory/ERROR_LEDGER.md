@@ -214,3 +214,11 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FIX: Moved `registerUpdaterHandlers()` outside the `app.isPackaged` gate. The handlers already gracefully no-op when `autoUpdater` is null (returns `{ available: false }` or does nothing). Only `setupAutoUpdater()` (which starts polling) remains production-gated.
 - RULE: **Always register IPC handlers unconditionally.** Gate the *behavior* (e.g., update polling), not the *handler registration*. A missing handler causes silent hangs that are extremely hard to debug.
 
+### PR-1510: CircuitBreaker private .state access (CI TS2341)
+
+- SEVERITY: Critical (blocks entire CI pipeline)
+- FILE: `packages/renderer/src/services/ai/FirebaseAIService.ts`
+- BUG: Lines 940 and 970 used `this.mediaBreaker?.state` to access the private `state` property of `CircuitBreaker`. The fix (`.getState()`) was present in the **working directory** but was **never committed**, so local typecheck passed but CI failed with TS2341.
+- FIX: Changed both occurrences to `this.mediaBreaker?.getState()` (the public accessor method).
+- RULE: **Always verify `git diff` is empty after fixing a typecheck error.** A common trap: `tsc --noEmit` runs against the working directory, not HEAD. If a fix is only in the working tree but not staged/committed, CI will still fail. Run `git show HEAD:<file> | grep -n '<pattern>'` to verify the committed version.
+
