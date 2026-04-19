@@ -2,6 +2,28 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.52.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.51.0...v1.52.0) (2026-04-18)
+
+
+### Features
+
+* Add BPM, key, and energy fields to DDEX ERN generation ([acf47e3](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/acf47e3bf8b4847aecffd71d51f6c717e37f1b7c))
+* **publishing:** add BPM, Key, and Energy metadata to releases ([aa2db9f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/aa2db9fba19e5f582484c5e8ed2652707fdc0881))
+* refine audio technical feature mapping for DDEX ERN ([33bc869](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/33bc8697319a56896854abca542259bc48928259))
+
+
+### Bug Fixes
+
+* **creative:** resolve TrackIngestionService types and harden CanvasOperationsService mask generation ([7dd05e1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7dd05e195c9d204a9ebd0b5dec95ad27b48be91b))
+* **ddex:** resolve ERN types and tests for YouTube Content ID integration ([9495b36](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9495b36010cd8106f003196a60f79f2831a58d50))
+
+## [1.51.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.50.1...v1.51.0) (2026-04-18)
+
+
+### Features
+
+* **slash:** add /plat finishing-touches workflow ([fd9ad8a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/fd9ad8aa15a3721ee56c123df05a3b58725a552c))
+
 ## [1.50.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.50.0...v1.50.1) (2026-04-18)
 
 
