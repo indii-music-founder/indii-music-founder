@@ -485,16 +485,19 @@ export class ERNMapper {
         const contributors: Contributor[] = [];
         let seq = 1;
 
-        // Always add Display Artist as MainArtist first (sequence 1)
-        const mainArtistSplit = splits.find(s => s.legalName === displayArtist);
-        contributors.push({
-            name: displayArtist,
-            role: 'MainArtist',
-            sequenceNumber: seq++,
-            isni: artistIsni || mainArtistSplit?.isni,
-            spotifyId: artistSpotifyId || mainArtistSplit?.spotifyId,
-            appleMusicId: artistAppleMusicId || mainArtistSplit?.appleMusicId
-        });
+        // Always add Display Artist as MainArtist first (sequence 1),
+        // but only if the name is non-empty (DDEX requires non-blank names).
+        if (displayArtist?.trim()) {
+            const mainArtistSplit = splits.find(s => s.legalName === displayArtist);
+            contributors.push({
+                name: displayArtist,
+                role: 'MainArtist',
+                sequenceNumber: seq++,
+                isni: artistIsni || mainArtistSplit?.isni,
+                spotifyId: artistSpotifyId || mainArtistSplit?.spotifyId,
+                appleMusicId: artistAppleMusicId || mainArtistSplit?.appleMusicId
+            });
+        }
 
         // Map remaining splits
         splits.forEach((split) => {
