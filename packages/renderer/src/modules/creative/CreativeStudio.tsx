@@ -66,6 +66,16 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         }
     }, [initialMode, setGenerationMode]);
 
+    // P0 FIX: Restore canvas editor when returning to Creative Director
+    // If the store still has a selectedItem from before navigation, re-open the editor.
+    // This prevents the "state lost" feeling when users navigate away and come back.
+    useEffect(() => {
+        if (selectedItem && viewMode !== 'editor') {
+            setViewMode('editor');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally only on mount
+    }, []);
+
     const prevGenerationMode = useRef(generationMode);
 
     useEffect(() => {

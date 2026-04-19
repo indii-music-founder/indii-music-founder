@@ -52,7 +52,7 @@ const NavItem = React.memo(function NavItem({
                         }}
                         style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
                         className={cn(
-                            "w-[calc(100%-16px)] mx-2 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-1",
+                            "w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
                             isActive
                                 ? `${colors.text} bg-white/[0.03] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]`
                                 : "text-gray-400 hover:text-white hover:bg-white/[0.02]"
