@@ -2,6 +2,15 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.52.2](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.52.1...v1.52.2) (2026-04-19)
+
+
+### Bug Fixes
+
+* **ci:** align EditingService tests with Direct SDK pipeline & update Sidebar snapshots ([fe5d4eb](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/fe5d4eb8c3e0eca91bf7c9c579955f74aa618d26))
+* **creative:** improve canvas UX and add Send to Video Producer action ([f57733c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f57733caeecde442ec1603bd27d93efe7af26823))
+* **creative:** replace Cloud Function image editing with Direct SDK pipeline ([ec870f4](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ec870f4701c293c18e3f2503c039d1d545ac128d))
+
 ## [1.52.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.52.0...v1.52.1) (2026-04-19)
 
 
