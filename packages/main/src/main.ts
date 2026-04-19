@@ -25,7 +25,7 @@ import { configureSecurity, auditSessionCookies } from './security';
 import { applyCSP } from './security/csp';
 import { SidecarService } from './services/SidecarService';
 import { mcpClientService } from './services/mcp/MCPClientService';
-import { setupAutoUpdater } from './updater';
+import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
 import Store from 'electron-store';
 
 // Configure logging — app.getPath may not be available in dev CJS bundles
@@ -43,6 +43,13 @@ let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
 
+const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
+
+// Disable security warnings in development (suppresses unsafe-eval CSP warning from Vite HMR)
+if (isDev) {
+    process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+}
+
 // Item 374: Crash reporter (no PII — only crash metadata is submitted)
 if (app.isPackaged) {
     crashReporter.start({
@@ -52,7 +59,6 @@ if (app.isPackaged) {
 }
 
 const createWindow = async () => {
-    const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
 
     interface IWindowStore {
@@ -98,7 +104,7 @@ const createWindow = async () => {
         y: windowState.y,
         webPreferences: {
             devTools: !app.isPackaged,
-            preload: path.join(__dirname, 'preload.js'),
+            preload: path.join(__dirname, '../preload/index.cjs'),
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: true,
@@ -478,7 +484,12 @@ if (!gotTheLock) {
             return powerMonitor.isOnBatteryPower() ? 'battery' : 'ac';
         });
 
-        // Auto-updater (production only)
+        // Auto-updater IPC handlers — registered unconditionally so the renderer
+        // never hangs on unanswered IPC calls. The handlers gracefully no-op
+        // when autoUpdater is unavailable (dev environment).
+        registerUpdaterHandlers();
+
+        // Auto-updater polling — production only
         if (app.isPackaged) {
             setupAutoUpdater();
         }

@@ -119,12 +119,17 @@ export async function generateVideo(
     logger.info('[MediaGenerator] Generating video with @google/genai SDK:', {
         model: modelId,
         promptLength: options.prompt.length,
+        promptPreview: options.prompt.substring(0, 120),
         durationSeconds,
+        clampedDuration,
         hasImage: !!imageInput,
+        config: JSON.stringify(videoConfig),
+        timeoutMs,
     });
 
     try {
         // 1. Start the video generation operation
+        logger.info('[MediaGenerator] 🚀 Submitting generateVideos request...');
         let operation = await client.models.generateVideos({
             model: modelId,
             prompt: options.prompt,
@@ -132,44 +137,152 @@ export async function generateVideo(
             config: videoConfig as Parameters<typeof client.models.generateVideos>[0]['config'],
         });
 
-        logger.info('[MediaGenerator] Video generation operation started. Polling for completion...');
+        logger.info('[MediaGenerator] ✅ Operation created successfully.', {
+            operationName: operation.name || '(no name)',
+            done: operation.done,
+            hasResponse: !!operation.response,
+            hasError: !!operation.error,
+        });
+
+        // If the operation completed immediately (unlikely but possible for cached results)
+        if (operation.done) {
+            logger.info('[MediaGenerator] Operation completed immediately (no polling needed).');
+        }
 
         // 2. Poll for completion
-        const pollInterval = 5000; // 5 seconds
+        const pollInterval = 10000; // 10 seconds — matches official Veo docs recommendation
         const maxAttempts = Math.ceil(timeoutMs / pollInterval);
         let attempts = 0;
+        let consecutivePollErrors = 0;
+        const MAX_CONSECUTIVE_POLL_ERRORS = 5;
 
         while (!operation.done && attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, pollInterval));
             attempts++;
 
-            // Re-poll the operation
-            operation = await client.operations.getVideosOperation({
-                operation: operation,
-            });
+            try {
+                // Re-poll the operation
+                operation = await client.operations.getVideosOperation({
+                    operation: operation,
+                });
+                consecutivePollErrors = 0; // Reset on successful poll
 
-            if (attempts % 3 === 0) {
-                logger.info(`[MediaGenerator] Video generation poll attempt ${attempts}/${maxAttempts}...`);
+                // Log every poll attempt for full diagnostics
+                logger.info(`[MediaGenerator] Poll ${attempts}/${maxAttempts}:`, {
+                    done: operation.done,
+                    hasResponse: !!operation.response,
+                    hasError: !!operation.error,
+                    videoCount: operation.response?.generatedVideos?.length ?? 0,
+                    raiFiltered: operation.response?.raiMediaFilteredCount ?? 0,
+                });
+
+                // On first successful poll, log the full operation shape for debugging
+                if (attempts === 1) {
+                    logger.info('[MediaGenerator] First poll — operation keys:', Object.keys(operation));
+                    if (operation.response) {
+                        logger.info('[MediaGenerator] First poll — response keys:', Object.keys(operation.response));
+                    }
+                }
+
+                // Early exit: Check if the operation has errored out mid-polling
+                if (operation.error) {
+                    const errorDetail = JSON.stringify(operation.error);
+                    logger.error(`[MediaGenerator] ❌ Operation error detected during polling:`, errorDetail);
+                    throw new AppException(
+                        AppErrorCode.INTERNAL_ERROR,
+                        `Video generation failed during processing: ${errorDetail}`
+                    );
+                }
+
+                // Early exit: Check if RAI filtered all videos
+                if (operation.response?.raiMediaFilteredCount && operation.response.raiMediaFilteredCount > 0 && !operation.response?.generatedVideos?.length) {
+                    const reasons = operation.response.raiMediaFilteredReasons?.join(', ') || 'content policy violation';
+                    logger.error(`[MediaGenerator] ❌ All videos filtered by safety: ${reasons}`);
+                    throw new AppException(
+                        AppErrorCode.CONTENT_FILTERED,
+                        `Video was blocked by safety filters: ${reasons}. Try a different prompt.`
+                    );
+                }
+            } catch (pollError: unknown) {
+                // If it's already an AppException from our early exit checks, re-throw
+                if (pollError instanceof AppException) throw pollError;
+
+                consecutivePollErrors++;
+                const pollMsg = pollError instanceof Error ? pollError.message : String(pollError);
+                logger.warn(`[MediaGenerator] ⚠️ Poll ${attempts} failed (${consecutivePollErrors}/${MAX_CONSECUTIVE_POLL_ERRORS}):`, pollMsg);
+
+                if (consecutivePollErrors >= MAX_CONSECUTIVE_POLL_ERRORS) {
+                    throw new AppException(
+                        AppErrorCode.INTERNAL_ERROR,
+                        `Video generation polling failed after ${consecutivePollErrors} consecutive errors. Last error: ${pollMsg}`
+                    );
+                }
+                // Continue polling — transient network errors shouldn't kill the operation
             }
         }
 
         if (!operation.done) {
+            logger.error(`[MediaGenerator] ❌ Timeout: ${attempts} poll attempts exhausted (${Math.round(timeoutMs / 1000)}s).`);
             throw new AppException(
                 AppErrorCode.TIMEOUT,
                 `Video generation timed out after ${attempts} poll attempts (${Math.round(timeoutMs / 1000)}s).`
             );
         }
 
+        logger.info('[MediaGenerator] ✅ Operation completed. Extracting results...');
+
         // 3. Extract the video URL from the typed operation response
         const generatedVideos = operation.response?.generatedVideos;
 
+        logger.info('[MediaGenerator] Response inspection:', {
+            hasResponse: !!operation.response,
+            generatedVideoCount: generatedVideos?.length ?? 0,
+            hasError: !!operation.error,
+            raiFilteredCount: operation.response?.raiMediaFilteredCount ?? 0,
+            raiReasons: operation.response?.raiMediaFilteredReasons ?? [],
+            responseKeys: operation.response ? Object.keys(operation.response) : [],
+        });
+
+        // Priority 1: Check for RAI filtering FIRST (most common silent failure)
+        if (operation.response?.raiMediaFilteredCount && operation.response.raiMediaFilteredCount > 0) {
+            const reasons = operation.response.raiMediaFilteredReasons?.join(', ') || 'content policy violation';
+            // If some videos were filtered but some were generated, log a warning and continue
+            if (!generatedVideos || generatedVideos.length === 0) {
+                logger.error(`[MediaGenerator] ❌ All videos blocked by safety filters: ${reasons}`);
+                throw new AppException(
+                    AppErrorCode.CONTENT_FILTERED,
+                    `Video was blocked by safety filters: ${reasons}. Try a different prompt.`
+                );
+            }
+            logger.warn(`[MediaGenerator] ⚠️ ${operation.response.raiMediaFilteredCount} video(s) filtered by safety (${reasons}), but ${generatedVideos.length} passed.`);
+        }
+
+        // Priority 2: Check for operation-level errors
+        if (operation.error) {
+            logger.error(`[MediaGenerator] ❌ Operation completed with error:`, JSON.stringify(operation.error));
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                `Video generation failed: ${JSON.stringify(operation.error)}`
+            );
+        }
+
+        // Priority 3: Extract video data
         if (generatedVideos && generatedVideos.length > 0) {
             const firstVideo = generatedVideos[0]!;
             const videoUri = firstVideo.video?.uri;
             const videoBytes = firstVideo.video?.videoBytes;
 
+            logger.info('[MediaGenerator] First video inspection:', {
+                hasUri: !!videoUri,
+                uriPreview: videoUri ? videoUri.substring(0, 100) : '(none)',
+                hasVideoBytes: !!videoBytes,
+                videoBytesLength: videoBytes ? videoBytes.length : 0,
+                mimeType: firstVideo.video?.mimeType ?? '(not set)',
+                videoKeys: firstVideo.video ? Object.keys(firstVideo.video) : [],
+            });
+
             if (videoUri) {
-                logger.info(`[MediaGenerator] ✅ Video URI received, fetching bytes for playback: ${videoUri.substring(0, 100)}...`);
+                logger.info(`[MediaGenerator] ✅ Video URI received, fetching bytes for playback...`);
 
                 // Native <video> elements cannot attach custom headers (x-goog-api-key).
                 // The raw Gemini API URI requires authentication, so we fetch the bytes
@@ -179,16 +292,19 @@ export async function generateVideo(
                     const fetchUrl = videoUri.includes('?')
                         ? `${videoUri}&key=${apiKey}`
                         : `${videoUri}?key=${apiKey}`;
+
+                    logger.info('[MediaGenerator] Fetching video bytes from authenticated URI...');
                     const videoResponse = await fetch(fetchUrl);
                     if (!videoResponse.ok) {
                         throw new Error(`HTTP ${videoResponse.status}: ${videoResponse.statusText}`);
                     }
                     const videoBlob = await videoResponse.blob();
                     const blobUrl = URL.createObjectURL(videoBlob);
-                    logger.info(`[MediaGenerator] ✅ Video ready for playback (blob): ${blobUrl}`);
+                    logger.info(`[MediaGenerator] ✅ Video ready for playback (blob): ${blobUrl} (${(videoBlob.size / 1024 / 1024).toFixed(2)} MB)`);
                     return blobUrl;
                 } catch (fetchError: unknown) {
-                    logger.warn('[MediaGenerator] Failed to fetch video bytes, falling back to raw URI:', fetchError);
+                    const fetchMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+                    logger.warn(`[MediaGenerator] ⚠️ Failed to fetch video bytes (${fetchMsg}), falling back to raw URI`);
                     // Fall back to raw URI — may still fail in <video> but allows Electron/download paths to work
                     return videoUri;
                 }
@@ -197,34 +313,26 @@ export async function generateVideo(
             // If we got raw bytes instead of a URI, create a blob URL
             if (videoBytes) {
                 const mimeType = firstVideo.video?.mimeType || 'video/mp4';
+                logger.info(`[MediaGenerator] Converting raw video bytes to blob URL (${videoBytes.length} chars, ${mimeType})...`);
                 const byteArray = Uint8Array.from(atob(videoBytes), c => c.charCodeAt(0));
                 const blob = new Blob([byteArray], { type: mimeType });
                 const blobUrl = URL.createObjectURL(blob);
-                logger.info(`[MediaGenerator] ✅ Video generated (blob): ${blobUrl}`);
+                logger.info(`[MediaGenerator] ✅ Video generated (blob): ${blobUrl} (${(blob.size / 1024 / 1024).toFixed(2)} MB)`);
                 return blobUrl;
             }
+
+            // Video object exists but has neither URI nor bytes — this is a bug
+            logger.error('[MediaGenerator] ❌ Video object exists but has neither URI nor bytes:', JSON.stringify(firstVideo.video));
         }
 
-        // Check for RAI filtering
-        if (operation.response?.raiMediaFilteredCount && operation.response.raiMediaFilteredCount > 0) {
-            const reasons = operation.response.raiMediaFilteredReasons?.join(', ') || 'content policy violation';
-            throw new AppException(
-                AppErrorCode.CONTENT_FILTERED,
-                `Video was blocked by safety filters: ${reasons}. Try a different prompt.`
-            );
-        }
-
-        // Check for error in the operation
-        if (operation.error) {
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                `Video generation failed: ${JSON.stringify(operation.error)}`
-            );
-        }
-
+        // No generated videos at all
+        logger.error('[MediaGenerator] ❌ Operation completed but no video data was returned.', {
+            responseJson: JSON.stringify(operation.response ?? {}),
+            errorJson: JSON.stringify(operation.error ?? {}),
+        });
         throw new AppException(
             AppErrorCode.INTERNAL_ERROR,
-            'Video generation completed but no video data was returned.'
+            'Video generation completed but no video data was returned. This may indicate a temporary API issue — please try again.'
         );
     } catch (error: unknown) {
         if (error instanceof AppException) throw error;

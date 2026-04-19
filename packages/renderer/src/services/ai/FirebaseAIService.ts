@@ -934,23 +934,43 @@ export class FirebaseAIService implements AIContext {
      * Matches the pattern used by image generation (direct SDK call, no backend proxy).
      */
     async generateVideo(options: GenerateVideoRequest & { timeoutMs?: number }): Promise<string> {
-        return this.mediaBreaker.execute(async () => {
-            await this.ensureInitialized();
-
-            // Ensure we have the fallback client (direct @google/genai SDK)
-            if (!this.fallbackClient) {
-                await this.initializeFallbackMode();
-            }
-
-            if (!this.fallbackClient) {
-                throw new AppException(
-                    AppErrorCode.INTERNAL_ERROR,
-                    'Video generation requires the Google GenAI SDK. Please configure VITE_API_KEY.'
-                );
-            }
-
-            return mediaGenerateVideo(this.fallbackClient, options);
+        logger.info('[FirebaseAI] generateVideo() — entering circuit breaker...', {
+            model: options.model || '(default)',
+            promptLength: options.prompt?.length ?? 0,
+            breakerState: this.mediaBreaker?.getState() ?? 'unknown',
         });
+
+        try {
+            const result = await this.mediaBreaker.execute(async () => {
+                await this.ensureInitialized();
+
+                // Ensure we have the fallback client (direct @google/genai SDK)
+                if (!this.fallbackClient) {
+                    await this.initializeFallbackMode();
+                }
+
+                if (!this.fallbackClient) {
+                    throw new AppException(
+                        AppErrorCode.INTERNAL_ERROR,
+                        'Video generation requires the Google GenAI SDK. Please configure VITE_API_KEY.'
+                    );
+                }
+
+                logger.info('[FirebaseAI] Delegating to MediaGenerator...');
+                return mediaGenerateVideo(this.fallbackClient, options);
+            });
+
+            logger.info('[FirebaseAI] generateVideo() — success. URL length:', result?.length ?? 0);
+            return result;
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            logger.error('[FirebaseAI] generateVideo() — circuit breaker caught error:', {
+                errorMessage: msg,
+                errorType: error?.constructor?.name || 'unknown',
+                breakerState: this.mediaBreaker?.getState() ?? 'unknown',
+            });
+            throw error;
+        }
     }
 
     /**

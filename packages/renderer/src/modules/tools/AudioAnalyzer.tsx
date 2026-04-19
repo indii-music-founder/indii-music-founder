@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit, Globe, AlertTriangle, HelpCircle, Target, Waves, CheckCircle2, XCircle
+    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit, Globe, AlertTriangle, HelpCircle, Target, Waves, CheckCircle2, XCircle, Video, ImageIcon, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
@@ -11,6 +11,7 @@ import { TagMatrix } from './components/TagMatrix';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
+import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -24,6 +25,8 @@ const DEFAULT_TAGS = {
 
 const AudioAnalyzer: React.FC = () => {
     const toast = useToast();
+    const setModule = useStore(state => state.setModule);
+    const setPendingPrompt = useStore(state => state.setPendingPrompt);
     const [file, setFile] = useState<File | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -37,17 +40,51 @@ const AudioAnalyzer: React.FC = () => {
             showProgress: true,
             animate: true,
             steps: [
-                { element: '#tour-audio-tabs', popover: { title: 'Distribution QC & Optimization', description: 'Switch between technical DDEX compliance extraction and mastering target optimization.' } },
-                { element: '#tour-audio-upload', popover: { title: 'Ingestion & Data Extraction', description: 'Upload a master track here to instantly extract the acoustic fingerprint and prepare DDEX metadata.' } },
+                { element: '#tour-audio-tabs', popover: { title: 'Distribution QC & Optimization', description: 'Switch between distribution-ready metadata extraction and mastering target optimization.' } },
+                { element: '#tour-audio-upload', popover: { title: 'Ingestion & Data Extraction', description: 'Upload a master track here to instantly extract the acoustic fingerprint and prepare distribution metadata.' } },
                 { element: '#tour-audio-knowledge', popover: { title: 'Knowledge Graph', description: 'Once scanned, verify the metadata and push the payload directly into the system for other agents to use.' } },
             ]
         });
         driverObj.drive();
     };
 
+    /**
+     * Lossless format enforcement — distributors (DistroKid, TuneCore, CD Baby,
+     * UnitedMasters) universally require lossless masters (WAV/FLAC/AIFF).
+     * MP3/AAC/OGG are lossy and will be rejected at QC.
+     */
+    const LOSSLESS_MIME_TYPES = new Set([
+        'audio/wav', 'audio/x-wav', 'audio/wave',
+        'audio/flac', 'audio/x-flac',
+        'audio/aiff', 'audio/x-aiff',
+        'audio/x-m4a', 'audio/mp4', // ALAC containers
+        'audio/alac',
+    ]);
+    const LOSSLESS_EXTENSIONS = new Set(['.wav', '.flac', '.aif', '.aiff', '.m4a', '.alac']);
+    const LOSSLESS_ACCEPT = '.wav,.flac,.aif,.aiff,.m4a';
+
+    const isLosslessFormat = (f: File): boolean => {
+        // Check MIME type first
+        if (f.type && LOSSLESS_MIME_TYPES.has(f.type.toLowerCase())) return true;
+        // Fallback: check file extension (some browsers don't set MIME for FLAC/AIFF)
+        const ext = '.' + f.name.split('.').pop()?.toLowerCase();
+        return LOSSLESS_EXTENSIONS.has(ext);
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
         if (!uploadedFile) return;
+
+        // Gate: Reject lossy formats
+        if (!isLosslessFormat(uploadedFile)) {
+            const ext = uploadedFile.name.split('.').pop()?.toUpperCase() || 'unknown';
+            toast.error(
+                `${ext} files are not accepted. Distributors require lossless masters (WAV, FLAC, or AIFF). Please re-export your track in a lossless format.`
+            );
+            // Reset the input so the same file can be re-selected after conversion
+            e.target.value = '';
+            return;
+        }
 
         setFile(uploadedFile);
         if (audioUrl) {
@@ -61,7 +98,7 @@ const AudioAnalyzer: React.FC = () => {
 
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
-        const extractToastId = toast.loading("Executing full technical and semantic audio scan (DDEX & Agents)...");
+        const extractToastId = toast.loading("Executing full technical and semantic audio scan...");
 
         try {
             const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
@@ -94,12 +131,12 @@ const AudioAnalyzer: React.FC = () => {
     const handleSaveAnalysis = async () => {
         if (!file || !profile || isAnalyzing) return;
         setIsSaving(true);
-        const toastId = toast.loading("Pushing DDEX and Agent context to Knowledge Graph...");
+        const toastId = toast.loading("Pushing distribution metadata to Knowledge Graph...");
 
         try {
             await audioAnalysisService.saveAnalysisToFirestore(profile.technical, file.name, { ...profile.semantic });
             toast.dismiss(toastId);
-            toast.success("DDEX Standards and Acoustic Profile logged to Database.");
+            toast.success("Distribution standards and acoustic profile saved.");
         } catch (error: unknown) {
             logger.error("Save failed", error);
             toast.dismiss(toastId);
@@ -148,7 +185,7 @@ const AudioAnalyzer: React.FC = () => {
                                 <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
                                     {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
                                     {isAnalyzing ? "Deep Analysis Running..." : "Load Audio Master"}
-                                    <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
+                                    <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
                                 </label>
                             </div>
 
@@ -194,15 +231,15 @@ const AudioAnalyzer: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* AI Deep Analysis & DDEX */}
+                            {/* AI Deep Analysis & Distribution Spec */}
                             {profile && (
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-5 duration-600">
 
-                                    {/* Box 1: DDEX Spec */}
+                                    {/* Box 1: Distribution Spec */}
                                     <div className="bg-card glass-panel border border-white/5 rounded-2xl p-6">
                                         <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2 mb-6">
                                             <Globe size={16} className="text-blue-400" />
-                                            DDEX Delivery Spec
+                                            Distribution Spec
                                         </h3>
                                         <div className="space-y-4">
                                             <div>
@@ -231,7 +268,7 @@ const AudioAnalyzer: React.FC = () => {
                                     <div className="lg:col-span-2 bg-linear-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-2xl p-6">
                                         <h3 className="text-sm font-bold text-indigo-100 uppercase tracking-widest flex items-center gap-2 mb-6">
                                             <BrainCircuit size={16} className="text-indigo-400" />
-                                            Prompt Genetics (For GenAI Agents)
+                                            Creative Intelligence
                                         </h3>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -249,18 +286,49 @@ const AudioAnalyzer: React.FC = () => {
                                             </div>
                                             <div className="space-y-4">
                                                 <div>
-                                                    <span className="text-[10px] text-indigo-300 uppercase block mb-2">Image Gen Payload (Gemini)</span>
+                                                    <span className="text-[10px] text-indigo-300 uppercase block mb-2">AI Image Prompt</span>
                                                     <div className="bg-black/30 p-2 rounded text-xs text-indigo-200/70 border border-indigo-500/10 custom-scrollbar overflow-x-auto whitespace-nowrap">
                                                         {profile.semantic.targetPrompts.image}
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <span className="text-[10px] text-indigo-300 uppercase block mb-2">Video Gen Payload (Veo)</span>
+                                                    <span className="text-[10px] text-indigo-300 uppercase block mb-2">AI Video Prompt</span>
                                                     <div className="bg-black/30 p-2 rounded text-xs text-indigo-200/70 border border-indigo-500/10 custom-scrollbar overflow-x-auto whitespace-nowrap">
                                                         {profile.semantic.targetPrompts.veo}
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        {/* ⚡ Action Buttons: Send prompts directly to generation studios */}
+                                        <div className="flex flex-wrap gap-3 mt-6 pt-5 border-t border-indigo-500/20">
+                                            <Button
+                                                data-testid="send-to-video-studio-btn"
+                                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                                                onClick={() => {
+                                                    setPendingPrompt(profile.semantic.targetPrompts.veo);
+                                                    setModule('video');
+                                                    toast.success('Video prompt loaded into Video Studio');
+                                                }}
+                                            >
+                                                <Video size={16} className="mr-2" />
+                                                Send to Video Studio
+                                                <ArrowRight size={14} className="ml-1.5 opacity-60" />
+                                            </Button>
+                                            <Button
+                                                data-testid="send-to-creative-studio-btn"
+                                                variant="outline"
+                                                className="border-indigo-500/30 text-indigo-200 hover:bg-indigo-500/10 hover:border-indigo-400/50 font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                                                onClick={() => {
+                                                    setPendingPrompt(profile.semantic.targetPrompts.image);
+                                                    setModule('creative');
+                                                    toast.success('Image prompt loaded into Creative Studio');
+                                                }}
+                                            >
+                                                <ImageIcon size={16} className="mr-2" />
+                                                Send to Creative Studio
+                                                <ArrowRight size={14} className="ml-1.5 opacity-60" />
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -293,7 +361,7 @@ const AudioAnalyzer: React.FC = () => {
                                                 </div>
                                             </div>
                                             <p className="text-xs text-muted-foreground leading-relaxed mb-6">
-                                                Pushing this profile persists DDEX metadata and generated prompt payloads to standard system schemas. Other agents (Marketer, Director) will inherit this context automatically.
+                                                Pushing this profile persists distribution metadata and generated prompt payloads to the system. Other agents (Marketer, Director) will inherit this context automatically.
                                             </p>
                                         </div>
 
@@ -322,7 +390,7 @@ const AudioAnalyzer: React.FC = () => {
                                     </p>
                                     <label className="border border-dept-publishing/50 text-dept-publishing hover:bg-dept-publishing/10 cursor-pointer inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors">
                                         <Upload size={16} className="mr-2" /> Upload Master for Audit
-                                        <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
+                                        <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
                                     </label>
                                 </div>
                             ) : (
@@ -337,7 +405,7 @@ const AudioAnalyzer: React.FC = () => {
                                         </div>
                                         <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3">
                                             <Upload size={18} /> Re-Audit New File
-                                            <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
+                                            <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
                                         </label>
                                     </div>
 
