@@ -179,7 +179,7 @@ declare module '@react-three/fiber' {
 }
 
 export default function WaveMesh() {
-    const meshRef = useRef<THREE.Mesh>(null);
+    const meshRef = useRef<any>(null);
     const materialRef = useRef<any>(null);
     const _noise3D = useMemo(() => createNoise3D(), []);
 

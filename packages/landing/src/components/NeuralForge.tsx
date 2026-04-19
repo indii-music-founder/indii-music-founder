@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { Instances, Instance } from '@react-three/drei';
 
 function DataStorm() {
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const meshRef = useRef<any>(null!);
     const count = 600;
 
     const particles = useMemo(() => {
@@ -60,7 +60,7 @@ function DataStorm() {
 }
 
 function CoreReactor() {
-    const mesh = useRef<THREE.Mesh>(null!);
+    const mesh = useRef<any>(null!);
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();
