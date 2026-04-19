@@ -11,6 +11,14 @@ export interface CanvasImage {
     height: number;
     aspect: number;
     projectId: string;
+    prompt?: string;
+    parentId?: string;
+    originalX?: number;
+    originalY?: number;
+    originalWidth?: number;
+    originalHeight?: number;
+    parentOffsetX?: number;
+    parentOffsetY?: number;
 }
 
 export interface CreativeHistorySlice {
@@ -40,9 +48,6 @@ export interface CreativeHistorySlice {
     removeUploadedAudio: (id: string) => void;
 }
 
-/**
- * Factory that returns the history/uploads/canvas portion of the creative slice.
- */
 export function buildCreativeHistoryState(
     set: Parameters<StateCreator<CreativeHistorySlice>>[0],
     _get: Parameters<StateCreator<CreativeHistorySlice>>[1]
@@ -172,7 +177,7 @@ export function buildCreativeHistoryState(
         removeFromHistory: (id: string) => {
             set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) }));
             import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+                StorageService.removeItem(id).catch((e) => { logger.error('[Store] Failed to remove item:', e); });
             });
         },
 
@@ -189,7 +194,7 @@ export function buildCreativeHistoryState(
         addUploadedImage: (img: HistoryItem) => {
             set((state) => ({ uploadedImages: [img, ...state.uploadedImages] }));
             import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.saveItem(img).catch(() => { /* Error handled silently */ });
+                StorageService.saveItem(img).catch((e) => { logger.error('[Store] Failed to save item:', e); });
             });
         },
         updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
@@ -198,7 +203,7 @@ export function buildCreativeHistoryState(
         removeUploadedImage: (id: string) => {
             set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) }));
             import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+                StorageService.removeItem(id).catch((e) => { logger.error('[Store] Failed to remove item:', e); });
             });
         },
 
@@ -206,7 +211,7 @@ export function buildCreativeHistoryState(
         addUploadedAudio: (audio: HistoryItem) => {
             set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio] }));
             import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.saveItem(audio).catch(() => { /* Error handled silently */ });
+                StorageService.saveItem(audio).catch((e) => { logger.error('[Store] Failed to save item:', e); });
             });
         },
         removeUploadedAudio: (id: string) => {

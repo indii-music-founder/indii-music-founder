@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles, Send } from 'lucide-react';
 import { InfiniteCanvasHUD } from './InfiniteCanvasHUD';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
@@ -17,7 +17,8 @@ export default function InfiniteCanvas() {
         removeCanvasImage,
         selectedCanvasImageId,
         selectCanvasImage,
-        currentProjectId
+        currentProjectId,
+        addToHistory
     } = useStore(useShallow(state => ({
         canvasImages: state.canvasImages,
         addCanvasImage: state.addCanvasImage,
@@ -25,25 +26,27 @@ export default function InfiniteCanvas() {
         removeCanvasImage: state.removeCanvasImage,
         selectedCanvasImageId: state.selectedCanvasImageId,
         selectCanvasImage: state.selectCanvasImage,
-        currentProjectId: state.currentProjectId
+        currentProjectId: state.currentProjectId,
+        addToHistory: state.addToHistory
     })));
     const toast = useToast();
 
     // Camera State (Refs for performance)
-    // ⚡ Bolt Optimization: Using refs instead of state for high-frequency updates (pan/zoom)
-    // prevents React re-renders on every frame, significantly improving performance.
     const scaleRef = useRef(1);
     const offsetRef = useRef({ x: 0, y: 0 });
 
     const [tool, setTool] = useState<'pan' | 'select' | 'generate'>('pan');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [promptOverlay, setPromptOverlay] = useState<{ sx: number, sy: number, w: number, h: number } | null>(null);
+    const [promptText, setPromptText] = useState("");
 
     // Interaction State
     const isDragging = useRef(false);
     const lastPos = useRef({ x: 0, y: 0 });
     const dragImageId = useRef<string | null>(null);
-    // ⚡ Bolt Optimization: Accumulate drag delta locally to avoid triggering React re-renders via store updates
+    const isResizing = useRef<string | null>(null); // 'tl', 'tr', 'bl', 'br'
     const dragAccumulator = useRef({ x: 0, y: 0 });
+    const resizeAccumulator = useRef({ x: 0, y: 0, w: 0, h: 0 });
     const selectionStart = useRef<{ x: number, y: number } | null>(null);
     const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
     const rafId = useRef<number | null>(null);
@@ -88,8 +91,6 @@ export default function InfiniteCanvas() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Calculate visible viewport in world coordinates
-        // ⚡ Bolt Optimization: Viewport Culling
-        // Only draw images that intersect with the current view
         const viewportLeft = -offset.x / scale;
         const viewportTop = -offset.y / scale;
         const viewportRight = (canvas.width - offset.x) / scale;
@@ -117,27 +118,48 @@ export default function InfiniteCanvas() {
                 const w = img.width ?? 0;
                 const h = img.height ?? 0;
 
-                // ⚡ Bolt Optimization: Apply local drag offset during render
                 let drawX = img.x;
                 let drawY = img.y;
+                let drawW = w;
+                let drawH = h;
 
                 if (img.id === dragImageId.current) {
-                    drawX += dragAccumulator.current.x;
-                    drawY += dragAccumulator.current.y;
+                    if (isResizing.current) {
+                        drawX += resizeAccumulator.current.x;
+                        drawY += resizeAccumulator.current.y;
+                        drawW += resizeAccumulator.current.w;
+                        drawH += resizeAccumulator.current.h;
+                    } else {
+                        drawX += dragAccumulator.current.x;
+                        drawY += dragAccumulator.current.y;
+                    }
                 }
 
-                // ⚡ Bolt Optimization: Skip drawing if off-screen (Viewport Culling)
-                if (drawX + w < viewportLeft || drawX > viewportRight ||
-                    drawY + h < viewportTop || drawY > viewportBottom) {
+                if (drawX + drawW < viewportLeft || drawX > viewportRight ||
+                    drawY + drawH < viewportTop || drawY > viewportBottom) {
                     return;
                 }
 
-                ctx.drawImage(image, drawX, drawY, w, h);
+                ctx.drawImage(image, drawX, drawY, drawW, drawH);
 
                 if (img.id === selectedCanvasImageId) {
                     ctx.strokeStyle = '#3b82f6';
                     ctx.lineWidth = 4 / scale;
-                    ctx.strokeRect(drawX, drawY, w, h);
+                    ctx.strokeRect(drawX, drawY, drawW, drawH);
+                    
+                    // Draw resize handles
+                    ctx.fillStyle = '#ffffff';
+                    const hs = 10 / scale; // handle size
+                    ctx.fillRect(drawX - hs/2, drawY - hs/2, hs, hs); // tl
+                    ctx.fillRect(drawX + drawW - hs/2, drawY - hs/2, hs, hs); // tr
+                    ctx.fillRect(drawX - hs/2, drawY + drawH - hs/2, hs, hs); // bl
+                    ctx.fillRect(drawX + drawW - hs/2, drawY + drawH - hs/2, hs, hs); // br
+                    
+                    ctx.lineWidth = 1.5 / scale;
+                    ctx.strokeRect(drawX - hs/2, drawY - hs/2, hs, hs);
+                    ctx.strokeRect(drawX + drawW - hs/2, drawY - hs/2, hs, hs);
+                    ctx.strokeRect(drawX - hs/2, drawY + drawH - hs/2, hs, hs);
+                    ctx.strokeRect(drawX + drawW - hs/2, drawY + drawH - hs/2, hs, hs);
                 }
             }
         });
@@ -202,6 +224,33 @@ export default function InfiniteCanvas() {
         const wx = (cx - offset.x) / scale;
         const wy = (cy - offset.y) / scale;
 
+        // Check resize handles of selected image first
+        if (selectedCanvasImageId && tool === 'select') {
+            const img = canvasImages.find(i => i.id === selectedCanvasImageId);
+            if (img) {
+                const w = img.width ?? 0;
+                const h = img.height ?? 0;
+                const hsHit = 15 / scale; // slightly larger hit area
+                
+                const corners = [
+                    { id: 'tl', x: img.x, y: img.y },
+                    { id: 'tr', x: img.x + w, y: img.y },
+                    { id: 'bl', x: img.x, y: img.y + h },
+                    { id: 'br', x: img.x + w, y: img.y + h }
+                ];
+                
+                for (const corner of corners) {
+                    if (wx >= corner.x - hsHit && wx <= corner.x + hsHit &&
+                        wy >= corner.y - hsHit && wy <= corner.y + hsHit) {
+                        isResizing.current = corner.id;
+                        dragImageId.current = img.id;
+                        resizeAccumulator.current = { x: 0, y: 0, w: 0, h: 0 };
+                        return;
+                    }
+                }
+            }
+        }
+
         // Check top-most image first
         for (let i = canvasImages.length - 1; i >= 0; i--) {
             const img = canvasImages[i]!;
@@ -238,8 +287,40 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (dragImageId.current && isResizing.current && tool === 'select') {
+            const img = canvasImages.find(i => i.id === dragImageId.current);
+            if (!img) return;
+            
+            const dw = dx / scale;
+            const aspect = img.aspect || (img.width! / img.height!);
+            
+            let deltaW = 0;
+            if (isResizing.current === 'br' || isResizing.current === 'tr') {
+                deltaW = dw;
+            } else {
+                deltaW = -dw;
+            }
+            
+            const proposedW = img.width! + resizeAccumulator.current.w + deltaW;
+            if (proposedW > 20) {
+                const newW = proposedW;
+                const newH = newW / aspect;
+                
+                resizeAccumulator.current.w = newW - img.width!;
+                resizeAccumulator.current.h = newH - img.height!;
+                
+                if (isResizing.current === 'bl' || isResizing.current === 'tl') {
+                    resizeAccumulator.current.x = img.width! - newW;
+                }
+                if (isResizing.current === 'tl' || isResizing.current === 'tr') {
+                    resizeAccumulator.current.y = img.height! - newH;
+                }
+            }
+            requestDraw();
+            return;
+        }
+
         if (dragImageId.current && tool === 'select') {
-            // ⚡ Bolt Optimization: Update local accumulator instead of store
             dragAccumulator.current.x += dx / scale;
             dragAccumulator.current.y += dy / scale;
             requestDraw();
@@ -256,17 +337,28 @@ export default function InfiniteCanvas() {
     const handleMouseUp = async () => {
         isDragging.current = false;
 
-        // ⚡ Bolt Optimization: Commit final position to store
         if (dragImageId.current && tool === 'select') {
             const img = canvasImages.find(i => i.id === dragImageId.current);
-            if (img && (dragAccumulator.current.x !== 0 || dragAccumulator.current.y !== 0)) {
-                updateCanvasImage(dragImageId.current, {
-                    x: img.x + dragAccumulator.current.x,
-                    y: img.y + dragAccumulator.current.y
-                });
+            if (img) {
+                if (isResizing.current) {
+                    if (resizeAccumulator.current.w !== 0 || resizeAccumulator.current.h !== 0) {
+                        updateCanvasImage(dragImageId.current, {
+                            x: img.x + resizeAccumulator.current.x,
+                            y: img.y + resizeAccumulator.current.y,
+                            width: img.width! + resizeAccumulator.current.w,
+                            height: img.height! + resizeAccumulator.current.h
+                        });
+                    }
+                } else if (dragAccumulator.current.x !== 0 || dragAccumulator.current.y !== 0) {
+                    updateCanvasImage(dragImageId.current, {
+                        x: img.x + dragAccumulator.current.x,
+                        y: img.y + dragAccumulator.current.y
+                    });
+                }
             }
         }
 
+        isResizing.current = null;
         dragImageId.current = null;
 
         if (tool === 'generate' && selectionStart.current) {
@@ -279,10 +371,8 @@ export default function InfiniteCanvas() {
             const h = Math.abs(ey - sy);
 
             if (w > 20 && h > 20) {
-                const prompt = window.prompt("Generate/Outpaint Prompt:");
-                if (prompt) {
-                    await handleGeneration(Math.min(sx, ex), Math.min(sy, ey), w, h, prompt);
-                }
+                setPromptOverlay({ sx: Math.min(sx, ex), sy: Math.min(sy, ey), w, h });
+                setPromptText("");
             }
             selectionStart.current = null;
             requestDraw();
@@ -365,23 +455,19 @@ export default function InfiniteCanvas() {
             const canvas = canvasRef.current;
             if (!canvas) throw new Error("No canvas");
 
-            // STEP 1: Draw clean canvas (no selection borders, no purple box)
             drawClean();
 
-            // STEP 2: Capture the clean canvas
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = w;
             tempCanvas.height = h;
             const tCtx = tempCanvas.getContext('2d');
             if (!tCtx) throw new Error("No temp context");
 
-            // Draw the CLEAN visible canvas onto temp canvas
             tCtx.drawImage(canvas, sx, sy, w, h, 0, 0, w, h);
 
             const contextDataUrl = tempCanvas.toDataURL('image/png');
             const base64Data = contextDataUrl.split(',')[1] ?? '';
 
-            // STEP 3: Restore normal draw with overlays
             requestDraw();
 
             // Use ImageService for generation (Edit Mode / Magic Fill)
@@ -396,7 +482,23 @@ export default function InfiniteCanvas() {
                     base64: result.url,
                     x: wx, y: wy, width: ww, height: wh,
                     aspect: ww / wh,
-                    projectId: currentProjectId
+                    projectId: currentProjectId,
+                    prompt: prompt,
+                    parentId: selectedCanvasImageId || undefined,
+                    originalX: wx, originalY: wy,
+                    originalWidth: ww, originalHeight: wh,
+                    parentOffsetX: selectedCanvasImageId ? (wx - (canvasImages.find(i => i.id === selectedCanvasImageId)?.x || 0)) : undefined,
+                    parentOffsetY: selectedCanvasImageId ? (wy - (canvasImages.find(i => i.id === selectedCanvasImageId)?.y || 0)) : undefined,
+                });
+
+                addToHistory({
+                    id: result.id,
+                    url: result.url,
+                    type: 'image',
+                    prompt: prompt,
+                    timestamp: Date.now(),
+                    projectId: currentProjectId,
+                    origin: 'generated'
                 });
             } else {
                 // Fallback to pure generation if edit returns null (unlikely)
@@ -412,7 +514,23 @@ export default function InfiniteCanvas() {
                         base64: res.url,
                         x: wx, y: wy, width: ww, height: wh,
                         aspect: ww / wh,
-                        projectId: currentProjectId
+                        projectId: currentProjectId,
+                        prompt: prompt,
+                        parentId: selectedCanvasImageId || undefined,
+                        originalX: wx, originalY: wy,
+                        originalWidth: ww, originalHeight: wh,
+                        parentOffsetX: selectedCanvasImageId ? (wx - (canvasImages.find(i => i.id === selectedCanvasImageId)?.x || 0)) : undefined,
+                        parentOffsetY: selectedCanvasImageId ? (wy - (canvasImages.find(i => i.id === selectedCanvasImageId)?.y || 0)) : undefined,
+                    });
+
+                    addToHistory({
+                        id: res.id,
+                        url: res.url,
+                        type: 'image',
+                        prompt: prompt,
+                        timestamp: Date.now(),
+                        projectId: currentProjectId,
+                        origin: 'generated'
                     });
                 }
             }
@@ -432,11 +550,88 @@ export default function InfiniteCanvas() {
         }
     };
 
+    const handleFlatten = () => {
+        if (canvasImages.length <= 1) {
+            toast.success("Nothing to flatten");
+            return;
+        }
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        canvasImages.forEach(img => {
+            const w = img.width ?? 0;
+            const h = img.height ?? 0;
+            if (img.x < minX) minX = img.x;
+            if (img.y < minY) minY = img.y;
+            if (img.x + w > maxX) maxX = img.x + w;
+            if (img.y + h > maxY) maxY = img.y + h;
+        });
+
+        if (minX === Infinity) return;
+
+        const w = maxX - minX;
+        const h = maxY - minY;
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        const tCtx = tempCanvas.getContext('2d');
+        if (!tCtx) return;
+
+        // Ensure we draw in the right order (z-index is array order)
+        canvasImages.forEach(img => {
+            const image = imageCache.current.get(img.id);
+            if (image && image.complete && image.naturalWidth > 0) {
+                tCtx.drawImage(image, img.x - minX, img.y - minY, img.width ?? 0, img.height ?? 0);
+            }
+        });
+
+        const dataUrl = tempCanvas.toDataURL('image/png');
+        
+        // Remove old images
+        canvasImages.forEach(img => removeCanvasImage(img.id));
+        
+        // Add new flattened image
+        const newId = crypto.randomUUID();
+        addCanvasImage({
+            id: newId,
+            base64: dataUrl,
+            x: minX,
+            y: minY,
+            width: w,
+            height: h,
+            aspect: w / h,
+            projectId: currentProjectId,
+            prompt: "Flattened Canvas"
+        });
+        
+        selectCanvasImage(newId);
+        toast.success("Layers flattened successfully!");
+    };
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         const id = e.dataTransfer.getData('text/plain');
         const state = useStore.getState();
-        const historyItem = state.generatedHistory.find(h => h.id === id) || state.uploadedImages.find(u => u.id === id);
+        
+        // Find in history, uploads, or file nodes
+        let historyItem = state.generatedHistory.find(h => h.id === id) || state.uploadedImages.find(u => u.id === id);
+        
+        if (!historyItem) {
+            const fileNode = state.fileNodes.find(f => f.id === id);
+            if (fileNode) {
+                const mime = fileNode.data?.mimeType || '';
+                historyItem = {
+                    id: fileNode.id,
+                    type: mime.startsWith('image') ? 'image' : mime.startsWith('video') ? 'video' : 'text',
+                    url: fileNode.data?.url || '',
+                    thumbnailUrl: fileNode.data?.url || '',
+                    prompt: fileNode.name,
+                    timestamp: fileNode.updatedAt || 0,
+                    projectId: fileNode.projectId || '',
+                    origin: 'uploaded'
+                } as any;
+            }
+        }
 
         if (historyItem && (historyItem.type === 'image' || historyItem.type === 'video')) { // Allow videos as static frames for now
             const rect = canvasRef.current!.getBoundingClientRect();
@@ -452,16 +647,88 @@ export default function InfiniteCanvas() {
             const img = new window.Image(); // Explicit window.Image to avoid conflict if imported
             img.onload = () => {
                 const aspect = img.width / img.height;
+                const newId = crypto.randomUUID();
+                
+                // If dropped on another image, set it as parent
+                let parentId: string | undefined = undefined;
+                let parentOffsetX: number | undefined = undefined;
+                let parentOffsetY: number | undefined = undefined;
+                
+                for (let i = canvasImages.length - 1; i >= 0; i--) {
+                    const cImg = canvasImages[i]!;
+                    const w = cImg.width ?? 0;
+                    const h = cImg.height ?? 0;
+                    if (wx >= cImg.x && wx <= cImg.x + w && wy >= cImg.y && wy <= cImg.y + h) {
+                        parentId = cImg.id;
+                        parentOffsetX = (wx - 150) - cImg.x;
+                        parentOffsetY = (wy - (150 / aspect)) - cImg.y;
+                        break;
+                    }
+                }
+                
                 addCanvasImage({
-                    id: crypto.randomUUID(),
+                    id: newId,
                     base64: historyItem.url,
                     x: wx - 150, y: wy - (150 / aspect),
                     width: 300, height: 300 / aspect,
                     aspect,
-                    projectId: currentProjectId
+                    projectId: currentProjectId,
+                    parentId,
+                    originalX: wx - 150,
+                    originalY: wy - (150 / aspect),
+                    originalWidth: 300,
+                    originalHeight: 300 / aspect,
+                    parentOffsetX,
+                    parentOffsetY
                 });
             };
             img.src = historyItem.url;
+        }
+    };
+
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        const rect = canvasRef.current!.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        const scale = scaleRef.current;
+        const offset = offsetRef.current;
+
+        const wx = (cx - offset.x) / scale;
+        const wy = (cy - offset.y) / scale;
+
+        // Find the top-most clicked image
+        for (let i = canvasImages.length - 1; i >= 0; i--) {
+            const img = canvasImages[i]!;
+            const w = img.width ?? 0;
+            const h = img.height ?? 0;
+            if (wx >= img.x && wx <= img.x + w && wy >= img.y && wy <= img.y + h) {
+                // Check if we can realign it to parent
+                if (img.parentId && img.parentOffsetX !== undefined && img.parentOffsetY !== undefined) {
+                    const parent = canvasImages.find(p => p.id === img.parentId);
+                    if (parent) {
+                        updateCanvasImage(img.id, {
+                            x: parent.x + img.parentOffsetX,
+                            y: parent.y + img.parentOffsetY,
+                            width: img.originalWidth ?? img.width,
+                            height: img.originalHeight ?? img.height
+                        });
+                        toast.success("Realigned to parent");
+                        return;
+                    }
+                }
+                
+                // Fallback: Check if we can realign to original coords
+                if (img.originalX !== undefined && img.originalY !== undefined) {
+                    updateCanvasImage(img.id, {
+                        x: img.originalX,
+                        y: img.originalY,
+                        width: img.originalWidth ?? img.width,
+                        height: img.originalHeight ?? img.height
+                    });
+                    toast.success("Restored original position");
+                }
+                return;
+            }
         }
     };
 
@@ -473,6 +740,7 @@ export default function InfiniteCanvas() {
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onDoubleClick={handleDoubleClick}
                 onWheel={handleWheel}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
@@ -485,7 +753,67 @@ export default function InfiniteCanvas() {
                 setTool={setTool}
                 selectedCanvasImageId={selectedCanvasImageId}
                 removeCanvasImage={removeCanvasImage}
+                onFlatten={handleFlatten}
             />
+
+            {promptOverlay && (
+                <div
+                    className="absolute z-50 flex flex-col gap-2 p-3 bg-[#111] border border-white/10 rounded-lg shadow-2xl backdrop-blur-md"
+                    style={{
+                        left: Math.max(160, Math.min(promptOverlay.sx + promptOverlay.w / 2, window.innerWidth - 160)),
+                        top: Math.min(promptOverlay.sy + promptOverlay.h + 10, window.innerHeight - 150),
+                        transform: 'translateX(-50%)',
+                        width: '300px'
+                    }}
+                >
+                    <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className="w-4 h-4 text-purple-400" />
+                        <span className="text-xs text-white/70 font-medium">Generate & Outpaint</span>
+                    </div>
+                    <textarea
+                        autoFocus
+                        value={promptText}
+                        onChange={e => setPromptText(e.target.value)}
+                        placeholder="Describe what you want to see..."
+                        className="w-full bg-black/40 border border-white/10 rounded p-2 text-sm text-white resize-none focus:outline-none focus:border-purple-500/50"
+                        rows={3}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                if (promptText.trim()) {
+                                    const { sx, sy, w, h } = promptOverlay;
+                                    setPromptOverlay(null);
+                                    handleGeneration(sx, sy, w, h, promptText.trim());
+                                }
+                            } else if (e.key === 'Escape') {
+                                setPromptOverlay(null);
+                                setTool('select');
+                            }
+                        }}
+                    />
+                    <div className="flex justify-end gap-2 mt-1">
+                        <button 
+                            onClick={() => { setPromptOverlay(null); setTool('select'); }}
+                            className="px-3 py-1 text-xs text-white/50 hover:text-white transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={() => {
+                                if (promptText.trim()) {
+                                    const { sx, sy, w, h } = promptOverlay;
+                                    setPromptOverlay(null);
+                                    handleGeneration(sx, sy, w, h, promptText.trim());
+                                }
+                            }}
+                            disabled={!promptText.trim()}
+                            className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-500 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                            Generate <Send className="w-3 h-3" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {isGenerating && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
