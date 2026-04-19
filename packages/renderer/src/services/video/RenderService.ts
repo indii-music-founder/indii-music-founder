@@ -28,7 +28,10 @@ export class RenderService {
      *
      * No AWS credentials required.
      */
-    async renderCompositionCloud(config: RenderConfig): Promise<CloudRenderResponse> {
+    async renderCompositionCloud(
+        config: RenderConfig,
+        onProgress?: (progress: number) => void
+    ): Promise<CloudRenderResponse> {
         try {
             logger.info(`[CloudRenderService] Dispatching GCP Cloud Run render for ${config.compositionId}...`);
 
@@ -45,7 +48,9 @@ export class RenderService {
                     if (error) {
                         logger.error(`[CloudRenderService] Render progress error for ${config.compositionId}`);
                     } else {
-                        logger.info(`[CloudRenderService] Render progress: ${Math.round(progress * 100)}%`);
+                        const pct = Math.round(progress * 100);
+                        logger.info(`[CloudRenderService] Render progress: ${pct}%`);
+                        onProgress?.(pct);
                     }
                 },
             });

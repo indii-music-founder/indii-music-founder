@@ -521,6 +521,9 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
     }
+    // Root-level projects (user-owned, with org-member fallback).
+    // NOTE: This is distinct from /organizations/{orgId}/projects/{projectId}
+    // which is the org-scoped subcollection. Both paths are intentional.
     match /projects/{projectId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
       allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
