@@ -23,7 +23,6 @@
         "@reduxjs/toolkit": "2.11.2",
         "@remotion/bundler": "4.0.445",
         "@remotion/cloudrun": "4.0.445",
-        "@remotion/lambda": "4.0.445",
         "@remotion/media-utils": "4.0.445",
         "@remotion/player": "4.0.445",
         "@remotion/renderer": "4.0.445",

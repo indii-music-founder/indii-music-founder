@@ -228,7 +228,11 @@ export class ERNMapper {
                     immersiveAudioProfile: (track as ExtendedGoldenMetadata).immersiveAudioProfile,
                     bpm: track.bpm,
                     key: track.key,
-                    energy: track.energy
+                    energy: track.energy,
+                    lyrics: track.lyrics ? {
+                        lyricsText: track.lyrics,
+                        isExplicit: track.explicit || false
+                    } : undefined
                 }
             };
 
@@ -255,7 +259,8 @@ export class ERNMapper {
                     contributors: [],
                     textDetails: {
                         textType: 'Lyrics',
-                        languageOfText: track.language || 'en'
+                        languageOfText: track.language || 'en',
+                        textContent: track.lyrics,
                     },
                     technicalDetails: {
                         fileName: `${lyricsRef}.txt`
@@ -386,7 +391,7 @@ export class ERNMapper {
                     }],
                     territoryCode,
                     validityPeriod,
-                    takeDown: action === 'Takedown',
+                    ...(action === 'Takedown' ? { takeDown: true } : {}),
                 },
             };
 
@@ -459,7 +464,7 @@ export class ERNMapper {
                     usage: [{ useType, distributionChannelType: 'Stream' }],
                     territoryCode,
                     validityPeriod,
-                    takeDown: action === 'Takedown',
+                    ...(action === 'Takedown' ? { takeDown: true } : {}),
                     releaseDisplayStartDate: metadata.releaseDate,
                 },
                 youtubeContentIdPolicy: contentIdPolicy,
@@ -478,23 +483,21 @@ export class ERNMapper {
         artistAppleMusicId?: string
     ): Contributor[] {
         const contributors: Contributor[] = [];
+        let seq = 1;
 
-        // Ensure Display Artist is included
-        // Check if display artist is in splits, if not add as MainArtist
-        const artistInSplits = splits.find(s => s.legalName === displayArtist);
-        if (!artistInSplits) {
-            contributors.push({
-                name: displayArtist,
-                role: 'MainArtist',
-                sequenceNumber: 1,
-                isni: artistIsni,
-                spotifyId: artistSpotifyId,
-                appleMusicId: artistAppleMusicId
-            });
-        }
+        // Always add Display Artist as MainArtist first (sequence 1)
+        const mainArtistSplit = splits.find(s => s.legalName === displayArtist);
+        contributors.push({
+            name: displayArtist,
+            role: 'MainArtist',
+            sequenceNumber: seq++,
+            isni: artistIsni || mainArtistSplit?.isni,
+            spotifyId: artistSpotifyId || mainArtistSplit?.spotifyId,
+            appleMusicId: artistAppleMusicId || mainArtistSplit?.appleMusicId
+        });
 
-        // Map splits to contributors
-        splits.forEach((split, index) => {
+        // Map remaining splits
+        splits.forEach((split) => {
             let role: ContributorRole;
             switch (split.role) {
                 case 'songwriter': role = 'Composer'; break; // Approximate
@@ -503,28 +506,21 @@ export class ERNMapper {
                 default: role = 'AssociatedPerformer';
             }
 
-            // If this split IS the display artist, map as MainArtist
-            if (split.legalName === displayArtist) {
-                role = 'MainArtist';
+            // If this split is the display artist, they are already MainArtist.
+            // We still add their other roles (e.g., Composer, Producer).
+            // But if their split role was 'performer', we skip it since they are MainArtist.
+            if (split.legalName === displayArtist && role === 'AssociatedPerformer') {
+                return;
             }
 
-            const contributor: Contributor = {
+            contributors.push({
                 name: split.legalName,
                 role: role,
-                sequenceNumber: index + 2, // Start after inferred main artist if added
+                sequenceNumber: seq++,
                 isni: split.isni,
                 spotifyId: split.spotifyId,
                 appleMusicId: split.appleMusicId
-            };
-
-            // If this is the main artist and we have top-level disambiguation, prioritize it
-            if (role === 'MainArtist') {
-                if (artistIsni && !contributor.isni) contributor.isni = artistIsni;
-                if (artistSpotifyId && !contributor.spotifyId) contributor.spotifyId = artistSpotifyId;
-                if (artistAppleMusicId && !contributor.appleMusicId) contributor.appleMusicId = artistAppleMusicId;
-            }
-
-            contributors.push(contributor);
+            });
         });
 
         return contributors;

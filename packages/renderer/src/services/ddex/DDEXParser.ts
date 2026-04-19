@@ -63,7 +63,8 @@ class DDEXParserImpl {
       // Navigate to the ERN root element
       const ernRoot = parsed['ern:NewReleaseMessage'] ||
         parsed['NewReleaseMessage'] ||
-        parsed['ern:PurgeReleaseMessage'];
+        parsed['ern:PurgeReleaseMessage'] ||
+        parsed['PurgeReleaseMessage'];
 
       if (!ernRoot) {
         return {
@@ -73,7 +74,12 @@ class DDEXParserImpl {
       }
 
       // Map to our ERN type structure
+      let action: 'NewRelease' | 'Update' | 'Takedown' = 'NewRelease';
+      if (parsed['ern:PurgeReleaseMessage'] || parsed['PurgeReleaseMessage']) action = 'Takedown';
+      else if (ernRoot.UpdateIndicator === 'UpdateMessage' || ernRoot['@_UpdateIndicator'] === 'UpdateMessage') action = 'Update';
+
       const ern: ERNMessage = {
+        action,
         messageSchemaVersionId: ernRoot['@_MessageSchemaVersionId'] || '4.3',
         messageHeader: this.parseMessageHeader(ernRoot.MessageHeader),
         releaseList: this.parseReleaseList(ernRoot.ReleaseList),
@@ -332,10 +338,50 @@ class DDEXParserImpl {
             soundRecordingType: 'MusicalWorkSoundRecording',
             isInstrumental: false,
             languageOfPerformance: details?.LanguageOfPerformance ? String(details.LanguageOfPerformance) : undefined,
+            immersiveAudioProfile: details?.ImmersiveAudioProfile as 'DolbyAtmos' | 'Sony360' | 'None' | undefined,
             lyrics: lyrics ? {
               lyricsText: typeof lyricsText === 'object' && lyricsText !== null ? String((lyricsText as Record<string, unknown>)['#text'] || '') : String(lyricsText || ''),
               isExplicit: lyrics.IsExplicit === true
             } : undefined
+          }
+        });
+      });
+    }
+
+    // Parse Text Resources
+    if (resourceList.Text) {
+      const texts = Array.isArray(resourceList.Text)
+        ? resourceList.Text
+        : [resourceList.Text];
+
+      texts.forEach((r: unknown) => {
+        const txt = r as Record<string, unknown>;
+        const resId = (txt.ResourceId as Record<string, unknown> | undefined);
+        const propId = (resId?.ProprietaryId as Record<string, unknown> | undefined);
+        const detailsByTerritory = (txt.TextDetailsByTerritory as Record<string, unknown>[] | Record<string, unknown> | undefined);
+        const details = Array.isArray(detailsByTerritory) ? detailsByTerritory[0] : detailsByTerritory;
+
+        resources.push({
+          resourceReference: String(txt['@_ResourceReference'] || ''),
+          resourceType: 'Text',
+          resourceId: {
+            proprietaryId: {
+              proprietaryIdType: 'LabelInternal',
+              id: String(propId?.Id || '')
+            }
+          },
+          resourceTitle: {
+            titleText: String((txt.ReferenceTitle as Record<string, unknown>)?.TitleText || '')
+          },
+          displayArtistName: '',
+          contributors: [],
+          textDetails: {
+            textType: (details?.TextType as 'Lyrics' | 'LinerNotes') || 'Lyrics',
+            languageOfText: details?.LanguageOfText ? String(details.LanguageOfText) : undefined,
+            textContent: details?.Text ? String(details.Text) : undefined
+          },
+          technicalDetails: {
+            fileName: String(((details?.TechnicalTextDetails as Record<string, unknown>)?.FileAvailabilityDescription as Record<string, unknown>)?.FilePath || '') || undefined
           }
         });
       });
@@ -437,6 +483,14 @@ class DDEXParserImpl {
           TerritoryCode: 'Worldwide',
           TextType: r.textDetails?.textType,
           LanguageOfText: r.textDetails?.languageOfText,
+          ...(r.textDetails?.textContent ? { Text: r.textDetails.textContent } : {}),
+          ...(r.technicalDetails ? {
+            TechnicalTextDetails: {
+              FileAvailabilityDescription: {
+                FilePath: r.technicalDetails.fileName,
+              },
+            }
+          } : {})
         },
       })),
     };
@@ -497,7 +551,7 @@ class DDEXParserImpl {
               StartDate: d.dealTerms.validityPeriod.startDate,
               EndDate: d.dealTerms.validityPeriod.endDate,
             },
-            ...(d.dealTerms.takeDown !== undefined ? { TakeDown: d.dealTerms.takeDown } : {}),
+            ...(d.dealTerms.takeDown ? { TakeDown: true } : {}),
             ...(d.youtubeContentIdPolicy ? {
               ProprietaryExtension: {
                 ExtensionCode: 'YouTubeContentIdPolicy',
