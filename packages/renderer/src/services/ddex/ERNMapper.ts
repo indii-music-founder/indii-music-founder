@@ -509,7 +509,7 @@ export class ERNMapper {
             // If this split is the display artist, they are already MainArtist.
             // We still add their other roles (e.g., Composer, Producer).
             // But if their split role was 'performer', we skip it since they are MainArtist.
-            if (split.legalName === displayArtist && role === 'AssociatedPerformer') {
+            if (split.legalName === displayArtist && (role === 'AssociatedPerformer' || role === 'FeaturedArtist')) {
                 return;
             }
 

@@ -10,7 +10,6 @@ import {
     getDocs
 } from 'firebase/firestore';
 import { events, EventType } from '@/core/events';
-import { v4 as uuidv4 } from 'uuid';
 import { AgentContext, ProactiveTask } from './types';
 
 export class ProactiveService {
@@ -83,7 +82,11 @@ export class ProactiveService {
             const snapshot = await getDocs(q);
             for (const document of snapshot.docs) {
                 const task = { id: document.id, ...document.data() } as ProactiveTask;
-                await this.executeProactiveTask(task, data);
+                try {
+                    await this.executeProactiveTask(task, data);
+                } catch (taskError) {
+                    logger.warn(`[ProactiveService] Event task ${task.id} failed (continuing batch):`, taskError);
+                }
             }
         } catch (error) {
             logger.warn('[ProactiveService] handleSystemEvent query failed:', error);
@@ -107,7 +110,11 @@ export class ProactiveService {
             const snapshot = await getDocs(q);
             for (const document of snapshot.docs) {
                 const task = { id: document.id, ...document.data() } as ProactiveTask;
-                await this.executeProactiveTask(task);
+                try {
+                    await this.executeProactiveTask(task);
+                } catch (taskError) {
+                    logger.warn(`[ProactiveService] Scheduled task ${task.id} failed (continuing batch):`, taskError);
+                }
             }
         } catch (error) {
             logger.warn('[ProactiveService] checkScheduledTasks query failed:', error);
