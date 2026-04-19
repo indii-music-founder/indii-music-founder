@@ -6,8 +6,8 @@ import * as THREE from 'three';
 import { useScroll, Text, Float } from '@react-three/drei';
 
 export default function TheTitan() {
-    const meshRef = useRef<THREE.Mesh>(null!);
-    const textRef = useRef<THREE.Group>(null!);
+    const meshRef = useRef<any>(null!);
+    const textRef = useRef<any>(null!);
     const scroll = useScroll();
     const { camera } = useThree();
     const [triggered, setTriggered] = useState(false);

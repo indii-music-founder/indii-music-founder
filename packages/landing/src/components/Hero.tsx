@@ -128,8 +128,8 @@ const NeuralNetworkMaterial = {
 };
 
 function NeuralSphere() {
-    const mesh = useRef<THREE.Mesh>(null!);
-    const materialRef = useRef<THREE.ShaderMaterial>(null!);
+    const mesh = useRef<any>(null!);
+    const materialRef = useRef<any>(null!);
     const { mouse, viewport } = useThree();
 
     useFrame((state) => {
@@ -168,7 +168,7 @@ function NeuralSphere() {
 
 function NodeParticles() {
     const count = 200;
-    const mesh = useRef<THREE.InstancedMesh>(null!);
+    const mesh = useRef<any>(null!);
 
     // Generate random positions on a sphere surface
      

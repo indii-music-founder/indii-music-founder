@@ -9,7 +9,7 @@ import { Instances, Instance } from '@react-three/drei';
 import { useAudioStore } from '../store/audioStore';
 
 function LaserGrid() {
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const meshRef = useRef<any>(null!);
     const count = 40;
 
      
@@ -53,7 +53,7 @@ function LaserGrid() {
 }
 
 function Scanner() {
-    const mesh = useRef<THREE.Mesh>(null!);
+    const mesh = useRef<any>(null!);
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();
@@ -71,7 +71,7 @@ function Scanner() {
 }
 
 function HexShields() {
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const meshRef = useRef<any>(null!);
     const count = 20;
 
      
@@ -121,10 +121,10 @@ function HexShields() {
 }
 
 function DataVault() {
-    const group = useRef<THREE.Group>(null!);
-    const coreMat = useRef<THREE.MeshStandardMaterial>(null!);
-    const ring1 = useRef<THREE.Mesh>(null!);
-    const ring2 = useRef<THREE.Mesh>(null!);
+    const group = useRef<any>(null!);
+    const coreMat = useRef<any>(null!);
+    const ring1 = useRef<any>(null!);
+    const ring2 = useRef<any>(null!);
 
     // Audio Reactivity
     const bass = useAudioStore((state) => state.frequencyData.bass);

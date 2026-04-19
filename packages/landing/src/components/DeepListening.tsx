@@ -9,7 +9,7 @@ import { Instance, Instances, useScroll } from '@react-three/drei';
 import { Trail } from '@react-three/drei';
 
 function ZappingLaser() {
-    const laserRef = useRef<THREE.Mesh>(null!);
+    const laserRef = useRef<any>(null!);
     const scroll = useScroll();
 
     // State for chaotic movement
@@ -74,7 +74,7 @@ function ZappingLaser() {
 
 function BackgroundParticles() {
     const count = 200;
-    const mesh = useRef<THREE.InstancedMesh>(null!);
+    const mesh = useRef<any>(null!);
 
     const particles = useMemo(() => {
         return new Array(count).fill(0).map(() => ({
