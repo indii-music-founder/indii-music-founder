@@ -99,9 +99,16 @@ export default function DirectGenerationTab() {
                 // Direct Video Generation
                 const finalPrompt = WhiskService.synthesizeVideoPrompt(localPrompt, whiskState);
 
+                // ISSUE-008 FIX: Auto-downscale 4K to 1080p for video (Veo doesn't support 4K)
+                let effectiveResolution = studioControls.resolution;
+                if (effectiveResolution === '4k') {
+                    effectiveResolution = '1080p';
+                    toast.info('4K is not yet supported for video. Generating at 1080p instead.');
+                }
+
                 const generated = await VideoGeneration.generateVideo({
                     prompt: finalPrompt,
-                    resolution: studioControls.resolution,
+                    resolution: effectiveResolution,
                     aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     duration: Math.max(6, studioControls.duration || 6), // Veo API requires >= 6
                     durationSeconds: Math.max(6, studioControls.duration || 6),
@@ -160,11 +167,13 @@ export default function DirectGenerationTab() {
             <div className="flex-none p-4 border-b border-white/10 bg-background/50 backdrop-blur-md flex flex-col gap-4">
                 <div className="flex items-center gap-4 justify-center max-w-4xl mx-auto w-full">
                     {/* Mode Switch */}
-                    <div className="flex bg-white/5 rounded-lg p-1 border border-white/5 shrink-0">
+                    <div className="flex bg-white/5 rounded-lg p-1 border border-white/10 shrink-0 relative">
                         <button
                             onClick={() => handleModeSwitch('image')}
                             data-testid="direct-image-mode-btn"
-                            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'image' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
+                            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${mode === 'image'
+                                ? 'bg-gradient-to-r from-dept-creative/30 to-dept-creative/20 text-white shadow-[0_0_12px_rgba(var(--color-dept-creative-rgb),0.3)] border border-dept-creative/40 font-bold'
+                                : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
                             <ImageIcon size={18} />
@@ -173,7 +182,9 @@ export default function DirectGenerationTab() {
                         <button
                             onClick={() => handleModeSwitch('video')}
                             data-testid="direct-video-mode-btn"
-                            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'video' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
+                            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${mode === 'video'
+                                ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/20 text-white shadow-[0_0_12px_rgba(168,85,247,0.3)] border border-purple-500/40 font-bold'
+                                : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
                             <Video size={18} />

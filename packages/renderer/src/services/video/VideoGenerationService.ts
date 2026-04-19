@@ -296,6 +296,14 @@ export class VideoGenerationService {
             userId,
         });
 
+        // ISSUE-008 FIX: Veo 3.1 does not support 4K output. 
+        // Auto-downgrade to 1080p at the service level to prevent silent failures
+        // across all call sites (DirectGeneration, CreativeStudio, Andromeda, DaisyChain).
+        if (options.resolution === '4k') {
+            logger.warn('[VideoGeneration] 4K resolution requested but not supported by Veo. Auto-downgrading to 1080p.');
+            options = { ...options, resolution: '1080p' };
+        }
+
         // Enforce quota check
         const quota = await this.checkVideoQuota(1);
         if (!quota.canGenerate) {

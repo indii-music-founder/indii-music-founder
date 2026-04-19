@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
-import { Wand2, Save, Image as ImageIcon, Play, X, Star, Sparkles } from 'lucide-react';
+import { Wand2, Save, Image as ImageIcon, Play, X, Star, Sparkles, Lock } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
+import { auth } from '@/services/firebase';
 
 interface CanvasHeaderProps {
     // Removed isEditing and setIsEditing as they are no longer used
@@ -47,6 +48,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     setIsHighFidelity,
     batchExportDimensions
 }) => {
+    const isAuthenticated = !!auth.currentUser;
 
     return (
         <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-background">
@@ -72,7 +74,12 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         onClick={handleMagicFill}
                         data-testid="magic-generate-btn"
                         disabled={isProcessing}
-                        className="px-4 py-1.5 bg-dept-creative hover:bg-dept-creative/80 text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 border border-white/20 shadow-lg shadow-dept-creative/30 transition-all active:scale-95 disabled:opacity-50"
+                        title={!isAuthenticated ? 'Sign in to use Magic Edit' : 'Refine image with AI'}
+                        className={`px-4 py-1.5 text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 border shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
+                            isAuthenticated
+                                ? 'bg-dept-creative hover:bg-dept-creative/80 border-white/20 shadow-dept-creative/30'
+                                : 'bg-dept-creative/50 border-white/10 shadow-none cursor-help'
+                        }`}
                     >
                         {isProcessing ? (
                             <>
@@ -81,6 +88,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                             </>
                         ) : (
                             <>
+                                {!isAuthenticated && <Lock size={10} className="opacity-70" />}
                                 <Wand2 size={12} />
                                 <span>Refine</span>
                             </>
