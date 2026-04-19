@@ -215,9 +215,9 @@ export class ERNMapper {
                 contributors: this.mapContributors(
                     track.splits, 
                     track.artistName,
-                    (track as ExtendedGoldenMetadata).artistIsni,
-                    (track as ExtendedGoldenMetadata).artistSpotifyId,
-                    (track as ExtendedGoldenMetadata).artistAppleMusicId
+                    (track as ExtendedGoldenMetadata).artistIsni || metadata.artistIsni,
+                    (track as ExtendedGoldenMetadata).artistSpotifyId || metadata.artistSpotifyId,
+                    (track as ExtendedGoldenMetadata).artistAppleMusicId || metadata.artistAppleMusicId
                 ),
                 duration: track.durationDDEXFormatted || this.formatDuration(track.durationFormatted),
                 parentalWarningType: track.explicit ? 'Explicit' : 'NotExplicit',

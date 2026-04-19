@@ -108,19 +108,23 @@ service cloud.firestore {
 
       // AlwaysOnMemoryEngine — Always-on memory ingestion & consolidation
       match /knowledge_wiki/{docId} {
-      allow read, write: if isOwner(userId);
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
       }
 
       match /alwaysOnMemories/{memoryId} {
-      allow read, write: if isOwner(userId);
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
       }
 
       match /consolidationInsights/{insightId} {
-      allow read, write: if isOwner(userId);
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
       }
 
       match /ingestionEvents/{eventId} {
-      allow read, write: if isOwner(userId);
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
       }
 
       // =========================================================================
@@ -128,17 +132,17 @@ service cloud.firestore {
       // =========================================================================
       // Desktop state document
       match /remote-relay/{docId} {
-      allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
 
-      // Commands (phone writes, desktop reads/updates)
+      // Commands (phone writes, desktop reads/updates) — ephemeral relay docs
       match /remote-relay-commands/{commandId} {
-      allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
 
-      // Responses (desktop writes, phone reads)
+      // Responses (desktop writes, phone reads) — ephemeral relay docs
       match /remote-relay-responses/{responseId} {
-      allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
 
       match /contracts/{contractId} {
@@ -157,11 +161,11 @@ service cloud.firestore {
       }
 
       match /syncBriefs/{briefId} {
-      allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
 
       match /styleMemory/{memoryId} {
-      allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
 
       // ── Media & Workflow Assets ──────────────────────────

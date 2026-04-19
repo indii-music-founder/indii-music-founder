@@ -13,7 +13,8 @@
  *   - Whether the agent is processing
  *   - Online status
  *
- * Falls back to the Vite HTTP relay if auth is not available (dev mode).
+ * Requires Firebase Auth — the Firestore relay only activates when authenticated.
+ * A Vite HTTP relay fallback exists (useHttpRelayFallback) but is currently disabled.
  *
  * Mount ONCE in App.tsx.
  */
