@@ -546,11 +546,7 @@ export function useRemoteCommandListener() {
         return unsubscribe;
     }, []);
 
-    // Use Firestore relay when authenticated, HTTP fallback only when
-    // unauthenticated AND Electron IPC is available (the local relay server).
-    // Without the IPC guard, pure-browser dev mode floods the console with
-    // 404s because there's no /api/remote/* endpoint on the Vite dev server.
-    const hasElectronBridge = typeof window !== 'undefined' && !!(window as unknown as { electronAPI?: unknown }).electronAPI;
+    // Use Firestore relay when authenticated.
     useFirestoreRelay(isAuthenticated);
     useHttpRelayFallback(false); // HTTP relay fallback disabled to prevent 404 spam in dev
 }
