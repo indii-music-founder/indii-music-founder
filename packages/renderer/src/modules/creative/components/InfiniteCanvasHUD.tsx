@@ -1,11 +1,12 @@
 import React, { memo } from 'react';
-import { Move, MousePointer2, ImagePlus, Eraser } from 'lucide-react';
+import { Move, MousePointer2, ImagePlus, Eraser, Layers } from 'lucide-react';
 
 interface InfiniteCanvasHUDProps {
     tool: 'pan' | 'select' | 'generate';
     setTool: (tool: 'pan' | 'select' | 'generate') => void;
     selectedCanvasImageId: string | null;
     removeCanvasImage: (id: string) => void;
+    onFlatten?: () => void;
 }
 
 // Optimized with React.memo to prevent re-renders when parent's local state (e.g., offset/drag) changes
@@ -14,7 +15,8 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
     tool,
     setTool,
     selectedCanvasImageId,
-    removeCanvasImage
+    removeCanvasImage,
+    onFlatten
 }) => {
     return (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-background/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-2xl">
@@ -46,6 +48,16 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                 <ImagePlus size={18} />
             </button>
             <div className="w-px h-6 bg-white/10 mx-1"></div>
+            {onFlatten && (
+                <button
+                    onClick={onFlatten}
+                    className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                    title="Flatten Canvas"
+                    aria-label="Flatten Canvas"
+                >
+                    <Layers size={18} />
+                </button>
+            )}
             <button
                 onClick={() => selectedCanvasImageId && removeCanvasImage(selectedCanvasImageId)}
                 disabled={!selectedCanvasImageId}
