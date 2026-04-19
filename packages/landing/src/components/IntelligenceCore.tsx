@@ -43,7 +43,7 @@ const _GlitchMaterial = {
 };
 
 function OrigamiShard({ position, rotation, scale, speed }: { position: [number, number, number], rotation: [number, number, number], scale: number, speed: number }) {
-    const mesh = useRef<THREE.Mesh>(null!);
+    const mesh = useRef<any>(null!);
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();

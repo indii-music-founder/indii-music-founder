@@ -10,10 +10,10 @@ import { useAudioStore } from '../store/audioStore';
 // --- REMIX 1: THE GLITCH EMPIRE (Evolved SecurityGrid) ---
 // Concept: A fracturing reality. 3 nested wireframes spinning in chaos.
 function RemixVault() {
-    const group = useRef<THREE.Group>(null!);
-    const mesh1 = useRef<THREE.Mesh>(null!);
-    const mesh2 = useRef<THREE.Mesh>(null!);
-    const mesh3 = useRef<THREE.Mesh>(null!);
+    const group = useRef<any>(null!);
+    const mesh1 = useRef<any>(null!);
+    const mesh2 = useRef<any>(null!);
+    const mesh3 = useRef<any>(null!);
 
     // Audio Reactivity
     const bass = useAudioStore((state) => state.frequencyData.bass) || 0;
@@ -68,8 +68,8 @@ function RemixVault() {
 // --- REMIX 2: THE NEURAL WEB (Evolved Business) ---
 // Concept: A breathing, living organism of data.
 function RemixNetwork() {
-    const pointsRef = useRef<THREE.Points>(null!);
-    const linesRef = useRef<THREE.LineSegments>(null!);
+    const pointsRef = useRef<any>(null!);
+    const linesRef = useRef<any>(null!);
     const mid = useAudioStore((state) => state.frequencyData.mid) || 0;
 
     const count = 200;
@@ -147,7 +147,7 @@ function RemixNetwork() {
 // --- REMIX 3: THE DATA TORRENT (Evolved Commerce) ---
 // Concept: A double-helix DNA strand of pure value.
 function RemixStream() {
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const meshRef = useRef<any>(null!);
     const count = 300;
     const high = useAudioStore((state) => state.frequencyData.high) || 0;
 

@@ -8,9 +8,9 @@ import { Points, PointMaterial, Instances, Instance } from '@react-three/drei';
 import { useAudioStore } from '../store/audioStore';
 
 function GlobalNetwork() {
-    const pointsRef = useRef<THREE.Points>(null!);
-    const linesRef = useRef<THREE.LineSegments>(null!);
-    const outerPointsRef = useRef<THREE.Points>(null!);
+    const pointsRef = useRef<any>(null!);
+    const linesRef = useRef<any>(null!);
+    const outerPointsRef = useRef<any>(null!);
 
     // Audio Reactivity
     const mid = useAudioStore((state) => state.frequencyData.mid) || 0;
@@ -116,8 +116,8 @@ function GlobalNetwork() {
 }
 
 function OrbitalClusters() {
-    const group = useRef<THREE.Group>(null!);
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const group = useRef<any>(null!);
+    const meshRef = useRef<any>(null!);
     const count = 40;
 
     const particles = useMemo(() => {
