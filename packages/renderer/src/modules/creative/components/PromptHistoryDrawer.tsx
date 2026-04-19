@@ -35,7 +35,7 @@ export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }
     };
 
     return (
-        <div className="absolute right-0 top-0 bottom-0 w-80 bg-[#0f0f0f]/95 backdrop-blur-xl border-l border-white/10 z-50 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+        <div className="absolute top-full right-0 mt-2 mr-2 w-80 bg-[#0f0f0f]/95 backdrop-blur-xl border border-white/10 rounded-xl z-50 flex flex-col max-h-[80vh] overflow-hidden shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <Clock size={16} className="text-purple-400" />

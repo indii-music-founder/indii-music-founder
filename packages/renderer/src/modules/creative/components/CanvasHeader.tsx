@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
-import { Wand2, Save, Image as ImageIcon, Play, X, Star, Sparkles, Lock } from 'lucide-react';
+import { Wand2, Save, Image as ImageIcon, Play, X, Star, Sparkles, Lock, Film } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { auth } from '@/services/firebase';
 
@@ -28,7 +28,8 @@ interface CanvasHeaderProps {
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
-    // Removed isEditing, setIsEditing, isMagicFillMode (unused in render)
+    // Removed isEditing, setIsEditing
+    isMagicFillMode,
     magicFillPrompt,
     setMagicFillPrompt,
     handleMagicFill,
@@ -67,7 +68,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         onChange={(e) => setMagicFillPrompt(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleMagicFill()}
                         data-testid="magic-fill-input"
-                        placeholder="Magic Edit (e.g. 'Add a dragon in the sky')..."
+                        placeholder={isMagicFillMode ? "Describe edit for masked area..." : "Describe how to remix the whole image..."}
                         className="bg-transparent border-none text-white text-xs px-2 focus:ring-0 outline-none w-64 placeholder:text-gray-500 font-medium"
                     />
                     <button
@@ -99,12 +100,13 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     <button
                         onClick={() => setIsHighFidelity(!isHighFidelity)}
                         title={isHighFidelity ? "Switch to High Speed (Flash)" : "Switch to High Fidelity (Pro)"}
-                        className={`p-1.5 rounded-lg border transition-all ${isHighFidelity
-                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/20'
-                            : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white'
+                        className={`p-1.5 px-3 rounded-lg border transition-all flex items-center gap-1.5 ${isHighFidelity
+                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/20 font-bold'
+                            : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white font-medium'
                             }`}
                     >
                         <Star size={12} fill={isHighFidelity ? "currentColor" : "none"} />
+                        <span className="text-[10px] uppercase tracking-wider">{isHighFidelity ? "Pro" : "Flash"}</span>
                     </button>
                 </div>
 
@@ -116,6 +118,18 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         className="px-4 py-2 bg-dept-marketing/20 hover:bg-dept-marketing/30 border border-dept-marketing/50 text-dept-marketing text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                     >
                         <ImageIcon size={14} /> Multi-Format
+                    </button>
+                </div>
+
+                <div className="relative group">
+                    <button
+                        onClick={() => _onSendToWorkflow && _onSendToWorkflow('firstFrame', item)}
+                        data-testid="send-to-video-btn"
+                        disabled={isProcessing || !_onSendToWorkflow}
+                        className="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-600/50 text-indigo-400 text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                        title="Send to Video Producer"
+                    >
+                        <Film size={14} /> Send to Video
                     </button>
                 </div>
 
