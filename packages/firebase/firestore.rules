@@ -73,14 +73,121 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // =========================================================================
+      // Cross-Device Handoff & User Settings (user-scoped subcollection)
+      // HandoffService writes to: users/{uid}/settings/handoff
+      // =========================================================================
+      match /settings/{settingId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      // Layer 1: Session Transcripts — Durable session history for Squeezer search
+      match /session_transcripts/{sessionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      // Layer 2: Deep Hive — Episodic memory store
+      match /memories/{memoryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      // Layer 2: Deep Hive — Consolidated insights
+      match /insights/{insightId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      // AlwaysOnMemoryEngine — Always-on memory ingestion & consolidation
+      match /knowledge_wiki/{docId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      match /alwaysOnMemories/{memoryId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      match /consolidationInsights/{insightId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      match /ingestionEvents/{eventId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      // =========================================================================
+      // Remote Relay (Firestore Cloud Relay — phone ↔ desktop)
+      // =========================================================================
+      // Desktop state document
+      match /remote-relay/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Commands (phone writes, desktop reads/updates) — ephemeral relay docs
+      match /remote-relay-commands/{commandId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Responses (desktop writes, phone reads) — ephemeral relay docs
+      match /remote-relay-responses/{responseId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /contracts/{contractId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      match /contract_analyses/{analysisId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      match /emailAccounts/{accountId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
+
+      match /syncBriefs/{briefId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /styleMemory/{memoryId} {
+        allow read, write: if isOwner(userId);
+      }
+
       // ── Media & Workflow Assets ──────────────────────────
       match /generated_videos/{vidId} { allow read, write: if isOwner(userId); }
       match /generated_images/{imgId} { allow read, write: if isOwner(userId); }
       match /analyzed_tracks/{trackId} { allow read, write: if isOwner(userId); }
+      match /neural_cortex/{cortexId} { allow read, write: if isOwner(userId); }
       match /knowledge_base/{docId} { allow read, write: if isOwner(userId); }
       match /workflows/{flowId} { allow read, write: if isOwner(userId); }
-      match /projects/{projId} { allow read, write: if isOwner(userId); }
+      // DEPRECATED: Dual project paths. Use root /projects collection instead.
+      // match /projects/{projId} { allow read, write: if isOwner(userId); }
       match /assets/{assetId} { allow read, write: if isOwner(userId); }
+
+      // ── Usage Tracking (MembershipService daily quota / budget) ──────
+      match /usage/{dateKey} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+        // Allow atomic counter increments (increment() uses updateDoc / setDoc merge)
+        allow update: if isOwner(userId);
+        // Usage records are retained for billing audit — no client-side deletion
+        allow delete: if false;
+      }
     }
 
     // =========================================================================
@@ -274,7 +381,7 @@ service cloud.firestore {
       // Users can read their own history or org history
       allow read: if isAuthenticated() &&
         (resource.data.userId == request.auth.uid ||
-         (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
       
       // Users can create history entries
       allow create: if isAuthenticated() &&
@@ -306,7 +413,7 @@ service cloud.firestore {
     match /knowledge/{docId} {
       allow read: if isAuthenticated() &&
         (resource.data.userId == request.auth.uid ||
-         (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
       
       allow create: if isAuthenticated() &&
         request.resource.data.userId == request.auth.uid;
@@ -355,13 +462,6 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // Cross-Device Handoff (user-scoped subcollection)
-    // =========================================================================
-    match /users/{userId}/handoff/{stateId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // =========================================================================
     // Memory Architecture — 5-Layer System (user-scoped subcollections)
     // =========================================================================
 
@@ -381,66 +481,6 @@ service cloud.firestore {
       // Entries can only be appended (arrayUnion), never removed
       allow update: if isOwner(userId);
       allow delete: if false;
-    }
-
-    // Layer 1: Session Transcripts — Durable session history for Squeezer search
-    match /users/{userId}/session_transcripts/{sessionId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    }
-
-    // Layer 2: Deep Hive — Episodic memory store
-    match /users/{userId}/memories/{memoryId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    }
-
-    // Layer 2: Deep Hive — Consolidated insights
-    match /users/{userId}/insights/{insightId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    }
-
-    // AlwaysOnMemoryEngine — Always-on memory ingestion & consolidation
-    match /users/{userId}/knowledge_wiki/{docId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    match /users/{userId}/alwaysOnMemories/{memoryId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    match /users/{userId}/consolidationInsights/{insightId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    match /users/{userId}/ingestionEvents/{eventId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // =========================================================================
-    // Remote Relay (Firestore Cloud Relay — phone ↔ desktop)
-    // =========================================================================
-    
-    // Desktop state document
-    match /users/{userId}/remote-relay/{docId} {
-      allow read, write: if isOwner(userId);
-    }
-    
-    // Commands (phone writes, desktop reads/updates)
-    match /users/{userId}/remote-relay-commands/{commandId} {
-      allow read, write: if isOwner(userId);
-    }
-    
-    // Responses (desktop writes, phone reads)
-    match /users/{userId}/remote-relay-responses/{responseId} {
-      allow read, write: if isOwner(userId);
     }
 
     // =========================================================================
@@ -476,16 +516,31 @@ service cloud.firestore {
     // =========================================================================
 
     match /ddexReleases/{releaseId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
-      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+    }
+    // Root-level projects (user-owned, with org-member fallback).
+    // NOTE: This is distinct from /organizations/{orgId}/projects/{projectId}
+    // which is the org-scoped subcollection. Both paths are intentional.
+    match /projects/{projectId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+    }
+    match /proactive_tasks/{taskId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
     match /videoJobs/{jobId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
-      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (('orgId' in request.resource.data) && request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)));
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)));
     }
     match /distribution_audit/{releaseId}/{allPaths=**} {
       allow read: if isAuthenticated();
@@ -550,21 +605,6 @@ service cloud.firestore {
       allow write: if false;
     }
     match /timelines/{userId}/items/{itemId} {
-      allow read, write: if isOwner(userId);
-    }
-    match /users/{userId}/contracts/{contractId} {
-      allow read, write: if isOwner(userId);
-    }
-    match /users/{userId}/contract_analyses/{analysisId} {
-      allow read, write: if isOwner(userId);
-    }
-    match /users/{userId}/emailAccounts/{accountId} {
-      allow read, write: if isOwner(userId);
-    }
-    match /users/{userId}/syncBriefs/{briefId} {
-      allow read, write: if isOwner(userId);
-    }
-    match /users/{userId}/styleMemory/{memoryId} {
       allow read, write: if isOwner(userId);
     }
 

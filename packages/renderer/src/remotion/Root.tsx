@@ -8,10 +8,40 @@ import {
   BannerGlitch,
   BannerPulse,
 } from './BannerAnimations';
+import { MyComposition } from '../modules/video/remotion/MyComposition';
+import type { VideoProject } from '../modules/video/store/videoEditorStore';
+
+const DEFAULT_VIDEO_PROJECT: VideoProject = {
+  id: 'default',
+  name: 'Default Project',
+  fps: 30,
+  durationInFrames: 300,
+  width: 1920,
+  height: 1080,
+  tracks: [],
+  clips: [],
+};
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* Video Project — Full timeline composition for user projects & Veo stitching */}
+      <Composition
+        id="VideoProject"
+        component={MyComposition}
+        durationInFrames={300}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ project: DEFAULT_VIDEO_PROJECT }}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: props.project.durationInFrames ?? 300,
+          fps: props.project.fps ?? 30,
+          width: props.project.width ?? 1920,
+          height: props.project.height ?? 1080,
+        })}
+      />
+
       {/* Logo Reveal — original */}
       <Composition
         id="LogoReveal"

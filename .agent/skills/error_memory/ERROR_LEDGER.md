@@ -168,3 +168,57 @@ Single branch (`claude/stupefied-faraday-aa0be2`) surfaced seven distinct classe
 ## Meta-rule: /plat
 
 Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It executes the Pre-commit checklist from `docs/PLATINUM_QUALITY_STANDARDS.md` and cross-references this ledger. Any agent that skips `/plat` on a substantive branch has violated the Error Memory Protocol.
+
+---
+
+## 2026-04-18 Firestore Subcollection Nesting (Syntax Error)
+
+### Pattern — Missing Closing Brace Nests Subcollections
+
+- SEVERITY: High (Permission denied errors for legitimate requests)
+- FILE: `packages/firebase/firestore.rules`
+- BUG: A missing closing brace `}` on a `match` block (e.g., `match /memoryInbox/{itemId}`) caused all subsequent top-level subcollections (like `alwaysOnMemories`, `remote-relay`) to be inadvertently nested underneath it. Client requests to the correct paths (e.g. `users/{userId}/alwaysOnMemories`) failed with `permission-denied` because the rules expected them at `users/{userId}/memoryInbox/{itemId}/alwaysOnMemories/{memoryId}`.
+- FIX: Re-added the missing closing brace and removed the extraneous brace at the bottom of the rules file.
+- RULE: **When editing `firestore.rules`, always verify that braces are properly matched.** A missing brace will silently nest all following rules without throwing a compilation error if an extra brace exists at the bottom.
+
+---
+
+## 2026-04-18 Gemini Files API CORS Block (Browser Audio Analysis)
+
+### Pattern — Files API upload endpoint has no CORS headers
+
+- SEVERITY: Critical (entire Audio Intelligence semantic pipeline non-functional in browser)
+- FILE: `packages/renderer/src/services/audio/AudioIntelligenceService.ts`
+- BUG: `AudioIntelligenceService.analyzeSemantic()` called `GeminiFileService.uploadFile()`, which makes a direct `fetch` to `generativelanguage.googleapis.com/upload/v1beta/files`. This endpoint does NOT return `Access-Control-Allow-Origin` headers, causing the browser to block the request. The error "No 'Access-Control-Allow-Origin' header is present" appeared in the console. This only fails in browser (Electron's IPC bypasses CORS).
+- ROOT CAUSE: The Gemini Files API upload endpoint is designed for server-side use and does not support CORS.
+- FIX: Replace `fileData` (Files API upload → poll → delete) with `inlineData` (base64 encode audio → embed in `generateContent` request body). The `generateContent` endpoint IS CORS-safe. Use `FileReader.readAsDataURL()` → strip `data:audio/...;base64,` prefix → pass as `inlineData.data` with matching `mimeType`. ~33% larger payload but eliminates the CORS failure mode entirely.
+- RULE: **Never use the Gemini Files API (`/upload/v1beta/files`) from browser-side code.** Use `inlineData` with base64 encoding for files under 20MB, or proxy through a Cloud Function for larger files.
+
+## 2026-04-19 Firestore Handoff Path Mismatch (PR-1510)
+
+### Pattern — Firestore rule path doesn't match service write path
+
+- SEVERITY: High (HandoffService writes silently fail / get caught by deny-all)
+- FILE: `packages/firebase/firestore.rules`, `packages/renderer/src/services/collaboration/HandoffService.ts`
+- BUG: HandoffService writes to `users/{uid}/settings/handoff` (the `settings` subcollection with `handoff` as the document ID), but the Firestore security rule matched `users/{userId}/handoff/{stateId}` — a completely different path. The `settings` subcollection had no rule, so all HandoffService writes were silently denied by the catch-all `match /{document=**} { allow read, write: if false; }`.
+- FIX: Changed the rule from `match /handoff/{stateId}` to `match /settings/{settingId}` to match the actual write path.
+- RULE: **When adding Firestore rules, always verify the exact path the service code writes to.** Use `grep -r` on the Firestore `doc()` / `collection()` calls to confirm the path structure matches the rule.
+
+## 2026-04-19 Electron IPC Registration Gated to Production (PR-1510)
+
+### Pattern — IPC handlers not registered in dev → renderer hangs
+
+- SEVERITY: Medium (dev-only — renderer hangs on updater:check/install IPC calls)
+- FILE: `packages/main/src/main.ts`
+- BUG: `registerUpdaterHandlers()` was inside an `if (app.isPackaged)` block. In development, the renderer could call `updater:check` or `updater:install` and receive no response, causing the IPC promise to hang indefinitely.
+- FIX: Moved `registerUpdaterHandlers()` outside the `app.isPackaged` gate. The handlers already gracefully no-op when `autoUpdater` is null (returns `{ available: false }` or does nothing). Only `setupAutoUpdater()` (which starts polling) remains production-gated.
+- RULE: **Always register IPC handlers unconditionally.** Gate the *behavior* (e.g., update polling), not the *handler registration*. A missing handler causes silent hangs that are extremely hard to debug.
+
+### PR-1510: CircuitBreaker private .state access (CI TS2341)
+
+- SEVERITY: Critical (blocks entire CI pipeline)
+- FILE: `packages/renderer/src/services/ai/FirebaseAIService.ts`
+- BUG: Lines 940 and 970 used `this.mediaBreaker?.state` to access the private `state` property of `CircuitBreaker`. The fix (`.getState()`) was present in the **working directory** but was **never committed**, so local typecheck passed but CI failed with TS2341.
+- FIX: Changed both occurrences to `this.mediaBreaker?.getState()` (the public accessor method).
+- RULE: **Always verify `git diff` is empty after fixing a typecheck error.** A common trap: `tsc --noEmit` runs against the working directory, not HEAD. If a fix is only in the working tree but not staged/committed, CI will still fail. Run `git show HEAD:<file> | grep -n '<pattern>'` to verify the committed version.
+

@@ -28,7 +28,7 @@
 | `build-desktop.sh` | `bash scripts/build-desktop.sh`    | Full desktop build (all platforms)       |
 | `build_sidecar.sh` | `bash scripts/build_sidecar.sh`    | Build the Python AI sidecar Docker image |
 | `deploy-cors.sh`   | `bash scripts/deploy-cors.sh`      | Deploy CORS config to Firebase Storage   |
-| `deploy-lambda.ts` | `npx tsx scripts/deploy-lambda.ts` | Deploy Lambda functions                  |
+| `deploy-cloudrun.ts` | `npx tsx scripts/deploy-cloudrun.ts` | Deploy Remotion site bundle to GCS for Cloud Run rendering |
 | `deploy_fix.sh`    | `bash scripts/deploy_fix.sh`       | Emergency deploy hot-patch               |
 
 ---

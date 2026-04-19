@@ -81,7 +81,12 @@ export class GeminiFileService {
             );
 
             if (!startResponse.ok) {
-                const errorText = await startResponse.text();
+                let errorText: string;
+                try {
+                    errorText = await startResponse.text();
+                } catch {
+                    errorText = `(unable to read response body: status ${startResponse.status})`;
+                }
                 throw new Error(`Failed to initialize upload: ${startResponse.status} ${errorText}`);
             }
 
@@ -113,7 +118,12 @@ export class GeminiFileService {
             if (onProgress) onProgress(100);
 
             if (!uploadResponse.ok) {
-                const errorText = await uploadResponse.text();
+                let errorText: string;
+                try {
+                    errorText = await uploadResponse.text();
+                } catch {
+                    errorText = `(unable to read response body: status ${uploadResponse.status})`;
+                }
                 throw new Error(`Upload failed: ${uploadResponse.status} ${errorText}`);
             }
 

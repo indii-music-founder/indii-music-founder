@@ -37,6 +37,7 @@ export class ERNMapper {
             recipient: DPID;
             createdDateTime: string;
             messageControlType?: 'LiveMessage' | 'TestMessage';
+            action?: 'NewRelease' | 'Update' | 'Takedown';
         },
         assets?: ReleaseAssets
     ): ERNMessage {
@@ -60,11 +61,12 @@ export class ERNMapper {
         mainRelease.releaseResourceReferenceList = resourceReferences;
 
         // 4. Build Deal List
-        const deals = this.buildDeals(metadata, releaseReference);
+        const deals = this.buildDeals(metadata, releaseReference, options.action);
 
         return {
             messageSchemaVersionId: '4.3',
             messageHeader,
+            action: options.action || 'NewRelease',
             releaseList: [mainRelease],
             resourceList: resources,
             dealList: deals,
@@ -85,7 +87,13 @@ export class ERNMapper {
             titleType: 'DisplayTitle',
         };
 
-        const contributors = this.mapContributors(metadata.splits, metadata.artistName);
+        const contributors = this.mapContributors(
+            metadata.splits, 
+            metadata.artistName, 
+            metadata.artistIsni, 
+            metadata.artistSpotifyId, 
+            metadata.artistAppleMusicId
+        );
 
         // Determine ReleaseType
         const RELEASE_TYPE_MAP: Record<string, ReleaseType> = {
@@ -204,29 +212,62 @@ export class ERNMapper {
                     titleType: 'DisplayTitle',
                 },
                 displayArtistName: track.artistName,
-                contributors: this.mapContributors(track.splits, track.artistName),
+                contributors: this.mapContributors(
+                    track.splits, 
+                    track.artistName,
+                    (track as ExtendedGoldenMetadata).artistIsni || metadata.artistIsni,
+                    (track as ExtendedGoldenMetadata).artistSpotifyId || metadata.artistSpotifyId,
+                    (track as ExtendedGoldenMetadata).artistAppleMusicId || metadata.artistAppleMusicId
+                ),
                 duration: track.durationDDEXFormatted || this.formatDuration(track.durationFormatted),
                 parentalWarningType: track.explicit ? 'Explicit' : 'NotExplicit',
                 soundRecordingDetails: {
                     soundRecordingType: 'MusicalWorkSoundRecording',
                     isInstrumental: track.isInstrumental || false,
                     languageOfPerformance: track.language,
-                    lyrics: track.lyrics ? {
-                        lyricsText: track.lyrics,
-                        isExplicit: track.explicit
-                    } : undefined,
+                    immersiveAudioProfile: (track as ExtendedGoldenMetadata).immersiveAudioProfile,
                     bpm: track.bpm,
                     key: track.key,
-                    energy: track.energy
+                    energy: track.energy,
+                    lyrics: track.lyrics ? {
+                        lyricsText: track.lyrics,
+                        isExplicit: track.explicit || false
+                    } : undefined
                 }
             };
 
             // Map Lyrics (Metadata to ERN Detail)
             // Note: ERN 4.3 typically handles lyrics as a Text Resource or DetailsByTerritory.
-            // For simplicity in this 'Gold Standard' pass, we'll attach it if the schema allows,
-            // or implicitly rely on it being present in the package.
-            // Here we assume it might be added to details if we had a field for it in Resource.
             // (DDEX 4.3 encourages Lyrics as a separate Text Resource linked to the SoundRecording)
+            if (track.lyrics) {
+                const lyricsRef = `T${resourceCounter++}`;
+                resourceReferences.push(lyricsRef);
+                const textResource: Resource = {
+                    resourceReference: lyricsRef,
+                    resourceType: 'Text',
+                    resourceId: {
+                        proprietaryId: {
+                            proprietaryIdType: 'PartySpecific',
+                            id: `LYR-${track.isrc || Date.now()}`
+                        }
+                    },
+                    resourceTitle: {
+                        titleText: `Lyrics for ${track.trackTitle}`,
+                        titleType: 'DisplayTitle'
+                    },
+                    displayArtistName: track.artistName,
+                    contributors: [],
+                    textDetails: {
+                        textType: 'Lyrics',
+                        languageOfText: track.language || 'eng',
+                        textContent: track.lyrics,
+                    },
+                    // Note: technicalDetails.fileName is intentionally omitted
+                    // when lyrics are embedded inline via textContent. Set it only
+                    // when a separate .txt file is bundled in the delivery package.
+                };
+                resources.push(textResource);
+            }
 
             // AI Info for Resource
             if (track.aiGeneratedContent) {
@@ -323,7 +364,8 @@ export class ERNMapper {
 
     private static buildDeals(
         metadata: ExtendedGoldenMetadata,
-        _releaseReference: string
+        _releaseReference: string,
+        action?: 'NewRelease' | 'Update' | 'Takedown'
     ): Deal[] {
         const deals: Deal[] = [];
         let dealCounter = 1;
@@ -349,7 +391,7 @@ export class ERNMapper {
                     }],
                     territoryCode,
                     validityPeriod,
-                    takeDown: false,
+                    ...(action === 'Takedown' ? { takeDown: true } : {}),
                 },
             };
 
@@ -422,7 +464,7 @@ export class ERNMapper {
                     usage: [{ useType, distributionChannelType: 'Stream' }],
                     territoryCode,
                     validityPeriod,
-                    takeDown: false,
+                    ...(action === 'Takedown' ? { takeDown: true } : {}),
                     releaseDisplayStartDate: metadata.releaseDate,
                 },
                 youtubeContentIdPolicy: contentIdPolicy,
@@ -433,22 +475,32 @@ export class ERNMapper {
         return deals;
     }
 
-    private static mapContributors(splits: RoyaltySplit[], displayArtist: string): Contributor[] {
+    private static mapContributors(
+        splits: RoyaltySplit[], 
+        displayArtist: string,
+        artistIsni?: string,
+        artistSpotifyId?: string,
+        artistAppleMusicId?: string
+    ): Contributor[] {
         const contributors: Contributor[] = [];
+        let seq = 1;
 
-        // Ensure Display Artist is included
-        // Check if display artist is in splits, if not add as MainArtist
-        const artistInSplits = splits.find(s => s.legalName === displayArtist);
-        if (!artistInSplits) {
+        // Always add Display Artist as MainArtist first (sequence 1),
+        // but only if the name is non-empty (DDEX requires non-blank names).
+        if (displayArtist?.trim()) {
+            const mainArtistSplit = splits.find(s => s.legalName === displayArtist);
             contributors.push({
                 name: displayArtist,
                 role: 'MainArtist',
-                sequenceNumber: 1
+                sequenceNumber: seq++,
+                isni: artistIsni || mainArtistSplit?.isni,
+                spotifyId: artistSpotifyId || mainArtistSplit?.spotifyId,
+                appleMusicId: artistAppleMusicId || mainArtistSplit?.appleMusicId
             });
         }
 
-        // Map splits to contributors
-        splits.forEach((split, index) => {
+        // Map remaining splits
+        splits.forEach((split) => {
             let role: ContributorRole;
             switch (split.role) {
                 case 'songwriter': role = 'Composer'; break; // Approximate
@@ -457,15 +509,20 @@ export class ERNMapper {
                 default: role = 'AssociatedPerformer';
             }
 
-            // If this split IS the display artist, map as MainArtist
-            if (split.legalName === displayArtist) {
-                role = 'MainArtist';
+            // If this split is the display artist, they are already MainArtist.
+            // We still add their other roles (e.g., Composer, Producer).
+            // But if their split role was 'performer', we skip it since they are MainArtist.
+            if (split.legalName === displayArtist && (role === 'AssociatedPerformer' || role === 'FeaturedArtist')) {
+                return;
             }
 
             contributors.push({
                 name: split.legalName,
                 role: role,
-                sequenceNumber: index + 2 // Start after inferred main artist if added
+                sequenceNumber: seq++,
+                isni: split.isni,
+                spotifyId: split.spotifyId,
+                appleMusicId: split.appleMusicId
             });
         });
 
