@@ -206,10 +206,18 @@ export class VeoToRemotionBridge {
             title?: string;
         } = {}
     ): VideoProject {
-        const fps = options.fps || 30;
-        const segmentDuration = options.segmentDurationSeconds || 8;
+        if (segmentUrls.length === 0) {
+            throw new Error('[VeoToRemotionBridge] At least one segment URL is required.');
+        }
+
+        const fps = options.fps ?? 30;
+        const segmentDuration = options.segmentDurationSeconds ?? 8;
+        if (fps <= 0 || segmentDuration <= 0) {
+            throw new Error('[VeoToRemotionBridge] fps and segment duration must be positive.');
+        }
+
         const { width, height } = aspectToDimensions(options.aspectRatio || '16:9');
-        const framesPerSegment = segmentDuration * fps;
+        const framesPerSegment = Math.round(segmentDuration * fps);
         const videoTrackId = `track_video_${uuidv4()}`;
 
         return {

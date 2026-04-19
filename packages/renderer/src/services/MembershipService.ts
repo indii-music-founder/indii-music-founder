@@ -317,8 +317,13 @@ class MembershipServiceImpl {
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
-            // Fallback to auth.user.uid if profile is still loading/syncing
-            return state.userProfile?.id || state.userProfile?.uid || (state as any).user?.uid || null;
+            // Prefer Firebase Auth as canonical; profile can lag during cache/profile sync.
+            const authUserId = (state as unknown as { user?: { uid?: string | null } | null }).user?.uid;
+            const profileUserId =
+                state.userProfile?.uid ||
+                (state.userProfile?.id && state.userProfile.id !== 'pending' ? state.userProfile.id : null);
+
+            return authUserId || profileUserId || null;
         } catch {
             return null;
         }

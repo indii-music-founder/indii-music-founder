@@ -35,10 +35,10 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         defaultProps={{ project: DEFAULT_VIDEO_PROJECT }}
         calculateMetadata={({ props }) => ({
-          durationInFrames: props.project.durationInFrames || 300,
-          fps: props.project.fps || 30,
-          width: props.project.width || 1920,
-          height: props.project.height || 1080,
+          durationInFrames: props.project.durationInFrames ?? 300,
+          fps: props.project.fps ?? 30,
+          width: props.project.width ?? 1920,
+          height: props.project.height ?? 1080,
         })}
       />
 

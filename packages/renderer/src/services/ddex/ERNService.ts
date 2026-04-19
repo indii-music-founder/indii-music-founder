@@ -20,7 +20,10 @@ export class ERNService {
         senderPartyId: string = DDEX_CONFIG.PARTY_ID,
         distributorKey: string = 'merlin',
         assets?: ReleaseAssets,
-        options?: { isTestMode?: boolean } // Added options for Test Mode
+        options?: {
+            isTestMode?: boolean;
+            action?: 'NewRelease' | 'Update' | 'Takedown';
+        }
     ): Promise<{ success: boolean; xml?: string; error?: string }> {
         try {
             const { DISTRIBUTORS } = await import('@/core/config/distributors');
@@ -51,7 +54,8 @@ export class ERNService {
                     partyName: 'Distributor', // Ideally fetched from distributor config
                 },
                 createdDateTime: timestamp,
-                messageControlType: options?.isTestMode ? 'TestMessage' : 'LiveMessage' // Set Test Flag
+                messageControlType: options?.isTestMode ? 'TestMessage' : 'LiveMessage',
+                action: options?.action,
             }, assets);
 
             // Generate XML using the parser

@@ -179,7 +179,7 @@ export class AudioIntelligenceService {
     private async analyzeSemantic(file: File, bpm: number, key: string): Promise<AudioSemanticData> {
         Logger.info('AudioIntelligence', 'Converting audio to base64 for inline Gemini analysis...');
 
-        const mimeType = file.type || 'audio/mpeg';
+        const mimeType = file.type || this.inferAudioMimeType(file.name);
         const base64Data = await this.fileToBase64(file);
         Logger.info('AudioIntelligence', `Audio converted: ${(base64Data.length * 0.75 / 1024 / 1024).toFixed(1)} MB original, sending as inlineData`);
 
@@ -242,6 +242,25 @@ CRITICAL RULES:
     }
 
 
+    /**
+     * Infers MIME type from file extension when file.type is empty.
+     * Prevents mislabeling WAV/FLAC/M4A files as audio/mpeg.
+     */
+    private inferAudioMimeType(fileName: string): string {
+        const ext = fileName.split('.').pop()?.toLowerCase();
+        const mimeByExtension: Record<string, string> = {
+            mp3: 'audio/mpeg',
+            wav: 'audio/wav',
+            flac: 'audio/flac',
+            m4a: 'audio/mp4',
+            aac: 'audio/aac',
+            ogg: 'audio/ogg',
+            aiff: 'audio/aiff',
+            alac: 'audio/mp4',
+        };
+
+        return mimeByExtension[ext ?? ''] ?? 'application/octet-stream';
+    }
 }
 
 export const audioIntelligence = new AudioIntelligenceService();

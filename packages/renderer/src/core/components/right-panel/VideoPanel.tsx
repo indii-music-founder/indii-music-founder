@@ -78,16 +78,27 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
         try {
             let results: { id: string; url: string; prompt: string; }[] = [];
 
+            // 🔇 Audio Suppression: honor the generateAudio toggle
+            let finalPrompt = prompt;
+            let audioNegativePrompt = studioControls.negativePrompt;
+            if (!studioControls.generateAudio) {
+                const audioSuppression = '(no background music), (no dialogue), (no sound effects), (no audio), (silent video), (muted)';
+                audioNegativePrompt = audioNegativePrompt
+                    ? `${audioNegativePrompt}, ${audioSuppression}`
+                    : audioSuppression;
+                finalPrompt = `${prompt}. Generate this as a completely silent video with no audio track.`;
+            }
+
             if (studioControls.duration > 8) {
                 // Trigger Long Form
                 results = await VideoGeneration.generateLongFormVideo({
-                    prompt: prompt,
+                    prompt: finalPrompt,
                     totalDuration: studioControls.duration,
                     aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     resolution: studioControls.resolution,
-                    negativePrompt: studioControls.negativePrompt,
+                    negativePrompt: audioNegativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                    // Audio is always-on for Veo 3.1 — omit generateAudio
+                    // Audio suppression handled via prompt augmentation above
                     model: studioControls.model,
                     firstFrame: videoInputs.firstFrame?.url, // H6 Fix: Wire up firstFrame
                     personGeneration: studioControls.personGeneration,
@@ -99,10 +110,10 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
             } else {
                 // Trigger Single Shot
                 results = await VideoGeneration.generateVideo({
-                    prompt: prompt,
+                    prompt: finalPrompt,
                     aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     resolution: studioControls.resolution,
-                    negativePrompt: studioControls.negativePrompt,
+                    negativePrompt: audioNegativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     duration: studioControls.duration,
                     firstFrame: videoInputs.firstFrame?.url,
@@ -110,7 +121,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     fps: studioControls.fps,
                     cameraMovement: studioControls.cameraMovement,
                     motionStrength: studioControls.motionStrength,
-                    // Audio is always-on for Veo 3.1 — omit generateAudio
+                    // Audio suppression handled via prompt augmentation above
                     model: studioControls.model,
                     orgId: currentOrganizationId,
                     personGeneration: studioControls.personGeneration,
@@ -367,6 +378,23 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                 </div>
                                 <div className={`w-10 h-5 rounded-full relative transition-colors ${studioControls.thinkingLevel !== 'none' ? 'bg-dept-creative' : 'bg-white/10'}`}>
                                     <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${studioControls.thinkingLevel !== 'none' ? 'left-6' : 'left-1'}`} />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 group hover:border-purple-500/30 transition-all cursor-pointer"
+                                onClick={() => setStudioControls({ generateAudio: !studioControls.generateAudio })}>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-purple-400 tracking-wider flex items-center gap-2">
+                                        AI AUDIO
+                                    </label>
+                                    <p className="text-[9px] text-gray-500 leading-tight">
+                                        {studioControls.generateAudio
+                                            ? 'Veo will generate sound effects & ambient audio.'
+                                            : 'Audio suppressed — ideal for music video overlays.'}
+                                    </p>
+                                </div>
+                                <div className={`w-10 h-5 rounded-full relative transition-colors ${studioControls.generateAudio ? 'bg-purple-500' : 'bg-white/10'}`}>
+                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${studioControls.generateAudio ? 'left-6' : 'left-1'}`} />
                                 </div>
                             </div>
                         </div>
