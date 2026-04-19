@@ -1,11 +1,9 @@
 import { GenAI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { functionsWest1 as functions, auth } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
 import { InputSanitizer } from '../ai/utils/InputSanitizer';
-import { PromptBuilder } from './PromptBuilderService';
 import { logger } from '@/utils/logger';
 import { ContentPart } from '@/shared/types/ai.dto';
+import { editImageDirectly } from '@/services/ai/generators/DirectImageEditor';
 
 
 // Data URI regex - strict pattern for image MIME types
@@ -48,10 +46,13 @@ export class EditingService {
     }
 
     /**
-     * Edit a single image using the Dual-View Pipeline (original + binary mask).
+     * Edit a single image using the Direct SDK Pipeline (original + binary mask).
      * 
-     * Pro (High Fidelity): Uses gemini-2.5-pro with IMAGE responseModality.
-     * Flash (High Speed): Uses gemini-2.5-flash with IMAGE responseModality.
+     * Calls Gemini SDK directly via DirectImageEditor, bypassing Cloud Functions.
+     * This eliminates AppCheck 401 errors and provides lower latency.
+     * 
+     * Pro (High Fidelity): Uses gemini-3-pro-image-preview with IMAGE responseModality.
+     * Flash (High Speed): Uses gemini-3.1-flash-image-preview with IMAGE responseModality.
      */
     async editImage(options: {
         image: { mimeType: string; data: string };
@@ -64,77 +65,23 @@ export class EditingService {
         thoughtSignature?: string;
         useSemanticMap?: boolean;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
-        // Auth pre-flight: fail fast with a clear message instead of a 401 from the Cloud Function
-        if (!auth.currentUser) {
-            throw new Error('Your session has expired. Please sign in again to edit images.');
-        }
-        try {
-            await auth.currentUser.getIdToken(true);
-        } catch {
-            throw new Error('Your session could not be refreshed. Please sign out and sign back in.');
-        }
-
-        const editImageFn = httpsCallable(functions, 'editImage');
-
-        // Determine Task Label
-        let taskLabel = "Object Modification via Visual Prompt";
-        if (options.useSemanticMap) taskLabel = "Semantic Image Editing";
-        else if (options.mask) taskLabel = "Targeted Image Inpainting";
-
-        // Generate structured prompt using PromptBuilder
-        const structuredPrompt = PromptBuilder.build({
-            userPrompt: options.prompt,
-            useDualView: !!options.mask,
+        logger.info('[EditingService] editImage called — using Direct SDK path', {
+            hasMask: !!options.mask,
+            hasReference: !!options.referenceImage,
+            model: options.model,
             useSemanticMap: !!options.useSemanticMap,
-            task: taskLabel
         });
 
-        // Selection Logic: use DIRECT image models (NOT text models)
-        const useHighFidelity = options.model === 'pro' || options.forceHighFidelity || !!options.decoratedImage;
-        const modelId = useHighFidelity ? AI_MODELS.IMAGE.DIRECT_PRO : AI_MODELS.IMAGE.DIRECT_FAST;
-
-        // Call backend via Firebase Cloud Function
-        const result = await this.withRetry(() => editImageFn({
-            image: options.image.data,
-            imageMimeType: options.image.mimeType,
-            mask: options.mask?.data,
-            maskMimeType: options.mask?.mimeType,
-            referenceImage: options.referenceImage?.data,
-            refMimeType: options.referenceImage?.mimeType,
-            prompt: structuredPrompt,
-            model: modelId,
-            thoughtSignature: options.thoughtSignature || "context_engineering_is_the_way_to_go"
+        return this.withRetry(() => editImageDirectly({
+            image: options.image,
+            mask: options.mask,
+            referenceImage: options.referenceImage,
+            prompt: options.prompt,
+            forceHighFidelity: options.forceHighFidelity || !!options.decoratedImage,
+            model: options.model,
+            thoughtSignature: options.thoughtSignature,
+            useSemanticMap: options.useSemanticMap,
         }));
-
-        const data = result.data as unknown as {
-            base64?: string;
-            mimeType?: string;
-            thoughtSignature?: string;
-            candidates?: { content?: { parts?: { inlineData?: { mimeType: string; data: string } }[] } }[]
-        };
-
-        // Handle flattened response (base64) or nested candidate structure
-        let url = "";
-        const newSignature: string | undefined = data.thoughtSignature;
-
-        if (data.base64) {
-            url = `data:${data.mimeType || 'image/png'};base64,${data.base64}`;
-        } else if (data.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
-            const part = data.candidates[0].content.parts[0];
-            if (part && part.inlineData) {
-                url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            }
-        }
-
-        if (url) {
-            return {
-                id: crypto.randomUUID(),
-                url,
-                prompt: `Edit (${useHighFidelity ? 'Pro' : 'Flash'}): ${options.prompt}`,
-                thoughtSignature: newSignature
-            };
-        }
-        return null;
     }
 
     /**
