@@ -937,7 +937,7 @@ export class FirebaseAIService implements AIContext {
         logger.info('[FirebaseAI] generateVideo() — entering circuit breaker...', {
             model: options.model || '(default)',
             promptLength: options.prompt?.length ?? 0,
-            breakerState: this.mediaBreaker?.state ?? 'unknown',
+            breakerState: this.mediaBreaker?.getState() ?? 'unknown',
         });
 
         try {
@@ -967,7 +967,7 @@ export class FirebaseAIService implements AIContext {
             logger.error('[FirebaseAI] generateVideo() — circuit breaker caught error:', {
                 errorMessage: msg,
                 errorType: error?.constructor?.name || 'unknown',
-                breakerState: this.mediaBreaker?.state ?? 'unknown',
+                breakerState: this.mediaBreaker?.getState() ?? 'unknown',
             });
             throw error;
         }
