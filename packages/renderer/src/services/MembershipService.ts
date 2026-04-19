@@ -529,8 +529,9 @@ class MembershipServiceImpl {
                 maxAllowed = limits.maxStorageMB;
                 break;
             case 'projects':
-                // Check if quota is unlimited first
-                if (tier === 'enterprise' && limits.maxProjects === -1) {
+                // Unlimited projects check — applies to any tier with maxProjects === -1
+                // (currently both 'founder' and 'enterprise')
+                if (limits.maxProjects === -1) {
                     return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
                 }
 
@@ -562,8 +563,8 @@ class MembershipServiceImpl {
                 return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
         }
 
-        // Enterprise has unlimited for most things
-        if (tier === 'enterprise' && maxAllowed === -1) {
+        // Any tier with unlimited (-1) for a resource type gets a pass
+        if (maxAllowed === -1) {
             return { allowed: true, currentUsage, maxAllowed: Infinity };
         }
 
