@@ -18,7 +18,7 @@ import { neuralCortex, type RenderDirectives } from '@/services/ai/NeuralCortexS
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
-const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3-generate-preview'
+const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
 
 /** Strip undefined values from an object to prevent Firestore rejection. */
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -109,6 +109,27 @@ export class VideoGenerationService {
      * Determines if an error is transient and worth retrying.
      */
     private isRetryableError(error: unknown): boolean {
+        // Check typed AppException codes first (most precise classification)
+        if (error instanceof Error && 'code' in error && error.name === 'AppException') {
+            const appError = error as { code: string };
+            const nonRetryableCodes = [
+                'UNAUTHORIZED',
+                'INVALID_INPUT',
+                'CONTENT_FILTERED',
+                'NOT_FOUND',
+                'CANCELLED',
+                'SAFETY_VIOLATION',
+                'INVALID_ARGUMENT',
+            ];
+            if (nonRetryableCodes.includes(appError.code)) {
+                return false;
+            }
+            const retryableCodes = ['RATE_LIMITED', 'TIMEOUT', 'NETWORK_ERROR'];
+            if (retryableCodes.includes(appError.code)) {
+                return true;
+            }
+        }
+
         if (error instanceof Error) {
             const message = error.message.toLowerCase();
 
@@ -264,6 +285,17 @@ export class VideoGenerationService {
         }
         const userId = currentUser.uid;
 
+        logger.info('[VideoGeneration] 🎬 generateVideo() called:', {
+            promptPreview: options.prompt.substring(0, 100),
+            model: options.model || DEFAULT_VIDEO_MODEL,
+            duration: options.duration || options.durationSeconds || 8,
+            aspectRatio: options.aspectRatio,
+            hasFirstFrame: !!options.firstFrame,
+            hasLastFrame: !!options.lastFrame,
+            hasReferenceImages: !!options.referenceImages?.length,
+            userId,
+        });
+
         // Enforce quota check
         const quota = await this.checkVideoQuota(1);
         if (!quota.canGenerate) {
@@ -380,7 +412,8 @@ export class VideoGenerationService {
 
         // Generate video via direct @google/genai SDK (no Cloud Functions)
         try {
-            const videoUrl = await firebaseAI.generateVideo({
+            // Build the AI service request object
+            const aiRequest = {
                 prompt: enrichedPrompt,
                 model: options.model || DEFAULT_VIDEO_MODEL,
                 image: imageInput,
@@ -394,7 +427,16 @@ export class VideoGenerationService {
                     referenceImages: options.referenceImages?.length ? options.referenceImages : undefined,
                     lastFrame: lastFrameConfig,
                 }),
+            };
+
+            logger.info('[VideoGeneration] 🚀 Calling firebaseAI.generateVideo() with:', {
+                model: aiRequest.model,
+                promptLength: aiRequest.prompt.length,
+                hasImage: !!aiRequest.image,
+                config: JSON.stringify(aiRequest.config),
             });
+
+            const videoUrl = await firebaseAI.generateVideo(aiRequest);
 
             // Update Firestore with completed status for UI subscription
             const { updateDoc } = await import('firebase/firestore');
@@ -453,6 +495,13 @@ export class VideoGenerationService {
             // Update Firestore with failure for UI subscription
             const { updateDoc } = await import('firebase/firestore');
             const errorMsg = error instanceof Error ? error.message : String(error);
+
+            logger.error('[VideoGeneration] ❌ generateVideo() failed:', {
+                errorMessage: errorMsg,
+                errorName: error instanceof Error ? error.name : 'unknown',
+                errorType: error?.constructor?.name || 'unknown',
+                jobId,
+            });
 
             await updateDoc(jobRef, {
                 status: 'failed',
