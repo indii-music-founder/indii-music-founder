@@ -259,7 +259,7 @@ export class ERNMapper {
                     contributors: [],
                     textDetails: {
                         textType: 'Lyrics',
-                        languageOfText: track.language || 'en',
+                        languageOfText: track.language || 'eng',
                         textContent: track.lyrics,
                     },
                     technicalDetails: {

@@ -83,17 +83,55 @@ export const ResourceIdSchema = z.object({
     }).optional()
 });
 
+export const TextDetailsSchema = z.object({
+    textType: z.enum(['Lyrics', 'LinerNotes']),
+    languageOfText: z.string().optional(),
+    textContent: z.string().optional()
+});
+
+/**
+ * Resource schema with discriminated validation:
+ * - SoundRecording/Video: require displayArtistName and at least one contributor
+ * - Image/Text: allow empty displayArtistName and zero contributors
+ */
 export const ResourceSchema = z.object({
-    resourceReference: z.string().regex(/^A[0-9]+$/, 'Resource reference must be A followed by digits'),
-    resourceType: z.enum(['SoundRecording', 'Video', 'Image']),
+    resourceReference: z.string().regex(/^(A|T)[0-9]+$/, 'Resource reference must be A or T followed by digits'),
+    resourceType: z.enum(['SoundRecording', 'Video', 'Image', 'Text']),
     resourceId: ResourceIdSchema,
     resourceTitle: TitleTextSchema,
-    displayArtistName: z.string().min(1, 'Display artist name is required'),
-    contributors: z.array(ContributorSchema).min(1, 'At least one contributor is required'),
+    displayArtistName: z.string(),
+    contributors: z.array(ContributorSchema),
     duration: z.string().optional(),
     technicalDetails: TechnicalDetailsSchema.optional(),
     parentalWarningType: z.enum(['Explicit', 'NotExplicit', 'NoAdviceAvailable', 'Edited']).optional(),
-    aiGenerationInfo: AIGenerationInfoSchema.optional()
+    aiGenerationInfo: AIGenerationInfoSchema.optional(),
+    textDetails: TextDetailsSchema.optional()
+}).superRefine((data, ctx) => {
+    // SoundRecording and Video resources MUST have artist and contributors
+    if (data.resourceType === 'SoundRecording' || data.resourceType === 'Video') {
+        if (!data.displayArtistName || data.displayArtistName.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Display artist name is required for audio/video resources',
+                path: ['displayArtistName']
+            });
+        }
+        if (!data.contributors || data.contributors.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'At least one contributor is required for audio/video resources',
+                path: ['contributors']
+            });
+        }
+    }
+    // Text resources MUST have textDetails
+    if (data.resourceType === 'Text' && !data.textDetails) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'textDetails is required for Text resources',
+            path: ['textDetails']
+        });
+    }
 });
 
 // --- Release Schema ---

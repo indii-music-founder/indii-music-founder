@@ -366,7 +366,7 @@ class DDEXParserImpl {
           resourceType: 'Text',
           resourceId: {
             proprietaryId: {
-              proprietaryIdType: 'LabelInternal',
+              proprietaryIdType: String(propId?.['@_Namespace'] || 'LabelInternal'),
               id: String(propId?.Id || '')
             }
           },
@@ -380,9 +380,10 @@ class DDEXParserImpl {
             languageOfText: details?.LanguageOfText ? String(details.LanguageOfText) : undefined,
             textContent: details?.Text ? String(details.Text) : undefined
           },
-          technicalDetails: {
-            fileName: String(((details?.TechnicalTextDetails as Record<string, unknown>)?.FileAvailabilityDescription as Record<string, unknown>)?.FilePath || '') || undefined
-          }
+          ...(() => {
+            const filePath = String(((details?.TechnicalTextDetails as Record<string, unknown>)?.FileAvailabilityDescription as Record<string, unknown>)?.FilePath || '');
+            return filePath ? { technicalDetails: { fileName: filePath } } : {};
+          })()
         });
       });
     }
@@ -484,7 +485,7 @@ class DDEXParserImpl {
           TextType: r.textDetails?.textType,
           LanguageOfText: r.textDetails?.languageOfText,
           ...(r.textDetails?.textContent ? { Text: r.textDetails.textContent } : {}),
-          ...(r.technicalDetails ? {
+          ...(r.technicalDetails?.fileName ? {
             TechnicalTextDetails: {
               FileAvailabilityDescription: {
                 FilePath: r.technicalDetails.fileName,

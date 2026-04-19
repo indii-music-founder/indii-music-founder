@@ -306,6 +306,14 @@ export default function VideoWorkflow() {
         // to avoid using stale state due to debounce, falling back to localPrompt.
         const promptToUse = promptOverride || localPrompt;
 
+        // 🔍 Prompt Diagnostics — trace exactly which prompt is being sent
+        logger.info('[VideoGeneration] Prompt selection:', {
+            promptOverride: promptOverride ? `"${promptOverride.substring(0, 80)}..."` : '(none)',
+            localPrompt: localPrompt ? `"${localPrompt.substring(0, 80)}..."` : '(empty)',
+            globalPrompt: useStore.getState().prompt ? `"${useStore.getState().prompt.substring(0, 80)}..."` : '(empty)',
+            selected: `"${promptToUse.substring(0, 80)}..."`,
+        });
+
         try {
             // Update global prompt before generating
             setPrompt(promptToUse);
@@ -320,6 +328,20 @@ export default function VideoWorkflow() {
                 finalPrompt = `[Think CINEMATIC PHYSICS & CONTINUITY]: ${finalPrompt}`;
             }
 
+            // 🔇 Audio Suppression: When generateAudio is disabled, append audio-muting
+            // instructions. Veo 3.1 has no API-level audio toggle — this is a prompt-level
+            // workaround recommended by the Google AI community.
+            let audioNegativePrompt = studioControls.negativePrompt;
+            if (!studioControls.generateAudio) {
+                const audioSuppression = '(no background music), (no dialogue), (no sound effects), (no audio), (silent video), (muted)';
+                audioNegativePrompt = audioNegativePrompt
+                    ? `${audioNegativePrompt}, ${audioSuppression}`
+                    : audioSuppression;
+                // Also add a soft directive to the main prompt
+                finalPrompt = `${finalPrompt}. Generate this as a completely silent video with no audio track.`;
+                logger.info('[VideoGeneration] 🔇 Audio suppression enabled — negative prompt augmented');
+            }
+
             let results: { id: string; url: string; prompt: string; }[] = [];
 
             // Check for long-form Video
@@ -329,10 +351,10 @@ export default function VideoWorkflow() {
                     totalDuration: studioControls.duration,
                     aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     resolution: studioControls.resolution,
-                    negativePrompt: studioControls.negativePrompt,
+                    negativePrompt: audioNegativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
-                    // Audio is always-on for Veo 3.1 — omit generateAudio
+                    // Audio suppression handled via prompt augmentation above
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinkingLevel: studioControls.thinkingLevel,
                     model: studioControls.model,
@@ -346,7 +368,7 @@ export default function VideoWorkflow() {
                     prompt: finalPrompt,
                     resolution: studioControls.resolution,
                     aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
-                    negativePrompt: studioControls.negativePrompt,
+                    negativePrompt: audioNegativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     fps: studioControls.fps,
                     cameraMovement: studioControls.cameraMovement,
@@ -363,7 +385,7 @@ export default function VideoWorkflow() {
                     orgId: currentOrganizationId,
                     duration: studioControls.duration,
                     durationSeconds: studioControls.duration,
-                    // Audio is always-on for Veo 3.1 — omit generateAudio
+                    // Audio suppression handled via prompt augmentation above
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinkingLevel: studioControls.thinkingLevel,
                     model: studioControls.model
@@ -416,8 +438,29 @@ export default function VideoWorkflow() {
             }
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            logger.error("Video generation failed:", error);
-            toast.error(`Trigger failed: ${message}`);
+            logger.error("[VideoGeneration] handleGenerate() failed:", {
+                errorMessage: message,
+                errorType: error?.constructor?.name || 'unknown',
+                errorStack: error instanceof Error ? error.stack?.substring(0, 500) : undefined,
+            });
+
+            // Classify error for user-friendly messaging
+            let userMessage = message;
+            if (message.includes('safety filter') || message.includes('content policy') || message.includes('CONTENT_FILTERED')) {
+                userMessage = `Safety filter: ${message}`;
+            } else if (message.includes('timed out') || message.includes('TIMEOUT')) {
+                userMessage = 'Video generation timed out. The API may be under heavy load — please try again.';
+            } else if (message.includes('quota') || message.includes('Quota exceeded')) {
+                userMessage = message; // Already user-friendly
+            } else if (message.includes('circuit breaker') || message.includes('OPEN')) {
+                userMessage = 'Service temporarily unavailable due to repeated errors. Please wait a moment and try again.';
+            } else if (message.includes('400') || message.includes('INVALID_ARGUMENT')) {
+                userMessage = `Invalid request: ${message}. Please check your settings and try again.`;
+            } else {
+                userMessage = `Generation failed: ${message}`;
+            }
+
+            toast.error(userMessage);
             setJobStatus('failed');
         }
     };
