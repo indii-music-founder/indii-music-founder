@@ -174,6 +174,16 @@ service cloud.firestore {
       // DEPRECATED: Dual project paths. Use root /projects collection instead.
       // match /projects/{projId} { allow read, write: if isOwner(userId); }
       match /assets/{assetId} { allow read, write: if isOwner(userId); }
+
+      // ── Usage Tracking (MembershipService daily quota / budget) ──────
+      match /usage/{dateKey} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+        // Allow atomic counter increments (increment() uses updateDoc / setDoc merge)
+        allow update: if isOwner(userId);
+        // Usage records are retained for billing audit — no client-side deletion
+        allow delete: if false;
+      }
     }
 
     // =========================================================================
