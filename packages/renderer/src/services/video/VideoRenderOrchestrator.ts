@@ -38,7 +38,12 @@ export class VideoRenderOrchestrator {
 
         try {
             // 2. Dispatch to Cloud Run (blocks until completion or crash)
-            const cloudResponse = await renderService.renderCompositionCloud(config);
+            //    Progress is relayed to the store via the onProgress callback
+            //    so the UI bar updates in real-time instead of freezing at 0%.
+            const cloudResponse = await renderService.renderCompositionCloud(
+                config,
+                (pct) => store.updateJobProgress(renderId, pct)
+            );
 
             // 3. Mark complete — Cloud Run resolves only on success (crash throws)
             store.updateJobProgress(renderId, 100);

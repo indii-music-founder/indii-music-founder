@@ -262,9 +262,9 @@ export class ERNMapper {
                         languageOfText: track.language || 'eng',
                         textContent: track.lyrics,
                     },
-                    technicalDetails: {
-                        fileName: `${lyricsRef}.txt`
-                    }
+                    // Note: technicalDetails.fileName is intentionally omitted
+                    // when lyrics are embedded inline via textContent. Set it only
+                    // when a separate .txt file is bundled in the delivery package.
                 };
                 resources.push(textResource);
             }
