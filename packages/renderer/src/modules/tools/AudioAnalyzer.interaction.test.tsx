@@ -155,7 +155,7 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
         // Initially Save button is not present because profile is null
         expect(screen.queryByTestId('save-analysis-button')).not.toBeInTheDocument();
 
-        const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' });
+        const file = new File(['audio'], 'test.wav', { type: 'audio/wav' });
         const input = screen.getByTestId('import-track-input');
         fireEvent.change(input, { target: { files: [file] } });
 
@@ -166,7 +166,7 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
         fireEvent.click(saveBtn);
 
         await waitFor(() => {
-            expect(mockToast.success).toHaveBeenCalledWith('DDEX Standards and Acoustic Profile logged to Database.');
+            expect(mockToast.success).toHaveBeenCalledWith('Distribution standards and acoustic profile saved.');
         });
     });
 });

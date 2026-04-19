@@ -157,6 +157,7 @@ export interface SoundRecordingDetails {
 export interface TextDetails {
   textType: 'Lyrics' | 'LinerNotes';
   languageOfText?: string;
+  textContent?: string;
 }
 
 // Deal - commercial terms for distribution

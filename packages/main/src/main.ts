@@ -43,8 +43,10 @@ let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
 
+const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
+
 // Disable security warnings in development (suppresses unsafe-eval CSP warning from Vite HMR)
-if (!app.isPackaged || !!process.env.VITE_DEV_SERVER_URL) {
+if (isDev) {
     process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 }
 
@@ -57,7 +59,6 @@ if (app.isPackaged) {
 }
 
 const createWindow = async () => {
-    const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
 
     interface IWindowStore {
@@ -484,8 +485,8 @@ if (!gotTheLock) {
         });
 
         // Auto-updater (production only)
-        registerUpdaterHandlers();
         if (app.isPackaged) {
+            registerUpdaterHandlers();
             setupAutoUpdater();
         }
 

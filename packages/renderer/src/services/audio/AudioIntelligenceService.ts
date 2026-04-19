@@ -138,15 +138,50 @@ export class AudioIntelligenceService {
     }
 
     /**
+     * Converts a File/Blob to a base64-encoded string.
+     * Used to send audio as inlineData to avoid the Gemini Files API
+     * upload endpoint, which is CORS-blocked in browser environments.
+     */
+    private async fileToBase64(file: File | Blob): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const dataUrl = reader.result as string;
+                // Strip the "data:audio/...;base64," prefix — the SDK wants raw base64.
+                const base64 = dataUrl.split(',')[1];
+                if (!base64) {
+                    reject(new Error('FileReader produced an empty base64 payload'));
+                    return;
+                }
+                resolve(base64);
+            };
+            reader.onerror = () => reject(new Error('FileReader failed to read audio file'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /**
      * Uses Gemini to "listen" to the track and generate semantic metadata.
+     *
+     * ARCHITECTURE NOTE (2026-04-18):
+     * Previously used the Gemini Files API (resumable upload → poll → delete) via
+     * GeminiFileService.uploadFile(). That endpoint
+     * (generativelanguage.googleapis.com/upload/v1beta/files) does NOT return
+     * CORS headers, so every browser-based fetch was blocked with:
+     *   "No 'Access-Control-Allow-Origin' header is present"
+     *
+     * The fix: convert the audio to base64 and send it as `inlineData` in the
+     * generateContent request. The generateContent endpoint IS CORS-safe.
+     * Trade-off: ~33% larger payload over the wire, but eliminates the
+     * upload → poll → cleanup lifecycle and the CORS failure mode entirely.
+     * For typical masters (5-10 MB), the base64 overhead is negligible.
      */
     private async analyzeSemantic(file: File, bpm: number, key: string): Promise<AudioSemanticData> {
-        // Upload the file via resumable upload to avoid base64 memory issues
-        Logger.info('AudioIntelligence', 'Uploading audio to Gemini File API...');
-        const fileMeta = await firebaseAI.fileService.uploadFile(file);
-        
-        Logger.info('AudioIntelligence', `Gemini file uploaded: ${fileMeta.uri}, waiting for processing...`);
-        await firebaseAI.fileService.waitForActive(fileMeta.name);
+        Logger.info('AudioIntelligence', 'Converting audio to base64 for inline Gemini analysis...');
+
+        const mimeType = file.type || 'audio/mpeg';
+        const base64Data = await this.fileToBase64(file);
+        Logger.info('AudioIntelligence', `Audio converted: ${(base64Data.length * 0.75 / 1024 / 1024).toFixed(1)} MB original, sending as inlineData`);
 
         const systemPrompt = `
 You are a world-class Musicologist, A&R Director, and Mastering Engineer with 20 years of experience at major labels.
@@ -188,31 +223,22 @@ CRITICAL RULES:
 - 'aiArtifacts' must be based on audio evidence, not assumption.
 `;
 
-        try {
-            const response = await firebaseAI.generateStructuredData<AudioSemanticData>(
-                [
-                    { text: systemPrompt },
-                    {
-                        fileData: {
-                            mimeType: fileMeta.mimeType || 'audio/mp3',
-                            fileUri: fileMeta.uri
-                        }
+        const response = await firebaseAI.generateStructuredData<AudioSemanticData>(
+            [
+                { text: systemPrompt },
+                {
+                    inlineData: {
+                        mimeType,
+                        data: base64Data
                     }
-                ],
-                SEMANTIC_SCHEMA,
-                8192, // Maps to thinkingLevel: 'HIGH' for Gemini 3.x (deep musicology analysis)
-                "You are an expert musicologist and audio analyst.",
-                AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
-            );
-            return response;
-        } finally {
-            try {
-                await firebaseAI.fileService.deleteFile(fileMeta.name);
-                Logger.info('AudioIntelligence', 'Cleaned up Gemini file.');
-            } catch (ce) {
-                Logger.warn('AudioIntelligence', `Failed to cleanup Gemini file: ${ce}`);
-            }
-        }
+                }
+            ],
+            SEMANTIC_SCHEMA,
+            8192, // Maps to thinkingLevel: 'HIGH' for Gemini 3.x (deep musicology analysis)
+            "You are an expert musicologist and audio analyst.",
+            AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
+        );
+        return response;
     }
 
 

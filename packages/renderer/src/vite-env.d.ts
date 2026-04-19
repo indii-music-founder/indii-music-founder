@@ -80,8 +80,12 @@ interface ImportMetaEnv {
     readonly VITE_EPK_BASE_URL?: string
     readonly VITE_PRESAVE_BASE_URL?: string
 
-    // Remotion
+    // Remotion — Cloud Run (GCP)
+    readonly VITE_REMOTION_BUNDLE_PATH?: string
     readonly VITE_REMOTION_SITE_NAME?: string
+    readonly VITE_REMOTION_SERVICE_NAME?: string
+    readonly VITE_REMOTION_GCP_REGION?: string
+    readonly VITE_REMOTION_GCP_PROJECT_ID?: string
 
     // Observability
     readonly VITE_SENTRY_DSN?: string

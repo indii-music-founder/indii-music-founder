@@ -180,3 +180,16 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - BUG: A missing closing brace `}` on a `match` block (e.g., `match /memoryInbox/{itemId}`) caused all subsequent top-level subcollections (like `alwaysOnMemories`, `remote-relay`) to be inadvertently nested underneath it. Client requests to the correct paths (e.g. `users/{userId}/alwaysOnMemories`) failed with `permission-denied` because the rules expected them at `users/{userId}/memoryInbox/{itemId}/alwaysOnMemories/{memoryId}`.
 - FIX: Re-added the missing closing brace and removed the extraneous brace at the bottom of the rules file.
 - RULE: **When editing `firestore.rules`, always verify that braces are properly matched.** A missing brace will silently nest all following rules without throwing a compilation error if an extra brace exists at the bottom.
+
+---
+
+## 2026-04-18 Gemini Files API CORS Block (Browser Audio Analysis)
+
+### Pattern — Files API upload endpoint has no CORS headers
+
+- SEVERITY: Critical (entire Audio Intelligence semantic pipeline non-functional in browser)
+- FILE: `packages/renderer/src/services/audio/AudioIntelligenceService.ts`
+- BUG: `AudioIntelligenceService.analyzeSemantic()` called `GeminiFileService.uploadFile()`, which makes a direct `fetch` to `generativelanguage.googleapis.com/upload/v1beta/files`. This endpoint does NOT return `Access-Control-Allow-Origin` headers, causing the browser to block the request. The error "No 'Access-Control-Allow-Origin' header is present" appeared in the console. This only fails in browser (Electron's IPC bypasses CORS).
+- ROOT CAUSE: The Gemini Files API upload endpoint is designed for server-side use and does not support CORS.
+- FIX: Replace `fileData` (Files API upload → poll → delete) with `inlineData` (base64 encode audio → embed in `generateContent` request body). The `generateContent` endpoint IS CORS-safe. Use `FileReader.readAsDataURL()` → strip `data:audio/...;base64,` prefix → pass as `inlineData.data` with matching `mimeType`. ~33% larger payload but eliminates the CORS failure mode entirely.
+- RULE: **Never use the Gemini Files API (`/upload/v1beta/files`) from browser-side code.** Use `inlineData` with base64 encoding for files under 20MB, or proxy through a Cloud Function for larger files.

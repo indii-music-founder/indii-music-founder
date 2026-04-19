@@ -1,74 +1,75 @@
 import { renderMedia, RenderMediaOptions } from '@remotion/renderer';
 import { logger } from '@/utils/logger';
-import { renderMediaOnLambda, getRenderProgress } from '@remotion/lambda/client';
-import { RemotionLambdaConfig } from './remotion.lambda';
+import { renderMediaOnCloudrun } from '@remotion/cloudrun/client';
+import type { GcpRegion } from '@remotion/cloudrun';
+import { RemotionCloudRunConfig } from './remotion.cloudrun';
 
 export interface RenderConfig {
     compositionId: string;
     outputLocation: string; // Used for local rendering
     inputProps: Record<string, unknown>;
     codec?: 'h264' | 'vp8';
-    useCloudQueue?: boolean; // Toggles Lambda vs Local
+    useCloudQueue?: boolean; // Toggles Cloud Run vs Local
 }
 
 export interface CloudRenderResponse {
     renderId: string;
     bucketName: string;
+    publicUrl?: string;
 }
 
 export class RenderService {
     /**
-     * Dispatches a render job to the cloud (AWS Lambda) so it doesn't block the UI/Electron thread.
+     * Dispatches a render job to Google Cloud Run so it doesn't block the UI/Electron thread.
+     *
+     * Authentication uses Google Application Default Credentials (ADC):
+     *   - Locally: `gcloud auth application-default login`
+     *   - CI/CD: GOOGLE_APPLICATION_CREDENTIALS service account JSON
+     *
+     * No AWS credentials required.
      */
     async renderCompositionCloud(config: RenderConfig): Promise<CloudRenderResponse> {
         try {
-            logger.info(`[CloudRenderService] Dispatching cloud render for ${config.compositionId}...`);
+            logger.info(`[CloudRenderService] Dispatching GCP Cloud Run render for ${config.compositionId}...`);
 
-            // This requires IAM credentials configured in the environment:
-            // AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-            // The site name usually points to the pre-deployed remotion bundle in S3.
-            const siteName = import.meta.env.VITE_REMOTION_SITE_NAME || 'indii-os-remotion-site';
-
-            const response = await renderMediaOnLambda({
-                region: RemotionLambdaConfig.region,
-                functionName: `remotion-render-${RemotionLambdaConfig.region}`, // Standard naming
-                serveUrl: siteName,
+            const result = await renderMediaOnCloudrun({
+                region: RemotionCloudRunConfig.region as GcpRegion,
+                serviceName: RemotionCloudRunConfig.serviceName,
+                serveUrl: RemotionCloudRunConfig.siteName,
                 composition: config.compositionId,
                 inputProps: config.inputProps,
                 codec: config.codec || 'h264',
                 imageFormat: 'jpeg',
-                maxRetries: 1,
                 privacy: 'public',
-                framesPerLambda: 15,
+                updateRenderProgress: (progress: number, error: boolean) => {
+                    if (error) {
+                        logger.error(`[CloudRenderService] Render progress error for ${config.compositionId}`);
+                    } else {
+                        logger.info(`[CloudRenderService] Render progress: ${Math.round(progress * 100)}%`);
+                    }
+                },
             });
 
-            logger.info(`[CloudRenderService] Cloud render dispatched successfully. ID: ${response.renderId}`);
+            if (result.type === 'crash') {
+                logger.error('[CloudRenderService] Cloud Run service crashed:', result.message);
+                throw new Error(
+                    `Cloud Run render crashed after ${result.requestElapsedTimeInSeconds}s. ` +
+                    `Check GCP Console logs for service: ${RemotionCloudRunConfig.serviceName}. ` +
+                    `Message: ${result.message}`
+                );
+            }
+
+            logger.info(`[CloudRenderService] Cloud Run render completed. ID: ${result.renderId}, URL: ${result.publicUrl || 'private'}`);
 
             return {
-                renderId: response.renderId,
-                bucketName: response.bucketName
+                renderId: result.renderId,
+                bucketName: result.bucketName,
+                publicUrl: result.publicUrl ?? undefined,
             };
 
         } catch (error: unknown) {
-            logger.error('[CloudRenderService] Cloud render dispatch failed:', error);
-            throw new Error(`Failed to dispatch cloud render: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-
-    /**
-     * Polls the cloud render progress given a renderId and bucketName.
-     */
-    async getCloudRenderProgress(renderId: string, bucketName: string) {
-        try {
-            return await getRenderProgress({
-                renderId,
-                bucketName,
-                functionName: `remotion-render-${RemotionLambdaConfig.region}`,
-                region: RemotionLambdaConfig.region,
-            });
-        } catch (error: unknown) {
-            logger.error('[CloudRenderService] Failed to get progress:', error);
-            throw error;
+            logger.error('[CloudRenderService] Cloud Run render dispatch failed:', error);
+            throw new Error(`Failed to dispatch Cloud Run render: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -81,8 +82,11 @@ export class RenderService {
         // If the configuration explicitly asks for the cloud queue, delegate it
         if (config.useCloudQueue) {
             const cloudResponse = await this.renderCompositionCloud(config);
-            // In a real application we would store the renderId and poll.
-            // For now, we return the stringified response indicating it's processing in the queue.
+            // If we got a public URL back, return it directly
+            if (cloudResponse.publicUrl) {
+                return cloudResponse.publicUrl;
+            }
+            // Otherwise return a marker string for the caller to poll
             return `CLOUD_QUEUED:${cloudResponse.renderId}:${cloudResponse.bucketName}`;
         }
 

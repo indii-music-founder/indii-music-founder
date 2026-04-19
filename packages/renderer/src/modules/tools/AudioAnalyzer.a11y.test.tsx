@@ -53,7 +53,7 @@ describe('AudioAnalyzer Accessibility', () => {
         expect(fileInput).not.toHaveClass('hidden')
 
         // Trigger file load to render the post-analysis controls
-        const file = new File(['mock audio'], 'test.mp3', { type: 'audio/mp3' });
+        const file = new File(['mock audio'], 'test.wav', { type: 'audio/wav' });
         fireEvent.change(fileInput, { target: { files: [file] } });
 
         // Wait for save button to appear
