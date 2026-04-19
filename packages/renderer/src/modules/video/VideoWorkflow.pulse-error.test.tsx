@@ -207,7 +207,7 @@ describe('Pulse: Video Workflow Error Handling', () => {
         });
 
         // 5. Assert Error Feedback
-        expect(mockToastError).toHaveBeenCalledWith(`Trigger failed: ${errorMsg}`);
+        expect(mockToastError).toHaveBeenCalledWith(`Generation failed: ${errorMsg}`);
         expect(mockSetJobStatus).toHaveBeenCalledWith('failed');
 
         // 6. Assert Return to Idle/Failed State

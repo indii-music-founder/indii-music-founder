@@ -9,6 +9,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 node_modules
 dist
@@ -104,3 +107,10 @@ electron/
 functions/
 coverage/
 scripts/daisy-chain-output/
+*.tsbuildinfo
+*.cache
+
+# Agent runtime state (never source)
+HANDOFF_STATE.md
+**/HANDOFF_STATE.md
+**/CHECKPOINT*.md

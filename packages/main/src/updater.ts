@@ -83,8 +83,15 @@ export function setupAutoUpdater(): void {
         log.error('[Updater] Error:', message);
         sendToRenderer('updater:error', { message });
     });
+}
 
-    // IPC handlers for renderer control
+let handlersRegistered = false;
+
+export function registerUpdaterHandlers(): void {
+    if (handlersRegistered) return;
+    handlersRegistered = true;
+
+    // IPC handlers for renderer control - registered unconditionally
     ipcMain.handle('updater:check', async () => {
         if (!autoUpdater) return { available: false };
         try {
@@ -100,13 +107,6 @@ export function setupAutoUpdater(): void {
         if (autoUpdater) {
             autoUpdater.quitAndInstall(false, true);
         }
-    });
-
-    ipcMain.handle('updater:set-channel', (_event: unknown, channel: 'stable' | 'beta') => {
-        if (!autoUpdater) return;
-        autoUpdater.allowPrerelease = channel === 'beta';
-        autoUpdater.channel = channel === 'beta' ? 'beta' : 'latest';
-        log.info(`[Updater] Channel changed to: ${channel}`);
     });
 }
 

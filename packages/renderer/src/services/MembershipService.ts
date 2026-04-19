@@ -299,7 +299,6 @@ class MembershipServiceImpl {
     // =========================================================================
 
     /**
-    /**
      * Gets today's date in YYYY-MM-DD format for Firestore document indexing.
      * Uses the local timezone to match user-perceived daily quotas.
      * 
@@ -318,7 +317,13 @@ class MembershipServiceImpl {
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
-            return state.userProfile?.id || null;
+            // Prefer Firebase Auth as canonical; profile can lag during cache/profile sync.
+            const authUserId = (state as unknown as { user?: { uid?: string | null } | null }).user?.uid;
+            const profileUserId =
+                state.userProfile?.uid ||
+                (state.userProfile?.id && state.userProfile.id !== 'pending' ? state.userProfile.id : null);
+
+            return authUserId || profileUserId || null;
         } catch {
             return null;
         }
@@ -524,41 +529,28 @@ class MembershipServiceImpl {
                 maxAllowed = limits.maxStorageMB;
                 break;
             case 'projects':
-                try {
-                    const q = query(collection(db, 'projects'), where('orgId', '==', 'personal'), where('userId', '==', userId));
-                    const snapshot = await getCountFromServer(q);
-                    currentUsage = snapshot.data().count;
-                } catch (_e: unknown) {
-                    logger.warn("[MembershipService] Failed to count projects:", _e);
-                    currentUsage = 0;
-                }
-                // Check if quota is unlimited first
-                if (tier === 'enterprise' && limits.maxProjects === -1) {
+                // Unlimited projects check — applies to any tier with maxProjects === -1
+                // (currently both 'founder' and 'enterprise')
+                if (limits.maxProjects === -1) {
                     return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
                 }
 
                 try {
-                    // Count projects where the user is a member
-                    // Note: This relies on the 'projects' collection being indexed by 'orgId'
-                    // and the user being able to access them.
-                    // For a simpler check, we count projects created by the user or
-                    // check the organization's project count if applicable.
-                    // Assuming 'projects' has an 'orgId' field.
-
-                    // Get current Org ID from store state similar to getCurrentTier
                     const { useStore } = await import('@/core/store');
                     const state = useStore.getState();
                     const currentOrgId = state.currentOrganizationId;
 
-                    if (currentOrgId) {
+                    if (currentOrgId && currentOrgId !== 'personal') {
+                        // Count org projects
                         const projectsRef = collection(db, 'projects');
                         const q = query(projectsRef, where('orgId', '==', currentOrgId));
                         const snapshot = await getCountFromServer(q);
                         currentUsage = snapshot.data().count;
                     } else {
-                        // Fallback to counting personal projects if no org context
-                        // This might need adjustment based on exact data model
-                        currentUsage = 0;
+                        // Count personal projects
+                        const q = query(collection(db, 'projects'), where('orgId', '==', 'personal'), where('userId', '==', userId));
+                        const snapshot = await getCountFromServer(q);
+                        currentUsage = snapshot.data().count;
                     }
                 } catch (_e: unknown) {
                     logger.warn("[MembershipService] Failed to count projects:", _e);
@@ -571,8 +563,8 @@ class MembershipServiceImpl {
                 return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
         }
 
-        // Enterprise has unlimited for most things
-        if (tier === 'enterprise' && maxAllowed === -1) {
+        // Any tier with unlimited (-1) for a resource type gets a pass
+        if (maxAllowed === -1) {
             return { allowed: true, currentUsage, maxAllowed: Infinity };
         }
 

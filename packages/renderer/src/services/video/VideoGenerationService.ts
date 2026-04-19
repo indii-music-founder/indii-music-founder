@@ -13,10 +13,12 @@ import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { VideoJob, VideoSafetyRating } from '@/types/video';
 import { logger } from '@/utils/logger';
+import { neuralCortex, type RenderDirectives } from '@/services/ai/NeuralCortexService';
+
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
-const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3-generate-preview'
+const DEFAULT_VIDEO_MODEL = AI_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
 
 /** Strip undefined values from an object to prevent Firestore rejection. */
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -33,6 +35,157 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
  * Daisychaining video generation via Cloud Functions.
  */
 export class VideoGenerationService {
+
+    /**
+     * Retry helper with exponential backoff for transient Veo API failures.
+     *
+     * Retries on:
+     *   - HTTP 429 (Rate Limit) — respects Retry-After header if present
+     *   - HTTP 503 (Service Unavailable)
+     *   - Network/timeout errors (TypeError, AbortError)
+     *
+     * Fails immediately on:
+     *   - HTTP 400 (Bad Request — malformed input, not transient)
+     *   - HTTP 401/403 (Auth failure — not transient)
+     *   - HTTP 404 (Not Found — not transient)
+     *   - Any error after max retries exhausted
+     *
+     * @param fn        The async operation to retry
+     * @param label     Human-readable label for logging context
+     * @param maxRetries Maximum number of retry attempts (default: 3)
+     * @param baseDelayMs Initial backoff delay in milliseconds (default: 1000)
+     * @returns The result of the successful operation
+     */
+    private async withRetry<T>(
+        fn: () => Promise<T>,
+        label: string,
+        maxRetries: number = 3,
+        baseDelayMs: number = 1000
+    ): Promise<T> {
+        let lastError: unknown;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                return await fn();
+            } catch (error: unknown) {
+                lastError = error;
+
+                // Determine if the error is retryable
+                const isRetryable = this.isRetryableError(error);
+
+                if (!isRetryable || attempt === maxRetries) {
+                    // Non-retryable or final attempt — throw immediately
+                    if (attempt > 0) {
+                        logger.error(
+                            `[VideoGeneration] ${label}: Failed after ${attempt + 1} attempts. ` +
+                            `Final error: ${error instanceof Error ? error.message : String(error)}`
+                        );
+                    }
+                    throw error;
+                }
+
+                // Calculate backoff delay with jitter
+                const retryAfterMs = this.extractRetryAfter(error);
+                const exponentialDelay = baseDelayMs * Math.pow(2, attempt);
+                // Add ±25% jitter to prevent thundering herd
+                const jitter = exponentialDelay * (0.75 + Math.random() * 0.5);
+                const delayMs = retryAfterMs || Math.round(jitter);
+
+                logger.warn(
+                    `[VideoGeneration] ${label}: Attempt ${attempt + 1}/${maxRetries + 1} failed ` +
+                    `(${error instanceof Error ? error.message : 'Unknown error'}). ` +
+                    `Retrying in ${(delayMs / 1000).toFixed(1)}s...`
+                );
+
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        }
+
+        // Should never reach here, but TypeScript doesn't know that
+        throw lastError;
+    }
+
+    /**
+     * Determines if an error is transient and worth retrying.
+     */
+    private isRetryableError(error: unknown): boolean {
+        // Check typed AppException codes first (most precise classification)
+        if (error instanceof Error && 'code' in error && error.name === 'AppException') {
+            const appError = error as { code: string };
+            const nonRetryableCodes = [
+                'UNAUTHORIZED',
+                'INVALID_INPUT',
+                'CONTENT_FILTERED',
+                'NOT_FOUND',
+                'CANCELLED',
+                'SAFETY_VIOLATION',
+                'INVALID_ARGUMENT',
+            ];
+            if (nonRetryableCodes.includes(appError.code)) {
+                return false;
+            }
+            const retryableCodes = ['RATE_LIMITED', 'TIMEOUT', 'NETWORK_ERROR'];
+            if (retryableCodes.includes(appError.code)) {
+                return true;
+            }
+        }
+
+        if (error instanceof Error) {
+            const message = error.message.toLowerCase();
+
+            // Network/connectivity errors — always retry
+            if (
+                error.name === 'TypeError' ||
+                error.name === 'AbortError' ||
+                message.includes('network') ||
+                message.includes('fetch') ||
+                message.includes('econnreset') ||
+                message.includes('etimedout') ||
+                message.includes('socket hang up')
+            ) {
+                return true;
+            }
+
+            // HTTP status-based errors
+            if (message.includes('429') || message.includes('rate limit')) return true;
+            if (message.includes('503') || message.includes('service unavailable')) return true;
+            if (message.includes('502') || message.includes('bad gateway')) return true;
+            if (message.includes('500') && !message.includes('internal server error: invalid')) return true;
+
+            // Non-retryable — fail fast
+            if (message.includes('400') || message.includes('bad request')) return false;
+            if (message.includes('401') || message.includes('unauthorized')) return false;
+            if (message.includes('403') || message.includes('forbidden')) return false;
+            if (message.includes('404') || message.includes('not found')) return false;
+            if (message.includes('quota exceeded')) return false;
+            if (message.includes('safety violation')) return false;
+        }
+
+        // QuotaExceededError — never retry
+        if (error instanceof QuotaExceededError) return false;
+
+        // Default: retry unknown errors once (could be transient)
+        return true;
+    }
+
+    /**
+     * Extracts Retry-After header value from an error if available.
+     * Returns delay in milliseconds, or undefined if not present.
+     */
+    private extractRetryAfter(error: unknown): number | undefined {
+        if (error instanceof Error) {
+            // Some API clients embed retry-after in the error
+            const retryMatch = error.message.match(/retry.?after[:\s]+(\d+)/i);
+            if (retryMatch?.[1]) {
+                const seconds = parseInt(retryMatch[1], 10);
+                if (!isNaN(seconds) && seconds > 0 && seconds < 120) {
+                    return seconds * 1000;
+                }
+            }
+        }
+        return undefined;
+    }
+
 
     private async analyzeTemporalContext(image: string, offset: number, basePrompt: string): Promise<string> {
         try {
@@ -131,6 +284,17 @@ export class VideoGenerationService {
             throw new Error("You must be signed in to generate video. Please log in.");
         }
         const userId = currentUser.uid;
+
+        logger.info('[VideoGeneration] 🎬 generateVideo() called:', {
+            promptPreview: options.prompt.substring(0, 100),
+            model: options.model || DEFAULT_VIDEO_MODEL,
+            duration: options.duration || options.durationSeconds || 8,
+            aspectRatio: options.aspectRatio,
+            hasFirstFrame: !!options.firstFrame,
+            hasLastFrame: !!options.lastFrame,
+            hasReferenceImages: !!options.referenceImages?.length,
+            userId,
+        });
 
         // Enforce quota check
         const quota = await this.checkVideoQuota(1);
@@ -248,7 +412,8 @@ export class VideoGenerationService {
 
         // Generate video via direct @google/genai SDK (no Cloud Functions)
         try {
-            const videoUrl = await firebaseAI.generateVideo({
+            // Build the AI service request object
+            const aiRequest = {
                 prompt: enrichedPrompt,
                 model: options.model || DEFAULT_VIDEO_MODEL,
                 image: imageInput,
@@ -262,7 +427,16 @@ export class VideoGenerationService {
                     referenceImages: options.referenceImages?.length ? options.referenceImages : undefined,
                     lastFrame: lastFrameConfig,
                 }),
+            };
+
+            logger.info('[VideoGeneration] 🚀 Calling firebaseAI.generateVideo() with:', {
+                model: aiRequest.model,
+                promptLength: aiRequest.prompt.length,
+                hasImage: !!aiRequest.image,
+                config: JSON.stringify(aiRequest.config),
             });
+
+            const videoUrl = await firebaseAI.generateVideo(aiRequest);
 
             // Update Firestore with completed status for UI subscription
             const { updateDoc } = await import('firebase/firestore');
@@ -321,6 +495,13 @@ export class VideoGenerationService {
             // Update Firestore with failure for UI subscription
             const { updateDoc } = await import('firebase/firestore');
             const errorMsg = error instanceof Error ? error.message : String(error);
+
+            logger.error('[VideoGeneration] ❌ generateVideo() failed:', {
+                errorMessage: errorMsg,
+                errorName: error instanceof Error ? error.name : 'unknown',
+                errorType: error?.constructor?.name || 'unknown',
+                jobId,
+            });
 
             await updateDoc(jobRef, {
                 status: 'failed',
@@ -542,20 +723,29 @@ export class VideoGenerationService {
                 }
 
                 // Generate segment — with firstFrame from previous segment's last frame
-                const videoUrl = await firebaseAI.generateVideo({
-                    prompt: segmentPrompt,
-                    model: options.model || DEFAULT_VIDEO_MODEL,
-                    image: previousLastFrame
-                        ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
-                        : undefined,
-                    config: stripUndefined({
-                        aspectRatio: targetAspectRatio || '16:9',
-                        resolution: options.resolution,
-                        durationSeconds: BLOCK_DURATION,
-                        negativePrompt: options.negativePrompt,
-                        seed: options.seed,
+                // Uses withRetry for production-grade error recovery:
+                //   - Retries on 429, 503, network errors with exponential backoff + jitter
+                //   - Fails fast on 400, 401, 403, quota, safety violations
+                //   - Respects Retry-After headers when present
+                const videoUrl = await this.withRetry(
+                    () => firebaseAI.generateVideo({
+                        prompt: segmentPrompt,
+                        model: options.model || DEFAULT_VIDEO_MODEL,
+                        image: previousLastFrame
+                            ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
+                            : undefined,
+                        config: stripUndefined({
+                            aspectRatio: targetAspectRatio || '16:9',
+                            resolution: options.resolution,
+                            durationSeconds: BLOCK_DURATION,
+                            negativePrompt: options.negativePrompt,
+                            seed: options.seed,
+                        }),
                     }),
-                });
+                    `Segment ${i + 1}/${numBlocks}`,
+                    3,   // maxRetries
+                    2000 // baseDelayMs — start at 2s since Veo jobs are inherently slow
+                );
 
                 segmentUrls.push(videoUrl);
 
@@ -645,6 +835,91 @@ export class VideoGenerationService {
             throw error;
         }
     }
+
+    /**
+     * Enriches a base prompt (or generates one from scratch) using Audio DNA
+     * from the NeuralCortexService.
+     *
+     * This is the automated pipe:
+     *   AudioIntelligenceService.analyze()
+     *     → NeuralCortexService.ingest()
+     *     → NeuralCortexService.buildRenderDirectives()
+     *     → VideoGenerationService.enrichPromptWithAudioDNA()
+     *     → enriched veo prompt with mood, timbre, narrative
+     *
+     * @param contentId  The audio fingerprint ID (from AudioIntelligenceProfile.id)
+     * @param basePrompt Optional override prompt. If omitted, the pure audio-derived
+     *                   targetPrompts.veo is used as the base.
+     * @returns RenderDirectives with enriched image + veo prompts, or null if
+     *          the content ID doesn't exist in the Cortex.
+     */
+    async enrichPromptWithAudioDNA(
+        contentId: string,
+        basePrompt?: string
+    ): Promise<RenderDirectives | null> {
+        logger.info(`[VideoGeneration] Enriching prompt with Audio DNA for content: ${contentId}`);
+
+        try {
+            // 1. Retrieve the entity from NeuralCortex
+            const entity = await neuralCortex.getEntity(contentId);
+
+            if (!entity) {
+                logger.warn(`[VideoGeneration] No Cortex entity found for content ID: ${contentId}. ` +
+                    `Run AudioIntelligenceService.analyze() + neuralCortex.ingest() first.`);
+                return null;
+            }
+
+            // 2. Build render directives (enriched prompts with mood, timbre, lighting)
+            const directives = neuralCortex.buildRenderDirectives(entity);
+
+            // 3. If a base prompt override was provided, prepend it to the veo prompt
+            if (basePrompt) {
+                directives.veoPrompt = `${basePrompt}. ${directives.veoPrompt}`;
+                directives.imagePrompt = `${basePrompt}. ${directives.imagePrompt}`;
+            }
+
+            logger.info(`[VideoGeneration] Audio DNA enrichment complete. Style: ${directives.styleSummary}`);
+
+            if (directives.driftWarning) {
+                logger.warn(`[VideoGeneration] ${directives.driftWarning}`);
+            }
+
+            return directives;
+        } catch (error: unknown) {
+            logger.error('[VideoGeneration] Audio DNA enrichment failed:', error);
+            return null;
+        }
+    }
+
+    /**
+     * One-shot convenience: enrich with Audio DNA + generate video.
+     *
+     * Combines enrichPromptWithAudioDNA() + generateVideo() into a single call.
+     * Falls back to the raw basePrompt if Audio DNA enrichment fails or yields null.
+     *
+     * @param contentId   Audio fingerprint ID from AudioIntelligenceProfile.id
+     * @param options     Standard VideoGenerationOptions — the prompt field will be
+     *                    overridden with the enriched veo prompt.
+     */
+    async generateVideoFromAudioDNA(
+        contentId: string,
+        options: VideoGenerationOptions
+    ): Promise<{ id: string; url: string; prompt: string }[]> {
+        const directives = await this.enrichPromptWithAudioDNA(contentId, options.prompt);
+
+        if (directives) {
+            logger.info(`[VideoGeneration] Using Audio DNA-enriched prompt for generation`);
+            return this.generateVideo({
+                ...options,
+                prompt: directives.veoPrompt,
+            });
+        }
+
+        // Fallback: Audio DNA not available, use raw prompt
+        logger.info(`[VideoGeneration] Audio DNA unavailable, falling back to raw prompt`);
+        return this.generateVideo(options);
+    }
 }
 
 export const VideoGeneration = new VideoGenerationService();
+

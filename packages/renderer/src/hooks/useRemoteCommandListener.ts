@@ -13,7 +13,8 @@
  *   - Whether the agent is processing
  *   - Online status
  *
- * Falls back to the Vite HTTP relay if auth is not available (dev mode).
+ * Requires Firebase Auth — the Firestore relay only activates when authenticated.
+ * A Vite HTTP relay fallback exists (useHttpRelayFallback) but is currently disabled.
  *
  * Mount ONCE in App.tsx.
  */
@@ -546,11 +547,7 @@ export function useRemoteCommandListener() {
         return unsubscribe;
     }, []);
 
-    // Use Firestore relay when authenticated, HTTP fallback only when
-    // unauthenticated AND Electron IPC is available (the local relay server).
-    // Without the IPC guard, pure-browser dev mode floods the console with
-    // 404s because there's no /api/remote/* endpoint on the Vite dev server.
-    const hasElectronBridge = typeof window !== 'undefined' && !!(window as unknown as { electronAPI?: unknown }).electronAPI;
+    // Use Firestore relay when authenticated.
     useFirestoreRelay(isAuthenticated);
-    useHttpRelayFallback(!isAuthenticated && hasElectronBridge);
+    useHttpRelayFallback(false); // HTTP relay fallback disabled to prevent 404 spam in dev
 }
