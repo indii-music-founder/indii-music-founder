@@ -356,11 +356,11 @@ describe('FirebaseAIService', () => {
             prompt: 'Cinematic video',
             model: 'veo-v1',
             config: { durationSeconds: 5 },
-            timeoutMs: 10000 // large enough to pass the maxAttempts check
+            timeoutMs: 60000 // large enough to pass the maxAttempts check
         });
 
-        // Advance timers to trigger the 5000ms setTimeout inside the polling loop
-        await vi.advanceTimersByTimeAsync(5500);
+        // MediaGenerator.ts uses a 10s poll interval — advance enough to trigger polling
+        await vi.advanceTimersByTimeAsync(15000);
 
         const result = await generatePromise;
 
@@ -368,7 +368,7 @@ describe('FirebaseAIService', () => {
 
         vi.useRealTimers();
         fetchSpy.mockRestore();
-    }, 15000);
+    }, 30000);
 
     it('should retry on transient errors', async () => {
         vi.useFakeTimers();
