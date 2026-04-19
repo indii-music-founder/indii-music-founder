@@ -484,9 +484,13 @@ if (!gotTheLock) {
             return powerMonitor.isOnBatteryPower() ? 'battery' : 'ac';
         });
 
-        // Auto-updater (production only)
+        // Auto-updater IPC handlers — registered unconditionally so the renderer
+        // never hangs on unanswered IPC calls. The handlers gracefully no-op
+        // when autoUpdater is unavailable (dev environment).
+        registerUpdaterHandlers();
+
+        // Auto-updater polling — production only
         if (app.isPackaged) {
-            registerUpdaterHandlers();
             setupAutoUpdater();
         }
 

@@ -74,9 +74,10 @@ service cloud.firestore {
       }
 
       // =========================================================================
-      // Cross-Device Handoff (user-scoped subcollection)
+      // Cross-Device Handoff & User Settings (user-scoped subcollection)
+      // HandoffService writes to: users/{uid}/settings/handoff
       // =========================================================================
-      match /handoff/{stateId} {
+      match /settings/{settingId} {
         allow read, create, update: if isOwner(userId);
         allow delete: if false;
       }
