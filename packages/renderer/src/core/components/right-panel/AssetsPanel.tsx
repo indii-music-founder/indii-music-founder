@@ -249,6 +249,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                             {filteredAssets.map((asset) => (
                                 <motion.button
                                     key={asset.id}
+                                    draggable={asset.type === 'image' || asset.type === 'video'}
+                                    onDragStart={(e: any) => {
+                                        e.dataTransfer?.setData('text/plain', asset.id);
+                                    }}
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
@@ -304,6 +308,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                             {filteredAssets.map((asset) => (
                                 <motion.button
                                     key={asset.id}
+                                    draggable={asset.type === 'image' || asset.type === 'video'}
+                                    onDragStart={(e: any) => {
+                                        e.dataTransfer?.setData('text/plain', asset.id);
+                                    }}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}

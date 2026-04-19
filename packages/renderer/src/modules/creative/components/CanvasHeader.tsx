@@ -55,7 +55,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
         <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-background">
             <div className="flex-1 mr-4 flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white">
-                    Creative Canvas
+                    Creative Editor
                 </h3>
             </div>
 
