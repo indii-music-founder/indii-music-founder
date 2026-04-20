@@ -53,12 +53,12 @@ export default function DirectGenerationTab() {
         }
     }, [mode]);
 
-    const mappedIngredients: Ingredient[] = videoInputs.ingredients.map(hi => ({
+    const mappedIngredients: Ingredient[] = videoInputs?.ingredients?.map(hi => ({
         id: hi.id,
         dataUrl: hi.url,
         type: hi.type as 'image' | 'video',
         file: new File([], 'placeholder') // Placeholder since we already have the dataUrl
-    }));
+    })) || [];
 
     const handleIngredientsChange = useCallback((newIngredients: Ingredient[]) => {
         const state = useStore.getState();
@@ -201,7 +201,7 @@ export default function DirectGenerationTab() {
         } finally {
             setIsGenerating(false);
         }
-    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs.ingredients]);
+    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs?.ingredients]);
 
     return (
         <div className="flex flex-col h-full w-full bg-background text-foreground">
