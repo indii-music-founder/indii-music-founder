@@ -13,7 +13,7 @@ test.describe('Creative Studio', () => {
         page.on('console', msg => console.log('PAGE LOG:', msg.type(), msg.text()));
         page.on('pageerror', error => console.log('PAGE ERROR:', error.message));
         // Mock Gemini image generation API
-        await page.route('**/generativelanguage.googleapis.com/**', async (route, request) => {
+        await page.route(/.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/, async (route, request) => {
             const url = request.url();
             console.log(`[E2E] Intercepted GenAI URL: ${url}`);
             if (url.includes('generateVideos') || url.includes('veo')) {
