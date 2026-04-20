@@ -1,5 +1,4 @@
 import { GenAI } from '@/services/ai/GenAI';
-import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
 
 /**

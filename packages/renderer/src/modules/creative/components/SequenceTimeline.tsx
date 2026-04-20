@@ -2,9 +2,19 @@ import React, { useState } from 'react';
 import { Plus, X, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+export type EnergyLevel = 'Low' | 'Medium' | 'High' | 'Extreme';
+export type SongSection = 'Intro' | 'Verse' | 'Pre-Chorus' | 'Chorus' | 'Bridge' | 'Build' | 'Drop' | 'Break' | 'Outro';
+
+export interface SequenceBlock {
+    id: string;
+    beats: number;
+    energy?: EnergyLevel;
+    section?: SongSection;
+}
+
 interface SequenceTimelineProps {
-    sequence: number[]; // represents beats
-    onChange: (sequence: number[]) => void;
+    sequence: SequenceBlock[];
+    onChange: (sequence: SequenceBlock[]) => void;
     bpm?: number;
     onBpmChange?: (bpm: number) => void;
 }
@@ -17,17 +27,20 @@ export const SequenceTimeline = ({ sequence, onChange, bpm = 120, onBpmChange }:
     const secondsPerBeat = 60 / bpm;
     const maxTotalBeats = Math.floor(maxTotalSeconds / secondsPerBeat);
     
-    const totalBeats = sequence.reduce((a, b) => a + b, 0);
+    const [currentSection, setCurrentSection] = useState<SongSection>('Verse');
+    const [currentEnergy, setCurrentEnergy] = useState<EnergyLevel>('Medium');
+
+    const totalBeats = sequence.reduce((a, b) => a + b.beats, 0);
     const totalSeconds = totalBeats * secondsPerBeat;
 
     const handleAdd = (interval: number) => {
         if (totalBeats + interval <= maxTotalBeats) {
-            onChange([...sequence, interval]);
+            onChange([...sequence, { id: crypto.randomUUID(), beats: interval, section: currentSection, energy: currentEnergy }]);
         }
     };
 
-    const handleRemove = (index: number) => {
-        onChange(sequence.filter((_, i) => i !== index));
+    const handleRemove = (idToRemove: string) => {
+        onChange(sequence.filter((block) => block.id !== idToRemove));
     };
 
     return (
@@ -66,12 +79,12 @@ export const SequenceTimeline = ({ sequence, onChange, bpm = 120, onBpmChange }:
             {/* Timeline Bar */}
             <div className="relative h-8 bg-black/40 rounded-lg overflow-hidden flex ring-1 ring-inset ring-white/5">
                 <AnimatePresence>
-                    {sequence.map((beats, index) => {
-                        const widthPct = (beats / maxTotalBeats) * 100;
-                        const durationSeconds = beats * secondsPerBeat;
+                    {sequence.map((block, index) => {
+                        const widthPct = (block.beats / maxTotalBeats) * 100;
+                        const durationSeconds = block.beats * secondsPerBeat;
                         return (
                             <motion.div
-                                key={`${index}-${beats}`}
+                                key={block.id}
                                 initial={{ width: 0, opacity: 0 }}
                                 animate={{ width: `${widthPct}%`, opacity: 1 }}
                                 exit={{ width: 0, opacity: 0 }}
@@ -79,15 +92,17 @@ export const SequenceTimeline = ({ sequence, onChange, bpm = 120, onBpmChange }:
                                 style={{
                                     backgroundColor: `hsl(${280 + (index * 20)}, 70%, 50%)`
                                 }}
-                                onClick={() => handleRemove(index)}
-                                title={`Remove ${beats} beats block (${durationSeconds.toFixed(2)}s)`}
+                                onClick={() => handleRemove(block.id)}
+                                title={`Remove ${block.beats} beats block (${durationSeconds.toFixed(2)}s) - ${block.section || 'Uncategorized'} / ${block.energy || 'Medium'} Energy`}
                             >
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity">
                                     <X size={12} className="text-white" />
                                 </div>
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:opacity-0 transition-opacity flex-col">
-                                    <span className="text-[10px] font-bold text-white shadow-sm">{beats} beats</span>
-                                    {widthPct > 10 && <span className="text-[8px] text-white/80">{durationSeconds.toFixed(2)}s</span>}
+                                    <span className="text-[10px] font-bold text-white shadow-sm truncate w-full text-center px-1">
+                                        {block.section || block.beats + ' beats'}
+                                    </span>
+                                    {widthPct > 10 && <span className="text-[8px] text-white/80">{durationSeconds.toFixed(2)}s {block.energy && `· ${block.energy}`}</span>}
                                 </div>
                             </motion.div>
                         );
@@ -101,7 +116,27 @@ export const SequenceTimeline = ({ sequence, onChange, bpm = 120, onBpmChange }:
             </div>
 
             {/* Add Controls */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 mr-2">
+                    <select
+                        value={currentSection}
+                        onChange={(e) => setCurrentSection(e.target.value as SongSection)}
+                        className="bg-black/40 border border-white/10 text-white text-[10px] rounded px-2 py-1 outline-none"
+                    >
+                        {['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Build', 'Drop', 'Break', 'Outro'].map(s => (
+                            <option key={s} value={s}>{s}</option>
+                        ))}
+                    </select>
+                    <select
+                        value={currentEnergy}
+                        onChange={(e) => setCurrentEnergy(e.target.value as EnergyLevel)}
+                        className="bg-black/40 border border-white/10 text-white text-[10px] rounded px-2 py-1 outline-none"
+                    >
+                        {['Low', 'Medium', 'High', 'Extreme'].map(e => (
+                            <option key={e} value={e}>{e} Energy</option>
+                        ))}
+                    </select>
+                </div>
                 {AVAILABLE_INTERVALS.map(interval => (
                     <button
                         key={interval}

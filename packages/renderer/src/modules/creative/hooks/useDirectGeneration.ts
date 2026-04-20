@@ -6,6 +6,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { WhiskService } from '@/services/WhiskService';
 import { logger } from '@/utils/logger';
 import { Ingredient } from '../components/IngredientDropZone';
+import { SequenceBlock } from '../components/SequenceTimeline';
 
 export function useDirectGeneration() {
     const {
@@ -35,7 +36,7 @@ export function useDirectGeneration() {
     const [mode, setMode] = useState<'image' | 'video'>('image');
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<HistoryItem[]>([]);
-    const [sequence, setSequence] = useState<number[]>([]);
+    const [sequence, setSequence] = useState<SequenceBlock[]>([]);
     const [bpm, setBpm] = useState<number>(120);
 
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
@@ -123,7 +124,7 @@ export function useDirectGeneration() {
             toast.info('4K is not yet supported for video. Generating at 1080p instead.');
         }
 
-        const sequenceTotalBeats = sequence.length > 0 ? sequence.reduce((a, b) => a + b, 0) : 0;
+        const sequenceTotalBeats = sequence.length > 0 ? sequence.reduce((a, b) => a + b.beats, 0) : 0;
         const secondsPerBeat = 60 / bpm;
         const sequenceTotalSeconds = sequenceTotalBeats * secondsPerBeat;
         
@@ -131,7 +132,7 @@ export function useDirectGeneration() {
         
         let sequencePrompt = finalPrompt;
         if (sequence.length > 0) {
-            const sequenceDetails = sequence.map(beats => `${beats} beats (${(beats * secondsPerBeat).toFixed(2)}s)`).join(', ');
+            const sequenceDetails = sequence.map(block => `${block.beats} beats (${(block.beats * secondsPerBeat).toFixed(2)}s) [${block.section || 'Uncategorized'}, ${block.energy || 'Medium'} Energy]`).join(', ');
             sequencePrompt = `[SEQUENCE: ${sequenceDetails} at ${bpm} BPM] ${finalPrompt}`;
         }
 
