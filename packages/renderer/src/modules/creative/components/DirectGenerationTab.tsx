@@ -1,10 +1,13 @@
-import React from 'react';
-import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
+import PromptBuilder from './PromptBuilder';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 
 export default function DirectGenerationTab() {
+    const [isPromptBuilderOpen, setIsPromptBuilderOpen] = useState(false);
     const {
         mode,
         localPrompt,
@@ -17,7 +20,9 @@ export default function DirectGenerationTab() {
         handleIngredientsChange,
         studioControls,
         setSelectedItem,
-        setViewMode
+        setViewMode,
+        sequence,
+        setSequence
     } = useDirectGeneration();
 
     return (
@@ -52,44 +57,74 @@ export default function DirectGenerationTab() {
                     </div>
 
                     {/* Prompt Input */}
-                    <div className="flex-1 relative group">
-                        <div className="absolute inset-0 bg-linear-to-r from-dept-creative/10 to-dept-marketing/10 rounded-xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                        <input
-                            type="text"
-                            value={localPrompt}
-                            onChange={(e) => setLocalPrompt(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleGenerate()}
-                            placeholder={`Describe your ${mode}...`}
-                            data-testid="direct-prompt-input"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-12 text-sm focus:outline-none focus:border-dept-creative/50 focus:ring-1 focus:ring-dept-creative/20 transition-all relative z-10"
-                        />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground z-20">
-                            {mode === 'image' ? <ImageIcon size={16} /> : <Video size={16} />}
+                    <div className="flex-1 relative group flex flex-col gap-2">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-linear-to-r from-dept-creative/10 to-dept-marketing/10 rounded-xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                            <input
+                                type="text"
+                                value={localPrompt}
+                                onChange={(e) => setLocalPrompt(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleGenerate()}
+                                placeholder={`Describe your ${mode}...`}
+                                data-testid="direct-prompt-input"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-12 pr-32 text-sm focus:outline-none focus:border-dept-creative/50 focus:ring-1 focus:ring-dept-creative/20 transition-all relative z-10"
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground z-20">
+                                {mode === 'image' ? <ImageIcon size={16} /> : <Video size={16} />}
+                            </div>
+
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center gap-2">
+                                <button
+                                    onClick={() => setIsPromptBuilderOpen(!isPromptBuilderOpen)}
+                                    className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                    title="Toggle Prompt Builder"
+                                >
+                                    {isPromptBuilderOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                </button>
+                                <span className="text-[10px] text-muted-foreground uppercase font-mono px-2 border-r border-white/5">
+                                    {studioControls.model.toUpperCase()}
+                                </span>
+                                <button
+                                    onClick={handleGenerate}
+                                    data-testid="direct-generate-btn"
+                                    disabled={isGenerating || !localPrompt.trim()}
+                                    className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" />
+                                            <span className="sr-only">Generating...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send size={16} />
+                                            <span className="sr-only">Generate</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground uppercase font-mono px-2 border-r border-white/5">
-                                {studioControls.model.toUpperCase()}
-                            </span>
-                            <button
-                                onClick={handleGenerate}
-                                data-testid="direct-generate-btn"
-                                disabled={isGenerating || !localPrompt.trim()}
-                                className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                {isGenerating ? (
-                                    <>
-                                        <Loader2 size={16} className="animate-spin" />
-                                        <span className="sr-only">Generating...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send size={16} />
-                                        <span className="sr-only">Generate</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        <AnimatePresence>
+                            {isPromptBuilderOpen && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="pt-2">
+                                        <PromptBuilder 
+                                            onAddTag={(tag) => setLocalPrompt(prev => prev ? `${prev}, ${tag}` : tag)}
+                                            mode={mode}
+                                            sequence={sequence}
+                                            setSequence={setSequence}
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
