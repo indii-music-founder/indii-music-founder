@@ -10,8 +10,8 @@ import { useToast } from '@/core/context/ToastContext';
 interface PromptBuilderProps {
     onAddTag: (tag: string) => void;
     mode?: 'image' | 'video';
-    sequence?: number[];
-    setSequence?: (seq: number[]) => void;
+    sequence?: SequenceBlock[];
+    setSequence?: (seq: SequenceBlock[]) => void;
     bpm?: number;
     setBpm?: (bpm: number) => void;
     /** Current prompt text from the input field */
@@ -99,7 +99,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
     );
 });
 
-import { SequenceTimeline } from './SequenceTimeline';
+import { SequenceTimeline, SequenceBlock } from './SequenceTimeline';
 
 function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, bpm, setBpm, currentPrompt = '', onPromptImproved }: PromptBuilderProps) {
     const [openCategory, setOpenCategory] = useState<string | null>(null);

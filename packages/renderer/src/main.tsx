@@ -24,6 +24,9 @@ import { getConsentPreferences } from '@/components/shared/CookieConsentBanner';
 import '@/core/i18n'; // Initialize i18n before any component renders
 import './index.css';
 
+// Import global test harness
+import './utils/test-harness';
+
 // Item 303: Gate Sentry initialization on cookie consent.
 // If user has previously consented to error tracking, initialize immediately.
 // Otherwise, CookieConsentBanner will initialize it after consent is granted.
