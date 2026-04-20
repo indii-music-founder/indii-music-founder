@@ -37,6 +37,10 @@ vi.mock("@/services/ai/FirebaseAIService", () => ({
   },
 }));
 
+vi.mock("@/services/ai/generators/DirectImageEditor", () => ({
+  editImageDirectly: vi.fn(),
+}));
+
 // Mock SubscriptionService and UsageTracker
 vi.mock("@/services/subscription/SubscriptionService", () => ({
   subscriptionService: {
@@ -235,28 +239,14 @@ describe("ImageGenerationService", () => {
   });
 
   describe("remixImage", () => {
-    it("should remix images with style reference via Cloud Function", async () => {
-      // remixImage now uses Cloud Function instead of AI.generateContent
-      const mockCloudResponse = {
-        data: {
-          candidates: [
-            {
-              content: {
-                parts: [
-                  {
-                    inlineData: {
-                      data: "remixeddata",
-                      mimeType: "image/png"
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        },
+    it("should remix images with style reference via Direct SDK", async () => {
+      const { editImageDirectly } = await import("@/services/ai/generators/DirectImageEditor");
+      
+      const mockDirectResponse = {
+        url: "data:image/png;base64,remixeddata",
       };
 
-      mockGenerateImage.mockResolvedValue(mockCloudResponse);
+      vi.mocked(editImageDirectly).mockResolvedValue(mockDirectResponse as any);
 
       const result = await ImageGeneration.remixImage({
         contentImage: { mimeType: "image/jpeg", data: "contentdata" },
@@ -266,11 +256,12 @@ describe("ImageGenerationService", () => {
 
       expect(result).toHaveProperty("url");
       expect(result!.url).toMatch(/^data:image\/png;base64,/);
-      expect(httpsCallable).toHaveBeenCalledWith(expect.anything(), "editImage");
-      expect(mockGenerateImage).toHaveBeenCalledWith(
+      expect(editImageDirectly).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: "Apply this style",
-        }),
+          image: { mimeType: "image/jpeg", data: "contentdata" },
+          referenceImage: { mimeType: "image/png", data: "styledata" }
+        })
       );
     });
   });

@@ -1,207 +1,24 @@
-import React, { useState, useCallback } from 'react';
-import { useStore, HistoryItem } from '@/core/store';
-import { useShallow } from 'zustand/react/shallow';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { useToast } from '@/core/context/ToastContext';
+import React from 'react';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download } from 'lucide-react';
-import { WhiskService } from '@/services/WhiskService';
-import { logger } from '@/utils/logger';
-import { IngredientDropZone, Ingredient } from './IngredientDropZone';
+import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
-
-interface GeneratedItem {
-    id: string;
-    url: string;
-    type: 'image' | 'video';
-    prompt: string;
-    timestamp: number;
-}
+import { useDirectGeneration } from '../hooks/useDirectGeneration';
 
 export default function DirectGenerationTab() {
     const {
+        mode,
+        localPrompt,
+        setLocalPrompt,
+        isGenerating,
+        results,
+        handleModeSwitch,
+        handleGenerate,
+        mappedIngredients,
+        handleIngredientsChange,
         studioControls,
-        setPrompt,
-        addToHistory,
-        currentProjectId,
-        whiskState,
         setSelectedItem,
-        setViewMode,
-        videoInputs,
-        setVideoInputs
-    } = useStore(useShallow(state => ({
-        studioControls: state.studioControls,
-        setPrompt: state.setPrompt,
-        addToHistory: state.addToHistory,
-        currentProjectId: state.currentProjectId,
-        whiskState: state.whiskState,
-        setSelectedItem: state.setSelectedItem,
-        setViewMode: state.setViewMode,
-        videoInputs: state.videoInputs,
-        setVideoInputs: state.setVideoInputs
-    })));
-    const toast = useToast();
-
-    const [localPrompt, setLocalPrompt] = useState('');
-    const [mode, setMode] = useState<'image' | 'video'>('image');
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [results, setResults] = useState<GeneratedItem[]>([]);
-
-    const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
-        if (newMode !== mode) {
-            setLocalPrompt('');
-            setMode(newMode);
-        }
-    }, [mode]);
-
-    const mappedIngredients: Ingredient[] = videoInputs?.ingredients?.map(hi => ({
-        id: hi.id,
-        dataUrl: hi.url,
-        type: hi.type as 'image' | 'video',
-        file: new File([], 'placeholder') // Placeholder since we already have the dataUrl
-    })) || [];
-
-    const handleIngredientsChange = useCallback((newIngredients: Ingredient[]) => {
-        const state = useStore.getState();
-        const allItems = [
-            ...(state.generatedHistory || []),
-            ...(state.uploadedImages || []),
-            ...(state.uploadedAudio || [])
-        ];
-
-        const newHistoryItems: HistoryItem[] = newIngredients.map(ing => {
-            const foundItem = allItems.find(item => item.id === ing.id);
-            if (foundItem) {
-                return foundItem;
-            }
-            return {
-                id: ing.id,
-                type: ing.type,
-                url: ing.dataUrl,
-                prompt: 'Uploaded Reference',
-                timestamp: Date.now(),
-                projectId: currentProjectId,
-                origin: 'uploaded'
-            };
-        });
-        setVideoInputs({ ingredients: newHistoryItems });
-    }, [setVideoInputs, currentProjectId]);
-
-    const handleGenerate = useCallback(async () => {
-        if (!localPrompt.trim()) return;
-
-        setIsGenerating(true);
-        setPrompt(localPrompt); // Sync to global for history/logging
-
-        try {
-            if (mode === 'image') {
-                const finalPrompt = WhiskService.synthesizeWhiskPrompt(localPrompt, whiskState);
-
-                const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
-                const { AI_MODELS } = await import('@/core/config/ai-models');
-
-                const resolvedModel = studioControls.model === 'pro'
-                    ? AI_MODELS.IMAGE.DIRECT_PRO
-                    : AI_MODELS.IMAGE.DIRECT_FAST;
-
-                const generatedUrls = await generateImageDirectly({
-                    prompt: finalPrompt,
-                    aspectRatio: studioControls.aspectRatio,
-                    model: resolvedModel,
-                    numberOfImages: 1
-                });
-
-                if (generatedUrls.length > 0) {
-                    const newItems = generatedUrls.map(url => ({
-                        id: crypto.randomUUID(),
-                        url: url, // Directly returns the data URI
-                        type: 'image' as const,
-                        prompt: localPrompt,
-                        timestamp: Date.now(),
-                        projectId: currentProjectId,
-                        origin: 'generated' as const
-                    }));
-                    setResults(prev => [...newItems, ...prev]);
-                    newItems.forEach(item => addToHistory({ ...item }));
-
-                    setSelectedItem(newItems[0] as HistoryItem);
-                    setViewMode('editor');
-
-                    toast.success('Image generated directly successfully');
-                }
-            } else {
-                const finalPrompt = WhiskService.synthesizeVideoPrompt(localPrompt, whiskState);
-
-                // ISSUE-008 FIX: Auto-downscale 4K to 1080p for video (Veo doesn't support 4K)
-                let effectiveResolution = studioControls.resolution;
-                if (effectiveResolution === '4k') {
-                    effectiveResolution = '1080p';
-                    toast.info('4K is not yet supported for video. Generating at 1080p instead.');
-                }
-
-                const generated = await VideoGeneration.generateVideo({
-                    prompt: finalPrompt,
-                    resolution: effectiveResolution,
-                    aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
-                    duration: Math.max(6, studioControls.duration || 6), // Veo API requires >= 6
-                    durationSeconds: Math.max(6, studioControls.duration || 6),
-                    model: studioControls.model, // Will be resolved by FirebaseAIService
-                    fps: 24,
-                    orgId: 'personal', // Force personal for direct test
-                    referenceImages: videoInputs.ingredients.map(ing => {
-                        let bytes = ing.url;
-                        const commaIndex = bytes.indexOf(',');
-                        if (bytes.startsWith('data:') && commaIndex !== -1) {
-                            bytes = bytes.substring(commaIndex + 1);
-                        }
-                        return {
-                            image: { imageBytes: bytes, mimeType: ing.type === 'video' ? 'video/mp4' : 'image/jpeg' },
-                            referenceType: 'asset' as const
-                        };
-                    })
-                });
-
-                if (generated && generated.length > 0) {
-                    // For video, we might get a URL immediately or a job ID.
-                    // VideoGenerationService returns standardized results now.
-                    const newItems = generated.map(g => ({
-                        id: g.id || crypto.randomUUID(),
-                        url: g.url || '', // Might be empty if queued
-                        type: 'video' as const,
-                        prompt: localPrompt,
-                        timestamp: Date.now()
-                    }));
-
-                    // If queued, we won't see it immediately here unless we listen.
-                    // For DIRECT mode, we accept that 'Queued' state might need refresh, 
-                    // or better, we just show the "Job Started" toast.
-                    if (newItems.every(i => !i.url)) {
-                        toast.info('Video job queued. Check gallery for results.');
-                    } else {
-                        setResults(prev => [...newItems, ...prev]);
-                        newItems.forEach(item => addToHistory({ ...item, projectId: currentProjectId }));
-                        toast.success('Video generated successfully');
-                    }
-                }
-            }
-        } catch (error: unknown) {
-            logger.error("Direct Generation Failed:", error);
-
-            const errObj = error as Record<string, unknown> | null;
-            const errMessage = error instanceof Error ? error.message : String(error);
-
-            if (errObj?.code === 'deadline-exceeded' || errMessage?.includes('timeout')) {
-                toast.error('Generation timed out. The API may be busy - please try again.');
-            } else if (errObj?.code === 'resource-exhausted') {
-                toast.error(errMessage || 'Quota exceeded. Please upgrade your plan.');
-            } else if (errObj?.code === 'internal' && errMessage?.includes('No image data')) {
-                toast.error('No image was generated. Try rephrasing your prompt.');
-            } else {
-                toast.error(`Generation failed: ${errMessage || 'Unknown error'}`);
-            }
-        } finally {
-            setIsGenerating(false);
-        }
-    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs?.ingredients]);
+        setViewMode
+    } = useDirectGeneration();
 
     return (
         <div className="flex flex-col h-full w-full bg-background text-foreground">
@@ -306,7 +123,7 @@ export default function DirectGenerationTab() {
                                 key={item.id}
                                 className="group relative aspect-square bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all cursor-pointer"
                                 onClick={() => {
-                                    setSelectedItem(item as unknown as HistoryItem);
+                                    setSelectedItem(item);
                                     setViewMode('editor');
                                 }}
                                 role="button"
@@ -314,7 +131,7 @@ export default function DirectGenerationTab() {
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
-                                        setSelectedItem(item as unknown as HistoryItem);
+                                        setSelectedItem(item);
                                         setViewMode('editor');
                                     }
                                 }}

@@ -38,7 +38,9 @@ vi.mock('@/core/store', () => ({
         currentProjectId: 'test-project',
         whiskState: {},
         setSelectedItem: vi.fn(),
-        setViewMode: vi.fn()
+        setViewMode: vi.fn(),
+        videoInputs: { ingredients: [] },
+        setVideoInputs: vi.fn()
     }),
     logger: {
         error: vi.fn(),

@@ -38,7 +38,8 @@ export default function AILab() {
         uploadedImages,
         setViewMode,
         setVideoInputs,
-        setStudioControls
+        setStudioControls,
+        setGenerationMode
     } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
         addToHistory: state.addToHistory,
@@ -47,7 +48,8 @@ export default function AILab() {
         uploadedImages: state.uploadedImages,
         setViewMode: state.setViewMode,
         setVideoInputs: state.setVideoInputs,
-        setStudioControls: state.setStudioControls
+        setStudioControls: state.setStudioControls,
+        setGenerationMode: state.setGenerationMode
     })));
 
     const toast = useToast();
@@ -158,8 +160,11 @@ export default function AILab() {
         const totalDuration = durationsInSeconds.reduce((a, b) => a + b, 0);
         setStudioControls({ duration: totalDuration });
 
+        // CRITICAL: Set generationMode FIRST so CreativeStudio routing cooperates
+        // and the Director tab becomes visible in CreativeNavbar
+        setGenerationMode('video');
         setViewMode('video_production');
-        toast.success(`Sequence locked. Transitioning to Director.`);
+        toast.success(`Sequence locked (${totalDuration.toFixed(1)}s). Director Mode active.`);
     };
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -556,20 +561,95 @@ export default function AILab() {
                         <motion.div
                             initial={{ y: 30, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            className="mt-12 p-6 bg-gradient-to-r from-blue-900/20 to-transparent border border-blue-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6"
+                            className="mt-12 space-y-6"
                         >
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                    <CheckCircle2 className="w-5 h-5 text-blue-400" />
+                            {/* Filmstrip: Visual Frame Succession */}
+                            {sequenceItems.length > 1 && seedImage && targetImage && (
+                                <div className="p-5 bg-black/40 border border-white/[0.06] rounded-2xl">
+                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+                                        <Film className="w-3.5 h-3.5 text-blue-400" /> Frame Succession Preview
+                                    </h3>
+                                    <div className="flex items-center gap-1 overflow-x-auto pb-2 custom-scrollbar">
+                                        {sequenceItems.map((item, idx) => {
+                                            const sec = item.type === 'seconds' ? item.value : (item.value * 60) / bpm;
+                                            const isFirst = idx === 0;
+                                            const isLast = idx === sequenceItems.length - 1;
+                                            return (
+                                                <React.Fragment key={item.id}>
+                                                    {/* Segment start frame */}
+                                                    <div className="flex flex-col items-center gap-1.5 shrink-0">
+                                                        <div className="w-16 h-20 rounded-lg border-2 border-blue-500/30 overflow-hidden bg-black/60 relative">
+                                                            <img
+                                                                src={isFirst ? seedImage.url : targetImage.url}
+                                                                alt={isFirst ? 'Seed' : `Seg ${idx + 1} Start`}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                            <div className="absolute bottom-0 inset-x-0 bg-black/70 py-0.5 text-center">
+                                                                <span className="text-[7px] font-bold text-blue-300 uppercase">
+                                                                    {isFirst ? 'Seed' : 'Chain'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-[8px] text-gray-500 font-mono">F{idx * 2 + 1}</span>
+                                                    </div>
+                                                    {/* Duration bridge */}
+                                                    <div className="flex flex-col items-center gap-0.5 px-1 shrink-0">
+                                                        <div className="h-px w-8 bg-gradient-to-r from-blue-500/40 to-blue-500/40" />
+                                                        <span className="text-[8px] text-blue-400/70 font-bold">{sec.toFixed(1)}s</span>
+                                                        <div className="h-px w-8 bg-gradient-to-r from-blue-500/40 to-blue-500/40" />
+                                                    </div>
+                                                    {/* Segment end frame */}
+                                                    <div className="flex flex-col items-center gap-1.5 shrink-0">
+                                                        <div className={`w-16 h-20 rounded-lg border-2 overflow-hidden bg-black/60 relative ${isLast ? 'border-green-500/30' : 'border-white/10'}`}>
+                                                            <img
+                                                                src={targetImage.url}
+                                                                alt={isLast ? 'Conclusion' : `Seg ${idx + 1} End`}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                            <div className="absolute bottom-0 inset-x-0 bg-black/70 py-0.5 text-center">
+                                                                <span className={`text-[7px] font-bold uppercase ${isLast ? 'text-green-300' : 'text-gray-400'}`}>
+                                                                    {isLast ? 'End' : 'Link'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-[8px] text-gray-500 font-mono">F{idx * 2 + 2}</span>
+                                                    </div>
+                                                    {/* Chain arrow between segments */}
+                                                    {!isLast && (
+                                                        <div className="flex items-center px-0.5 shrink-0">
+                                                            <ArrowRight className="w-3.5 h-3.5 text-blue-500/50" />
+                                                        </div>
+                                                    )}
+                                                </React.Fragment>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="text-[9px] text-gray-500 mt-3 italic">
+                                        Each segment's last frame becomes the next segment's first frame for seamless continuity.
+                                    </p>
                                 </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-white">Sequence Primed</h3>
-                                    <p className="text-xs text-blue-200/60 mt-1">Frames are ready to be sent to the generation pipeline.</p>
+                            )}
+
+                            {/* CTA Banner */}
+                            <div className="p-6 bg-gradient-to-r from-blue-900/20 to-transparent border border-blue-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                        <CheckCircle2 className="w-5 h-5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-white">Sequence Primed</h3>
+                                        <p className="text-xs text-blue-200/60 mt-1">
+                                            {sequenceItems.length > 1
+                                                ? `${sequenceItems.length} segments (${currentTotalSec.toFixed(1)}s) ready for daisy-chain generation.`
+                                                : 'Frames are ready to be sent to the generation pipeline.'}
+                                        </p>
+                                    </div>
                                 </div>
+                                <Button onClick={transferToProduction} className="bg-white text-black hover:bg-gray-200 font-semibold tracking-wide px-8 py-5 rounded-xl whitespace-nowrap shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+                                    <Film className="w-4 h-4 mr-2" />
+                                    Enter Director Mode
+                                </Button>
                             </div>
-                            <Button onClick={transferToProduction} className="bg-white text-black hover:bg-gray-200 font-semibold tracking-wide px-8 py-5 rounded-xl whitespace-nowrap">
-                                Enter Director Mode
-                            </Button>
                         </motion.div>
                     )}
                 </Card>

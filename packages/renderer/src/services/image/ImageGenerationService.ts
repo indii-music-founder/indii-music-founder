@@ -479,39 +479,35 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         return withServiceError('ImageGeneration', 'remixImage', async () => {
-            // ── Auth Pre-Flight ────────────────────────────────────────────────
-            if (!auth.currentUser) {
-                logger.error('[ImageGen] No authenticated user — cannot call Cloud Function.');
-                throw new Error('Your session has expired. Please sign in again.');
-            }
+            // ── Direct SDK Pipeline ────────────────────────────────────────────
+            // Uses editImageDirectly (Gemini SDK) instead of Cloud Functions.
+            // This eliminates the Firebase Auth dependency that caused
+            // "Unauthenticated" errors when sessions expire or users aren't
+            // signed in. Matches the EditingService pattern.
+            const { editImageDirectly } = await import('@/services/ai/generators/DirectImageEditor');
 
-            try {
-                await auth.currentUser.getIdToken(true);
-            } catch (tokenError: unknown) {
-                logger.error('[ImageGen] Failed to refresh auth token:', tokenError);
-                throw new Error('Your authentication session could not be refreshed. Please sign out and sign back in.');
-            }
-
-            const editImageFn = httpsCallable(functions, 'editImage');
-
-            const result = await editImageFn({
-                prompt: options.prompt || 'Create a cinematic remix.',
-                image: options.contentImage?.data || '',
-                imageMimeType: options.contentImage?.mimeType || 'image/png',
-                // Pass style image as a reference image for composition
-                referenceImages: options.styleImage ? [{
-                    mimeType: options.styleImage.mimeType,
-                    data: options.styleImage.data,
-                }] : undefined,
+            logger.info('[ImageGen] remixImage: using Direct SDK path', {
+                hasContent: !!options.contentImage,
+                hasStyle: !!options.styleImage,
+                promptSnippet: (options.prompt || '').substring(0, 60),
             });
 
-            const data = result.data as { candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[] };
+            const result = await editImageDirectly({
+                image: {
+                    mimeType: options.contentImage.mimeType,
+                    data: options.contentImage.data,
+                },
+                referenceImage: options.styleImage ? {
+                    mimeType: options.styleImage.mimeType,
+                    data: options.styleImage.data,
+                } : undefined,
+                prompt: options.prompt || 'Create a cinematic remix that preserves the subject and composition while enhancing the mood and atmosphere.',
+            });
 
-            if (data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
-                const mimeType = data.candidates[0].content.parts[0].inlineData.mimeType || 'image/png';
-                const base64 = data.candidates[0].content.parts[0].inlineData.data;
-                return { url: `data:${mimeType};base64,${base64}` };
+            if (result) {
+                return { url: result.url };
             }
+
             return null;
         });
     }

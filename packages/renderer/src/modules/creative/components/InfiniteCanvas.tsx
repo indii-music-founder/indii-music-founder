@@ -116,7 +116,7 @@ export default function InfiniteCanvas() {
                 if (src.startsWith('http')) {
                     // Fetch as base64 to avoid CORS tainting issues
                     fetchAsBase64(src).then(({ base64, mimeType }) => {
-                        image!.removeAttribute('crossOrigin');
+                        if (typeof image!.removeAttribute === 'function') image!.removeAttribute('crossOrigin');
                         image!.src = `data:${mimeType};base64,${base64}`;
                     }).catch(err => {
                         console.error("Failed to load canvas image via safe fetch:", src, err);
@@ -125,7 +125,7 @@ export default function InfiniteCanvas() {
                         image!.src = src + (src.includes('?') ? '&' : '?') + 'cb=' + Date.now();
                     });
                 } else {
-                    image.removeAttribute('crossOrigin');
+                    if (typeof image.removeAttribute === 'function') image.removeAttribute('crossOrigin');
                     image.src = src;
                 }
 
