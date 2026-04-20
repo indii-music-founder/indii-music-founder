@@ -84,6 +84,7 @@ export interface CreativeControlsSlice {
         isDaisyChain: boolean;
         timeOffset: number;
         ingredients: HistoryItem[];
+        sequenceDurations?: number[];
     };
     setVideoInput: <K extends keyof CreativeControlsSlice['videoInputs']>(key: K, value: CreativeControlsSlice['videoInputs'][K]) => void;
     setVideoInputs: (inputs: Partial<CreativeControlsSlice['videoInputs']>) => void;
