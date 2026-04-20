@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
+/* eslint-disable react-refresh/only-export-components -- Test utility file */
 import { vi } from 'vitest';
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';

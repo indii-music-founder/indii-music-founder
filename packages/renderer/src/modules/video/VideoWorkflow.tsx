@@ -377,7 +377,7 @@ export default function VideoWorkflow() {
                     firstFrame: videoInputs.firstFrame?.url,
                     lastFrame: videoInputs.lastFrame?.url,
                     timeOffset: videoInputs.timeOffset,
-                    referenceImages: characterReferences?.map(ref => ({
+                    referenceImages: characterReferences?.slice(0, 3).map(ref => ({
                         image: { uri: ref.image.url },
                         referenceType: 'asset' as const  // Official API only supports lowercase 'asset'
                     })),
