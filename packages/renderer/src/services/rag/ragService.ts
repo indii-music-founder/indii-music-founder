@@ -140,7 +140,7 @@ export async function processForKnowledgeBase(
             title: displayTitle,
             content: typeof content === 'string' ? content : `Native ${file.mimeType} file stored in Gemini.`,
             entities: [],
-            tags: ['gemini-file', file.mimeType.split('/').pop() || 'raw'],
+            tags: ['gemini-file', file.mimeType?.split('/').pop() || 'raw'],
             embeddingId: file.name
         };
     } catch (e: unknown) {
