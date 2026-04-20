@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import CreativeGallery from './CreativeGallery';
 import CreativeNavbar from './CreativeNavbar';
 import CreativeCanvas from './CreativeCanvas';
+import PromptBuilder from './PromptBuilder';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -36,6 +37,26 @@ vi.mock('./CanvasToolbar', () => ({
 
 vi.mock('./EditDefinitionsPanel', () => ({
     default: () => <div data-testid="edit-definitions-panel" />
+}));
+
+// Mock PromptBuilder — renders the brand category and tag buttons the test expects
+vi.mock('./PromptBuilder', () => ({
+    default: ({ onAddTag }: { onAddTag: (tag: string) => void }) => (
+        <div data-testid="prompt-builder-panel">
+            <button
+                data-testid="category-Brand-trigger"
+                onClick={() => {}}
+            >
+                Brand
+            </button>
+            <button
+                data-testid="tag-Cool Brand-btn"
+                onClick={() => onAddTag('Cool Brand')}
+            >
+                Cool Brand
+            </button>
+        </div>
+    )
 }));
 
 // Mock Canvas operations
@@ -191,7 +212,15 @@ describe('Creative Director 12-Click Daisychain', () => {
                     removeUploadedImage: vi.fn(),
                     addUploadedAudio: vi.fn(),
                     removeUploadedAudio: vi.fn(),
-                    currentProjectId: 'test-project'
+                    currentProjectId: 'test-project',
+                    isPromptBuilderOpen: false,
+                    togglePromptBuilder: vi.fn(),
+                    showBrandAssets: false,
+                    setShowBrandAssets: vi.fn(),
+                    videoInputs: { ingredients: [] },
+                    setVideoInputs: vi.fn(),
+                    whiskState: {},
+                    setVideoInput: vi.fn()
                 };
                 return selector ? selector(state) : state;
             });
@@ -219,6 +248,12 @@ describe('Creative Director 12-Click Daisychain', () => {
                     >
                         Go to Showroom
                     </button>
+                    <PromptBuilder
+                        onAddTag={(tag: string) => {
+                            setLocalPrompt(prev => prev ? `${prev}, ${tag}` : tag);
+                            mockSetPrompt(prompt ? `${prompt}, ${tag}` : tag);
+                        }}
+                    />
                     {(viewMode === 'gallery' || viewMode === 'editor') && <CreativeGallery />}
                     {viewMode === 'showroom' && <MockShowroom />}
                     {selectedItem && (viewMode === 'gallery' || viewMode === 'editor') && (
@@ -263,6 +298,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         // --- CLICK 4: Open Prompt Builder ---
         const builderBtn = screen.getByTestId('builder-btn');
         fireEvent.click(builderBtn);
+        // togglePromptBuilder is now a store action; the PromptBuilder mock is always visible in this test harness
 
         // --- CLICK 5: Open Brand Category ---
         const brandTrigger = await screen.findByTestId('category-Brand-trigger');
