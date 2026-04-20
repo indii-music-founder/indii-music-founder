@@ -36,6 +36,7 @@ export function useDirectGeneration() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<HistoryItem[]>([]);
     const [sequence, setSequence] = useState<number[]>([]);
+    const [bpm, setBpm] = useState<number>(120);
 
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
@@ -122,9 +123,17 @@ export function useDirectGeneration() {
             toast.info('4K is not yet supported for video. Generating at 1080p instead.');
         }
 
-        const sequenceTotal = sequence.length > 0 ? sequence.reduce((a, b) => a + b, 0) : 0;
-        const finalDuration = sequenceTotal > 0 ? sequenceTotal : Math.max(6, studioControls.duration || 6);
-        const sequencePrompt = sequence.length > 0 ? `[SEQUENCE: ${sequence.join('s, ')}s] ${finalPrompt}` : finalPrompt;
+        const sequenceTotalBeats = sequence.length > 0 ? sequence.reduce((a, b) => a + b, 0) : 0;
+        const secondsPerBeat = 60 / bpm;
+        const sequenceTotalSeconds = sequenceTotalBeats * secondsPerBeat;
+        
+        const finalDuration = sequenceTotalSeconds > 0 ? sequenceTotalSeconds : Math.max(6, studioControls.duration || 6);
+        
+        let sequencePrompt = finalPrompt;
+        if (sequence.length > 0) {
+            const sequenceDetails = sequence.map(beats => `${beats} beats (${(beats * secondsPerBeat).toFixed(2)}s)`).join(', ');
+            sequencePrompt = `[SEQUENCE: ${sequenceDetails} at ${bpm} BPM] ${finalPrompt}`;
+        }
 
         const generated = await VideoGeneration.generateVideo({
             prompt: sequencePrompt,
@@ -206,7 +215,7 @@ export function useDirectGeneration() {
         } finally {
             setIsGenerating(false);
         }
-    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs?.ingredients]);
+    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs?.ingredients, sequence, bpm]);
 
     return {
         mode,
@@ -222,6 +231,8 @@ export function useDirectGeneration() {
         setSelectedItem,
         setViewMode,
         sequence,
-        setSequence
+        setSequence,
+        bpm,
+        setBpm
     };
 }
