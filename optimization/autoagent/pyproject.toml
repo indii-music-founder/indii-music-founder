@@ -1,15 +1,12 @@
 [project]
-name = "indiios-autoagent"
+name = "indii-autoagent"
 version = "0.1.0"
-description = "AutoAgent harness for optimizing the indii Conductor system prompt overnight."
-requires-python = ">=3.12"
+description = "AutoAgent implementation for indiiOS Conductor"
+readme = "README.md"
+requires-python = ">=3.11"
 dependencies = [
-    "openai-agents",
-    "harbor",
+    "autoagent"
 ]
 
-# Notes:
-# - Mirrors upstream kevinrgu/autoagent's runtime deps. We omit pandas/openpyxl/numpy
-#   because none of our tasks need them yet. Add back if a task starts using them.
-# - This package is intentionally NOT a member of the Node monorepo. It is a
-#   standalone Python sidecar managed by `uv` and lives only inside this directory.
+[tool.uv]
+package = false
