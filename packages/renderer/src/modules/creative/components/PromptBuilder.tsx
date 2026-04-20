@@ -7,6 +7,9 @@ import { useShallow } from 'zustand/react/shallow';
 
 interface PromptBuilderProps {
     onAddTag: (tag: string) => void;
+    mode?: 'image' | 'video';
+    sequence?: number[];
+    setSequence?: (seq: number[]) => void;
 }
 
 // Memoized tag button to prevent re-renders
@@ -88,7 +91,9 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
     );
 });
 
-function PromptBuilder({ onAddTag }: PromptBuilderProps) {
+import { SequenceTimeline } from './SequenceTimeline';
+
+function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence }: PromptBuilderProps) {
     const [openCategory, setOpenCategory] = useState<string | null>(null);
     const brandKit = useStore(useShallow(state => state.userProfile?.brandKit));
 
@@ -133,6 +138,13 @@ function PromptBuilder({ onAddTag }: PromptBuilderProps) {
                     />
                 ))}
             </div>
+
+            {/* Sequence Builder for Video Mode */}
+            {mode === 'video' && setSequence && (
+                <div className="mt-4">
+                    <SequenceTimeline sequence={sequence} onChange={setSequence} />
+                </div>
+            )}
         </div>
     );
 }

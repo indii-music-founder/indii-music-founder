@@ -35,10 +35,12 @@ export function useDirectGeneration() {
     const [mode, setMode] = useState<'image' | 'video'>('image');
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<HistoryItem[]>([]);
+    const [sequence, setSequence] = useState<number[]>([]);
 
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
             setLocalPrompt('');
+            setSequence([]);
             setMode(newMode);
         }
     }, [mode]);
@@ -120,12 +122,16 @@ export function useDirectGeneration() {
             toast.info('4K is not yet supported for video. Generating at 1080p instead.');
         }
 
+        const sequenceTotal = sequence.length > 0 ? sequence.reduce((a, b) => a + b, 0) : 0;
+        const finalDuration = sequenceTotal > 0 ? sequenceTotal : Math.max(6, studioControls.duration || 6);
+        const sequencePrompt = sequence.length > 0 ? `[SEQUENCE: ${sequence.join('s, ')}s] ${finalPrompt}` : finalPrompt;
+
         const generated = await VideoGeneration.generateVideo({
-            prompt: finalPrompt,
+            prompt: sequencePrompt,
             resolution: effectiveResolution,
             aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
-            duration: Math.max(6, studioControls.duration || 6), // Veo API requires >= 6
-            durationSeconds: Math.max(6, studioControls.duration || 6),
+            duration: finalDuration,
+            durationSeconds: finalDuration,
             model: studioControls.model, // Will be resolved by FirebaseAIService
             fps: 24,
             orgId: 'personal', // Force personal for direct test
@@ -214,6 +220,8 @@ export function useDirectGeneration() {
         handleIngredientsChange,
         studioControls,
         setSelectedItem,
-        setViewMode
+        setViewMode,
+        sequence,
+        setSequence
     };
 }
