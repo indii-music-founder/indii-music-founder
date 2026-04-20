@@ -1,6 +1,6 @@
 {
   "name": "indiios-monorepo",
-  "version": "1.52.2",
+  "version": "1.53.0",
   "description": "The Operating System for Independent Artists — npm Workspace Monorepo",
   "author": "IndiiOS LLC <info@indiios.com>",
   "type": "module",
