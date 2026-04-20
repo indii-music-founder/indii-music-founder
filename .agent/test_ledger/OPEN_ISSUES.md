@@ -84,11 +84,12 @@
 ---
 
 ### ISSUE-004: No "Send to Video Producer" action from Creative Director
-- **Status:** OPEN
+- **Status:** FIXED
 - **Severity:** 🟡 MEDIUM
 - **UX Dimension:** Cross-Module Asset Flow
 - **Module:** Creative Director → Video Producer
 - **Found:** 2026-04-19 by Detroit Producer
+- **Fixed:** Added "Send to Video", "Create Last Frame", and "Animate" buttons to the Canvas toolbar.
 - **Steps to Reproduce:**
   1. Generate an image in Creative Director
   2. Open it on the canvas

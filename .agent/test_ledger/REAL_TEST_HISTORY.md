@@ -28,6 +28,24 @@
 
 ---
 
+## 2026-04-20 - Detroit Producer - Multi-Module Navigation & Regression Run
+- **Modules Tested:** Creative Director (GENERATE, CANVAS)
+- **Duration:** ~15 minutes (Interrupted)
+- **Findings:**
+  - Verified fix for ISSUE-007: IMAGE/VIDEO toggle now has clear visual distinction (gradient/glow for active mode).
+  - Verified fix for ISSUE-008: 4K video selection properly notifies user and downgrades to 1080p.
+  - Verified fix for ISSUE-010: REFINE button now displays a lock icon when unauthenticated.
+  - Verified fix for ISSUE-004: "Send to Video", "Create Last Frame", and "Animate" buttons are now present in the Canvas toolbar.
+  - Successfully generated TR-909 image and verified it populates the Project Assets sidebar.
+- **Coverage Delta:**
+  - ✅ Regression test: IMAGE/VIDEO toggle
+  - ✅ Regression test: 4K video feedback
+  - ✅ Regression test: Auth requirement for Magic Edit
+  - ✅ First test: Canvas toolbar action buttons
+- **UX Score:** N/A (Partial Run)
+
+---
+
 ## Untested Areas (For Next Run)
 - [ ] Distribution pipeline (upload → DDEX)
 - [ ] Audio Analyzer (full DNA extraction)
