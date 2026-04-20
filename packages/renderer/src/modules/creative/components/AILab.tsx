@@ -6,14 +6,17 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-    FlaskConical,
-    Zap,
     CheckCircle2,
     Loader2,
     Play,
     Image as ImageIcon,
     Target,
-    ArrowRight
+    ArrowRight,
+    Wand2,
+    Clock,
+    UploadCloud,
+    Film,
+    Sparkles
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
@@ -24,15 +27,19 @@ export default function AILab() {
         addToHistory,
         currentProjectId,
         generatedHistory,
+        uploadedImages,
         setViewMode,
-        setVideoInputs
+        setVideoInputs,
+        setStudioControls
     } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
         addToHistory: state.addToHistory,
         currentProjectId: state.currentProjectId,
         generatedHistory: state.generatedHistory,
+        uploadedImages: state.uploadedImages,
         setViewMode: state.setViewMode,
-        setVideoInputs: state.setVideoInputs
+        setVideoInputs: state.setVideoInputs,
+        setStudioControls: state.setStudioControls
     })));
 
     const toast = useToast();
@@ -43,17 +50,19 @@ export default function AILab() {
     const [targetImage, setTargetImage] = useState<HistoryItem | null>(null);
     const [predictedPrompt, setPredictedPrompt] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
+    const [duration, setDuration] = useState<number>(6);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     const steps = [
-        { id: 1, name: 'Context Selection', description: 'Choose a seed asset from gallery' },
-        { id: 2, name: 'Climax Prediction', description: 'AI analysis of scene evolution' },
-        { id: 3, name: 'Target Synthesis', description: 'Generating the climax end-frame' },
-        { id: 4, name: 'Digital Handover', description: 'Pushing frames to Production' }
+        { id: 1, name: 'Establish Scene', description: 'Drop your establishing shot' },
+        { id: 2, name: 'Cinematic Analysis', description: 'Engine predicts logical progression' },
+        { id: 3, name: 'Synthesize', description: 'Rendering the conclusion frame' },
+        { id: 4, name: 'Sequence Ready', description: 'Frames primed for generation' }
     ];
 
     const runArchitectProcess = async () => {
         if (!seedImage || !userProfile) {
-            toast.error("Please select a source image from your gallery.");
+            toast.error("Please provide an establishing shot.");
             return;
         }
 
@@ -75,34 +84,30 @@ export default function AILab() {
 
             const seedBase64 = await getBase64(seedImage.url);
 
-            // STEP 2: PREDICT CLIMAX
-            toast.info("Step 2: Analyzing scene and predicting climax...");
+            toast.info("Analyzing cinematic trajectory...");
 
-            // Use Caption strategy but for "Next Frame"
             const climaxDescription = await ImageGeneration.captionImage(
                 { mimeType: 'image/png', data: seedBase64 },
                 'subject'
             );
 
-            // Refine the prompt to be an "End State" via specialized reasoning
-            const refinedTargetPrompt = `${climaxDescription}, capturing the high-energy climax of the scene with dramatic lighting and motion energy.`;
+            const refinedTargetPrompt = `${climaxDescription}, capturing the logical conclusion of the scene with cinematic lighting.`;
             setPredictedPrompt(refinedTargetPrompt);
 
-            // STEP 3: SYNTHESIS
             setCurrentStep(3);
-            toast.info("Step 3: Synthesizing consistent end-frame...");
+            toast.info("Synthesizing sequence conclusion...");
             const synthResults = await ImageGeneration.remixImage({
                 contentImage: { mimeType: 'image/png', data: seedBase64 },
                 styleImage: { mimeType: 'image/png', data: seedBase64 },
                 prompt: refinedTargetPrompt
             });
 
-            if (!synthResults) throw new Error("End-frame synthesis failed.");
+            if (!synthResults) throw new Error("Synthesis failed.");
 
             const targetAsset: HistoryItem = {
                 id: crypto.randomUUID(),
                 url: synthResults.url,
-                prompt: `Architect End State: ${refinedTargetPrompt.substring(0, 50)}...`,
+                prompt: `Conclusion: ${refinedTargetPrompt.substring(0, 50)}...`,
                 type: 'image',
                 timestamp: Date.now(),
                 projectId: currentProjectId
@@ -111,17 +116,16 @@ export default function AILab() {
             addToHistory(targetAsset);
             setTargetImage(targetAsset);
 
-            // STEP 4: PREPARE INJECTION
             setCurrentStep(4);
             setStatus('complete');
-            toast.success("Architectural Chain Complete. Ready for Production.");
+            toast.success("Sequence primed for Director mode.");
 
         } catch (err: unknown) {
-            logger.error("Architect Failure:", err);
-            const msg = err instanceof Error ? err.message : 'Prediction chain failed.';
+            logger.error("Synthesis Failure:", err);
+            const msg = err instanceof Error ? err.message : 'Synthesis failed.';
             setError(msg);
             setStatus('error');
-            toast.error(`Architect Error: ${msg}`);
+            toast.error(`Error: ${msg}`);
         }
     };
 
@@ -136,27 +140,66 @@ export default function AILab() {
             ingredients: []
         });
 
-        // Use the proper app navigation
+        setStudioControls({ duration });
+
         setViewMode('video_production');
-        toast.success("Interpolation Bridge Active: First & Last frames set.");
+        toast.success(`Sequence locked. Transitioning to Director.`);
     };
 
-    const recentImages = generatedHistory.filter(h => h.type === 'image').slice(0, 12);
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+        
+        try {
+            const assetId = e.dataTransfer.getData('text/plain');
+            if (assetId) {
+                const asset = generatedHistory.find(h => h.id === assetId) || uploadedImages.find(i => i.id === assetId);
+                if (asset && asset.type === 'image') {
+                    setSeedImage(asset);
+                    setStatus('idle');
+                    setTargetImage(null);
+                    setCurrentStep(1);
+                    return;
+                } else if (asset) {
+                    toast.error("Please drop an image asset.");
+                    return;
+                }
+            }
+        } catch (err) {
+            logger.error('Failed to parse dropped item', err);
+        }
+        
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            toast.error("Drag assets from the side panel instead of the file system.");
+        }
+    };
 
     return (
-        <div className="p-6 md:p-10 space-y-10 max-w-7xl mx-auto h-full overflow-y-auto custom-scrollbar">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-dept-creative">
-                        <FlaskConical className="w-5 h-5" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-white/50">Experimental Component</span>
+        <div className="p-8 md:p-12 space-y-12 max-w-[1400px] mx-auto h-full overflow-y-auto custom-scrollbar bg-background">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-white/[0.04]">
+                <div className="space-y-3">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.08]">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-300">Generative Engine</span>
                     </div>
-                    <h1 className="text-5xl font-black tracking-tighter text-white uppercase italic">
-                        Video Keyframe Architect
+                    <h1 className="text-4xl font-light tracking-tight text-white">
+                        Sequence Architect
                     </h1>
-                    <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-tight max-w-lg leading-relaxed">
-                        Contextual Morphing Engine: Analyzing a source asset to derive its
-                        logical cinematic climax, and bridging the temporal gap.
+                    <p className="text-sm text-gray-400 max-w-xl font-light leading-relaxed">
+                        Design temporal sequences by defining the establishing shot. Our engine predicts and renders the cinematic conclusion, bridging the gap with high-fidelity interpolation.
                     </p>
                 </div>
 
@@ -164,88 +207,57 @@ export default function AILab() {
                     {status === 'complete' ? (
                         <Button
                             onClick={transferToProduction}
-                            className="bg-green-600 hover:bg-green-500 text-white px-8 py-8 h-auto font-black uppercase tracking-widest"
+                            className="bg-white text-black hover:bg-gray-200 px-8 py-6 h-auto rounded-xl transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]"
                         >
-                            <Play className="w-6 h-6 mr-2 fill-current" />
-                            Start Production
+                            <Film className="w-5 h-5 mr-3" />
+                            <span className="font-semibold tracking-wide">Enter Director Mode</span>
                         </Button>
                     ) : (
                         <Button
                             onClick={runArchitectProcess}
                             disabled={status === 'running' || !seedImage}
-                            className="relative group bg-dept-creative hover:bg-dept-creative/80 text-white px-8 py-8 h-auto overflow-hidden transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:scale-100"
+                            className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-6 h-auto rounded-xl transition-all shadow-[0_0_30px_rgba(37,99,235,0.2)] disabled:opacity-50"
                         >
-                            <div className="absolute inset-0 bg-linear-to-r from-purple-600 to-pink-600 opacity-50 group-hover:opacity-80 transition-opacity" />
-                            <div className="relative flex flex-col items-center gap-1">
-                                <Zap className={`w-8 h-8 ${status === 'running' ? 'animate-bounce' : 'group-hover:rotate-12 transition-transform'}`} />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Architect End-Frame</span>
+                            <div className="flex items-center gap-3">
+                                {status === 'running' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
+                                <span className="font-semibold tracking-wide">Synthesize Sequence</span>
                             </div>
                         </Button>
                     )}
                 </div>
             </header>
 
-            {/* Selection Row */}
-            <section className="space-y-4">
-                <h2 className="text-[10px] font-black tracking-[0.2em] text-white/30 uppercase flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4" /> 1. Select Source Asset
-                </h2>
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                    {recentImages.map((img) => (
-                        <motion.button
-                            key={img.id}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                                setSeedImage(img);
-                                setStatus('idle');
-                                setTargetImage(null);
-                            }}
-                            className={`relative min-w-[120px] aspect-square rounded-xl overflow-hidden border-2 transition-all ${seedImage?.id === img.id ? 'border-dept-creative ring-4 ring-dept-creative/20' : 'border-white/5 opacity-60 hover:opacity-100'
-                                }`}
-                        >
-                            <img src={img.url} alt="Gallery item" className="w-full h-full object-cover" />
-                            {seedImage?.id === img.id && (
-                                <div className="absolute inset-0 bg-dept-creative/20 flex items-center justify-center">
-                                    <CheckCircle2 className="w-8 h-8 text-white" />
-                                </div>
-                            )}
-                        </motion.button>
-                    ))}
-                </div>
-            </section>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
                 {/* Left: Metadata & Status */}
-                <div className="space-y-6">
-                    <Card className="p-6 bg-surface/40 border-white/5 backdrop-blur-xl space-y-6">
-                        <h2 className="text-[10px] font-black uppercase tracking-widest text-white/50 border-b border-white/5 pb-2 flex items-center gap-2">
-                            <Target className="w-4 h-4" /> Architectural Steps
+                <div className="xl:col-span-4 space-y-6">
+                    <Card className="p-8 bg-black/40 border-white/[0.06] backdrop-blur-xl rounded-2xl shadow-2xl">
+                        <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-6 flex items-center gap-3">
+                            <Target className="w-4 h-4 text-gray-400" /> Pipeline Status
                         </h2>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {steps.map((step) => (
                                 <StepCard
                                     key={step.id}
                                     step={step}
-                                    isActive={currentStep === step.id}
-                                    isComplete={currentStep > step.id}
+                                    isActive={currentStep === step.id || (step.id === 1 && !seedImage)}
+                                    isComplete={currentStep > step.id || (step.id === 1 && !!seedImage)}
                                     isError={status === 'error' && currentStep === step.id}
                                 />
                             ))}
                         </div>
                         {error && (
-                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] text-red-500 font-mono">
-                                ERROR: {error}
+                            <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+                                {error}
                             </div>
                         )}
                     </Card>
 
                     {predictedPrompt && (
-                        <Card className="p-6 bg-surface/40 border-white/5 backdrop-blur-xl space-y-2">
-                            <h2 className="text-[10px] font-black uppercase tracking-widest text-white/50 border-b border-white/5 pb-2">
-                                Derived End-State Logic
+                        <Card className="p-8 bg-black/40 border-white/[0.06] backdrop-blur-xl rounded-2xl shadow-2xl">
+                            <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
+                                Engine Trajectory
                             </h2>
-                            <p className="text-[11px] font-mono text-dept-creative leading-relaxed italic">
+                            <p className="text-sm text-gray-300 leading-relaxed font-light italic">
                                 "{predictedPrompt}"
                             </p>
                         </Card>
@@ -253,61 +265,121 @@ export default function AILab() {
                 </div>
 
                 {/* Right: Synthesis Workspace */}
-                <Card className="lg:col-span-2 p-8 bg-surface/20 border-white/5 backdrop-blur-md min-h-[500px] flex flex-col relative overflow-hidden">
-                    <div className="flex-1 flex items-center justify-between gap-12 px-8">
-                        {/* Frame A */}
-                        <div className="flex-1 space-y-4">
+                <Card className="xl:col-span-8 p-10 bg-black/20 border-white/[0.04] backdrop-blur-md rounded-2xl min-h-[600px] flex flex-col relative overflow-hidden">
+                    <div className="flex-1 flex flex-col md:flex-row items-center justify-between gap-12">
+                        {/* Frame A: Drop Zone */}
+                        <div className="w-full md:w-2/5 flex flex-col space-y-6">
                             <div className="text-center">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Frame A: Origin</span>
+                                <span className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Establishing Shot</span>
                             </div>
-                            <div className="aspect-square bg-black/40 rounded-2xl border border-white/5 overflow-hidden flex items-center justify-center relative">
+                            <div 
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                className={`aspect-[4/5] rounded-2xl border-2 transition-all duration-300 overflow-hidden flex flex-col items-center justify-center relative group ${
+                                    isDragOver 
+                                        ? 'border-blue-500 bg-blue-500/10 scale-[1.02] shadow-[0_0_30px_rgba(37,99,235,0.2)]' 
+                                        : seedImage 
+                                            ? 'border-white/10 bg-black' 
+                                            : 'border-dashed border-white/20 hover:border-white/40 hover:bg-white/[0.02]'
+                                }`}
+                            >
                                 {seedImage ? (
-                                    <img src={seedImage.url} alt="Origin" className="w-full h-full object-cover" />
+                                    <>
+                                        <img src={seedImage.url} alt="Start Frame" className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <p className="text-xs font-semibold text-white tracking-wide">Drop to Replace</p>
+                                        </div>
+                                    </>
                                 ) : (
-                                    <ImageIcon className="w-12 h-12 text-white/5" />
-                                )}
-                                <div className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center font-black text-xs">A</div>
-                            </div>
-                        </div>
-
-                        {/* Bridge */}
-                        <div className="flex flex-col items-center gap-4">
-                            <div className={`w-16 h-1 bg-linear-to-r ${status === 'running' ? 'from-dept-creative to-transparent animate-pulse' : 'from-white/10 to-white/10'}`} />
-                            <ArrowRight className={`w-10 h-10 ${status === 'running' ? 'text-dept-creative animate-bounce' : 'text-white/10'}`} />
-                            <div className={`w-16 h-1 bg-linear-to-l ${status === 'running' ? 'from-dept-creative to-transparent animate-pulse' : 'from-white/10 to-white/10'}`} />
-                        </div>
-
-                        {/* Frame B */}
-                        <div className="flex-1 space-y-4">
-                            <div className="text-center">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Frame B: Destination</span>
-                            </div>
-                            <div className="aspect-square bg-black/40 rounded-2xl border border-white/5 overflow-hidden flex items-center justify-center relative">
-                                {targetImage ? (
-                                    <img src={targetImage.url} alt="Destination" className="w-full h-full object-cover shadow-[0_0_40px_rgba(168,85,247,0.3)]" />
-                                ) : (
-                                    <div className="flex flex-col items-center gap-3">
-                                        {status === 'running' ? <Loader2 className="w-10 h-10 text-dept-creative animate-spin" /> : <Target className="w-12 h-12 text-white/5" />}
-                                        <p className="text-[9px] font-black uppercase text-white/10">Pending Synthesis</p>
+                                    <div className="flex flex-col items-center gap-4 text-gray-500 p-8 text-center pointer-events-none">
+                                        <UploadCloud className={`w-10 h-10 ${isDragOver ? 'text-blue-400 animate-bounce' : 'text-gray-600'}`} />
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-300">Drop asset here</p>
+                                            <p className="text-xs mt-1 opacity-70">Drag from the right panel</p>
+                                        </div>
                                     </div>
                                 )}
-                                <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-dept-creative/80 backdrop-blur-md border border-white/20 flex items-center justify-center font-black text-xs">B</div>
+                            </div>
+                        </div>
+
+                        {/* Timeline / Bridge */}
+                        <div className="flex flex-col items-center gap-8 w-full md:w-1/5">
+                            <ArrowRight className={`w-6 h-6 ${status === 'running' ? 'text-blue-400 animate-pulse' : 'text-gray-700'}`} />
+                            
+                            <div className="flex flex-col items-center gap-4 w-full">
+                                <span className="text-[10px] uppercase tracking-widest font-bold text-gray-500 flex items-center gap-2">
+                                    <Clock className="w-3.5 h-3.5" /> Interpolation
+                                </span>
+                                <div className="flex flex-col gap-2 w-full">
+                                    {[4, 6, 8].map(sec => (
+                                        <button
+                                            key={sec}
+                                            onClick={() => setDuration(sec)}
+                                            className={`relative overflow-hidden w-full py-3 rounded-xl text-xs font-bold tracking-wider transition-all duration-300 ${
+                                                duration === sec 
+                                                    ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.15)] scale-105' 
+                                                    : 'bg-white/[0.03] text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] border border-white/[0.05]'
+                                            }`}
+                                        >
+                                            {sec} SECONDS
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Frame B: Conclusion */}
+                        <div className="w-full md:w-2/5 flex flex-col space-y-6">
+                            <div className="text-center">
+                                <span className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Conclusion</span>
+                            </div>
+                            <div className="aspect-[4/5] bg-black/40 rounded-2xl border border-white/[0.08] overflow-hidden flex items-center justify-center relative">
+                                {targetImage ? (
+                                    <motion.div 
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="w-full h-full relative"
+                                    >
+                                        <img src={targetImage.url} alt="End Frame" className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.5)] pointer-events-none" />
+                                    </motion.div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-4">
+                                        {status === 'running' ? (
+                                            <>
+                                                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                                                <p className="text-[10px] uppercase tracking-widest font-bold text-blue-400/80">Rendering...</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Target className="w-8 h-8 text-gray-700" />
+                                                <p className="text-xs font-medium text-gray-600">Awaiting establishing shot</p>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     {status === 'complete' && (
                         <motion.div
-                            initial={{ y: 20, opacity: 0 }}
+                            initial={{ y: 30, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            className="mt-8 p-4 bg-dept-creative/10 border border-dept-creative/40 rounded-xl flex items-center justify-between"
+                            className="mt-12 p-6 bg-gradient-to-r from-blue-900/20 to-transparent border border-blue-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6"
                         >
-                            <div className="flex items-center gap-3">
-                                <CheckCircle2 className="w-5 h-5 text-dept-creative" />
-                                <span className="text-xs font-bold uppercase tracking-widest text-white">Bridge Ready for Interpolation</span>
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                    <CheckCircle2 className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-white">Sequence Primed</h3>
+                                    <p className="text-xs text-blue-200/60 mt-1">Frames are ready to be sent to the generation pipeline.</p>
+                                </div>
                             </div>
-                            <Button size="sm" onClick={transferToProduction} className="bg-white text-black hover:bg-white/90 font-black uppercase text-[10px]">
-                                Push to Video Studio
+                            <Button onClick={transferToProduction} className="bg-white text-black hover:bg-gray-200 font-semibold tracking-wide px-8 py-5 rounded-xl whitespace-nowrap">
+                                Enter Director Mode
                             </Button>
                         </motion.div>
                     )}
@@ -319,23 +391,25 @@ export default function AILab() {
 
 function StepCard({ step, isActive, isComplete, isError }: { step: { id: number; name: string; description: string }, isActive: boolean, isComplete: boolean, isError: boolean }) {
     return (
-        <div className={`p-4 rounded-xl border transition-all duration-500 relative overflow-hidden ${isActive ? 'bg-dept-creative/10 border-dept-creative' :
-            isComplete ? 'bg-green-500/5 border-green-500/20' :
-                isError ? 'bg-red-500/5 border-red-500/40' :
-                    'bg-white/5 border-white/5 opacity-40'
-            }`}>
-            <div className="relative flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${isActive ? 'bg-dept-creative text-white border-white/20' :
-                    isComplete ? 'bg-green-500 text-black border-transparent' :
-                        'bg-white/5 text-white/20 border-white/10'
-                    }`}>
-                    {isComplete ? <CheckCircle2 className="w-4 h-4" /> : step.id}
+        <div className={`p-5 rounded-xl border transition-all duration-500 relative overflow-hidden ${
+            isActive ? 'bg-blue-500/10 border-blue-500/30 shadow-[0_0_30px_rgba(37,99,235,0.1)]' :
+            isComplete ? 'bg-white/[0.02] border-white/[0.08]' :
+            isError ? 'bg-red-500/10 border-red-500/30' :
+            'bg-transparent border-transparent opacity-40 grayscale'
+        }`}>
+            <div className="relative flex items-center gap-5">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                    isActive ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' :
+                    isComplete ? 'bg-white/10 text-white' :
+                    'bg-white/5 text-gray-500'
+                }`}>
+                    {isComplete && !isActive ? <CheckCircle2 className="w-5 h-5" /> : step.id}
                 </div>
                 <div>
-                    <h4 className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-white' : isComplete ? 'text-green-400' : 'text-white/40'}`}>
+                    <h4 className={`text-sm font-semibold tracking-wide ${isActive ? 'text-white' : isComplete ? 'text-gray-300' : 'text-gray-500'}`}>
                         {step.name}
                     </h4>
-                    <p className="text-[9px] text-white/30 tracking-tight leading-none mt-0.5">{step.description}</p>
+                    <p className="text-xs text-gray-500 mt-1 font-light leading-relaxed">{step.description}</p>
                 </div>
             </div>
         </div>

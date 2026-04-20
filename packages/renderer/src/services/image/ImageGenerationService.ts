@@ -479,6 +479,19 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         return withServiceError('ImageGeneration', 'remixImage', async () => {
+            // ── Auth Pre-Flight ────────────────────────────────────────────────
+            if (!auth.currentUser) {
+                logger.error('[ImageGen] No authenticated user — cannot call Cloud Function.');
+                throw new Error('Your session has expired. Please sign in again.');
+            }
+
+            try {
+                await auth.currentUser.getIdToken(true);
+            } catch (tokenError: unknown) {
+                logger.error('[ImageGen] Failed to refresh auth token:', tokenError);
+                throw new Error('Your authentication session could not be refreshed. Please sign out and sign back in.');
+            }
+
             const editImageFn = httpsCallable(functions, 'editImage');
 
             const result = await editImageFn({
@@ -608,6 +621,19 @@ export class ImageGenerationService {
         conversationHistory?: { role: string; parts: Record<string, unknown>[] }[];
     }): Promise<unknown> {
         return withServiceError('ImageGeneration', 'editImage', async () => {
+            // ── Auth Pre-Flight ────────────────────────────────────────────────
+            if (!auth.currentUser) {
+                logger.error('[ImageGen] No authenticated user — cannot call Cloud Function.');
+                throw new Error('Your session has expired. Please sign in again.');
+            }
+
+            try {
+                await auth.currentUser.getIdToken(true);
+            } catch (tokenError: unknown) {
+                logger.error('[ImageGen] Failed to refresh auth token:', tokenError);
+                throw new Error('Your authentication session could not be refreshed. Please sign out and sign back in.');
+            }
+
             const editImageFn = httpsCallable(functions, 'editImage');
             const result = await editImageFn(options);
             return result.data;
