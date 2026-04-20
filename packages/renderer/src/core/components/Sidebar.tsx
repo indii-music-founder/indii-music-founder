@@ -54,7 +54,7 @@ const NavItem = React.memo(function NavItem({
                         className={cn(
                             "w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
                             isActive
-                                ? `${colors.text} font-bold bg-white/[0.08] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]`
+                                ? `${colors.text} font-bold bg-white/[0.12] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10`
                                 : "text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
                         )}
                         data-testid={`nav-item-${item.id}`}
@@ -65,8 +65,8 @@ const NavItem = React.memo(function NavItem({
                         {isActive && (
                             <motion.div
                                 layoutId="active-pill"
-                                className="absolute left-0 top-0 w-1.5 h-full rounded-r-md opacity-90"
-                                style={{ backgroundColor: 'var(--dept-color)', boxShadow: '0 0 10px var(--dept-color)' }}
+                                className="absolute left-0 top-0 w-2.5 h-full opacity-100 rounded-r-md"
+                                style={{ backgroundColor: 'var(--dept-color)', boxShadow: '0 0 12px 2px var(--dept-color)' }}
                                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             />
                         )}
