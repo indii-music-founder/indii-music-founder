@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
 import PromptBuilder from './PromptBuilder';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function DirectGenerationTab() {
-    const [isPromptBuilderOpen, setIsPromptBuilderOpen] = useState(false);
+    const { isPromptBuilderOpen, togglePromptBuilder } = useStore(useShallow(state => ({
+        isPromptBuilderOpen: state.isPromptBuilderOpen,
+        togglePromptBuilder: state.togglePromptBuilder
+    })));
     const {
         mode,
         localPrompt,
@@ -22,7 +27,9 @@ export default function DirectGenerationTab() {
         setSelectedItem,
         setViewMode,
         sequence,
-        setSequence
+        setSequence,
+        bpm,
+        setBpm
     } = useDirectGeneration();
 
     return (
@@ -75,7 +82,7 @@ export default function DirectGenerationTab() {
 
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center gap-2">
                                 <button
-                                    onClick={() => setIsPromptBuilderOpen(!isPromptBuilderOpen)}
+                                    onClick={() => togglePromptBuilder()}
                                     className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
                                     title="Toggle Prompt Builder"
                                 >
@@ -120,6 +127,10 @@ export default function DirectGenerationTab() {
                                             mode={mode}
                                             sequence={sequence}
                                             setSequence={setSequence}
+                                            bpm={bpm}
+                                            setBpm={setBpm}
+                                            currentPrompt={localPrompt}
+                                            onPromptImproved={(improved) => setLocalPrompt(improved)}
                                         />
                                     </div>
                                 </motion.div>
