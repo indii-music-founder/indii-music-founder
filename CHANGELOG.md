@@ -2,6 +2,24 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.53.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.52.2...v1.53.0) (2026-04-20)
+
+
+### Features
+
+* add PromptImproverService and integrate AI-powered prompt enhancement into the PromptBuilder UI. ([aa14bdc](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/aa14bdc86a7d1e5d8afaf613ec4880ca96d04496))
+* **creative:** add SequenceTimeline component and wire video mode sequence state ([19f1984](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/19f1984fdf6b610dd9a2294fa36fdaff2cf141ef))
+* **creative:** integrate Veo 3.1 DirectGenerationTab, CreativeVideoPlayer, and IngredientDropZone ([2a6c118](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2a6c118d749ec46d9ac59655a53f34b5dae0591d))
+* **creative:** wire SequenceTimeline into DirectGenerationTab video mode ([cc7308c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cc7308ce0847be9d2adabd6fcae5a6fb4f3b75aa))
+* enhance sequence builder timeline precision and daisy chaining in AILab ([664928b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/664928ba8b9a7284738eb3328e36adc7d7b49e78))
+
+
+### Bug Fixes
+
+* **creative:** clean up anti-slop guidelines in InfiniteCanvas and fix DragEvent TS error in AssetsPanel ([1582443](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/1582443a9391a419635701b02dbfe8e29c4e9930))
+* **landing:** resolve React Three Fiber ref typing issues across 3D components ([7cf4c0e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7cf4c0ed308597a9f045e6828f946c19ae64a419))
+* resolve asset pipeline CORS and refine Veo 3.1 UI ([02f6ef9](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/02f6ef95f9937caf1692519192c1f7768f5173e2))
+
 ## [1.52.2](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.52.1...v1.52.2) (2026-04-19)
 
 
