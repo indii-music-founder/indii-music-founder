@@ -222,3 +222,8 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FIX: Changed both occurrences to `this.mediaBreaker?.getState()` (the public accessor method).
 - RULE: **Always verify `git diff` is empty after fixing a typecheck error.** A common trap: `tsc --noEmit` runs against the working directory, not HEAD. If a fix is only in the working tree but not staged/committed, CI will still fail. Run `git show HEAD:<file> | grep -n '<pattern>'` to verify the committed version.
 
+
+### Gemini 400 "Multiple candidates is not enabled for this model"
+**Symptom:** When generating multiple variations of an image (e.g. `count: 4`) using a fast model.
+**Root Cause:** Fast models (and some versions of Gemini) do not support `candidate_count > 1` through standard configuration.
+**Fix:** Instead of passing `count: 4` in a single request, fire off an array of parallel API calls (e.g., `Promise.all(Array(4).fill(null).map(() => generateImages({ count: 1 })))`) and flatten the results.

@@ -1,12 +1,13 @@
 import React, { memo } from 'react';
-import { Move, MousePointer2, ImagePlus, Eraser, Layers } from 'lucide-react';
+import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop } from 'lucide-react';
 
 interface InfiniteCanvasHUDProps {
-    tool: 'pan' | 'select' | 'generate';
-    setTool: (tool: 'pan' | 'select' | 'generate') => void;
+    tool: 'pan' | 'select' | 'generate' | 'crop';
+    setTool: (tool: 'pan' | 'select' | 'generate' | 'crop') => void;
     selectedCanvasImageId: string | null;
     removeCanvasImage: (id: string) => void;
     onFlatten?: () => void;
+    onGenerateVariations?: () => void;
 }
 
 // Optimized with React.memo to prevent re-renders when parent's local state (e.g., offset/drag) changes
@@ -16,7 +17,8 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
     setTool,
     selectedCanvasImageId,
     removeCanvasImage,
-    onFlatten
+    onFlatten,
+    onGenerateVariations
 }) => {
     return (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-background/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-2xl">
@@ -47,6 +49,15 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
             >
                 <ImagePlus size={18} />
             </button>
+            <button
+                onClick={() => setTool('crop')}
+                className={`p-2 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-orange-500/40 focus-visible:outline-none ${tool === 'crop' ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                title="Adaptive Crop & Fill"
+                aria-label="Adaptive Crop & Fill"
+                aria-pressed={tool === 'crop'}
+            >
+                <Crop size={18} />
+            </button>
             <div className="w-px h-6 bg-white/10 mx-1"></div>
             {onFlatten && (
                 <button
@@ -67,6 +78,17 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
             >
                 <Eraser size={18} />
             </button>
+            {onGenerateVariations && (
+                <button
+                    onClick={onGenerateVariations}
+                    disabled={!selectedCanvasImageId}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium bg-dept-creative text-white hover:bg-dept-creative/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none flex items-center gap-1"
+                    title="Generate Variations"
+                    aria-label="Generate Variations"
+                >
+                    Variations
+                </button>
+            )}
         </div>
     );
 });

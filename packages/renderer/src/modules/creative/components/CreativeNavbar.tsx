@@ -50,7 +50,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         { id: 'direct', label: 'Generate', icon: Wand2, testId: 'direct-view-btn', always: true },
         { id: 'canvas', label: 'Canvas', icon: ImageIcon, testId: 'canvas-view-btn', always: true },
         { id: 'video_production', label: 'Director', icon: Video, testId: 'director-view-btn', always: false, showWhen: generationMode === 'video' },
-        { id: 'lab', label: 'Lab', icon: FlaskConical, testId: 'lab-view-btn', always: true },
+        { id: 'lab', label: 'Keyframes', icon: FlaskConical, testId: 'lab-view-btn', always: true },
     ] as const;
 
     return (

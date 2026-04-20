@@ -73,7 +73,7 @@ export class ThreeSceneBuilderService {
     /**
      * Generates a camera fly-through path based on audio transients.
      */
-    async generateAudioResponsivePath(sceneId: string, audioUrl: string): Promise<CameraPath> {
+    async generateAudioResponsivePath(sceneId: string, _audioUrl: string): Promise<CameraPath> {
         logger.info(`[ThreeScene] Generating audio-reactive path for ${sceneId}`);
 
         // Use AudioIntelligence / Essentia.js logic to find beats/drops

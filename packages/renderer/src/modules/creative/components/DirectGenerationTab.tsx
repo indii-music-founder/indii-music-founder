@@ -6,6 +6,8 @@ import { useToast } from '@/core/context/ToastContext';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download } from 'lucide-react';
 import { WhiskService } from '@/services/WhiskService';
 import { logger } from '@/utils/logger';
+import { IngredientDropZone, Ingredient } from './IngredientDropZone';
+import { CreativeVideoPlayer } from './CreativeVideoPlayer';
 
 interface GeneratedItem {
     id: string;
@@ -23,7 +25,9 @@ export default function DirectGenerationTab() {
         currentProjectId,
         whiskState,
         setSelectedItem,
-        setViewMode
+        setViewMode,
+        videoInputs,
+        setVideoInputs
     } = useStore(useShallow(state => ({
         studioControls: state.studioControls,
         setPrompt: state.setPrompt,
@@ -31,23 +35,56 @@ export default function DirectGenerationTab() {
         currentProjectId: state.currentProjectId,
         whiskState: state.whiskState,
         setSelectedItem: state.setSelectedItem,
-        setViewMode: state.setViewMode
+        setViewMode: state.setViewMode,
+        videoInputs: state.videoInputs,
+        setVideoInputs: state.setVideoInputs
     })));
     const toast = useToast();
 
-    // Local state for direct mode isolation
     const [localPrompt, setLocalPrompt] = useState('');
     const [mode, setMode] = useState<'image' | 'video'>('image');
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<GeneratedItem[]>([]);
 
-    // Clear prompt when switching between image and video modes to prevent text accumulation
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
             setLocalPrompt('');
             setMode(newMode);
         }
     }, [mode]);
+
+    const mappedIngredients: Ingredient[] = videoInputs.ingredients.map(hi => ({
+        id: hi.id,
+        dataUrl: hi.url,
+        type: hi.type as 'image' | 'video',
+        file: new File([], 'placeholder') // Placeholder since we already have the dataUrl
+    }));
+
+    const handleIngredientsChange = useCallback((newIngredients: Ingredient[]) => {
+        const state = useStore.getState();
+        const allItems = [
+            ...(state.generatedHistory || []),
+            ...(state.uploadedImages || []),
+            ...(state.uploadedAudio || [])
+        ];
+
+        const newHistoryItems: HistoryItem[] = newIngredients.map(ing => {
+            const foundItem = allItems.find(item => item.id === ing.id);
+            if (foundItem) {
+                return foundItem;
+            }
+            return {
+                id: ing.id,
+                type: ing.type,
+                url: ing.dataUrl,
+                prompt: 'Uploaded Reference',
+                timestamp: Date.now(),
+                projectId: currentProjectId,
+                origin: 'uploaded'
+            };
+        });
+        setVideoInputs({ ingredients: newHistoryItems });
+    }, [setVideoInputs, currentProjectId]);
 
     const handleGenerate = useCallback(async () => {
         if (!localPrompt.trim()) return;
@@ -57,14 +94,11 @@ export default function DirectGenerationTab() {
 
         try {
             if (mode === 'image') {
-                // Synthesize prompt with Whisk (optional, but good for consistency)
                 const finalPrompt = WhiskService.synthesizeWhiskPrompt(localPrompt, whiskState);
 
-                // Direct mode: Bypasses Firebase Functions entirely. Calls Gemini 3 Image directly via SDK.
                 const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
                 const { AI_MODELS } = await import('@/core/config/ai-models');
 
-                // Map studio model to Direct models
                 const resolvedModel = studioControls.model === 'pro'
                     ? AI_MODELS.IMAGE.DIRECT_PRO
                     : AI_MODELS.IMAGE.DIRECT_FAST;
@@ -89,14 +123,12 @@ export default function DirectGenerationTab() {
                     setResults(prev => [...newItems, ...prev]);
                     newItems.forEach(item => addToHistory({ ...item }));
 
-                    // Open the FIRST generated image in CreativeCanvas for editing
                     setSelectedItem(newItems[0] as HistoryItem);
                     setViewMode('editor');
 
                     toast.success('Image generated directly successfully');
                 }
             } else {
-                // Direct Video Generation
                 const finalPrompt = WhiskService.synthesizeVideoPrompt(localPrompt, whiskState);
 
                 // ISSUE-008 FIX: Auto-downscale 4K to 1080p for video (Veo doesn't support 4K)
@@ -114,7 +146,18 @@ export default function DirectGenerationTab() {
                     durationSeconds: Math.max(6, studioControls.duration || 6),
                     model: studioControls.model, // Will be resolved by FirebaseAIService
                     fps: 24,
-                    orgId: 'personal' // Force personal for direct test
+                    orgId: 'personal', // Force personal for direct test
+                    referenceImages: videoInputs.ingredients.map(ing => {
+                        let bytes = ing.url;
+                        const commaIndex = bytes.indexOf(',');
+                        if (bytes.startsWith('data:') && commaIndex !== -1) {
+                            bytes = bytes.substring(commaIndex + 1);
+                        }
+                        return {
+                            image: { imageBytes: bytes, mimeType: ing.type === 'video' ? 'video/mp4' : 'image/jpeg' },
+                            referenceType: 'asset' as const
+                        };
+                    })
                 });
 
                 if (generated && generated.length > 0) {
@@ -144,9 +187,8 @@ export default function DirectGenerationTab() {
             logger.error("Direct Generation Failed:", error);
 
             const errObj = error as Record<string, unknown> | null;
-            const errMessage = error instanceof Error ? error.message : '';
+            const errMessage = error instanceof Error ? error.message : String(error);
 
-            // Provide specific error messages based on error type
             if (errObj?.code === 'deadline-exceeded' || errMessage?.includes('timeout')) {
                 toast.error('Generation timed out. The API may be busy - please try again.');
             } else if (errObj?.code === 'resource-exhausted') {
@@ -159,7 +201,7 @@ export default function DirectGenerationTab() {
         } finally {
             setIsGenerating(false);
         }
-    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode]);
+    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs.ingredients]);
 
     return (
         <div className="flex flex-col h-full w-full bg-background text-foreground">
@@ -233,6 +275,16 @@ export default function DirectGenerationTab() {
                         </div>
                     </div>
                 </div>
+
+                {mode === 'video' && (
+                    <div className="max-w-4xl mx-auto w-full">
+                        <IngredientDropZone 
+                            ingredients={mappedIngredients} 
+                            onChange={handleIngredientsChange} 
+                            mode="reference" 
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Main Content: Results Grid */}
@@ -269,14 +321,14 @@ export default function DirectGenerationTab() {
                                 data-testid={`direct-result-${item.id}`}
                             >
                                 {item.type === 'video' ? (
-                                    item.url ? (
-                                        <video src={item.url} className="w-full h-full object-cover" controls loop muted />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-[#111] text-gray-500">
-                                            <Loader2 size={24} className="animate-spin mb-2" />
-                                            <span className="text-xs">Processing...</span>
-                                        </div>
-                                    )
+                                    <div className="w-full h-full">
+                                        <CreativeVideoPlayer 
+                                            jobId={item.url ? undefined : item.id} 
+                                            url={item.url || undefined} 
+                                            autoPlay={false}
+                                            className="w-full h-full border-none rounded-none"
+                                        />
+                                    </div>
                                 ) : (
                                     <img src={item.url} alt={item.prompt} className="w-full h-full object-cover" />
                                 )}
