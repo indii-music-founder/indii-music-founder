@@ -6,6 +6,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { PromptImproverService } from '@/services/creative/PromptImproverService';
 import { useToast } from '@/core/context/ToastContext';
+import { SequenceTimeline, SequenceBlock } from './SequenceTimeline';
 
 interface PromptBuilderProps {
     onAddTag: (tag: string) => void;
@@ -31,6 +32,7 @@ const TagButton = memo(({ tag, onClick, variant = 'creative' }: { tag: string; o
         {tag}
     </button>
 ));
+TagButton.displayName = 'TagButton';
 
 const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick, variant = 'creative' }: {
     category: string;
@@ -98,8 +100,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
         </div>
     );
 });
-
-import { SequenceTimeline, SequenceBlock } from './SequenceTimeline';
+CategoryDropdown.displayName = 'CategoryDropdown';
 
 function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, bpm, setBpm, currentPrompt = '', onPromptImproved }: PromptBuilderProps) {
     const [openCategory, setOpenCategory] = useState<string | null>(null);
