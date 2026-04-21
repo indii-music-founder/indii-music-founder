@@ -2,6 +2,22 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.54.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.53.0...v1.54.0) (2026-04-21)
+
+
+### Features
+
+* Add energy and song section metadata to Sequence Timeline and integrate into prompt payload ([5e53cc4](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5e53cc4c56548c193bd5941732b8023f874baaac))
+
+
+### Bug Fixes
+
+* **agents:** synchronize and correct prompt routing tables ([ede611f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ede611f878dde0fa3b8419a24e07b0dd2d88a8dc))
+* **agents:** synchronize and correct prompt routing tables ([0948f96](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0948f963a19c8a3a9d4f1752c2d294d57a58cfe0))
+* **e2e:** widen GenAI route intercept to match firebasevertexai domain and wrap callable mock in data envelope ([2b325f4](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2b325f4c0f2605cb455e230546fbcf9dfcfe1af8))
+* **renderer:** handle daisy chain video duration and add auth checks to StorageService ([47ad290](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/47ad2902c9df7775c3324b3712d467ade01663fb))
+* Resolve React display name warnings and RAG service optional chaining ([f466a49](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f466a49518bace7203743362e6db9aabf21bbe52))
+
 ## [1.53.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.52.2...v1.53.0) (2026-04-20)
 
 
