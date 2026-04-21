@@ -11,11 +11,20 @@ import { DirectorTools } from '../tools/DirectorTools';
  *
  * NOTE: 'creative' is the canonical ID. The legacy alias 'creative-director'
  * in VALID_AGENT_IDS resolves to this same agent at runtime.
+ *
+ * TOOLS EXPOSED:
+ *   - generate_image           (DirectorTools) — Primary image generation
+ *   - batch_edit_images        (DirectorTools) — Multi-image editing
+ *   - run_showroom_mockup      (DirectorTools) — Product photography mockups
+ *   - generate_high_res_asset  (DirectorTools) — Print-quality asset generation
+ *   - render_cinematic_grid    (DirectorTools) — 2x2 cinematic shot grid
+ *   - extract_grid_frame       (DirectorTools) — Extract individual frame from grid
+ *   - add_character_reference  (DirectorTools) — Set character reference for consistency
  */
 export const CreativeAgent: AgentConfig = {
     id: 'creative',
     name: 'Creative',
-    description: 'Visual identity specialist — generates album art, promotional graphics, mockups, and brand-aligned visuals.',
+    description: 'Visual identity specialist — generates album art, promotional graphics, mockups, cinematic grids, and brand-aligned visuals.',
     color: 'bg-fuchsia-500',
     category: 'specialist',
     systemPrompt: `
@@ -45,6 +54,8 @@ You are a SPOKE agent. The **indii Conductor** (generalist) is the only HUB.
 - Social media visual asset generation aligned with brand guidelines
 - Image editing and batch modifications
 - High-resolution asset upscaling and export
+- Cinematic shot grids (Wide, Medium, Close-up, Low Angle)
+- Character reference anchoring for visual consistency across generations
 
 ## OUT OF SCOPE (route back to indii Conductor)
 - Video production and storyboarding → Director or Video agent
@@ -70,20 +81,37 @@ You are a SPOKE agent. The **indii Conductor** (generalist) is the only HUB.
 **Example:** \`run_showroom_mockup({ productType: "vinyl record", scenePrompt: "Minimalist white studio lighting" })\`
 
 ### generate_high_res_asset
-**When to use:** Upscale or produce print-quality assets at high resolution.
-**Example:** \`generate_high_res_asset({ prompt: "Album cover", resolution: "4K" })\`
+**When to use:** Produce print-quality assets for physical media (CD jackets, vinyl sleeves, posters, merch).
+**Required param:** templateType — the physical format being designed.
+**Example:** \`generate_high_res_asset({ prompt: "Album cover", templateType: "cd_front", style: "minimalist noir" })\`
+
+### render_cinematic_grid
+**When to use:** Create a 2x2 grid of cinematic shots (Wide, Medium, Close-up, Low Angle) for visual storytelling.
+**Example:** \`render_cinematic_grid({ prompt: "Lone figure walking through neon-lit alley at night" })\`
+
+### extract_grid_frame
+**When to use:** Extract a specific panel from a cinematic grid for standalone use.
+**Example:** \`extract_grid_frame({ gridIndex: 2 })\` — extracts the Close-up (bottom-left panel).
+
+### add_character_reference
+**When to use:** Set a character reference image to maintain visual consistency across multiple generations.
+**Example:** \`add_character_reference({ image: "data:image/png;base64,..." })\`
 
 ## CRITICAL PROTOCOLS
 
 **Aspect Ratio Awareness:**
 - 1:1 for album covers and social media posts
-- 16:9 for hero images, banners, and presentations
+- 16:9 for hero images, banners, presentations, and cinematic grids
 - 9:16 for mobile/smartphone displays and stories
 - 4:3 for standard landscape prints
 
 **Brand Consistency:** When brand guidelines are available, always incorporate the artist's color palette, typography preferences, and visual mood into prompts.
 
-**Print Readiness:** For physical media, always generate at the highest resolution available and mention DPI requirements.
+**Print Readiness:** For physical media, always use generate_high_res_asset with the correct templateType and generate at the highest resolution available.
+
+**Character Consistency:** When creating a series of images featuring the same person/character, use add_character_reference first to anchor the visual identity, then generate subsequent images.
+
+**Cinematic Workflow:** For visual storytelling, use render_cinematic_grid to create a shot composition, then extract_grid_frame to pull out individual panels for refinement.
 
 ## SECURITY PROTOCOL (NON-NEGOTIABLE)
 
@@ -108,9 +136,20 @@ Voice: Think creative director at a top visual agency who lives and breathes aes
             batch_edit_images: DirectorTools.batch_edit_images,
             run_showroom_mockup: DirectorTools.run_showroom_mockup,
             generate_high_res_asset: DirectorTools.generate_high_res_asset,
+            render_cinematic_grid: DirectorTools.render_cinematic_grid,
+            extract_grid_frame: DirectorTools.extract_grid_frame,
+            add_character_reference: DirectorTools.add_character_reference,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['generate_image', 'batch_edit_images', 'run_showroom_mockup', 'generate_high_res_asset'],
+    authorizedTools: [
+        'generate_image',
+        'batch_edit_images',
+        'run_showroom_mockup',
+        'generate_high_res_asset',
+        'render_cinematic_grid',
+        'extract_grid_frame',
+        'add_character_reference',
+    ],
     tools: [{
         functionDeclarations: [
             {
@@ -158,14 +197,49 @@ Voice: Think creative director at a top visual agency who lives and breathes aes
             },
             {
                 name: 'generate_high_res_asset',
-                description: 'Generate or upscale visual assets at high resolution for print or large-format use.',
+                description: 'Generate print-quality visual assets at high resolution for physical media (CD jacket, vinyl sleeve, poster, merch).',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
                         prompt: { type: 'STRING', description: 'Description of the high-resolution asset to generate.' },
-                        resolution: { type: 'STRING', description: 'Target resolution: 4K, 2K, HD.' }
+                        templateType: { type: 'STRING', description: 'Physical format type: cd_front, cd_back, vinyl_jacket, poster, merch, booklet.' },
+                        style: { type: 'STRING', description: 'Optional artistic style directive (e.g., "minimalist noir", "retro synthwave").' }
+                    },
+                    required: ['prompt', 'templateType']
+                }
+            },
+            {
+                name: 'render_cinematic_grid',
+                description: 'Create a 2x2 cinematic shot grid (Wide, Medium, Close-up, Low Angle) for visual storytelling and shot composition planning.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        prompt: { type: 'STRING', description: 'Scene description for the cinematic grid (e.g., "lone figure walking through neon-lit alley").' }
                     },
                     required: ['prompt']
+                }
+            },
+            {
+                name: 'extract_grid_frame',
+                description: 'Extract a single frame from a previously generated 2x2 cinematic grid for standalone use or further editing.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        gridIndex: { type: 'NUMBER', description: 'Panel index: 0 (top-left / Wide), 1 (top-right / Medium), 2 (bottom-left / Close-up), 3 (bottom-right / Low Angle).' },
+                        imageId: { type: 'STRING', description: 'Optional ID of a specific grid image. If omitted, uses the most recent cinematic grid.' }
+                    },
+                    required: ['gridIndex']
+                }
+            },
+            {
+                name: 'add_character_reference',
+                description: 'Set a character reference image for maintaining visual consistency across multiple image generations.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        image: { type: 'STRING', description: 'Base64 data URI of the character reference image (data:image/png;base64,...).' }
+                    },
+                    required: ['image']
                 }
             }
         ]
