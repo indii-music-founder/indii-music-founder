@@ -45,7 +45,6 @@ export function useDirectGeneration() {
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
             setLocalPrompt('');
-            setSequence([]);
             setMode(newMode);
         }
     }, [mode]);
@@ -233,10 +232,6 @@ export function useDirectGeneration() {
         handleIngredientsChange,
         studioControls,
         setSelectedItem,
-        setViewMode,
-        sequence,
-        setSequence,
-        bpm,
-        setBpm
+        setViewMode
     };
 }

@@ -1,19 +1,21 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download, ChevronDown, ChevronUp, Film } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
-import PromptBuilder from './PromptBuilder';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function DirectGenerationTab() {
-    const { isPromptBuilderOpen, togglePromptBuilder, setGenerationMode } = useStore(useShallow(state => ({
-        isPromptBuilderOpen: state.isPromptBuilderOpen,
-        togglePromptBuilder: state.togglePromptBuilder,
+    const { setGenerationMode } = useStore(useShallow(state => ({
         setGenerationMode: state.setGenerationMode
     })));
+
+    // Local toggle for prompt builder panel (not yet wired to global store)
+    const [isPromptBuilderOpen, setIsPromptBuilderOpen] = useState(false);
+    const togglePromptBuilder = useCallback(() => setIsPromptBuilderOpen(prev => !prev), []);
+
     const {
         mode,
         localPrompt,
@@ -26,11 +28,7 @@ export default function DirectGenerationTab() {
         handleIngredientsChange,
         studioControls,
         setSelectedItem,
-        setViewMode,
-        sequence,
-        setSequence,
-        bpm,
-        setBpm
+        setViewMode
     } = useDirectGeneration();
 
     const videoClipCount = results.filter(r => r.type === 'video').length;
@@ -115,31 +113,6 @@ export default function DirectGenerationTab() {
                                 </button>
                             </div>
                         </div>
-
-                        <AnimatePresence>
-                            {isPromptBuilderOpen && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="pt-2">
-                                        <PromptBuilder 
-                                            onAddTag={(tag) => setLocalPrompt(prev => prev ? `${prev}, ${tag}` : tag)}
-                                            mode={mode}
-                                            sequence={sequence}
-                                            setSequence={setSequence}
-                                            bpm={bpm}
-                                            setBpm={setBpm}
-                                            currentPrompt={localPrompt}
-                                            onPromptImproved={(improved) => setLocalPrompt(improved)}
-                                        />
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
                     </div>
                 </div>
 
