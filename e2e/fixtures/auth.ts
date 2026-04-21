@@ -134,7 +134,7 @@ export const test = base.extend<AuthFixtures>({
         status: 200,
         headers: corsHeaders,
         contentType: "application/json",
-        body: JSON.stringify({}),
+        body: JSON.stringify({ data: {} }),
       });
     });
 

@@ -7,7 +7,9 @@ vi.mock('./firebase', () => ({
   serverTimestamp: vi.fn(),
     db: {},
     storage: {},
-    auth: {}
+    auth: {
+        currentUser: { uid: 'test-user-123' }
+    }
 }));
 
 // Mock Firestore

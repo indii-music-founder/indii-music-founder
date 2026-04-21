@@ -26,14 +26,19 @@ vi.mock('@/services/ai/generators/DirectImageGenerator', () => ({
 }));
 
 // Mock the AI_MODELS config that the component also imports dynamically.
-vi.mock('@/core/config/ai-models', () => ({
-    AI_MODELS: {
-        IMAGE: {
-            DIRECT_PRO: 'gemini-3-pro-image-preview',
-            DIRECT_FAST: 'gemini-3-flash-preview'
+vi.mock('@/core/config/ai-models', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/core/config/ai-models')>();
+    return {
+        ...actual,
+        AI_MODELS: {
+            ...actual.AI_MODELS,
+            IMAGE: {
+                DIRECT_PRO: 'gemini-3-pro-image-preview',
+                DIRECT_FAST: 'gemini-3-flash-preview'
+            }
         }
-    }
-}));
+    };
+});
 
 const mockGenerateVideo = vi.fn();
 vi.mock('@/services/video/VideoGenerationService', () => ({
