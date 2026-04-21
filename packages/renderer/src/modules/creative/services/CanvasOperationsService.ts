@@ -518,15 +518,51 @@ export class CanvasOperationsService {
     }
 
     /**
-     * Save canvas as PNG file download
+     * Returns a high-res data URL of the canvas with all annotation overlays
+     * (drawing paths, bounding boxes, segmentation masks) temporarily hidden.
+     * This ensures saved/exported images contain only the actual artwork.
+     */
+    private getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number }): string {
+        if (!this.canvas) return '';
+
+        const allObjects = this.canvas.getObjects();
+
+        // Identify every annotation object on the canvas
+        const annotationObjects = allObjects.filter(obj => {
+            // Drawing paths (free-hand strokes)
+            if (obj.type === 'path') return true;
+            // Bounding boxes and segmentation masks tagged via data flags
+            const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean; isSegmentationMask?: boolean } }).data;
+            if (data?.isBoundingBox || data?.isSegmentationMask) return true;
+            return false;
+        });
+
+        // Snapshot current visibility so we can restore after export
+        const visibilitySnapshot = annotationObjects.map(obj => obj.visible);
+
+        // Hide all annotations
+        annotationObjects.forEach(obj => (obj.visible = false));
+        this.canvas.renderAll();
+
+        const dataUrl = this.canvas.toDataURL({
+            format: (options?.format as 'png' | 'jpeg') ?? 'png',
+            quality: options?.quality ?? 1,
+            multiplier: options?.multiplier ?? 2,
+        });
+
+        // Restore original visibility
+        annotationObjects.forEach((obj, i) => (obj.visible = visibilitySnapshot[i] ?? true));
+        this.canvas.renderAll();
+
+        return dataUrl;
+    }
+
+    /**
+     * Save canvas as PNG file download (annotations excluded from output)
      */
     saveCanvas(filename: string): string {
         if (!this.canvas) return '';
-        const dataUrl = this.canvas.toDataURL({
-            format: 'png',
-            quality: 1,
-            multiplier: 2
-        });
+        const dataUrl = this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: 2 });
 
         const link = document.createElement('a');
         link.download = filename;
@@ -539,17 +575,12 @@ export class CanvasOperationsService {
     }
 
     /**
-     * Get canvas as Blob for uploading
+     * Get canvas as Blob for uploading (annotations excluded from output)
      */
     async getBlob(): Promise<Blob | null> {
         if (!this.canvas) return null;
 
-        // simple dataURL to blob conversion
-        const dataUrl = this.canvas.toDataURL({
-            format: 'png',
-            quality: 1,
-            multiplier: 2
-        });
+        const dataUrl = this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: 2 });
 
         try {
             const res = await fetch(dataUrl);

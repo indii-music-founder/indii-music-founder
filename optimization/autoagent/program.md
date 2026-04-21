@@ -16,7 +16,7 @@ indiiOS uses a hub-and-spoke architecture:
   to the correct specialist agent
 - **Spokes:** 15 specialist agents, each with their own `agents/<name>/prompt.md`
 - **Support:** 5 additional agents (default, generalist, indii_curriculum,
-  indii_executor, creative-director) with specialized roles
+  indii_executor, creative) with specialized roles
 
 The full fleet:
 
@@ -25,7 +25,7 @@ The full fleet:
 | `agent0` | Conductor — hub orchestrator, routes all requests |
 | `analytics` | Streaming metrics, audience data, revenue insights |
 | `brand` | Visual DNA, brand pillars, identity enforcement |
-| `creative-director` | Image/video generation, visual brand consistency |
+| `creative` | Image/video generation, visual brand consistency |
 | `default` | Fallback generalist |
 | `distribution` | DDEX, SFTP, DSP delivery, QC validation |
 | `finance` | Royalties, payments, budgets |

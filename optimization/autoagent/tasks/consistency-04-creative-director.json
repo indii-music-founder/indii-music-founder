@@ -1,6 +1,6 @@
 {
     "type": "consistency",
-    "agent": "creative-director",
+    "agent": "creative",
     "checks": {
         "has_mission": true,
         "has_identity": true,
