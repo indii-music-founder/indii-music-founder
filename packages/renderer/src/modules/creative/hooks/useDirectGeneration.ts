@@ -232,6 +232,10 @@ export function useDirectGeneration() {
         handleIngredientsChange,
         studioControls,
         setSelectedItem,
-        setViewMode
+        setViewMode,
+        sequence,
+        setSequence,
+        bpm,
+        setBpm
     };
 }

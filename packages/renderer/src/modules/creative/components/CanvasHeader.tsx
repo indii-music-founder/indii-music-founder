@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
-import { Wand2, Save, Image as ImageIcon, Play, X, Star, Sparkles, Lock, Film } from 'lucide-react';
+import { Wand2, Save, Image as ImageIcon, Play, X, Star, Sparkles, Lock, Film, Layers } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { auth } from '@/services/firebase';
 
@@ -25,6 +25,7 @@ interface CanvasHeaderProps {
     isHighFidelity: boolean;
     setIsHighFidelity: (val: boolean) => void;
     batchExportDimensions?: () => void;
+    flattenCanvas?: () => void;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -47,7 +48,8 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     processingStatus,
     isHighFidelity,
     setIsHighFidelity,
-    batchExportDimensions
+    batchExportDimensions,
+    flattenCanvas
 }) => {
     const isAuthenticated = !!auth.currentUser;
 
@@ -130,6 +132,17 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         title="Send to Video Producer"
                     >
                         <Film size={14} /> Send to Video
+                    </button>
+                </div>
+
+                <div className="relative group">
+                    <button
+                        onClick={flattenCanvas}
+                        disabled={isProcessing}
+                        title="Flatten all edits into a new base image (Permanent)"
+                        className="px-4 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/50 text-amber-500 text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                    >
+                        <Layers size={14} /> Flatten
                     </button>
                 </div>
 

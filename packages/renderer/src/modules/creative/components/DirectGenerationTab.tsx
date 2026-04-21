@@ -6,6 +6,7 @@ import { CreativeVideoPlayer } from './CreativeVideoPlayer';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import PromptBuilder from './PromptBuilder';
 
 export default function DirectGenerationTab() {
     const { setGenerationMode } = useStore(useShallow(state => ({
@@ -26,9 +27,13 @@ export default function DirectGenerationTab() {
         handleGenerate,
         mappedIngredients,
         handleIngredientsChange,
-        studioControls,
         setSelectedItem,
-        setViewMode
+        setViewMode,
+        sequence,
+        setSequence,
+        bpm,
+        setBpm,
+        studioControls
     } = useDirectGeneration();
 
     const videoClipCount = results.filter(r => r.type === 'video').length;
@@ -126,6 +131,29 @@ export default function DirectGenerationTab() {
                     </div>
                 )}
             </div>
+
+            {/* Prompt Builder Panel */}
+            <AnimatePresence>
+                {isPromptBuilderOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden bg-background/50 border-b border-white/10"
+                    >
+                        <PromptBuilder 
+                            onAddTag={(tag) => setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag)} 
+                            mode={mode}
+                            sequence={sequence}
+                            setSequence={setSequence}
+                            bpm={bpm}
+                            setBpm={setBpm}
+                            currentPrompt={localPrompt}
+                            onPromptImproved={setLocalPrompt}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Main Content: Results Grid */}
             <div className="flex-1 overflow-y-auto p-6">
