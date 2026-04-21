@@ -51,6 +51,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         saveCanvas,
         handleRefine,
         handleCreateLastFrame,
+        handleFlattenCanvas,
         batchExportDimensions,
     } = useCreativeCanvas({ item, onClose, onRefine });
 
@@ -84,6 +85,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     isHighFidelity={isHighFidelity}
                     setIsHighFidelity={setIsHighFidelity}
                     batchExportDimensions={batchExportDimensions}
+                    flattenCanvas={handleFlattenCanvas}
                 />
 
                 <div className="flex-1 flex overflow-hidden">
