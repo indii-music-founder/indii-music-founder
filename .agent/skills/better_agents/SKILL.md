@@ -95,7 +95,7 @@ Manual verification:
 ```
 agents/
 ├── agent0/             # Hub orchestrator — routes to specialists
-├── creative-director/  # Image/video creative decisions
+├── creative/           # Image/video creative decisions
 ├── finance/            # Revenue, royalties, payouts
 ├── legal/              # Contract review, rights
 ├── licensing/          # Sync + master licensing

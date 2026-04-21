@@ -83,7 +83,6 @@ const DEFAULT_CONFIG: BigBrainConfig = {
 const AGENT_VAULT_MAP: Record<string, VaultCategory[]> = {
     // Agent folder names
     'agent0': ['artist_identity', 'goals', 'preferences', 'team'],
-    'creative-director': ['artist_identity', 'preferences', 'technical'],
     'brand': ['artist_identity', 'goals', 'contacts'],
     'distribution': ['distribution', 'legal', 'financial'],
     'finance': ['financial', 'business_model', 'legal'],

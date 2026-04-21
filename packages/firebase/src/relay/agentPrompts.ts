@@ -290,6 +290,7 @@ export const AGENT_PROMPTS: Record<string, string> = {
     'analytics': ANALYTICS_PROMPT,
     'brand': BRAND_PROMPT,
     'creative': CREATIVE_DIRECTOR_PROMPT,
+    'creative-director': CREATIVE_DIRECTOR_PROMPT, // Legacy Alias
     'marketing': MARKETING_PROMPT,
     'finance': FINANCE_PROMPT,
     'legal': LEGAL_PROMPT,
@@ -298,6 +299,7 @@ export const AGENT_PROMPTS: Record<string, string> = {
     'social': SOCIAL_PROMPT,
     'publishing': PUBLISHING_PROMPT,
     'road': ROAD_PROMPT,
+    'road-manager': ROAD_PROMPT, // Legacy Alias
     'publicist': PUBLICIST_PROMPT,
     'video': VIDEO_PROMPT,
     'licensing': LICENSING_PROMPT,

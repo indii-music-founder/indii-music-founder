@@ -6,6 +6,48 @@
 
 ---
 
+## MANDATORY SESSION BOOTSTRAP
+
+> This section is non-negotiable. There are no lifecycle hooks in this environment —
+> **you must execute this manually at the start of every session, before anything else.**
+
+### Step 1 — Read the handoff
+
+```bash
+cat .agent/HANDOFF_STATE.md
+```
+
+Summarize what was last built, what branch you're on, and what's pending.
+
+### Step 2 — Detect machine state
+
+```bash
+echo "node_modules: $(ls node_modules 2>/dev/null | wc -l) packages"
+git status --short
+git branch --show-current
+```
+
+### Step 3 — Route accordingly
+
+**If `node_modules` is empty or absent** (fresh machine, likely just got home from a mobile session):
+
+> Read `.agent/skills/walk/SKILL.md` and execute the full protocol immediately.
+> Do not wait to be asked. The user is home. Drive to prime.
+
+**Otherwise:**
+
+> Brief the user: "Last session was on [date/branch]. You built [X]. Still pending: [Y]. How do you want to proceed?"
+
+### Step 4 — Session end (before every sign-off)
+
+Always run this before ending a session so the next machine picks up cleanly:
+
+```bash
+bash .claude/scripts/checkpoint.sh
+```
+
+---
+
 ## Project Overview
 
 **indiiOS** is a multi-tenant, AI-native creative platform for independent music producers, visual artists, and creators. It provides a unified workspace combining AI-powered image generation, video production, audio DNA extraction (analyzing finished tracks for BPM, key, mood, energy, genre), distribution, and business operations.
@@ -113,7 +155,7 @@ indiiOS-Alpha-Electron/
 │
 ├── agents/                     # AI agent definitions (hub-and-spoke architecture)
 │   ├── agent0/                 # Hub orchestrator (indii Conductor)
-│   ├── creative-director/      # Creative direction agent
+│   ├── creative/               # Creative direction agent
 │   ├── indii_executor/         # Task executor
 │   └── [specialist agents]/    # brand, finance, legal, licensing, marketing,
 │                               # music, publicist, publishing, road, social, video
@@ -247,7 +289,7 @@ npm run deploy                 # Build studio + deploy to Firebase hosting (app 
 
 ```typescript
 import { Something } from '@/services/ai/AIService';    // src/*
-import { AgentDef } from '@agents/creative-director';     // agents/*
+import { AgentDef } from '@agents/creative';             // agents/*
 ```
 
 ### State Management (Zustand)
@@ -370,7 +412,7 @@ The `build` script runs three steps sequentially:
   Legal   Brand  Marketing Music  Video
   Agent   Agent   Agent   Agent  Agent
     │
-  [Finance, Publishing, Road Manager, Licensing, Social, Publicist, etc.]
+  [Finance, Publishing, Road, Licensing, Social, Publicist, etc.]
 ```
 
 - **indii Conductor** (`agents/agent0/`) - Central hub, routes tasks to specialists
@@ -512,45 +554,66 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 | Desktop (Linux) | Electron | AppImage |
 | Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
 
-## Skill routing
+## Skill Routing
 
-When the user's request matches an available skill, ALWAYS invoke it using the Skill
-tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
-The skill has specialized workflows that produce better results than ad-hoc answers.
+When a user request matches a skill pattern below, **READ the referenced skill file first and follow its instructions exactly**. Do not answer ad hoc when a skill exists — the skill provides a proven, structured workflow.
 
-### Claude Code Skills (invoke via Skill tool)
+**How to invoke a skill:** Read the file at the listed path, internalize the protocol, then execute it step-by-step. Do not summarize — execute.
 
-- Product ideas, "is this worth building", brainstorming → invoke `office-hours`
-- Bugs, errors, "why is this broken", 500 errors → invoke `investigate`
-- Ship, deploy, push, create PR → invoke `ship`
-- QA, test the site, find bugs → invoke `qa`
-- Code review, check my diff → invoke `review`
-- Update docs after shipping → invoke `document-release`
-- Weekly retro → invoke `retro`
-- Design system, brand → invoke `design-consultation`
-- Visual audit, design polish → invoke `design-review`
-- Architecture review → invoke `plan-eng-review`
-- Save progress, checkpoint, resume → invoke `checkpoint`
-- Code quality, health check → invoke `health`
+### Agent Skills (`.agent/skills/`)
 
-### Claude Commands (slash commands via `.claude/commands/`)
+| Trigger | Skill File |
+|---------|-----------|
+| Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
+| Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
+| Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
+| Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
+| Scaffold a new specialist agent | `.agent/skills/better_agents/SKILL.md` |
+| Brand kit setup, onboarding artist identity | `.agent/skills/brand_kit/SKILL.md` |
+| Direct file upload, bypass file picker for testing | `.agent/skills/direct_upload/SKILL.md` |
+| Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
+| Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
+| Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
+| Stress test image generation pipeline | `.agent/skills/live_test_creative/SKILL.md` |
+| Session start, operator bootstrap, context scan | `.agent/skills/opp/SKILL.md` |
+| Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
+| **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
 
-- Design or evaluate an AI agent harness → `/claude`
-- Known issues audit, error pattern check → `/broken`
-- Resume mobile session, drive codebase to prime → `/walk`
+### Jules Tools (`.jules/`)
 
-### Agent Skills (read `.agent/skills/<name>/SKILL.md` and follow exactly)
+| Trigger | Tool File |
+|---------|----------|
+| Access control, auth flows | `.jules/access.md` |
+| Rapid task execution | `.jules/bolt.md` |
+| UI component building | `.jules/bolt_ui.md` |
+| Click path testing | `.jules/click.md` |
+| Workflow / flow execution | `.jules/flow.md` |
+| Build and forge operations | `.jules/forge.md` |
+| Automation sequences, complex orchestration | `.jules/helix.md` |
+| State and data persistence | `.jules/keeper.md` |
+| Visual inspection, UI review | `.jules/lens.md` |
+| Multi-agent orchestration | `.jules/maestro.md` |
+| Design system, styling, color palette | `.jules/palette.md` |
+| Pixel-level UI adjustments | `.jules/pixel.md` |
+| Quick health pulse check | `.jules/pulse.md` |
+| Monitoring, alerting, system sentinel | `.jules/sentinel.md` |
+| Viewport, responsive design testing | `.jules/viewport.md` |
 
-- Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) → `.agent/skills/hooks/SKILL.md`
-- Design or evaluate an agent harness → `.agent/skills/agentic-harness-architect/SKILL.md`
-- Visual QA, screenshot testing, UI validation → `.agent/skills/auto_qa/SKILL.md`
-- Scaffold a new specialist agent → `.agent/skills/better_agents/SKILL.md`
-- Brand kit setup, onboarding artist identity → `.agent/skills/brand_kit/SKILL.md`
-- Direct file upload, bypass file picker for testing → `.agent/skills/direct_upload/SKILL.md`
-- Drive a task to verified completion (recursive loop) → `.agent/skills/go/SKILL.md`
-- Full engineering health audit, ship readiness → `.agent/skills/health_audit/SKILL.md`
-- Bug sweep, security scan, find and fix all issues → `.agent/skills/hunter/SKILL.md`
-- Stress test image generation pipeline → `.agent/skills/live_test_creative_director/SKILL.md`
-- Session start, operator bootstrap, context scan → `.agent/skills/opp/SKILL.md`
-- Run tests, determine which tests apply → `.agent/skills/test/SKILL.md`
-- **MANDATORY before any debug**: check `.agent/skills/error_memory/ERROR_LEDGER.md`
+### Gemini-Native Equivalents for Claude Code Skills
+
+When Claude would invoke a named Skill tool, use the following Gemini-native approach:
+
+| Claude Skill | Gemini Approach |
+|-------------|-----------------|
+| `office-hours` | Apply extended reasoning to surface tradeoffs, risks, and a concrete recommendation |
+| `investigate` | Trace root cause systematically: read logs → search codebase → form hypothesis → verify before touching code |
+| `ship` | Stage changes → commit with conventional message → push branch → confirm CI green |
+| `qa` | Use `.agent/skills/auto_qa/SKILL.md` for visual QA; run `npm test -- --run` for unit coverage |
+| `review` | Read the full diff, check against architecture standards in this file, report issues by P0/P1/P2 severity |
+| `document-release` | Update CHANGELOG, relevant module docs, and root README after shipping |
+| `retro` | Summarize: what was built, what broke, root causes, and concrete next steps |
+| `design-consultation` | Read `.jules/palette.md` + brand kit; provide design system recommendations grounded in existing tokens |
+| `design-review` | Use `.agent/skills/auto_qa/SKILL.md` for screenshots + `.jules/lens.md` for visual inspection |
+| `plan-eng-review` | Use `.agent/skills/agentic-harness-architect/SKILL.md`; apply all 12 architecture primitives |
+| `checkpoint` | Write current session state to `.agent/HANDOFF_STATE.md` with completed work, decisions, and next steps |
+| `health` | Use `.agent/skills/health_audit/SKILL.md` for full spectrum audit |
