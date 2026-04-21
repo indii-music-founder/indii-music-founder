@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
@@ -6,6 +6,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { WhiskService } from '@/services/WhiskService';
 import { logger } from '@/utils/logger';
 import { Ingredient } from '../components/IngredientDropZone';
+import { SequenceBlock } from '../components/SequenceTimeline';
 
 export function useDirectGeneration() {
     const {
@@ -35,6 +36,11 @@ export function useDirectGeneration() {
     const [mode, setMode] = useState<'image' | 'video'>('image');
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<HistoryItem[]>([]);
+    const [sequence, setSequence] = useState<SequenceBlock[]>([]);
+    const [bpm, setBpm] = useState<number>(120);
+
+    // Guard against double-submit while a generation is in-flight
+    const generatingRef = useRef(false);
 
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
@@ -76,7 +82,7 @@ export function useDirectGeneration() {
         setVideoInputs({ ingredients: newHistoryItems });
     }, [setVideoInputs, currentProjectId]);
 
-    const handleImageGenerate = async (finalPrompt: string) => {
+    const handleImageGenerate = useCallback(async (finalPrompt: string) => {
         const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
         const { AI_MODELS } = await import('@/core/config/ai-models');
 
@@ -110,9 +116,9 @@ export function useDirectGeneration() {
 
             toast.success('Image generated directly successfully');
         }
-    };
+    }, [studioControls.model, studioControls.aspectRatio, localPrompt, currentProjectId, addToHistory, setSelectedItem, setViewMode, toast]);
 
-    const handleVideoGenerate = async (finalPrompt: string) => {
+    const handleVideoGenerate = useCallback(async (finalPrompt: string) => {
         // ISSUE-008 FIX: Auto-downscale 4K to 1080p for video (Veo doesn't support 4K)
         let effectiveResolution = studioControls.resolution;
         if (effectiveResolution === '4k') {
@@ -120,16 +126,30 @@ export function useDirectGeneration() {
             toast.info('4K is not yet supported for video. Generating at 1080p instead.');
         }
 
+        const sequenceTotalBeats = sequence.length > 0 ? sequence.reduce((a, b) => a + b.beats, 0) : 0;
+        const secondsPerBeat = 60 / bpm;
+        const sequenceTotalSeconds = sequenceTotalBeats * secondsPerBeat;
+        
+        const finalDuration = sequenceTotalSeconds > 0 ? sequenceTotalSeconds : Math.max(6, studioControls.duration || 6);
+        
+        let sequencePrompt = finalPrompt;
+        if (sequence.length > 0) {
+            const sequenceDetails = sequence.map(block => `${block.beats} beats (${(block.beats * secondsPerBeat).toFixed(2)}s) [${block.section || 'Uncategorized'}, ${block.energy || 'Medium'} Energy]`).join(', ');
+            sequencePrompt = `[SEQUENCE: ${sequenceDetails} at ${bpm} BPM] ${finalPrompt}`;
+        }
+
+        const ingredientsList = videoInputs?.ingredients || [];
+
         const generated = await VideoGeneration.generateVideo({
-            prompt: finalPrompt,
+            prompt: sequencePrompt,
             resolution: effectiveResolution,
             aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
-            duration: Math.max(6, studioControls.duration || 6), // Veo API requires >= 6
-            durationSeconds: Math.max(6, studioControls.duration || 6),
+            duration: finalDuration,
+            durationSeconds: finalDuration,
             model: studioControls.model, // Will be resolved by FirebaseAIService
             fps: 24,
             orgId: 'personal', // Force personal for direct test
-            referenceImages: videoInputs.ingredients.map(ing => {
+            referenceImages: ingredientsList.map(ing => {
                 let bytes = ing.url;
                 const commaIndex = bytes.indexOf(',');
                 if (bytes.startsWith('data:') && commaIndex !== -1) {
@@ -143,8 +163,6 @@ export function useDirectGeneration() {
         });
 
         if (generated && generated.length > 0) {
-            // For video, we might get a URL immediately or a job ID.
-            // VideoGenerationService returns standardized results now.
             const newItems: HistoryItem[] = generated.map(g => ({
                 id: g.id || crypto.randomUUID(),
                 url: g.url || '', // Might be empty if queued
@@ -155,9 +173,6 @@ export function useDirectGeneration() {
                 origin: 'generated' as const
             }));
 
-            // If queued, we won't see it immediately here unless we listen.
-            // For DIRECT mode, we accept that 'Queued' state might need refresh, 
-            // or better, we just show the "Job Started" toast.
             if (newItems.every(i => !i.url)) {
                 toast.info('Video job queued. Check gallery for results.');
             } else {
@@ -166,11 +181,13 @@ export function useDirectGeneration() {
                 toast.success('Video generated successfully');
             }
         }
-    };
+    }, [studioControls, localPrompt, currentProjectId, addToHistory, toast, sequence, bpm, videoInputs?.ingredients]);
 
     const handleGenerate = useCallback(async () => {
         if (!localPrompt.trim()) return;
+        if (generatingRef.current) return; // Prevent double-submit
 
+        generatingRef.current = true;
         setIsGenerating(true);
         setPrompt(localPrompt); // Sync to global for history/logging
 
@@ -199,8 +216,9 @@ export function useDirectGeneration() {
             }
         } finally {
             setIsGenerating(false);
+            generatingRef.current = false;
         }
-    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs?.ingredients]);
+    }, [localPrompt, mode, whiskState, setPrompt, toast, handleImageGenerate, handleVideoGenerate]);
 
     return {
         mode,
