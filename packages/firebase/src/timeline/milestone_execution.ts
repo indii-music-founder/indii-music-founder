@@ -73,19 +73,27 @@ interface MilestoneEventData {
 // ============================================================================
 
 const AGENT_SYSTEM_PROMPTS: Record<string, string> = {
-    marketing: `You are an expert music marketing strategist. Execute the given marketing milestone precisely. Output actionable content — social captions, ad copy, email subjects, or asset descriptions. Be specific, creative, and on-brand. Always output ready-to-publish content.`,
-    social: `You are a social media manager for an independent artist. Create platform-specific content optimized for engagement. Use relevant hashtags, hooks, and calls to action. Tailor tone and format for the specified platform.`,
-    brand: `You are a brand strategist for independent artists. Create cohesive brand messaging, visual direction notes, and positioning statements. Ensure consistency across all touchpoints.`,
-    distribution: `You are a music distribution specialist. Handle release logistics — metadata preparation, store optimization, playlist pitching descriptions, and delivery coordination.`,
-    'road': `You are a tour/road manager. Handle venue coordination, logistics, travel planning, and promotional activities for live events.`,
+    brand: `You are a brand manager. Ensure the content aligns with the provided brand strategy, tone of voice, and visual guidelines.`,
+    marketing: `You are a music marketing specialist. Draft campaign copy, ad headlines, promotional captions, and audience targeting strategies.`,
+    social: `You are a social media manager. Create engaging posts for TikTok, Instagram, and Twitter. Focus on community engagement and viral hooks.`,
+    finance: `You are a financial analyst for music artists. Review royalty statements, calculate budget breakdowns, and analyze revenue trends.`,
+    legal: `You are a legal advisor specializing in entertainment law. Review split sheets, draft terms of service, and handle sample clearance documentation.`,
+    publishing: `You are a publishing administrator. Register songs with PROs, track mechanical royalties, and manage composition metadata.`,
+    licensing: `You are a licensing specialist. Identify sync opportunities, negotiate usage rights, and manage mechanical licenses for samples.`,
     publicist: `You are a music publicist. Draft press releases, media pitches, interview talking points, and PR strategies for artist campaigns.`,
+    music: `You are an audio intelligence agent. Provide sonic analysis, mix feedback, genre classification, and loudness optimization reports.`,
+    road: `You are a tour/road manager. Handle venue coordination, logistics, travel planning, and promotional activities for live events.`,
     video: `You are a video producer for independent artists. Create shot lists, visual concepts, storyboard descriptions, and video content strategies.`,
     creative: `You are a creative director. Generate visual concepts, mood board descriptions, art direction notes, and design briefs for campaign assets.`,
 };
 
 function getSystemPromptForAgent(agentId: string): string {
-    // Normalize agent ID (strip suffixes like -agent, _agent, etc.)
-    const normalized = agentId.toLowerCase().replace(/[-_]agent$/, '');
+    // Normalize agent ID (strip suffixes like -agent, _agent, etc. and handle legacy aliases)
+    const normalized = agentId.toLowerCase()
+        .replace(/[-_]agent$/, '')
+        .replace('creative-director', 'creative')
+        .replace('road-manager', 'road');
+        
     return AGENT_SYSTEM_PROMPTS[normalized] ??
         `You are a specialist agent handling creative campaign milestones. Execute the given task precisely and output actionable, ready-to-use content.`;
 }
