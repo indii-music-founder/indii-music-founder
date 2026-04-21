@@ -1,0 +1,6 @@
+
+> indiios-monorepo@1.54.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/modules/creative/services/CanvasOperationsService.ts(554,48): error TS2322: Type 'boolean | undefined' is not assignable to type 'boolean'.
+  Type 'undefined' is not assignable to type 'boolean'.

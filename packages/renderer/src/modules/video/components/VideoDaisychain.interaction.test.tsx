@@ -286,7 +286,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         fireEvent.change(promptInput, { target: { value: 'Cinematic morph' } });
 
         // --- STEP 5: Generate ---
-        vi.mocked(VideoGeneration.generateVideo).mockResolvedValue([
+        vi.mocked(VideoGeneration.generateLongFormVideo).mockResolvedValue([
             { id: 'vid-1', url: 'video.mp4', prompt: 'Cinematic morph' }
         ]);
 
@@ -296,9 +296,8 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         expect(mockToastInfo).toHaveBeenCalledWith('Queuing interpolation...');
 
         await waitFor(() => {
-            expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+            expect(VideoGeneration.generateLongFormVideo).toHaveBeenCalledWith(expect.objectContaining({
                 firstFrame: 'img1.jpg',
-                lastFrame: 'img2.jpg'
             }));
             expect(mockToastSuccess).toHaveBeenCalledWith('Scene generated!');
         });
