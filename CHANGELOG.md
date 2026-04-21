@@ -2,6 +2,16 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.54.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.54.0...v1.54.1) (2026-04-21)
+
+
+### Bug Fixes
+
+* **autoagent:** unify routing table creative agent name ([bd95ff1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bd95ff1c7119bc15da58a6c3f980bbf990723d29))
+* clarify creative director routing for indii conductor ([9765664](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9765664ace9ae237457a69094fb5584b3daa7967))
+* **creative:** direct generation hook and RAG RLS issues ([acf5dcb](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/acf5dcb43482081761b5c94647ba32668e23f8d7))
+* resolve merge conflicts and sync Creative agent identity ([47861cd](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/47861cd65ec786f2d5b3e3a077dd0408fe3b8a9a))
+
 ## [1.52.2](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.52.1...v1.52.2) (2026-04-19)
 
 
