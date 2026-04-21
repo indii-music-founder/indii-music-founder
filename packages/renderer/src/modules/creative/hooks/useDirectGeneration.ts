@@ -35,13 +35,10 @@ export function useDirectGeneration() {
     const [mode, setMode] = useState<'image' | 'video'>('image');
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<HistoryItem[]>([]);
-    const [sequence, setSequence] = useState<number[]>([]);
-    const [bpm, setBpm] = useState<number>(120);
 
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
             setLocalPrompt('');
-            setSequence([]);
             setMode(newMode);
         }
     }, [mode]);
@@ -123,24 +120,12 @@ export function useDirectGeneration() {
             toast.info('4K is not yet supported for video. Generating at 1080p instead.');
         }
 
-        const sequenceTotalBeats = sequence.length > 0 ? sequence.reduce((a, b) => a + b, 0) : 0;
-        const secondsPerBeat = 60 / bpm;
-        const sequenceTotalSeconds = sequenceTotalBeats * secondsPerBeat;
-        
-        const finalDuration = sequenceTotalSeconds > 0 ? sequenceTotalSeconds : Math.max(6, studioControls.duration || 6);
-        
-        let sequencePrompt = finalPrompt;
-        if (sequence.length > 0) {
-            const sequenceDetails = sequence.map(beats => `${beats} beats (${(beats * secondsPerBeat).toFixed(2)}s)`).join(', ');
-            sequencePrompt = `[SEQUENCE: ${sequenceDetails} at ${bpm} BPM] ${finalPrompt}`;
-        }
-
         const generated = await VideoGeneration.generateVideo({
-            prompt: sequencePrompt,
+            prompt: finalPrompt,
             resolution: effectiveResolution,
             aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
-            duration: finalDuration,
-            durationSeconds: finalDuration,
+            duration: Math.max(6, studioControls.duration || 6), // Veo API requires >= 6
+            durationSeconds: Math.max(6, studioControls.duration || 6),
             model: studioControls.model, // Will be resolved by FirebaseAIService
             fps: 24,
             orgId: 'personal', // Force personal for direct test
@@ -215,7 +200,7 @@ export function useDirectGeneration() {
         } finally {
             setIsGenerating(false);
         }
-    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs?.ingredients, sequence, bpm]);
+    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem, setViewMode, videoInputs?.ingredients]);
 
     return {
         mode,
@@ -229,10 +214,6 @@ export function useDirectGeneration() {
         handleIngredientsChange,
         studioControls,
         setSelectedItem,
-        setViewMode,
-        sequence,
-        setSequence,
-        bpm,
-        setBpm
+        setViewMode
     };
 }
