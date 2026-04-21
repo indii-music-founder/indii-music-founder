@@ -25,7 +25,7 @@ RESULTS_FILE = Path(__file__).resolve().parent / "results.tsv"
 # ── Agent Fleet ──────────────────────────────────────────────────────────────
 
 AGENT_NAMES = [
-    "agent0", "analytics", "brand", "creative-director", "default",
+    "agent0", "analytics", "brand", "creative", "default",
     "distribution", "finance", "generalist", "indii_curriculum",
     "indii_executor", "legal", "licensing", "marketing", "merchandise",
     "music", "publicist", "publishing", "road", "social", "video",
@@ -34,7 +34,7 @@ AGENT_NAMES = [
 # ── Routing Table (ground truth for Conductor routing tests) ─────────────────
 
 ROUTING_TABLE = {
-    "creative-director": [
+    "creative": [
         "visuals", "3d", "album art", "album cover", "cover art",
         "image generation", "graphic design", "artwork", "photo shoot",
         "visual content", "cover designed",

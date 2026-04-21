@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, memo, useId } from 'react';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
-import { ChevronDown, ChevronRight, Sparkles, Wand2, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -104,10 +104,7 @@ CategoryDropdown.displayName = 'CategoryDropdown';
 
 function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, bpm, setBpm, currentPrompt = '', onPromptImproved }: PromptBuilderProps) {
     const [openCategory, setOpenCategory] = useState<string | null>(null);
-    const [isImproving, setIsImproving] = useState(false);
-    const [lastReasoning, setLastReasoning] = useState<string | null>(null);
     const brandKit = useStore(useShallow(state => state.userProfile?.brandKit));
-    const toast = useToast();
 
     // Memoize brandTags computation
     const brandTags = useMemo(() => [
@@ -123,30 +120,6 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
         onAddTag(tag);
         setOpenCategory(null);
     }, [onAddTag]);
-
-    // Prompt Improve handler
-    const handleImprovePrompt = useCallback(async () => {
-        if (!currentPrompt.trim() || !onPromptImproved) return;
-
-        setIsImproving(true);
-        setLastReasoning(null);
-
-        try {
-            const result = await PromptImproverService.improve({
-                rawPrompt: currentPrompt,
-                mode
-            });
-
-            onPromptImproved(result.improved);
-            setLastReasoning(result.reasoning);
-            toast.success('Prompt improved ✨');
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Failed to improve prompt';
-            toast.error(message);
-        } finally {
-            setIsImproving(false);
-        }
-    }, [currentPrompt, mode, onPromptImproved, toast]);
 
     return (
         <div className="flex flex-col gap-2 p-2 bg-background/20 border-b border-white/5">
@@ -174,50 +147,6 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
                     />
                 ))}
             </div>
-
-            {/* Improve Prompt Button */}
-            {onPromptImproved && (
-                <div className="flex items-center gap-3 mt-2 pt-2 border-t border-white/5">
-                    <button
-                        onClick={handleImprovePrompt}
-                        disabled={isImproving || !currentPrompt.trim()}
-                        data-testid="improve-prompt-btn"
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 hover:border-amber-500/50 hover:shadow-[0_0_16px_rgba(245,158,11,0.2)] active:scale-[0.98]"
-                    >
-                        {isImproving ? (
-                            <>
-                                <Loader2 size={14} className="animate-spin" />
-                                <span>Improving…</span>
-                            </>
-                        ) : (
-                            <>
-                                <Wand2 size={14} />
-                                <span>Improve Prompt</span>
-                            </>
-                        )}
-                    </button>
-
-                    <AnimatePresence>
-                        {lastReasoning && !isImproving && (
-                            <motion.p
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                className="text-[10px] text-amber-500/70 italic flex-1 truncate"
-                            >
-                                {lastReasoning}
-                            </motion.p>
-                        )}
-                    </AnimatePresence>
-                </div>
-            )}
-
-            {/* Sequence Builder for Video Mode */}
-            {mode === 'video' && setSequence && (
-                <div className="mt-4">
-                    <SequenceTimeline sequence={sequence} onChange={setSequence} bpm={bpm} onBpmChange={setBpm} />
-                </div>
-            )}
         </div>
     );
 }

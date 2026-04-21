@@ -6,6 +6,7 @@ import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
     Palette, Clock, FlaskConical, Wand2, Rocket, Settings2
 } from 'lucide-react';
+import PromptBuilder from './PromptBuilder';
 import DaisyChainControls from './DaisyChainControls';
 import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
@@ -18,28 +19,27 @@ interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 export default function CreativeNavbar(props: CreativeNavbarProps) {
     const {
         setVideoInput,
-
+        prompt,
+        setPrompt,
         generationMode,
         viewMode,
         setViewMode,
         studioControls,
         enableAndromedaMode,
-        disableAndromedaMode,
-        isPromptBuilderOpen,
-        togglePromptBuilder
+        disableAndromedaMode
     } = useStore(useShallow(state => ({
         setVideoInput: state.setVideoInput,
-
+        prompt: state.prompt,
+        setPrompt: state.setPrompt,
         generationMode: state.generationMode,
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
         studioControls: state.studioControls,
         enableAndromedaMode: state.enableAndromedaMode,
-        disableAndromedaMode: state.disableAndromedaMode,
-        isPromptBuilderOpen: state.isPromptBuilderOpen,
-        togglePromptBuilder: state.togglePromptBuilder
+        disableAndromedaMode: state.disableAndromedaMode
     })));
     const toast = useToast();
+    const [showPromptBuilder, setShowPromptBuilder] = useState(false);
     const [showBrandAssets, setShowBrandAssets] = useState(false);
     const [showPromptHistory, setShowPromptHistory] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
@@ -95,10 +95,10 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     {generationMode === 'image' ? (
                         <div className="flex items-center gap-1.5">
                             <button
-                                onClick={() => togglePromptBuilder()}
+                                onClick={() => setShowPromptBuilder(!showPromptBuilder)}
                                 data-testid="builder-btn"
                                 className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
-                                    ${isPromptBuilderOpen
+                                    ${showPromptBuilder
                                         ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
                                         : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
                             >
@@ -194,6 +194,10 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 </div>
             </div>
 
+            {/* Prompt Builder Drawer */}
+            {showPromptBuilder && (
+                <PromptBuilder onAddTag={(tag) => setPrompt(prompt ? `${prompt}, ${tag}` : tag)} />
+            )}
 
             {/* Brand Assets Drawer */}
             {showBrandAssets && (

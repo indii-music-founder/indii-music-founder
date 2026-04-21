@@ -327,7 +327,7 @@ function useFirestoreRelay(enabled: boolean) {
                         await remoteRelayService.sendResponse(
                             command.id,
                             `✅ Generated ${results.length} image${results.length > 1 ? 's' : ''}.`,
-                            'creative-director',
+                            'creative',
                             false,
                             imageUrls
                         );

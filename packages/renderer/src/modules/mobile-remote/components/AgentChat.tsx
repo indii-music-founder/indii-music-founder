@@ -22,10 +22,12 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 
 // Available specialist agents for routing
+// Agent IDs MUST match the keys in AGENT_PROMPTS (packages/firebase/src/relay/agentPrompts.ts).
+// Mismatches cause silent fallback to the generalist conductor.
 const CONTROLLER_AGENTS = [
     { id: 'auto', label: 'indii (Auto)', icon: '🎯' },
     { id: 'brand', label: 'Brand Manager', icon: '🎨' },
-    { id: 'road-manager', label: 'Road Manager', icon: '🚐' },
+    { id: 'road', label: 'Road Manager', icon: '🚐' },
     { id: 'marketing', label: 'Marketing', icon: '📣' },
     { id: 'social', label: 'Social Media', icon: '📱' },
     { id: 'finance', label: 'Finance', icon: '💰' },
@@ -35,7 +37,7 @@ const CONTROLLER_AGENTS = [
     { id: 'publicist', label: 'Publicist', icon: '🎤' },
     { id: 'music', label: 'Music', icon: '🎵' },
     { id: 'video', label: 'Video', icon: '🎬' },
-    { id: 'creative-director', label: 'Creative Director', icon: '✨' },
+    { id: 'creative', label: 'Creative Director', icon: '✨' },
 ];
 
 interface ChatMessage {
