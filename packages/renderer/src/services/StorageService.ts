@@ -290,6 +290,11 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         // Try standard query with server-side sort
         try {
             const { auth } = await import('./firebase');
+            
+            if (!auth.currentUser?.uid) {
+                return [];
+            }
+            
             const constraints = [
                 where('orgId', '==', orgId),
                 orderBy('timestamp', 'desc'),
@@ -298,11 +303,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
             // If personal org, we must filter by userId to match security rules
             if (orgId === 'personal') {
-                if (auth.currentUser?.uid) {
-                    constraints.push(where('userId', '==', auth.currentUser.uid));
-                } else {
-                    return [];
-                }
+                constraints.push(where('userId', '==', auth.currentUser.uid));
             }
 
             return (await this.query(constraints)).map(doc => this.mapDocumentToItem(doc));
@@ -311,15 +312,16 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             // Check if it's the index error
             if (error.code === 'failed-precondition' || error.message?.includes('index')) {
                 const { auth } = await import('./firebase');
+                
+                if (!auth.currentUser?.uid) {
+                    return [];
+                }
+                
                 const constraints = [where('orgId', '==', orgId), limit(limitCount)];
 
                 // Only filter by userId for personal org
                 if (orgId === 'personal') {
-                    if (auth.currentUser) {
-                        constraints.push(where('userId', '==', auth.currentUser.uid));
-                    } else {
-                        return [];
-                    }
+                    constraints.push(where('userId', '==', auth.currentUser.uid));
                 }
 
                 // Fallback to client-side sort
@@ -355,6 +357,12 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         }
 
         const { auth } = await import('./firebase');
+        
+        if (!auth.currentUser?.uid) {
+            onUpdate([]);
+            return () => { };
+        }
+        
         const constraints = [
             where('orgId', '==', orgId),
             orderBy('timestamp', 'desc'),
@@ -362,12 +370,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         ];
 
         if (orgId === 'personal') {
-            if (auth.currentUser?.uid) {
-                constraints.push(where('userId', '==', auth.currentUser.uid));
-            } else {
-                onUpdate([]);
-                return () => { };
-            }
+            constraints.push(where('userId', '==', auth.currentUser.uid));
         }
 
         const q = query(this.collection, ...constraints);
