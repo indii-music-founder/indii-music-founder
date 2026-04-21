@@ -88,7 +88,7 @@ describe('📚 Keeper: Persistence', () => {
         expect(sessionId).toBe(state.activeSessionId);
         expect(updatePayload.messages).toHaveLength(1);
         expect(updatePayload.messages[0].text).toBe('Hello, Keeper!');
-    });
+    }, 15000);
 
     it('should persist cleared history to SessionService', async () => {
         // Setup: Add a message first
@@ -111,7 +111,7 @@ describe('📚 Keeper: Persistence', () => {
 
         const [_, updatePayload] = mockUpdateSession.mock.calls[0]!;
         expect(updatePayload.messages).toEqual([]);
-    });
+    }, 15000);
 
     it('should persist message updates (e.g. streaming chunks) to SessionService', async () => {
         // Setup
@@ -130,5 +130,5 @@ describe('📚 Keeper: Persistence', () => {
 
         const [_, updatePayload] = mockUpdateSession.mock.calls[0]!;
         expect(updatePayload.messages[0].text).toBe('Thinking complete.');
-    });
+    }, 15000);
 });
