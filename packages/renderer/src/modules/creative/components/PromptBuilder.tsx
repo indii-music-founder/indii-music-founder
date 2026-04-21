@@ -104,7 +104,9 @@ CategoryDropdown.displayName = 'CategoryDropdown';
 
 function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, bpm, setBpm, currentPrompt = '', onPromptImproved }: PromptBuilderProps) {
     const [openCategory, setOpenCategory] = useState<string | null>(null);
+    const [isImproving, setIsImproving] = useState(false);
     const brandKit = useStore(useShallow(state => state.userProfile?.brandKit));
+    const toast = useToast();
 
     // Memoize brandTags computation
     const brandTags = useMemo(() => [
@@ -120,6 +122,24 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
         onAddTag(tag);
         setOpenCategory(null);
     }, [onAddTag]);
+
+    const handleImprove = useCallback(async () => {
+        if (!currentPrompt.trim() || !onPromptImproved) return;
+
+        setIsImproving(true);
+        try {
+            const result = await PromptImproverService.improve({
+                rawPrompt: currentPrompt,
+                mode: mode as 'image' | 'video'
+            });
+            onPromptImproved(result.improved);
+            toast.success(`Prompt improved: ${result.reasoning}`);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to improve prompt');
+        } finally {
+            setIsImproving(false);
+        }
+    }, [currentPrompt, mode, onPromptImproved, toast]);
 
     return (
         <div className="flex flex-col gap-2 p-2 bg-background/20 border-b border-white/5">
@@ -146,7 +166,39 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
                         onTagClick={handleTagClick}
                     />
                 ))}
+
+                {/* AI Prompt Improver Button */}
+                {onPromptImproved && (
+                    <button
+                        onClick={handleImprove}
+                        disabled={isImproving || !currentPrompt.trim()}
+                        className="ml-auto px-4 py-1.5 text-xs rounded-full bg-linear-to-r from-dept-creative to-dept-marketing text-white font-bold flex items-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-dept-creative/20"
+                    >
+                        {isImproving ? (
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                            >
+                                <Sparkles size={14} />
+                            </motion.div>
+                        ) : (
+                            <Sparkles size={14} />
+                        )}
+                        <span>Improve with AI</span>
+                    </button>
+                )}
             </div>
+
+            {mode === 'video' && setSequence && setBpm && (
+                <div className="mt-4 pt-4 border-t border-white/5">
+                    <SequenceTimeline 
+                        sequence={sequence} 
+                        onChange={setSequence} 
+                        bpm={bpm} 
+                        onBpmChange={setBpm} 
+                    />
+                </div>
+            )}
         </div>
     );
 }
