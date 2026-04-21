@@ -11,30 +11,36 @@ vi.mock('./firebase', () => ({
 }));
 
 // Mock Firestore
-const mockGetDocs = vi.fn();
-const mockQuery = vi.fn();
-const mockCollection = vi.fn();
-const mockWhere = vi.fn();
-const mockOrderBy = vi.fn();
-const mockLimit = vi.fn();
+const { mockGetDocs, mockQuery, mockCollection, mockWhere, mockOrderBy, mockLimit } = vi.hoisted(() => {
+    return {
+        mockGetDocs: vi.fn(),
+        mockQuery: vi.fn(),
+        mockCollection: vi.fn(),
+        mockWhere: vi.fn(),
+        mockOrderBy: vi.fn(),
+        mockLimit: vi.fn()
+    };
+});
 
-vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
-    collection: (...args: any[]) => mockCollection(...args),
-    addDoc: vi.fn(),
-    getDocs: (...args: any[]) => mockGetDocs(...args),
-    query: (...args: any[]) => mockQuery(...args),
-    orderBy: (...args: any[]) => mockOrderBy(...args),
-    limit: (...args: any[]) => mockLimit(...args),
-    where: (...args: any[]) => mockWhere(...args),
-    Timestamp: {
-        fromMillis: vi.fn()
-    }
-}));
+vi.mock('firebase/firestore', () => {
+    return {
+        serverTimestamp: vi.fn(),
+        collection: (...args: any[]) => mockCollection(...args),
+        addDoc: vi.fn(),
+        getDocs: (...args: any[]) => mockGetDocs(...args),
+        query: (...args: any[]) => mockQuery(...args),
+        orderBy: (...args: any[]) => mockOrderBy(...args),
+        limit: (...args: any[]) => mockLimit(...args),
+        where: (...args: any[]) => mockWhere(...args),
+        Timestamp: {
+            fromMillis: vi.fn()
+        }
+    };
+});
 
 // Mock OrganizationService
 vi.mock('./OrganizationService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     OrganizationService: {
         getCurrentOrgId: () => 'org-123'
     }
