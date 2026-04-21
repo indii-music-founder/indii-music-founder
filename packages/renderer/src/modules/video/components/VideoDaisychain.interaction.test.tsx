@@ -94,6 +94,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: vi.fn(),
+        generateLongFormVideo: vi.fn(),
         subscribeToJob: vi.fn().mockReturnValue(vi.fn()), // Returns unsubscribe
     }
 }));
