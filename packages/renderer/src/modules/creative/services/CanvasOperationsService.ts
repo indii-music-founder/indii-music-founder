@@ -223,22 +223,22 @@ export class CanvasOperationsService {
     }
 
     isAnnotation(obj: fabric.Object): boolean {
-        const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean; isSegmentationMask?: boolean; colorId?: string; isBaseImage?: boolean } }).data;
+        if (!obj) return false;
+        const type = obj.type?.toLowerCase();
+        const data = (obj as any).data;
         
         // Explicitly marked as base image? Not an annotation.
         if (data?.isBaseImage) return false;
         
         // Fabric.js paths are always annotations in this context
-        if (obj.type === 'path') return true;
+        if (type === 'path') return true;
+        
+        // Groups containing annotations (or being used for mask drawing)
+        if (type === 'group') return true;
         
         // Explicitly marked as annotation metadata
         if (data?.isBoundingBox || data?.isSegmentationMask || data?.colorId) return true;
         
-        // Fallback: If it's a group, check if it contains any annotations (though we don't usually group here)
-        if (obj.type === 'group') {
-            return (obj as fabric.Group).getObjects().some(child => this.isAnnotation(child));
-        }
-
         return false;
     }
 

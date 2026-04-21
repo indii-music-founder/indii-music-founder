@@ -58,11 +58,24 @@ export function buildCreativeHistoryState(
             // Use dynamic import to avoid circular dependency with store
             import('@/core/store').then(({ useStore }) => {
                 logger.debug("CreativeSlice: addToHistory called", item.id);
-                const { currentOrganizationId } = useStore.getState();
+                const { currentOrganizationId, currentProjectId, createFileNode, user } = useStore.getState();
                 const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
 
                 set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory] }));
                 logger.debug("CreativeSlice: generatedHistory updated", enrichedItem.id);
+
+                // Auto-persistence to project asset folder
+                if (enrichedItem.type === 'image' || enrichedItem.type === 'video') {
+                    const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.png`;
+                    createFileNode(
+                        filename,
+                        null, // root
+                        currentProjectId,
+                        user?.uid || 'anonymous',
+                        enrichedItem.type as any,
+                        { url: enrichedItem.url, origin: enrichedItem.origin }
+                    ).catch(err => logger.error("CreativeSlice: File system sync error", err));
+                }
 
                 import('@/services/StorageService').then(({ StorageService }) => {
                     StorageService.saveItem(enrichedItem)

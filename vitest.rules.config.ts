@@ -12,13 +12,16 @@ import path from 'path';
 export default defineConfig({
     resolve: {
         alias: {
-            '@': path.resolve(__dirname, './src'),
+            '@': path.resolve(__dirname, './packages/renderer/src'),
         },
     },
     test: {
         globals: true,
         environment: 'node',
-        include: ['src/test/security/firestore.rules.test.ts'],
+        include: [
+            'packages/renderer/src/test/security/**/*.test.ts',
+            'packages/firebase/src/test/security/**/*.test.ts'
+        ],
         // Rules tests are slow (emulator round-trips) — allow generous timeout
         testTimeout: 30000,
         hookTimeout: 30000,
@@ -29,3 +32,4 @@ export default defineConfig({
         },
     },
 });
+

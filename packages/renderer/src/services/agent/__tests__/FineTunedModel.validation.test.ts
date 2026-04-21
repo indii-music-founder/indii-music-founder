@@ -228,9 +228,9 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
     describe('Registry Completeness Cross-Reference (5 tests)', () => {
         it('registry should contain exactly the expected agent count', () => {
             const registryKeys = Object.keys(FINE_TUNED_MODEL_REGISTRY);
-            // Should match the number of unique agents (excluding aliases)
+            // Should match the number of unique agents (including aliases like creative-director, road-manager)
             expect(registryKeys.length).toBeGreaterThanOrEqual(18);
-            expect(registryKeys.length).toBeLessThanOrEqual(22);
+            expect(registryKeys.length).toBeLessThanOrEqual(26);
         });
 
         it('no endpoint should be empty string', () => {
