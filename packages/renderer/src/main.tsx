@@ -19,24 +19,16 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './core/App';
 import { ErrorBoundary } from './core/components/ErrorBoundary';
 import { initViewportFixes, initKeyboardDetection } from '@/lib/mobile';
-import { initSentry } from '@/lib/sentry';
 import { getConsentPreferences } from '@/components/shared/CookieConsentBanner';
 import '@/core/i18n'; // Initialize i18n before any component renders
 import './index.css';
 
 // Import global test harness
-import './utils/test-harness';
+import { initSentry } from '@/services/observability/SentryService';
 
-// Item 303: Gate Sentry initialization on cookie consent.
-// If user has previously consented to error tracking, initialize immediately.
-// Otherwise, CookieConsentBanner will initialize it after consent is granted.
-const consent = getConsentPreferences();
-if (consent?.errorTracking) {
-    initSentry();
-} else if (!consent) {
-    // No consent recorded yet — Sentry will be initialized by CookieConsentBanner
-    // after the user makes their choice.
-}
+// Initialize Sentry before the app renders. 
+// Item 303: Consent is checked internally within initSentry.
+initSentry();
 
 
 logger.debug("Indii OS Studio v1.2.6-manual-redeploy");
