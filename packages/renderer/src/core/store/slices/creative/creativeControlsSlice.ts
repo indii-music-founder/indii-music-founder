@@ -124,6 +124,11 @@ export interface CreativeControlsSlice {
 
     isGenerating: boolean;
     setIsGenerating: (isGenerating: boolean) => void;
+
+    // Prompt Builder visibility (shared between CreativeNavbar & DirectGenerationTab)
+    isPromptBuilderOpen: boolean;
+    setIsPromptBuilderOpen: (open: boolean) => void;
+    togglePromptBuilder: () => void;
 }
 
 /**
@@ -296,5 +301,9 @@ export function buildCreativeControlsState(
 
         isGenerating: false,
         setIsGenerating: (isGenerating) => set({ isGenerating }),
+
+        isPromptBuilderOpen: false,
+        setIsPromptBuilderOpen: (open) => set({ isPromptBuilderOpen: open }),
+        togglePromptBuilder: () => set((state) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen })),
     };
 }
