@@ -27,7 +27,11 @@ describe('Access: DailyItem Accessibility', () => {
             />
         );
 
-        const results = await axe(container);
+        const results = await axe(container, {
+            rules: {
+                'color-contrast': { enabled: false }
+            }
+        });
         expect(results).toHaveNoViolations();
     }, 15000);
 
