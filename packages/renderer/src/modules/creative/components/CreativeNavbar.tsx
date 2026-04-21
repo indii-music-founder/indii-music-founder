@@ -19,7 +19,8 @@ interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 export default function CreativeNavbar(props: CreativeNavbarProps) {
     const {
         setVideoInput,
-
+        prompt,
+        setPrompt,
         generationMode,
         viewMode,
         setViewMode,
@@ -28,7 +29,8 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         disableAndromedaMode
     } = useStore(useShallow(state => ({
         setVideoInput: state.setVideoInput,
-
+        prompt: state.prompt,
+        setPrompt: state.setPrompt,
         generationMode: state.generationMode,
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
