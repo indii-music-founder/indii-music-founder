@@ -130,6 +130,7 @@ export class CanvasOperationsService {
         const canvasH = Math.round(imgH * fitScale);
         this.canvas.setDimensions({ width: canvasW, height: canvasH });
 
+        img.set('data', { isBaseImage: true });
         scaleImageToCanvas(img, this.canvas);
         this.canvas.add(img);
         this.canvas.renderAll();
@@ -222,9 +223,22 @@ export class CanvasOperationsService {
     }
 
     isAnnotation(obj: fabric.Object): boolean {
+        const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean; isSegmentationMask?: boolean; colorId?: string; isBaseImage?: boolean } }).data;
+        
+        // Explicitly marked as base image? Not an annotation.
+        if (data?.isBaseImage) return false;
+        
+        // Fabric.js paths are always annotations in this context
         if (obj.type === 'path') return true;
-        const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean; isSegmentationMask?: boolean } }).data;
-        if (data?.isBoundingBox || data?.isSegmentationMask) return true;
+        
+        // Explicitly marked as annotation metadata
+        if (data?.isBoundingBox || data?.isSegmentationMask || data?.colorId) return true;
+        
+        // Fallback: If it's a group, check if it contains any annotations (though we don't usually group here)
+        if (obj.type === 'group') {
+            return (obj as fabric.Group).getObjects().some(child => this.isAnnotation(child));
+        }
+
         return false;
     }
 
@@ -530,13 +544,14 @@ export class CanvasOperationsService {
      * (drawing paths, bounding boxes, segmentation masks) temporarily hidden.
      * This ensures saved/exported images contain only the actual artwork.
      */
-    private getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number }): string {
+    private getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number; excludeAnnotations?: boolean }): string {
         if (!this.canvas) return '';
 
         const allObjects = this.canvas.getObjects();
+        const excludeAnnotations = options?.excludeAnnotations !== false;
 
         // Identify every annotation object on the canvas
-        const annotationObjects = allObjects.filter(obj => this.isAnnotation(obj));
+        const annotationObjects = excludeAnnotations ? allObjects.filter(obj => this.isAnnotation(obj)) : [];
 
         // Snapshot current visibility so we can restore after export
         const visibilitySnapshot = annotationObjects.map(obj => obj.visible);
@@ -544,6 +559,13 @@ export class CanvasOperationsService {
         try {
             // Hide all annotations
             annotationObjects.forEach(obj => (obj.visible = false));
+            
+            // Also hide selection handles/borders for a clean export
+            const activeObject = this.canvas.getActiveObject();
+            if (activeObject) {
+                this.canvas.discardActiveObject();
+            }
+            
             this.canvas.renderAll();
 
             const dataUrl = this.canvas.toDataURL({
@@ -557,6 +579,51 @@ export class CanvasOperationsService {
             // Restore original visibility
             annotationObjects.forEach((obj, i) => (obj.visible = visibilitySnapshot[i] ?? true));
             this.canvas.renderAll();
+        }
+    }
+
+    /**
+     * Flatten the canvas: Consolidates all visible layers (excluding annotations) 
+     * into a single new base image and clears the current layer stack.
+     * This effectively "bakes" all current edits into the base.
+     */
+    async flattenCanvas(): Promise<boolean> {
+        if (!this.canvas) return false;
+
+        logger.info('[CanvasOps] Flattening canvas layers...');
+        
+        // 1. Get high-fidelity flattened image (hides annotations automatically)
+        const flattenedDataUrl = this.getFlattenedDataURL({ 
+            format: 'png', 
+            quality: 1, 
+            multiplier: 2 // Export at 2x for better quality
+        });
+        
+        if (!flattenedDataUrl) return false;
+
+        try {
+            // 2. Load the new flattened image
+            const newBaseImg = await this.loadImageSafe(flattenedDataUrl);
+            
+            // 3. Clear canvas and add new flattened image
+            const width = this.canvas.getWidth();
+            const height = this.canvas.getHeight();
+            
+            this.canvas.clear();
+            this.canvas.backgroundColor = '#1a1a1a';
+            this.canvas.setDimensions({ width, height });
+            
+            newBaseImg.set('data', { isBaseImage: true });
+            scaleImageToCanvas(newBaseImg, this.canvas);
+            this.canvas.add(newBaseImg);
+            
+            this.canvas.renderAll();
+            
+            logger.info('[CanvasOps] Canvas flattened successfully');
+            return true;
+        } catch (err) {
+            logger.error('[CanvasOps] Failed to flatten canvas:', err);
+            return false;
         }
     }
 
@@ -820,6 +887,7 @@ export class CanvasOperationsService {
         // Clear and update
         this.canvas.clear();
         this.canvas.backgroundColor = '#1a1a1a';
+        img.set('data', { isBaseImage: true });
         this.canvas.add(img);
 
         if (magicFillEnabled) {

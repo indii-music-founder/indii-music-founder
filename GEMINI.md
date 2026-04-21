@@ -155,7 +155,7 @@ indiiOS-Alpha-Electron/
 │
 ├── agents/                     # AI agent definitions (hub-and-spoke architecture)
 │   ├── agent0/                 # Hub orchestrator (indii Conductor)
-│   ├── creative-director/      # Creative direction agent
+│   ├── creative/               # Creative direction agent
 │   ├── indii_executor/         # Task executor
 │   └── [specialist agents]/    # brand, finance, legal, licensing, marketing,
 │                               # music, publicist, publishing, road, social, video
@@ -289,7 +289,7 @@ npm run deploy                 # Build studio + deploy to Firebase hosting (app 
 
 ```typescript
 import { Something } from '@/services/ai/AIService';    // src/*
-import { AgentDef } from '@agents/creative-director';     // agents/*
+import { AgentDef } from '@agents/creative';             // agents/*
 ```
 
 ### State Management (Zustand)
@@ -412,7 +412,7 @@ The `build` script runs three steps sequentially:
   Legal   Brand  Marketing Music  Video
   Agent   Agent   Agent   Agent  Agent
     │
-  [Finance, Publishing, Road Manager, Licensing, Social, Publicist, etc.]
+  [Finance, Publishing, Road, Licensing, Social, Publicist, etc.]
 ```
 
 - **indii Conductor** (`agents/agent0/`) - Central hub, routes tasks to specialists
@@ -574,7 +574,7 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 | Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
 | Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
 | Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
-| Stress test image generation pipeline | `.agent/skills/live_test_creative_director/SKILL.md` |
+| Stress test image generation pipeline | `.agent/skills/live_test_creative/SKILL.md` |
 | Session start, operator bootstrap, context scan | `.agent/skills/opp/SKILL.md` |
 | Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
 | **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |

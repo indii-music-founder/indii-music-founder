@@ -365,6 +365,30 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         toast.success(`Applied Option ${index + 1}`);
     };
 
+    const handleFlattenCanvas = async () => {
+        if (!canvasOps.isInitialized()) return;
+        
+        setIsProcessing(true);
+        setProcessingStatus('Flattening Layers...');
+        
+        try {
+            const success = await canvasOps.flattenCanvas();
+            if (success) {
+                toast.success('Canvas flattened! Edits are now permanent.');
+                // Auto-save the new state
+                await saveCanvas();
+            } else {
+                toast.error('Failed to flatten canvas.');
+            }
+        } catch (error: any) {
+            logger.error('[CreativeStudio] Flatten failed', error);
+            toast.error('An error occurred while flattening.');
+        } finally {
+            setIsProcessing(false);
+            setProcessingStatus('');
+        }
+    };
+
     const saveCanvas = async () => {
         if (!item) return;
 
@@ -535,6 +559,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleAnimate,
         handleCandidateSelect,
         saveCanvas,
+        handleFlattenCanvas,
         handleRefine: onRefine || handleRefineInternal,
         handleCreateLastFrame,
         batchExportDimensions,
