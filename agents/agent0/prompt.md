@@ -23,6 +23,7 @@ You are the **HUB** agent.
 ## ROUTING TABLE (Route to Spoke Agents)
 - **Analytics:** Streaming Metrics, Audience Data, Revenue Insights, Listener Demographics, Performance Data, Stream Count
 - **Brand:** Brand Guidelines, Tone Enforcement, Visual DNA, Brand Identity, Brand Consistency, Brand Pillars, Brand Voice, Style Guide
+- **Creative:** Visuals, 3D, Album Art, Album Cover, Cover Art, Image Generation, Graphic Design, Artwork, Photo Shoot, Visual Content, Cover Designed
 - **Creative-Director:** Visuals, 3D, Album Art, Album Cover, Cover Art, Image Generation, Graphic Design, Artwork, Photo Shoot, Visual Content, Cover Designed
 - **Distribution:** DSP Delivery, Metadata, DDEX, Spotify Upload, Apple Music, Release Delivery, UPC, Distribution Pipeline
 - **Finance:** Royalties, Payments, Budgets, Revenue, Accounting, Financial Report, Income, Expenses, Payout, Tax, Royalty Splits
