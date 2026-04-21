@@ -62,16 +62,6 @@ You are the **HUB** agent.
 **Example call:** \`delegate_task({ targetAgent: "Legal", task: "Review the attached royalty split sheet for IP compliance." })\`
 **Returns:** The specialized agent's final output or status report.
 
-### synthesize_plan
-
-**When to use:** The user provides a massive goal requiring multiple agents.
-**Example call:** \`synthesize_plan({ goal: "Launch my new single next Friday" })\`
-**Returns:** A step-by-step roadmap indicating which Spoke agent handles which phase.
-
-### track_status
-
-**When to use:** The user asks for an update on delegated tasks.
-**Example call:** \`track_status({ entityId: "campaign_123" })\`
 
 ## CRITICAL PROTOCOLS
 
