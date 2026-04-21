@@ -1,26 +1,26 @@
-/**
- * SentryService — Client-side error tracking initialization
- * Item 388: Production error capture with @sentry/react
- *
- * Call initSentry() once at app startup (before rendering).
- * In Electron, also call initElectronSentry() from the main process.
- *
- * DSN is stored in VITE_SENTRY_DSN env variable. If not set, Sentry is
- * disabled (safe for local development and CI without credentials).
- */
-
 import * as Sentry from '@sentry/react';
+import { getConsentPreferences } from '@/components/shared/CookieConsentBanner';
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined;
 const ENVIRONMENT = import.meta.env.MODE ?? 'development';
 const RELEASE = `indiios@${import.meta.env.VITE_APP_VERSION ?? '0.1.0-beta.2'}`;
+const DEBUG = import.meta.env.DEV && import.meta.env.VITE_DEBUG_SENTRY === 'true';
 
 /** Initialize Sentry for the React renderer. Call once before ReactDOM.render(). */
 export function initSentry(): void {
-    if (!SENTRY_DSN) {
-        // No DSN configured — Sentry disabled (safe in dev/test)
+    // Item 303: Gate Sentry initialization on cookie consent.
+    const consent = getConsentPreferences();
+    if (!consent?.errorTracking) {
+        if (DEBUG) console.log('[Sentry] Initialization skipped: No consent for error tracking.');
         return;
     }
+
+    if (!SENTRY_DSN) {
+        if (DEBUG) console.warn('[Sentry] Initialization skipped: No VITE_SENTRY_DSN configured.');
+        return;
+    }
+
+    if (DEBUG) console.log(`[Sentry] Initializing for ${ENVIRONMENT} (${RELEASE})...`);
 
     Sentry.init({
         dsn: SENTRY_DSN,
@@ -31,15 +31,34 @@ export function initSentry(): void {
         // Capture 10% of sessions for Session Replay in production
         replaysSessionSampleRate: ENVIRONMENT === 'production' ? 0.1 : 0,
         replaysOnErrorSampleRate: 1.0,
+        sendDefaultPii: true, // Allow PII for better debugging, but scrub sensitive headers in beforeSend
         integrations: [
             Sentry.browserTracingIntegration(),
+            Sentry.replayIntegration({
+                maskAllText: true,
+                blockAllMedia: true,
+            }),
         ],
-        // Filter out known non-actionable errors
+        // Filter out known non-actionable errors and scrub sensitive data
         beforeSend(event) {
-            // Don't send ResizeObserver loop errors (browser noise)
+            // 1. Scrub sensitive headers from breadcrumbs (Authorization, etc.)
+            if (event.breadcrumbs) {
+                event.breadcrumbs.forEach((breadcrumb) => {
+                    if (breadcrumb.category === 'fetch' || breadcrumb.category === 'xhr') {
+                        const data = breadcrumb.data as Record<string, any> | undefined;
+                        if (data?.headers?.Authorization) {
+                            data.headers.Authorization = '[REDACTED]';
+                        }
+                    }
+                });
+            }
+
+            // 2. Filter out non-actionable errors
             const msg = event.exception?.values?.[0]?.value ?? '';
             if (msg.includes('ResizeObserver loop')) return null;
             if (msg.includes('Non-Error exception captured')) return null;
+            if (msg.includes('NetworkError when attempting to fetch resource')) return null;
+            
             return event;
         },
         ignoreErrors: [
@@ -47,10 +66,20 @@ export function initSentry(): void {
             'NetworkError',
             'Failed to fetch',
             'Load failed',
+            'Aborted',
             // Firebase offline mode
             'The client is offline',
+            'FirebaseError: [code=unavailable]',
+            // Third-party extension noise
+            'chrome-extension://',
+            'moz-extension://',
         ],
     });
+
+    // Register instance for global debugging if needed
+    if (typeof window !== 'undefined') {
+        (window as any).__sentryInstance = Sentry;
+    }
 }
 
 /**

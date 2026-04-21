@@ -314,7 +314,7 @@ export function CookieConsentBanner() {
  */
 function initializeConsentedServices(prefs: ConsentPreferences): void {
     if (prefs.errorTracking) {
-        import('@/lib/sentry').then(({ initSentry }) => {
+        import('@/services/observability/SentryService').then(({ initSentry }) => {
             initSentry();
             logger.info('[CookieConsent] Sentry initialized after consent.');
         }).catch(err => logger.error('[CookieConsent] Failed to init Sentry:', err));

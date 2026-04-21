@@ -182,7 +182,7 @@ describe('Agent Tool Accessibility Audit', () => {
             const unregisteredAgents: string[] = [];
 
             for (const agentId of VALID_AGENT_IDS) {
-                if (agentId === 'road-manager') continue; // Alias, skip
+                if (agentId === 'road-manager' || agentId === 'creative-director') continue; // Aliases, skip
 
                 const agent = await agentRegistry.getAsync(agentId);
                 if (!agent) {
