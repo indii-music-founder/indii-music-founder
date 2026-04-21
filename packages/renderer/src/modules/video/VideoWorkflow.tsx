@@ -344,11 +344,11 @@ export default function VideoWorkflow() {
 
             let results: { id: string; url: string; prompt: string; }[] = [];
 
-            // Check for long-form Video
-            if (studioControls.duration > 8) {
+            // Check for long-form Video (Daisy Chain or duration > 8s)
+            if (studioControls.duration > 8 || videoInputs.isDaisyChain) {
                 results = await VideoGeneration.generateLongFormVideo({
                     prompt: finalPrompt,
-                    totalDuration: studioControls.duration,
+                    totalDuration: Math.max(studioControls.duration, 8), // Ensure at least 1 block
                     aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
                     resolution: studioControls.resolution,
                     negativePrompt: audioNegativePrompt,
