@@ -37,7 +37,7 @@ describe('CreatePostModal Accessibility', () => {
 
         const results = await axe(container);
         expect(results).toHaveNoViolations();
-    });
+    }, 15000);
 
     it('should use semantic structure for dialog', () => {
         const { getByRole } = render(

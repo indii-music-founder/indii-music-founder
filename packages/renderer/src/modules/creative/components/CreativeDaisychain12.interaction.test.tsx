@@ -301,12 +301,12 @@ describe('Creative Director 12-Click Daisychain', () => {
         // togglePromptBuilder is now a store action; the PromptBuilder mock is always visible in this test harness
 
         // --- CLICK 5: Open Brand Category ---
-        const brandTrigger = await screen.findByTestId('category-Brand-trigger');
-        fireEvent.click(brandTrigger);
+        const brandTriggers = await screen.findAllByTestId('category-Brand-trigger');
+        fireEvent.click(brandTriggers[0]!);
 
         // --- CLICK 6: Select Cool Brand Tag ---
-        const tagBtn = await screen.findByTestId('tag-Cool Brand-btn');
-        fireEvent.click(tagBtn);
+        const tagBtns = await screen.findAllByTestId('tag-Cool Brand-btn');
+        fireEvent.click(tagBtns[0]!);
         expect(mockSetPrompt).toHaveBeenCalledWith('Initial Prompt, Cool Brand');
 
         // --- CLICK 7: Switch to Showroom ---

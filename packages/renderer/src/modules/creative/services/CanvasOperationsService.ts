@@ -221,6 +221,13 @@ export class CanvasOperationsService {
         return this.canvas;
     }
 
+    isAnnotation(obj: fabric.Object): boolean {
+        if (obj.type === 'path') return true;
+        const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean; isSegmentationMask?: boolean } }).data;
+        if (data?.isBoundingBox || data?.isSegmentationMask) return true;
+        return false;
+    }
+
     /**
      * Retrieves the base image as a data URI (excluding annotations like paths).
      */
@@ -228,7 +235,7 @@ export class CanvasOperationsService {
         if (!this.canvas) return null;
         
         const originalObjects = this.canvas.getObjects();
-        const maskObjects = originalObjects.filter(obj => obj.type === 'path' || (obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data?.isBoundingBox);
+        const maskObjects = originalObjects.filter(obj => this.isAnnotation(obj));
         
         // Hide masks
         maskObjects.forEach(obj => (obj.visible = false));
@@ -528,14 +535,7 @@ export class CanvasOperationsService {
         const allObjects = this.canvas.getObjects();
 
         // Identify every annotation object on the canvas
-        const annotationObjects = allObjects.filter(obj => {
-            // Drawing paths (free-hand strokes)
-            if (obj.type === 'path') return true;
-            // Bounding boxes and segmentation masks tagged via data flags
-            const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean; isSegmentationMask?: boolean } }).data;
-            if (data?.isBoundingBox || data?.isSegmentationMask) return true;
-            return false;
-        });
+        const annotationObjects = allObjects.filter(obj => this.isAnnotation(obj));
 
         // Snapshot current visibility so we can restore after export
         const visibilitySnapshot = annotationObjects.map(obj => obj.visible);
@@ -686,9 +686,8 @@ export class CanvasOperationsService {
         if (activeDefinitions.length === 0) return null;
 
         const originalObjects = this.canvas.getObjects();
-        const isMask = (obj: fabric.Object) => obj.type === 'path' || !!(obj as fabric.Object & { data?: { isSegmentationMask?: boolean } }).data?.isSegmentationMask;
-        const maskObjects = originalObjects.filter(isMask);
-        const contentObjects = originalObjects.filter(obj => !isMask(obj));
+        const maskObjects = originalObjects.filter(obj => this.isAnnotation(obj));
+        const contentObjects = originalObjects.filter(obj => !this.isAnnotation(obj));
 
         // Step 1: Generate Base Image (Content only, hide all annotations)
         maskObjects.forEach(obj => (obj.visible = false));
@@ -853,33 +852,35 @@ export class CanvasOperationsService {
         originalObjects.forEach(obj => {
             const data = (obj as fabric.Object & { data?: { isBoundingBox?: boolean, isSegmentationMask?: boolean } }).data;
             
-            if (obj.type === 'path') {
-                obj.set({
-                    stroke: "#FFFFFF",
-                    fill: (obj.fill && obj.fill !== 'transparent') ? "#FFFFFF" : undefined,
-                    opacity: 1,
-                    visible: true
-                });
-            } else if (data?.isBoundingBox) {
-                obj.set({
-                    stroke: "#FFFFFF",
-                    fill: "#FFFFFF",
-                    opacity: 1,
-                    visible: true
-                });
-            } else if (data?.isSegmentationMask) {
-                const imgObj = obj as fabric.Image;
-                const whiteFilter = new fabric.filters.BlendColor({
-                    color: '#FFFFFF',
-                    mode: 'add',
-                    alpha: 1.0
-                });
-                imgObj.filters = [whiteFilter];
-                imgObj.applyFilters();
-                imgObj.set({
-                    opacity: 1.0,
-                    visible: true
-                });
+            if (this.isAnnotation(obj)) {
+                if (obj.type === 'path') {
+                    obj.set({
+                        stroke: "#FFFFFF",
+                        fill: (obj.fill && obj.fill !== 'transparent') ? "#FFFFFF" : undefined,
+                        opacity: 1,
+                        visible: true
+                    });
+                } else if (data?.isBoundingBox) {
+                    obj.set({
+                        stroke: "#FFFFFF",
+                        fill: "#FFFFFF",
+                        opacity: 1,
+                        visible: true
+                    });
+                } else if (data?.isSegmentationMask) {
+                    const imgObj = obj as fabric.Image;
+                    const whiteFilter = new fabric.filters.BlendColor({
+                        color: '#FFFFFF',
+                        mode: 'add',
+                        alpha: 1.0
+                    });
+                    imgObj.filters = [whiteFilter];
+                    imgObj.applyFilters();
+                    imgObj.set({
+                        opacity: 1.0,
+                        visible: true
+                    });
+                }
             } else {
                 obj.visible = false;
             }
@@ -939,7 +940,7 @@ export class CanvasOperationsService {
 
         originalObjects.forEach(obj => {
             const data = (obj as fabric.Object & { data?: { isSegmentationMask?: boolean, isBoundingBox?: boolean } }).data;
-            const isMask = obj.type === 'path' || !!data?.isSegmentationMask || !!data?.isBoundingBox;
+            const isMask = this.isAnnotation(obj);
             
             if (isMask) {
                 if (data?.isBoundingBox) {
