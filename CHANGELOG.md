@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.55.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.0...v1.55.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* **agent:** resolve cinematic grid metadata and workflow selection types ([#1551](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1551)) ([09fcf9e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/09fcf9e5fbb12ada158a1c7e26b5fdb8aee2c83c))
+
 ## [1.55.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.54.1...v1.55.0) (2026-04-22)
 
 
