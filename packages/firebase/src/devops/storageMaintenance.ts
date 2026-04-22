@@ -88,41 +88,62 @@ export const cleanupOrphanedVideos = functions
             totalFiles = files.length;
             console.log(`[StorageMaintenance] Found ${totalFiles} files in videos/`);
 
-            // Batch lookup: extract job IDs from file paths
-            // Path format: videos/{userId}/{jobId}.mp4
-            for (const file of files) {
-                const pathParts = file.name.split("/");
-                if (pathParts.length < 3) continue;
+            // Process files in batches to avoid N+1 queries
+            const CHUNK_SIZE = 100;
+            for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+                const chunkFiles = files.slice(i, i + CHUNK_SIZE);
 
-                const jobId = pathParts[2].replace(/\.mp4$/, "");
+                // Extract valid job IDs and their corresponding files
+                // Path format: videos/{userId}/{jobId}.mp4
+                const fileInfos: { file: typeof files[0]; jobId: string }[] = [];
+                for (const file of chunkFiles) {
+                    const pathParts = file.name.split("/");
+                    if (pathParts.length < 3) continue;
 
-                // Check if this job exists in the history collection
-                const historyDoc = await admin.firestore()
-                    .collection("history")
-                    .doc(jobId)
-                    .get();
+                    const jobId = pathParts[2].replace(/\.mp4$/, "");
+                    fileInfos.push({ file, jobId });
+                }
 
-                // Also check videoJobs collection as a secondary reference
-                const jobDoc = await admin.firestore()
-                    .collection("videoJobs")
-                    .doc(jobId)
-                    .get();
+                if (fileInfos.length === 0) continue;
 
-                if (!historyDoc.exists && !jobDoc.exists) {
-                    orphanCount++;
-                    orphanPaths.push(file.name);
+                // Create document references for batch fetch
+                // Deduplicate job IDs to avoid fetching the same document multiple times
+                const uniqueJobIds = Array.from(new Set(fileInfos.map((info) => info.jobId)));
 
-                    if (enableDeletion) {
-                        try {
-                            await file.delete();
-                            deletedCount++;
-                            console.log(`[StorageMaintenance] Deleted orphan: ${file.name}`);
-                        } catch (delErr) {
-                            errorCount++;
-                            console.error(`[StorageMaintenance] Failed to delete ${file.name}:`, delErr);
+                const historyRefs = uniqueJobIds.map((jobId) =>
+                    admin.firestore().collection("history").doc(jobId)
+                );
+                const jobRefs = uniqueJobIds.map((jobId) =>
+                    admin.firestore().collection("videoJobs").doc(jobId)
+                );
+
+                // Fetch documents in batch
+                const [historyDocs, jobDocs] = await Promise.all([
+                    admin.firestore().getAll(...historyRefs),
+                    admin.firestore().getAll(...jobRefs),
+                ]);
+
+                // Create lookup maps for fast access
+                const historyExists = new Set(historyDocs.filter((doc) => doc.exists).map((doc) => doc.id));
+                const jobExists = new Set(jobDocs.filter((doc) => doc.exists).map((doc) => doc.id));
+
+                for (const { file, jobId } of fileInfos) {
+                    if (!historyExists.has(jobId) && !jobExists.has(jobId)) {
+                        orphanCount++;
+                        orphanPaths.push(file.name);
+
+                        if (enableDeletion) {
+                            try {
+                                await file.delete();
+                                deletedCount++;
+                                console.log(`[StorageMaintenance] Deleted orphan: ${file.name}`);
+                            } catch (delErr) {
+                                errorCount++;
+                                console.error(`[StorageMaintenance] Failed to delete ${file.name}:`, delErr);
+                            }
+                        } else {
+                            console.log(`[StorageMaintenance] [DRY RUN] Would delete: ${file.name}`);
                         }
-                    } else {
-                        console.log(`[StorageMaintenance] [DRY RUN] Would delete: ${file.name}`);
                     }
                 }
             }
