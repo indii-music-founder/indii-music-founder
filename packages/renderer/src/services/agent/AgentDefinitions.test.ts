@@ -10,7 +10,7 @@ describe('Agent Definitions', () => {
     describe('BrandAgent', () => {
         it('should have the correct ID and name', () => {
             expect(BrandAgent.id).toBe('brand');
-            expect(BrandAgent.name).toBe('Brand Manager');
+            expect(BrandAgent.name).toBe('Brand Director');
         });
 
         it('should register required tools', () => {
@@ -30,7 +30,7 @@ describe('Agent Definitions', () => {
     describe('MarketingAgent', () => {
         it('should have the correct ID and name', () => {
             expect(MarketingAgent.id).toBe('marketing');
-            expect(MarketingAgent.name).toBe('Marketing Department');
+            expect(MarketingAgent.name).toBe('Marketing Director');
         });
 
         it('should register required tools', () => {
