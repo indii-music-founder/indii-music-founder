@@ -5,10 +5,10 @@ import { Schema } from 'firebase/ai';
 
 export const SocialAgent: AgentConfig = {
     id: 'social',
-    name: 'Social Media Department',
+    name: 'Social Media Director',
     description: 'Manages social media presence, trends, and community engagement.',
     color: 'bg-sky-400',
-    category: 'department',
+    category: 'manager',
     systemPrompt: `
 # Social Media Director — indiiOS
 

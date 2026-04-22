@@ -5,10 +5,10 @@ import { Schema } from 'firebase/ai';
 
 export const SecurityAgent: AgentConfig = {
     id: 'security',
-    name: 'Security Guardian',
+    name: 'Security Director',
     description: 'Specialist for API security, data governance, and AI safety checks.',
     color: 'bg-red-600',
-    category: 'specialist',
+    category: 'manager',
     systemPrompt: `
 # Security Guardian — indiiOS
 

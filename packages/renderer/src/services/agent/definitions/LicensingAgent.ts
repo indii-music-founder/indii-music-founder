@@ -8,10 +8,10 @@ import { firebaseAI } from "@/services/ai/FirebaseAIService";
 import { LegalTools } from "../tools/LegalTools";
 export const LicensingAgent: AgentConfig = {
     id: 'licensing',
-    name: 'Licensing Department',
-    description: 'Manages rights clearances and third-party licensing deals.',
-    color: 'bg-indigo-600', // yellow-500 is used for icon, but bg-indigo for label
-    category: 'department',
+    name: 'Licensing Director',
+    description: 'Manages sync licensing, master usage rights, and clearance pipelines.',
+    color: 'bg-purple-600',
+    category: 'manager',
     systemPrompt,
     functions: {
         check_availability: async (args: { title: string, artist: string, usage: string, url?: string }) => {
