@@ -11,7 +11,7 @@ import type { AnyToolFunction } from '../types';
 
 const VALID_ASPECT_RATIOS = ['16:9', '9:16'] as const; // Veo 3.1 only supports these two
 type ValidAspectRatio = typeof VALID_ASPECT_RATIOS[number];
-const VALID_RESOLUTIONS = ['1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024'] as const;
+const VALID_RESOLUTIONS = ['720p', '1080p', '4k'] as const;
 type ValidResolution = typeof VALID_RESOLUTIONS[number];
 const MAX_DURATION_SECONDS = 300;
 const MAX_CHAIN_DURATION_SECONDS = 300;
@@ -352,19 +352,41 @@ export const VideoTools = {
         }
 
         const { useStore } = await import('@/core/store');
+        const { userProfile, whiskState } = useStore.getState();
+
+        // =====================================================================
+        // WHISK INTEGRATION: Synthesize prompt with locked references
+        // =====================================================================
+        let finalPrompt = args.prompt;
+        let finalAspectRatio: ValidAspectRatio | undefined = args.aspectRatio as ValidAspectRatio | undefined;
+        let finalDuration = args.totalDuration;
+
+        if (whiskState && (whiskState.targetMedia === 'video' || whiskState.targetMedia === 'both')) {
+            const { WhiskService } = await import('@/services/WhiskService');
+            finalPrompt = WhiskService.synthesizeVideoPrompt(args.prompt, whiskState);
+            const videoParams = await WhiskService.getVideoParameters(whiskState);
+
+            if (!args.aspectRatio && videoParams.aspectRatio && (VALID_ASPECT_RATIOS as readonly string[]).includes(videoParams.aspectRatio)) {
+                finalAspectRatio = videoParams.aspectRatio as ValidAspectRatio;
+            }
+
+            if (!args.totalDuration && videoParams.duration) {
+                finalDuration = videoParams.duration;
+            }
+        }
+
         useStore.getState().addAgentMessage({
             id: crypto.randomUUID(),
             role: 'system',
-            text: `Queuing long-form background job for ${args.totalDuration}s...`,
+            text: `Queuing long-form background job for ${finalDuration}s...`,
             timestamp: Date.now()
         });
 
-        const { userProfile } = useStore.getState();
-
         const results = await VideoGeneration.generateLongFormVideo({
-            prompt: args.prompt,
-            totalDuration: args.totalDuration,
+            prompt: finalPrompt,
+            totalDuration: finalDuration,
             firstFrame: args.startImage,
+            aspectRatio: finalAspectRatio,
             userProfile
         });
 

@@ -4,10 +4,10 @@ import systemPrompt from '@agents/video/prompt.md?raw';
 
 export const VideoAgent: AgentConfig = {
     id: 'video',
-    name: 'Video Department',
+    name: 'Video Director',
     description: 'Specializes in video production, editing, and VFX.',
     color: 'bg-blue-600',
-    category: 'department',
+    category: 'manager',
     systemPrompt: `
 # Video Director — indiiOS
 
