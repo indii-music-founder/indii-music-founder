@@ -183,6 +183,8 @@ Voice: Think creative director at a top visual agency who lives and breathes aes
                         count: { type: 'NUMBER', description: 'Number of images to generate (1-4).' },
                         negativePrompt: { type: 'STRING', description: 'Things to avoid in the generated image.' },
                         resolution: { type: 'STRING', description: 'Resolution tier: 4K, 2K, HD.' },
+                        style: { type: 'STRING', description: 'Optional artistic style directive.' },
+                        quality: { type: 'STRING', description: 'Optional generation quality setting.' },
                         seed: { type: 'STRING', description: 'Random seed for reproducible generation.' },
                         referenceImageIndex: { type: 'NUMBER', description: 'Index of a reference image from the Brand Kit.' },
                         referenceAssetIndex: { type: 'NUMBER', description: 'Index of a brand asset (logo) from the Brand Kit.' },

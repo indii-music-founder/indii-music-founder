@@ -51,6 +51,7 @@ Read the user's input carefully. It will fall into one of three categories:
 | **Vague** | `/real` (no args) | Agent autonomously selects what to test based on coverage gaps |
 | **Themed** | `/real video pipeline` | Agent designs a realistic scenario around the theme |
 | **Specific** | `/real generate 4K image, crop it, animate to video` | Agent executes the specific sequence |
+| **Deep** | `/real deep [module]` | Agent executes the Universal Deep-Interaction Stress Test on the specified module (or defaults to core modules). 100+ actions, detailed follow-through, exhaustive form completion and file uploads. |
 
 ### 1.2 Coverage-Aware Selection (Vague Mode)
 
@@ -110,6 +111,7 @@ Every test runs under a **persona**. Pick one that fits the scenario:
 4. **Don't bail on failure** — when something fails, document it, then try an alternative path. Real users don't give up on the first error.
 5. **Time everything** — note how long generations, uploads, and navigations take. Anything > 30s is a yellow flag. Anything > 60s is a red flag.
 6. **Test the edges** — try unusual combinations: max resolution + video, empty prompts, very long prompts, rapid mode switching.
+7. **DEEP INTERACTION (CRITICAL RULE)** — Do not just "window shop" by clicking and moving on. You MUST follow through on actions. If you open a form or modal, fill in the text fields (type things like tax information, names, bios) and submit them. If there is an upload button, use the absolute file paths provided in your context to upload images. Perform at least 100 distinct actions (clicks, types, uploads) per full run. Act like a determined power user configuring their account and creating assets.
 
 ### 2.3 The Failure Protocol
 
@@ -185,6 +187,27 @@ Wait for DNA extraction → Verify BPM detection →
 Verify key detection → Verify mood/energy classification →
 Check genre tags → Export analysis report
 ```
+
+### 3.7 Universal Deep-Interaction Stress Test (`/real deep [module_name]`)
+You are executing an extreme, deep-interaction stress test. This test is designed to be "drop-anywhere" — if a new feature or module is built, you can target it directly (e.g., `/real deep distribution`) and exhaustively test it.
+
+**CRITICAL RULES FOR ALL DEEP TESTS:** 
+Do not just "window shop" by clicking and moving on. You MUST follow through on actions. 
+- If you open a form or modal, fill in ALL text fields (type realistic things like tax information, names, bios, etc.) and submit them. 
+- If there is an upload button, use the absolute file paths provided in your context to upload actual files (images, audio, etc.). 
+- Perform at least 100 distinct actions (clicks, types, uploads) during the session. 
+- Act like a determined power user configuring their account and creating assets.
+
+**Execution Phases (Targeted Mode):**
+If a `[module_name]` is provided, focus the 100+ actions entirely on that module. Explore every tab, click every button, fill every form, upload to every dropzone, and test every edge case within that specific boundary.
+
+**Execution Phases (Default Mode):**
+If no module is specified, execute the following core phases with extreme thoroughness:
+1. **Dashboard:** Click all stat widgets, notifications, and quick actions. Expand and collapse the sidebar 5 times.
+2. **Brand Manager:** Navigate here using the sidebar. Fill out text fields in the Identity Core and Visual DNA sections. Type and send at least 3 messages in the Brand Interview AI chat. Toggle all available tabs.
+3. **Creative Director:** Navigate here using the sidebar. Open the prompt input and type a detailed image generation prompt. Upload one of your provided images as a reference image. Click the canvas tools (zoom, pan, layers) and the new 'ID' (Detect Objects) button. Change aspect ratios. 
+
+Stop when you have thoroughly exhausted the target module (or the default phases) or reached your maximum step limit. Return a detailed summary of the actions taken, forms filled, files uploaded, and any UI issues or console errors observed.
 
 ---
 
@@ -476,6 +499,7 @@ When invoked as `/real 30`, the agent enters **perfection mode**:
 /real                    → Auto-pick scenario from coverage gaps
 /real video pipeline     → Themed scenario
 /real chaos              → Break everything mode
+/real deep [module]      → Universal Deep-Interaction Stress Test on target or default core modules (100+ actions)
 /real 30                 → Perfection loop until 30/30
 /real regression         → Retest all previously-fixed issues
 
