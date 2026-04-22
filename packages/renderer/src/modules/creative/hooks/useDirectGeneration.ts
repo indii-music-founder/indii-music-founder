@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
@@ -11,6 +11,7 @@ import { SequenceBlock } from '../components/SequenceTimeline';
 export function useDirectGeneration() {
     const {
         studioControls,
+        prompt,
         setPrompt,
         addToHistory,
         currentProjectId,
@@ -21,6 +22,7 @@ export function useDirectGeneration() {
         setVideoInputs
     } = useStore(useShallow(state => ({
         studioControls: state.studioControls,
+        prompt: state.prompt,
         setPrompt: state.setPrompt,
         addToHistory: state.addToHistory,
         currentProjectId: state.currentProjectId,
@@ -32,8 +34,19 @@ export function useDirectGeneration() {
     })));
     const toast = useToast();
 
-    const [localPrompt, setLocalPrompt] = useState('');
+    const [localPrompt, setLocalPromptState] = useState(prompt ?? '');
     const [mode, setMode] = useState<'image' | 'video'>('image');
+
+    // Keep local input in sync with global prompt updates (e.g. top-nav Builder pills).
+    useEffect(() => {
+        const next = prompt ?? '';
+        setLocalPromptState(prev => (prev === next ? prev : next));
+    }, [prompt]);
+
+    const setLocalPrompt = useCallback((value: string) => {
+        setLocalPromptState(value);
+        setPrompt(value);
+    }, [setPrompt]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<HistoryItem[]>([]);
     const [sequence, setSequence] = useState<SequenceBlock[]>([]);
@@ -47,7 +60,7 @@ export function useDirectGeneration() {
             setLocalPrompt('');
             setMode(newMode);
         }
-    }, [mode]);
+    }, [mode, setLocalPrompt]);
 
     const mappedIngredients: Ingredient[] = videoInputs?.ingredients?.map(hi => ({
         id: hi.id,
@@ -189,7 +202,6 @@ export function useDirectGeneration() {
 
         generatingRef.current = true;
         setIsGenerating(true);
-        setPrompt(localPrompt); // Sync to global for history/logging
 
         try {
             if (mode === 'image') {
@@ -218,7 +230,7 @@ export function useDirectGeneration() {
             setIsGenerating(false);
             generatingRef.current = false;
         }
-    }, [localPrompt, mode, whiskState, setPrompt, toast, handleImageGenerate, handleVideoGenerate]);
+    }, [localPrompt, mode, whiskState, toast, handleImageGenerate, handleVideoGenerate]);
 
     return {
         mode,
