@@ -224,3 +224,75 @@
 - **User Impact:** The error feels like something is broken, not like a feature gate. A user who's been generating images successfully (which works without auth) wouldn't understand why editing suddenly requires sign-in. The transition from "everything works" to "this one thing needs auth" is jarring.
 - **Screenshot:** Error toast after clicking REFINE
 - **Notes:** —
+
+---
+
+### ISSUE-011: Canvas state and prompt cleared on module navigation
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** State Persistence
+- **Module:** Creative Director
+- **Found:** 2026-04-22 by Detroit Producer
+- **Steps to Reproduce:**
+  1. Open Creative Director → Generate tab
+  2. Type a prompt and generate an image
+  3. Image auto-pushes to Canvas — canvas is now populated
+  4. Navigate away via sidebar (e.g., Marketing Department)
+  5. Navigate back to Creative Director
+  6. Canvas is blank, prompt is cleared
+- **User Impact:** Any in-progress session is wiped on a single navigation click. A real user building something complex would lose all context. Feels like the app crashed.
+- **Screenshot:** Canvas blank on return to Creative Director
+- **Notes:** History tab preserves past generations — so the data isn't lost, but the active session context is gone.
+
+---
+
+### ISSUE-012: Success toast fires simultaneously with canvas auto-push transition — unreadable
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **UX Dimension:** Error Communication
+- **Module:** Creative Director (Generate → Canvas transition)
+- **Found:** 2026-04-22 by Detroit Producer (user-reported live)
+- **Steps to Reproduce:**
+  1. Open Creative Director → Generate tab
+  2. Type a prompt and click Generate
+  3. Wait for generation to complete
+  4. A success toast appears ("Image generated directly successfully") at the exact same moment the view transitions to Canvas
+  5. Toast is visible for ~2s but the layout shift caused by the canvas transition makes it nearly impossible to read
+- **User Impact:** User sees a flash of something but can't read it. Creates anxiety — "was that an error?" The success confirmation is wasted.
+- **Screenshot:** Toast appears during canvas transition, user reported they couldn't read it
+- **Notes:** Simple fix: delay the toast by ~500ms after the canvas transition completes, or increase toast duration to 4s. Alternatively, show the success state in the Canvas header instead.
+
+---
+
+### ISSUE-013: Boardroom overlay traps the user — no obvious back navigation
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **UX Dimension:** Navigation Clarity
+- **Module:** Boardroom
+- **Found:** 2026-04-22 by Detroit Producer
+- **Steps to Reproduce:**
+  1. Click "Boardroom" in the sidebar from any module
+  2. Boardroom opens as an overlay/modal experience
+  3. Try to navigate back to the previous module
+  4. Sidebar links appear to be inactive or hidden behind the overlay
+  5. Must find and click an explicit "Exit" or "Close" button
+- **User Impact:** The transition in is seamless but the way out is not obvious. Feels like a trap. Real users will hit browser back or get confused.
+- **Screenshot:** Boardroom overlay with no visible back navigation
+- **Notes:** A persistent "← Back to Studio" or an always-visible close affordance would fix this.
+
+---
+
+### ISSUE-014: Generate button uses icon only — no text label or tooltip
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **UX Dimension:** Action Discoverability
+- **Module:** Creative Director (Generate tab)
+- **Found:** 2026-04-22 by Detroit Producer
+- **Steps to Reproduce:**
+  1. Open Creative Director → Generate tab
+  2. Look at the submit/generate button at the right end of the prompt bar
+  3. The button displays a send/arrow icon with no text label
+  4. Hover — no tooltip appears
+- **User Impact:** New users won't immediately know this is the Generate button. The icon (send arrow) isn't universally associated with "generate image." A first-time user might type a prompt and not know how to submit it.
+- **Screenshot:** Prompt bar with icon-only generate button
+- **Notes:** Add a tooltip on hover ("Generate image"), or add a short text label "Generate" that collapses to icon-only on smaller widths.

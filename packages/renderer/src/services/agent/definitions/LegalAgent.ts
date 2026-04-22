@@ -2,10 +2,10 @@ import { AgentConfig } from "../types";
 
 export const LegalAgent: AgentConfig = {
     id: "legal",
-    name: "Legal Counsel",
-    description: "Automated copyright clearance and contract analysis.",
+    name: "Legal Director",
+    description: "Automated copyright clearance, rights management, and contract analysis.",
     color: "bg-yellow-500",
-    category: "specialist",
+    category: "manager",
     systemPrompt: `
 You are the **Music Industry Legal Specialist**, a high-level specialist agent within the indii system.
 

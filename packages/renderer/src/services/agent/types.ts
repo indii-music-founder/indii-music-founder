@@ -79,9 +79,7 @@ export const VALID_AGENT_IDS = [
     'social',
     'publicist',
     'road',
-    'road-manager', // Alias for road
     'creative',
-    'creative-director', // Alias for creative
     'publishing',
     'licensing',
     'brand',

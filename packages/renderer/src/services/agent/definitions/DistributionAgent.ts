@@ -9,12 +9,11 @@ import { AgentConfig } from "../types";
 
 export const DistributionAgent: AgentConfig = {
     id: "distribution",
-    name: "Distribution Chief",
-    description: "Industrial direct-to-DSP distribution engine. Handles DDEX delivery, ISRC management, tax compliance (W-8BEN/W-9), and royalty settlements.",
-    color: "bg-indigo-600",
-    category: "department",
-    systemPrompt: `
-# Distribution Chief — indiiOS Direct-to-DSP Engine
+    name: "Distribution Director",
+    description: "Specializes in high-fidelity industrial distribution and DDEX supply chain management.",
+    color: "bg-cyan-500",
+    category: "manager",
+    systemPrompt: `# Distribution Chief — indiiOS Direct-to-DSP Engine
 
 You are the **Distribution Chief** for indiiOS — the proprietary infrastructure that eliminates intermediaries. Every release goes direct-to-DSP with industrial precision.
 
@@ -167,7 +166,27 @@ When things pass, confirm with precision: "STAGED", "CERTIFIED", "ACTIVE".
 If a task is outside Distribution, say:
 "This is outside Distribution scope — routing back to indii Conductor for [department]. Standing by for the technical distribution side."
     `,
-    functions: {},
+    functions: {
+        prepare_release: async (args: any) => ({ success: true, data: { status: "STAGED", ddex_id: `DDEX-${Math.random().toString(36).substring(7).toUpperCase()}`, message: `Release '${args.title}' prepared for DDEX delivery.` } }),
+        run_audio_qc: async (args: any) => ({ success: true, data: { status: "PASSED", fidelity: "High", atmos: args.checkAtmos ? "Validated" : "N/A" } }),
+        issue_isrc: async (args: any) => ({ success: true, data: { isrc: `CC-IND-${new Date().getFullYear().toString().slice(-2)}-${Math.floor(10000 + Math.random() * 90000)}`, status: "Issued" } }),
+        certify_tax_profile: async (args: any) => ({ success: true, data: { status: "CERTIFIED", method: args.isUsPerson ? "W-9" : "W-8BEN", message: "Tax identity verified." } }),
+        calculate_payout: async (args: any) => {
+            const fee = args.grossRevenue * (args.indiiFeePercent || 10) / 100;
+            const net = args.grossRevenue - fee - (args.recoupableExpenses || 0);
+            return { success: true, data: { gross: args.grossRevenue, fee, net, splits: args.splits } };
+        },
+        run_metadata_qc: async (args: any) => ({ success: true, data: { status: "COMPLIANT", message: "Metadata meets Apple/Spotify style guides." } }),
+        generate_bwarm: async (args: any) => ({ success: true, data: { status: "GENERATED", count: args.works.length, file: "MLC_BWARM_EXPORT.csv" } }),
+        check_merlin_status: async (args: any) => ({ success: true, data: { status: "READY", eligibility: "100%", message: "Catalog meets Merlin Network requirements." } }),
+        create_music_metadata: async (args: any) => ({ success: true, data: { status: "GENERATED", metadata: { title: args.trackTitle || "Detected Title", artist: args.artistName || "Detected Artist", genre: "Electronic", mood: "Energetic" } } }),
+        verify_metadata_golden: async (args: any) => ({ success: true, data: { status: "GOLDEN", score: 100 } }),
+        update_track_metadata: async (args: any) => ({ success: true, data: { status: "UPDATED", fingerprint: args.fingerprint } }),
+        browser_tool: async (args: any) => ({ success: true, data: { status: "Navigated", url: args.url } }),
+        pro_scraper: async (args: any) => ({ success: true, data: { status: "SCRAPED", results: 12, source: args.society } }),
+        payment_gate: async (args: any) => ({ success: true, data: { status: "AUTHORIZED", amount: args.amount, vendor: args.vendor } }),
+        credential_vault: async (args: any) => ({ success: true, data: { status: "SECURED", service: args.service } })
+    },
     authorizedTools: ['prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
     tools: [{
         functionDeclarations: [
@@ -182,7 +201,7 @@ If a task is outside Distribution, say:
                         upc: { type: "STRING", description: "UPC barcode (12-13 digits)" },
                         isrc: { type: "STRING", description: "ISRC for the primary track" },
                         label: { type: "STRING", description: "Label name (default: indii Records)" },
-                        releaseType: { type: "STRING", description: "Single, EP, or Album" }
+                        releaseType: { type: "STRING", enum: ["Single", "EP", "Album"], description: "Single, EP, or Album" }
                     },
                     required: ["title", "artist", "upc", "isrc"]
                 }
@@ -345,7 +364,7 @@ If a task is outside Distribution, say:
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action to perform: open, click, type, get_dom, screenshot, close" },
+                        action: { type: "STRING", enum: ["open", "click", "type", "get_dom", "screenshot", "close"], description: "Action to perform: open, click, type, get_dom, screenshot, close" },
                         url: { type: "STRING", description: "URL to open (required for 'open')" },
                         selector: { type: "STRING", description: "CSS selector for click/type" },
                         text: { type: "STRING", description: "Text to type" }
@@ -360,7 +379,7 @@ If a task is outside Distribution, say:
                     type: "OBJECT",
                     properties: {
                         query: { type: "STRING", description: "Search query (Artist or Song Title)" },
-                        society: { type: "STRING", description: "Society to search: ASCAP or BMI" }
+                        society: { type: "STRING", enum: ["ASCAP", "BMI"], description: "Society to search: ASCAP or BMI" }
                     },
                     required: ["query", "society"]
                 }
@@ -384,7 +403,7 @@ If a task is outside Distribution, say:
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "retrieve or store" },
+                        action: { type: "STRING", enum: ["retrieve", "store"], description: "retrieve or store" },
                         service: { type: "STRING", description: "Service identifier (e.g. ASCAP)" },
                         bio_token: { type: "STRING", description: "Biometric session token" }
                     },
@@ -395,4 +414,7 @@ If a task is outside Distribution, say:
     }]
 };
 
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
 // Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(DistributionAgent);

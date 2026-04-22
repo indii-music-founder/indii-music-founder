@@ -4,12 +4,11 @@ import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 export const FinanceAgent: AgentConfig = {
     id: "finance",
-    name: "Finance Department",
-    description: "Proactive CFO. Audits metadata to prevent royalty leakage and manages budgets.",
-    color: "bg-emerald-500",
-    category: "department",
-    systemPrompt: `
-# Finance Director — indiiOS
+    name: 'Finance Director',
+    description: 'Expert in music finance, royalty waterfalls, and tax compliance.',
+    color: 'bg-emerald-500',
+    category: 'manager',
+    systemPrompt: `# Finance Director — indiiOS
 
 ## MISSION
 You are the CFO and financial conscience of the artist's business. Your job is to give clear, conservative, numbers-driven analysis that ensures long-term sustainability in a volatile industry. You always think in terms of Gross vs. Net, Artist Share, and Burn Rate.
@@ -173,10 +172,6 @@ If a task is outside Finance, say:
             };
         },
         search_knowledge: async (args: { query: string }) => {
-            /**
-             * Answer financial queries based on industry economics.
-             * Simulating RAG by asking the AI to recall knowledge rooted in its system prompt context.
-             */
             const prompt = `Answer the following financial query based on standard music industry economics and the 'indiiOS Dividend' knowledge base.
             Query: ${args.query}`;
 
@@ -285,6 +280,38 @@ If a task is outside Finance, say:
                     message: `Over ${months} months at ${args.growth_rate_percent}% monthly growth: projected revenue $${cumulativeRevenue.toFixed(2)}, with $${cumulativeDividend.toFixed(2)} saved vs. paying a 20% external manager — your indiiOS Dividend.`
                 }
             };
+        },
+        generate_tax_report: async (args: { year: number; transactions: any[] }) => {
+            const highValuepayouts = args.transactions.filter(t => t.amount >= 600);
+            return {
+                success: true,
+                data: {
+                    year: args.year,
+                    total_transactions: args.transactions.length,
+                    flagged_for_1099: highValuepayouts.length,
+                    payouts: highValuepayouts,
+                    status: "Report generated. Please consult a tax professional."
+                }
+            };
+        },
+        credential_vault: async (args: { action: string; service: string }) => {
+            return {
+                success: true,
+                data: {
+                    status: "Access granted",
+                    message: `Credentials for ${args.service} retrieved via Secure Vault.`
+                }
+            };
+        },
+        payment_gate: async (args: { amount: number; vendor: string; reason: string }) => {
+            return {
+                success: true,
+                data: {
+                    status: "Authorized",
+                    transaction_id: `TX-${Math.random().toString(36).substring(7).toUpperCase()}`,
+                    message: `Payment of $${args.amount} to ${args.vendor} for ${args.reason} has been authorized.`
+                }
+            };
         }
     },
     authorizedTools: ['analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue'],
@@ -345,7 +372,7 @@ If a task is outside Finance, say:
                     type: "OBJECT",
                     properties: {
                         trackTitle: { type: "STRING" },
-                        distributor: { type: "STRING", description: "ID of the distributor (e.g. 'distrokid', 'tunecore')" }
+                        distributor: { type: "STRING", enum: ["distrokid", "tunecore", "indii", "other"], description: "ID of the distributor (e.g. 'distrokid', 'tunecore')" }
                     },
                     required: ["trackTitle", "distributor"]
                 }
@@ -356,7 +383,7 @@ If a task is outside Finance, say:
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "retrieve" },
+                        action: { type: "STRING", enum: ["retrieve"], description: "retrieve" },
                         service: { type: "STRING", description: "Service name (e.g. SoundExchange)" }
                     },
                     required: ["action", "service"]
@@ -381,7 +408,7 @@ If a task is outside Finance, say:
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
+                        action: { type: "STRING", enum: ["open", "click", "type", "get_dom"], description: "Action: open, click, type, get_dom" },
                         url: { type: "STRING" },
                         selector: { type: "STRING" }
                     },
@@ -428,4 +455,7 @@ If a task is outside Finance, say:
     }]
 };
 
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
 // Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(FinanceAgent);

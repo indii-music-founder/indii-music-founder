@@ -3,6 +3,8 @@ import systemPrompt from './prompt.md?raw';
 import { VideoTools } from '@/services/agent/tools/VideoTools';
 import { NarrativeTools } from '@/services/agent/tools/NarrativeTools';
 import { DirectorTools } from '@/services/agent/tools/DirectorTools';
+import { MusicTools } from '@/services/agent/tools/MusicTools';
+import { CanvasTools } from '@/services/agent/tools/CanvasTools';
 
 export const DirectorAgent: AgentConfig = {
     id: 'director',
@@ -24,9 +26,11 @@ export const DirectorAgent: AgentConfig = {
             render_cinematic_grid: DirectorTools.render_cinematic_grid,
             extract_grid_frame: DirectorTools.extract_grid_frame,
             interpolate_sequence: VideoTools.interpolate_sequence,
+            analyze_audio: MusicTools.analyze_audio,
+            canvas_push: CanvasTools.canvas_push,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence'],
+    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence', 'analyze_audio', 'canvas_push'],
     tools: [{
         functionDeclarations: [
             {
@@ -162,6 +166,31 @@ export const DirectorAgent: AgentConfig = {
                         prompt: { type: "STRING", description: "Optional description of transition." }
                     },
                     required: ["firstFrame", "lastFrame"]
+                }
+            },
+            {
+                name: "analyze_audio",
+                description: "Deep technical and semantic analysis of an uploaded audio file. Extracts BPM, key, energy, genre, mood, and visual prompts.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        uploadedAudioIndex: { type: "NUMBER", description: "The index of the audio in the uploaded list." }
+                    },
+                    required: ["uploadedAudioIndex"]
+                }
+            },
+            {
+                name: "canvas_push",
+                description: "Push structured visual content (charts, tables, cards, markdown) to the user's workspace canvas.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        type: { type: "STRING", enum: ['chart', 'table', 'card', 'markdown'], description: "The type of content." },
+                        title: { type: "STRING", description: "Title of the panel." },
+                        data: { type: "OBJECT", description: "The structured data for the panel." },
+                        agentId: { type: "STRING", description: "Optional agent ID (default 'director')." }
+                    },
+                    required: ["type", "title", "data"]
                 }
             }
         ]

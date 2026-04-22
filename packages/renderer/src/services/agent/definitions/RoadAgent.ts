@@ -7,7 +7,7 @@ import { Schema } from 'firebase/ai';
 
 export const RoadAgent: AgentConfig = {
     id: 'road',
-    name: 'Road Manager',
+    name: 'Road Director',
     description: 'Manages logistics and tour planning.',
     color: 'bg-slate-500',
     category: 'manager',

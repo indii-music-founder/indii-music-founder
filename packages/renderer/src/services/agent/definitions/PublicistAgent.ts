@@ -6,7 +6,7 @@ import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
 
 export const PublicistAgent = createAgent('publicist')
-    .withName('Publicist')
+    .withName('Publicist Director')
     .withDescription('Manages public relations and media communications.')
     .withColor('bg-pink-500')
     .withCategory('manager')

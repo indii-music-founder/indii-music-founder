@@ -5,10 +5,10 @@ import { AnalysisTools } from "@/services/agent/tools/AnalysisTools";
 
 export const LegalAgent: AgentConfig = {
     id: "legal",
-    name: "Legal Department",
+    name: "Legal Director",
     description: "Drafts contracts, reviews compliance, and manages intellectual property.",
     color: "bg-red-700",
-    category: "department",
+    category: "manager",
     systemPrompt,
     authorizedTools: ['analyze_contract', 'draft_contract', 'generate_nda'],
     tools: [{
