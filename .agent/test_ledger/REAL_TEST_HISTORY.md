@@ -46,6 +46,29 @@
 
 ---
 
+## 2026-04-22 — Detroit Producer — Creative Director Smoke Test (Post-Hardening)
+
+- **Modules Tested:** Creative Director (Generate, Canvas, History), Boardroom (navigation only), Agent Chat
+- **Duration:** ~4 minutes
+- **Persona:** Detroit Producer
+- **Scenario:** Post-hardening sprint smoke test — prompt → image → canvas → navigation persistence → agent chat
+- **Findings:** 4 issues (1 HIGH, 2 MEDIUM, 1 LOW)
+- **Key Issues:**
+  - ISSUE-011: Active canvas + prompt cleared when navigating away to major module
+  - ISSUE-012: Success toast fires simultaneously with canvas transition — unreadable (user-reported)
+  - ISSUE-013: Boardroom overlay requires explicit "Exit" click to return to Studio view
+  - ISSUE-014: Generate button icon-only — no text label or tooltip for discoverability
+- **Coverage Delta:**
+  - ✅ Regression: Direct generation pipeline end-to-end
+  - ✅ Regression: Auto-push to canvas on generation complete
+  - ✅ First test: Agent chat "What tools do you have?" query in Creative module
+  - ✅ First test: History tab persistence after navigation away/back
+- **UX Score:** 23/30
+- **Recording:** creative_real_smoke_test_1776863122145.webp
+- **Issues Filed:** ISSUE-011 through ISSUE-014
+
+---
+
 ## Untested Areas (For Next Run)
 - [ ] Distribution pipeline (upload → DDEX)
 - [ ] Audio Analyzer (full DNA extraction)

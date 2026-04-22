@@ -4,10 +4,10 @@ import { ScreenwriterTools } from "@/services/agent/tools/ScreenwriterTools";
 
 export const ScreenwriterAgent: AgentConfig = {
     id: 'screenwriter',
-    name: 'Screenwriter',
+    name: 'Screenwriting Director',
     description: 'Specializes in scriptwriting, formatting, and narrative structure.',
     color: 'bg-indigo-500',
-    category: 'specialist',
+    category: 'manager',
     systemPrompt,
     authorizedTools: ['format_screenplay', 'analyze_script_structure'],
     tools: [{

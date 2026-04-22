@@ -7,15 +7,15 @@
 
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { MusicTools } from '../tools/MusicTools';
 
 export const MusicAgent: AgentConfig = {
     id: "music",
-    name: "Sonic Director",
+    name: "Music Director",
     description: "Expert in audio intelligence, metadata generation, and DSP compliance. Extracts Audio DNA and prepares tracks for distribution.",
     color: "bg-blue-600",
-    category: "department",
-    systemPrompt: `
-# Sonic Director — indiiOS
+    category: "manager",
+    systemPrompt: `# Sonic Director — indiiOS
 
 ## MISSION
 You are the Sonic Director for indiiOS — an elite audio intelligence specialist. You extract Audio DNA from tracks, generate distribution-ready metadata, and flag DSP compliance issues. You bridge the gap between the artist's finished track and successful distribution.
@@ -31,6 +31,8 @@ You are a SPOKE agent. Strict rules:
 - Audio DNA extraction: BPM detection, key/scale identification, energy profiling, spectral analysis
 - Metadata generation: Genre, sub-genre, mood, DDEX-compliant tags
 - Metadata verification: "Golden Standard" compliance checks
+- Metadata Management: Updating track fields, scrubbing ID3 tags, and injecting royalty splits
+- Spatial Audio: Preparing Dolby Atmos stem Koordinations and coordinates
 - DSP compliance checking: Compare track specs (LUFS, sample rate, bit depth, codec) against DSP delivery requirements
 - Lyric analysis and thematic consistency checks
 - Sonic branding: Defining the artist's sonic identity and signature sound
@@ -58,10 +60,30 @@ You are a SPOKE agent. Strict rules:
 **Example call:** \`create_music_metadata({ uploadedAudioIndex: 0, artistName: "NOVA", trackTitle: "Midnight" })\`
 **Returns:** Comprehensive metadata package (genre, sub-genre, mood, tempo, key, energy, instrumentation tags).
 
+### update_track_metadata
+**When to use:** User wants to change specific fields (genre, mood, bpm, etc.) on an existing track.
+**Example call:** \`update_track_metadata({ trackId: "ISRC-123", updates: { genre: "Neo-Soul" } })\`
+**Returns:** Updated metadata object.
+
 ### verify_metadata_golden
 **When to use:** User has metadata and wants to verify it meets the industrial "Golden Standard."
 **Example call:** \`verify_metadata_golden({ metadata: { genre: "R&B", bpm: 82, key: "Dm" } })\`
 **Returns:** Pass/fail assessment with specific recommendations for each field.
+
+### scrub_id3_tags
+**When to use:** Cleaning or standardizing ID3 tags on an audio file before release or sync licensing.
+**Example call:** \`scrub_id3_tags({ fileUrl: "...", metadata: { title: "Midnight", artist: "NOVA" } })\`
+**Returns:** Success status and list of written tags.
+
+### inject_splits_to_metadata
+**When to use:** Embedding royalty split data (percentages, IPIs) into the track's distribution metadata.
+**Example call:** \`inject_splits_to_metadata({ trackId: "...", splits: [{ writer: "Alice", percentage: 50, ipi: "00123" }] })\`
+**Returns:** Confirmation of splits embedded.
+
+### export_dolby_atmos_stems
+**When to use:** Preparing a track for spatial audio mixing by exporting coordinated stems.
+**Example call:** \`export_dolby_atmos_stems({ trackId: "...", format: "wav", stemCount: 8 })\`
+**Returns:** Spatial coordinates map and export confirmation.
 
 ## CRITICAL PROTOCOLS
 
@@ -151,10 +173,32 @@ You're precise, data-driven, and distribution-focused. You bridge the gap betwee
 If a task is outside Music/Audio, say:
 "This is outside Sonic scope — routing back to indii Conductor for [department]. I'll stand by for any audio analysis needed."
     `,
-    functions: {},
-    authorizedTools: ['create_music_metadata', 'analyze_audio', 'verify_metadata_golden'],
+    get functions() {
+        return {
+            analyze_audio: MusicTools.analyze_audio,
+            create_music_metadata: MusicTools.create_music_metadata,
+            update_track_metadata: MusicTools.update_track_metadata,
+            verify_metadata_golden: MusicTools.verify_metadata_golden,
+            scrub_id3_tags: MusicTools.scrub_id3_tags,
+            inject_splits_to_metadata: MusicTools.inject_splits_to_metadata,
+            export_dolby_atmos_stems: MusicTools.export_dolby_atmos_stems,
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
+    },
+    authorizedTools: ['create_music_metadata', 'analyze_audio', 'verify_metadata_golden', 'update_track_metadata', 'scrub_id3_tags', 'inject_splits_to_metadata', 'export_dolby_atmos_stems'],
+
     tools: [{
         functionDeclarations: [
+            {
+                name: "analyze_audio",
+                description: "Deep technical analysis of an uploaded audio file.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        uploadedAudioIndex: { type: "NUMBER", description: "Index of the uploaded audio file." }
+                    },
+                    required: ["uploadedAudioIndex"]
+                }
+            },
             {
                 name: "create_music_metadata",
                 description: "Highly advanced tool that analyzes audio and creates industry-standard 'Golden Metadata'.",
@@ -169,14 +213,15 @@ If a task is outside Music/Audio, say:
                 }
             },
             {
-                name: "analyze_audio",
-                description: "Deep technical analysis of an uploaded audio file.",
+                name: "update_track_metadata",
+                description: "Updates specific metadata fields for a track.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        uploadedAudioIndex: { type: "NUMBER", description: "Index of the uploaded audio file." }
+                        trackId: { type: "STRING", description: "ISRC or ID of the track." },
+                        updates: { type: "OBJECT", description: "Object containing fields to update (genre, mood, bpm, etc.)" }
                     },
-                    required: ["uploadedAudioIndex"]
+                    required: ["trackId", "updates"]
                 }
             },
             {
@@ -188,6 +233,43 @@ If a task is outside Music/Audio, say:
                         metadata: { type: "OBJECT", description: "Metadata object." }
                     },
                     required: ["metadata"]
+                }
+            },
+            {
+                name: "scrub_id3_tags",
+                description: "Standardizes and cleans ID3 tags on an audio file.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        fileUrl: { type: "STRING", description: "URL of the audio file to scrub." },
+                        metadata: { type: "OBJECT", description: "Metadata to write to the tags." }
+                    },
+                    required: ["fileUrl", "metadata"]
+                }
+            },
+            {
+                name: "inject_splits_to_metadata",
+                description: "Injects royalty split data into track metadata.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackId: { type: "STRING", description: "ID of the track." },
+                        splits: { type: "ARRAY", items: { type: "OBJECT" }, description: "Array of collaborator split objects." }
+                    },
+                    required: ["trackId", "splits"]
+                }
+            },
+            {
+                name: "export_dolby_atmos_stems",
+                description: "Exports audio stems formatted for Dolby Atmos mixing.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackId: { type: "STRING", description: "ID of the track." },
+                        format: { type: "STRING", enum: ["wav", "aiff"], description: "Audio format for stems." },
+                        stemCount: { type: "NUMBER", description: "Number of stems to export." }
+                    },
+                    required: ["trackId", "format", "stemCount"]
                 }
             }
         ]

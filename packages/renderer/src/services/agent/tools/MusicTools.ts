@@ -83,12 +83,12 @@ export const MusicTools = {
      * Updates specific fields in a track's metadata.
      */
     update_track_metadata: wrapTool('update_track_metadata', async (args: {
-        fingerprint: string,
+        trackId: string,
         updates: Partial<any>
     }) => {
         const { trackLibrary } = await import('@/services/metadata/TrackLibraryService');
 
-        const existing = await trackLibrary.getByFingerprint(args.fingerprint);
+        const existing = await trackLibrary.getByFingerprint(args.trackId);
         if (!existing) return toolError("Track not found in library.", "NOT_FOUND");
 
         const updated = { ...existing, ...args.updates, isGolden: false }; // Reset golden until re-verified
@@ -97,8 +97,42 @@ export const MusicTools = {
         return toolSuccess(updated, `Updated metadata for "${updated.trackTitle}".`);
     }),
 
+    /**
+     * Deep technical and semantic analysis of an uploaded audio file.
+     * Extracts BPM, key, energy, genre, mood, and visual prompts.
+     */
+    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
+        const { useStore } = await import('@/core/store');
+        const { uploadedAudio } = useStore.getState();
+
+        const audioItem = uploadedAudio[args.uploadedAudioIndex];
+        if (!audioItem) {
+            return toolError(`No audio found at index ${args.uploadedAudioIndex}.`, "NOT_FOUND");
+        }
+
+        try {
+            const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
+            
+            // Fetch audio blob
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], audioItem.prompt || "track.mp3", { type: blob.type });
+
+            // Run Analysis
+            const profile = await audioIntelligence.analyze(file);
+
+            return toolSuccess(
+                profile,
+                `Audio analysis complete for "${file.name}". BPM: ${profile.technical.bpm}, Key: ${profile.technical.key}, Energy: ${profile.technical.energy.toFixed(2)}. Detected Genre: ${profile.semantic.ddexGenre}.`
+            );
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to analyze audio: ${message}`, "ANALYSIS_FAILED");
+        }
+    }),
+
     scrub_id3_tags: wrapTool('scrub_id3_tags', async (args: { fileUrl: string; metadata: any }) => {
-        // Item 176: Write ID3 tags using MetadataOrchestrator
+        // Write ID3 tags using MetadataOrchestrator
         const tags = {
             TIT2: args.metadata.trackTitle || args.metadata.title || 'Untitled',
             TPE1: args.metadata.artistName || args.metadata.artist || 'Unknown Artist',
@@ -137,7 +171,7 @@ export const MusicTools = {
     }),
 
     inject_splits_to_metadata: wrapTool('inject_splits_to_metadata', async (args: { trackId: string; splits: Array<{ writer: string; percentage: number; ipi: string }> }) => {
-        // Item 178: Persist splits into the track document in Firestore
+        // Persist splits into the track document in Firestore
         const userId = auth.currentUser?.uid;
         if (!userId) {
             return toolError('Authentication required to inject splits.', 'AUTH_REQUIRED');
@@ -185,8 +219,8 @@ export const MusicTools = {
         }
     }),
 
-    export_dolby_atmos_stems: wrapTool('export_dolby_atmos_stems', async (args: { trackId: string; stemCount: number }) => {
-        // Item 192: Structure Dolby Atmos metadata and persist export config
+    export_dolby_atmos_stems: wrapTool('export_dolby_atmos_stems', async (args: { trackId: string; format: 'wav' | 'aiff'; stemCount: number }) => {
+        // Structure Dolby Atmos metadata and persist export config
         const userId = auth.currentUser?.uid;
 
         // Generate spatial coordinate assignments for each stem
