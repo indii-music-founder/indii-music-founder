@@ -2,6 +2,28 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.55.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.54.1...v1.55.0) (2026-04-22)
+
+
+### Features
+
+* **agents:** platinum hardening — canonicalize agent IDs, sync tool … ([29927e5](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/29927e570e40dd1c526f9262358a93024375dd68))
+* **agents:** platinum hardening — canonicalize agent IDs, sync tool definitions, fix CI test coverage ([38634c7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/38634c708a72db7430e05f9cab0b2b4d3e0a3ae0))
+* **creative-agent:** platinum hardening — fix schema mismatch + expo… ([83a4f94](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/83a4f9403a7e87804c705cef49bfc66372c66577))
+* **creative-agent:** platinum hardening — fix schema mismatch + expose cinematic tools ([830689f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/830689f38a35f7cbe40f67e90b34d46e6003acf3))
+* **creative:** platinum hardening — add deep interaction workflow & update generate_image schema ([cad790a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cad790a00e3c469426f464efe8c2f462ed4743e5))
+* **creative:** sync history slice, gallery components, and canvas services ([#1537](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1537)) ([3f8d78b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3f8d78b7ef1541ffc9c88afb6ec0de33a63c3d7e))
+
+
+### Bug Fixes
+
+* **agent-definitions:** align test names with Brand and Marketing Director personas ([cc9456e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cc9456e20b1a4051545702b0dd1037e2ac284e85))
+* **agent-tools:** align DistributionAgent test with config and update road-manager IDs ([14030c9](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/14030c9f11d7e8fdc7aab5bbe3f2b6f769694bad))
+* **agent-tools:** resolve whiskState uninitialized crashes and NarrativeTools test regressions ([a213e14](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a213e14e6fc45a15fc3ccf1e389cdd0ac8ad8eff))
+* **agents:** register CreativeAgent & align persona IDs for CI ([7d82670](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7d8267027e7fff50601b8086a751cd32e80fbe04))
+* **creative:** wire Prompt Builder pills to the visible input ([0a88795](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0a88795a257657bcb742195622afca97ac94bfff))
+* **video:** resolve SubscriptionService mock gap and align resolution params in video-gen tests ([69c62b8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/69c62b8c2da157c4e372095e9e6483bdc9c4c30e))
+
 ## [1.54.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.54.0...v1.54.1) (2026-04-21)
 
 
