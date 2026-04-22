@@ -299,15 +299,40 @@ describe('DirectorTools', () => {
         });
     });
 
-    describe('add_character_reference', () => {
+    describe('set_entity_anchor', () => {
         it('validates base64 data URI format', async () => {
-            const result = await DirectorTools.add_character_reference!({ image: 'invalid-data' });
+            const result = await DirectorTools.set_entity_anchor!({ image: 'invalid-data' });
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('Invalid image data');
         });
 
-        it('sets character reference and adds to history', async () => {
+        it('sets entity anchor and adds to history', async () => {
+            const mockAddCharacterReference = vi.fn();
+            const mockAddToHistory = vi.fn();
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({
+                addCharacterReference: mockAddCharacterReference,
+                addToHistory: mockAddToHistory
+            }) as unknown as ReturnType<typeof useStore.getState>);
+
+            const result = await DirectorTools.set_entity_anchor!({
+                image: 'data:image/png;base64,validdata'
+            });
+
+            expect(mockAddCharacterReference).toHaveBeenCalled();
+            expect(mockAddToHistory).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    url: 'data:image/png;base64,validdata',
+                    prompt: 'Entity Anchor (Character Reference)',
+                    meta: 'entity_anchor'
+                })
+            );
+            expect(result.message).toContain('Entity Anchor (Character Reference) set successfully');
+        });
+    });
+
+    describe('add_character_reference', () => {
+        it('acts as an alias for set_entity_anchor', async () => {
             const mockAddCharacterReference = vi.fn();
             const mockAddToHistory = vi.fn();
             vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({
@@ -320,13 +345,7 @@ describe('DirectorTools', () => {
             });
 
             expect(mockAddCharacterReference).toHaveBeenCalled();
-            expect(mockAddToHistory).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    url: 'data:image/png;base64,validdata',
-                    prompt: 'Character Reference'
-                })
-            );
-            expect(result.message).toContain('Character Reference set successfully');
+            expect(result.message).toContain('Entity Anchor (Character Reference) set successfully');
         });
     });
 

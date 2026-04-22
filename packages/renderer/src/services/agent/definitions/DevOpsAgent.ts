@@ -107,10 +107,10 @@ When a request falls outside your scope:
 
 export const DevOpsAgent: AgentConfig = {
     id: "devops",
-    name: "DevOps / SRE",
+    name: "DevOps Director",
     description: "Manages cloud infrastructure, GKE clusters, and system reliability.",
     color: "bg-orange-600",
-    category: "specialist",
+    category: "manager",
     systemPrompt,
     functions: {
         list_clusters: async () => {

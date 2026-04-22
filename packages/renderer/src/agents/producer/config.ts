@@ -4,7 +4,7 @@ import { ProducerTools } from "@/services/agent/tools/ProducerTools";
 
 export const ProducerAgent: AgentConfig = {
     id: 'producer',
-    name: 'Producer',
+    name: 'Production Director',
     description: 'Manages logistics, scheduling, and budgets.',
     color: 'bg-emerald-600',
     category: 'manager',

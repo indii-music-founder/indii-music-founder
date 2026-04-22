@@ -4,6 +4,8 @@ import { Editing } from '@/services/image/EditingService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { ToolFunctionArgs, AnyToolFunction } from '../types';
+import { MusicTools } from './MusicTools';
+import { CanvasTools } from './CanvasTools';
 
 /**
  * Extracts a specific frame from a 2x2 grid image using Canvas API.
@@ -320,83 +322,98 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     /**
-     * Unified High-Res Asset Tool
+     * Unified High-Res Asset Tool for production-grade creative (4K)
      */
     generate_high_res_asset: wrapTool('generate_high_res_asset', async (args: GenerateHighResAssetArgs) => {
         const { useStore } = await import('@/core/store');
         const { userProfile, currentProjectId, addToHistory } = useStore.getState();
 
-        const fullPrompt = `${args.templateType} design: ${args.prompt}. ${args.style || ''} --quality high --v 6.0`;
+        const isCover = ['cd_front', 'cd_back', 'vinyl_jacket', 'jacket', 'vinyl', 'booklet'].includes(args.templateType);
+        
+        try {
+            const effectivePrompt = args.style
+                ? `${args.prompt}, style: ${args.style}`
+                : args.prompt;
 
-        const results = await ImageGeneration.generateImages({
-            prompt: fullPrompt,
-            count: 1,
-            resolution: '4K',
-            aspectRatio: args.templateType.includes('jacket') || args.templateType.includes('vinyl') ? '1:1' : '2:3',
-            userProfile,
-            isCoverArt: args.templateType.includes('jacket') || args.templateType.includes('vinyl')
-        });
+            const results = await ImageGeneration.generateImages({
+                prompt: effectivePrompt,
+                count: 1,
+                resolution: '4K',
+                aspectRatio: isCover ? '1:1' : '2:3',
+                isCoverArt: isCover,
+                userProfile
+            });
 
-        if (results.length > 0) {
-            results.forEach(res => {
+            if (results.length > 0) {
+                const res = results[0]!;
                 addToHistory({
                     id: res.id,
                     url: res.url,
                     prompt: res.prompt,
                     type: 'image',
                     timestamp: Date.now(),
-                    projectId: currentProjectId,
-                    meta: 'high_res_asset'
+                    projectId: currentProjectId || 'default-project',
+                    meta: `high_res_${args.templateType}`
                 });
-            });
-            return toolSuccess({
-                asset_id: results[0]!.id
-            }, `High-resolution asset (${args.templateType}) generated successfully.`);
+
+                return toolSuccess({
+                    image_id: res.id,
+                    url: res.url
+                }, `High-res ${args.templateType} generated successfully.`);
+            }
+            return toolError("Generation completed but no image was returned.", "EMPTY_RESULT");
+        } catch (err: unknown) {
+            return toolError(`Failed to generate high-res asset: ${String(err)}`, "GENERATION_FAILED");
         }
-        return toolError("Failed to generate high-resolution asset.", "GENERATION_FAILED");
     }),
 
+    /**
+     * Renders a 2x2 grid of storyboards for visual planning.
+     */
     render_cinematic_grid: wrapTool('render_cinematic_grid', async (args: { prompt: string }) => {
         const { useStore } = await import('@/core/store');
-        const { characterReferences, addToHistory, currentProjectId } = useStore.getState();
+        const { userProfile, characterReferences, currentProjectId, addToHistory } = useStore.getState();
 
-        let fullPrompt = `Create a cinematic grid of shots (Wide, Medium, Close-up, Low Angle) for: ${args.prompt}.`;
-        let sourceImages = undefined;
+        // Include the first subject reference if available as a character anchor
+        const sourceImages = characterReferences
+            .filter(ref => ref.referenceType === 'subject')
+            .map(ref => {
+                const match = ref.image.url.match(/^data:(.+);base64,(.+)$/);
+                return match ? { mimeType: match[1]!, data: match[2]! } : null;
+            })
+            .filter((img): img is { mimeType: string, data: string } => img !== null)
+            .slice(0, 1);
 
-        const firstRef = characterReferences?.[0];
-
-        if (firstRef) {
-            const match = firstRef.image.url.match(/^data:(.+);base64,(.+)$/);
-            if (match) {
-                sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
-                fullPrompt += " Maintain strict character consistency with the provided reference.";
-            }
-        }
-
-        const results = await ImageGeneration.generateImages({
-            prompt: fullPrompt,
-            count: 1,
-            resolution: '4K',
-            aspectRatio: '16:9',
-            sourceImages: sourceImages
-        });
-
-        if (results.length > 0) {
-            const res = results[0]!;
-            addToHistory({
-                id: res.id,
-                url: res.url,
-                prompt: fullPrompt,
-                type: 'image',
-                timestamp: Date.now(),
-                projectId: currentProjectId,
-                meta: 'cinematic_grid'
+        try {
+            const results = await ImageGeneration.generateImages({
+                prompt: `${args.prompt}, 2x2 cinematic grid, storyboard panels, different camera angles, consistent lighting`,
+                count: 1,
+                resolution: '4K',
+                aspectRatio: '16:9',
+                sourceImages: sourceImages.length > 0 ? sourceImages : undefined,
+                userProfile
             });
-            return toolSuccess({
-                grid_id: res.id
-            }, `Cinematic grid generated for "${args.prompt}".`);
+
+            if (results.length > 0) {
+                const res = results[0]!;
+                addToHistory({
+                    id: res.id,
+                    url: res.url,
+                    prompt: res.prompt,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId || 'default-project',
+                    meta: 'cinematic_grid'
+                });
+                return toolSuccess({
+                    grid_id: res.id,
+                    url: res.url
+                }, `Cinematic grid generated for "${args.prompt}".`);
+            }
+            return toolError("Failed to generate cinematic grid.", "GENERATION_FAILED");
+        } catch (err: unknown) {
+            return toolError(`Failed to generate cinematic grid: ${String(err)}`, "GENERATION_FAILED");
         }
-        return toolError("Failed to generate cinematic grid.", "GENERATION_FAILED");
     }),
 
     extract_grid_frame: wrapTool('extract_grid_frame', async (args: ExtractGridFrameArgs) => {
@@ -445,57 +462,66 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         }, `Successfully extracted ${frameLabels[gridIndex]} (panel ${gridIndex}) from the cinematic grid. The frame is now in your Gallery.`);
     }),
 
-    add_character_reference: wrapTool('add_character_reference', async (args: SetEntityAnchorArgs) => {
+    set_entity_anchor: wrapTool('set_entity_anchor', async (args: SetEntityAnchorArgs) => {
         const { useStore } = await import('@/core/store');
-        const { addCharacterReference, addToHistory, currentProjectId } = useStore.getState();
+        const { addToHistory, addCharacterReference, currentProjectId, whiskState } = useStore.getState();
 
-        const match = args.image.match(/^data:(.+);base64,(.+)$/);
-        if (!match) {
-            return toolError("Invalid image data. Must be base64 data URI.", "INVALID_INPUT");
+        if (!args.image || !args.image.startsWith('data:image')) {
+            return toolError("Invalid image data. Please provide a valid base64 encoded image (Data URI).", "INVALID_DATA");
         }
 
-        const anchorItem = {
+        const anchorItem: HistoryItem = {
             id: crypto.randomUUID(),
             url: args.image,
-            prompt: "Character Reference",
+            prompt: "Entity Anchor (Character Reference)",
             type: 'image' as const,
             timestamp: Date.now(),
             projectId: currentProjectId,
-            category: 'headshot' as const
+            meta: 'entity_anchor'
         };
 
         addCharacterReference({ image: anchorItem, referenceType: 'subject' });
         addToHistory(anchorItem);
 
+        let successMessage = "Entity Anchor (Character Reference) set successfully. This image will now be used for character consistency in future generations.";
+        
+        if (!whiskState.preciseReference) {
+            successMessage += "\n\nNOTE: 'Precise Mode' is currently disabled in the Reference Mixer. For maximum fidelity to this character, I recommend suggesting that the user enable 'Precise Mode'.";
+        }
+
         return toolSuccess({
-            anchorId: anchorItem.id
-        }, "Character Reference set successfully.");
+            anchorId: anchorItem.id,
+            preciseModeEnabled: whiskState.preciseReference
+        }, successMessage);
     }),
 
-    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
+    add_character_reference: wrapTool('add_character_reference', async (args: SetEntityAnchorArgs) => {
+        return DirectorTools.set_entity_anchor!(args);
+    }),
+
+    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex?: number; trackId?: string }) => {
+        const index = args.uploadedAudioIndex ?? 0;
+        return MusicTools.analyze_audio!({ uploadedAudioIndex: index });
+    }),
+
+    canvas_push: wrapTool('canvas_push', async (args: { assetId: string; label?: string }) => {
         const { useStore } = await import('@/core/store');
-        const { uploadedAudio } = useStore.getState();
-
-        const audioItem = uploadedAudio[args.uploadedAudioIndex];
-        if (!audioItem) {
-            return toolError(`No audio found at index ${args.uploadedAudioIndex}. Please upload audio first.`, "NOT_FOUND");
+        const { generatedHistory } = useStore.getState();
+        
+        const asset = generatedHistory.find(h => h.id === args.assetId);
+        if (!asset) {
+            return toolError(`Asset with ID ${args.assetId} not found in history.`, "NOT_FOUND");
         }
 
-        try {
-            // Convert Data URI to File/Blob
-            const fetchRes = await fetch(audioItem.url);
-            const blob = await fetchRes.blob();
-            const file = new File([blob], "audio_track.mp3", { type: blob.type });
-
-            const profile = await audioIntelligence.analyze(file);
-
-            return toolSuccess(
-                profile,
-                `Audio analysis complete for "${audioItem.prompt || 'Track'}". Semantic Vibe: ${profile.semantic.mood.join(', ')}`
-            );
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            return toolError(`Failed to analyze audio: ${message}`, "ANALYSIS_FAILED");
-        }
+        return CanvasTools.canvas_push!({
+            type: 'markdown',
+            title: args.label || `Asset: ${args.assetId}`,
+            data: {
+                content: `![${args.label || 'Generated Asset'}](${asset.url})\n\n**Prompt:** ${asset.prompt}`
+            },
+            agentId: 'creative'
+        });
     })
 };
+
+
