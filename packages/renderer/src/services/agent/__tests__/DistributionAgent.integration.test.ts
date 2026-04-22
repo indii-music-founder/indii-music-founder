@@ -12,7 +12,7 @@ describe('DistributionAgent Integration', () => {
     it('should load Distribution Agent from registry', () => {
         expect(distributionAgent).toBeDefined();
         expect(distributionAgent.id).toBe('distribution');
-        expect(distributionAgent.name).toBe('Distribution Chief');
+        expect(distributionAgent.name).toBe('Distribution Director');
     });
 
     it('should have all distribution tools declared', () => {
@@ -60,8 +60,8 @@ describe('DistributionAgent Integration', () => {
     });
 
     it('should have correct category and color', () => {
-        expect(distributionAgent.category).toBe('department');
-        expect(distributionAgent.color).toBe('bg-indigo-600');
+        expect(distributionAgent.category).toBe('manager');
+        expect(distributionAgent.color).toBe('bg-cyan-500');
     });
 
     it('should have comprehensive system prompt', () => {
