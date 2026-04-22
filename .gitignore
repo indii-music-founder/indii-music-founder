@@ -115,3 +115,4 @@ HANDOFF_STATE.md
 **/HANDOFF_STATE.md
 **/CHECKPOINT*.md
 .claude/settings.local.json
+test-results.json
