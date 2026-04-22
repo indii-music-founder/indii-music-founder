@@ -224,6 +224,16 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 
 
 ### Gemini 400 "Multiple candidates is not enabled for this model"
-**Symptom:** When generating multiple variations of an image (e.g. `count: 4`) using a fast model.
-**Root Cause:** Fast models (and some versions of Gemini) do not support `candidate_count > 1` through standard configuration.
-**Fix:** Instead of passing `count: 4` in a single request, fire off an array of parallel API calls (e.g., `Promise.all(Array(4).fill(null).map(() => generateImages({ count: 1 })))`) and flatten the results.
+- SEVERITY: Medium
+- BUG: Fast models (and some versions of Gemini) do not support `candidate_count > 1` through standard configuration.
+- FIX: Instead of passing `count: 4` in a single request, fire off an array of parallel API calls (e.g., `Promise.all(Array(4).fill(null).map(() => generateImages({ count: 1 })))`) and flatten the results.
+
+---
+
+## 2026-04-22 VideoTools Test Dependency Gap
+
+- SEVERITY: High (blocks feature test coverage)
+- FILE: `packages/renderer/src/tests/features/video-gen.test.ts`
+- BUG: Tests failed with `SubscriptionService.canPerformAction is not a function` because the `VideoTools.generate_video` implementation now enforces quota checks.
+- FIX: Added `vi.mock('@/services/subscription/SubscriptionService', () => ({ SubscriptionService: { canPerformAction: vi.fn().mockResolvedValue({ allowed: true }) } }))` to the test file.
+- RULE: **If a tool or service adds a quota check, update all related unit tests with a mock for `SubscriptionService`.** Quota checks are business logic that must be decoupled from tool-level functional tests.

@@ -20,6 +20,12 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
   },
 }));
 
+vi.mock('@/services/subscription/SubscriptionService', () => ({
+  subscriptionService: {
+    canPerformAction: vi.fn().mockResolvedValue({ allowed: true }),
+  },
+}));
+
 // Import the mocked service to set return values
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 
@@ -73,16 +79,18 @@ describe('VideoTools Feature', () => {
           prompt: 'A cat video',
           duration: 5,
           aspectRatio: '16:9',
-          resolution: '1920x1080',
+          resolution: '1080p',
       });
+
 
       expect(VideoGeneration.generateVideo).toHaveBeenCalledWith({
         prompt: 'A cat video',
         firstFrame: undefined,
         duration: 5,
         aspectRatio: '16:9',
-        resolution: '1920x1080',
+        resolution: '1080p',
         userProfile: expect.any(Object),
+
       });
 
       expect(result.success).toBe(true);
