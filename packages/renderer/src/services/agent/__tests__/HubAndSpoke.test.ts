@@ -158,14 +158,14 @@ describe('Hub-and-Spoke Architecture', () => {
             expect(isSpokeAgent('marketing')).toBe(true);
         });
 
-        it('validates road-manager alias as spoke', () => {
-            expect(isSpokeAgent('road-manager')).toBe(true);
-            const result = validateHubAndSpoke('road-manager', 'generalist');
+        it('validates road alias as spoke', () => {
+            expect(isSpokeAgent('road')).toBe(true);
+            const result = validateHubAndSpoke('road', 'generalist');
             expect(result).toBeNull();
         });
 
-        it('blocks road-manager spoke-to-spoke delegation', () => {
-            const result = validateHubAndSpoke('road-manager', 'marketing');
+        it('blocks road spoke-to-spoke delegation', () => {
+            const result = validateHubAndSpoke('road', 'marketing');
             expect(result).not.toBeNull();
             expect(result).toContain('indii architecture rule');
         });
