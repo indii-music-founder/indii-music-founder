@@ -144,6 +144,10 @@ export class GeminiImageService {
         useImageSearch?: boolean | null;
         responseFormat?: string | null;
         count?: number | null;
+        style?: string | null;
+        quality?: string | null;
+        seed?: number | null;
+        personGeneration?: string | null;
         // Legacy compat
         thinking?: boolean | null;
         useGrounding?: boolean | null;
@@ -163,6 +167,15 @@ export class GeminiImageService {
         if (data.imageSize) {
             // Ensure uppercase K (API rejects lowercase)
             imageConfig.imageSize = data.imageSize.toUpperCase();
+        }
+        if (data.style) {
+            imageConfig.style = data.style;
+        }
+        if (data.quality) {
+            imageConfig.quality = data.quality;
+        }
+        if (data.seed !== undefined && data.seed !== null) {
+            imageConfig.seed = data.seed;
         }
 
         // Thinking config — Flash supports level control; Pro always thinks
@@ -200,6 +213,10 @@ export class GeminiImageService {
         const config: Record<string, unknown> = {
             responseModalities,
         };
+
+        if (data.personGeneration) {
+            config.personGeneration = data.personGeneration;
+        }
 
         // Pro only supports 1 candidate
         if (!isPro && data.count && data.count > 1) {
@@ -317,13 +334,13 @@ export class GeminiImageService {
         const result = response as GeminiGenerateContentResponse;
         const candidates = result.candidates;
         if (!candidates || candidates.length === 0) {
-            throw new Error("No candidates returned from Gemini API");
+            throw new Error(`No candidates returned from Gemini API. Response keys: ${Object.keys(result).join(', ')}`);
         }
 
         const candidate = candidates[0];
         const parts = candidate?.content?.parts;
         if (!parts || parts.length === 0) {
-            throw new Error("No content parts in response");
+            throw new Error(`No content parts in response. Finish reason: ${candidate?.finishReason || 'Unknown'}. Safety Ratings: ${JSON.stringify(candidate?.safetyRatings || [])}`);
         }
 
         const images: ImageResult[] = [];
@@ -526,6 +543,10 @@ export class GeminiImageService {
                 includeThoughts: data.includeThoughts,
                 useGoogleSearch: data.useGoogleSearch,
                 responseFormat: data.responseFormat,
+                style: data.style,
+                quality: data.quality,
+                seed: data.seed,
+                personGeneration: data.personGeneration,
             }, modelId);
 
             // Build contents for edit: text + source image + mask + reference images
