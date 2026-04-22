@@ -17,7 +17,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 describe('🖱️ Click: CreativeGallery Interaction', () => {
-    const mockRemoveFromHistory = vi.fn();
+    const mockRemoveItemFromProject = vi.fn();
     const mockSetVideoInput = vi.fn();
     const mockSetSelectedItem = vi.fn();
     const mockToastSuccess = vi.fn();
@@ -36,7 +36,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         generatedHistory: [mockItem],
         uploadedImages: [],
         uploadedAudio: [],
-        removeFromHistory: mockRemoveFromHistory,
+        removeItemFromProject: mockRemoveItemFromProject,
         addUploadedImage: vi.fn(),
         removeUploadedImage: vi.fn(),
         addUploadedAudio: vi.fn(),
@@ -89,8 +89,8 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         // ⚡ Action
         fireEvent.click(deleteBtn);
 
-        // ✅ Assert Action: Verify removeFromHistory was called
-        expect(mockRemoveFromHistory).toHaveBeenCalledWith('test-123', 'image', 'generated');
+        // ✅ Assert Action: Verify removeItemFromProject was called
+        expect(mockRemoveItemFromProject).toHaveBeenCalledWith('test-123', 'image', 'generated');
     });
 
     it('verifies the Video Set Frame lifecycle in Video Mode (Click → Action → Feedback)', async () => {
