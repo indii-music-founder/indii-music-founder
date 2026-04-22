@@ -114,7 +114,7 @@ describe('Filmmaking Grammar Tools', () => {
 
             expect(ImageGeneration.generateImages).toHaveBeenCalledWith(expect.objectContaining({
                 sourceImages: [{ mimeType: 'image/png', data: 'mockanchordata' }],
-                prompt: expect.stringContaining("Maintain strict character consistency")
+                prompt: expect.stringContaining("2x2 cinematic grid")
             }));
         });
 
@@ -130,7 +130,7 @@ describe('Filmmaking Grammar Tools', () => {
             }));
 
             expect(result.success).toBe(true);
-            expect(result.message).toContain("Character Reference set successfully");
+            expect(result.message).toContain("Entity Anchor (Character Reference) set successfully");
         });
     });
 
