@@ -51,7 +51,7 @@ Read the user's input carefully. It will fall into one of three categories:
 | **Vague** | `/real` (no args) | Agent autonomously selects what to test based on coverage gaps |
 | **Themed** | `/real video pipeline` | Agent designs a realistic scenario around the theme |
 | **Specific** | `/real generate 4K image, crop it, animate to video` | Agent executes the specific sequence |
-| **Deep** | `/real deep [module]` | Agent executes the Universal Deep-Interaction Stress Test on the specified module (or defaults to core modules). 100+ actions, detailed follow-through, exhaustive form completion and file uploads. |
+| **Deep** | `/real deep [module]` | Agent executes the Universal Deep-Interaction Stress Test. Scales adaptively based on target scope (e.g. 10s of actions for minor fixes, 1000+ for major new features). Exhaustive form completion and file uploads. |
 
 ### 1.2 Coverage-Aware Selection (Vague Mode)
 
@@ -195,11 +195,11 @@ You are executing an extreme, deep-interaction stress test. This test is designe
 Do not just "window shop" by clicking and moving on. You MUST follow through on actions. 
 - If you open a form or modal, fill in ALL text fields (type realistic things like tax information, names, bios, etc.) and submit them. 
 - If there is an upload button, use the absolute file paths provided in your context to upload actual files (images, audio, etc.). 
-- Perform at least 100 distinct actions (clicks, types, uploads) during the session. 
+- **ADAPTIVE SCALING:** The number of actions is a metaphor that scales with the target. If testing a minor fix, a few dozen actions may suffice. If testing a newly built feature from the ground up, you may need 1,000+ distinct actions (clicks, types, uploads) to truly stress-test it.
 - Act like a determined power user configuring their account and creating assets.
 
 **Execution Phases (Targeted Mode):**
-If a `[module_name]` is provided, focus the 100+ actions entirely on that module. Explore every tab, click every button, fill every form, upload to every dropzone, and test every edge case within that specific boundary.
+If a `[module_name]` is provided, focus your scaled actions entirely on that module. Explore every tab, click every button, fill every form, upload to every dropzone, and test every edge case within that specific boundary.
 
 **Execution Phases (Default Mode):**
 If no module is specified, execute the following core phases with extreme thoroughness:
@@ -499,7 +499,7 @@ When invoked as `/real 30`, the agent enters **perfection mode**:
 /real                    → Auto-pick scenario from coverage gaps
 /real video pipeline     → Themed scenario
 /real chaos              → Break everything mode
-/real deep [module]      → Universal Deep-Interaction Stress Test on target or default core modules (100+ actions)
+/real deep [module]      → Universal Deep-Interaction Stress Test (scales from 10s to 1000s of actions based on target)
 /real 30                 → Perfection loop until 30/30
 /real regression         → Retest all previously-fixed issues
 
