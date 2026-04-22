@@ -28,6 +28,7 @@ export interface CreativeHistorySlice {
     initializeHistory: () => Promise<void>;
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void;
     removeFromHistory: (id: string) => void;
+    removeItemFromProject: (id: string) => void;
 
     // Canvas
     canvasImages: CanvasImage[];
@@ -192,6 +193,11 @@ export function buildCreativeHistoryState(
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.removeItem(id).catch((e) => { logger.error('[Store] Failed to remove item:', e); });
             });
+        },
+        removeItemFromProject: (id: string) => {
+            set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) }));
+            // Soft delete - removes from local state/project view, but leaves in master storage
+            logger.debug(`[CreativeSlice] Soft removed item ${id} from project view.`);
         },
 
         canvasImages: [],

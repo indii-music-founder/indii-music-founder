@@ -628,20 +628,11 @@ export class CanvasOperationsService {
     }
 
     /**
-     * Save canvas as PNG file download (annotations excluded from output)
+     * Get canvas as PNG data URL (annotations excluded from output)
      */
-    saveCanvas(filename: string): string {
+    saveCanvas(): string {
         if (!this.canvas) return '';
-        const dataUrl = this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: 2 });
-
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        return dataUrl;
+        return this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: 2 });
     }
 
     /**
@@ -1071,13 +1062,51 @@ export class CanvasOperationsService {
     }
 
     /**
+     * Get all layers (objects) on the canvas
+     */
+    getLayers(): any[] {
+        if (!this.canvas) return [];
+        return this.canvas.getObjects().map(obj => {
+            const data = (obj as any).data || {};
+            return {
+                id: (obj as any).id || `layer_${Math.random().toString(36).substring(2, 9)}`,
+                type: obj.type,
+                visible: obj.visible,
+                isBaseImage: !!data.isBaseImage,
+                isAnnotation: this.isAnnotation(obj),
+                colorId: data.colorId,
+                label: data.label,
+                object: obj
+            };
+        });
+    }
+
+    /**
+     * Toggle visibility of a specific layer/object
+     */
+    toggleLayerVisibility(obj: fabric.Object, visible: boolean): void {
+        if (!this.canvas) return;
+        obj.set('visible', visible);
+        this.canvas.renderAll();
+    }
+
+    /**
      * Convert canvas to JSON
      */
     async toJSON(): Promise<string | null> {
         if (!this.canvas) return null;
         // Include 'data' property so colorId survives serialization/deserialization
         // Fabric 6: toJSON() takes no args; use toObject() for custom property inclusion
-        const json = this.canvas.toObject(['data']);
+        const json = this.canvas.toObject(['data', 'id']);
+        
+        // Strip out transient UI data (bounding boxes, masks)
+        if (json.objects && Array.isArray(json.objects)) {
+            json.objects = json.objects.filter((obj: any) => {
+                if (!obj.data) return true;
+                return !obj.data.isBoundingBox && !obj.data.isSegmentationMask;
+            });
+        }
+        
         return JSON.stringify(json);
     }
 }

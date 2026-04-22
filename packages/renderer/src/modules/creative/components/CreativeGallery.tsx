@@ -236,13 +236,13 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
 export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates
     const {
-        generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage,
+        generatedHistory, removeItemFromProject, uploadedImages, addUploadedImage, removeUploadedImage,
         uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode,
         setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
         playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
-        removeFromHistory: state.removeFromHistory,
+        removeItemFromProject: state.removeItemFromProject,
         uploadedImages: state.uploadedImages,
         addUploadedImage: state.addUploadedImage,
         removeUploadedImage: state.removeUploadedImage,
@@ -369,9 +369,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             if (type === 'music') removeUploadedAudio(id);
             else removeUploadedImage(id);
         } else {
-            removeFromHistory(id);
+            removeItemFromProject(id);
         }
-    }, [removeUploadedAudio, removeUploadedImage, removeFromHistory]);
+    }, [removeUploadedAudio, removeUploadedImage, removeItemFromProject]);
 
     if (isEmpty) {
         return (
@@ -465,7 +465,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             setSelectedItem={setSelectedItem}
                                             toast={toast}
                                             generationMode={generationMode}
-                                            onDelete={item.origin === 'uploaded' ? (item.type === 'music' ? removeUploadedAudio : removeUploadedImage) : removeFromHistory}
+                                            onDelete={item.origin === 'uploaded' ? (item.type === 'music' ? removeUploadedAudio : removeUploadedImage) : removeItemFromProject}
                                             setPrompt={setPrompt}
                                             setViewMode={setViewMode}
                                             playTrack={playTrack}
