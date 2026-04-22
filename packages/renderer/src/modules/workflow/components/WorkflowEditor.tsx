@@ -41,13 +41,14 @@ interface WorkflowEditorProps {
 }
 
 const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false, onInit }) => {
-    const { nodes, edges, setNodes, setEdges, addNode } = useStore(
+    const { nodes, edges, setNodes, setEdges, addNode, setSelectedNodeId } = useStore(
         useShallow((state) => ({
             nodes: state.nodes,
             edges: state.edges,
             setNodes: state.setNodes,
             setEdges: state.setEdges,
             addNode: state.addNode,
+            setSelectedNodeId: state.setSelectedNodeId,
         }))
     );
 
@@ -63,6 +64,14 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
         if (readOnly) return;
         setEdges((eds) => applyEdgeChanges(changes, eds));
     }, [setEdges, readOnly]);
+
+    const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: import('reactflow').Node[] }) => {
+        if (selectedNodes.length === 1 && selectedNodes[0]) {
+            setSelectedNodeId?.(selectedNodes[0].id);
+        } else {
+            setSelectedNodeId?.(null);
+        }
+    }, [setSelectedNodeId]);
 
     // --- STRICT CONNECTION VALIDATION ---
     const isValidConnection = useCallback((connection: Connection) => {
@@ -108,6 +117,7 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onSelectionChange={onSelectionChange}
                 onInit={(instance) => {
                     setReactFlowInstance(instance);
                     onInit?.(instance);
