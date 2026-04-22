@@ -74,12 +74,16 @@ describe('DirectGenerationTab', () => {
             mediaResolution: 'medium',
             thinking: false
         },
+        prompt: '',
         setPrompt: vi.fn(),
+        isPromptBuilderOpen: false,
+        togglePromptBuilder: vi.fn(),
         addToHistory: vi.fn(),
         currentProjectId: 'test-project',
         whiskState: {},
         setSelectedItem: vi.fn(),
-        setViewMode: vi.fn()
+        setViewMode: vi.fn(),
+        setGenerationMode: vi.fn()
     };
 
     beforeEach(() => {
