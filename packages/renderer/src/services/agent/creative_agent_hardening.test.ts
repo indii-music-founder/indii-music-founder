@@ -106,14 +106,14 @@ describe('CreativeAgent — System Prompt Template Literal Integrity', () => {
 
     it('should export a systemPrompt that is a non-empty string', async () => {
         const mod = await import('@/services/agent/definitions/CreativeAgent');
-        const agent = mod.CreativeAgent ?? mod.default;
+        const agent = mod.CreativeAgent ?? (mod as any).default;
         expect(typeof agent?.systemPrompt).toBe('string');
         expect((agent?.systemPrompt as string).length).toBeGreaterThan(100);
     });
 
     it('system prompt should contain canonical tool names', async () => {
         const mod = await import('@/services/agent/definitions/CreativeAgent');
-        const agent = mod.CreativeAgent ?? mod.default;
+        const agent = mod.CreativeAgent ?? (mod as any).default;
         const prompt = agent?.systemPrompt as string;
 
         // These are load-bearing tool names; if removed from the prompt,

@@ -128,7 +128,7 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference' }
     const getModeHelperText = () => {
         if (mode === 'base_video') return "Upload 1 base video for scene extension";
         if (mode === 'transition') return "Upload Start & End frames for transitions";
-        return "Lock in characters, pets, or styles for Veo 3.1";
+        return "Lock in characters, pets, or styles for video generation";
     };
 
     return (

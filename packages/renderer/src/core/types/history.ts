@@ -14,4 +14,6 @@ export interface HistoryItem {
     subject?: string;
     origin?: 'generated' | 'uploaded' | 'canvas-export';
     localPath?: string; // Path to locally saved file (Electron/Veo)
+    /** ID of the source HistoryItem this was derived from (e.g., canvas-export of a generated image) */
+    parentId?: string;
 }
