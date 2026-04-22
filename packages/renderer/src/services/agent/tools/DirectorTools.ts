@@ -148,7 +148,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             finalPrompt = WhiskService.synthesizeWhiskPrompt(args.prompt, whiskState);
 
             // If no source images yet and precise mode is on, get them from Whisk
-            if (!sourceImages && whiskState.preciseReference) {
+            if (!sourceImages && whiskState?.preciseReference) {
                 const whiskSourceImages = WhiskService.getSourceImages(whiskState);
                 if (whiskSourceImages && whiskSourceImages.length > 0) {
                     sourceImages = whiskSourceImages;
@@ -485,13 +485,13 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
 
         let successMessage = "Entity Anchor (Character Reference) set successfully. This image will now be used for character consistency in future generations.";
         
-        if (!whiskState.preciseReference) {
+        if (whiskState && !whiskState.preciseReference) {
             successMessage += "\n\nNOTE: 'Precise Mode' is currently disabled in the Reference Mixer. For maximum fidelity to this character, I recommend suggesting that the user enable 'Precise Mode'.";
         }
 
         return toolSuccess({
             anchorId: anchorItem.id,
-            preciseModeEnabled: whiskState.preciseReference
+            preciseModeEnabled: whiskState?.preciseReference || false
         }, successMessage);
     }),
 
