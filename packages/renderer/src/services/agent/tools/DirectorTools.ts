@@ -176,6 +176,9 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 negativePrompt: args.negativePrompt || studioControls.negativePrompt,
                 model: studioControls.model || 'fast', // Respect user's model preference (cost protection)
                 thinking: true,
+                style: args.style,
+                quality: args.quality,
+                seed: args.seed,
                 personGeneration: { 'allow_adult': 'ALLOW_ADULT', 'dont_allow': 'ALLOW_NONE', 'allow_all': 'ALLOW_ALL' }[studioControls.personGeneration] ?? 'ALLOW_ADULT',
                 sourceImages,
                 userProfile
@@ -200,48 +203,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
             return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
         } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-
-            // CRITICAL FIX: Prevent infinite retry loops on subscription errors
-            if (errorMessage.includes("Failed to fetch subscription")) {
-                return toolError(
-                    "Subscription verification failed. Please check your network connection or subscription status. Do not retry immediately.",
-                    "SUBSCRIPTION_ERROR"
-                );
-            }
-
-            // CRITICAL FIX: Gracefully handle 401/Unauthenticated errors
-            // so the agent loop continues and the agent can still respond with text.
-            if (
-                errorMessage.includes('unauthenticated') ||
-                errorMessage.includes('Unauthenticated') ||
-                errorMessage.includes('UNAUTHENTICATED') ||
-                errorMessage.includes('401') ||
-                errorMessage.includes('permission-denied') ||
-                errorMessage.includes('App Check')
-            ) {
-                return toolError(
-                    "Image generation requires authentication. The user may need to sign in again or ensure App Check is configured. Generation was skipped — please provide text-only guidance instead.",
-                    "AUTH_ERROR"
-                );
-            }
-
-            // CRITICAL FIX: Handle quota exceeded errors without breaking the session
-            // Catches: Firebase resource-exhausted HttpsError, Gemini API quota strings
-            if (
-                errorMessage.includes('quota') ||
-                errorMessage.includes('Quota') ||
-                errorMessage.includes('QUOTA_EXCEEDED') ||
-                errorMessage.includes('resource-exhausted') ||
-                errorMessage.includes('RESOURCE_EXHAUSTED')
-            ) {
-                return toolError(
-                    `Image generation quota exceeded: ${errorMessage}. Suggest the user upgrade their subscription or wait for quota reset.`,
-                    "QUOTA_EXCEEDED"
-                );
-            }
-
-            throw err; // Re-throw other errors to be handled by wrapTool
+            return handleGenerationError(err, 'generate_image');
         }
     }),
 
@@ -254,7 +216,10 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         }
 
         const targetImages = args.imageIndices
-            ? args.imageIndices.map(i => uploadedImages[i]).filter(Boolean)
+            ? args.imageIndices
+                .filter(i => i >= 0 && i < uploadedImages.length)
+                .map(i => uploadedImages[i])
+                .filter(Boolean)
             : uploadedImages;
 
         if (targetImages.length === 0) {
@@ -328,7 +293,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         const { useStore } = await import('@/core/store');
         const { userProfile, currentProjectId, addToHistory } = useStore.getState();
 
-        const isCover = ['cd_front', 'cd_back', 'vinyl_jacket', 'jacket', 'vinyl', 'booklet'].includes(args.templateType);
+        const isCover = ['cd_front', 'cd_back', 'vinyl_jacket', 'jacket', 'vinyl', 'booklet', 'cover'].includes(args.templateType);
         
         try {
             const effectivePrompt = args.style
@@ -363,14 +328,14 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
             return toolError("Generation completed but no image was returned.", "EMPTY_RESULT");
         } catch (err: unknown) {
-            return toolError(`Failed to generate high-res asset: ${String(err)}`, "GENERATION_FAILED");
+            return handleGenerationError(err, 'generate_high_res_asset');
         }
     }),
 
     /**
      * Renders a 2x2 grid of storyboards for visual planning.
      */
-    render_cinematic_grid: wrapTool('render_cinematic_grid', async (args: { prompt: string }) => {
+    render_cinematic_grid: wrapTool('render_cinematic_grid', async (args: { prompt: string }, context) => {
         const { useStore } = await import('@/core/store');
         const { userProfile, characterReferences, currentProjectId, addToHistory } = useStore.getState();
 
@@ -405,6 +370,12 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     projectId: currentProjectId || 'default-project',
                     meta: 'cinematic_grid'
                 });
+
+                context?.setMetadata?.('last_grid', {
+                    url: res.url,
+                    count: 4
+                });
+
                 return toolSuccess({
                     grid_id: res.id,
                     url: res.url
@@ -412,11 +383,11 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
             return toolError("Failed to generate cinematic grid.", "GENERATION_FAILED");
         } catch (err: unknown) {
-            return toolError(`Failed to generate cinematic grid: ${String(err)}`, "GENERATION_FAILED");
+            return handleGenerationError(err, 'render_cinematic_grid');
         }
     }),
 
-    extract_grid_frame: wrapTool('extract_grid_frame', async (args: ExtractGridFrameArgs) => {
+    extract_grid_frame: wrapTool('extract_grid_frame', async (args: ExtractGridFrameArgs, context) => {
         const { useStore } = await import('@/core/store');
         const { generatedHistory, addToHistory, currentProjectId } = useStore.getState();
 
@@ -433,12 +404,17 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             return toolError("No grid image found. Please generate a cinematic grid first using render_cinematic_grid.", "NOT_FOUND");
         }
 
-        const gridIndex = args.gridIndex;
-        if (gridIndex < 0 || gridIndex > 3) {
-            return toolError("Invalid grid index. Use 0 (top-left), 1 (top-right), 2 (bottom-left), or 3 (bottom-right).", "INVALID_INDEX");
+        const gridInfo = context?.getMetadata?.('last_grid');
+        if (!gridInfo) {
+            return toolError('No cinematic grid found in recent context. Please generate a grid first.', 'MISSING_CONTEXT');
         }
 
-        const extractedDataUrl = await extractFrameFromGrid(sourceImage.url, gridIndex);
+        const index = args.gridIndex || 0;
+        if (index < 0 || index >= gridInfo.count) {
+            return toolError(`Invalid frame index ${index}. The current grid only has ${gridInfo.count} frames (0-${gridInfo.count - 1}).`, 'OUT_OF_BOUNDS');
+        }
+
+        const extractedDataUrl = await extractFrameFromGrid(sourceImage.url, index);
 
         if (!extractedDataUrl) {
             return toolError("Failed to extract frame from grid image.", "EXTRACTION_FAILED");
@@ -448,7 +424,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         const frameItem = {
             id: crypto.randomUUID(),
             url: extractedDataUrl,
-            prompt: `Extracted ${frameLabels[gridIndex]} from cinematic grid`,
+            prompt: `Extracted ${frameLabels[index]} from cinematic grid`,
             type: 'image' as const,
             timestamp: Date.now(),
             projectId: currentProjectId,
@@ -459,7 +435,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
 
         return toolSuccess({
             frame_id: frameItem.id
-        }, `Successfully extracted ${frameLabels[gridIndex]} (panel ${gridIndex}) from the cinematic grid. The frame is now in your Gallery.`);
+        }, `Successfully extracted ${frameLabels[index]} (panel ${index}) from the cinematic grid. The frame is now in your Gallery.`);
     }),
 
     set_entity_anchor: wrapTool('set_entity_anchor', async (args: SetEntityAnchorArgs) => {
@@ -523,5 +499,35 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         });
     })
 };
+
+/**
+ * Standardized error handler for image generation tools.
+ * Maps common API errors to actionable hints for the agent.
+ */
+function handleGenerationError(err: unknown, toolName: string) {
+    const error = err as any;
+    const message = error.message || String(err);
+    
+    // Check for Quota/Rate Limits
+    if (message.includes('429') || message.includes('quota') || message.includes('Rate limit')) {
+        return toolError(
+            `Quota exceeded for ${toolName}. Please wait a moment or try a lower-resolution setting.`,
+            'QUOTA_EXCEEDED',
+            { hint: "Suggest the user try again in 1 minute or switch to 'fast' model." }
+        );
+    }
+
+    // Check for Authentication/Subscription
+    if (message.includes('401') || message.includes('403') || message.includes('unauthorized') || message.includes('subscription')) {
+        return toolError(
+            `Authentication or subscription error during ${toolName}.`,
+            'AUTH_REQUIRED',
+            { hint: "Check user subscription status. If they are on a free tier, they may have hit a hard limit." }
+        );
+    }
+
+    // Fallback
+    return toolError(`Image generation failed during ${toolName}: ${message}`, 'GENERATION_ERROR');
+}
 
 

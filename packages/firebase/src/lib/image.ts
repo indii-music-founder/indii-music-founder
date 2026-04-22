@@ -144,6 +144,20 @@ export const GenerateImageRequestSchema = z.object({
      */
     responseFormat: ResponseFormatEnum.nullish(),
 
+    // --- Advanced Generation Control ---
+
+    /** Style preference for generation */
+    style: z.string().nullish(),
+
+    /** Quality setting for generation */
+    quality: z.string().nullish(),
+
+    /** Seed for reproducible generation */
+    seed: z.number().int().nullish(),
+
+    /** Person generation policy (e.g. 'ALLOW_ADULT') */
+    personGeneration: z.string().nullish(),
+
     // --- Multi-Turn Editing (Stateless) ---
 
     /**
@@ -229,6 +243,20 @@ export const EditImageRequestSchema = z.object({
 
     /** Previous conversation history for iterative editing sessions */
     conversationHistory: z.array(ConversationTurnSchema).nullish(),
+
+    // --- Advanced Generation Control ---
+
+    /** Style preference for generation */
+    style: z.string().nullish(),
+
+    /** Quality setting for generation */
+    quality: z.string().nullish(),
+
+    /** Seed for reproducible generation */
+    seed: z.number().int().nullish(),
+
+    /** Person generation policy (e.g. 'ALLOW_ADULT') */
+    personGeneration: z.string().nullish(),
 });
 
 // ============================================================================

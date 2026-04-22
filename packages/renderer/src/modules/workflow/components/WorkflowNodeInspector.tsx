@@ -54,11 +54,13 @@ export default function WorkflowNodeInspector() {
     };
 
     return (
-        <div className="absolute right-4 top-4 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-right-10 fade-in duration-300">
-            <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-gray-800/50">
-                <h3 className="font-bold text-white">Node Inspector</h3>
-                <button onClick={() => setSelectedNodeId(null)} className="text-gray-400 hover:text-white">
-                    <X size={18} />
+        <div className="flex flex-col h-full rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden">
+            <div className="flex items-center justify-between p-3 border-b border-white/5 bg-white/[0.02]">
+                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <Sparkles size={10} /> Node Inspector
+                </h3>
+                <button onClick={() => setSelectedNodeId(null)} className="text-gray-400 hover:text-white p-1 rounded hover:bg-white/10 transition-colors">
+                    <X size={14} />
                 </button>
             </div>
 

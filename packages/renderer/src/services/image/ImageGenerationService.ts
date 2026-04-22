@@ -70,6 +70,13 @@ export interface ImageGenerationOptions {
     /** Thought signature from a previous response for multi-turn continuity. */
     thoughtSignature?: string;
 
+    /** Optional artistic style directive. */
+    style?: string;
+    /** Optional generation quality setting. */
+    quality?: string;
+    /** Random seed for reproducible generation. */
+    seed?: string;
+
     // --- Legacy compat (deprecated) ---
 
     /** @deprecated Use `thinkingLevel` instead. */
@@ -282,6 +289,10 @@ export class ImageGenerationService {
                 // Multi-turn
                 conversationHistory: options.conversationHistory,
                 thoughtSignature: options.thoughtSignature,
+                // Advanced control
+                style: options.style,
+                quality: options.quality,
+                seed: options.seed,
                 // Legacy compat
                 thinking: options.thinking,
                 useGrounding: options.useGrounding,

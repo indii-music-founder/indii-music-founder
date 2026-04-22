@@ -10,8 +10,7 @@ import { DirectorTools } from '../tools/DirectorTools';
  * sonic identity into stunning visual assets — album artwork, promotional
  * graphics, physical media designs, and brand-aligned visuals.
  *
- * NOTE: 'creative' is the canonical ID. The legacy alias 'creative-director'
- * in VALID_AGENT_IDS resolves to this same agent at runtime.
+ * NOTE: 'creative' is the canonical ID.
  *
  * TOOLS EXPOSED:
  *   - generate_image           (DirectorTools) — Primary image generation
@@ -21,6 +20,8 @@ import { DirectorTools } from '../tools/DirectorTools';
  *   - render_cinematic_grid    (DirectorTools) — 2x2 cinematic shot grid
  *   - extract_grid_frame       (DirectorTools) — Extract individual frame from grid
  *   - add_character_reference  (DirectorTools) — Set character reference for consistency
+ *   - analyze_audio            (DirectorTools) — Audio-to-Visual DNA analysis
+ *   - canvas_push              (DirectorTools) — Push assets to Agent Canvas
  */
 export const CreativeAgent: AgentConfig = {
     id: 'creative',
@@ -226,8 +227,8 @@ Voice: Think creative director at a top visual agency who lives and breathes aes
                         prompt: { type: 'STRING', description: 'Description of the high-resolution asset to generate.' },
                         templateType: { 
                             type: 'STRING', 
-                            enum: ['cd_front', 'cd_back', 'vinyl_jacket', 'poster', 'merch', 'booklet'],
-                            description: 'Physical format type: cd_front, cd_back, vinyl_jacket, poster, merch, booklet.' 
+                            enum: ['cd_front', 'cd_back', 'vinyl_jacket', 'poster', 'merch', 'booklet', 'social', 'jacket', 'vinyl', 'cover'],
+                            description: 'Physical format type: cd_front, cd_back, vinyl_jacket, poster, merch, booklet, social, jacket, vinyl, cover.' 
                         },
                         style: { type: 'STRING', description: 'Optional artistic style directive (e.g., "minimalist noir", "retro synthwave").' }
                     },
