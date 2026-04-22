@@ -24,24 +24,19 @@ export class DSRProcessor {
             platformFeePercent: number;
         } = { distributorFeePercent: 0, platformFeePercent: 0 }
     ): Promise<RoyaltyCalculation[]> {
-        const calculations: Map<string, RoyaltyCalculation> = new Map();
+        // First pass: aggregate totals without fetching metadata yet.
+        // This avoids N+1 queries by replacing N catalog.get(isrc) lookups with Map lookups
+        const tempCalculations: Map<string, { totalStreams: number; totalDownloads: number; grossRevenue: number }> = new Map();
 
         for (const txn of report.transactions) {
             const isrc = txn.resourceId.isrc;
             if (!isrc) continue; // Skip if no ISRC to match
 
-            const metadata = catalog.get(isrc);
-            if (!metadata) {
-                // Skip transactions without matching metadata
-                continue;
+            let calc = tempCalculations.get(isrc);
+            if (!calc) {
+                calc = { totalStreams: 0, totalDownloads: 0, grossRevenue: 0 };
+                tempCalculations.set(isrc, calc);
             }
-
-            // Initialize calculation entry if not exists
-            if (!calculations.has(isrc)) {
-                calculations.set(isrc, this.createEmptyCalculation(isrc, metadata, report));
-            }
-
-            const calc = calculations.get(isrc)!;
 
             // Aggregate Usage
             if (txn.usageType === 'OnDemandStream' || txn.usageType === 'ProgrammedStream') {
@@ -55,15 +50,24 @@ export class DSRProcessor {
         }
 
         // Finalize Calculations (Apply Fees & Splits)
-        const results = Array.from(calculations.values());
-        for (const calc of results) {
-            const metadata = catalog.get(calc.isrc)!;
+        // Second pass: map with metadata only for unique ISRC found in transactions
+        const results: RoyaltyCalculation[] = [];
+        for (const [isrc, tempCalc] of tempCalculations.entries()) {
+            const metadata = catalog.get(isrc);
+            if (!metadata) {
+                // Skip transactions without matching metadata
+                continue;
+            }
+
+            const calc = this.createEmptyCalculation(isrc, metadata, report);
+            calc.totalStreams = tempCalc.totalStreams;
+            calc.totalDownloads = tempCalc.totalDownloads;
+            calc.grossRevenue = tempCalc.grossRevenue;
 
             // 1. Deduct Fees
             // Platform fees are usually deducted before we get the report revenue (Net Receipts), 
             // but if we are acting as distributor, we might take a cut.
             // DSR Revenue is typically "Net Receipts" from DSP.
-            // calc.distributorFeePercent = config.distributorFeePercent; // Property does not exist on type
             const distFeeAmount = calc.grossRevenue * (config.distributorFeePercent / 100);
 
             calc.distributorFees = distFeeAmount;
@@ -72,6 +76,8 @@ export class DSRProcessor {
             // 2. Calculate Splits
             // indiiOS model: Splits applied to Net Revenue
             calc.contributorPayments = this.calculateSplits(calc.netRevenue, metadata.splits);
+
+            results.push(calc);
         }
 
         return results;
