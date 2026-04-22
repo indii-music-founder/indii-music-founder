@@ -26,8 +26,12 @@ class ContractAnalyzer(Tool):
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
             model_id = AIConfig.TEXT_AGENT # Pro required for complex legal reasoning
             
-            with open(file_path, "rb") as f:
-                asset_data = f.read()
+            def _read_file():
+                with open(file_path, "rb") as f:
+                    return f.read()
+
+            loop = asyncio.get_running_loop()
+            asset_data = await loop.run_in_executor(None, _read_file)
             mime_type = "application/pdf"
             
             if action == "extract_terms":
@@ -53,17 +57,19 @@ class ContractAnalyzer(Tool):
                     self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
                     await asyncio.sleep(wait_time)
 
-                response = client.models.generate_content(
-                    model=model_id,
-                    contents=[
-                        types.Part.from_bytes(data=asset_data, mime_type=mime_type),
-                        prompt
-                    ],
-                    config=types.GenerateContentConfig(
-                        response_mime_type="application/json",
-                        temperature=0.0 # High factuality
+                def _generate():
+                    return client.models.generate_content(
+                        model=model_id,
+                        contents=[
+                            types.Part.from_bytes(data=asset_data, mime_type=mime_type),
+                            prompt
+                        ],
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            temperature=0.0 # High factuality
+                        )
                     )
-                )
+                response = await asyncio.get_running_loop().run_in_executor(None, _generate)
                 
                 analysis = json.loads(response.text)
                 
@@ -109,12 +115,14 @@ class ContractAnalyzer(Tool):
                     }
                     
                     try:
-                        pd_res = requests.post(
-                            "https://api.pandadoc.com/public/v1/documents",
-                            json=doc_payload,
-                            headers=headers,
-                            timeout=15
-                        )
+                        def _post_pandadoc():
+                            return requests.post(
+                                "https://api.pandadoc.com/public/v1/documents",
+                                json=doc_payload,
+                                headers=headers,
+                                timeout=15
+                            )
+                        pd_res = await asyncio.get_running_loop().run_in_executor(None, _post_pandadoc)
                         if pd_res.ok:
                             pandadoc_doc_id = pd_res.json().get("id")
                             workflow_status = f"PandaDoc document {pandadoc_doc_id} created"
