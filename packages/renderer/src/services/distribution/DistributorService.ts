@@ -477,12 +477,22 @@ class DistributorServiceImpl {
     const platformMap = new Map<string, { streams: number; downloads: number; revenue: number }>();
     const territoryMap = new Map<string, { streams: number; downloads: number; revenue: number }>();
 
+    // Pre-fetch all conversion rates to avoid N+1 queries
+    const uniqueCurrencies = Array.from(new Set(validEarnings.map(e => e?.currencyCode).filter(Boolean)));
+    const ratesArray = await Promise.all(
+      uniqueCurrencies.map(async currency => ({
+        currency,
+        rate: await currencyConversionService.convert(1, currency as string, targetCurrency)
+      }))
+    );
+    const rateMap = Object.fromEntries(ratesArray.map(r => [r.currency, r.rate]));
+
     // Process each distributor's earnings report
     for (const e of validEarnings) {
       if (!e) continue;
 
       // Determine conversion rate for this report
-      const rate = await currencyConversionService.convert(1, e.currencyCode, targetCurrency);
+      const rate = rateMap[e.currencyCode] || 1;
 
       // Accumulate totals
       totalStreams += e.streams;
