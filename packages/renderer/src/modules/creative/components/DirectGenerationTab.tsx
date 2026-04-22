@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download, ChevronDown, ChevronUp, Film } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
@@ -6,16 +6,13 @@ import { CreativeVideoPlayer } from './CreativeVideoPlayer';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import PromptBuilder from './PromptBuilder';
 
 export default function DirectGenerationTab() {
-    const { setGenerationMode } = useStore(useShallow(state => ({
-        setGenerationMode: state.setGenerationMode
+    const { setGenerationMode, isPromptBuilderOpen, togglePromptBuilder } = useStore(useShallow(state => ({
+        setGenerationMode: state.setGenerationMode,
+        isPromptBuilderOpen: state.isPromptBuilderOpen,
+        togglePromptBuilder: state.togglePromptBuilder
     })));
-
-    // Local toggle for prompt builder panel (not yet wired to global store)
-    const [isPromptBuilderOpen, setIsPromptBuilderOpen] = useState(false);
-    const togglePromptBuilder = useCallback(() => setIsPromptBuilderOpen(prev => !prev), []);
 
     const {
         mode,
@@ -29,10 +26,6 @@ export default function DirectGenerationTab() {
         handleIngredientsChange,
         setSelectedItem,
         setViewMode,
-        sequence,
-        setSequence,
-        bpm,
-        setBpm,
         studioControls
     } = useDirectGeneration();
 
@@ -88,10 +81,12 @@ export default function DirectGenerationTab() {
 
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center gap-2">
                                 <button
-                                    onClick={() => togglePromptBuilder()}
+                                    onClick={togglePromptBuilder}
                                     data-testid="toggle-prompt-builder"
                                     className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                                    title="Toggle Prompt Builder"
+                                    title={isPromptBuilderOpen ? 'Hide Prompt Builder' : 'Show Prompt Builder'}
+                                    aria-label={isPromptBuilderOpen ? 'Hide Prompt Builder' : 'Show Prompt Builder'}
+                                    aria-expanded={isPromptBuilderOpen}
                                 >
                                     {isPromptBuilderOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                 </button>
@@ -131,29 +126,6 @@ export default function DirectGenerationTab() {
                     </div>
                 )}
             </div>
-
-            {/* Prompt Builder Panel */}
-            <AnimatePresence>
-                {isPromptBuilderOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden bg-background/50 border-b border-white/10"
-                    >
-                        <PromptBuilder 
-                            onAddTag={(tag) => setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag)} 
-                            mode={mode}
-                            sequence={sequence}
-                            setSequence={setSequence}
-                            bpm={bpm}
-                            setBpm={setBpm}
-                            currentPrompt={localPrompt}
-                            onPromptImproved={setLocalPrompt}
-                        />
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* Main Content: Results Grid */}
             <div className="flex-1 overflow-y-auto p-6">
