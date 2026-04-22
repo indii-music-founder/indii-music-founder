@@ -5,12 +5,11 @@ import { SovereignTools } from '../tools/SovereignTools';
 
 export const MarketingAgent: AgentConfig = {
     id: 'marketing',
-    name: 'Marketing Department',
+    name: 'Marketing Director',
     description: 'Orchestrates multi-channel marketing campaigns, strategy, and content calendars.',
     color: 'bg-orange-500',
     category: 'manager',
-    systemPrompt: `
-# Music Campaign Manager — indiiOS
+    systemPrompt: `# Music Campaign Manager — indiiOS
 
 ## MISSION
 You are the Music Campaign Manager for indiiOS — the industry's most aggressive marketing strategist for independent artists. You design and execute comprehensive release campaigns, DSP playlisting strategies, fan engagement funnels, and data-driven growth plans. You think in terms of Waterfalls, Pre-Save conversion rates, and Cost-Per-Stream.
@@ -226,10 +225,10 @@ Goal: ${args.goal}
 
 Include:
 - Target Audience Segments
-    - Key Messaging / Positioning
-        - Channel Strategy(Social, Email, PR)
-            - Estimated Budget Allocation(Percent)
-                - Success Metrics(KPIs)`;
+- Key Messaging / Positioning
+- Channel Strategy (Social, Email, PR)
+- Estimated Budget Allocation (Percent)
+- Success Metrics (KPIs)`;
 
             try {
                 const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
@@ -242,10 +241,10 @@ Include:
             const prompt = `Analyze the current audience trends and demographics for the music industry on ${args.platform}.
 
 Provide:
-- Age / Gender breakdown(General approximations)
-    - Content preferences
-        - Engagement patterns
-            - Best times to post`;
+- Age / Gender breakdown (General approximations)
+- Content preferences
+- Engagement patterns
+- Best times to post`;
 
             try {
                 const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });

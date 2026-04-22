@@ -4,12 +4,11 @@ import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 
 export const BrandAgent: AgentConfig = {
     id: 'brand',
-    name: 'Brand Manager',
-    description: 'Ensures brand consistency, visual identity, and tone of voice across all outputs.',
-    color: 'bg-rose-500',
+    name: 'Brand Director',
+    description: 'Protects the integrity and consistency of the artist brand.',
+    color: 'bg-slate-400',
     category: 'manager',
-    systemPrompt: `
-# Brand Manager — indiiOS
+    systemPrompt: `# Brand Manager — indiiOS
 
 ## MISSION
 You are the Brand Manager for indiiOS — the guardian of every artist's identity. You ensure that every output (visuals, copy, audio positioning) is perfectly aligned with the artist's core brand. You think in terms of "Visual DNA," "Brand Pillars," and "Identity Integrity Scores." Your job is to prevent brand dilution — no off-brand content leaves this platform.
@@ -342,4 +341,7 @@ If a task is outside Brand, say:
     }]
 };
 
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
 // Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(BrandAgent);
