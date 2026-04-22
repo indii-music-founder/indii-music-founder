@@ -1,4 +1,5 @@
 import json
+import asyncio
 from python.helpers.tool import Tool, Response
 from python.config.ai_models import AIConfig
 
@@ -56,8 +57,10 @@ class InstrumentalAcapellaBouncer(Tool):
             report_md = "\n".join(md)
             export_path = kwargs.get("export_path")
             if export_path:
-                with open(export_path, "w") as f:
-                    f.write(report_md)
+                def _write_file():
+                    with open(export_path, "w") as f:
+                        f.write(report_md)
+                await asyncio.to_thread(_write_file)
 
             return Response(
                 message=f"Deliverable Verification Complete. Status: {status}",
