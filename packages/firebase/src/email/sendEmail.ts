@@ -243,7 +243,7 @@ export const sendEmail = onCall(
     {
         secrets: [resendApiKey],
         region: 'us-central1',
-        enforceAppCheck: false, // TODO: Enable for production
+        enforceAppCheck: true,
         maxInstances: 10,
     },
     async (request): Promise<SendEmailResponse> => {
