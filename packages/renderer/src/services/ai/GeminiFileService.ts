@@ -96,7 +96,7 @@ export class GeminiFileService {
             }
 
             // Step 2: Upload the actual data
-            // To provide robust progress tracking, we could chunk it, but standard
+            // To provide robust progress tracking, we could chunk it, but standard 
             // XMLHttpRequest / fetch with stream progress is better.
             // For now, doing a direct PUT/POST with the Blob:
 
@@ -168,8 +168,8 @@ export class GeminiFileService {
         }
     }
 
-    /**
-     * Polls the file until its state is ACTIVE.
+     /**
+     * Polls the file until its state is ACTIVE. 
      * Useful for large media like video that require backend processing.
      */
     public async waitForActive(name: string, pollIntervalMs = 5000, timeoutMs = 600000): Promise<GeminiFile> {
