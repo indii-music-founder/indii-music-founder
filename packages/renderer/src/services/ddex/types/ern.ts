@@ -180,7 +180,7 @@ export interface DealTerms {
 
 export interface Usage {
   useType: UseType;
-  distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice';
+  distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice' | 'Physical';
 }
 
 export interface PriceInformation {

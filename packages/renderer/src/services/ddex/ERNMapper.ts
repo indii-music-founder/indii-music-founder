@@ -286,7 +286,11 @@ export class ERNMapper {
                 if (matchedAsset) {
                     const ext = matchedAsset.format || 'wav';
                     audioResource.technicalDetails = {
-                        fileName: `${audioRef}.${ext}`
+                        fileName: `${audioRef}.${ext}`,
+                        audioCodec: ext.toUpperCase() as any,
+                        samplingRate: matchedAsset.sampleRate,
+                        bitDepth: matchedAsset.bitDepth,
+                        fileSizeInBytes: matchedAsset.sizeBytes
                     };
                 } else {
                     // Fallback default
@@ -298,7 +302,11 @@ export class ERNMapper {
                 // Backward compatibility for singular audioFile (Single release only)
                 const ext = assets.audioFile.format || 'wav';
                 audioResource.technicalDetails = {
-                    fileName: `${audioRef}.${ext}`
+                    fileName: `${audioRef}.${ext}`,
+                    audioCodec: ext.toUpperCase() as any,
+                    samplingRate: assets.audioFile.sampleRate,
+                    bitDepth: assets.audioFile.bitDepth,
+                    fileSizeInBytes: assets.audioFile.sizeBytes
                 };
             } else {
                 // No matching asset found
@@ -338,7 +346,8 @@ export class ERNMapper {
         if (assets && assets.coverArt) {
             const ext = assets.coverArt.url.split('.').pop() || 'jpg';
             imageResource.technicalDetails = {
-                fileName: `${imageRef}.${ext}`
+                fileName: `${imageRef}.${ext}`,
+                fileSizeInBytes: assets.coverArt.sizeBytes
             };
         } else {
             imageResource.technicalDetails = {
@@ -380,7 +389,7 @@ export class ERNMapper {
         };
 
         // Helper to create and add a deal
-        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice' | 'Physical') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
@@ -434,9 +443,9 @@ export class ERNMapper {
         }
 
         // 3. Physical Deals
-        // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
+        // Used to signify that physical copies (Vinyl, CD) will be produced and distributed.
         if (distributionChannels.includes('physical')) {
-            // Placeholder for future implementation
+            addDeal('PayAsYouGoModel', 'PhysicalProduct', 'Physical');
         }
 
         // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
