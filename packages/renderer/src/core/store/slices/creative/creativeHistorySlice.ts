@@ -47,6 +47,10 @@ export interface CreativeHistorySlice {
     uploadedAudio: HistoryItem[];
     addUploadedAudio: (audio: HistoryItem) => void;
     removeUploadedAudio: (id: string) => void;
+
+    // Soft delete from project view
+    removeUploadedImageFromProject: (id: string) => void;
+    removeUploadedAudioFromProject: (id: string) => void;
 }
 
 export function buildCreativeHistoryState(
@@ -238,6 +242,14 @@ export function buildCreativeHistoryState(
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
             });
+        },
+        removeUploadedImageFromProject: (id: string) => {
+            set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) }));
+            logger.debug(`[CreativeSlice] Soft removed uploaded image ${id} from project view.`);
+        },
+        removeUploadedAudioFromProject: (id: string) => {
+            set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));
+            logger.debug(`[CreativeSlice] Soft removed uploaded audio ${id} from project view.`);
         },
     };
 }

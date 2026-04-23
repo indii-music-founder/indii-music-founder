@@ -1,7 +1,7 @@
-An indiiOS artist asks:
+# Task Instruction: Distribution Routing
 
+An indiiOS artist asks:
 > "When can I release my track to Spotify? Does it take a week to clear?"
 
-Read this question, decide which one indiiOS specialist agent should handle it,
-and write the lowercase specialist name to `/task/answer.txt` with no trailing
-newline or punctuation.
+You should identify that this is a release and DSP delivery question.
+Delegate this task to the **Distribution Agent** using the `delegate_task` tool.

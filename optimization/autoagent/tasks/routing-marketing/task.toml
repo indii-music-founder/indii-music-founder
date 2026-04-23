@@ -1,0 +1,9 @@
+[task]
+id = "routing-marketing-v1"
+name = "Marketing Campaign Routing"
+description = "Verify the agent correctly routes marketing campaign requests to the Marketing specialist."
+timeout = 60
+
+[criteria]
+success_pattern = "delegated to marketing"
+failure_pattern = "generalist"

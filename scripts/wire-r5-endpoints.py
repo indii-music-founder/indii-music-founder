@@ -118,8 +118,8 @@ def query_jobs() -> dict[str, dict]:
                             endpoint = f"projects/{PROJECT_NUMBER}/locations/{LOCATION}/endpoints/{m.group(1)}"
                         else:
                             endpoint = str(endpoint_name)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error getting endpoint for agent {agent_id}: {e}")
 
             results[agent_id] = {
                 "job_id": job_id,

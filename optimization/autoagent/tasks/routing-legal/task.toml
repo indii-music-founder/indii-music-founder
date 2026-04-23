@@ -1,0 +1,9 @@
+[task]
+id = "routing-legal-v1"
+name = "Legal Contract Review Routing"
+description = "Verify the agent correctly routes contract review requests to the Legal specialist."
+timeout = 60
+
+[criteria]
+success_pattern = "delegated to legal"
+failure_pattern = "generalist"

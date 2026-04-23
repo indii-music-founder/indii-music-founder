@@ -59,15 +59,42 @@ def extract_system_prompt(agent_py_path: Path) -> str:
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id == "SYSTEM_PROMPT":
-                    if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                        return node.value.value
-                    raise ValueError(
-                        "SYSTEM_PROMPT exists but is not a plain string literal. "
-                        "The meta-agent likely introduced an f-string or concat — "
-                        "the sync script does not support that yet."
-                    )
+                    try:
+                        return _get_string_value(node.value)
+                    except ValueError as e:
+                        raise ValueError(f"SYSTEM_PROMPT found but could not be parsed: {e}")
 
     raise ValueError(f"No top-level SYSTEM_PROMPT assignment found in {agent_py_path}")
+
+
+def _get_string_value(node: ast.AST) -> str:
+    """Recursively extract string value from AST nodes.
+    
+    Supports:
+    - Constant (plain strings)
+    - JoinedStr (f-strings)
+    - BinOp (string concatenation via +)
+    """
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    
+    if isinstance(node, ast.JoinedStr):
+        # For f-strings, we try to reconstruct the text. 
+        # Note: If it contains variables, we can't fully evaluate it statically,
+        # but the meta-agent is told to stick to strings.
+        parts = []
+        for part in node.values:
+            if isinstance(part, ast.Constant):
+                parts.append(str(part.value))
+            elif isinstance(part, ast.FormattedValue):
+                # We can't evaluate variables at sync-time, but we can warn.
+                raise ValueError("SYSTEM_PROMPT contains an f-string variable which cannot be statically synced.")
+        return "".join(parts)
+
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        return _get_string_value(node.left) + _get_string_value(node.right)
+
+    raise ValueError(f"Unsupported node type: {type(node).__name__}")
 
 
 def write_conductor_prompt(prompt: str, target_path: Path, *, dry_run: bool) -> int:

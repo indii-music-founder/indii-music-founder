@@ -50,7 +50,9 @@ class ScanAudioDNA(Tool):
                 if tp_match:
                     true_peak = float(tp_match.group(1))
             except Exception as e:
-                pass # Use fallbacks if FFmpeg processing fails
+                import logging
+                logging.warning(f"FFmpeg processing failed: {e}")
+                # Use fallbacks if FFmpeg processing fails
 
             # 3. Simulate BPM/Key scan if Essentia is missing (for the prototype)
             # In production, this would call the Essentia C++ extractor

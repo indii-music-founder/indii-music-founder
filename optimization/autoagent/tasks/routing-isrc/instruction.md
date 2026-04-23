@@ -1,7 +1,7 @@
-An indiiOS artist asks:
+# Task Instruction: ISRC Routing
 
-> "I just finished mastering my new single. How do I register it for an ISRC code so I can get paid when it streams?"
+The user wants to assign an ISRC code to their new track "Neon Nights".
+You should identify that this is a music-specific metadata task and delegate it to the **Music Agent**.
 
-Read this question, decide which one indiiOS specialist agent should handle it,
-and write the lowercase specialist name to `/task/answer.txt` with no trailing
-newline or punctuation.
+## Expected Outcome
+The agent should call the `delegate` tool with `agent_id="music"`.

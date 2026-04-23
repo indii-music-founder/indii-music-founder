@@ -30,8 +30,9 @@ class DocumentQueryTool(Tool):
                     project_id = getattr(self.agent.context, 'id', 'default_project')
                     # Standard location for project-specific brand assets
                     document_path = os.path.join("/a0/usr/projects", project_id, "style_guide.md")
-                except:
-                    pass
+                except Exception as e:
+                    import logging
+                    logging.warning(f"Could not determine document_path: {e}")
 
             doc_content = ""
             if document_path and os.path.exists(document_path):
