@@ -70,6 +70,7 @@ export class MultiTurnAutorater {
             const result = await GenAI.generateStructuredData<AutoraterScore>(
                 prompt,
                 schema as any,
+                { ...schema } as Record<string, unknown>,
                 undefined,
                 undefined,
                 AI_MODELS.TEXT.AGENT

@@ -56,5 +56,6 @@ describe('RateLimiter', () => {
         await vi.advanceTimersByTimeAsync(1000);
 
         await acquirePromise;
+        await expect(acquirePromise).rejects.toThrow('Rate limit acquisition timed out');
     }, 10000); // 10s timeout for this test case
 });
