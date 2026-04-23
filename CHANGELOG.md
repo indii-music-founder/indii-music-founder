@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.55.4](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.3...v1.55.4) (2026-04-23)
+
+
+### Bug Fixes
+
+* **ddex:** normalize metadata keywords and update validation schemas for production stability ([b899242](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b89924274624c0cd294dc2b74e1f0d30bb8def60))
+* **tests:** resolve vitest mock issues in python-bridge.test.ts to stabilize CI ([6456b79](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6456b79e00bf121669b6f86be7e079b0e9fed260))
+
 ## [1.55.3](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.2...v1.55.3) (2026-04-23)
 
 
