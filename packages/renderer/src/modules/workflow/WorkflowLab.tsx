@@ -334,6 +334,36 @@ export default function WorkflowLab() {
                         </button>
 
                         <button
+                            onClick={async () => {
+                                if (nodes.length === 0) {
+                                    toastError('No nodes to export.');
+                                    return;
+                                }
+                                try {
+                                    const { generateADKManifest } = await import('./utils/adkExport');
+                                    const adkManifest = generateADKManifest(workflowName, 'Exported from Workflow Lab', nodes, edges);
+                                    const blob = new Blob([JSON.stringify(adkManifest, null, 2)], { type: 'application/json' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `${workflowName.replace(/\s+/g, '_').toLowerCase()}_adk.json`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                    toastSuccess('ADK Manifest exported successfully.');
+                                } catch (error) {
+                                    logger.error("Failed to export ADK manifest:", error);
+                                    toastError('Failed to export ADK manifest.');
+                                }
+                            }}
+                            className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20"
+                        >
+                            <Cpu size={16} />
+                            Export ADK
+                        </button>
+
+                        <button
                             onClick={() => setShowTemplates(true)}
                             className="w-full py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all border border-gray-700"
                         >

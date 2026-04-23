@@ -40,6 +40,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     // Memory & Knowledge (read)
     recall_memories: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     search_user_memory: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
+    core_vault_read: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read authoritative facts from Layer 3' },
+    core_vault_history: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'View version history of an authoritative fact' },
+    captains_log_read: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read operational logs from Layer 4' },
+    list_tasks: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'List project tasks' },
 
     // Security (read)
     check_api_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
@@ -123,6 +127,12 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     save_user_memory: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     update_user_memory: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     consolidate_user_memories: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    core_vault_write: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Promote fact to Layer 3 authoritative vault' },
+    core_vault_supersede: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Update and version an authoritative fact' },
+    captains_log_decision: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Log a strategic decision to Layer 4' },
+    captains_log_milestone: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Log a project milestone to Layer 4' },
+    create_task: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create a new project task' },
+    update_task_status: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Update status of a project task' },
 
     // Social & Marketing
     generate_social_post: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },

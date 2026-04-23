@@ -11,7 +11,7 @@ export const BILLBOARD_SLIDES = [
                 <ScrambleText text="Your Rules." delay={800} className="text-glow-blue filter drop-shadow-2xl" />
             </div>
         ),
-        subheadline: "The Operating System for Independence.",
+        subheadline: "The operating system for your musical independence.",
         cta: { label: "Start Creating", href: "/signup" }
     },
     {

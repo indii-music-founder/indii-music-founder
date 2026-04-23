@@ -34,6 +34,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const [artworkUrl, setArtwork] = useState('');
     const [trackTitle, setTrkTitle] = useState('');
     const [isrc, setIsrc] = useState('');
+    const [genre, setGenre] = useState('Electronic');
 
     const [submitting, setSubmitting] = useState(false);
     const [done, setDone] = useState(false);
@@ -71,21 +72,20 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         setSteps(INITIAL_STEPS);
         setOverallProgress(0);
 
-        const releaseData: DDEXMetadata = {
+        const releaseData: any = {
             releaseId: `release-${Date.now()}`,
             title: title.trim(),
             artist: artist.trim(),
             artists: [artist.trim()],
             label: label.trim() || 'Indii Records',
+            genre: genre,
             release_date: releaseDate || undefined,
-            releaseDate: releaseDate || undefined,
             artwork_url: artworkUrl || undefined,
-            artworkUrl: artworkUrl || undefined,
-            cover_filename: 'cover.jpg', // Default for now
             tracks: [{
                 title: trackTitle.trim(),
                 isrc: isrc.trim() || undefined,
                 artist: artist.trim(),
+                artists: [artist.trim()],
             }],
         };
 
@@ -213,6 +213,23 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-distribution/50 transition-colors"
                                     />
                                 </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Primary Genre *</label>
+                                <select
+                                    value={genre}
+                                    onChange={e => setGenre(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-dept-distribution/50 transition-colors appearance-none"
+                                >
+                                    <option value="Electronic">Electronic</option>
+                                    <option value="Hip-Hop">Hip-Hop</option>
+                                    <option value="Pop">Pop</option>
+                                    <option value="Rock">Rock</option>
+                                    <option value="Jazz">Jazz</option>
+                                    <option value="Classical">Classical</option>
+                                    <option value="Ambient">Ambient</option>
+                                </select>
                             </div>
 
                             <div>
