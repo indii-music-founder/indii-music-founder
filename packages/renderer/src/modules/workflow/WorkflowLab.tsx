@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import WorkflowEditor from './components/WorkflowEditor';
-import NodePanel from './components/NodePanel';
 import WorkflowGeneratorModal from './components/WorkflowGeneratorModal';
 import WorkflowTemplateModal from './components/WorkflowTemplateModal';
 import WorkflowLoadModal from './components/WorkflowLoadModal';
@@ -356,16 +355,15 @@ export default function WorkflowLab() {
                 {/* ── CENTER — Node Editor Canvas ────────────────────── */}
                 <div id="tour-workflow-canvas" className="flex-1 relative min-w-0">
                     <WorkflowEditor onInit={(instance) => { rfInstanceRef.current = instance; }} />
-                    <NodePanel />
                 </div>
 
                 {/* ── RIGHT PANEL — Node Library & Inspector ─────────── */}
                 <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]">
+                    <NodeLibraryPanel />
                     {selectedNodeId ? (
                         <WorkflowNodeInspector />
                     ) : (
                         <>
-                            <NodeLibraryPanel />
                             <NodeInspectorPanel nodes={nodes} />
                             <HelpDocsPanel />
                         </>

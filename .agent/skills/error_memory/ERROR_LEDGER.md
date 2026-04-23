@@ -237,3 +237,11 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - BUG: Tests failed with `SubscriptionService.canPerformAction is not a function` because the `VideoTools.generate_video` implementation now enforces quota checks.
 - FIX: Added `vi.mock('@/services/subscription/SubscriptionService', () => ({ SubscriptionService: { canPerformAction: vi.fn().mockResolvedValue({ allowed: true }) } }))` to the test file.
 - RULE: **If a tool or service adds a quota check, update all related unit tests with a mock for `SubscriptionService`.** Quota checks are business logic that must be decoupled from tool-level functional tests.
+
+### AI Tool Unhandled Quota Error Crash
+- SEVERITY: High
+- FILE: `packages/renderer/src/services/agent/tools/DirectorTools.ts`
+- BUG: Unhandled 429 Quota Exceeded and 403 Auth errors from the AI APIs bubble up through the tool definitions, causing the agent loop to crash or fall into infinite loops instead of returning actionable tool errors.
+- FIX: Catch rate limits, quota limits, and authentication errors within the specific tool wrapper and return them formatted as `toolError` with actionable hints for the agent (e.g., "Suggest the user try again in 1 minute").
+- RULE: **All agent tools calling external APIs (Gemini, Google GenAI, etc.) MUST have internal catch blocks that return known failure modes (429, 401, etc.) as `toolError` responses, NOT as thrown exceptions.**
+

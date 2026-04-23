@@ -180,11 +180,10 @@ describe('WorkflowEngine', () => {
         await engine.run();
 
         const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
-        // Note: imageUrl is populated from inputs.image_input which requires explicit
-        // handle wiring in the UI. In this simplified test topology (no target handles),
-        // the image URL flows through `inputs.data` instead, so imageUrl is not present.
+        // Note: With the updated prompt concatenation logic, any input containing a URL
+        // will be automatically appended to the final prompt.
         expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(
-            expect.objectContaining({ prompt: 'Cinematic shot', durationSeconds: 5, aspectRatio: '16:9' })
+            expect.objectContaining({ prompt: 'Cinematic shot\n\nhttps://example.com/frame.jpg', durationSeconds: 5, aspectRatio: '16:9' })
         );
     });
 

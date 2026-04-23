@@ -63,9 +63,10 @@ def scout_venues(target_city: str, expected_capacity: int, genre: str) -> Dict[s
                             "google_place_id": place.get("place_id", ""),
                             "open_now": place.get("opening_hours", {}).get("open_now", None)
                         })
-            except Exception:
+            except Exception as e:
+                import logging
+                logging.warning(f"Google Places API request failed: {e}")
                 # Fall through to mock data
-                pass
         
         # Fallback: Generate synthetic venues if API didn't return results
         if not venues:

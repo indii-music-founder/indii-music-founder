@@ -62,6 +62,20 @@ export class ToolExecutionContext {
     getChangeSummary(): string {
         return this.executionContext.getChangeSummary();
     }
+
+    /**
+     * Set custom metadata for transient tool state
+     */
+    setMetadata(key: string, value: any): void {
+        this.executionContext.setMetadata(key, value);
+    }
+
+    /**
+     * Get custom metadata for transient tool state
+     */
+    getMetadata(key: string): any {
+        return this.executionContext.getMetadata(key);
+    }
 }
 
 /**

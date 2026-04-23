@@ -263,8 +263,8 @@ if __name__ == "__main__":
             if args.payload:
                 try:
                     kwargs = json.loads(args.payload)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to parse payload for generate_isrc: {e}")
             print(json.dumps({"isrc": manager.generate_isrc(**kwargs)}, indent=2))
             manager._save_data()
 
@@ -273,8 +273,8 @@ if __name__ == "__main__":
             if args.payload:
                 try:
                     kwargs = json.loads(args.payload)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to parse payload for generate_upc: {e}")
             print(json.dumps({"upc": manager.generate_upc(**kwargs)}, indent=2))
             manager._save_data()
 

@@ -886,7 +886,7 @@ class Agent:
                 )
 
         except Exception as e:
-            pass
+            print(f"Error in handle_response_stream: {e}")
 
     def get_tool(
         self, name: str, method: str | None, args: dict, message: str, loop_data: LoopData | None, **kwargs
@@ -902,8 +902,8 @@ class Agent:
                 classes = extract_tools.load_classes_from_file(
                     "agents/" + self.config.profile + "/tools/" + name + ".py", Tool  # type: ignore[arg-type]
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Warning: Failed to load tool {name} from agents/{self.config.profile}/tools/: {e}")
 
         # try default tools
         if not classes:
@@ -912,7 +912,7 @@ class Agent:
                     "python/tools/" + name + ".py", Tool  # type: ignore[arg-type]
                 )
             except Exception as e:
-                pass
+                print(f"Warning: Failed to load tool {name} from python/tools/: {e}")
         tool_class = classes[0] if classes else Unknown
         return tool_class(
             agent=self, name=name, method=method, args=args, message=message, loop_data=loop_data, **kwargs

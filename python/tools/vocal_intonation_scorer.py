@@ -43,8 +43,9 @@ class VocalIntonationScorer(Tool):
                                 "duration": audio_stream.get("duration"),
                                 "codec": audio_stream.get("codec_name")
                             }
-                except Exception:
-                    pass
+                except Exception as e:
+                    import logging
+                    logging.warning(f"Failed to parse ffprobe output: {e}")
             
             model_id = AIConfig.TEXT_FAST
             prompt = f"""
