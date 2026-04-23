@@ -12,6 +12,15 @@ vi.mock('../tools', () => ({
     }
 }));
 
+// Mock ModelArmor to prevent prompt rejections
+vi.mock('../governance/ModelArmor', () => ({
+    ModelArmor: {
+        scanInput: vi.fn().mockResolvedValue({ allowed: true }),
+        scanOutput: vi.fn().mockResolvedValue({ allowed: true })
+    },
+    getDefaultPolicy: vi.fn().mockReturnValue({})
+}));
+
 // Mock dependencies
 vi.mock('@/core/store', () => ({
     useStore: {
@@ -28,7 +37,12 @@ vi.mock('@/services/rag/GeminiRetrievalService', () => ({
     GeminiRetrievalService: vi.fn().mockImplementation(() => ({
         ensureFileSearchStore: vi.fn().mockResolvedValue('mock-store-id'),
         uploadFileAndPoll: vi.fn().mockResolvedValue({ name: 'mock-file', uri: 'mock-uri' })
-    }))
+    })),
+    GeminiRetrieval: {
+        query: vi.fn().mockResolvedValue({
+            candidates: [{ content: { parts: [{ text: "NONE" }] } }]
+        })
+    }
 }));
 
 vi.mock('@/services/firebase', () => ({

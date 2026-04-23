@@ -42,8 +42,11 @@ describe('MultiTurnAutorater', () => {
         expect(GenAI.generateStructuredData).toHaveBeenCalledTimes(1);
         
         const callArgs = vi.mocked(GenAI.generateStructuredData).mock.calls[0];
-        expect(callArgs[0]).toContain('Create a project'); // Check prompt contains goal
-        expect(callArgs[0]).toContain('Do not hallucinate files'); // Check prompt contains guidelines
+        expect(callArgs).toBeDefined();
+        if (callArgs) {
+            expect(callArgs[0]).toContain('Create a project'); // Check prompt contains goal
+            expect(callArgs[0]).toContain('Do not hallucinate files'); // Check prompt contains guidelines
+        }
     });
 
     it('should handle failures in evaluation gracefully', async () => {

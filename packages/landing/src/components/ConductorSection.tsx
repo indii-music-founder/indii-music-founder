@@ -170,23 +170,23 @@ function OrbitalVisualization() {
 const hubCapabilities = [
   {
     icon: Zap,
-    title: 'Your Vision, Handled',
-    description: 'Turn your simple requests into a full career strategy. You speak the vision; the Conductor handles the technical labor.',
+    title: 'From Vision to Reality',
+    description: 'Turn your simple ideas into a full career strategy. You set the vision; the Conductor executes the plan across your entire creative ecosystem.',
   },
   {
     icon: Globe,
-    title: 'Sovereign Control',
-    description: 'Autonomous multi-agent orchestration. The Conductor manages your specialist crew to ensure your art and identity remain 100% yours.',
+    title: 'Total Command',
+    description: 'Autonomous orchestration of your specialist crew. The Conductor ensures every move aligns with your brand and protects your identity.',
   },
   {
     icon: BrainCircuit,
-    title: 'Complete Release',
-    description: 'Execute your entire release in seconds. Global distribution, legal protection, and marketing—all handled in a single move.',
+    title: 'Instant Global Impact',
+    description: 'Execute your entire release in seconds. Global distribution, legal guard, and creative assets—all delivered in a single, unified move.',
   },
   {
     icon: BarChart3,
-    title: 'Transparent Progress',
-    description: 'Real-time transparency for everything we do. Always know exactly how your swarm of agents is moving your career forward.',
+    title: 'Total Clarity',
+    description: 'Complete transparency into every action. Always see exactly how your crew is moving the needle on your career and your independence.',
   },
 ];
 
@@ -207,19 +207,18 @@ export default function ConductorSection() {
       >
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-8 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
           <BrainCircuit size={12} />
-          Operational Sovereignty
+          The Operating System for Independence
         </div>
         <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
           One Brain.{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-            Autonomous Command.
+            Total Command.
           </span>
         </h2>
         <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-          The Indii Conductor is your operational sovereignty engine. Tell it what you want
-          to achieve, and it dynamically orchestrates 15 specialist agents
-          across distribution, legal, and creative to execute your entire 
-          global strategy autonomously.
+          The indii Conductor is your mission control for independence. Tell it what you want
+          to achieve, and it coordinates your specialist crew to handle the labor—leaving you 
+          free to stay focused on the art.
         </p>
       </motion.div>
 
