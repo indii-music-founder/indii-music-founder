@@ -37,19 +37,20 @@ export class AgentOptimizer {
             
             // Build metrics per agent
             for (const execution of allExecutions) {
-                for (const stepId in execution.steps) {
-                    const step = execution.steps[stepId];
-                    if (!this.metricsCache[step.agentId]) {
-                        this.metricsCache[step.agentId] = {
+                for (const step of Object.values(execution.steps)) {
+                    if (!step) continue;
+                    let metrics = this.metricsCache[step.agentId];
+                    if (!metrics) {
+                        metrics = {
                             totalInvocations: 0,
                             successCount: 0,
                             failureCount: 0,
                             averageLatencyMs: 0,
                             shieldTriggers: 0
                         };
+                        this.metricsCache[step.agentId] = metrics;
                     }
                     
-                    const metrics = this.metricsCache[step.agentId];
                     metrics.totalInvocations++;
                     if (step.status === 'step_complete') metrics.successCount++;
                     if (step.status === 'failed') metrics.failureCount++;

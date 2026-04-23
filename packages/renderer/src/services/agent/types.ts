@@ -441,6 +441,7 @@ export interface WorkflowExecution {
     userId: string;
     status: WorkflowExecutionStatus;
     steps: Record<string, WorkflowStepExecution>;
+    currentStepIndex: number;
     createdAt: number;
     updatedAt: number;
 }
