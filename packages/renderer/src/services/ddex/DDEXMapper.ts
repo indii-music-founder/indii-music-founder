@@ -37,6 +37,11 @@ export class DDEXMapper {
             mood: semantic.mood,
             keywords: semantic.marketingHooks?.keywords,
 
+            // Musical Features from technical analysis
+            bpm: technical.bpm,
+            key: technical.scale === 'minor' ? `${technical.key}m` : technical.key,
+            energy: technical.energy,
+
             // Duration from technical analysis
             durationSeconds: technical.duration,
             durationFormatted: this.formatDuration(technical.duration),

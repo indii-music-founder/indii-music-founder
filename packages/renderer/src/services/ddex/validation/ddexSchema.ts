@@ -64,13 +64,26 @@ export const GenreSchema = z.object({
 });
 
 export const TechnicalDetailsSchema = z.object({
+    technicalResourceDetailsReference: z.string().optional(),
     audioCodec: z.enum(['FLAC', 'WAV', 'MP3', 'AAC']).optional(),
     samplingRate: z.number().int().positive().optional(),
     bitDepth: z.number().int().positive().optional(),
     numberOfChannels: z.number().int().min(1).max(8).optional(),
-    duration: z.string().regex(/^PT[0-9]+M[0-9]+S$/, 'Invalid ISO 8601 duration format (e.g. PT3M45S)').optional(),
+    duration: z.string().optional(),
     fileSizeInBytes: z.number().int().positive().optional(),
-    fileName: z.string().optional()
+    fileName: z.string().optional(),
+    filePath: z.string().optional(),
+    file: z.object({
+        fileName: z.string(),
+        filePath: z.string().optional(),
+        hashSum: z.union([
+            z.string(),
+            z.object({
+                hashSum: z.string(),
+                hashSumAlgorithmType: z.string().optional()
+            })
+        ]).optional()
+    }).optional()
 });
 
 // --- Resource Schema ---
@@ -102,7 +115,7 @@ export const ResourceSchema = z.object({
     displayArtistName: z.string(),
     contributors: z.array(ContributorSchema),
     duration: z.string().optional(),
-    technicalDetails: TechnicalDetailsSchema.optional(),
+    technicalDetails: z.array(TechnicalDetailsSchema).optional(),
     parentalWarningType: z.enum(['Explicit', 'NotExplicit', 'NoAdviceAvailable', 'Edited']).optional(),
     aiGenerationInfo: AIGenerationInfoSchema.optional(),
     textDetails: TextDetailsSchema.optional()
