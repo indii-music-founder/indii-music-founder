@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.55.2](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.1...v1.55.2) (2026-04-23)
+
+
+### Performance Improvements
+
+* **devops:** fix N+1 query in storage maintenance ([#1535](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1535)) ([8284abc](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8284abcd7534cba0018fdf50bacca5f1775f40ef))
+* Optimize DSRProcessor N+1 query loop ([#1542](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1542)) ([ff92272](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ff92272e6f00b8b0d07abba905b68b24ca75966e))
+
 ## [1.55.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.0...v1.55.1) (2026-04-22)
 
 
