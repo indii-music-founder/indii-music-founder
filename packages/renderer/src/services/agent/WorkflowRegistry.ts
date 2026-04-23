@@ -5,6 +5,7 @@ export type WorkflowStep = {
     prompt: string;
     priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
     dependencies?: string[]; // IDs of steps that must complete first
+    condition?: (execution: any) => boolean; // Evaluates if the step should run
 };
 
 export type WorkflowDefinition = {

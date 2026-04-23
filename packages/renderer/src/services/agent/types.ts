@@ -412,7 +412,8 @@ export type WorkflowExecutionStatus =
     | 'awaiting_approval'
     | 'completed'
     | 'failed'
-    | 'cancelled';
+    | 'cancelled'
+    | 'skipped';
 
 /**
  * Persisted state for a single step within a workflow execution.
