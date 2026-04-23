@@ -13,6 +13,7 @@ export interface RoyaltySplit {
     isni?: string; // International Standard Name Identifier
     spotifyId?: string; // DSP URI
     appleMusicId?: string; // DSP URI
+    distributorId?: string; // For platform-specific routing (e.g. 'youtube')
 }
 
 export interface GoldenMetadata {

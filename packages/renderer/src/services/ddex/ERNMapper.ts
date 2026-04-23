@@ -23,6 +23,7 @@ import {
       UseType,
       AIDisclosureType,
 } from './types/common';
+import { logger } from '@/utils/logger';
 
 /**
  * ERN Mapper
@@ -104,7 +105,6 @@ export class ERNMapper {
                         'VideoSingle': 'VideoSingle',
                         'Ringtone': 'Ringtone',
           };
-    };
 
         let releaseType: ReleaseType = 'Single';
           if (metadata.releaseType) {
@@ -132,6 +132,10 @@ export class ERNMapper {
                       },
                       originalReleaseDate: metadata.originalReleaseDate,
                       marketingComment: metadata.marketingComment,
+                      keyWords: Array.from(new Set([
+                                        ...(metadata.keywords || []),
+                                        ...(metadata.mood || []),
+                      ].map(k => k.toLowerCase()))),
                       releaseResourceReferenceList: [], // Filled later
                       pLine: metadata.pLineYear ? { year: metadata.pLineYear, text: metadata.pLineText || '' } : undefined,
                       cLine: metadata.cLineYear ? { year: metadata.cLineYear, text: metadata.cLineText || '' } : undefined,
@@ -151,14 +155,14 @@ export class ERNMapper {
         // Self-Publishing Rights Controller
         if (!metadata.publisher || metadata.publisher === 'Self' || metadata.publisher === 'self') {
             release.rightsControllers = [{
-                              partyName: metadata.labelName || metadata.artistName,
-                              role: 'OriginalPublisher',
-                              rightSharePercentage: 100,
+                               partyName: metadata.labelName || metadata.artistName,
+                               role: 'OriginalPublisher',
+                               rightSharePercentage: 100,
             }];
-}
+        }
 
         return release;
-}
+    }
 
     private static buildResources(
               metadata: ExtendedGoldenMetadata,
@@ -186,171 +190,256 @@ export class ERNMapper {
                       resourceTitle: { titleText: metadata.trackTitle, titleType: 'DisplayTitle' },
                       displayArtistName: metadata.artistName,
                       contributors,
-                      duration: metadata.duration,
-                      pLine: metadata.pLineYear ? { year: metadata.pLineYear, text: metadata.pLineText || '' } : undefined,
-                      isExplicit: metadata.explicit,
-                      audioLegalType: 'AudioRecording',
+                      duration: metadata.durationDDEXFormatted || ERNMapper.formatISO8601Duration(metadata.durationFormatted),
+                      parentalWarningType: metadata.explicit ? 'Explicit' : 'NotExplicit',
+                      soundRecordingDetails: {
+                                        soundRecordingType: 'MusicalWorkSoundRecording',
+                                        isInstrumental: metadata.language === 'zxx',
+                                        languageOfPerformance: metadata.language || 'zxx',
+                                        bpm: metadata.bpm,
+                                        key: metadata.key,
+                                        energy: metadata.energy,
+                      },
         };
 
         if (assets?.audioFile) {
                       audioResource.technicalDetails = [{
                                         technicalResourceDetailsReference: 'T1',
                                         file: {
-                                                              fileName: assets.audioFile.name,
-                                                              filePath: assets.audioFile.path,
-                                                              hashSum: assets.audioFile.hash,
+                                                               fileName: assets.audioFile.name || `${metadata.trackTitle}.${assets.audioFile.format}`,
+                                                               filePath: assets.audioFile.path,
+                                                               hashSum: assets.audioFile.hash,
                                         },
-                                        duration: metadata.duration,
+                                        duration: metadata.durationDDEXFormatted || ERNMapper.formatISO8601Duration(metadata.durationFormatted),
                       }];
         }
 
         resources.push(audioResource);
 
         // 2. Image Resource (Cover Art)
-        if (assets?.coverArt) {
+        if (assets?.coverArt || metadata.coverArtAIGenerated) {
                       const imageRef = 'IM1';
                       resourceReferences.push(imageRef);
-                      resources.push({
+                      
+                      const imageResource: Resource = {
                                         resourceReference: imageRef,
                                         resourceType: 'Image',
-                                        resourceId: { proprietaryId: 'COVER_ART' },
-                                        resourceTitle: { titleText: `${metadata.releaseTitle} Cover Art`, titleType: 'DisplayTitle' },
-                                        imageType: 'FrontCoverImage',
-                                        technicalDetails: [{
-                                                              technicalResourceDetailsReference: 'T2',
-                                                              file: {
-                                                                                        fileName: assets.coverArt.name,
-                                                                                        filePath: assets.coverArt.path,
-                                                              }
-                                        }]
-                      });
+                                        resourceId: { 
+                                                            proprietaryId: { 
+                                                                                id: 'COVER_ART', 
+                                                                                proprietaryIdType: 'Internal' 
+                                                            } 
+                                        },
+                                        resourceTitle: { titleText: `${metadata.releaseTitle || metadata.trackTitle} Cover Art`, titleType: 'DisplayTitle' },
+                                        displayArtistName: metadata.artistName,
+                                        contributors: [],
+                      };
+
+                      if (assets?.coverArt) {
+                                        imageResource.technicalDetails = [{
+                                                               technicalResourceDetailsReference: 'T2',
+                                                               file: {
+                                                                                         fileName: assets.coverArt.name || 'cover.jpg',
+                                                                                         filePath: assets.coverArt.path,
+                                                               },
+                                        }];
+                      }
+
+                      if (metadata.coverArtAIGenerated) {
+                                        imageResource.aiGenerationInfo = {
+                                                            isFullyAIGenerated: true,
+                                                            isPartiallyAIGenerated: false,
+                                                            disclosureType: 'AI_Generated' as AIDisclosureType,
+                                        };
+                      }
+
+                      resources.push(imageResource);
         }
 
         return { resources, resourceReferences };
-}
+    }
 
     private static buildDeals(
               metadata: ExtendedGoldenMetadata,
               _releaseReference: string,
               action?: 'NewRelease' | 'Update' | 'Takedown'
           ): Deal[] {
-                    ): Deal[] {
-                        const deals: Deal[] = [];
-                              let dealCounter = 1;
+                const deals: Deal[] = [];
+                let dealCounter = 1;
 
-                              // Default to Worldwide if no territories specified
-                              const territoryCode: TerritoryCode[] = (metadata.territories && metadata.territories.length > 0)
-                                  ? (metadata.territories as TerritoryCode[])
-                                      : ['Worldwide'];
+                // Default to Worldwide if no territories specified
+                const territoryCode: TerritoryCode[] = (metadata.territories && metadata.territories.length > 0)
+                    ? (metadata.territories as TerritoryCode[])
+                        : ['Worldwide'];
 
-                              const validityPeriod = {
-                                            startDate: metadata.releaseDate
+                const validityPeriod = {
+                              startDate: metadata.releaseDate
+                };
+
+                // Helper to create and add a deal
+                const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice' | 'Physical') => {
+                              const deal: Deal = {
+                                                dealReference: `D${dealCounter++}`,
+                                                dealTerms: {
+                                                                      commercialModelType: commercialModel,
+                                                                      usage: [{
+                                                                                                useType,
+                                                                                                distributionChannelType
+                                                                        }],
+                                                                      territoryCode,
+                                                                      validityPeriod,
+                                                                      ...(action === 'Takedown' ? { takeDown: true } : {}),
+                                                },
                               };
 
-                              // Helper to create and add a deal
-                              const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice' | 'Physical') => {
-                                            const deal: Deal = {
-                                                              dealReference: `D${dealCounter++}`,
-                                                              dealTerms: {
-                                                                                    commercialModelType: commercialModel,
-                                                                                    usage: [{
-                                                                                                              useType,
-                                                                                                              distributionChannelType
-                                                                                      }],
-                                                                                    territoryCode,
-                                                                                    validityPeriod,
-                                                                                    ...(action === 'Takedown' ? { takeDown: true } : {}),
-                                                              },
-                                            };
-
-                                  // Release Display Start Date
-                                  if (metadata.releaseDate) {
-                                                    deal.dealTerms.releaseDisplayStartDate = metadata.releaseDate;
-                                  }
-
-                                  deals.push(deal);
-                              };
-
-                              const distributionChannels = metadata.distributionChannels || [];
-
-                              // 1. Streaming Deals
-                              if (distributionChannels.includes('streaming')) {
-                                  addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-                                  addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
-                                  addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
-                                  addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
+                    // Release Display Start Date
+                    if (metadata.releaseDate) {
+                                      deal.dealTerms.releaseDisplayStartDate = metadata.releaseDate;
                     }
 
-                        // 2. Download Deals
-                        if (distributionChannels.includes('download')) {
-                            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
-}
+                    deals.push(deal);
+                };
 
-        // 3. Physical Deals
-        if (distributionChannels.includes('physical')) {
-                      addDeal('PayAsYouGoModel', 'PhysicalProduct', 'Physical');
-        }
+                const distributionChannels = metadata.distributionChannels || [];
 
-        // Fallback: If no digital deal types were added, default to Streaming + Download
-        if (deals.length === 0 || (deals.length === 1 && distributionChannels.includes('physical') && distributionChannels.length === 1)) {
-                      if (deals.length === 1) {
-                                        deals.length = 0;
-                                        dealCounter = 1;
-                      }
-                      addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-                      addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
-                      addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
-        }
+                // 1. Streaming Deals
+                if (distributionChannels.includes('streaming')) {
+                    addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+                    addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+                    addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
+                    addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
+                }
 
-        // 4. YouTube Content ID Deal (Legacy/Item 233)
-        // If there's a YouTube-specific split, we add a YouTube deal
-        const youtubeSplit = metadata.splits?.find(s => s.distributorId === 'youtube' || s.distributorId === 'youtube_content_id');
-        if (youtubeSplit) {
-                      addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
-        }
+                // 2. Download Deals
+                if (distributionChannels.includes('download')) {
+                    addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+                }
 
-        return deals;
-}
-}
+                // 3. Physical Deals
+                if (distributionChannels.includes('physical')) {
+                    addDeal('PayAsYouGoModel', 'PhysicalProduct', 'Physical');
+                }
+
+                // Fallback: If no digital deal types were added, default to Streaming + Download
+                if (deals.length === 0 || (deals.length === 1 && distributionChannels.includes('physical') && distributionChannels.length === 1)) {
+                    if (deals.length === 1) {
+                        deals.length = 0;
+                        dealCounter = 1;
+                    }
+                    addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+                    addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+                    addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+                }
+
+                // 4. YouTube Content ID Deal (Item 233)
+                if (metadata.youtubeContentIdOptIn) {
+                    const policy = metadata.youtubeContentIdPolicy || 'monetize';
+                    const useType: UseType = policy === 'block' ? 'NonInteractiveStream' : 'UserMadeContentDelivery';
+                    
+                    const youtubeDeal: Deal = {
+                        dealReference: `D${dealCounter++}`,
+                        dealTerms: {
+                            commercialModelType: 'UserMakeAvailableLabelProvided',
+                            usage: [{
+                                useType,
+                                distributionChannelType: 'Stream'
+                            }],
+                            territoryCode,
+                            validityPeriod,
+                        },
+                        youtubeContentIdPolicy: policy
+                    };
+
+                    // Release Display Start Date
+                    if (metadata.releaseDate) {
+                        youtubeDeal.dealTerms.releaseDisplayStartDate = metadata.releaseDate;
+                    }
+
+                    deals.push(youtubeDeal);
+                }
+
+                // 5. Additional legacy YouTube check (if Split exists but opt-in is false)
+                const youtubeSplit = metadata.splits?.find(s => s.distributorId === 'youtube' || s.distributorId === 'youtube_content_id');
+                if (youtubeSplit && !metadata.youtubeContentIdOptIn) {
+                    addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+                }
+
+                return deals;
+    }
 
     private static mapContributors(
-              splits: RoyaltySplit[] = [],
-              mainArtistName: string,
-              mainArtistIsni?: string,
-              spotifyId?: string,
-              appleId?: string
-          ): Contributor[] {
-                        const contributors: Contributor[] = [];
+        splits: RoyaltySplit[] = [],
+        mainArtistName: string,
+        mainArtistIsni?: string,
+        spotifyId?: string,
+        appleId?: string
+    ): Contributor[] {
+        const contributors: Contributor[] = [];
 
         // 1. Main Artist
         contributors.push({
-                      partyName: mainArtistName,
-                      role: 'MainArtist',
-                      isni: mainArtistIsni,
-                      proprietaryIds: [
-                                        ...(spotifyId ? [{ id: spotifyId, type: 'SpotifyArtistId' as any }] : []),
-                                        ...(appleId ? [{ id: appleId, type: 'AppleArtistId' as any }] : []),
-                                    ]
+            name: mainArtistName,
+            role: 'MainArtist',
+            isni: mainArtistIsni,
+            spotifyId: spotifyId,
+            appleMusicId: appleId,
         });
 
         // 2. Map Splits to Contributors (Composer, Lyricist, etc.)
+        const ROLE_MAP: Record<string, ContributorRole> = {
+            'songwriter': 'Composer',
+            'performer': 'AssociatedPerformer',
+            'producer': 'Producer',
+            'mixer': 'Mixer',
+            'composer': 'Composer',
+            'lyricist': 'Lyricist',
+        };
+
         splits.forEach(split => {
-                      if (split.role && split.role !== 'MainArtist') {
-                                        contributors.push({
-                                                              partyName: split.userName || split.userId,
-                                                              role: split.role as ContributorRole,
-                                                              rightSharePercentage: split.percentage,
-                                        });
-                      }
+            const internalRole = (split.role || '').toLowerCase();
+            if (internalRole && internalRole !== 'mainartist') {
+                contributors.push({
+                    name: split.legalName,
+                    role: ROLE_MAP[internalRole] || 'AssociatedPerformer',
+                });
+            }
         });
 
         return contributors;
-}
+    }
 
     private static classifyAIDisclosure(aiContent: any): AIDisclosureType {
-        if (aiContent.isFullyAIGenerated) return 'FullyAIGenerated';
-              if (aiContent.isPartiallyAIGenerated) return 'PartiallyAIGenerated';
-              return 'NotAIGenerated';
+        if (aiContent.isFullyAIGenerated) return 'AI_Generated';
+        if (aiContent.isPartiallyAIGenerated) {
+            const contribution = (aiContent.humanContribution || '').toLowerCase();
+            if (contribution.includes('composed') || contribution.includes('wrote')) {
+                return 'Human_Composed_AI_Produced';
+            }
+            return 'AI_Assisted';
+        }
+        return 'Human_Created';
+    }
+
+    private static formatISO8601Duration(durationStr?: string): string | undefined {
+        if (!durationStr) return undefined;
+        
+        // Handle HH:MM:SS or MM:SS
+        const parts = durationStr.split(':').map(Number);
+        
+        if (parts.length === 3) {
+            // HH:MM:SS
+            const hours = parts[0];
+            const minutes = parts[1];
+            const seconds = parts[2];
+            return `PT${hours}H${minutes}M${seconds}S`;
+        } else if (parts.length === 2) {
+            // MM:SS
+            const minutes = parts[0];
+            const seconds = parts[1];
+            return `PT${minutes}M${seconds}S`;
+        }
+        
+        return durationStr;
     }
 
     /**

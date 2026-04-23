@@ -284,6 +284,10 @@ class DDEXParserImpl {
             SubGenre: r.genre.subGenre
           },
           ParentalWarningType: r.parentalWarningType,
+          MarketingComment: r.marketingComment,
+          KeyWords: (r.keyWords && r.keyWords.length > 0) ? {
+            KeyWord: r.keyWords
+          } : undefined,
         },
         ReleaseType: r.releaseType,
         ReleaseResourceReferenceList: {
@@ -382,7 +386,7 @@ class DDEXParserImpl {
           },
           ...(() => {
             const filePath = String(((details?.TechnicalTextDetails as Record<string, unknown>)?.FileAvailabilityDescription as Record<string, unknown>)?.FilePath || '');
-            return filePath ? { technicalDetails: { fileName: filePath } } : {};
+            return filePath ? { technicalDetails: [{ fileName: filePath }] } : {};
           })()
         });
       });
@@ -462,9 +466,9 @@ class DDEXParserImpl {
         },
         ImageDetailsByTerritory: {
           TerritoryCode: 'Worldwide',
-          TechnicalImageDetails: r.technicalDetails ? {
+          TechnicalImageDetails: (r.technicalDetails && r.technicalDetails[0]) ? {
             FileAvailabilityDescription: {
-              FilePath: r.technicalDetails.fileName,
+              FilePath: r.technicalDetails[0].fileName,
             },
           } : undefined,
         },
@@ -485,10 +489,10 @@ class DDEXParserImpl {
           TextType: r.textDetails?.textType,
           LanguageOfText: r.textDetails?.languageOfText,
           ...(r.textDetails?.textContent ? { Text: r.textDetails.textContent } : {}),
-          ...(r.technicalDetails?.fileName ? {
+          ...(r.technicalDetails?.[0]?.fileName ? {
             TechnicalTextDetails: {
               FileAvailabilityDescription: {
-                FilePath: r.technicalDetails.fileName,
+                FilePath: r.technicalDetails[0].fileName,
               },
             }
           } : {})

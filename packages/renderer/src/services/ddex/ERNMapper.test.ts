@@ -353,4 +353,31 @@ describe('ERNMapper', () => {
         expect(youtubeDeal!.dealTerms.usage[0]!.useType).toBe('NonInteractiveStream');
         expect((youtubeDeal as unknown as Record<string, unknown>)['youtubeContentIdPolicy']).toBe('block');
     });
+
+    it('should map contributors from splits correctly using legalName', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            splits: [
+                { legalName: 'Self', role: 'performer', percentage: 100, email: '' },
+                { legalName: 'Composer X', role: 'producer', percentage: 50, email: '' }
+            ]
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        const release = ern.releaseList[0];
+        
+        expect(release!.contributors).toBeDefined();
+        // Main Artist + 2 from splits (though role per tests/logic filtering might differ)
+        // mapContributors logic: mainArtist is always added. splits are added if role !== 'MainArtist'
+        // Here we have 2 non-MainArtist roles. So total 3.
+        expect(release!.contributors).toHaveLength(3);
+        
+        const composer = release!.contributors.find(c => c.name === 'Composer X');
+        expect(composer).toBeDefined();
+        expect(composer!.role).toBe('Producer');
+        
+        const performer = release!.contributors.find(c => c.name === 'Self');
+        expect(performer).toBeDefined();
+        expect(performer!.role).toBe('AssociatedPerformer');
+    });
 });
