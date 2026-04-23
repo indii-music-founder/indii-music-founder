@@ -17,7 +17,7 @@ describe('CLIP (Audio) -> DDEX Integration Pipeline', () => {
             bpm: 128,
             key: 'A',
             scale: 'minor',
-            energy: 0.95,
+            energy: 0.85,
             duration: 184, // 3:04
             danceability: 0.8,
             loudness: -4
@@ -111,6 +111,13 @@ describe('CLIP (Audio) -> DDEX Integration Pipeline', () => {
         expect(xml).toContain('<SubGenre>Techno</SubGenre>');
         expect(xml).toContain('<Duration>PT3M4S</Duration>');
         expect(xml).toContain('<LanguageOfPerformance>zxx</LanguageOfPerformance>'); // Instrumental
+        expect(xml).toContain('<BPM>128</BPM>');
+        expect(xml).toContain('<Key>Am</Key>');
+        expect(xml).toContain('<Energy>0.85</Energy>');
+        expect(xml).toContain('<MarketingComment>A peak-time warehouse weapon.</MarketingComment>');
+        expect(xml).toContain('<KeyWord>underground</KeyWord>');
+        expect(xml).toContain('<KeyWord>techno</KeyWord>');
+        expect(xml).toContain('<KeyWord>dark</KeyWord>');
 
         // Step E: Validate with DDEX Validator (Schema integrity)
         const validation = ddexValidator.validateXML(xml, '4.3');

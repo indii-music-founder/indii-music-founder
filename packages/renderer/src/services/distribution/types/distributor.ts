@@ -102,6 +102,9 @@ export interface ReleaseAssets {
     format: 'wav' | 'flac' | 'mp3' | 'aac';
     sampleRate: number;
     bitDepth: number;
+    name?: string;
+    path?: string;
+    hash?: string;
   };
   coverArt: {
     url: string;
@@ -109,6 +112,8 @@ export interface ReleaseAssets {
     width: number;
     height: number;
     sizeBytes: number;
+    name?: string;
+    path?: string;
   };
   additionalAssets?: {
     type: 'lyrics' | 'video' | 'pressKit';

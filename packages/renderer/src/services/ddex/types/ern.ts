@@ -121,7 +121,7 @@ export interface Resource {
   displayArtistName: string;
   contributors: Contributor[];
   duration?: string;  // ISO 8601 duration
-  technicalDetails?: TechnicalDetails;
+  technicalDetails?: TechnicalDetails[];
   parentalWarningType?: ParentalWarningType;
 
   // AI Generation (ERN 4.3)
