@@ -11,7 +11,8 @@ export type AgentEventType =
     | 'TOOL_EXECUTION_COMPLETE'
     | 'TOOL_EXECUTION_FAILED'
     | 'BUDGET_THRESHOLD_WARNING'
-    | 'CONTEXT_COMPACTION_TRIGGERED';
+    | 'CONTEXT_COMPACTION_TRIGGERED'
+    | 'MARKETING_AUTOMATION_TRIGGERED';
 
 /**
  * Payload Interfaces
@@ -77,7 +78,7 @@ export class AgentEventBus {
      * System-level agentic events
      */
     static emitSystemEvent(
-        type: 'BUDGET_THRESHOLD_WARNING' | 'CONTEXT_COMPACTION_TRIGGERED',
+        type: 'BUDGET_THRESHOLD_WARNING' | 'CONTEXT_COMPACTION_TRIGGERED' | 'MARKETING_AUTOMATION_TRIGGERED',
         details: string
     ): void {
         events.emit('SYSTEM_ALERT', {

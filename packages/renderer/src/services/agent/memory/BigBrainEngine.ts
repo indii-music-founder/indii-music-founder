@@ -22,6 +22,7 @@ import { userMemoryService } from '../UserMemoryService';
 import { memoryService } from '../MemoryService';
 import { logger } from '@/utils/logger';
 import type { MemorySearchResult } from '@/types/UserMemory';
+import { memoryBankService } from './MemoryBankService';
 
 // ============================================================================
 // TYPES
@@ -277,17 +278,35 @@ class BigBrainEngine {
         const _maxChars = maxChars || 3000;
         const lines: string[] = [];
 
-        // Project-scoped semantic search via MemoryService
-        if (projectId && userMessage) {
-            const memories = await memoryService.retrieveRelevantMemories(
-                projectId,
-                userMessage,
-                5
-            );
-            for (const mem of memories) {
-                const line = `- ${mem}`;
+        if (!userMessage) return '';
+
+        // 1. Semantic search via Mem0 (MemoryBankService) for global episodic recall
+        try {
+            const mem0Results = await memoryBankService.searchMemories(userId, userMessage, 5);
+            for (const mem of mem0Results) {
+                const line = `- [Global] ${mem.memory}`;
                 if (lines.join('\n').length + line.length > _maxChars) break;
                 lines.push(line);
+            }
+        } catch (error) {
+            logger.warn('[BigBrain] Mem0 retrieval failed:', error);
+        }
+
+        // 2. Project-scoped semantic search via MemoryService (existing Deep Hive)
+        if (projectId && lines.join('\n').length < _maxChars) {
+            try {
+                const memories = await memoryService.retrieveRelevantMemories(
+                    projectId,
+                    userMessage,
+                    3
+                );
+                for (const mem of memories) {
+                    const line = `- [Project] ${mem}`;
+                    if (lines.join('\n').length + line.length > _maxChars) break;
+                    lines.push(line);
+                }
+            } catch (error) {
+                logger.warn('[BigBrain] Project memory retrieval failed:', error);
             }
         }
 
