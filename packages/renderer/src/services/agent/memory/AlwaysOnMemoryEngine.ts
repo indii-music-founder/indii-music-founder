@@ -16,6 +16,7 @@ import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { MemoryConsolidator } from './MemoryConsolidator';
 import { MemoryIngestionPipeline, memoryIngestionPipeline } from './MemoryIngestionPipeline';
+import { AgentEventBus } from '../governance/AgentEventBus';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryConfig,
@@ -384,6 +385,9 @@ ANSWER:`;
                 'system_trigger',
                 'marketing' as AlwaysOnMemoryCategory
             );
+            
+            // Trigger the Marketing Agent via Event Bus
+            AgentEventBus.emitSystemEvent('MARKETING_AUTOMATION_TRIGGERED', 'Lookalike Audiences threshold reached. Shifting from interest-based to Saver Lookalike Audiences.');
         }
     }
 

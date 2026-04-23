@@ -28,6 +28,12 @@ const DEFAULT_TTL = 1000 * 60 * 60 * 24; // 24 hours
  * Creates a no-op mock database for server-side/test environments.
  * All methods resolve successfully with null/void to avoid breaking code paths.
  */
+interface IndexedDBRecord { [key: string]: unknown }
+
+/**
+ * Creates a no-op mock database for server-side/test environments.
+ * All methods resolve successfully with null/void to avoid breaking code paths.
+ */
 function createMockDatabase(): MockDatabase {
     return {
         get: async () => null,
