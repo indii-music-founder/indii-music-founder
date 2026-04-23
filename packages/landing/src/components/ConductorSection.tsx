@@ -170,23 +170,23 @@ function OrbitalVisualization() {
 const hubCapabilities = [
   {
     icon: Zap,
-    title: 'Direct Intent Processing',
-    description: 'Convert ambiguous requests into structured execution plans. Say it in plain English — the Conductor figures out the rest.',
+    title: 'Your Vision, Handled',
+    description: 'Turn your simple requests into a full career strategy. You speak the vision; the Conductor handles the technical labor.',
   },
   {
     icon: Globe,
-    title: 'Autonomous Delegation',
-    description: 'Break complex tasks into sub-tasks and automatically delegate them to the right specialist agents.',
+    title: 'Sovereign Control',
+    description: 'Autonomous multi-agent orchestration. The Conductor manages your specialist crew to ensure your art and identity remain 100% yours.',
   },
   {
     icon: BrainCircuit,
-    title: 'Protocol Execution',
-    description: 'Combine output from multiple agents into one unified deliverable. Distribution + Legal + Marketing in a single request.',
+    title: 'Complete Release',
+    description: 'Execute your entire release in seconds. Global distribution, legal protection, and marketing—all handled in a single move.',
   },
   {
     icon: BarChart3,
-    title: 'Sovereign Audit Log',
-    description: 'Real-time status updates on long-running operations. Always know exactly what your agents are working on.',
+    title: 'Transparent Progress',
+    description: 'Real-time transparency for everything we do. Always know exactly how your swarm of agents is moving your career forward.',
   },
 ];
 
@@ -207,19 +207,19 @@ export default function ConductorSection() {
       >
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-8 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
           <BrainCircuit size={12} />
-          Superintelligence
+          Operational Sovereignty
         </div>
         <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
           One Brain.{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-            Fifteen Agents.
+            Autonomous Command.
           </span>
         </h2>
         <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-          The Indii Conductor is the intelligence core. Tell it what you want
-          to achieve, and it dynamically orchestrates specialized agents
-          across distribution, legal, creative, and every other domain to
-          execute the entire workflow autonomously.
+          The Indii Conductor is your operational sovereignty engine. Tell it what you want
+          to achieve, and it dynamically orchestrates 15 specialist agents
+          across distribution, legal, and creative to execute your entire 
+          global strategy autonomously.
         </p>
       </motion.div>
 
@@ -275,14 +275,13 @@ export default function ConductorSection() {
               <BrainCircuit size={12} className="text-amber-400" />
             </div>
             <span className="text-[10px] font-mono font-bold tracking-[0.15em] uppercase text-gray-500">
-              Example Prompt
+              Example Command
             </span>
           </div>
           <p className="text-white text-lg md:text-xl font-medium leading-relaxed mb-4">
-            &ldquo;Release my new single directly to the global supply chain, 
-            synthesize cinematic visual identity from the spectral data, 
-            draft a rights management agreement, and execute an 
-            autonomous marketing protocol.&rdquo;
+            &ldquo;I just finished my new single. Share it to every store, 
+            build a visual world around it, protect my rights, and 
+            help me find my audience.&rdquo;
           </p>
           <div className="flex items-center gap-4 text-xs font-mono text-gray-500">
             <span className="flex items-center gap-1.5">
