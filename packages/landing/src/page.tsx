@@ -72,7 +72,7 @@ function AnimatedStat({ value, suffix, label }: { value: string; suffix?: string
 /*  Hero Words                                                         */
 /* ------------------------------------------------------------------ */
 
-const words = "Independence doesn't mean being alone.".split(' ');
+const words = "the operating system for your musical independence".split(' ');
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
@@ -143,17 +143,17 @@ export default function Home() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
           </span>
-          15 Specialist Agents • Zero Aggregators • Total Sovereignty
+          15 Specialist Agents • Operational Sovereignty • Human-Soul-Certified
         </motion.div>
 
-        <h1 className="text-5xl md:text-7xl lg:text-[6rem] font-black tracking-tighter text-white leading-[1.05] md:leading-[0.95] drop-shadow-2xl flex flex-wrap justify-center max-w-5xl">
+        <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter text-white leading-[1.05] md:leading-[0.9] drop-shadow-2xl flex flex-wrap justify-center max-w-6xl">
           {words.map((word, i) => (
             <motion.span
               initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 0.8, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.8, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
               key={i}
-              className={`mr-4 last:mr-0 ${word === 'alone.' ? 'text-transparent bg-clip-text bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]' : ''}`}
+              className={`mr-4 last:mr-0 ${word === 'musical' || word === 'independence' ? 'text-transparent bg-clip-text bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]' : ''}`}
             >
               {word}
             </motion.span>
@@ -166,11 +166,11 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mt-8 text-lg md:text-xl text-gray-400 max-w-3xl leading-relaxed font-light"
         >
-          <strong className="text-white font-medium block mb-4">
-            indiiOS is the operating system for your musical independence.
+          <strong className="text-white font-medium block mb-4 text-2xl">
+            Independence doesn&apos;t mean being alone.
           </strong>
-          An autonomous multi-agent infrastructure designed to give you total 
-          operational sovereignty. Own the distribution. Own the data. Own the code.
+          indiiOS is more than an app—it&apos;s an architecture of togetherness. A private swarm of 15 specialist minds designed to dismantle the gatekeepers, automate the labor, and protect your creative life force.
+          <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl">The operating system for your musical independence.</span>
         </motion.p>
 
         {/* Dual CTA */}
@@ -184,14 +184,14 @@ export default function Home() {
             href={getStudioUrl()}
             className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold text-black bg-gradient-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
           >
-            <span className="relative z-10">Launch Studio Free</span>
+            <span className="relative z-10">Launch Studio</span>
             <ArrowRight size={18} className="relative z-10 transition-transform group-hover:translate-x-1" />
           </a>
           <a
             href="#capabilities"
             className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-gray-400 border border-white/10 rounded-full hover:text-white hover:border-white/20 transition-all"
           >
-            See All 15 Agents
+            Explore the Swarm
           </a>
         </motion.div>
       </motion.section>
@@ -211,12 +211,12 @@ export default function Home() {
             </div>
             <div className="mx-auto flex items-center gap-2 bg-[#1A1A1A] border border-white/5 rounded-md px-32 py-1.5 shadow-inner">
               <ShieldCheck size={12} className="text-green-500" />
-              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indiios.studio/workspace</span>
+              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indiios.studio/architecture</span>
             </div>
           </div>
           <div className="flex-1 flex bg-[#030303] relative overflow-hidden border-t border-white/5">
             <img
-              src="/dashboard-real.png"
+              src="/brand/screenshot-dashboard.png"
               alt="indiiOS Dashboard Interface"
               className="w-full h-[150%] object-cover object-top opacity-90 transition-opacity duration-1000 hover:opacity-100"
               style={{ filter: 'contrast(1.05) brightness(0.95)' }}
@@ -226,13 +226,12 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ═══════════════ 5. STATS BAR ═══════════════ */}
       <section className="w-full max-w-5xl px-4 mb-24 z-20 relative">
         <div className="flex flex-wrap justify-center gap-8 md:gap-16 py-12 border-y border-white/[0.04]">
-          <AnimatedStat value="15" suffix=" crew" label="Specialist Agents" />
-          <AnimatedStat value="100" suffix="+" label="Global DSPs" />
-          <AnimatedStat value="0" suffix="%" label="Revenue Markup" />
-          <AnimatedStat value="∞" label="A&R Capacity" />
+          <AnimatedStat value="15" suffix=" Minds" label="The Collective" />
+          <AnimatedStat value="100" suffix="%" label="Soul Certified" />
+          <AnimatedStat value="0" suffix="%" label="Extraction Rate" />
+          <AnimatedStat value="∞" label="Creative Capacity" />
         </div>
       </section>
 
@@ -253,17 +252,17 @@ export default function Home() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white mb-4">
-            The Release{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600">Protocol</span>
+            The Sovereign{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600">Pipeline</span>
           </h2>
-          <p className="text-gray-400 max-w-xl mx-auto font-light">Zero labels. Zero aggregators. Zero gatekeepers. Your creative vision, amplified by autonomous sovereignty.</p>
+          <p className="text-gray-400 max-w-xl mx-auto font-light">Direct-to-DSP supply chains. AI-powered creative synthesis. Total ownership of your soul and your data.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { step: '01', icon: Music, title: 'Spectral Intake', desc: 'Upload your masters. The Music Agent performs a full spectral forensic audit, metadata QC, and DNA extraction (BPM, key, mood) to prime your global campaign pipeline.' },
-            { step: '02', icon: BrainCircuit, title: 'DNA Synthesis', desc: 'Direct the Conductor to execute your release strategy. 15 specialized agents work in parallel to synthesize visual assets, marketing briefs, and legal compliance in minutes.' },
-            { step: '03', icon: Globe2, title: 'Direct Injection', desc: 'Bypass the gatekeepers. Inject your music directly into the global supply chain via proprietary DSP pipes. No middlemen, no percentage of revenue, total operational sovereignty.' },
+            { step: '01', icon: Music, title: 'Sonic Genesis', desc: 'Invoke the Soul-Scan. Extract the life force of your sound—timbre, weight, and emotional trajectory—to prime your creative universe.' },
+            { step: '02', icon: BrainCircuit, title: 'The Collective', desc: 'Deploy a swarm of 15 specialist minds. From legal sovereignty to visual manifestos, your crew builds your vision in parallel.' },
+            { step: '03', icon: Globe2, title: 'Sovereign Connection', desc: 'Inject your masters directly into the global supply chain. No gatekeepers, no noise, just total independence.' },
           ].map((s, i) => (
             <motion.div
               key={s.step}
@@ -304,25 +303,25 @@ export default function Home() {
               The Founders Covenant
             </h2>
             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
-              We are issuing exactly <strong className="text-white">10 lifetime seats</strong>. At $2,500, you receive permanent access to the entire indiiOS infrastructure — all 15 agents, the Conductor, and every future update — with zero recurring software fees. Own the means of production.
+              We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indiiOS Founders Program. At $2,500, you receive permanent access to the entire indiiOS infrastructure — all 15 agents, the Conductor, and every future update — with zero recurring software fees. Own the means of production on an architecture of togetherness.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Cpu size={16} /> Pass-Through Intelligence</h4>
-                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. Zero markup by us. True operational sovereignty.</p>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Cpu size={16} /> Sovereign Intelligence</h4>
+                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. Zero markup. True operational sovereignty for the artist.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Cryptographic Proof</h4>
-                <p className="text-sm text-gray-400">Your name and a SHA-256 hash of your covenant terms are committed directly into the indiiOS codebase structure forever.</p>
+                <p className="text-sm text-gray-400">Your name and a SHA-256 hash of your covenant terms are committed directly into the indiiOS codebase structure forever. You are part of the engine.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> 15 Specialist Agents</h4>
-                <p className="text-sm text-gray-400">Distribution, Creative, Music, Legal, Finance, Marketing, Publishing, Analytics, Brand, Video, Social, Licensing, Merch, Publicist, Road. All yours.</p>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> 15 Specialist Minds</h4>
+                <p className="text-sm text-gray-400">Distribution, Creative, Music, Legal, Finance, Marketing, Publishing, Analytics, Brand, Video, Social, Licensing, Merch, Publicist, Road. The collective is yours.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Disc3 size={16} /> Anti-Extraction</h4>
-                <p className="text-sm text-gray-400">Every new agent, every model upgrade, every feature we ship — automatically included in your seat. No upsells. No tiers. No rent-seeking.</p>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Disc3 size={16} /> Soul Certified</h4>
+                <p className="text-sm text-gray-400">Every new mind, every model upgrade, every feature we ship — automatically included in your seat. No rent-seeking. Just music.</p>
               </div>
             </div>
 

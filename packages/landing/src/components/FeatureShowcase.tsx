@@ -6,29 +6,29 @@ import { Disc, Scale, Clapperboard, ArrowRight } from 'lucide-react';
 const features = [
     {
         id: 'publishing',
-        title: 'Global Manufacturing',
-        subtitle: 'Publishing Module',
-        description: 'Automated DDEX injection to 100+ DSPs. The Release Wizard aggregates metadata, validates ERN 4.3 standards, and handles multi-threaded asset ingestion.',
+        title: 'Global Connection',
+        subtitle: 'Distribution Module',
+        description: 'Directly connect your music to 100+ global platforms. No middlemen, no confusion. Just share your sound everywhere at once.',
         icon: Disc,
         color: 'text-electric-blue',
         gradient: 'from-blue-500/20 to-cyan-500/20',
-        meta: 'Status: Beta Ready'
+        meta: 'Status: Live'
     },
     {
         id: 'legal',
-        title: 'Autonomous Negotiation',
+        title: 'Rights Guardian',
         subtitle: 'Legal Module',
-        description: 'AI-driven contract analysis and generation. The Licensing Service manages rights, subscriptions, and splits with real-time error handling.',
+        description: 'Protect your creative IP with fair, automated contracts. Manage your rights and splits instantly, so you can focus on the music.',
         icon: Scale,
         color: 'text-frequency-pink',
         gradient: 'from-pink-500/20 to-purple-500/20',
-        meta: 'Status: Beta Ready'
+        meta: 'Status: Live'
     },
     {
         id: 'creative',
-        title: 'Neural Synthesis',
+        title: 'Visual Synthesis',
         subtitle: 'Creative Module',
-        description: 'Generative video and audio production powered by Veo 3.1. Create music videos, stems, and marketing assets directly from your browser.',
+        description: 'Bring your visual world to life with AI-powered video and design. Create stunning visualizers and artwork that match your sound perfectly.',
         icon: Clapperboard,
         color: 'text-white',
         gradient: 'from-white/10 to-gray-500/10',

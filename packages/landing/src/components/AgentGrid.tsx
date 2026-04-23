@@ -112,44 +112,44 @@ const agents: AgentDef[] = [
   /* ---- TIER 1: CORE ENGINE ---- */
   {
     id: 'distribution',
-    name: 'Distribution',
-    title: 'Universal Supply Chain',
-    tagline: 'Zero Aggregators.',
+    name: 'Access',
+    title: 'Direct Distribution',
+    tagline: 'Global Release.',
     description:
-      'Professional-grade distribution that usually requires a major label. Direct delivery to 100+ DSPs using standard DDEX feeds—no middleman, no aggregators, no percentage of your revenue taken.',
-    keywords: ['Direct-to-DSP', 'DDEX ERN 4.3', 'ISRC Provisioning', 'Universal Supply Chain', 'No Middlemen'],
+      'Share your music directly to Spotify, Apple Music, and everywhere else that matters. Total control, no labels, and no gatekeepers taking a cut. You keep 100% of your earnings and 100% of your independence.',
+    keywords: ['Direct-to-Fans', 'Global Release', 'Artist Owned', 'Keep 100%', 'Zero Extraction'],
     icon: Globe,
     colorClass: 'text-blue-400',
     bgClass: 'bg-blue-500/10',
     borderClass: 'border-blue-500/20',
     glowColor: 'rgba(46,46,254,0.25)',
     tier: 1,
-    image: '/distro-real.png',
+    image: '/brand/screenshot-distribution.png',
   },
   {
     id: 'creative',
     name: 'Creative',
-    title: 'Visual DNA Synthesis',
-    tagline: 'Synthesis Over Stock.',
+    title: 'Visual Manifesto',
+    tagline: 'See Your Sound.',
     description:
-      'Generate cinematic visual identity directly from sonic signatures. Our Andromeda pipeline maps frequency distribution to 4K album art and visualizers using Gemini 3 Pro multimodal reasoning.',
-    keywords: ['Andromeda Pipeline', 'Sonic DNA', 'Multimodal Synthesis', '4K Rendering', 'Art Direction'],
+      'Beautiful visuals generated directly from your sonic identity. Our creative engine translates your audio into stunning 4K album art and visualizers that capture your creative life force perfectly.',
+    keywords: ['Visual Manifesto', '4K Synthesis', 'Social Assets', 'Neural Cortex', 'Creative Minds'],
     icon: Sparkles,
     colorClass: 'text-pink-400',
     bgClass: 'bg-pink-500/10',
     borderClass: 'border-pink-500/20',
     glowColor: 'rgba(254,46,154,0.25)',
     tier: 1,
-    image: '/creative-real.png',
+    image: '/brand/screenshot-creative.png',
   },
   {
     id: 'music',
-    name: 'Audio Intelligence',
-    title: 'Spectral Forensics',
-    tagline: 'Master Your Frequencies.',
+    name: 'Music',
+    title: 'Sonic Soul-Scan',
+    tagline: 'Master Your DNA.',
     description:
-      'Deep spectral forensics powered by Essentia WASM. Extract BPM, Key, and Energy with surgical precision. AI-driven mastering audits ensure every track meets global LUFS integrity standards.',
-    keywords: ['LUFS Integrity', 'Essentia WASM', 'Spectral Forensics', 'Mastering Audit', 'Rejection Risk'],
+      'Invoke the Soul-Scan. Listen to your sound\'s DNA—extracting key, tempo, and emotional weight—to build your perfect creative world. Master your sound with professional standards.',
+    keywords: ['Soul-Scan', 'Sonic DNA', 'Quality Audit', 'Mood Detection', 'Pro Standards'],
     icon: AudioWaveform,
     colorClass: 'text-cyan-400',
     bgClass: 'bg-cyan-500/10',
@@ -163,11 +163,11 @@ const agents: AgentDef[] = [
   {
     id: 'governance',
     name: 'Governance',
-    title: 'Agent Governance',
-    tagline: 'Trust the Swarm.',
+    title: 'Total Ownership',
+    tagline: 'Own Your Career.',
     description:
-      'Immutable provenance for the autonomous creative swarm. Every action is secured via Digital Handshake protocols and Identity Provenance tracking. Autonomous compliance for your IP sovereignty.',
-    keywords: ['Digital Handshake', 'Identity Provenance', 'Attestation Tracking', 'IP Sovereignty', 'Swarm Governance'],
+      'Absolute control over your business. Every action is tracked and secured, ensuring your rights and identity remain protected. You are the CEO of your own independent universe.',
+    keywords: ['Rights Protection', 'Identity Security', 'Project Tracking', 'Full Ownership', 'Total Control'],
     icon: ShieldCheck,
     colorClass: 'text-violet-400',
     bgClass: 'bg-violet-500/10',
@@ -179,11 +179,11 @@ const agents: AgentDef[] = [
   {
     id: 'finance',
     name: 'Finance',
-    title: 'Royalty Waterfall',
-    tagline: 'Liquid Revenue.',
+    title: 'Sovereign Revenue',
+    tagline: 'Get Paid.',
     description:
-      'Automated royalty tracking with complex waterfall split engines. Precision accounting for recoupable expenses, featured artist shares, and cross-platform revenue ingestion.',
-    keywords: ['Waterfall Splits', 'Recoupment Ledger', 'Royalty Ingestion', 'Accounting Precision', 'Net Payable'],
+      'Automated payouts with crystal-clear split tracking. Track every dollar, manage expenses, and pay your collaborators instantly without the extraction of traditional accounting.',
+    keywords: ['Instant Splits', 'Live Tracking', 'Collaborator Pay', 'Expense Logs', 'Net Profits'],
     icon: DollarSign,
     colorClass: 'text-emerald-400',
     bgClass: 'bg-emerald-500/10',
@@ -195,27 +195,27 @@ const agents: AgentDef[] = [
   {
     id: 'legal',
     name: 'Legal',
-    title: 'Agreement Audit',
-    tagline: 'Secure Your Legacy.',
+    title: 'Legal Guard',
+    tagline: 'Protect the Bag.',
     description:
-      'AI-powered audit for recording and publishing agreements. Identifies predatory lock-ins and calculates termination of transfer windows. Automated digital signature workflows for split sheets.',
-    keywords: ['Agreement Audit', 'Termination Rights', 'Digital Signature', 'Rights Reversion', 'IP Guard'],
+      'AI-powered review of every contract. Spot predatory terms, understand your rights, and sign split sheets digitally in seconds. Keep your IP safe forever. Soul-certified protection.',
+    keywords: ['Contract Audit', 'Your Rights', 'Sovereign Legal', 'IP Safety', 'Legal Guard'],
     icon: Scale,
     colorClass: 'text-indigo-400',
     bgClass: 'bg-indigo-500/10',
     borderClass: 'border-indigo-500/20',
     glowColor: 'rgba(99,102,241,0.2)',
     tier: 2,
-    image: '/dashboard-real.png',
+    image: '/brand/screenshot-agent.png',
   },
   {
     id: 'marketing',
     name: 'Marketing',
-    title: 'Audience Velocity',
-    tagline: 'Algorithmic Sovereignty.',
+    title: 'Tribe Finder',
+    tagline: 'Find Your Tribe.',
     description:
-      'Deploy the indii Growth Protocol. Autonomous audience acquisition using our Meta Andromeda pipeline. 28-day front-loaded algorithmic spikes to manipulate Spotify discovery—Instagram-only targeting for maximum conversion.',
-    keywords: ['Growth Protocol', 'Fan Acquisition', 'Andromeda Pipeline', 'Instagram-Only Matrix', 'Algorithmic Spike'],
+      'Automated strategies to find your true fans. Build your audience using the indii Growth Protocol—targeting the people who actually want to connect with your sound.',
+    keywords: ['Fan Growth', 'Audience Find', 'Targeting', 'Social Boost', 'Hype Engine'],
     icon: Megaphone,
     colorClass: 'text-rose-400',
     bgClass: 'bg-rose-500/10',
@@ -229,10 +229,10 @@ const agents: AgentDef[] = [
   {
     id: 'publishing',
     name: 'Publishing',
-    title: 'Rights Management',
-    tagline: 'Protect. Collect.',
-    description: 'Automated composition registration with PROs. Management of songwriter splits and mechanical licensing flows.',
-    keywords: ['PRO Registration', 'Mechanical Rights', 'Songwriter Splits'],
+    title: 'Rights Guardian',
+    tagline: 'Collect. Protect.',
+    description: 'Automatically register your songs with global rights organizations. Track your splits and ensure you get every cent you deserve from your writing.',
+    keywords: ['Registration', 'Writer Splits', 'Global Tracking', 'Collect Money'],
     icon: BookOpen,
     colorClass: 'text-orange-400',
     bgClass: 'bg-orange-500/10',
@@ -244,10 +244,10 @@ const agents: AgentDef[] = [
   {
     id: 'analytics',
     name: 'Analytics',
-    title: 'Catalog Velocity',
-    tagline: 'Real-time Feed.',
-    description: 'Unified tracking across DSPs. Monitor listener geography and consumption trends in one live feed.',
-    keywords: ['Streaming Data', 'Velocity Heatmaps', 'Playlist Tracking'],
+    title: 'Growth Feed',
+    tagline: 'Real-time Pulse.',
+    description: 'See exactly where your fans are listening. Monitor your growth in real-time across all platforms in one simple dashboard.',
+    keywords: ['Live Data', 'Fan Map', 'Streaming Stats', 'Growth Feed'],
     icon: BarChart3,
     colorClass: 'text-sky-400',
     bgClass: 'bg-sky-500/10',
@@ -259,10 +259,10 @@ const agents: AgentDef[] = [
   {
     id: 'video',
     name: 'Video',
-    title: 'Visual Assets',
-    tagline: 'Cinema Snippets.',
-    description: 'AI-driven lyric videos and vertical visualizers optimized for social feeds.',
-    keywords: ['Vertical Video', 'Lyric Visualizers', 'Motion Assets'],
+    title: 'Visual Crew',
+    tagline: 'Pro Fidelity.',
+    description: 'Instantly generate 4K lyric videos and short social clips. Get high-end video content without the high-end cost.',
+    keywords: ['Short Clips', 'Lyric Videos', 'Pro Quality', 'Social Video'],
     icon: Video,
     colorClass: 'text-violet-400',
     bgClass: 'bg-violet-500/10',
@@ -274,10 +274,10 @@ const agents: AgentDef[] = [
   {
     id: 'social',
     name: 'Social',
-    title: 'Engagement Loops',
-    tagline: 'Platform Sync.',
-    description: 'Manage cross-platform presence with synchronized engagement loops and autonomous community voice.',
-    keywords: ['Community Loops', 'Platform Sync', 'Auto-Reply'],
+    title: 'Tribe Engager',
+    tagline: 'Stay Connected.',
+    description: 'Sync your social presence and keep your fans engaged without spending all day on your phone. Real connection, automated.',
+    keywords: ['Auto-Post', 'Easy Sync', 'Engagement', 'Fan Replies'],
     icon: Share2,
     colorClass: 'text-indigo-400',
     bgClass: 'bg-indigo-500/10',
@@ -289,10 +289,10 @@ const agents: AgentDef[] = [
   {
     id: 'licensing',
     name: 'Licensing',
-    title: 'Sync Pitch',
-    tagline: 'Pitch & Clear.',
-    description: 'Sample clearance workflows and sync pitching modules for high-value usage agreements.',
-    keywords: ['Sync Pitching', 'Sample Clearance', 'Usage Clearance'],
+    title: 'Sync Engine',
+    tagline: 'Get Synced.',
+    description: 'Get your music into movies, TV, and games. Automated pitching and clearing so you can land big placements easily.',
+    keywords: ['TV & Movie Placements', 'Easy Clearance', 'Music Pitching', 'Sync Deals'],
     icon: Key,
     colorClass: 'text-yellow-400',
     bgClass: 'bg-yellow-500/10',
@@ -304,10 +304,10 @@ const agents: AgentDef[] = [
   {
     id: 'merchandise',
     name: 'Merchandise',
-    title: 'Merch Ops',
-    tagline: 'POD Logistics.',
-    description: 'AI-assisted apparel design and drop-shipping logistics without inventory overhead.',
-    keywords: ['POD Design', 'Merch Drops', 'Logistics'],
+    title: 'Merch Arsenal',
+    tagline: 'Sell Gear.',
+    description: 'Design and sell your own apparel without ever touching a box. AI-assisted design and hands-free shipping for your fans.',
+    keywords: ['Apparel Design', 'No Inventory', 'Auto-Shipping', 'Shopify Sync'],
     icon: ShoppingBag,
     colorClass: 'text-lime-400',
     bgClass: 'bg-lime-500/10',
@@ -319,10 +319,10 @@ const agents: AgentDef[] = [
   {
     id: 'publicist',
     name: 'Publicist',
-    title: 'Media Outreach',
-    tagline: 'Press & EPK.',
-    description: 'Craft precision press releases and manage editorial outreach with automated digital EPKs.',
-    keywords: ['EPK Generation', 'Media Outreach', 'Press Release'],
+    title: 'Media Minds',
+    tagline: 'Get Heard.',
+    description: 'Professional press releases and outreach. Get featured in blogs and magazines with your own autonomous press crew.',
+    keywords: ['EPK Builder', 'Blog Outreach', 'Press Releases', 'Media Lists'],
     icon: Newspaper,
     colorClass: 'text-teal-400',
     bgClass: 'bg-teal-500/10',
@@ -334,10 +334,10 @@ const agents: AgentDef[] = [
   {
     id: 'road',
     name: 'Road',
-    title: 'Tour Routing',
-    tagline: 'Tour Ops.',
-    description: 'Venue scouting and logistics optimization for high-density show routing.',
-    keywords: ['Venue Scouting', 'Routing Ops', 'Logistics'],
+    title: 'Tour Guide',
+    tagline: 'Hit the Road.',
+    description: 'Find venues and plan your tour routes. Manage your logistics so you can focus on the performance, not the parking.',
+    keywords: ['Venue Finder', 'Tour Routes', 'Logistics', 'Show Planning'],
     icon: MapPin,
     colorClass: 'text-red-400',
     bgClass: 'bg-red-500/10',
@@ -581,19 +581,19 @@ export default function AgentGrid() {
       >
         <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-white/[0.02] border border-white/5 text-[11px] font-black tracking-[0.4em] uppercase text-gray-500 mb-12 shadow-xl backdrop-blur-md">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)] animate-pulse" />
-          Autonomous Enterprise
+          The Architecture of Togetherness
         </div>
         <h2 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-white mb-12 pb-4 leading-[0.85]">
           The Swarm <br className="hidden md:block" />
           <span className="text-chrome glow-text inline-block transform -rotate-1 skew-x-1">
-            Replaces the Label.
+            Replaces the Middlemen.
           </span>
         </h2>
         <p className="text-gray-500 max-w-4xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed font-light px-4">
-          Zero labels. Zero aggregators. Professional-grade infrastructure 
-          synthesized into a personal autonomous crew. Take back your leverage 
-          with direct-to-DSP distribution and spectral forensics. 
-          indiiOS is the world&apos;s first <strong>operational sovereignty engine</strong>.
+          Zero labels. Zero gatekeepers. Professional-grade tools 
+          working for you as your personal crew. Take back control 
+          of your career with global distribution and smart audio 
+          analysis. indiiOS is your <strong>sovereign creative engine</strong>.
         </p>
       </motion.div>
 
