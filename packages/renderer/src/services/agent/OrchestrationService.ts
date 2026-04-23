@@ -67,9 +67,38 @@ export class OrchestrationService {
         return this.runSteps(executionId, workflow, context, userId, traceId);
     }
 
+    private hasCycles(workflow: WorkflowDefinition): boolean {
+        const visited = new Set<string>();
+        const recursionStack = new Set<string>();
+
+        const dfs = (nodeId: string): boolean => {
+            if (recursionStack.has(nodeId)) return true;
+            if (visited.has(nodeId)) return false;
+
+            visited.add(nodeId);
+            recursionStack.add(nodeId);
+
+            const step = workflow.steps.find(s => s.id === nodeId);
+            if (step && step.dependencies) {
+                for (const dep of step.dependencies) {
+                    if (dfs(dep)) return true;
+                }
+            }
+
+            recursionStack.delete(nodeId);
+            return false;
+        };
+
+        for (const step of workflow.steps) {
+            if (dfs(step.id)) return true;
+        }
+
+        return false;
+    }
+
     /**
-     * Core step execution loop. Processes each step sequentially,
-     * persisting state after every step completion or failure.
+     * Core graph execution loop. Processes parallel steps using batch execution,
+     * resolving dependencies and persisting state.
      */
     private async runSteps(
         executionId: string,
@@ -78,81 +107,107 @@ export class OrchestrationService {
         userId: string,
         traceId: string
     ): Promise<string> {
+        if (this.hasCycles(workflow)) {
+            throw new Error(`Workflow ${workflow.id} contains a cyclic dependency.`);
+        }
+
         let report = `# 🚀 Workflow Report: ${workflow.name}\n\n**Description**: ${workflow.description}\n\n---\n\n`;
 
-        // Get current execution state to know which steps to skip
-        const execution = await workflowStateService.getExecution(userId, executionId);
-        if (!execution) throw new Error(`Execution ${executionId} not found.`);
+        let executing = true;
+        while (executing) {
+            const execution = await workflowStateService.getExecution(userId, executionId);
+            if (!execution) throw new Error(`Execution ${executionId} not found.`);
 
-        for (let i = 0; i < workflow.steps.length; i++) {
-            const step = workflow.steps[i];
-            if (!step) continue;
+            // Find all steps that are ready to run
+            const readySteps = workflow.steps.filter(step => {
+                const state = execution.steps[step.id];
+                if (!state) return false;
+                if (state.status !== 'planned' && state.status !== 'failed') return false;
 
-            const stepExec = execution.steps[i];
-            if (!stepExec) continue;
+                if (!step.dependencies || step.dependencies.length === 0) return true;
 
-            // Skip already completed steps (for resume scenarios)
-            if (stepExec.status === 'step_complete') {
-                const statusIcon = '⏭️';
-                report += `## ${statusIcon} Step ${i + 1}: ${step.agentId.toUpperCase()} (skipped — already complete)\n`;
-                report += `${stepExec.result || 'Previously completed'}\n\n---\n\n`;
-                continue;
+                // Check if all dependencies are complete
+                return step.dependencies.every(depId => {
+                    const depState = execution.steps[depId];
+                    return depState && depState.status === 'step_complete';
+                });
+            });
+
+            if (readySteps.length === 0) {
+                executing = false;
+                break;
             }
 
-            // Skip cancelled steps
-            if (stepExec.status === 'cancelled') {
-                continue;
+            for (const step of readySteps) {
+                await workflowStateService.markStepExecuting(userId, executionId, step.id);
             }
+
+            const tasks = readySteps.map(step => ({
+                agentId: step.agentId,
+                prompt: step.prompt,
+                description: step.prompt,
+                params: { projectId: context.projectId, traceId },
+                context,
+                priority: step.priority,
+                traceId
+            }));
 
             try {
-                // Mark step as executing
-                await workflowStateService.markStepExecuting(userId, executionId, i);
-
-                // Execute via Maestro Batching (single-step batch)
-                const tasks = [{
-                    agentId: step.agentId,
-                    prompt: step.prompt,
-                    description: step.prompt,
-                    params: { projectId: context.projectId, traceId },
-                    context,
-                    priority: step.priority,
-                    traceId,
-                }];
-
                 const results = await maestroBatchingService.executeBatch(tasks);
-                const res: any = results[0];
 
-                const resultText = res?.text || res?.message || 'No output';
-                const success = res?.success !== false;
+                let batchFailed = false;
+                for (let i = 0; i < readySteps.length; i++) {
+                    const step = readySteps[i];
+                    const res: any = results[i];
 
-                if (success) {
-                    // Persist step completion
-                    await workflowStateService.advanceStep(userId, executionId, i, resultText);
-                    const statusIcon = '✅';
-                    report += `## ${statusIcon} Step ${i + 1}: ${step.agentId.toUpperCase()}\n`;
-                    report += `${resultText}\n\n---\n\n`;
-                } else {
-                    // Persist step failure — subsequent steps remain 'planned' for resumability
-                    const errorMsg = res?.error || 'Unknown error';
-                    await workflowStateService.failStep(userId, executionId, i, errorMsg);
-                    report += `## ❌ Step ${i + 1}: ${step.agentId.toUpperCase()} (FAILED)\n`;
-                    report += `${errorMsg}\n\n---\n\n`;
-                    report += `⚠️ **Workflow paused at step ${i + 1}.** Remaining steps preserved for resumption.\n`;
+                    const resultText = res?.text || res?.message || 'No output';
+                    const success = res?.success !== false;
+
+                    if (success) {
+                        await workflowStateService.advanceStep(userId, executionId, step.id, resultText);
+                        const statusIcon = '✅';
+                        report += `## ${statusIcon} Step: ${step.id} [${step.agentId.toUpperCase()}]\n`;
+                        report += `${resultText}\n\n---\n\n`;
+                    } else {
+                        const errorMsg = res?.error || 'Unknown error';
+                        await workflowStateService.failStep(userId, executionId, step.id, errorMsg);
+                        report += `## ❌ Step: ${step.id} [${step.agentId.toUpperCase()}] (FAILED)\n`;
+                        report += `${errorMsg}\n\n---\n\n`;
+                        batchFailed = true;
+                    }
+                }
+
+                if (batchFailed) {
+                    report += `⚠️ **Workflow paused due to failure.** Remaining steps preserved for resumption.\n`;
                     report += `Resume with execution ID: \`${executionId}\`\n`;
                     return report;
                 }
             } catch (error: unknown) {
                 const errorMsg = error instanceof Error ? error.message : String(error);
-                await workflowStateService.failStep(userId, executionId, i, errorMsg);
-                logger.error(`[Orchestration] Step ${i} failed:`, error);
-                report += `## ❌ Step ${i + 1}: ${step.agentId.toUpperCase()} (EXCEPTION)\n`;
+                for (const step of readySteps) {
+                    await workflowStateService.failStep(userId, executionId, step.id, errorMsg);
+                }
+                logger.error(`[Orchestration] Batch failed:`, error);
+                report += `## ❌ Batch Execution Failed (EXCEPTION)\n`;
                 report += `${errorMsg}\n\n---\n\n`;
                 report += `⚠️ **Workflow interrupted.** Resume with execution ID: \`${executionId}\`\n`;
                 return report;
             }
         }
 
-        report += `✅ **Orchestration Complete.** All steps processed with persistent state tracking.`;
+        const finalExecution = await workflowStateService.getExecution(userId, executionId);
+        const allComplete = Object.values(finalExecution!.steps).every(s => s.status === 'step_complete');
+        
+        if (allComplete) {
+            report += `✅ **Orchestration Complete.** All graph steps processed successfully.`;
+        } else {
+            if (finalExecution?.status === 'cancelled') {
+                 report += `🛑 **Workflow Cancelled.**`;
+            } else if (finalExecution?.status !== 'failed') {
+                 report += `⚠️ **Workflow stuck.** Unresolved dependencies.`;
+            }
+        }
+
         return report;
     }
 

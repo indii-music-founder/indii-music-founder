@@ -37,13 +37,16 @@ class WorkflowStateServiceImpl {
         const id = uuidv4();
         const now = Date.now();
 
-        const stepExecutions: WorkflowStepExecution[] = steps.map((step, index) => ({
-            stepIndex: index,
-            agentId: step.agentId,
-            prompt: step.prompt,
-            status: 'planned' as WorkflowExecutionStatus,
-            idempotencyKey: uuidv4(),
-        }));
+        const stepExecutions: Record<string, WorkflowStepExecution> = {};
+        for (const step of steps) {
+            stepExecutions[step.id] = {
+                stepId: step.id,
+                agentId: step.agentId,
+                prompt: step.prompt,
+                status: 'planned' as WorkflowExecutionStatus,
+                idempotencyKey: uuidv4(),
+            };
+        }
 
         const execution: WorkflowExecution = {
             id,
@@ -52,7 +55,6 @@ class WorkflowStateServiceImpl {
             userId,
             status: 'planned',
             steps: stepExecutions,
-            currentStepIndex: 0,
             createdAt: now,
             updatedAt: now,
         };
@@ -68,7 +70,7 @@ class WorkflowStateServiceImpl {
     async markStepExecuting(
         userId: string,
         executionId: string,
-        stepIndex: number
+        stepId: string
     ): Promise<void> {
         const service = this.getService(userId);
         const execution = await service.get(executionId);
@@ -76,23 +78,22 @@ class WorkflowStateServiceImpl {
             throw new Error(`Execution ${executionId} not found`);
         }
 
-        const step = execution.steps[stepIndex];
+        const step = execution.steps[stepId];
         if (!step) {
-            throw new Error(`Step ${stepIndex} not found in execution ${executionId}`);
+            throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
         if (step.status !== 'planned' && step.status !== 'failed') {
-            throw new Error(`Step ${stepIndex} cannot be executed - currently ${step.status} (Idempotency Lock)`);
+            throw new Error(`Step ${stepId} cannot be executed - currently ${step.status} (Idempotency Lock)`);
         }
 
         step.status = 'executing';
         step.startedAt = Date.now();
         execution.status = 'executing';
-        execution.currentStepIndex = stepIndex;
         execution.updatedAt = Date.now();
 
         await service.set(executionId, execution);
-        logger.debug(`[WorkflowState] Step ${stepIndex} (${step.agentId}) now executing`);
+        logger.debug(`[WorkflowState] Step ${stepId} (${step.agentId}) now executing`);
     }
 
     /**
@@ -102,7 +103,7 @@ class WorkflowStateServiceImpl {
     async advanceStep(
         userId: string,
         executionId: string,
-        stepIndex: number,
+        stepId: string,
         result: string
     ): Promise<WorkflowExecution> {
         const service = this.getService(userId);
@@ -111,9 +112,9 @@ class WorkflowStateServiceImpl {
             throw new Error(`Execution ${executionId} not found`);
         }
 
-        const step = execution.steps[stepIndex];
+        const step = execution.steps[stepId];
         if (!step) {
-            throw new Error(`Step ${stepIndex} not found in execution ${executionId}`);
+            throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
         step.status = 'step_complete';
@@ -122,18 +123,10 @@ class WorkflowStateServiceImpl {
         execution.updatedAt = Date.now();
 
         // Check if all steps are complete
-        const allComplete = execution.steps.every((s: WorkflowStepExecution) => s.status === 'step_complete');
+        const allComplete = Object.values(execution.steps).every((s: WorkflowStepExecution) => s.status === 'step_complete');
         if (allComplete) {
             execution.status = 'completed';
             logger.info(`[WorkflowState] Execution ${executionId} fully completed`);
-        } else {
-            // Advance currentStepIndex to next planned step
-            const nextPlanned = execution.steps.findIndex(
-                (s: WorkflowStepExecution, i: number) => i > stepIndex && s.status === 'planned'
-            );
-            if (nextPlanned !== -1) {
-                execution.currentStepIndex = nextPlanned;
-            }
         }
 
         await service.set(executionId, execution);
@@ -147,7 +140,7 @@ class WorkflowStateServiceImpl {
     async failStep(
         userId: string,
         executionId: string,
-        stepIndex: number,
+        stepId: string,
         error: string
     ): Promise<WorkflowExecution> {
         const service = this.getService(userId);
@@ -156,9 +149,9 @@ class WorkflowStateServiceImpl {
             throw new Error(`Execution ${executionId} not found`);
         }
 
-        const step = execution.steps[stepIndex];
+        const step = execution.steps[stepId];
         if (!step) {
-            throw new Error(`Step ${stepIndex} not found in execution ${executionId}`);
+            throw new Error(`Step ${stepId} not found in execution ${executionId}`);
         }
 
         step.status = 'failed';
@@ -168,7 +161,7 @@ class WorkflowStateServiceImpl {
         execution.updatedAt = Date.now();
 
         await service.set(executionId, execution);
-        logger.warn(`[WorkflowState] Step ${stepIndex} (${step.agentId}) failed: ${error}`);
+        logger.warn(`[WorkflowState] Step ${stepId} (${step.agentId}) failed: ${error}`);
         return execution;
     }
 
@@ -209,7 +202,7 @@ class WorkflowStateServiceImpl {
         execution.updatedAt = Date.now();
 
         // Cancel any planned/executing steps
-        execution.steps.forEach((step: WorkflowStepExecution) => {
+        Object.values(execution.steps).forEach((step: WorkflowStepExecution) => {
             if (step.status === 'planned' || step.status === 'executing') {
                 step.status = 'cancelled';
                 step.completedAt = Date.now();

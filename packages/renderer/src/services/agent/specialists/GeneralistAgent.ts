@@ -58,30 +58,31 @@ When ambiguous, apply the AMBIGUITY PROTOCOL below.
 
 | User's Request Involves | Route To | targetAgentId |
 |------------------------|----------|---------------|
-| Royalties, recoupment, advance, budget, expense, invoice, tax, revenue, profit, burn rate | Finance | finance |
-| Contract, agreement, copyright, trademark, clearance, sample, legal rights, dispute, NDA | Legal | legal |
-| DSP delivery, distributor, DDEX, ISRC, UPC, Spotify upload, release metadata QC | Distribution | distribution |
-| Campaign, marketing plan, release strategy, playlist pitch, advertising, audience, pre-save | Marketing | marketing |
-| Logo, brand colors, fonts, visual identity, brand guidelines, show bible, brand kit | Brand | brand |
-| Music video, visual story, storyboard, VFX, motion, animation, video production direction | Video | video |
-| BPM, key detection, audio analysis, mix, master, stem, arrangement, sound design | Music | music |
-| Social media post, caption, TikTok, Instagram, Twitter/X, content calendar, community | Social | social |
-| Press release, media coverage, PR, journalist, interview, crisis comms, EPK | Publicist | publicist |
-| Sync deal, licensing fee, usage rights, film/TV/game placement, commercial license | Licensing | licensing |
-| PRO registration, publishing deal, mechanical royalties, catalog management, ASCAP/BMI | Publishing | publishing |
-| Tour, itinerary, venue, travel, logistics, rider, stage plot, advancing, road crew | Road | road |
-| Merch, merchandise, t-shirt, hoodie, print-on-demand, POD, product design, store | Merchandise | merchandise |
+| Royalties, recoupment, advance, budget, expense, invoice, tax, revenue, profit, burn rate, historical royalties, import statements, accounting migration, legacy data | Finance | finance |
+| Contract, agreement, copyright, trademark, clearance, sample, legal rights, dispute, NDA, split sheet, work-for-hire | Legal | legal |
+| DSP delivery, distributor, DDEX, ISRC, UPC, Spotify upload, release metadata QC, catalog migration, import catalog, ISRC transfer, DistroKid, TuneCore, Symphonic, UnitedMasters, takeover | Distribution | distribution |
+| Campaign, marketing plan, release strategy, playlist pitch, advertising, audience, pre-save, ROI, marketing funnel, conversion | Marketing | marketing |
+| Logo, brand colors, fonts, visual identity, brand guidelines, show bible, brand kit, brand voice training, voice cloning, persona training, tone calibration | Brand | brand |
+| Music video, visual story, storyboard, VFX, motion, animation, video production direction, video treatment | Video | video |
+| BPM, key detection, audio analysis, mix, master, stem, arrangement, sound design, style analysis, sonic DNA training, audio archive, reference track | Music | music |
+| Social media post, caption, TikTok, Instagram, Twitter/X, content calendar, community, import email list, import contacts, fan migration, indiiOS profile, indiiOS feed, native platform, platform exclusives, indiiOS community, gated content, native post | Social | social |
+| Press release, media coverage, PR, journalist, interview, crisis comms, EPK, media list | Publicist | publicist |
+| Sync deal, licensing fee, usage rights, film/TV/game placement, commercial license, sync brief | Licensing | licensing |
+| PRO registration, publishing deal, mechanical royalties, catalog management, ASCAP/BMI, song registration | Publishing | publishing |
+| Tour, itinerary, venue, travel, logistics, rider, stage plot, advancing, road crew, booking | Road | road |
+| Merch, merchandise, t-shirt, hoodie, print-on-demand, POD, product design, store, inventory | Merchandise | merchandise |
 | Script, screenplay, story treatment, dialogue, narrative arc, character | Screenwriter | screenwriter |
-| Album art, cover design, visual artwork, image generation, creative assets | Director | director |
+| Album art, cover design, visual artwork, image generation, creative assets, visual training, style reference, moodboard ingestion, aesthetic calibration | Director | director |
 | Security audit, vulnerability scan, access control, credentials, compliance review | Security | security |
 | Deployment, CI/CD, Firebase, cloud infrastructure, monitoring, pipeline | DevOps | devops |
 
 ## AMBIGUITY PROTOCOL
 When a request spans 2+ domains, apply this priority chain:
 1. Money or contracts involved → Finance or Legal first
-2. Creative media to generate → Director or Video first
-3. Audience-facing content → Marketing first
-4. Still unclear → ask ONE concise clarifying question, then route
+2. Workspace management, adding team members (Manager/Producer), permissions → Handle directly (Core Platform task)
+3. Creative media to generate → Director or Video first
+4. Audience-facing content → Marketing first
+5. Still unclear → ask ONE concise clarifying question, then route
 
 ## THE PULSE (Proactive AI Calendar)
 1. **Anticipation:** Watch upcoming release dates, tour schedules, and deadlines.
@@ -603,83 +604,88 @@ CURRENT REQUEST: ${task}
 
                 // Check for function calls (native function calling)
                 const allFunctionCalls = response.functionCalls?.() || [];
-                const functionCall = allFunctionCalls[0];
 
-                if (functionCall) {
-                    const { name, args } = functionCall;
-                    const argsStr = JSON.stringify(args || {});
+                if (allFunctionCalls.length > 0) {
+                    let shouldBreakAfterBatch = false;
 
-                    // Loop detection
-                    if (lastToolCall && lastToolCall.name === name && lastToolCall.args === argsStr) {
-                        logger.warn(`[GeneralistAgent] Loop detected: same tool ${name} called twice with same args`);
-                        return {
-                            text: accumulatedResponse || 'Task completed.',
-                            error: 'Loop detected - stopping to prevent infinite execution.'
-                        };
-                    }
-                    lastToolCall = { name, args: argsStr };
+                    for (const functionCall of allFunctionCalls) {
+                        const { name, args } = functionCall;
+                        const argsStr = JSON.stringify(args || {});
 
-                    onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
-
-                    // Execute tool
-                    let result: any;
-                    if (this.functions[name]) {
-                        try {
-                            result = await this.functions[name](args as Record<string, unknown>, context);
-                        } catch (err: unknown) {
-                            const msg = err instanceof Error ? err.message : String(err);
-                            result = { success: false, error: msg, message: `Tool error: ${msg}` };
+                        // Loop detection
+                        if (allFunctionCalls.length === 1 && lastToolCall && lastToolCall.name === name && lastToolCall.args === argsStr) {
+                            logger.warn(`[GeneralistAgent] Loop detected: same tool ${name} called twice with same args`);
+                            return {
+                                text: accumulatedResponse || 'Task completed.',
+                                error: 'Loop detected - stopping to prevent infinite execution.'
+                            };
                         }
-                    } else {
-                        // Dynamic try
-                        const { TOOL_REGISTRY } = await import('../tools');
-                        if (TOOL_REGISTRY[name]) {
+                        
+                        if (allFunctionCalls.length === 1) {
+                            lastToolCall = { name, args: argsStr };
+                        } else {
+                            lastToolCall = null; // Multi-call turns don't block the same way for now
+                        }
+
+                        onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
+
+                        // Execute tool
+                        let result: any;
+                        if (this.functions[name]) {
                             try {
-                                result = await TOOL_REGISTRY[name](args);
+                                result = await this.functions[name](args as Record<string, unknown>, context);
                             } catch (err: unknown) {
                                 const msg = err instanceof Error ? err.message : String(err);
                                 result = { success: false, error: msg, message: `Tool error: ${msg}` };
                             }
                         } else {
-                            // Enhanced error: find similar tools
-                            const allToolNames = Object.keys(TOOL_REGISTRY);
-                            const nameLower = name.toLowerCase();
-                            const suggestions = allToolNames
-                                .filter(t => t.toLowerCase().includes(nameLower) || nameLower.includes(t.toLowerCase()))
-                                .slice(0, 5);
+                            // Dynamic try
+                            const { TOOL_REGISTRY } = await import('../tools');
+                            if (TOOL_REGISTRY[name]) {
+                                try {
+                                    result = await TOOL_REGISTRY[name](args);
+                                } catch (err: unknown) {
+                                    const msg = err instanceof Error ? err.message : String(err);
+                                    result = { success: false, error: msg, message: `Tool error: ${msg}` };
+                                }
+                            } else {
+                                // Enhanced error: find similar tools
+                                const allToolNames = Object.keys(TOOL_REGISTRY);
+                                const nameLower = name.toLowerCase();
+                                const suggestions = allToolNames
+                                    .filter(t => t.toLowerCase().includes(nameLower) || nameLower.includes(t.toLowerCase()))
+                                    .slice(0, 5);
 
-                            const suggestionText = suggestions.length > 0
-                                ? ` Did you mean: ${suggestions.join(', ')}?`
-                                : '';
+                                const suggestionText = suggestions.length > 0
+                                    ? ` Did you mean: ${suggestions.join(', ')}?`
+                                    : '';
 
-                            logger.warn(`[GeneralistAgent] Tool '${name}' not found.${suggestionText}`);
-                            result = {
-                                success: false,
-                                error: `Tool '${name}' not found.${suggestionText}`,
-                                message: `Tool '${name}' not found.${suggestionText}`
-                            };
+                                logger.warn(`[GeneralistAgent] Tool '${name}' not found.${suggestionText}`);
+                                result = {
+                                    success: false,
+                                    error: `Tool '${name}' not found.${suggestionText}`,
+                                    message: `Tool '${name}' not found.${suggestionText}`
+                                };
+                            }
+                        }
+
+                        const outputText = typeof result === 'string'
+                            ? result
+                            : (result.message || JSON.stringify(result));
+
+                        onProgress?.({ type: 'thought', content: `Tool ${name} completed: ${outputText.substring(0, 200)}` });
+                        accumulatedResponse += `\n[Tool: ${name}] ${outputText}`;
+
+                        // Check if we should break after this batch (e.g. generation tool succeeded)
+                        const generationTools = ['generate_image', 'generate_video', 'edit_image', 'batch_edit_images'];
+                        if (generationTools.includes(name) && String(outputText).toLowerCase().includes('success')) {
+                            logger.debug(`[GeneralistAgent] ${name} succeeded, setting break flag`);
+                            shouldBreakAfterBatch = true;
                         }
                     }
 
-                    const outputText = typeof result === 'string'
-                        ? result
-                        : (result.message || JSON.stringify(result));
-
-                    onProgress?.({ type: 'thought', content: `Tool ${name} completed: ${outputText.substring(0, 200)}` });
-                    accumulatedResponse += `\n[Tool: ${name}] ${outputText}`;
-
-                    // CRITICAL FIX: For generation tools that succeed, break immediately
-                    // Don't try to get another AI response which may fail due to permission issues
-                    const generationTools = ['generate_image', 'generate_video', 'edit_image', 'batch_edit_images'];
-                    if (generationTools.includes(name) && String(outputText).toLowerCase().includes('success')) {
-                        logger.debug(`[GeneralistAgent] ${name} succeeded, breaking loop immediately`);
-                        break; // Exit loop - we have completed the generation
-                    }
-
-                    // For other tools, continue loop to let AI provide final response
-                    if (String(outputText).toLowerCase().includes('success')) {
-                        continue;
-                    }
+                    if (shouldBreakAfterBatch) break;
+                    continue; // Next turn to let AI respond to the batch of results
                 } else {
                     // No function call - this is the final text response
                     const responseText = response.text?.() || '';
