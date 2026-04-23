@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.55.3](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.2...v1.55.3) (2026-04-23)
+
+
+### Bug Fixes
+
+* finalize slop cleanup - robust error handling across python tools and workflow engine ([#1554](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1554)) ([1178599](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/117859977707855a12cf317d7fc570adc3ac2080))
+
 ## [1.55.2](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.1...v1.55.2) (2026-04-23)
 
 
