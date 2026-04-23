@@ -3,10 +3,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, ShieldAlert, Zap } from 'lucide-react';
 import { agentOptimizer, OptimizationSuggestion } from '../../../services/agent/governance/AgentOptimizer';
-import { useAuthStore } from '@/core/store/slices/authSlice';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 export const SecurityDashboard: React.FC = () => {
-    const { user } = useAuthStore();
+    const user = useStore(useShallow(state => state.user));
     const [suggestions, setSuggestions] = useState<OptimizationSuggestion[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 

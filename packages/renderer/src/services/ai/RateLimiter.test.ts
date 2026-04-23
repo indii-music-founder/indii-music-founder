@@ -52,9 +52,8 @@ describe('RateLimiter', () => {
 
         const acquirePromise = limiter.acquire(500);
 
-        // Advance time but not enough for refill
-        vi.setSystemTime(startTime + 600);
-        await vi.advanceTimersByTimeAsync(600);
+        // Advance time enough to trigger the internal 1000ms setTimeout
+        await vi.advanceTimersByTimeAsync(1000);
 
         await expect(acquirePromise).rejects.toThrow('Rate limit acquisition timed out');
     }, 10000); // 10s timeout for this test case

@@ -1,97 +1,109 @@
-# indiiOS Design System: The Resonant Interface
-
-> **Philosophy**: Balanced at the edge of hyper-real AI perfection and raw human authenticity. We don't just build tools; we build resonant environments.
-
----
+# indiiOS Design Manifesto: The Resonant Interface (v2026.1)
 
 ## 1. Vision & Metaphilosophy
-
-The indiiOS interface follows the **2026 Machine Experience (MX)** philosophy. It is an adaptive ecosystem designed to be read by AI agents (AEO/GEO) while remaining deeply emotive for human creators.
+The **indiiOS** interface is a **resonant environment** for creativity, designed for the **2026 Machine Experience (MX)**. We bridge the gap between **Hyper-real AI Perfection** and **Raw Human Authenticity**.
 
 ### Core Pillars
-- **Subliminal (MX)**: The UI "nudges more than notifies," receding to let content shine.
-- **Alive (Kinetic)**: Elements breathe, pulse, and react. Interaction is a conversation.
-- **Artful (Wabi-Sabi)**: Embracing imperfection through subtle noise, grain, and organic motion to counter AI sterility.
-- **Resonant (Sonic)**: Every interaction carries potential energy, reinforced by a "Sonic OS" identity.
+*   **Subliminal (MX)**: The UI nudges more than it notifies. It recedes to let the creator's content lead.
+*   **Alive (Kinetic)**: Every element breathes, pulses, and reacts. Interaction is a dialogue, not a command.
+*   **Artful (Wabi-Sabi)**: We embrace imperfection through subtle noise, organic motion, and "drippy" textures.
+*   **Resonant (Sonic)**: Design that you can "hear." Interactions carry potential energy, reinforced by sonic feedback.
 
 ---
 
-## 2. Visual Language & Atmosphere
+## 2. The "Drippy" Aesthetic
+The signature visual style of indiiOS is the **Drippy 2026 Aesthetic**—a fusion of high-intensity glassmorphism and liquid physics.
 
-### The Atmosphere ("The Void & The Glass")
-- **Void Background**: Using true black (`#000000` / `#0d1117`) for OLED optimization and infinite depth.
-- **Wet Glassmorphism**: Translucent layers (`.glass-panel`) with high blur (`30px`), saturation (`200%`), and ultra-thin borders.
-- **Grainy Texture**: A subliminal noise overlay (`opacity: 0.05`) to add tactile "paper-like" quality to digital surfaces.
-- **Chrome/Liquid**: High-fidelity silver gradients and liquid-motion borders for a "premium-experimental" feel.
+### Visual Components
+*   **The "Wet Look"**: High-saturation backdrop blurs (`blur-xl`), increased contrast (`saturate-200`), and ultra-thin translucent borders.
+*   **Liquid Borders**: Dynamic, pseudo-element borders that feel like they are flowing or "dripping" around containers.
+*   **Spotlight Interaction**: Surfaces react to the cursor with radial gradients (`glowColor`) that follow movement, creating a sense of depth and focus.
+*   **Noise & Grain**: A persistent, low-opacity noise overlay (`opacity-[0.04]`) adds tactile depth and counters AI sterility.
+*   **Scanlines**: Subtle technical overlays (`opacity-[0.03]`) signal the platform's high-fidelity processing nature.
 
-### Color Systems
+---
 
-#### A. The Frequency Theme (Brand)
-| Token | Value | Role |
+## 3. Design Tokens (The Frequency Theme)
+
+### A. Color Palette
+| Token | Hex | Usage |
 | :--- | :--- | :--- |
-| `--void` | `#030303` | Core background depth |
-| `--resonance-blue` | `#2E2EFE` | Primary action / Brand signal |
-| `--electric-blue` | `#00F0FF` | Digital flow / Highlights |
-| `--frequency-pink` | `#FE2E9A` | Creative energy / Alerts |
-| `--signal-white` | `#F0F0F0` | High-contrast technical text |
+| **Void** | `#030303` | Primary background; deepest OLED black. |
+| **Resonance Blue** | `#2E2EFE` | Primary action; electric, digital energy. |
+| **Frequency Pink** | `#FE2E9A` | Accent; creative life-force and highlights. |
+| **Dopamine Pink** | `#FF0099` | Secondary accent; high-saturation optimism. |
+| **Electric Blue** | `#00F0FF` | Technical highlights and data flow. |
+| **Signal White** | `#F0F0F0` | Primary typography; high contrast, low harshness. |
 
-#### B. Department Color System (Functional)
-Every department in the indiiOS ecosystem has a distinct "vibe" mapping:
-- **Finance (Royalties)**: `#FFC107` (Gold/Amber) — Precision & Wealth.
-- **Distribution**: `#2196F3` (Electric Blue) — Data flow & Logistics.
-- **Marketing**: `#E91E63` (Magenta) — Energy & Attention.
-- **Legal**: `#455A64` (Slate) — Stability & Protection.
-- **Creative**: `#9C27B0` (Purple) — Passion & Magic.
-- **Touring**: `#FF5722` (Deep Orange) — Road heat & Stage lights.
-- **Publishing**: `#8BC34A` (Lime) — Growth & Catalog expansion.
-- **Social**: `#00BCD4` (Cyan) — Viral connectivity.
-- **Licensing**: `#009688` (Teal) — Secondary revenue deals.
+### B. Gradients
+*   **Tech Bro**: `Resonance Blue` to `Electric Blue` (The SaaS/AI standard).
+*   **Dopamine**: `Dopamine Pink` to `Frequency Pink` (Creative energy).
+*   **Liquid Chrome**: Multistop silver/white gradients for high-impact headlines.
 
----
-
-## 3. Typography System
-
-Typography is a primary design element, often treated as a physical object or kinetic force.
-
-- **Main/Sans**: `Geist Sans` (or Inter fallback). Modern, legible, technical.
-- **Mono**: `Geist Mono` (or JetBrains Mono). Used for code, IDs, metadata, and "Engineering Blueprint" sections.
-- **Display**: Kinetic typography that reacts to scroll/mouse, often using exaggerated hierarchy (oversized headlines).
+### C. Typography
+*   **Primary (Sans)**: `Geist Sans` (Technical but human, highly legible).
+*   **Technical (Mono)**: `Geist Mono` (For metadata, IDs, and code-like elements).
+*   **Hierarchy**: Oversized headlines (tracking-tighter) paired with tiny, wide-tracked uppercase secondary text (`tracking-[0.4em]`).
 
 ---
 
-## 4. Motion & Interaction
+## 4. Interactive Architecture
 
-### Movement Principles
-1. **No Abrupt Starts**: Everything fades, slides, or scales. Use `framer-motion` for all state changes.
-2. **The "Snappy" Feel**: Standard transitions at `0.25s` with `cubic-bezier(0.4, 0, 0.2, 1)`.
-3. **Sonic Feedback**: Click, hum, and whoosh sounds reinforce tactile interactions.
+### The Spotlight Card System
+The primary container for all content. It must include:
+1.  **Primary Glow**: Cursor-following radial gradient.
+2.  **Secondary Blur**: Larger, softer secondary glow for "atmosphere."
+3.  **Internal Sheen**: Gradient-to-tr from `white/0.02` to transparent.
+4.  **Drippy Border**: High-intensity border with slight hover elevation (`hover:-translate-y-2`).
 
-### Signature Effects
-- **Neon Glow**: Soft blooms behind department-colored elements (`.dept-glow`).
-- **Bolt Pulse**: A signature 1.5s animation for AI/automation updates.
-- **Liquid Drift**: Background gradients that drift slowly over 15s to maintain "aliveness".
-- **Drip Effect**: Vertical "data drips" for active background processes.
-
----
-
-## 5. Component Architecture
-
-- **Bento Grids**: For feature showcases and data-heavy dashboards.
-- **Prompt Kit (Agentic UX)**: Dialogue-based intent (Conversational Nav) instead of traditional forms.
-- **Kokonut UI**: Complex patterns like the "Drippy" file upload and AI Search Omnibar.
-- **Motion Primitives**: Animated numbers, floating toolbars, and "Text Effects".
+### Kinetic Motion (Framer Motion)
+*   **No Abrupt Appearances**: Everything must fade, scale, or slide with high-damping springs (`stiffness: 100, damping: 20`).
+*   **Capability Ticker**: Horizontal scrolling "data-streams" of keywords to signal operational supremacy.
+*   **Scanline Pulses**: Step-based animations that mimic data flow across visual elements.
 
 ---
 
-## 6. Implementation Standards
+## 5. Implementation Directives
 
-- **No Ad-Hoc CSS**: Exclusively Tailwind CSS (v4 spec).
-- **Asset Excellence**: Use **AVIF** and **WebP** only. Dithered images for retro-sections.
-- **Performance**: LCP < 2.5s, INP < 200ms. "Fast is Green."
-- **AI-Readability**: Mandatory Schema markup and 40-60 word summaries for AEO snippets.
-- **Mobile-First**: Perfect parity on mobile for the Landing Page; graceful degradation for the Studio App.
+1.  **No Ad-Hoc CSS**: All styling must use Tailwind utility tokens or the centralized `index.css` system.
+2.  **Mobile Perfection**: The landing experience must be "iPhone-Perfect," respecting touch targets and viewport constraints.
+3.  **Accessibility as Default**: Minimum AA contrast, focus indicators, and support for "Reduced Motion" OS preferences.
+4.  **Intent-Based Navigation**: Use "Agentic UX" patterns—Dialogue-based navigation ("Get me in") over traditional action buttons.
 
 ---
 
-> [!NOTE]
-> This document is the "Source of Truth" for all frontend development. Before starting a feature, ask: "Does this feel Alive, Artful, and Resonant?"
+## 6. Sonic OS Identity
+The UI is the visual representation of the **indiiOS Sonic DNA**.
+*   **Audio Visualizers**: Real-time 4K synthesis of audio into visual manifests.
+*   **Sonic Feedback**: Buttons "click," panels "whoosh," and the system "hums" with potential energy.
+
+---
+
+## 7. Production Integrity & Specialized Components
+While aesthetics are "drippy" and "resonant," the interface must remain functionally ironclad.
+
+### A. Safety Patterns
+*   **ConfirmDialog**: All destructive actions (Delete, Remove, Cancel) must utilize the `ConfirmDialog` component. It uses the Radix `Dialog` primitive but follows the indiiOS aesthetic (glassmorphism + loading states).
+*   **Data Loss Prevention**: The `useConfirmDialog` hook is the mandatory pattern for stateful confirmation flows.
+
+### B. Compliance UI
+*   **CookieConsentBanner**: GDPR-compliant, transparent tracking management. It must integrate with the "Resonant" theme—clear, non-intrusive, yet authoritative.
+*   **Privacy Layers**: Interfaces involving sensitive data should use the "Fog" effect (high blur) when not in active focus.
+
+---
+
+## 8. Technical Implementation (CSS Utilities)
+To maintain consistency, use the following pre-defined utility classes in `globals.css`:
+
+### Class Definitions
+*   `.glass-panel`: Implements the "Wet" look with `backdrop-filter: blur(30px) saturate(200%)` and subtle internal shadows.
+*   `.drippy-border`: Uses a pseudo-element mask to create a high-fidelity, light-reactive edge without standard border limitations.
+*   `.text-chrome`: Applies the `liquid-chrome` gradient to text, mimicking polished metal.
+*   `.glow-text-[blue|pink]`: Applies multi-layered text shadows for a "neon-on-black" resonance effect.
+*   `.animate-liquid`: A 15s ease-infinite background drift for gradient-heavy surfaces.
+*   `.perspective-2000` & `.transform-style-3d`: Core utilities for creating high-depth layouts.
+
+### Atmosphere Layer
+The system uses a global **Grainy Texture Layer** (`body::after`) with `mix-blend-mode: overlay` at `0.05` opacity to create a physical, tactile surface across the entire viewport.
+
+> **Directive**: If it looks static, add a pulse. If it looks dry, add a drip. If it looks silent, add a hum. If it's destructive, add a check. If it's code, make it mono.

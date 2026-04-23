@@ -55,6 +55,7 @@ class WorkflowStateServiceImpl {
             userId,
             status: 'planned',
             steps: stepExecutions,
+            currentStepIndex: 0,
             createdAt: now,
             updatedAt: now,
         };
@@ -141,7 +142,8 @@ class WorkflowStateServiceImpl {
     async skipStep(
         userId: string,
         executionId: string,
-        stepId: string
+        stepId: string,
+        reason?: string
     ): Promise<WorkflowExecution> {
         const service = this.getService(userId);
         const execution = await service.get(executionId);
@@ -155,6 +157,7 @@ class WorkflowStateServiceImpl {
         }
 
         step.status = 'skipped';
+        step.result = reason;
         step.completedAt = Date.now();
         execution.updatedAt = Date.now();
 
@@ -202,6 +205,14 @@ class WorkflowStateServiceImpl {
         await service.set(executionId, execution);
         logger.warn(`[WorkflowState] Step ${stepId} (${step.agentId}) failed: ${error}`);
         return execution;
+    }
+
+    /**
+     * Get all workflow executions for a specific user.
+     */
+    async getExecutionsByUser(userId: string): Promise<WorkflowExecution[]> {
+        const service = this.getService(userId);
+        return await service.list();
     }
 
     /**

@@ -143,7 +143,7 @@ export default function Home() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
           </span>
-          15 Specialist Agents • Operational Sovereignty • Human-Soul-Certified
+          15 Specialist Agents • Musical Independence • Soul-Certified
         </motion.div>
 
         <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter text-white leading-[1.05] md:leading-[0.9] drop-shadow-2xl flex flex-wrap justify-center max-w-6xl">
@@ -169,8 +169,8 @@ export default function Home() {
           <strong className="text-white font-medium block mb-4 text-2xl">
             Independence doesn&apos;t mean being alone.
           </strong>
-          indiiOS is more than an app—it&apos;s an architecture of togetherness. A private swarm of 15 specialist minds designed to dismantle the gatekeepers, automate the labor, and protect your creative life force.
-          <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl">The operating system for your musical independence.</span>
+          indiiOS is your personal tech collective. A specialist crew of AI minds designed to handle the labor, dismantle the gatekeepers, and amplify your creative life force. 
+          <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl italic">&ldquo;It&apos;s the operating system for your musical independence.&rdquo;</span>
         </motion.p>
 
         {/* Dual CTA */}
@@ -191,7 +191,7 @@ export default function Home() {
             href="#capabilities"
             className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-gray-400 border border-white/10 rounded-full hover:text-white hover:border-white/20 transition-all"
           >
-            Explore the Swarm
+            Meet Your Crew
           </a>
         </motion.div>
       </motion.section>
@@ -252,17 +252,17 @@ export default function Home() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white mb-4">
-            The Sovereign{' '}
+            The Independent{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600">Pipeline</span>
           </h2>
-          <p className="text-gray-400 max-w-xl mx-auto font-light">Direct-to-DSP supply chains. AI-powered creative synthesis. Total ownership of your soul and your data.</p>
+          <p className="text-gray-400 max-w-xl mx-auto font-light">Direct-to-platform release pipelines. High-fidelity creative synthesis. Total ownership of your masters and your career.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { step: '01', icon: Music, title: 'Sonic Genesis', desc: 'Invoke the Soul-Scan. Extract the life force of your sound—timbre, weight, and emotional trajectory—to prime your creative universe.' },
-            { step: '02', icon: BrainCircuit, title: 'The Collective', desc: 'Deploy a swarm of 15 specialist minds. From legal sovereignty to visual manifestos, your crew builds your vision in parallel.' },
-            { step: '03', icon: Globe2, title: 'Sovereign Connection', desc: 'Inject your masters directly into the global supply chain. No gatekeepers, no noise, just total independence.' },
+            { step: '01', icon: Music, title: 'Sonic Identity', desc: 'Unlock your sound\'s DNA. Extract the life force of your tracks—tempo, key, and emotional weight—to prime your creative universe.' },
+            { step: '02', icon: BrainCircuit, title: 'Your AI Crew', desc: 'Deploy your specialist crew of AI minds. From visual manifestos to legal guard, your specialists build your vision in parallel.' },
+            { step: '03', icon: Globe2, title: 'Global Impact', desc: 'Release your tracks directly to global platforms. No gatekeepers, no noise, just total independence and 100% of the bag.' },
           ].map((s, i) => (
             <motion.div
               key={s.step}
@@ -303,20 +303,20 @@ export default function Home() {
               The Founders Covenant
             </h2>
             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
-              We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indiiOS Founders Program. At $2,500, you receive permanent access to the entire indiiOS infrastructure — all 15 agents, the Conductor, and every future update — with zero recurring software fees. Own the means of production on an architecture of togetherness.
+              We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indiiOS Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indiiOS infrastructure — all 15 agents, the Conductor, and every future update — with zero recurring fees. Own the means of production on an architecture of togetherness.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Cpu size={16} /> Sovereign Intelligence</h4>
-                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. Zero markup. True operational sovereignty for the artist.</p>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Cpu size={16} /> Your Keys, Your Sound</h4>
+                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. Zero markup. True creative sovereignty for the artist.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Cryptographic Proof</h4>
-                <p className="text-sm text-gray-400">Your name and a SHA-256 hash of your covenant terms are committed directly into the indiiOS codebase structure forever. You are part of the engine.</p>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Immutable Legacy</h4>
+                <p className="text-sm text-gray-400">Your signature and a record of your covenant are committed directly into the indiiOS infrastructure forever. You are part of the engine.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> 15 Specialist Minds</h4>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 15-Piece Crew</h4>
                 <p className="text-sm text-gray-400">Distribution, Creative, Music, Legal, Finance, Marketing, Publishing, Analytics, Brand, Video, Social, Licensing, Merch, Publicist, Road. The collective is yours.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
@@ -343,7 +343,7 @@ export default function Home() {
           <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/30 flex justify-center items-center shadow-[0_0_10px_rgba(245,158,11,0.2)]">
             <Zap size={12} className="text-amber-500" />
           </div>
-          <span className="font-medium tracking-wide">© 2026 indiiOS Inc. All Rights Reserved.</span>
+          <span className="font-medium tracking-wide">© 2026 indiiOS Inc. The operating system for your musical independence.</span>
         </div>
         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
           <a href="/privacy" className="hover:text-white transition-colors font-medium">Privacy Policy</a>

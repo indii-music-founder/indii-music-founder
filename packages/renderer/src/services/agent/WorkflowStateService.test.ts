@@ -66,7 +66,7 @@ describe('WorkflowStateService', () => {
             expect(execution.steps['step_0']!.status).toBe('planned');
             expect(execution.steps['step_1']!.status).toBe('planned');
             expect(execution.steps['step_2']!.status).toBe('planned');
-            expect(execution.currentStepIndex).toBeUndefined();
+            expect(execution.currentStepIndex).toBe(0);
             expect(mockSet).toHaveBeenCalledOnce();
         });
     });
@@ -183,11 +183,11 @@ describe('WorkflowStateService', () => {
     describe('getResumableExecutions', () => {
         it('should return only non-terminal executions', async () => {
             const executions: WorkflowExecution[] = [
-                { id: '1', workflowId: 'A', userId, status: 'completed', steps: {}, createdAt: 1, updatedAt: 1 },
-                { id: '2', workflowId: 'B', userId, status: 'failed', steps: {}, createdAt: 2, updatedAt: 2 },
-                { id: '3', workflowId: 'C', userId, status: 'cancelled', steps: {}, createdAt: 3, updatedAt: 3 },
-                { id: '4', workflowId: 'D', userId, status: 'planned', steps: {}, createdAt: 4, updatedAt: 4 },
-                { id: '5', workflowId: 'E', userId, status: 'executing', steps: {}, createdAt: 5, updatedAt: 5 },
+                { id: '1', workflowId: 'A', userId, status: 'completed', steps: {}, currentStepIndex: 0, createdAt: 1, updatedAt: 1 },
+                { id: '2', workflowId: 'B', userId, status: 'failed', steps: {}, currentStepIndex: 0, createdAt: 2, updatedAt: 2 },
+                { id: '3', workflowId: 'C', userId, status: 'cancelled', steps: {}, currentStepIndex: 0, createdAt: 3, updatedAt: 3 },
+                { id: '4', workflowId: 'D', userId, status: 'planned', steps: {}, currentStepIndex: 0, createdAt: 4, updatedAt: 4 },
+                { id: '5', workflowId: 'E', userId, status: 'executing', steps: {}, currentStepIndex: 0, createdAt: 5, updatedAt: 5 },
             ];
 
             mockList.mockResolvedValue(executions);
