@@ -3,9 +3,18 @@ import { PythonBridge } from './python-bridge';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 
-vi.mock('child_process', () => ({
-    spawn: vi.fn(),
-}));
+vi.mock('child_process', async (importOriginal) => {
+    const actual = await importOriginal() as any;
+    const spawnMock = vi.fn();
+    return {
+        ...actual,
+        spawn: spawnMock,
+        default: {
+            ...actual.default,
+            spawn: spawnMock
+        }
+    };
+});
 
 vi.mock('electron', () => ({
     app: {
