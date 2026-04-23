@@ -39,18 +39,29 @@ describe('OrchestrationService', () => {
             userId: 'test-user',
             status: 'planned',
             currentStepIndex: 0,
-            steps: [
-                { stepIndex: 0, agentId: 'brand', prompt: 'Analyze brand', status: 'planned' } as WorkflowStepExecution,
-                { stepIndex: 1, agentId: 'publicist', prompt: 'Generate press release', status: 'planned' } as WorkflowStepExecution,
-                { stepIndex: 2, agentId: 'marketing', prompt: 'Marketing strategy', status: 'planned' } as WorkflowStepExecution,
-                { stepIndex: 3, agentId: 'social', prompt: 'Social drop posts', status: 'planned' } as WorkflowStepExecution,
-            ],
+            steps: {
+                'brand_analysis': { stepId: 'brand_analysis', agentId: 'brand', prompt: 'Analyze brand', status: 'planned' } as WorkflowStepExecution,
+                'press_release': { stepId: 'press_release', agentId: 'publicist', prompt: 'Generate press release', status: 'planned' } as WorkflowStepExecution,
+                'marketing_strategy': { stepId: 'marketing_strategy', agentId: 'marketing', prompt: 'Marketing strategy', status: 'planned' } as WorkflowStepExecution,
+                'social_drafts': { stepId: 'social_drafts', agentId: 'social', prompt: 'Social drop posts', status: 'planned' } as WorkflowStepExecution,
+            },
             createdAt: 1000,
             updatedAt: 1000,
         };
 
         vi.mocked(workflowStateService.createExecution).mockResolvedValue(mockExecution);
-        vi.mocked(workflowStateService.getExecution).mockResolvedValue(mockExecution);
+        vi.mocked(workflowStateService.getExecution)
+            .mockResolvedValueOnce(mockExecution) // Loop 1: Start
+            .mockResolvedValue({
+                ...mockExecution,
+                steps: {
+                    'brand_analysis': { stepId: 'brand_analysis', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete' } as WorkflowStepExecution,
+                    'press_release': { stepId: 'press_release', agentId: 'publicist', prompt: 'Generate press release', status: 'step_complete' } as WorkflowStepExecution,
+                    'marketing_strategy': { stepId: 'marketing_strategy', agentId: 'marketing', prompt: 'Marketing strategy', status: 'step_complete' } as WorkflowStepExecution,
+                    'social_drafts': { stepId: 'social_drafts', agentId: 'social', prompt: 'Social drop posts', status: 'step_complete' } as WorkflowStepExecution,
+                }
+            }); // Subsequent loops
+
         vi.mocked(workflowStateService.advanceStep).mockResolvedValue(mockExecution);
 
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValue([
@@ -63,7 +74,7 @@ describe('OrchestrationService', () => {
         );
 
         expect(result).toContain('Workflow Report: Campaign Launch');
-        expect(result).toContain('Step 1: BRAND');
+        expect(result).toContain('Step: brand_analysis [BRAND]');
         expect(workflowStateService.createExecution).toHaveBeenCalled();
         expect(workflowStateService.markStepExecuting).toHaveBeenCalled();
         expect(workflowStateService.advanceStep).toHaveBeenCalled();
@@ -76,11 +87,11 @@ describe('OrchestrationService', () => {
             userId: 'test-user',
             status: 'planned',
             currentStepIndex: 0,
-            steps: [
-                { stepIndex: 0, agentId: 'creative', prompt: 'Generate designs', status: 'planned' } as WorkflowStepExecution,
-                { stepIndex: 1, agentId: 'marketing', prompt: 'Product description', status: 'planned' } as WorkflowStepExecution,
-                { stepIndex: 2, agentId: 'social', prompt: 'Teaser campaign', status: 'planned' } as WorkflowStepExecution,
-            ],
+            steps: {
+                'design_concepts': { stepId: 'design_concepts', agentId: 'creative', prompt: 'Generate designs', status: 'planned' } as WorkflowStepExecution,
+                'pricing_strategy': { stepId: 'pricing_strategy', agentId: 'marketing', prompt: 'Product description', status: 'planned' } as WorkflowStepExecution,
+                'teaser_campaign': { stepId: 'teaser_campaign', agentId: 'social', prompt: 'Teaser campaign', status: 'planned' } as WorkflowStepExecution,
+            },
             createdAt: 1000,
             updatedAt: 1000,
         };
@@ -90,11 +101,11 @@ describe('OrchestrationService', () => {
         vi.mocked(workflowStateService.failStep).mockResolvedValue({
             ...mockExecution,
             status: 'failed' as const,
-            steps: [
-                { ...mockExecution.steps[0]!, status: 'failed' as const, error: 'Generation failed' },
-                mockExecution.steps[1]!,
-                mockExecution.steps[2]!,
-            ],
+            steps: {
+                'design_concepts': { ...mockExecution.steps['design_concepts']!, status: 'failed' as const, error: 'Generation failed' },
+                'pricing_strategy': mockExecution.steps['pricing_strategy']!,
+                'teaser_campaign': mockExecution.steps['teaser_campaign']!,
+            },
         });
 
         // First step fails
@@ -110,7 +121,7 @@ describe('OrchestrationService', () => {
         expect(result).toContain('FAILED');
         expect(result).toContain('exec-2'); // Execution ID for resumption
         expect(result).toContain('Remaining steps preserved');
-        expect(workflowStateService.failStep).toHaveBeenCalledWith('test-user', 'exec-2', 0, 'Generation failed');
+        expect(workflowStateService.failStep).toHaveBeenCalledWith('test-user', 'exec-2', 'design_concepts', 'Generation failed');
         // Step 2 and 3 were never attempted
         expect(workflowStateService.advanceStep).not.toHaveBeenCalled();
     });
@@ -137,15 +148,24 @@ describe('OrchestrationService', () => {
             userId: 'test-user',
             status: 'planned',
             currentStepIndex: 0,
-            steps: [
-                { stepIndex: 0, agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'planned' } as WorkflowStepExecution,
-            ],
+            steps: {
+                'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'planned' } as WorkflowStepExecution,
+                'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'planned' } as WorkflowStepExecution,
+            },
             createdAt: 1000,
             updatedAt: 1000,
         };
 
         vi.mocked(workflowStateService.createExecution).mockResolvedValue(mockExecution);
-        vi.mocked(workflowStateService.getExecution).mockResolvedValue(mockExecution);
+        vi.mocked(workflowStateService.getExecution)
+            .mockResolvedValueOnce(mockExecution)
+            .mockResolvedValue({
+                ...mockExecution,
+                steps: {
+                    'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'step_complete' } as WorkflowStepExecution,
+                    'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'step_complete' } as WorkflowStepExecution,
+                }
+            });
         vi.mocked(workflowStateService.advanceStep).mockResolvedValue(mockExecution);
 
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValue([
@@ -158,6 +178,7 @@ describe('OrchestrationService', () => {
         );
 
         expect(result).toContain('Workflow Report: indii Growth Protocol');
+        expect(result).toContain('Step: video_generation [WORKFLOW]');
         expect(workflowStateService.createExecution).toHaveBeenCalledWith(
             'test-user',
             'INDII_GROWTH_PROTOCOL',

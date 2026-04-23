@@ -1,3 +1,4 @@
+import { DDEXReleaseSchema } from './DistributionSchemas';
 import { auth, storage } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import {
@@ -594,6 +595,16 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
         // Item 414: Snapshot metadata at the point of submission for post-distribution history
         writeMetadataSnapshot(releaseId, releaseData).catch(() => { /* best-effort */ });
+
+        // Item: Robust Release Metadata Validation (DDEX Compliance)
+        try {
+            DDEXReleaseSchema.parse(releaseData);
+            onProgress?.({ step: 'qc', status: 'done', detail: 'Metadata validation passed' });
+        } catch (error: any) {
+            const validationError = error.errors?.[0]?.message || 'Metadata validation failed';
+            onProgress?.({ step: 'qc', status: 'error', detail: validationError });
+            throw new Error(`QC Validation Failed: ${validationError}`);
+        }
 
         // Item: Check mechanical royalty clearance before distribution (Hardened Pre-flight)
         try {
