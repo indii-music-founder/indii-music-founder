@@ -122,14 +122,53 @@ class WorkflowStateServiceImpl {
         step.completedAt = Date.now();
         execution.updatedAt = Date.now();
 
-        // Check if all steps are complete
-        const allComplete = Object.values(execution.steps).every((s: WorkflowStepExecution) => s.status === 'step_complete');
-        if (allComplete) {
+        // Check if all steps are complete or skipped
+        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) => 
+            s.status === 'step_complete' || s.status === 'skipped'
+        );
+        if (allDone) {
             execution.status = 'completed';
             logger.info(`[WorkflowState] Execution ${executionId} fully completed`);
         }
 
         await service.set(executionId, execution);
+        return execution;
+    }
+
+    /**
+     * Mark a step as skipped due to a failed condition.
+     */
+    async skipStep(
+        userId: string,
+        executionId: string,
+        stepId: string
+    ): Promise<WorkflowExecution> {
+        const service = this.getService(userId);
+        const execution = await service.get(executionId);
+        if (!execution) {
+            throw new Error(`Execution ${executionId} not found`);
+        }
+
+        const step = execution.steps[stepId];
+        if (!step) {
+            throw new Error(`Step ${stepId} not found in execution ${executionId}`);
+        }
+
+        step.status = 'skipped';
+        step.completedAt = Date.now();
+        execution.updatedAt = Date.now();
+
+        // Check if all steps are complete or skipped
+        const allDone = Object.values(execution.steps).every((s: WorkflowStepExecution) => 
+            s.status === 'step_complete' || s.status === 'skipped'
+        );
+        if (allDone) {
+            execution.status = 'completed';
+            logger.info(`[WorkflowState] Execution ${executionId} fully completed`);
+        }
+
+        await service.set(executionId, execution);
+        logger.info(`[WorkflowState] Step ${stepId} (${step.agentId}) skipped due to condition`);
         return execution;
     }
 
