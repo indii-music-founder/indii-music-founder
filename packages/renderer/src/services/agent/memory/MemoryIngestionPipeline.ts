@@ -4,6 +4,7 @@ import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
 import type { Content, GenerationConfig } from 'firebase/ai';
 import { MemorySummarizer } from './MemorySummarizer';
+import { memoryBankService } from './MemoryBankService';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryCategory,
@@ -535,6 +536,14 @@ Respond with ONLY a JSON object: {"category": "<category>"}`;
         };
 
         const docRef = await addDoc(memoryRef, docData);
+        
+        // SYNC TO MEM0
+        try {
+            await memoryBankService.addMemory(userId, docData.summary || docData.content);
+        } catch (error) {
+            logger.warn('[MemoryIngestionPipeline] Failed to sync to MemoryBank:', error);
+        }
+
         return docRef.id;
     }
 

@@ -6,6 +6,7 @@ import type { AgentMessage } from '@/core/store/slices/agent';
 export type { AgentMessage };
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { INDII_MESSAGES } from './constants';
+import type { AgentIdentityCard } from './governance/AgentIdentity';
 
 export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
@@ -208,6 +209,12 @@ export interface AgentContext {
     triggerType?: ProactiveTriggerType;
     /** Breaking circular dependency: Runner provided at runtime */
     runAgent?: AgentRunner;
+    /**
+     * Cryptographic identity card for the executing agent.
+     * Injected by BaseAgent during execution for provenance tracking.
+     * @see AgentIdentityCard
+     */
+    agentIdentity?: AgentIdentityCard;
 }
 
 export type AgentRunner = (
@@ -337,6 +344,11 @@ export interface AgentConfig {
      *  "tunedModels/{tunedModelName}" or full Vertex endpoint URI.
      */
     modelId?: string;
+    /**
+     * Pre-minted cryptographic identity card. If not provided,
+     * BaseAgent will mint one automatically during construction.
+     */
+    identityCard?: AgentIdentityCard;
 }
 
 export interface AgentResponse {
@@ -400,13 +412,14 @@ export type WorkflowExecutionStatus =
     | 'awaiting_approval'
     | 'completed'
     | 'failed'
-    | 'cancelled';
+    | 'cancelled'
+    | 'skipped';
 
 /**
  * Persisted state for a single step within a workflow execution.
  */
 export interface WorkflowStepExecution {
-    stepIndex: number;
+    stepId: string;
     agentId: string;
     prompt: string;
     status: WorkflowExecutionStatus;
@@ -427,7 +440,7 @@ export interface WorkflowExecution {
     sessionId?: string;
     userId: string;
     status: WorkflowExecutionStatus;
-    steps: WorkflowStepExecution[];
+    steps: Record<string, WorkflowStepExecution>;
     currentStepIndex: number;
     createdAt: number;
     updatedAt: number;

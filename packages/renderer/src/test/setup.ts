@@ -111,6 +111,10 @@ if (typeof globalThis.localStorage === 'undefined' || !(globalThis.localStorage?
 // FIREBASE MOCKS - Centralized for all test files
 // ============================================================================
 
+import { createFirebaseMock } from './mocks/firebase';
+
+const firebaseMock = createFirebaseMock();
+
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -128,29 +132,18 @@ vi.mock('react-i18next', () => ({
 // Mock the @/services/firebase module FIRST to prevent module-level initialization
 // This is critical because firebase.ts has side effects that call real Firebase APIs at import time
 vi.mock('@/services/firebase', () => ({
-    app: { name: 'mock-app', options: {} },
-    db: {},
-    storage: {},
-    auth: {
-        currentUser: { uid: 'test-uid', email: 'test@test.com', getIdToken: vi.fn().mockResolvedValue('test-token') },
-        onAuthStateChanged: vi.fn((callback) => {
-            // Simulate immediate callback with authenticated user
-            if (typeof callback === 'function') {
-                setTimeout(() => callback({ uid: 'test-uid', email: 'test@test.com' }), 0);
-            }
-            return () => { }; // Return unsubscribe function
-        }),
-        signInWithEmailAndPassword: vi.fn(),
-        signOut: vi.fn()
-    },
-    functions: {},
-    functionsWest1: {},
-    remoteConfig: { defaultConfig: {} },
-    messaging: null,
-    appCheck: null,
-    ai: { instance: null },
-    getFirebaseAI: vi.fn(() => null),
-    getFirebaseMessaging: vi.fn(() => Promise.resolve(null))
+    app: firebaseMock.app,
+    db: firebaseMock.db,
+    storage: firebaseMock.storage,
+    auth: firebaseMock.auth,
+    functions: firebaseMock.functions,
+    functionsWest1: firebaseMock.functions,
+    remoteConfig: firebaseMock.remoteConfig,
+    messaging: firebaseMock.messaging,
+    appCheck: firebaseMock.appCheck,
+    ai: firebaseMock.ai,
+    getFirebaseAI: vi.fn(() => firebaseMock.ai),
+    getFirebaseMessaging: vi.fn(() => Promise.resolve(firebaseMock.messaging))
 }));
 
 // Mock Firebase App

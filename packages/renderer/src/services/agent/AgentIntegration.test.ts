@@ -61,6 +61,15 @@ vi.mock('@/services/MembershipService', () => ({
     }
 }));
 
+// Mock ModelArmor to prevent prompt rejections
+vi.mock('@/services/agent/governance/ModelArmor', () => ({
+    ModelArmor: {
+        scanInput: vi.fn().mockResolvedValue({ allowed: true }),
+        scanOutput: vi.fn().mockResolvedValue({ allowed: true })
+    },
+    getDefaultPolicy: vi.fn().mockReturnValue({})
+}));
+
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
     db: {},

@@ -63,14 +63,16 @@ vi.mock('@/services/rag/GeminiRetrievalService', () => ({
         uploadFile: vi.fn().mockResolvedValue('files/mock-file'),
         listFiles: vi.fn().mockResolvedValue([]),
         deleteFile: vi.fn().mockResolvedValue({}),
-        fetch: vi.fn().mockResolvedValue({})
+        fetch: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockResolvedValue({ chunks: [] })
     })),
     GeminiRetrieval: {
         ensureFileSearchStore: vi.fn().mockResolvedValue('fileSearchStores/mock-store'),
         uploadFile: vi.fn().mockResolvedValue('files/mock-file'),
         listFiles: vi.fn().mockResolvedValue([]),
         deleteFile: vi.fn().mockResolvedValue({}),
-        fetch: vi.fn().mockResolvedValue({})
+        fetch: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockResolvedValue({ chunks: [] })
     }
 }));
 vi.mock('@/services/GeminiRetrievalService', () => ({
@@ -79,15 +81,26 @@ vi.mock('@/services/GeminiRetrievalService', () => ({
         uploadFile: vi.fn().mockResolvedValue('files/mock-file'),
         listFiles: vi.fn().mockResolvedValue([]),
         deleteFile: vi.fn().mockResolvedValue({}),
-        fetch: vi.fn().mockResolvedValue({})
+        fetch: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockResolvedValue({ chunks: [] })
     })),
     GeminiRetrieval: {
         ensureFileSearchStore: vi.fn().mockResolvedValue('fileSearchStores/mock-store'),
         uploadFile: vi.fn().mockResolvedValue('files/mock-file'),
         listFiles: vi.fn().mockResolvedValue([]),
         deleteFile: vi.fn().mockResolvedValue({}),
-        fetch: vi.fn().mockResolvedValue({})
+        fetch: vi.fn().mockResolvedValue({}),
+        query: vi.fn().mockResolvedValue({ chunks: [] })
     }
+}));
+
+// Mock ModelArmor
+vi.mock('@/services/agent/governance/ModelArmor', () => ({
+    ModelArmor: {
+        scanInput: vi.fn().mockResolvedValue({ allowed: true, sanitizedPrompt: "Mock Prompt" }),
+        scanOutput: vi.fn().mockResolvedValue({ allowed: true, sanitizedContent: "Mock Content" })
+    },
+    getDefaultPolicy: vi.fn().mockReturnValue({})
 }));
 
 // Mock useToast - This is a new mock from the provided change
@@ -251,7 +264,7 @@ describe('Multi-Agent Architecture Tests', () => {
         // Skipped: executes actual agent which triggers real network calls (GeminiRetrievalService) that timeout in CI.
         it('should pass superpower tools to AI when executing', async () => {
             const agent_marketing = agentRegistry.get('marketing');
-            await agent_marketing?.execute('Research market trends');
+            const result = await agent_marketing?.execute('Research market trends');
 
             // BaseAgent currently uses generateContent
             // BaseAgent currently uses generateContent with positional arguments:
