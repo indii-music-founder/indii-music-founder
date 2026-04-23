@@ -126,10 +126,10 @@ export class OrchestrationService {
 
                 if (!step.dependencies || step.dependencies.length === 0) return true;
 
-                // Check if all dependencies are complete
+                // Check if all dependencies are complete or skipped
                 return step.dependencies.every(depId => {
                     const depState = execution.steps[depId];
-                    return depState && depState.status === 'step_complete';
+                    return depState && (depState.status === 'step_complete' || depState.status === 'skipped');
                 });
             });
 
@@ -138,11 +138,43 @@ export class OrchestrationService {
                 break;
             }
 
+            const stepsToRun = [];
+            let stepsSkipped = false;
+
             for (const step of readySteps) {
-                await workflowStateService.markStepExecuting(userId, executionId, step.id);
+                let shouldExecute = true;
+                if (step.condition) {
+                    try {
+                        shouldExecute = step.condition(execution);
+                    } catch (error) {
+                        logger.warn(`[Orchestration] Condition evaluation threw an error for step ${step.id}, defaulting to skip`, error);
+                        shouldExecute = false;
+                    }
+                }
+
+                if (shouldExecute) {
+                    stepsToRun.push(step);
+                    await workflowStateService.markStepExecuting(userId, executionId, step.id);
+                } else {
+                    await workflowStateService.skipStep(userId, executionId, step.id, 'Condition not met');
+                    report += `## ⏭️ Step: ${step.id} [${step.agentId.toUpperCase()}] (SKIPPED)\n`;
+                    report += `Condition evaluated to false.\n\n---\n\n`;
+                    stepsSkipped = true;
+                }
             }
 
-            const tasks = readySteps.map(step => ({
+            if (stepsToRun.length === 0) {
+                if (stepsSkipped) {
+                    // Loop again because skipping steps may have unlocked dependent steps
+                    continue;
+                } else {
+                    // This shouldn't happen, but just in case
+                    executing = false;
+                    break;
+                }
+            }
+
+            const tasks = stepsToRun.map(step => ({
                 agentId: step.agentId,
                 prompt: step.prompt,
                 description: step.prompt,
@@ -156,8 +188,8 @@ export class OrchestrationService {
                 const results = await maestroBatchingService.executeBatch(tasks);
 
                 let batchFailed = false;
-                for (let i = 0; i < readySteps.length; i++) {
-                    const step = readySteps[i];
+                for (let i = 0; i < stepsToRun.length; i++) {
+                    const step = stepsToRun[i];
                     const res: any = results[i];
 
                     const resultText = res?.text || res?.message || 'No output';
@@ -184,7 +216,7 @@ export class OrchestrationService {
                 }
             } catch (error: unknown) {
                 const errorMsg = error instanceof Error ? error.message : String(error);
-                for (const step of readySteps) {
+                for (const step of stepsToRun) {
                     await workflowStateService.failStep(userId, executionId, step.id, errorMsg);
                 }
                 logger.error(`[Orchestration] Batch failed:`, error);
@@ -196,10 +228,10 @@ export class OrchestrationService {
         }
 
         const finalExecution = await workflowStateService.getExecution(userId, executionId);
-        const allComplete = Object.values(finalExecution!.steps).every(s => s.status === 'step_complete');
+        const allCompleteOrSkipped = Object.values(finalExecution!.steps).every(s => s.status === 'step_complete' || s.status === 'skipped');
         
-        if (allComplete) {
-            report += `✅ **Orchestration Complete.** All graph steps processed successfully.`;
+        if (allCompleteOrSkipped) {
+            report += `✅ **Orchestration Complete.** All graph steps processed successfully or skipped.`;
         } else {
             if (finalExecution?.status === 'cancelled') {
                  report += `🛑 **Workflow Cancelled.**`;
