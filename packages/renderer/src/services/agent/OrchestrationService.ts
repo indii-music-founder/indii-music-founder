@@ -193,6 +193,9 @@ export class OrchestrationService {
                     const res = results[i];
 
                     if (!step || !res) continue;
+                    if (!step) continue;
+
+                    const res: any = results[i];
 
                     const resultText = res?.text || res?.message || 'No output';
                     const success = res?.success !== false;
