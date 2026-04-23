@@ -1,6 +1,15 @@
-# AutoAgent eval artifacts
-results.tsv
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.venv/
+.env
+.DS_Store
+*.log
+tasks/*/environment/state.json
+uv.lock
 jobs/
-run.log
+results.tsv
+# Only ignore temporary/debug text files
+debug_*.txt
+trace_*.txt
+*.bak

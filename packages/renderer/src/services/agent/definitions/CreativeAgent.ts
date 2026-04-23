@@ -241,7 +241,8 @@ Voice: Think creative director at a top visual agency who lives and breathes aes
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        prompt: { type: 'STRING', description: 'Scene description for the cinematic grid (e.g., "lone figure walking through neon-lit alley").' }
+                        prompt: { type: 'STRING', description: 'Scene description for the cinematic grid (e.g., "lone figure walking through neon-lit alley").' },
+                        sourceImageIds: { type: 'ARRAY', description: 'Optional list of source image IDs to use as references for the grid.', items: { type: 'STRING' } }
                     },
                     required: ['prompt']
                 }

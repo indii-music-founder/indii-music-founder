@@ -150,8 +150,12 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
     );
 
     // Post-processing to ensure internal consistency (status, etc)
-    const nodes: SavedWorkflow['nodes'] = (generated.nodes || []).map((n: GeneratedNode) => ({
+    const nodes: SavedWorkflow['nodes'] = (generated.nodes || []).map((n: GeneratedNode, index: number) => ({
         ...n,
+        position: {
+            x: n.position?.x ?? (index * 300),
+            y: n.position?.y ?? 100
+        },
         data: { ...n.data, status: Status.PENDING }
     })) as SavedWorkflow['nodes'];
 

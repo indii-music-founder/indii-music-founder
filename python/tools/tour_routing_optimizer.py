@@ -91,8 +91,10 @@ class TourRoutingOptimizer(Tool):
                                     }
                                 }
                             )
-                except Exception:
-                    pass  # Fall through to LLM fallback
+                except Exception as e:
+                    import logging
+                    logging.warning(f"Google Directions API request failed: {e}")
+                    # Fall through to LLM fallback
             
             # --- Strategy 2: LLM Spatial Reasoning Fallback ---
             self.set_progress("Using AI spatial reasoning for route optimization...")

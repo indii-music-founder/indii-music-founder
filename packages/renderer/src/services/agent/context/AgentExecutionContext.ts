@@ -35,6 +35,7 @@ export interface StateModification {
 export class AgentExecutionContext {
     private snapshot: Readonly<Partial<StoreState>>;
     private modifications: Map<keyof StoreState, any> = new Map();
+    private customMetadata: Map<string, any> = new Map();
     private changeHistory: StateModification[] = [];
     private readonly options: ExecutionContextOptions;
     private isCommitted = false;
@@ -290,9 +291,9 @@ export class AgentExecutionContext {
     }
 
     /**
-     * Get context metadata
+     * Get context metadata (system)
      */
-    getMetadata() {
+    getSystemMetadata() {
         return {
             agentId: this.options.agentId,
             traceId: this.options.traceId,
@@ -303,6 +304,20 @@ export class AgentExecutionContext {
             isRolledBack: this.isRolledBack,
             changeHistory: this.changeHistory.length
         };
+    }
+
+    /**
+     * Set custom metadata for transient tool state
+     */
+    setMetadata(key: string, value: any): void {
+        this.customMetadata.set(key, value);
+    }
+
+    /**
+     * Get custom metadata for transient tool state
+     */
+    getMetadata(key: string): any {
+        return this.customMetadata.get(key);
     }
 }
 

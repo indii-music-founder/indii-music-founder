@@ -292,10 +292,18 @@ describe('DirectorTools', () => {
             }];
             vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ generatedHistory: mockHistory }) as unknown as ReturnType<typeof useStore.getState>);
 
-            const result = await DirectorTools.extract_grid_frame!({ gridIndex: 5 });
+            const mockToolContext = {
+                getMetadata: vi.fn().mockReturnValue({ count: 4, url: 'data:image/png;base64,mock' })
+            };
+
+            const result = await DirectorTools.extract_grid_frame!(
+                { gridIndex: 5 },
+                undefined,
+                mockToolContext as any
+            );
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain('Invalid grid index');
+            expect(result.error).toContain('Invalid frame index 5');
         });
     });
 

@@ -1,7 +1,7 @@
-An indiiOS artist asks:
+# Task Instruction: Finance Routing
 
+An indiiOS artist asks:
 > "How do royalty splits work if I co-wrote a song with a producer?"
 
-Read this question, decide which one indiiOS specialist agent should handle it,
-and write the lowercase specialist name to `/task/answer.txt` with no trailing
-newline or punctuation.
+You should identify that this is a royalty and payout question.
+Delegate this task to the **Finance Agent** using the `delegate_task` tool.

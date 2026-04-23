@@ -131,7 +131,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
                 id: 'video-extend',
                 label: 'Extend Video',
                 description: 'Continue the action from a previous video clip.',
-                defaultPrompt: 'Continue the action seamlessly.',
+                defaultPrompt: 'Continue the action.',
                 inputs: [
                     { id: 'trigger', label: 'Start', type: 'TRIGGER' },
                     { id: 'video_input', label: 'Input Video', type: 'VIDEO', required: true },

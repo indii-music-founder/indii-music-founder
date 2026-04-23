@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { HistoryItem } from '@/core/types/history';
 import {
     ChevronRight, Image as ImageIcon, Video, Music,
-    FileText, Search, Eye, Grid3X3, List
+    FileText, Search, Eye, Grid3X3, List, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,11 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
         fileNodes,
         setSelectedItem,
         setViewMode,
-        setModule
+        setModule,
+        removeItemFromProject,
+        removeUploadedImageFromProject,
+        removeUploadedAudioFromProject,
+        deleteNode
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         uploadedImages: state.uploadedImages,
@@ -32,7 +36,11 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
         fileNodes: state.fileNodes,
         setSelectedItem: state.setSelectedItem,
         setViewMode: state.setViewMode,
-        setModule: state.setModule
+        setModule: state.setModule,
+        removeItemFromProject: state.removeItemFromProject,
+        removeUploadedImageFromProject: state.removeUploadedImageFromProject,
+        removeUploadedAudioFromProject: state.removeUploadedAudioFromProject,
+        deleteNode: state.deleteNode
     })));
 
     const [filter, setFilter] = useState<AssetFilter>('all');
@@ -138,6 +146,27 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
             setSelectedItem(asset);
             setModule('creative');
             setViewMode('editor');
+        }
+    };
+
+    const handleDeleteAsset = (e: React.MouseEvent, asset: HistoryItem) => {
+        e.stopPropagation();
+        
+        if (fileNodes.some(n => n.id === asset.id)) {
+            deleteNode(asset.id);
+            return;
+        }
+        if (generatedHistory.some(h => h.id === asset.id)) {
+            removeItemFromProject(asset.id);
+            return;
+        }
+        if (uploadedImages.some(i => i.id === asset.id)) {
+            removeUploadedImageFromProject(asset.id);
+            return;
+        }
+        if (uploadedAudio.some(a => a.id === asset.id)) {
+            removeUploadedAudioFromProject(asset.id);
+            return;
         }
     };
 
@@ -285,9 +314,16 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                         </div>
                                     </div>
 
-                                    {/* Type badge */}
-                                    <div className="absolute top-1 right-1 z-10">
-                                        <div className={cn("p-0.5 rounded", getTypeColor(asset.type))}>
+                                    {/* Type badge and delete action */}
+                                    <div className="absolute top-1 right-1 z-10 flex gap-1 items-start">
+                                        <button
+                                            onClick={(e) => handleDeleteAsset(e, asset)}
+                                            className="p-1 rounded bg-black/40 text-gray-400 hover:text-red-400 hover:bg-black/60 transition-colors opacity-0 group-hover:opacity-100"
+                                            title="Remove from project"
+                                        >
+                                            <X size={10} />
+                                        </button>
+                                        <div className={cn("p-0.5 rounded backdrop-blur-sm", getTypeColor(asset.type))}>
                                             {getTypeIcon(asset.type)}
                                         </div>
                                     </div>
@@ -349,8 +385,17 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                         </div>
                                     </div>
 
-                                    {/* Action */}
-                                    <Eye size={12} className="text-gray-600 group-hover:text-gray-300 transition-colors flex-shrink-0" />
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto pl-2 flex-shrink-0">
+                                        <Eye size={12} className="text-gray-400 hover:text-gray-200 transition-colors" />
+                                        <button 
+                                            onClick={(e) => handleDeleteAsset(e, asset)}
+                                            className="p-1 -m-1 text-gray-400 hover:text-red-400 transition-colors"
+                                            title="Remove from project"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
                                 </motion.button>
                             ))}
                         </AnimatePresence>
