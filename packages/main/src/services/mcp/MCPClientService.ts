@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import path from 'path';
+import log from 'electron-log';
 
 export class MCPClientService {
     private localClient: Client | null = null;
@@ -37,7 +38,7 @@ export class MCPClientService {
         );
 
         await this.localClient.connect(this.localTransport);
-        console.log('✅ Connected to local MCP Server over Stdio');
+        log.info('[MCP] ✅ Connected to local MCP Server over Stdio');
     }
 
     /**
@@ -61,7 +62,7 @@ export class MCPClientService {
         );
 
         await this.remoteClient.connect(this.remoteTransport);
-        console.log(`✅ Connected to remote MCP Server over SSE at ${url}`);
+        log.info(`[MCP] ✅ Connected to remote MCP Server over SSE at ${url}`);
     }
 
     /**
@@ -69,18 +70,26 @@ export class MCPClientService {
      */
     public async disconnect(): Promise<void> {
         if (this.localTransport) {
-            await this.localTransport.close();
+            try {
+                await this.localTransport.close();
+            } catch (e) {
+                log.warn('[MCP] Local transport close error:', e);
+            }
             this.localTransport = null;
         }
         this.localClient = null;
-        console.log('🛑 Disconnected from local MCP Server');
+        log.info('[MCP] 🛑 Disconnected from local MCP Server');
 
         if (this.remoteTransport) {
-            await this.remoteTransport.close();
+            try {
+                await this.remoteTransport.close();
+            } catch (e) {
+                log.warn('[MCP] Remote transport close error:', e);
+            }
             this.remoteTransport = null;
         }
         this.remoteClient = null;
-        console.log('🛑 Disconnected from remote MCP Server');
+        log.info('[MCP] 🛑 Disconnected from remote MCP Server');
     }
 
     /**
@@ -109,7 +118,7 @@ export class MCPClientService {
             });
             return response;
         } catch (error) {
-            console.error(`MCP Tool Call Error (${toolName} via ${clientType}):`, error);
+            log.error(`[MCP] Tool Call Error (${toolName} via ${clientType}):`, error);
             throw error;
         }
     }

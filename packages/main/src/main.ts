@@ -1,6 +1,70 @@
 import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter } from 'electron';
 import path from 'path';
 import log from 'electron-log';
+
+// Item 86: isDev must be defined early for logging config
+const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
+
+// Configure logging — app.getPath may not be available in dev CJS bundles
+log.transports.file.level = 'info';
+log.transports.console.level = isDev ? 'debug' : 'info';
+
+// Item 166: Suppression of 'write EIO' errors. This happens if stdout is closed
+// before the app finishes logging during shutdown.
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+const originalConsoleInfo = console.info;
+const originalConsoleWarn = console.warn;
+
+const wrapConsole = (original: (...args: any[]) => void) => (...args: any[]) => {
+    try {
+        original(...args);
+    } catch (e: any) {
+        if (e.code === 'EIO' || (e.message && e.message.includes('EIO'))) {
+            // Silently ignore IO errors on console (dead terminal/pipe)
+            return;
+        }
+        // If we can't write to console, we probably can't write to log either
+        // In shutdown mode, we're even more aggressive
+        if (typeof isQuitting !== 'undefined' && isQuitting) return;
+        
+        throw e;
+    }
+};
+
+console.log = wrapConsole(originalConsoleLog);
+console.error = wrapConsole(originalConsoleError);
+console.info = wrapConsole(originalConsoleInfo);
+console.warn = wrapConsole(originalConsoleWarn);
+
+// Item 374: Global Uncaught Exception Handler
+process.on('uncaughtException', (error: any) => {
+    if (error.code === 'EIO' || (error.message && error.message.includes('EIO'))) return;
+    try {
+        log.error('Uncaught Exception in Main Process:', error);
+    } catch {
+        // If logging fails (EIO), just swallow it
+    }
+});
+
+process.on('unhandledRejection', (reason: any) => {
+    if (reason instanceof Error && ((reason as any).code === 'EIO' || reason.message.includes('EIO'))) return;
+    try {
+        log.error('Unhandled Rejection in Main Process:', reason);
+    } catch {
+        // Swallow
+    }
+});
+
+try {
+    log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs/main.log');
+} catch {
+    // Fallback: write logs to the current working directory until app is ready
+    log.transports.file.resolvePathFn = () => path.join(process.cwd(), 'logs/main.log');
+}
+
+log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)}`);
+
 import { registerSystemHandlers } from './handlers/system';
 // import { registerAuthHandlers } from './handlers/auth';
 import { handleDeepLink } from './handlers/deeplink';
@@ -28,22 +92,9 @@ import { mcpClientService } from './services/mcp/MCPClientService';
 import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
 import Store from 'electron-store';
 
-// Configure logging — app.getPath may not be available in dev CJS bundles
-log.transports.file.level = 'info';
-try {
-    log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs/main.log');
-} catch {
-    // Fallback: write logs to the current working directory until app is ready
-    log.transports.file.resolvePathFn = () => path.join(process.cwd(), 'logs/main.log');
-}
-
-log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)}`);
-
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
-
-const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
 
 // Disable security warnings in development (suppresses unsafe-eval CSP warning from Vite HMR)
 if (isDev) {
@@ -163,7 +214,12 @@ const createWindow = async () => {
     win.webContents.on('console-message', (_event, level, message) => {
         const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
         const tag = levels[level] || 'INFO';
-        log.info(`[Renderer][${tag}] ${message}`);
+        // Item 377: Sanitize and truncate renderer logs to prevent EIO crashes
+        // Large data URLs (images/videos) can exceed pipe buffers.
+        const sanitizedMessage = typeof message === 'string' && message.length > 1024
+            ? message.substring(0, 1024) + '... [TRUNCATED]'
+            : message;
+        log.info(`[Renderer][${tag}] ${sanitizedMessage}`);
     });
 
     // Handle Window Open Requests
@@ -523,8 +579,12 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', async () => {
-    SchedulerService.stop();
     isQuitting = true;
+    
+    // Item 166: Disable console logging during shutdown to avoid write EIO if terminal/pipe is gone
+    log.transports.console.level = false;
+    
+    SchedulerService.stop();
     // Item 377: Close open SFTP/SSH connections before quit
     if (sftpService.isConnected()) {
         await sftpService.disconnect().catch(e => log.warn('[Main] SFTP disconnect on quit error:', e));

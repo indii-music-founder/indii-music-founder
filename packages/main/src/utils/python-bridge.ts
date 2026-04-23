@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import { app } from 'electron';
+import log from 'electron-log';
 
 export class PythonBridge {
     private static getPythonPath(): string {
@@ -35,7 +36,7 @@ export class PythonBridge {
         category: string,
         scriptName: string,
         args: string[] = [],
-        onProgress?: (progress: number, log?: string) => void,
+        onProgress?: (progress: number, logLine?: string) => void,
         env: NodeJS.ProcessEnv = {},
         sensitiveArgsIndices: number[] = []
     ): Promise<unknown> {
@@ -58,7 +59,7 @@ export class PythonBridge {
                 return arg;
             });
 
-            console.log(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${redactedArgs.join(' ')}`);
+            log.info(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${redactedArgs.join(' ')}`);
 
             const childProcess = spawn(python, [fullScriptPath, ...args], {
                 env: { ...process.env, ...env }
@@ -78,7 +79,7 @@ export class PythonBridge {
                         if (line.includes('PROGRESS:')) {
                             const match = line.match(/PROGRESS:(\d+\.?\d*)/);
                             if (match) {
-                                onProgress(parseFloat(match[1]));
+                                onProgress(parseFloat(match[1]!));
                             }
                         } else if (line.trim() && !line.startsWith('{')) {
                             // If it's a log line but not the final JSON result, pass it as a log
@@ -94,7 +95,7 @@ export class PythonBridge {
 
             childProcess.on('close', (code) => {
                 if (code !== 0) {
-                    console.error(`[PythonBridge] Script failed with code ${code}. Stderr: ${stderr}`);
+                    log.error(`[PythonBridge] Script failed with code ${code}. Stderr: ${stderr}`);
                     return reject(new Error(`Python script execution failed: ${stderr || 'Unknown error'}`));
                 }
 
@@ -106,7 +107,7 @@ export class PythonBridge {
                     resolve(result);
                 } catch (_e) {
                     // If not JSON, return full stdout
-                    console.warn('[PythonBridge] Could not parse output as JSON, returning raw string.');
+                    log.warn('[PythonBridge] Could not parse output as JSON, returning raw string.');
                     resolve(stdout);
                 }
             });

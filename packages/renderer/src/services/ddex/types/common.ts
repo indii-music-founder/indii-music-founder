@@ -50,7 +50,8 @@ export type UseType =
   | 'NonInteractiveStream'
   | 'Broadcast'
   | 'Simulcast'
-  | 'UserMadeContentDelivery';
+  | 'UserMadeContentDelivery'
+  | 'PhysicalProduct';
 
 // Commercial Model Types
 export type CommercialModelType =
