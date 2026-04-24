@@ -1,0 +1,8 @@
+
+> indiios-monorepo@1.56.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/modules/desktop/DesktopDashboard.test.tsx(56,51): error TS2741: Property '$$typeof' is missing in type '() => JSX.Element' but required in type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>'.
+packages/renderer/src/modules/files/FileDashboard.test.tsx(63,25): error TS2741: Property '$$typeof' is missing in type '() => JSX.Element' but required in type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>'.
+packages/renderer/src/modules/history/HistoryDashboard.test.tsx(63,28): error TS2741: Property '$$typeof' is missing in type '() => JSX.Element' but required in type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>'.
+packages/renderer/src/modules/memory/MemoryDashboard.tsx(342,19): error TS2322: Type 'number' is not assignable to type 'never'.
