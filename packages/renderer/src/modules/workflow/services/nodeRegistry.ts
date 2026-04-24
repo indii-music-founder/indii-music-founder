@@ -1,5 +1,5 @@
 import React from 'react';
-import { Paintbrush, Video, Megaphone, Users, Box, Search, Cog, Database } from 'lucide-react';
+import { Paintbrush, Video, Megaphone, Users, Box, Search, Cog, Database, type LucideIcon } from 'lucide-react';
 
 export type DataType = 'TRIGGER' | 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'CONTEXT' | 'ANY';
 
@@ -32,7 +32,7 @@ export interface NodeJob {
 export interface NodeDefinition {
     departmentName: string;
     label: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     jobs: NodeJob[];
 }
 

@@ -5,7 +5,7 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 import {
     Briefcase, Users, Megaphone, Network, Mic, Palette, Film,
     Scale, Book, DollarSign, FileText, ShoppingBag, Radio,
-    Menu, X, Layout, Clock
+    Menu, X, Layout, Clock, type LucideIcon
 } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { type ModuleId } from '@/core/constants';
@@ -13,7 +13,7 @@ import { motion, AnimatePresence, PanInfo } from 'motion/react';
 
 interface NavItem {
     id: ModuleId;
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
 }
 

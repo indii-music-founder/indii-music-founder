@@ -201,5 +201,108 @@ export const OrganizationTools = {
             const error = e as Error;
             return toolError(`Failed to schedule event: ${error.message}`);
         }
+    }),
+
+    invite_team_member: wrapTool('invite_team_member', async (args: { email: string; role: 'manager' | 'producer' | 'member' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        try {
+            const { useStore } = await import('@/core/store');
+            const currentOrganizationId = toolContext
+                ? toolContext.get('currentOrganizationId')
+                : useStore.getState().currentOrganizationId;
+
+            if (!currentOrganizationId) {
+                return toolError("No active organization. Please switch to an organization first.", "ORG_REQUIRED");
+            }
+
+            const inviteId = await OrganizationService.inviteMember(currentOrganizationId, args.email, args.role);
+            return {
+                inviteId,
+                email: args.email,
+                role: args.role,
+                message: `Successfully sent invitation to ${args.email} for role ${args.role}.`
+            };
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to invite team member: ${error.message}`);
+        }
+    }),
+
+    update_member_role: wrapTool('update_member_role', async (args: { userId: string; role: 'manager' | 'producer' | 'member' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        try {
+            const { useStore } = await import('@/core/store');
+            const currentOrganizationId = toolContext
+                ? toolContext.get('currentOrganizationId')
+                : useStore.getState().currentOrganizationId;
+
+            if (!currentOrganizationId) {
+                return toolError("No active organization. Please switch to an organization first.", "ORG_REQUIRED");
+            }
+
+            await OrganizationService.updateMemberRole(currentOrganizationId, args.userId, args.role);
+            return {
+                userId: args.userId,
+                role: args.role,
+                message: `Successfully updated role for user ${args.userId} to ${args.role}.`
+            };
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to update member role: ${error.message}`);
+        }
+    }),
+
+    remove_team_member: wrapTool('remove_team_member', async (args: { userId: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        try {
+            const { useStore } = await import('@/core/store');
+            const currentOrganizationId = toolContext
+                ? toolContext.get('currentOrganizationId')
+                : useStore.getState().currentOrganizationId;
+
+            if (!currentOrganizationId) {
+                return toolError("No active organization. Please switch to an organization first.", "ORG_REQUIRED");
+            }
+
+            await OrganizationService.removeMember(currentOrganizationId, args.userId);
+            return {
+                userId: args.userId,
+                message: `Successfully removed user ${args.userId} from the organization.`
+            };
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to remove team member: ${error.message}`);
+        }
+    }),
+
+    list_team_members: wrapTool('list_team_members', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        try {
+            const { useStore } = await import('@/core/store');
+            const store = useStore.getState();
+            const currentOrganizationId = toolContext
+                ? toolContext.get('currentOrganizationId')
+                : store.currentOrganizationId;
+
+            if (!currentOrganizationId) {
+                return toolError("No active organization. Please switch to an organization first.", "ORG_REQUIRED");
+            }
+
+            const organizations = toolContext
+                ? toolContext.get('organizations')
+                : store.organizations;
+
+            const org = organizations?.find(o => o.id === currentOrganizationId);
+            
+            if (!org) {
+                return toolError("Current organization details not found.", "NOT_FOUND");
+            }
+
+            return {
+                members: org.members,
+                memberRoles: org.memberRoles || {},
+                ownerId: org.ownerId,
+                message: `Found ${org.members.length} team members.`
+            };
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to list team members: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;

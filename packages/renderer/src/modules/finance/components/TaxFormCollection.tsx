@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, Upload, Mail, Lock, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { FileText, Upload, Mail, Lock, CheckCircle, Clock, AlertCircle, type LucideIcon } from 'lucide-react';
 
 /* ================================================================== */
 /*  Item 155 — Automated W-9/W-8BEN Collection                        */
@@ -20,7 +20,7 @@ interface TaxCollaborator {
 
 const INITIAL_COLLABORATORS: TaxCollaborator[] = [];
 
-const STATUS_CONFIG: Record<FormStatus, { label: string; color: string; bg: string; icon: React.ElementType }> = {
+const STATUS_CONFIG: Record<FormStatus, { label: string; color: string; bg: string; icon: LucideIcon }> = {
     verified: { label: 'Verified', color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20', icon: CheckCircle },
     submitted: { label: 'Under Review', color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20', icon: Clock },
     needed: { label: 'Needed', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', icon: AlertCircle },

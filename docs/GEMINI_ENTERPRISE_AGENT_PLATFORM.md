@@ -264,7 +264,7 @@ agentIdentity: this.identityCard,
 
 ---
 
-## 4. Phase 2 — Model Armor (NEXT)
+## 4. Phase 2 — Model Armor (COMPLETE)
 
 ### 4.1 Goal
 
@@ -346,7 +346,7 @@ if (outputCheck.redactedResponse) {
 
 ---
 
-## 5. Phase 3 — Memory Bank Integration
+## 5. Phase 3 — Memory Bank Integration (COMPLETE)
 
 ### 5.1 Goal
 
@@ -382,7 +382,7 @@ Layer 5: Big Brain Engine (BigBrainEngine)        → Orchestrates all layers wi
 
 ---
 
-## 6. Phase 4 — Graph-Based Orchestration
+## 6. Phase 4 — Graph-Based Orchestration (NEXT)
 
 ### 6.1 Goal
 
@@ -529,10 +529,10 @@ All use `type` imports where possible to avoid circular dependency issues.
 ### How to Verify
 ```bash
 # Run the agent architecture tests
-npx vitest run --reporter=verbose packages/renderer/src/services/agent/AgentArchitecture.test.ts
+# npx vitest run --reporter=verbose packages/renderer/src/services/agent/AgentArchitecture.test.ts
 
 # Run full typecheck
-npx tsc --noEmit --pretty
+# npx tsc --noEmit --pretty
 
 # Look for identity minting in output:
 # [AgentIdentity] Minted identity for Creative Director (director): instance=20b59a96..., fingerprint=701b6dec64bc...
