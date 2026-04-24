@@ -8,3 +8,4 @@ export * from './ipc/electron-api.types';
 export * from './types/ai.dto';
 export * from './types/errors';
 export * from './schemas/env.schema';
+export * from './schemas/api';
