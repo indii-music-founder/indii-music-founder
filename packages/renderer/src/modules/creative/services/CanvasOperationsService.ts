@@ -394,7 +394,7 @@ export class CanvasOperationsService {
 
             this.canvas?.renderAll();
         } catch (err) {
-            console.error('Failed to add segmentation mask', err);
+            logger.error('Failed to add segmentation mask', err);
             throw err;
         }
     }

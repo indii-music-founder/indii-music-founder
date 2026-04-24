@@ -3,6 +3,7 @@ import { db } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Play, Pause, Volume2, VolumeX, Maximize, Download, AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 interface CreativeVideoPlayerProps {
     jobId?: string;
@@ -64,7 +65,7 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
             if (isPlaying) {
                 videoRef.current.pause();
             } else {
-                videoRef.current.play().catch(err => console.warn('Play interrupted', err));
+                videoRef.current.play().catch(err => logger.warn('Play interrupted', err));
             }
             setIsPlaying(!isPlaying);
         }
