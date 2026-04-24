@@ -14,7 +14,19 @@
 
 import { logger } from '@/utils/logger';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import * as admin from 'firebase-admin';
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  addDoc, 
+  query as firestoreQuery, 
+  where, 
+  orderBy, 
+  limit as firestoreLimit 
+} from 'firebase/firestore';
+import { db } from '@/services/firebase';
 
 // ============================================================================
 // Memory Types
@@ -172,12 +184,12 @@ export class PersistentMemoryService {
           );
 
         case 'captain-logs': {
-          const logsSnapshot = await admin
-            .firestore()
-            .collection(`users/${this.userId}/captain-logs`)
-            .orderBy('timestamp', 'desc')
-            .limit(1)
-            .get();
+          const q = firestoreQuery(
+            collection(db, `users/${this.userId}/captain-logs`),
+            orderBy('timestamp', 'desc'),
+            firestoreLimit(1)
+          );
+          const logsSnapshot = await getDocs(q);
 
           if (logsSnapshot.empty || !logsSnapshot.docs[0]) return null;
           return logsSnapshot.docs[0].data() as Record<string, unknown>;
@@ -225,13 +237,13 @@ export class PersistentMemoryService {
           results.push(...matches);
         } else if (layer === 'core-vault') {
           // Query Firestore for matching patterns
-          const snapshot = await admin
-            .firestore()
-            .collection(`users/${this.userId}/core-vault`)
-            .where('key', '>=', query)
-            .where('key', '<=', query + '')
-            .limit(limit)
-            .get();
+          const q = firestoreQuery(
+            collection(db, `users/${this.userId}/core-vault`),
+            where('key', '>=', query),
+            where('key', '<=', query + ''),
+            firestoreLimit(limit)
+          );
+          const snapshot = await getDocs(q);
 
           snapshot.docs.forEach((doc) => {
             results.push(doc.data() as Memory);
@@ -316,19 +328,19 @@ export class PersistentMemoryService {
     path: string,
     data: Record<string, unknown>
   ): Promise<void> {
-    await admin.firestore().doc(path).set(data, { merge: true });
+    await setDoc(doc(db, path), data, { merge: true });
   }
 
   private async readFromFirestore(path: string): Promise<Record<string, unknown> | null> {
-    const doc = await admin.firestore().doc(path).get();
-    return doc.exists ? (doc.data() as Record<string, unknown>) : null;
+    const docSnap = await getDoc(doc(db, path));
+    return docSnap.exists() ? (docSnap.data() as Record<string, unknown>) : null;
   }
 
   private async appendToFirestore(
     collectionPath: string,
     data: Record<string, unknown>
   ): Promise<void> {
-    await admin.firestore().collection(collectionPath).add(data);
+    await addDoc(collection(db, collectionPath), data);
   }
 }
 
