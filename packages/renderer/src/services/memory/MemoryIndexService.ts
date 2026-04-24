@@ -63,7 +63,7 @@ export class MemoryIndexService {
 
       const result = await this.genAI.models.embedContent({
         model: 'models/embedding-001',
-        content: { parts: [{ text }] }
+        contents: [{ role: 'user', parts: [{ text }] }]
       });
 
       const values = result.embeddings?.[0]?.values;
@@ -194,7 +194,7 @@ Layer: ${memory.layer}`;
   private cosineSimilarity(vec1: number[], vec2: number[]): number {
     if (vec1.length !== vec2.length) return 0;
 
-    const dotProduct = vec1.reduce((sum, val, i) => sum + val * vec2[i], 0);
+    const dotProduct = vec1.reduce((sum, val, i) => sum + val * (vec2[i] ?? 0), 0);
     const mag1 = Math.sqrt(vec1.reduce((sum, val) => sum + val * val, 0));
     const mag2 = Math.sqrt(vec2.reduce((sum, val) => sum + val * val, 0));
 
