@@ -11,7 +11,8 @@
     "packages/renderer",
     "packages/firebase",
     "packages/shared",
-    "packages/landing"
+    "packages/landing",
+    "packages/sdk"
   ],
   "scripts": {
     "dev": "electron-vite dev",
