@@ -1,307 +1,199 @@
+/**
+ * ObservabilityDashboard.tsx
+ * Real User Monitoring (RUM) dashboard for performance metrics
+ */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { TraceViewer } from '@/components/studio/observability/TraceViewer';
-import { SchedulerStatusPanel } from './components/SchedulerStatusPanel';
-import { MetricsService, SystemMetrics } from '@/services/agent/observability/MetricsService';
-import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { motion } from 'motion/react';
-import {
-    Activity, Cpu, Clock, AlertTriangle,
-    Zap, RefreshCw, TrendingUp, TrendingDown, BarChart3,
-    Coins, Shield
-} from 'lucide-react';
+import { getRealUserMonitoringService, getCoreWebVitalsReporter, getRequestTracingService, getBundleAnalysisService } from '@/services/observability';
+import type { RUMSnapshot, VitalsReport } from '@/services/observability';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-/* ================================================================== */
-/*  Observability Dashboard — Full Production Module                    */
-/*                                                                     */
-/*  Composes: MetricsService → SystemMetrics cards                     */
-/*            TraceViewer → Real-time trace list + SwarmGraph           */
-/*            Agent breakdown → Per-agent cost/execution stats          */
-/* ================================================================== */
-
-interface MetricCardProps {
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    subtitle?: string;
-    trend?: 'up' | 'down' | 'neutral';
-    accentColor?: string;
+interface MetricPoint {
+  timestamp: string;
+  lcp?: number;
+  inp?: number;
+  cls?: number;
+  fcp?: number;
+  ttfb?: number;
 }
 
-function MetricCard({ icon, label, value, subtitle, trend, accentColor = 'purple' }: MetricCardProps) {
-    const colorMap: Record<string, string> = {
-        purple: 'from-purple-500/20 to-purple-900/5 border-purple-500/20',
-        blue: 'from-blue-500/20 to-blue-900/5 border-blue-500/20',
-        green: 'from-emerald-500/20 to-emerald-900/5 border-emerald-500/20',
-        amber: 'from-amber-500/20 to-amber-900/5 border-amber-500/20',
-        red: 'from-red-500/20 to-red-900/5 border-red-500/20',
+interface RequestMetrics {
+  totalTraces: number;
+  errorCount: number;
+  avgDuration: number;
+}
+
+export const ObservabilityDashboard: React.FC = () => {
+  const [rumSnapshot, setRumSnapshot] = useState<RUMSnapshot | null>(null);
+  const [vitalsReport, setVitalsReport] = useState<VitalsReport | null>(null);
+  const [metricHistory, setMetricHistory] = useState<MetricPoint[]>([]);
+  const [requestMetrics, setRequestMetrics] = useState<RequestMetrics>({ totalTraces: 0, errorCount: 0, avgDuration: 0 });
+  const [bundleMetrics, setBundleMetrics] = useState<{ jsSize: number; cssSize: number; totalSize: number } | null>(null);
+
+  const handleMetricsUpdate = useCallback((snapshot: RUMSnapshot) => {
+    const reporter = getCoreWebVitalsReporter();
+
+    setRumSnapshot(snapshot);
+    const report = reporter.reportMetrics(snapshot);
+    setVitalsReport(report);
+
+    const point: MetricPoint = {
+      timestamp: new Date(snapshot.timestamp).toLocaleTimeString(),
+      lcp: snapshot.vitals['LCP']?.value,
+      inp: snapshot.vitals['INP']?.value,
+      cls: snapshot.vitals['CLS']?.value,
+      fcp: snapshot.vitals['FCP']?.value,
+      ttfb: snapshot.vitals['TTFB']?.value,
     };
-    const colors = colorMap[accentColor] || colorMap.purple;
+    setMetricHistory(prev => [...prev.slice(-20), point]);
+  }, []);
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-        >
-            <Card className={`bg-linear-to-br ${colors} border backdrop-blur-sm`}>
-                <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{label}</p>
-                            <p className="text-2xl font-bold tracking-tight">{value}</p>
-                            {subtitle && (
-                                <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                                    {trend === 'up' && <TrendingUp size={10} className="text-emerald-400" />}
-                                    {trend === 'down' && <TrendingDown size={10} className="text-red-400" />}
-                                    {subtitle}
-                                </p>
-                            )}
-                        </div>
-                        <div className="p-2 rounded-lg bg-white/5">
-                            {icon}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        </motion.div>
-    );
-}
+  useEffect(() => {
+    const rum = getRealUserMonitoringService();
+    const tracing = getRequestTracingService();
+    const bundle = getBundleAnalysisService();
 
-interface AgentBreakdownRowProps {
-    agentId: string;
-    data: { count: number; cost: number; tokens: number };
-    totalExecutions: number;
-}
+    rum.onMetricsReady(handleMetricsUpdate);
 
-const AGENT_COLORS: Record<string, string> = {
-    orchestrator: 'bg-purple-500',
-    generalist: 'bg-blue-500',
-    legal: 'bg-red-500',
-    finance: 'bg-emerald-500',
-    creative: 'bg-pink-500',
-    publicist: 'bg-orange-500',
-    brand: 'bg-cyan-500',
-    marketing: 'bg-yellow-500',
-    music: 'bg-indigo-500',
-    video: 'bg-rose-500',
+    const requestInterval = setInterval(() => {
+      setRequestMetrics(tracing.getMetrics());
+    }, 5000);
+
+    const metrics = bundle.getMetrics();
+    if (metrics) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBundleMetrics({
+        jsSize: metrics.jsSize,
+        cssSize: metrics.cssSize,
+        totalSize: metrics.totalSize,
+      });
+    }
+
+    return () => clearInterval(requestInterval);
+  }, [handleMetricsUpdate]);
+
+  const formatSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const getStatusBadgeClass = (status: string): string => {
+    switch (status) {
+      case 'good': return 'bg-green-900 text-green-200';
+      case 'needs-improvement': return 'bg-yellow-900 text-yellow-200';
+      case 'poor': return 'bg-red-900 text-red-200';
+      default: return 'bg-gray-900 text-gray-200';
+    }
+  };
+
+  return (
+    <div className="p-6 space-y-8 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen">
+      <div>
+        <h1 className="text-3xl font-bold text-white mb-2">Performance Monitoring</h1>
+        <p className="text-slate-400">Real User Monitoring (RUM) Dashboard</p>
+      </div>
+
+      {vitalsReport && (
+        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h2 className="text-xl font-semibold text-white mb-4">Core Web Vitals</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+            {vitalsReport.vitals.map(vital => (
+              <div key={vital.metric} className="bg-slate-700 rounded p-4">
+                <div className="text-xs text-slate-400 mb-1">{vital.metric}</div>
+                <div className="text-2xl font-bold text-white">{vital.value.toFixed(0)}</div>
+                <div className="text-xs text-slate-400 mt-1">{vital.threshold}ms threshold</div>
+                <div className={`inline-block mt-2 px-2 py-1 rounded text-xs font-semibold ${getStatusBadgeClass(vital.status)}`}>
+                  {vital.status}
+                </div>
+              </div>
+            ))}
+          </div>
+          {vitalsReport.warnings.length > 0 && (
+            <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded">
+              <div className="text-sm font-semibold text-red-200 mb-2">⚠️ Issues Found</div>
+              <ul className="text-xs text-red-300 space-y-1">
+                {vitalsReport.warnings.map((warning, idx) => (
+                  <li key={idx}>• {warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {metricHistory.length > 0 && (
+        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h2 className="text-xl font-semibold text-white mb-4">Metric Trends</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={metricHistory}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+              <XAxis dataKey="timestamp" stroke="#94a3b8" />
+              <YAxis stroke="#94a3b8" />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
+              <Legend />
+              {metricHistory.some(p => p.lcp !== undefined) && <Line type="monotone" dataKey="lcp" stroke="#10b981" name="LCP" />}
+              {metricHistory.some(p => p.inp !== undefined) && <Line type="monotone" dataKey="inp" stroke="#3b82f6" name="INP" />}
+              {metricHistory.some(p => p.fcp !== undefined) && <Line type="monotone" dataKey="fcp" stroke="#8b5cf6" name="FCP" />}
+              {metricHistory.some(p => p.ttfb !== undefined) && <Line type="monotone" dataKey="ttfb" stroke="#f59e0b" name="TTFB" />}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <h2 className="text-xl font-semibold text-white mb-4">Request Tracing</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-slate-700 rounded p-4">
+            <div className="text-xs text-slate-400 mb-1">Total Requests</div>
+            <div className="text-2xl font-bold text-white">{requestMetrics.totalTraces}</div>
+          </div>
+          <div className="bg-slate-700 rounded p-4">
+            <div className="text-xs text-slate-400 mb-1">Errors</div>
+            <div className="text-2xl font-bold text-red-400">{requestMetrics.errorCount}</div>
+          </div>
+          <div className="bg-slate-700 rounded p-4">
+            <div className="text-xs text-slate-400 mb-1">Avg Duration</div>
+            <div className="text-2xl font-bold text-white">{requestMetrics.avgDuration.toFixed(0)}ms</div>
+          </div>
+        </div>
+      </div>
+
+      {bundleMetrics && (
+        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h2 className="text-xl font-semibold text-white mb-4">Bundle Analysis</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={[{ name: 'Bundle', jsSize: bundleMetrics.jsSize, cssSize: bundleMetrics.cssSize }]}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+              <XAxis dataKey="name" stroke="#94a3b8" />
+              <YAxis stroke="#94a3b8" />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} formatter={(value: number | undefined) => value ? (value / 1024).toFixed(1) : '0'} />
+              <Legend />
+              <Bar dataKey="jsSize" fill="#3b82f6" name="JS" />
+              <Bar dataKey="cssSize" fill="#10b981" name="CSS" />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-4 pt-4 border-t border-slate-700">
+            <div className="text-sm text-slate-400">
+              Total: <span className="text-white font-semibold">{formatSize(bundleMetrics.totalSize)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rumSnapshot && (
+        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className="text-xs text-slate-400 space-y-1">
+            <div>Session ID: <code className="text-slate-300">{rumSnapshot.sessionId}</code></div>
+            <div>Page Load Time: {rumSnapshot.pageLoadTime.toFixed(0)}ms</div>
+            <div>URL: {rumSnapshot.url}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
-function AgentBreakdownRow({ agentId, data, totalExecutions }: AgentBreakdownRowProps) {
-    const pct = totalExecutions > 0 ? (data.count / totalExecutions) * 100 : 0;
-    const barColor = AGENT_COLORS[agentId.toLowerCase()] || 'bg-gray-500';
-
-    return (
-        <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${barColor}`} />
-                    <span className="font-medium capitalize">{agentId}</span>
-                </div>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                    <span className="font-mono">{data.count}×</span>
-                    <span className="font-mono">${data.cost.toFixed(4)}</span>
-                </div>
-            </div>
-            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div
-                    className={`h-full rounded-full ${barColor}`}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                />
-            </div>
-        </div>
-    );
-}
-
-export default function ObservabilityDashboard() {
-    const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [timeRange, setTimeRange] = useState(7);
-
-    const loadMetrics = useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await MetricsService.getSystemMetrics(timeRange);
-            setMetrics(data);
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to load metrics');
-        } finally {
-            setLoading(false);
-        }
-    }, [timeRange]);
-
-    useEffect(() => {
-        loadMetrics();
-        // Auto-refresh every 30 seconds
-        const interval = setInterval(loadMetrics, 30_000);
-        return () => clearInterval(interval);
-    }, [loadMetrics]);
-
-    const formatTokens = (tokens: number): string => {
-        if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
-        if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}K`;
-        return tokens.toString();
-    };
-
-    const formatLatency = (ms: number): string => {
-        if (ms >= 60_000) return `${(ms / 60_000).toFixed(1)}m`;
-        if (ms >= 1_000) return `${(ms / 1_000).toFixed(1)}s`;
-        return `${Math.round(ms)}ms`;
-    };
-
-    const sortedAgents = metrics
-        ? Object.entries(metrics.agentBreakdown).sort((a, b) => b[1].count - a[1].count)
-        : [];
-
-    return (
-        <ModuleErrorBoundary moduleName="Observability">
-            <div className="absolute inset-0 flex flex-col text-white bg-background overflow-hidden">
-                {/* ── HEADER ────────────────────────────────────────── */}
-                <div className="flex-shrink-0 px-4 md:px-6 pt-4 md:pt-5 pb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/5">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                            <Activity size={20} className="text-purple-400" />
-                        </div>
-                        <div>
-                            <h1 className="text-base md:text-lg font-bold tracking-tight">System Observability</h1>
-                            <p className="text-[11px] text-muted-foreground">Agent telemetry, cost tracking, and trace analysis</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {/* Time range selector */}
-                        <div className="flex bg-white/5 rounded-lg border border-white/10 p-0.5">
-                            {[1, 7, 30].map((days) => (
-                                <button
-                                    key={days}
-                                    type="button"
-                                    onClick={() => setTimeRange(days)}
-                                    className={`px-3 py-1 text-xs rounded-md transition-all ${timeRange === days
-                                        ? 'bg-purple-500/30 text-purple-200 font-medium'
-                                        : 'text-muted-foreground hover:text-white hover:bg-white/5'
-                                        }`}
-                                >
-                                    {days}d
-                                </button>
-                            ))}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={loadMetrics}
-                            disabled={loading}
-                            className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all disabled:opacity-50"
-                            aria-label="Refresh metrics"
-                        >
-                            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* ── CONTENT ───────────────────────────────────────── */}
-                <div className="flex-1 flex min-h-0 overflow-hidden">
-                    {/* ── LEFT PANEL — System Metrics ─────────────────── */}
-                    <aside className="hidden md:flex w-72 xl:w-80 flex-shrink-0 border-r border-white/5 overflow-y-auto flex-col">
-                        <div className="p-4 space-y-4">
-                            {/* Error state */}
-                            {error && (
-                                <Card className="bg-red-900/20 border-red-500/30">
-                                    <CardContent className="p-3 flex items-center gap-2 text-red-300 text-xs">
-                                        <AlertTriangle size={14} />
-                                        {error}
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {/* Metric Cards */}
-                            <div className="space-y-3">
-                                <MetricCard
-                                    icon={<Zap size={18} className="text-purple-400" />}
-                                    label="Total Executions"
-                                    value={metrics ? metrics.totalExecutions.toLocaleString() : '—'}
-                                    subtitle={`${timeRange}-day window`}
-                                    accentColor="purple"
-                                />
-                                <MetricCard
-                                    icon={<Coins size={18} className="text-amber-400" />}
-                                    label="Total Cost"
-                                    value={metrics ? `$${metrics.totalCost.toFixed(4)}` : '—'}
-                                    subtitle="Across all agents"
-                                    accentColor="amber"
-                                />
-                                <MetricCard
-                                    icon={<Cpu size={18} className="text-blue-400" />}
-                                    label="Total Tokens"
-                                    value={metrics ? formatTokens(metrics.totalTokens) : '—'}
-                                    subtitle="Input + output"
-                                    accentColor="blue"
-                                />
-                                <MetricCard
-                                    icon={<Clock size={18} className="text-green-400" />}
-                                    label="Avg Latency"
-                                    value={metrics ? formatLatency(metrics.avgLatencyMs) : '—'}
-                                    subtitle="Per execution"
-                                    accentColor="green"
-                                />
-                                <MetricCard
-                                    icon={<Shield size={18} className="text-red-400" />}
-                                    label="Error Rate"
-                                    value={metrics ? `${(metrics.errorRate * 100).toFixed(1)}%` : '—'}
-                                    trend={metrics && metrics.errorRate > 0.05 ? 'down' : 'up'}
-                                    subtitle={metrics && metrics.errorRate > 0.05 ? 'Above threshold' : 'Healthy'}
-                                    accentColor="red"
-                                />
-                            </div>
-
-                            {/* Agent Breakdown */}
-                            {sortedAgents.length > 0 && (
-                                <Card className="bg-black/30 border-white/10">
-                                    <CardHeader className="py-3 px-4">
-                                        <CardTitle className="text-xs font-medium flex items-center gap-2">
-                                            <BarChart3 size={14} className="text-muted-foreground" />
-                                            Agent Breakdown
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="px-4 pb-4">
-                                        <div className="space-y-3">
-                                            {sortedAgents.map(([agentId, data]) => (
-                                                <AgentBreakdownRow
-                                                    key={agentId}
-                                                    agentId={agentId}
-                                                    data={data}
-                                                    totalExecutions={metrics?.totalExecutions || 1}
-                                                />
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {/* Scheduler Status */}
-                            <SchedulerStatusPanel />
-
-                            {/* Loading skeleton */}
-                            {loading && !metrics && (
-                                <div className="space-y-3">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                        <div key={i} className="h-24 rounded-xl bg-white/5 animate-pulse" />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </aside>
-
-                    {/* ── CENTER — Trace Viewer ──────────────────────── */}
-                    <main className="flex-1 min-w-0 overflow-hidden">
-                        <ModuleErrorBoundary moduleName="Observability / Traces">
-                            <TraceViewer />
-                        </ModuleErrorBoundary>
-                    </main>
-                </div>
-            </div>
-        </ModuleErrorBoundary>
-    );
-}
+export default ObservabilityDashboard;

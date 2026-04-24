@@ -64,6 +64,7 @@ export class MemoryIndexService {
       const result = await this.genAI.models.embedContent({
         model: 'models/embedding-001',
         contents: { parts: [{ text }] }
+        contents: [{ role: 'user', parts: [{ text }] }]
       });
 
       const values = result.embeddings?.[0]?.values;

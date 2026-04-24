@@ -32,6 +32,9 @@ import { getFineTunedModel } from './fine-tuned-models';
 import { agentIdentityService, type AgentIdentityCard } from './governance/AgentIdentity';
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
+import { getAgentStreamingService } from './AgentStreamingService';
+import { getPersistentMemoryService } from '@/services/memory/PersistentMemoryService';
+import { getReflectionLoop } from './ReflectionLoop';
 
 export class BaseAgent implements SpecializedAgent {
     public id: string;
@@ -316,6 +319,84 @@ export class BaseAgent implements SpecializedAgent {
 
         BaseAgent.executionLocks.set(lockKey, executionPromise);
         return executionPromise;
+    }
+
+    /**
+     * Stream agent response tokens in real-time via Server-Sent Events
+     * Phase 2: Streaming integration for token-by-token rendering
+     */
+    async streamingExecute(
+        task: string,
+        context?: AgentContext,
+        callbacks?: {
+            onToken?: (token: string, index: number) => void;
+            onComplete?: (response: string) => void;
+            onError?: (error: Error) => void;
+        }
+    ): Promise<void> {
+        try {
+            const streamingService = getAgentStreamingService();
+            const memoryService = getPersistentMemoryService();
+            const reflectionService = getReflectionLoop();
+
+            // Build context for streaming
+            const contextData = {
+                agentId: this.id,
+                agentName: this.name,
+                taskDescription: task,
+                userContext: context
+            };
+
+            // Start streaming
+            await streamingService.stream(
+                task,
+                this.id,
+                context?.userId || 'unknown',
+                contextData,
+                {
+                    onToken: (token, index) => {
+                        callbacks?.onToken?.(token, index);
+                    },
+                    onComplete: async (metadata) => {
+                        const fullText = streamingService.getState().tokens.join('');
+
+                        // Store in memory (Phase 2 integration)
+                        try {
+                            await memoryService.write(
+                                'session',
+                                `agent-response-${this.id}`,
+                                { response: fullText, task, metadata },
+                                ['agent-output', this.id, task.substring(0, 50)]
+                            );
+                        } catch (err) {
+                            logger.warn('[BaseAgent] Failed to store streaming response in memory', err);
+                        }
+
+                        // Optionally evaluate with reflection (Phase 2 integration)
+                        if (fullText.length > 0) {
+                            try {
+                                await reflectionService.reflect({
+                                    originalPrompt: task,
+                                    agentOutput: fullText,
+                                    context: context as Record<string, unknown> | undefined,
+                                });
+                            } catch (err) {
+                                logger.warn('[BaseAgent] Reflection evaluation skipped', err);
+                            }
+                        }
+
+                        callbacks?.onComplete?.(fullText);
+                    },
+                    onError: (error) => {
+                        callbacks?.onError?.(error);
+                    }
+                }
+            );
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            callbacks?.onError?.(err);
+            logger.error('[BaseAgent] Streaming execution failed', err);
+        }
     }
 
     /**
