@@ -130,7 +130,11 @@ AVAILABLE TOOLS:
 27. switch_organization(orgId: string) - Switch to a different organization.
 28. create_organization(name: string) - Create a new organization.
 29. get_organization_details() - Get details of current organization.
-30. list_files(limit?: number, type?: string) - List recently generated files.
+30. invite_team_member(email: string, role: string) - Invite a new member to the current organization.
+31. update_member_role(userId: string, role: string) - Update a team member's role.
+32. remove_team_member(userId: string) - Remove a member from the organization.
+33. list_team_members() - List all members of the current organization.
+34. list_files(limit?: number, type?: string) - List recently generated files.
 31. search_files(query: string, type?: string) - Search files by name or type.
 32. search_places(query: string, type?: string) - Search for real-world places (venues, hotels) via Google Maps.
 33. get_place_details(place_id: string) - Get address, phone, and reviews for a specific place.

@@ -9,6 +9,7 @@ export interface Organization {
     name: string;
     ownerId: string;
     members: string[]; // List of user IDs
+    memberRoles?: Record<string, 'owner' | 'manager' | 'producer' | 'member'>; // userId -> role mapping
     createdAt: number;
 }
 
@@ -51,6 +52,7 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
             name,
             ownerId: userId,
             members: [userId],
+            memberRoles: { [userId]: 'owner' },
             createdAt: Date.now()
         };
 
@@ -73,7 +75,7 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
         return this.list([where('members', 'array-contains', userId)]);
     }
 
-    async addUserToOrg(userId: string, orgId: string) {
+    async addUserToOrg(userId: string, orgId: string, role: 'owner' | 'manager' | 'producer' | 'member' = 'member') {
         // 1. Add user to Org members
         // Using direct references here as this is specific business logic not covered by generic update
         const orgRef = doc(db, 'organizations', orgId);
@@ -81,8 +83,18 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
         if (orgSnap.exists()) {
             const orgData = orgSnap.data();
             const members = orgData.members || [];
+            const memberRoles = orgData.memberRoles || {};
+            
+            const updates: Record<string, any> = {};
             if (!members.includes(userId)) {
-                await updateDoc(orgRef, { members: [...members, userId] });
+                updates.members = [...members, userId];
+            }
+            if (memberRoles[userId] !== role) {
+                updates[`memberRoles.${userId}`] = role;
+            }
+            
+            if (Object.keys(updates).length > 0) {
+                await updateDoc(orgRef, updates);
             }
         }
     }
@@ -108,6 +120,70 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
         await updateDoc(userRef, { currentOrganizationId: orgId });
 
         return orgId;
+    }
+
+    async inviteMember(orgId: string, email: string, role: 'manager' | 'producer' | 'member'): Promise<string> {
+        // Mock invitation logic - in reality this would create an invite doc and trigger an email
+        const orgRef = doc(db, 'organizations', orgId);
+        const orgSnap = await getDoc(orgRef);
+        if (!orgSnap.exists()) {
+            throw new Error(`Organization ${orgId} not found`);
+        }
+
+        console.log(`[OrganizationService] Mock inviting ${email} to ${orgId} as ${role}`);
+        // Return a mock invitation ID
+        return `inv_${Date.now()}`;
+    }
+
+    async updateMemberRole(orgId: string, userId: string, role: 'manager' | 'producer' | 'member'): Promise<void> {
+        const orgRef = doc(db, 'organizations', orgId);
+        const orgSnap = await getDoc(orgRef);
+        if (!orgSnap.exists()) {
+            throw new Error(`Organization ${orgId} not found`);
+        }
+
+        const orgData = orgSnap.data() as Organization;
+        if (!orgData.members.includes(userId)) {
+            throw new Error(`User ${userId} is not a member of organization ${orgId}`);
+        }
+        
+        if (orgData.ownerId === userId) {
+            throw new Error(`Cannot change role of organization owner`);
+        }
+
+        await updateDoc(orgRef, {
+            [`memberRoles.${userId}`]: role
+        });
+    }
+
+    async removeMember(orgId: string, userId: string): Promise<void> {
+        const orgRef = doc(db, 'organizations', orgId);
+        const orgSnap = await getDoc(orgRef);
+        if (!orgSnap.exists()) {
+            throw new Error(`Organization ${orgId} not found`);
+        }
+
+        const orgData = orgSnap.data() as Organization;
+        if (orgData.ownerId === userId) {
+            throw new Error(`Cannot remove the organization owner. Transfer ownership first.`);
+        }
+
+        const members = orgData.members || [];
+        const newMembers = members.filter(id => id !== userId);
+
+        const updates: Record<string, any> = {
+            members: newMembers
+        };
+        
+        // Use dot notation to remove from map by setting to null or using deleteField
+        // Since we don't have deleteField imported, we can just replace the whole map
+        if (orgData.memberRoles) {
+            const newRoles = { ...orgData.memberRoles };
+            delete newRoles[userId];
+            updates.memberRoles = newRoles;
+        }
+
+        await updateDoc(orgRef, updates);
     }
 }
 
