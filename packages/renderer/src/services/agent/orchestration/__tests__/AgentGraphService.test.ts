@@ -120,13 +120,171 @@ describe('AgentGraphService', () => {
     it('should handle parallel execution of independent nodes', async () => {
         const parallelGraph: AgentGraph = {
             ...mockGraph,
+            id: 'parallel-graph',
             nodes: [
-                { id: 'node-1', agentId: 'generalist', taskTemplate: 'Parallel 1', waitCondition: 'all' },
-                { id: 'node-2', agentId: 'generalist', taskTemplate: 'Parallel 2', waitCondition: 'all' }
+                { id: 'node-1', agentId: 'generalist', taskTemplate: 'Start', waitCondition: 'all' },
+                { id: 'node-2', agentId: 'agent-A', taskTemplate: 'Parallel A', waitCondition: 'all' },
+                { id: 'node-3', agentId: 'agent-B', taskTemplate: 'Parallel B', waitCondition: 'all' },
             ],
-            edges: [], // No edges means they both start (if they are entry nodes, but entryNodeId is only one)
+            edges: [
+                { sourceId: 'node-1', targetId: 'node-2' },
+                { sourceId: 'node-1', targetId: 'node-3' },
+            ],
         };
+
+        const mockExecutionId = 'exec-parallel';
+        const state1 = {
+            executionId: mockExecutionId,
+            status: 'planned',
+            nodeStates: {
+                'node-1': { status: 'planned' },
+                'node-2': { status: 'planned' },
+                'node-3': { status: 'planned' },
+            }
+        };
+
+        const state2 = {
+            ...state1,
+            nodeStates: {
+                'node-1': { status: 'step_complete', output: 'Done 1' },
+                'node-2': { status: 'planned' },
+                'node-3': { status: 'planned' },
+            }
+        };
+
+        const state3 = {
+            ...state2,
+            nodeStates: {
+                'node-1': { status: 'step_complete', output: 'Done 1' },
+                'node-2': { status: 'step_complete', output: 'Done 2' },
+                'node-3': { status: 'step_complete', output: 'Done 3' },
+            },
+            status: 'completed'
+        };
+
+        (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
+        (agentGraphStateService.getExecution as any)
+            .mockResolvedValueOnce(state1) // Loop 1: node 1
+            .mockResolvedValueOnce(state1) // node 1 start
+            .mockResolvedValueOnce(state2) // Loop 2: node 2 & 3
+            .mockResolvedValueOnce(state2) // node 2 & 3 start
+            .mockResolvedValueOnce(state3); // Exit
+
+        (agentService.delegateTask as any)
+            .mockResolvedValueOnce('Done 1')
+            .mockResolvedValueOnce('Done 2')
+            .mockResolvedValueOnce('Done 3');
+
+        await agentGraphService.executeGraph(parallelGraph, mockContext);
+
+        // Verify that node 2 and 3 were started together in Loop 2
+        // Loop 1 called delegateTask for node 1
+        // Loop 2 should have called delegateTask for both node 2 and node 3
+        expect(agentService.delegateTask).toHaveBeenCalledTimes(3);
         
-        // Parallel testing logic...
+        // The first call was node 1
+        expect((agentService.delegateTask as any).mock.calls[0][1]).toBe('Start');
+        
+        // The next two calls should be node 2 and 3
+        const task2Prompt = (agentService.delegateTask as any).mock.calls[1][1];
+        const task3Prompt = (agentService.delegateTask as any).mock.calls[2][1];
+        expect(task2Prompt).toBe('Parallel A');
+        expect(task3Prompt).toBe('Parallel B');
+    });
+
+    it('should handle conditional branching (regex matching)', async () => {
+        const conditionalGraph: AgentGraph = {
+            ...mockGraph,
+            id: 'conditional-graph',
+            nodes: [
+                { id: 'node-1', agentId: 'generalist', taskTemplate: 'Evaluate', waitCondition: 'all' },
+                { id: 'node-2', agentId: 'success-agent', taskTemplate: 'Success Path', waitCondition: 'all' },
+                { id: 'node-3', agentId: 'failure-agent', taskTemplate: 'Failure Path', waitCondition: 'all' },
+            ],
+            edges: [
+                { sourceId: 'node-1', targetId: 'node-2', condition: 'SUCCESS' },
+                { sourceId: 'node-1', targetId: 'node-3', condition: 'FAILURE' },
+            ],
+        };
+
+        const mockExecutionId = 'exec-conditional';
+        const state1 = {
+            executionId: mockExecutionId,
+            status: 'planned',
+            nodeStates: {
+                'node-1': { status: 'planned' },
+                'node-2': { status: 'planned' },
+                'node-3': { status: 'planned' },
+            }
+        };
+
+        // Node 1 returns "SUCCESS"
+        const state2 = {
+            ...state1,
+            nodeStates: {
+                'node-1': { status: 'step_complete', output: 'The result is SUCCESS' },
+                'node-2': { status: 'planned' },
+                'node-3': { status: 'planned' },
+            }
+        };
+
+        // Node 2 starts, Node 3 skipped
+        const state3 = {
+            ...state2,
+            nodeStates: {
+                'node-1': { status: 'step_complete', output: 'The result is SUCCESS' },
+                'node-2': { status: 'step_complete', output: 'Success Output' },
+                'node-3': { status: 'skipped' },
+            },
+            status: 'completed'
+        };
+
+        (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
+        (agentGraphStateService.getExecution as any)
+            .mockResolvedValueOnce(state1) // Loop 1: node 1
+            .mockResolvedValueOnce(state1)
+            .mockResolvedValueOnce(state2) // Loop 2: node 2 executes, node 3 skips
+            .mockResolvedValueOnce(state2)
+            .mockResolvedValueOnce(state3);
+
+        (agentService.delegateTask as any)
+            .mockResolvedValueOnce('The result is SUCCESS')
+            .mockResolvedValueOnce('Success Output');
+
+        await agentGraphService.executeGraph(conditionalGraph, mockContext);
+
+        expect(agentService.delegateTask).toHaveBeenCalledTimes(2);
+        expect(agentGraphStateService.updateNodeStatus).toHaveBeenCalledWith(
+            mockUserId, mockExecutionId, 'node-3', expect.objectContaining({ status: 'skipped' })
+        );
+    });
+
+    it('should fail the graph if a node fails', async () => {
+        const simpleGraph: AgentGraph = {
+            ...mockGraph,
+            nodes: [{ id: 'node-1', agentId: 'generalist', taskTemplate: 'Task 1', waitCondition: 'all' }],
+            edges: [],
+        };
+
+        const mockExecutionId = 'exec-fail';
+        const state1 = {
+            executionId: mockExecutionId,
+            status: 'planned',
+            nodeStates: { 'node-1': { status: 'planned' } }
+        };
+
+        (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
+        (agentGraphStateService.getExecution as any)
+            .mockResolvedValueOnce(state1)
+            .mockResolvedValueOnce(state1);
+
+        (agentService.delegateTask as any).mockRejectedValue(new Error('Agent Crash'));
+
+        await expect(agentGraphService.executeGraph(simpleGraph, mockContext))
+            .rejects.toThrow('Agent Crash');
+
+        expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
+            mockUserId, mockExecutionId, 'failed'
+        );
     });
 });

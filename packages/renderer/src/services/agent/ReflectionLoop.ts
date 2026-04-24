@@ -34,7 +34,7 @@ import type { ReflectionResult, AgentContext } from '@/services/agent/types';
 interface ReflectionInput {
   originalPrompt: string;
   agentOutput: string;
-  context?: Record<string, unknown>;
+  context?: AgentContext | Record<string, unknown>;
   previousReflections?: ReflectionIteration[];
 }
 
