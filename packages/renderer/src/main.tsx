@@ -71,6 +71,19 @@ try {
 initViewportFixes();
 initKeyboardDetection();
 
+// Phase 1: Initialize PWA and offline services
+Promise.all([
+    import('@/services/sync/OfflineFirstService').then(({ offlineFirstService }) => offlineFirstService),
+    import('@/services/network/NetworkQualityMonitor').then(({ initializeNetworkQualityMonitor }) => initializeNetworkQualityMonitor()),
+    import('@/services/cache/MediaCacheManager').then(({ initializeMediaCacheManager }) => initializeMediaCacheManager()),
+]).then(async ([offlineService, networkMonitor, mediaCache]) => {
+    const { initializeBackgroundSyncManager } = await import('@/services/sync/BackgroundSyncManager');
+    initializeBackgroundSyncManager(offlineService);
+    logger.info('[Phase 1] PWA and offline services initialized');
+}).catch(err => {
+    logger.error('[Phase 1] Failed to initialize offline services:', err);
+});
+
 // Item 260: Core Web Vitals reporting
 import('@/lib/webVitals').then(({ initWebVitals }) => initWebVitals()).catch(() => { });
 

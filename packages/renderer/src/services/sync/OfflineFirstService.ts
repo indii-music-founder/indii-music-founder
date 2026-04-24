@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
 
-interface SyncItem {
+export interface SyncItem {
   id: string;
   collection: string;
   operation: 'create' | 'update' | 'delete';
