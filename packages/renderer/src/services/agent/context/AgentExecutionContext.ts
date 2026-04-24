@@ -129,7 +129,7 @@ export class AgentExecutionContext {
 
         // Apply modifications on top
         this.modifications.forEach((value, key) => {
-            merged[key] = value;
+            (merged as Record<string, unknown>)[key] = value;
         });
 
         return merged;

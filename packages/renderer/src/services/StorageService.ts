@@ -384,7 +384,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                 return this.mapDocumentToItem({ ...data, id: doc.id });
             });
             onUpdate(items);
-        }, (error: FirebaseError) => {
+        }, (error: FirestoreError | Error & { code?: string }) => {
             // Check if it's an index error, fallback to un-ordered query if so
             if (error.code === 'failed-precondition' || error.message.includes('index')) {
                 logger.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
