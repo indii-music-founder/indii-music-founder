@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { vi } from 'vitest';
+import React from 'react';
 
 // Only import DOM-specific modules when running in jsdom environment
 if (typeof window !== 'undefined') {
@@ -497,6 +498,30 @@ vi.mock('@/services/CloudStorageService', () => ({
         smartSave: vi.fn().mockResolvedValue({ url: 'mock-storage-url' }),
         compressImage: vi.fn().mockResolvedValue({ dataUri: 'data:image/png;base64,mock-compressed' }),
     },
+}));
+
+// Mock @react-three/fiber and @react-three/drei to prevent event initialization errors in JSDOM
+vi.mock('@react-three/fiber', () => ({
+    Canvas: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'mock-canvas' }, children),
+    useThree: () => ({
+        size: { width: 100, height: 100 },
+        viewport: { width: 100, height: 100, factor: 1 },
+        camera: { position: [0, 0, 0] },
+        scene: {},
+        gl: { domElement: {} }
+    }),
+    useFrame: vi.fn(),
+    useLoader: vi.fn(),
+    extend: vi.fn(),
+}));
+
+vi.mock('@react-three/drei', () => ({
+    OrbitControls: () => React.createElement('div', { 'data-testid': 'mock-orbit-controls' }),
+    Environment: () => null,
+    ContactShadows: () => null,
+    useGLTF: () => ({ scene: { clone: () => ({ traverse: vi.fn() }) } }),
+    Html: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
+    Text: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
 }));
 
 // Mock ToastContext globally

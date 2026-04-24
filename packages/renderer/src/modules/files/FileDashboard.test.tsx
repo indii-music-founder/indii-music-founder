@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { File } from 'lucide-react';
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
     const invalid = ['initial', 'animate', 'exit', 'transition', 'whileHover', 'whileTap', 'layout'];
@@ -60,7 +61,7 @@ describe('FileDashboard', () => {
 
 describe('NavItem', () => {
     it('renders label and count', () => {
-        render(<NavItem icon={() => <span>I</span>} label="Test" count={5} active />);
+        render(<NavItem icon={File} label="Test" count={5} active />);
         expect(screen.getByText('Test')).toBeInTheDocument();
         expect(screen.getByText('5')).toBeInTheDocument();
     });

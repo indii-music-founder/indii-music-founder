@@ -4,11 +4,11 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import {
     MessageCircle, Image, Film, Music,
-    Maximize2, Clock, Sparkles, X,
+    Maximize2, Clock, Sparkles, X, LucideIcon
 } from 'lucide-react';
 
 /* ── type badge config ───────────────────────────────────────────── */
-const BADGE: Record<string, { icon: React.ElementType; label: string; cls: string }> = {
+const BADGE: Record<string, { icon: LucideIcon; label: string; cls: string }> = {
     image: { icon: Image, label: 'Image', cls: 'text-blue-400 bg-blue-500/15' },
     video: { icon: Film, label: 'Video', cls: 'text-purple-400 bg-purple-500/15' },
     music: { icon: Music, label: 'Audio', cls: 'text-amber-400 bg-amber-500/15' },

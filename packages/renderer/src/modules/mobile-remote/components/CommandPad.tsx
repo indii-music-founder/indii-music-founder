@@ -14,7 +14,7 @@ import {
     Palette, Video, Music, BarChart3, Sparkles,
     Shield, Globe, FileText, MessageSquare,
     Wand2, Package, TrendingUp, Settings,
-    Send, Mic
+    Send, Mic, LucideIcon
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';
 
@@ -25,7 +25,7 @@ interface CommandPadProps {
 
 interface QuickAction {
     id: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
     color: string;
     action: () => void;

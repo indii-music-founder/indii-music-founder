@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, TrendingUp, Users, MousePointerClick, AlertCircle } from 'lucide-react';
+import { Activity, TrendingUp, Users, MousePointerClick, AlertCircle, LucideIcon } from 'lucide-react';
 import { SkeletonStat, SkeletonTable } from '@/components/ui/Skeleton';
 import { DashboardService } from '@/services/dashboard/DashboardService';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
@@ -46,7 +46,7 @@ const MetricCard = ({
     value: string;
     change?: number;
     trend: 'up' | 'down' | 'neutral';
-    icon: React.ElementType;
+    icon: LucideIcon;
     iconColor: string;
 }) => (
     <div className="bg-[#161b22] p-4 rounded-xl border border-gray-800">
