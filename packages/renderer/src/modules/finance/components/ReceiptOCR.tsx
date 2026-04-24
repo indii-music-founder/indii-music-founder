@@ -85,14 +85,14 @@ export function ReceiptOCR() {
 
         try {
             // Call AI Vision service for receipt analysis via the GeminiFileService
-            const { firebaseAI } = await import('@/services/ai/FirebaseAIService');
+            const { GenAI } = await import('@/services/ai/GenAI');
 
             // 1. Upload the file using resumable upload
-            const fileMeta = await firebaseAI.fileService.uploadFile(uploadedFile);
+            const fileMeta = await GenAI.fileService.uploadFile(uploadedFile);
 
 
             // 2. Wait for it to be active
-            await firebaseAI.fileService.waitForActive(fileMeta.name);
+            await GenAI.fileService.waitForActive(fileMeta.name);
 
             // 3. Analyze the URI
             const jsonPrompt = `
@@ -105,14 +105,14 @@ Analyze this receipt image and extract the following fields as JSON:
 }
 Return ONLY valid JSON, no markdown fences or extra text.`;
 
-            const responseText = await firebaseAI.analyzeFileURI(
+            const responseText = await GenAI.analyzeFileURI(
                 fileMeta.uri,
                 fileMeta.mimeType,
                 jsonPrompt
             );
 
             // 4. Cleanup the file (fire and forget)
-            firebaseAI.fileService.deleteFile(fileMeta.name).catch((ce) => {
+            GenAI.fileService.deleteFile(fileMeta.name).catch((ce) => {
                 logger.warn('[ReceiptOCR] Failed to cleanup Gemini file', ce);
             });
 

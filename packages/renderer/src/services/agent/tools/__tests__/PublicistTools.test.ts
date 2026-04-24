@@ -1,10 +1,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PublicistTools } from '../PublicistTools';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 // Mock Firebase AI
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         generateStructuredData: vi.fn(),
     }
 }));
@@ -25,13 +25,13 @@ describe('PublicistTools', () => {
             contact_info: { name: 'PR', email: 'pr@example.com' },
             pdf: null
         };
-        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+        vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
         const result = await PublicistTools.write_press_release({ topic: 'New Album' });
 
         expect(result.success).toBe(true);
         expect(result.data).toEqual(mockResponse); // result.data is the ToolFunctionResult.data
-        expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
+        expect(GenAI.generateStructuredData).toHaveBeenCalled();
     });
 
     it('generate_social_post calls database', async () => {
@@ -47,7 +47,7 @@ describe('PublicistTools', () => {
             internal_talking_points: ['Point 1'],
             actions_to_take: ['Action 1']
         };
-        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+        vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
         const result = await PublicistTools.generate_crisis_response({ situation: 'Leak' });
 
@@ -64,7 +64,7 @@ describe('PublicistTools', () => {
             angle: 'Angle',
             target_outlets: ['Outlet 1']
         };
-        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+        vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
         const result = await PublicistTools.pitch_story({ story_summary: 'We cool', recipient_type: 'blog' });
 
@@ -73,7 +73,7 @@ describe('PublicistTools', () => {
     });
 
     it('handles AI failure gracefully', async () => {
-        vi.mocked(firebaseAI.generateStructuredData).mockRejectedValue(new Error("AI Down"));
+        vi.mocked(GenAI.generateStructuredData).mockRejectedValue(new Error("AI Down"));
         const result = await PublicistTools.write_press_release({ topic: 'Fail' });
 
         expect(result.success).toBe(false);

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { PUBLICIST_TOOLS } from './tools';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
 // Mock AI Service with alias path
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         generateContent: vi.fn().mockResolvedValue({
             response: {
                 text: () => JSON.stringify({
@@ -65,7 +65,7 @@ describe('PUBLICIST_TOOLS', () => {
             }
         };
 
-        (firebaseAI.generateContent as import("vitest").Mock).mockResolvedValueOnce({
+        (GenAI.generateContent as import("vitest").Mock).mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify(mockCampaign)
             }

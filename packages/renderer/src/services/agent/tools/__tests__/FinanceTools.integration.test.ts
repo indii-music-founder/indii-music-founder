@@ -23,9 +23,9 @@ vi.mock('@/services/firebase', () => ({
     db: {},
 }));
 
-// ── Mock firebaseAI (used by negotiation) ────────────────────────────────────
+// ── Mock GenAI (used by negotiation) ────────────────────────────────────
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         generateStructuredData: vi.fn().mockResolvedValue({
             negotiationLog: ['[A] Proposed terms', '[B] Counter-proposal', '[A] Agreed'],
             finalTerms: 'Agreed terms',

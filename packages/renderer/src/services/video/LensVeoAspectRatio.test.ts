@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 import { UserProfile } from '@/modules/workflow/types';
-import { firebaseAI } from '../ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
@@ -55,7 +55,7 @@ vi.mock('../firebase', () => ({
 }));
 
 vi.mock('../ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         analyzeImage: vi.fn().mockResolvedValue('Analyzed context'),
         generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4')
     }
@@ -90,7 +90,7 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             duration: 5
         });
 
-        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining('Cinematic sunset'),
             config: expect.objectContaining({
                 aspectRatio: '16:9',
@@ -114,14 +114,14 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             // No explicit aspect ratio
         });
 
-        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             config: expect.objectContaining({
                 aspectRatio: '9:16',
             }),
         }));
 
         // Verify prompt enrichment
-        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+        const callArgs = (GenAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
         expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         expect(callArgs.prompt).toContain('9:16');
     });
@@ -141,7 +141,7 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             userProfile: userProfile as UserProfile
         });
 
-        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             config: expect.objectContaining({
                 aspectRatio: '16:9',
             }),
