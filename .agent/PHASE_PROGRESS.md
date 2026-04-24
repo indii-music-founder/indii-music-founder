@@ -59,36 +59,35 @@
 
 ## Phase 2: Agent Orchestration & Memory
 
-**Status:** 🔧 Phase 2a.1 COMPLETE - SSE Streaming Unblocked  
+**Status:** 🔧 Phase 2.0 COMPLETE - Core Services & Streaming  
 **Branch:** `phase-2-agent-orchestration`  
-**Latest Commit:** 38b3f06 (agentStreamResponse v2 function)  
+**Latest Commit:** 48f4f75 (Phase 2.0 core services complete)  
 **Target Completion:** 2026-05-22  
 
 ### Implementation Checklist
 
-- [ ] PersistentMemoryService (350 LOC)
-- [ ] MemoryIndexService (250 LOC)
-- [ ] AgentStreamingService (200 LOC)
-- [ ] ReflectionLoop service (180 LOC)
-- [ ] ContextStackService (150 LOC)
-- [ ] StreamingAgentCard component (120 LOC)
+- [x] PersistentMemoryService (350 LOC) ✅
+- [x] MemoryIndexService (250 LOC) ✅
+- [x] AgentStreamingService (200 LOC) ✅
+- [x] ReflectionLoop service (180 LOC) ✅
+- [x] ContextStackService (150 LOC) ✅
+- [x] StreamingAgentCard component (120 LOC) ✅
+- [x] useAgentStream hook (100 LOC) ✅
 - [ ] MemoryBrowserPanel component (180 LOC)
 - [ ] ReflectionPanel component (140 LOC)
-- [ ] useAgentStream hook (100 LOC)
 - [ ] useMemoryQuery hook (80 LOC)
 - [ ] useContextStack hook (70 LOC)
 - [ ] BaseAgent.ts streaming support (+150 LOC)
 - [ ] OrchestrationService reflection loops (+200 LOC)
 - [ ] AgentMemorySlice in store (+100 LOC)
-- [ ] Cloud Function SSE endpoint (100 LOC)
 - [ ] Unit tests (9 files, 2,000 LOC)
 - [ ] E2E tests (streaming, memory, multi-turn)
 
-### Critical Blockers
+### Critical Blockers - RESOLVED
 
-- [ ] **Cloud Functions v2 migration** (SSE support)
-- [ ] Memory persistence to Firestore (CORE Vault)
-- [ ] No Zustand selector memory leaks (`useShallow` usage)
+- [x] **Cloud Functions v2 migration** (SSE support) ✅ - agentStreamResponse implemented
+- [x] Memory persistence to Firestore (CORE Vault) ✅ - PersistentMemoryService ready
+- [x] No Zustand selector memory leaks (`useShallow` usage) ✅ - Applied throughout
 
 ### Verification
 
@@ -189,6 +188,42 @@
 ---
 
 ## Session Notes
+
+### 2026-04-24 (Phase 2.0 Complete!)
+
+**Achievements:**
+- Phase 2.0 core services fully implemented (7 out of 18 items)
+- PersistentMemoryService: 5-layer memory architecture ready
+- MemoryIndexService: RAG semantic search with embeddings
+- ReflectionLoop: Agent self-evaluation with quality metrics
+- AgentStreamingService: SSE token streaming from Cloud Function v2
+- ContextStackService: Multi-turn context management with token budgets
+- useAgentStream hook: React integration for streaming responses
+- StreamingAgentCard: UI component for streaming token display
+- All Phase 2 code passes TypeScript strict mode
+- All critical blockers resolved (v2 migration, Firestore persistence, Zustand patterns)
+
+**Architecture Notes:**
+- Memory layers: scratchpad (Map) → session (IndexedDB) → core-vault (Firestore) → captain-logs (append-only) → rag-index (semantic)
+- Singleton pattern maintained across all new services
+- Streaming via EventSource for real-time token rendering
+- Reflection loop supports 3-iteration quality improvement
+- Context stack enforces 8000-token budget with LRU eviction
+- Integration into main.tsx for automatic service initialization
+
+**Commits:**
+1. `776ca93` feat: Phase 2 - add PersistentMemoryService for 5-layer memory architecture
+2. `e5b6d77` feat: Phase 2 - add core orchestration services and hooks
+3. `93f2c9b` fix: update Phase 2 services to use @google/genai instead of @google/generative-ai
+4. `48f4f75` fix: resolve TypeScript errors in Phase 2 services and components
+
+**Next Steps:**
+- Phase 2.1: UI components (MemoryBrowserPanel, ReflectionPanel)
+- Phase 2.2: Zustand store integration (AgentMemorySlice)
+- Phase 2.3: BaseAgent.ts streaming integration
+- Phase 2.4: Unit & E2E tests (2,000+ LOC)
+
+---
 
 ### 2026-04-24 (Phase 1 Complete!)
 
