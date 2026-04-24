@@ -46,7 +46,7 @@ vi.mock('@/services/ai/GenAI', () => ({
 
 // Mock FirebaseAIService
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         generateContent: vi.fn().mockResolvedValue({
             response: { text: () => 'Safe response' }
         })

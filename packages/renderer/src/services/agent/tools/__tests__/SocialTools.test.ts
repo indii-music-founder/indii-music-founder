@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SocialTools } from '../SocialTools';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { SocialService } from '@/services/social/SocialService';
 
 // Mock Dependencies
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-  firebaseAI: {
+  GenAI: {
     generateContent: vi.fn(),
   },
 }));
@@ -51,11 +51,11 @@ describe('SocialTools', () => {
       const mockGeneratedText = 'Exciting news! #LaunchDay';
       const mockPostId = 'post-123';
 
-      vi.mocked(firebaseAI.generateContent).mockResolvedValue({
+      vi.mocked(GenAI.generateContent).mockResolvedValue({
         response: {
           text: () => mockGeneratedText,
         },
-      } as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
+      } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
       vi.mocked(SocialService.createPost).mockResolvedValue(mockPostId);
 
@@ -75,7 +75,7 @@ describe('SocialTools', () => {
       });
 
       // Verify Calls
-      expect(firebaseAI.generateContent).toHaveBeenCalledWith(
+      expect(GenAI.generateContent).toHaveBeenCalledWith(
         expect.stringContaining('Twitter'),
         'mock-model'
       );
@@ -86,11 +86,11 @@ describe('SocialTools', () => {
       // Setup Mocks
       const mockGeneratedText = 'Resilience check! #Testing';
 
-      vi.mocked(firebaseAI.generateContent).mockResolvedValue({
+      vi.mocked(GenAI.generateContent).mockResolvedValue({
         response: {
           text: () => mockGeneratedText,
         },
-      } as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
+      } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
       // Simulate DB Failure
       vi.mocked(SocialService.createPost).mockRejectedValue(new Error('Firestore unavailable'));

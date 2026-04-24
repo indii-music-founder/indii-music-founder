@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from './VideoGenerationService';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
 // --- MOCKS ---
 
@@ -69,7 +69,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         analyzeImage: vi.fn().mockResolvedValue('Temporal context'),
         generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4')
     }
@@ -94,8 +94,8 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         });
 
         // Assert
-        expect(firebaseAI.generateVideo).toHaveBeenCalled();
-        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+        expect(GenAI.generateVideo).toHaveBeenCalled();
+        const callArgs = (GenAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("4111 1111 1111 1111");
@@ -116,8 +116,8 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         });
 
         // Assert
-        expect(firebaseAI.generateVideo).toHaveBeenCalled();
-        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+        expect(GenAI.generateVideo).toHaveBeenCalled();
+        const callArgs = (GenAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
 
         expect(callArgs.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs.prompt).not.toContain("SuperSecretPassword123!");

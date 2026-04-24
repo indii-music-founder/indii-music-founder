@@ -17,7 +17,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         generateStructuredData: vi.fn(),
     },
 }));
@@ -52,7 +52,7 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 import { MarketingTools } from '../MarketingTools';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { getDocs } from 'firebase/firestore';
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ describe('MarketingTools — integration', () => {
                 channels: ['Instagram', 'TikTok'],
                 kpis: ['streams', 'playlist adds'],
             };
-            (firebaseAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrief);
+            (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrief);
 
             const result = await MarketingTools.create_campaign_brief({
                 product: 'Summer EP',
@@ -129,11 +129,11 @@ describe('MarketingTools — integration', () => {
             expect(result.success).toBe(true);
             expect(result.data.campaignName).toBe('Summer Splash');
             expect(result.data.channels).toContain('Instagram');
-            expect(firebaseAI.generateStructuredData).toHaveBeenCalledOnce();
+            expect(GenAI.generateStructuredData).toHaveBeenCalledOnce();
         });
 
         it('returns a fallback result when AI fails', async () => {
-            (firebaseAI.generateStructuredData as ReturnType<typeof vi.fn>).mockRejectedValue(
+            (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockRejectedValue(
                 new Error('Quota exceeded')
             );
 
@@ -160,7 +160,7 @@ describe('MarketingTools — integration', () => {
                 interests: ['Hip-hop', 'R&B', 'Streetwear'],
                 reach: '250,000'
             };
-            (firebaseAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockAudience);
+            (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockAudience);
 
             const result = await MarketingTools.analyze_audience({
                 genre: 'hip-hop',
@@ -243,7 +243,7 @@ describe('MarketingTools — integration', () => {
                 metrics: { impressions: 1000, clicks: 100, conversions: 10 },
                 roi: '150%'
             };
-            (firebaseAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockPerformance);
+            (GenAI.generateStructuredData as ReturnType<typeof vi.fn>).mockResolvedValue(mockPerformance);
             
             const result = await MarketingTools.track_performance({ campaignId: 'camp-mock-001' });
             expect(result.success).toBe(true);

@@ -15,10 +15,10 @@ vi.mock('@/services/ai/GenAI', () => ({
 }));
 
 // Mock the Firebase AI service (for BrandTools)
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         generateStructuredData: vi.fn(),
         generateContent: vi.fn(),
         parseJSON: vi.fn((text) => JSON.parse(text))
@@ -40,11 +40,11 @@ describe('Agent Tools Validation', () => {
 
     describe('BrandTools', () => {
         it('verify_output handles valid JSON response', async () => {
-            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue({
+            vi.mocked(GenAI.generateStructuredData).mockResolvedValue({
                 approved: true,
                 critique: "Great job",
                 score: 9
-            } as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+            } as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
             const result = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
             expect(result.data.approved).toBe(true);
@@ -52,7 +52,7 @@ describe('Agent Tools Validation', () => {
         });
 
         it('verify_output handles invalid JSON response gracefully', async () => {
-            vi.mocked(firebaseAI.generateStructuredData).mockRejectedValue(new Error("AI Generation Failed"));
+            vi.mocked(GenAI.generateStructuredData).mockRejectedValue(new Error("AI Generation Failed"));
 
             try {
                 await BrandTools.verify_output({ goal: "Test", content: "Test content" });
@@ -71,13 +71,13 @@ describe('Agent Tools Validation', () => {
 
     describe('MarketingTools', () => {
         it('create_campaign_brief handles valid JSON response', async () => {
-            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue({
+            vi.mocked(GenAI.generateStructuredData).mockResolvedValue({
                 campaignName: "Test Campaign",
                 targetAudience: "Gen Z",
                 budget: "$1000",
                 channels: ["TikTok"],
                 kpis: ["Views"]
-            } as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+            } as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
             const result = await MarketingTools.create_campaign_brief({ product: "Song", goal: "Viral" });
             expect(result.data.campaignName).toBe("Test Campaign");
@@ -87,12 +87,12 @@ describe('Agent Tools Validation', () => {
 
     describe('RoadTools', () => {
         it('plan_tour_route handles valid JSON response', async () => {
-            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue({
+            vi.mocked(GenAI.generateStructuredData).mockResolvedValue({
                 route: ["NY", "NJ"],
                 totalDistance: "100 miles",
                 estimatedDuration: "2 hours",
                 legs: [{ from: "NY", to: "NJ", distance: "100 miles", driveTime: "2 hours" }]
-            } as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+            } as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
             const result = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
             expect(result.data.route).toContain("NY");

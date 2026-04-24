@@ -14,6 +14,8 @@ import { agentRegistry } from './registry';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { agentGraphService } from './orchestration/AgentGraphService';
+import { AgentGraph } from './types';
 
 /**
  * AgentService is the primary entry point for agent-related operations.
@@ -763,6 +765,21 @@ If the user asks you to do something that requires active tools (like generating
             parentTraceId,
             attachments || context.attachments
         );
+    }
+
+    /**
+     * Alias for runAgent to maintain compatibility with Graph Orchestration.
+     */
+    async delegateTask(agentId: string, task: string, context?: AgentContext): Promise<string> {
+        const result = await this.runAgent(agentId, task, context);
+        return result.text;
+    }
+
+    /**
+     * Entry point for executing an AgentGraph.
+     */
+    async executeGraph(graph: AgentGraph, context: AgentContext, initialInput?: string): Promise<string> {
+        return await agentGraphService.executeGraph(graph, context, initialInput);
     }
 
     private async addSystemMessage(text: string): Promise<void> {

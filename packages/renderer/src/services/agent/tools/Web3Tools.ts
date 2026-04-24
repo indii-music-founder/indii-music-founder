@@ -1,5 +1,5 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
@@ -46,7 +46,7 @@ Requirements:
 Return ONLY the complete Solidity source code, no markdown fences.`;
 
         try {
-            const result = await firebaseAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const result = await GenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
             const sourceCode = result.response.text().trim();
 
             // Verify it looks like Solidity (basic sanity check)

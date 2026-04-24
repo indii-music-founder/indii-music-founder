@@ -1,4 +1,4 @@
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
@@ -29,7 +29,7 @@ Attempt to infer scene headers if not explicit.
 `;
     const prompt = `Convert this text to screenplay JSON:\n\n${args.text}`;
 
-    const response = await firebaseAI.generateContent(
+    const response = await GenAI.generateContent(
       prompt,
       AI_MODELS.TEXT.AGENT,
       undefined,
@@ -67,7 +67,7 @@ Return ONLY valid JSON with this structure:
 `;
     const prompt = `Analyze this script:\n\n${args.script}`;
 
-    const response = await firebaseAI.generateContent(
+    const response = await GenAI.generateContent(
       prompt,
       AI_MODELS.TEXT.AGENT,
       undefined,
