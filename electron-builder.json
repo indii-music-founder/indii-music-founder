@@ -39,7 +39,12 @@
     "target": [
       "dmg",
       "zip"
-    ]
+    ],
+    "certificateFile": "${CSC_LINK}",
+    "certificatePassword": "${CSC_KEY_PASSWORD}",
+    "notarize": {
+      "teamId": "${APPLE_TEAM_ID}"
+    }
   },
   "productName": "indiiOS",
   "protocols": [
@@ -59,6 +64,16 @@
   "win": {
     "target": [
       "nsis"
-    ]
+    ],
+    "certificateFile": "${WIN_CSC_LINK}",
+    "certificatePassword": "${WIN_CSC_KEY_PASSWORD}",
+    "signingHashAlgorithms": [
+      "sha256"
+    ],
+    "sign": "build/sign.js"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
   }
 }

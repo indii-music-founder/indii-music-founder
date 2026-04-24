@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 import { logger } from '@/utils/logger';
 /**
  * Agent Execution Context - Phase 3: Architectural Improvements
@@ -23,8 +22,8 @@ export interface ExecutionContextOptions {
 
 export interface StateModification {
     key: keyof StoreState;
-    oldValue: any;
-    newValue: any;
+    oldValue: unknown;
+    newValue: unknown;
     timestamp: number;
 }
 
@@ -34,8 +33,8 @@ export interface StateModification {
  */
 export class AgentExecutionContext {
     private snapshot: Readonly<Partial<StoreState>>;
-    private modifications: Map<keyof StoreState, any> = new Map();
-    private customMetadata: Map<string, any> = new Map();
+    private modifications: Map<keyof StoreState, unknown> = new Map();
+    private customMetadata: Map<string, unknown> = new Map();
     private changeHistory: StateModification[] = [];
     private readonly options: ExecutionContextOptions;
     private isCommitted = false;
@@ -130,7 +129,7 @@ export class AgentExecutionContext {
 
         // Apply modifications on top
         this.modifications.forEach((value, key) => {
-            merged[key] = value;
+            (merged as Record<string, unknown>)[key] = value;
         });
 
         return merged;
@@ -194,9 +193,9 @@ export class AgentExecutionContext {
         }
 
         // Apply all modifications atomically
-        const updates: any = {};
+        const updates: Partial<StoreState> = {};
         this.modifications.forEach((value, key) => {
-            updates[key] = value;
+            updates[key] = value as never;
         });
 
         if (Object.keys(updates).length > 0) {
@@ -309,14 +308,14 @@ export class AgentExecutionContext {
     /**
      * Set custom metadata for transient tool state
      */
-    setMetadata(key: string, value: any): void {
+    setMetadata(key: string, value: unknown): void {
         this.customMetadata.set(key, value);
     }
 
     /**
      * Get custom metadata for transient tool state
      */
-    getMetadata(key: string): any {
+    getMetadata(key: string): unknown {
         return this.customMetadata.get(key);
     }
 }

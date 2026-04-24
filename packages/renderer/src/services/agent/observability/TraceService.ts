@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 import { db } from '@/services/firebase';
 import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { AgentTrace, TraceStep, UsageMetrics } from './types';
@@ -22,7 +21,7 @@ export class TraceService {
         userId: string,
         agentId: string,
         input: string,
-        metadata?: Record<string, any>,
+        metadata?: Record<string, unknown>,
         parentTraceId?: string
     ): Promise<string> {
         if (!userId) {
@@ -51,7 +50,7 @@ export class TraceService {
                 startTime: serverTimestamp() as unknown as import('firebase/firestore').Timestamp,
 
                 steps: [],
-                swarmId: metadata?.swarmId || (parentTraceId ? null : traceId),
+                swarmId: (metadata?.swarmId as string | null | undefined) || (parentTraceId ? null : traceId),
                 metadata: {
                     ...(metadata || {}),
                     ...(parentTraceId ? { parentTraceId } : {})
@@ -69,11 +68,11 @@ export class TraceService {
     /**
      * Calculate estimated cost for a step
      */
-    private static calculateCost(modelId: string, usage: any): number {
+    private static calculateCost(modelId: string, usage: Record<string, unknown>): number {
         // 1. Validations
         if (!modelId || !usage) return 0;
 
-        let pricing: any = MODEL_PRICING[modelId as keyof typeof MODEL_PRICING];
+        let pricing: Record<string, unknown> | undefined = MODEL_PRICING[modelId as keyof typeof MODEL_PRICING];
 
         // 2. Check Remote Config for overrides
         try {
@@ -110,14 +109,19 @@ export class TraceService {
         // 3. Calculate
         if (!pricing) return 0;
 
-        if (pricing.perGeneration) {
-            return pricing.perGeneration;
+        const perGen = pricing.perGeneration as number | undefined;
+        if (perGen) {
+            return perGen;
         }
 
-        if (usage.promptTokenCount !== undefined && usage.candidatesTokenCount !== undefined) {
+        const promptTokens = usage.promptTokenCount as number | undefined;
+        const candidateTokens = usage.candidatesTokenCount as number | undefined;
+        if (promptTokens !== undefined && candidateTokens !== undefined) {
             // Pricing is usually per 1M tokens
-            const inputCost = (usage.promptTokenCount / 1_000_000) * (pricing.input || 0);
-            const outputCost = (usage.candidatesTokenCount / 1_000_000) * (pricing.output || 0);
+            const inputPrice = pricing.input as number || 0;
+            const outputPrice = pricing.output as number || 0;
+            const inputCost = (promptTokens / 1_000_000) * inputPrice;
+            const outputCost = (candidateTokens / 1_000_000) * outputPrice;
             return inputCost + outputCost;
         }
 
@@ -130,20 +134,20 @@ export class TraceService {
     static async addStepWithUsage(
         traceId: string,
         type: TraceStep['type'],
-        content: any,
+        content: unknown,
         modelId: string,
-        rawUsage?: any,
-        metadata?: Record<string, any>
+        rawUsage?: Record<string, unknown>,
+        metadata?: Record<string, unknown>
     ): Promise<void> {
         if (!traceId) return;
 
         let usage: UsageMetrics | undefined;
         if (rawUsage) {
             usage = {
-                promptTokens: rawUsage.promptTokenCount || 0,
-                candidatesTokens: rawUsage.candidatesTokenCount || 0,
-                totalTokens: rawUsage.totalTokenCount || 0,
-                cachedContentTokens: rawUsage.cachedContentTokenCount,
+                promptTokens: (rawUsage.promptTokenCount as number) || 0,
+                candidatesTokens: (rawUsage.candidatesTokenCount as number) || 0,
+                totalTokens: (rawUsage.totalTokenCount as number) || 0,
+                cachedContentTokens: rawUsage.cachedContentTokenCount as number | undefined,
                 estimatedCost: this.calculateCost(modelId, rawUsage)
             };
         }
@@ -193,14 +197,14 @@ export class TraceService {
     /**
      * Legacy method for adding steps without explicit usage
      */
-    static async addStep(traceId: string, type: TraceStep['type'], content: any, metadata?: Record<string, any>): Promise<void> {
+    static async addStep(traceId: string, type: TraceStep['type'], content: unknown, metadata?: Record<string, unknown>): Promise<void> {
         return this.addStepWithUsage(traceId, type, content, '', undefined, metadata);
     }
 
     /**
      * Mark trace as completed
      */
-    static async completeTrace(traceId: string, output?: any): Promise<void> {
+    static async completeTrace(traceId: string, output?: unknown): Promise<void> {
         if (!traceId) return;
 
         const ref = doc(db, this.COLLECTION, traceId);
