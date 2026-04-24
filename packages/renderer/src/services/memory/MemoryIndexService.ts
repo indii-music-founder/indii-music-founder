@@ -61,12 +61,13 @@ export class MemoryIndexService {
         throw new Error('GenAI not initialized');
       }
 
-      const result = await this.genAI.embedContent({
+      const result = await this.genAI.models.embedContent({
         model: 'models/embedding-001',
         content: { parts: [{ text }] }
       });
 
-      return result.embedding.values;
+      const values = result.embeddings?.[0]?.values;
+      return values || null;
     } catch (error) {
       logger.error('[MemoryIndex] Failed to generate embedding', error);
       return null;

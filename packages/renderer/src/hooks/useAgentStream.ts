@@ -48,7 +48,7 @@ export function useAgentStream(
   );
 
   const handleComplete = useCallback(
-    (metadata) => {
+    (metadata: { totalTokens: number; duration: number; latency: number; completedAt: number }) => {
       setIsStreaming(false);
       options.onComplete?.(metadata);
     },

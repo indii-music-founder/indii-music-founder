@@ -109,7 +109,7 @@ export class ContextStackService {
       return null;
     }
 
-    const frame = this.state.frames.pop();
+    const frame = this.state.frames.pop() ?? null;
     if (!frame) return null;
 
     this.state.currentDepth--;

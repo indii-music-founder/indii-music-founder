@@ -93,7 +93,7 @@ export class ReflectionLoop {
 
       const reflectionPrompt = this.buildReflectionPrompt(input);
 
-      const result = await this.genAI.generateContent({
+      const result = await this.genAI.models.generateContent({
         model: 'models/gemini-1.5-flash',
         contents: [{ role: 'user', parts: [{ text: reflectionPrompt }] }]
       });
