@@ -1,11 +1,14 @@
+export type WorkflowEdge = {
+    from: string;
+    to: string;
+    condition?: (state: any) => boolean; // Evaluates if the edge should be traversed
+};
 
 export type WorkflowStep = {
     id: string; // Unique identifier for the step within the workflow
     agentId: string;
     prompt: string;
     priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
-    dependencies?: string[]; // IDs of steps that must complete first
-    condition?: (execution: any) => boolean; // Evaluates if the step should run
 };
 
 export type WorkflowDefinition = {
@@ -13,6 +16,7 @@ export type WorkflowDefinition = {
     name: string;
     description: string;
     steps: WorkflowStep[];
+    edges: WorkflowEdge[];
 };
 
 export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
@@ -31,23 +35,26 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
                 id: 'press_release',
                 agentId: 'publicist',
                 prompt: 'Generate a professional press release and PDF for this campaign.',
-                priority: 'MEDIUM',
-                dependencies: ['brand_analysis']
+                priority: 'MEDIUM'
             },
             {
                 id: 'marketing_strategy',
                 agentId: 'marketing',
                 prompt: 'Analyze current market trends and provide a 4-week marketing strategy for this release.',
-                priority: 'MEDIUM',
-                dependencies: ['brand_analysis']
+                priority: 'MEDIUM'
             },
             {
                 id: 'social_drafts',
                 agentId: 'social',
                 prompt: 'Prepare at least 3 social drop post drafts (TikTok, Instagram, Twitter) for this campaign.',
-                priority: 'LOW',
-                dependencies: ['press_release', 'marketing_strategy']
+                priority: 'LOW'
             }
+        ],
+        edges: [
+            { from: 'brand_analysis', to: 'press_release' },
+            { from: 'brand_analysis', to: 'marketing_strategy' },
+            { from: 'press_release', to: 'social_drafts' },
+            { from: 'marketing_strategy', to: 'social_drafts' }
         ]
     },
     'AI_MERCH_DROP': {
@@ -65,16 +72,18 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
                 id: 'pricing_strategy',
                 agentId: 'marketing',
                 prompt: 'Create a product description and pricing strategy for this merch drop.',
-                priority: 'MEDIUM',
-                dependencies: ['design_concepts']
+                priority: 'MEDIUM'
             },
             {
                 id: 'teaser_campaign',
                 agentId: 'social',
                 prompt: 'Craft a teaser social media campaign for the upcoming merch drop.',
-                priority: 'LOW',
-                dependencies: ['design_concepts']
+                priority: 'LOW'
             }
+        ],
+        edges: [
+            { from: 'design_concepts', to: 'pricing_strategy' },
+            { from: 'design_concepts', to: 'teaser_campaign' }
         ]
     },
     'SECURITY_AUDIT': {
@@ -94,7 +103,8 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
                 prompt: 'Analyze Firebase security rules for potential data leaks.',
                 priority: 'HIGH'
             }
-        ]
+        ],
+        edges: []
     },
     'TOUR_PLANNING': {
         id: 'TOUR_PLANNING',
@@ -111,23 +121,25 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
                 id: 'budgeting',
                 agentId: 'finance',
                 prompt: 'Draft an initial tour budget based on venue capacities and standard travel costs.',
-                priority: 'HIGH',
-                dependencies: ['demographics']
+                priority: 'HIGH'
             },
             {
                 id: 'press_announcement',
                 agentId: 'publicist',
                 prompt: 'Create a tour announcement press release template.',
-                priority: 'MEDIUM',
-                dependencies: ['demographics']
+                priority: 'MEDIUM'
             },
             {
                 id: 'social_teaser',
                 agentId: 'social',
                 prompt: 'Draft a 3-week social media teaser campaign for the pending tour announcement.',
-                priority: 'LOW',
-                dependencies: ['press_announcement']
+                priority: 'LOW'
             }
+        ],
+        edges: [
+            { from: 'demographics', to: 'budgeting' },
+            { from: 'demographics', to: 'press_announcement' },
+            { from: 'press_announcement', to: 'social_teaser' }
         ]
     },
     'INDII_GROWTH_PROTOCOL': {
@@ -145,9 +157,11 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
                 id: 'ad_deployment',
                 agentId: 'marketing',
                 prompt: 'Deploy all creative variations simultaneously with a $5-$10 daily budget. Enforce strict Instagram-Only placements. Monitor CTR and Save Rates, autonomously kill losing creatives by Day 3, and scale the winners.',
-                priority: 'HIGH',
-                dependencies: ['video_generation']
+                priority: 'HIGH'
             }
+        ],
+        edges: [
+            { from: 'video_generation', to: 'ad_deployment' }
         ]
     }
 };

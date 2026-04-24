@@ -8,7 +8,7 @@ import { onSnapshot } from 'firebase/firestore';
 
 vi.mock('../../ai/FirebaseAIService', () => ({
     serverTimestamp: vi.fn(),
-    firebaseAI: {
+    GenAI: {
         analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result."),
         generateContentStream: vi.fn().mockResolvedValue({
             stream: (async function* () { yield { text: () => 'Mock Response' }; })(),

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 
@@ -74,7 +74,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await firebaseAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const res = await GenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
             const text = res.response.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
@@ -102,7 +102,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await firebaseAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const res = await GenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
             const text = res.response.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
@@ -163,7 +163,7 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await firebaseAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const res = await GenAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
             const text = res.response.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);

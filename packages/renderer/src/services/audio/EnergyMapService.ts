@@ -8,7 +8,7 @@
  * then uses Gemini to produce a time-stamped emotional arc with tension peaks,
  * release moments, and narrative phase labels.
  */
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
@@ -114,7 +114,7 @@ RULES:
 - If the track doesn't peak emotionally, say so via trajectoryShape = 'Plateau'.
 `;
 
-            const narrative = await firebaseAI.generateStructuredData<EmotionalNarrative>(
+            const narrative = await GenAI.generateStructuredData<EmotionalNarrative>(
                 [
                     { text: prompt },
                     {

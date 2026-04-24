@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { z } from 'zod';
@@ -56,7 +56,7 @@ export const LicensingTools = {
         For each match, explain WHY it fits the brief.
         `;
 
-        const data = await firebaseAI.generateStructuredData(
+        const data = await GenAI.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );

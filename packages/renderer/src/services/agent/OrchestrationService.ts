@@ -71,6 +71,18 @@ export class OrchestrationService {
         const visited = new Set<string>();
         const recursionStack = new Set<string>();
 
+        // Build adjacency list from edges
+        const adjList = new Map<string, string[]>();
+        for (const step of workflow.steps) {
+            adjList.set(step.id, []);
+        }
+        for (const edge of workflow.edges) {
+            const deps = adjList.get(edge.from);
+            if (deps) {
+                deps.push(edge.to);
+            }
+        }
+
         const dfs = (nodeId: string): boolean => {
             if (recursionStack.has(nodeId)) return true;
             if (visited.has(nodeId)) return false;
@@ -78,10 +90,10 @@ export class OrchestrationService {
             visited.add(nodeId);
             recursionStack.add(nodeId);
 
-            const step = workflow.steps.find(s => s.id === nodeId);
-            if (step && step.dependencies) {
-                for (const dep of step.dependencies) {
-                    if (dfs(dep)) return true;
+            const neighbors = adjList.get(nodeId);
+            if (neighbors) {
+                for (const neighbor of neighbors) {
+                    if (dfs(neighbor)) return true;
                 }
             }
 
@@ -98,7 +110,7 @@ export class OrchestrationService {
 
     /**
      * Core graph execution loop. Processes parallel steps using batch execution,
-     * resolving dependencies and persisting state.
+     * resolving dependencies via explicit edges and persisting state.
      */
     private async runSteps(
         executionId: string,
@@ -124,11 +136,14 @@ export class OrchestrationService {
                 if (!state) return false;
                 if (state.status !== 'planned' && state.status !== 'failed') return false;
 
-                if (!step.dependencies || step.dependencies.length === 0) return true;
+                // A step is ready if ALL incoming edges from other steps have their conditions met
+                // AND the origin steps are complete/skipped.
+                const incomingEdges = workflow.edges.filter(edge => edge.to === step.id);
+                if (incomingEdges.length === 0) return true; // No dependencies
 
                 // Check if all dependencies are complete or skipped
-                return step.dependencies.every(depId => {
-                    const depState = execution.steps[depId];
+                return incomingEdges.every(edge => {
+                    const depState = execution.steps[edge.from];
                     return depState && (depState.status === 'step_complete' || depState.status === 'skipped');
                 });
             });
@@ -143,12 +158,21 @@ export class OrchestrationService {
 
             for (const step of readySteps) {
                 let shouldExecute = true;
-                if (step.condition) {
-                    try {
-                        shouldExecute = step.condition(execution);
-                    } catch (error) {
-                        logger.warn(`[Orchestration] Condition evaluation threw an error for step ${step.id}, defaulting to skip`, error);
-                        shouldExecute = false;
+                
+                // Evaluate conditions on all incoming edges
+                const incomingEdges = workflow.edges.filter(edge => edge.to === step.id);
+                for (const edge of incomingEdges) {
+                    if (edge.condition) {
+                        try {
+                            if (!edge.condition(execution)) {
+                                shouldExecute = false;
+                                break;
+                            }
+                        } catch (error) {
+                            logger.warn(`[Orchestration] Condition evaluation threw an error for edge to step ${step.id}, defaulting to skip`, error);
+                            shouldExecute = false;
+                            break;
+                        }
                     }
                 }
 
@@ -158,7 +182,7 @@ export class OrchestrationService {
                 } else {
                     await workflowStateService.skipStep(userId, executionId, step.id, 'Condition not met');
                     report += `## ⏭️ Step: ${step.id} [${step.agentId.toUpperCase()}] (SKIPPED)\n`;
-                    report += `Condition evaluated to false.\n\n---\n\n`;
+                    report += `Edge condition evaluated to false.\n\n---\n\n`;
                     stepsSkipped = true;
                 }
             }

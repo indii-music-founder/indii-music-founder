@@ -32,7 +32,7 @@ vi.mock("@/services/ai/GenAI", () => ({
 }));
 
 vi.mock("@/services/ai/FirebaseAIService", () => ({
-  firebaseAI: {
+  GenAI: {
     generateContent: vi.fn(),
   },
 }));
@@ -297,14 +297,14 @@ describe("ImageGenerationService", () => {
   });
 });
 describe("captionImage", () => {
-  it("should call firebaseAI.generateContent and return caption text", async () => {
-    const { firebaseAI } = await import("@/services/ai/FirebaseAIService");
+  it("should call GenAI.generateContent and return caption text", async () => {
+    const { GenAI } = await import('@/services/ai/GenAI');
     const mockResponse = {
       response: {
         text: vi.fn().mockReturnValue("A glowing orb in a dark forest."),
       },
     };
-    vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
+    vi.mocked(GenAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
     const result = await ImageGeneration.captionImage(
       { mimeType: "image/png", data: "cleanBase64Data" },
@@ -312,6 +312,6 @@ describe("captionImage", () => {
     );
 
     expect(result).toBe("A glowing orb in a dark forest.");
-    expect(firebaseAI.generateContent).toHaveBeenCalledOnce();
+    expect(GenAI.generateContent).toHaveBeenCalledOnce();
   });
 });

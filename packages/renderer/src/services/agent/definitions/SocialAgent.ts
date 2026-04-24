@@ -1,6 +1,6 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { Schema } from 'firebase/ai';
 
 export const SocialAgent: AgentConfig = {
@@ -179,7 +179,7 @@ If a task is outside Social, say:
         analyze_trends: async (args: { topic: string }) => {
             const prompt = `Analyze current social media trends for the topic: "${args.topic}". Return a JSON with trend_score (0-100), sentiment (positive/neutral/negative), keywords (array), and a summary.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await GenAI.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: response };
             } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };
@@ -187,7 +187,7 @@ If a task is outside Social, say:
         },
         generate_social_post: async (args: { platform: string, topic: string, tone?: string }) => {
             const prompt = `Write a ${args.platform} post about "${args.topic}". Tone: ${args.tone || 'engaging'}. Include hashtags.`;
-            const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+            const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return { success: true, data: { content: response } };
         },
         create_social_calendar: async (args: { releaseDate: string, campaignTitle: string, durationWeeks: number }) => {
@@ -203,7 +203,7 @@ If a task is outside Social, say:
             - Platform-specific frequency (TikTok daily, IG 3x/week, etc.)`;
 
             try {
-                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { calendar: response } };
             } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };
@@ -224,7 +224,7 @@ If a task is outside Social, say:
         draft_advanced_thread: async (args: { topic: string, platform: string, threadLength: number }) => {
             const prompt = `Draft a compelling ${args.threadLength}-part advanced thread for ${args.platform} about ${args.topic}. Make each part flow smoothly into the next, using hooks and cliffhangers where appropriate. Return an array of strings.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'array', items: { type: 'string' } } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await GenAI.generateStructuredData(prompt, { type: 'array', items: { type: 'string' } } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { thread: response } };
             } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };

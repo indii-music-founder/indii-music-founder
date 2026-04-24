@@ -8,7 +8,7 @@ import { useStore } from '@/core/store';
 
 // Mock dependencies
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         generateStructuredData: vi.fn(),
         generateText: vi.fn(),
         analyzeImage: vi.fn()
@@ -40,7 +40,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 
@@ -75,14 +75,14 @@ describe('Filmmaking Grammar Tools', () => {
                 beats: [{ beat: 1, name: "Intro" }]
             };
 
-            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse);
+            vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockResponse);
 
             const result = await NarrativeTools.generate_visual_script({ synopsis: "A test story" });
 
             expect(result.success).toBe(true);
             expect(result.message).toContain("Test Script");
             expect(result.data.title).toBe("Test Script");
-            expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
+            expect(GenAI.generateStructuredData).toHaveBeenCalled();
         });
     });
 

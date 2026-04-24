@@ -578,3 +578,72 @@ export interface StreamCallbacks {
     /** Called on any error during streaming */
     onError: (error: Error) => void;
 }
+// ============================================================================
+// Phase 4: Graph-Based Orchestration (NEXT)
+// ============================================================================
+
+/**
+ * A specialized node in an Agentic Graph.
+ * Nodes represent individual agent executions or logic gates.
+ */
+export interface GraphNode {
+    id: string;
+    agentId: ValidAgentId;
+    /** The task template for this node. Can use placeholders like {{input}}. */
+    taskTemplate: string;
+    /** Whether this node must wait for all parents or just any parent. */
+    waitCondition: 'all' | 'any';
+    /** Optional hardcoded context overrides for this node. */
+    contextOverrides?: Partial<AgentContext>;
+}
+
+/**
+ * A directed edge between graph nodes.
+ * Edges represent data flow and execution order.
+ */
+export interface GraphEdge {
+    sourceId: string;
+    targetId: string;
+    /** Optional condition to traverse this edge (e.g. tool output matches regex). */
+    condition?: string;
+    /** Maps source output to target input placeholders. */
+    inputMapping?: Record<string, string>;
+}
+
+/**
+ * A non-linear workflow represented as a Directed Acyclic Graph (DAG).
+ * Maps to GEAP Pillar 3: Graph-Based Orchestration.
+ */
+export interface AgentGraph {
+    id: string;
+    name: string;
+    description: string;
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    /** The node where execution begins. */
+    entryNodeId: string;
+    /** Metadata for tracking versioning and ownership. */
+    metadata: {
+        version: string;
+        author: string;
+        createdAt: number;
+    };
+}
+
+/**
+ * The execution state of a running graph.
+ */
+export interface GraphExecutionState {
+    graphId: string;
+    executionId: string;
+    /** Map of node ID to its current execution status and output. */
+    nodeStates: Record<string, {
+        status: WorkflowExecutionStatus;
+        output?: string;
+        error?: string;
+        startedAt?: number;
+        completedAt?: number;
+    }>;
+    /** Overall status of the graph execution. */
+    status: WorkflowExecutionStatus;
+}

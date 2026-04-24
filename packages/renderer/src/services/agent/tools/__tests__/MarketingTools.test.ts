@@ -4,10 +4,10 @@ import { MarketingTools } from '../MarketingTools';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { MarketingService } from '@/services/marketing/MarketingService';
 
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
+    GenAI: {
         generateStructuredData: vi.fn(),
     }
 }));
@@ -59,7 +59,7 @@ describe('MarketingTools', () => {
             channels: [],
             kpis: []
         };
-        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+        vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
         const result = await MarketingTools.create_campaign_brief({ product: 'Test', goal: 'Win' });
         expect(result.success).toBe(true);
