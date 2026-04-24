@@ -116,3 +116,4 @@ HANDOFF_STATE.md
 **/CHECKPOINT*.md
 .claude/settings.local.json
 test-results.json
+packages/shared/tsconfig.tsbuildinfo
