@@ -5,6 +5,7 @@ import { Shield, ShieldAlert, Zap } from 'lucide-react';
 import { agentOptimizer, OptimizationSuggestion } from '../../../services/agent/governance/AgentOptimizer';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { logger } from '@/utils/logger';
 
 export const SecurityDashboard: React.FC = () => {
     const user = useStore(useShallow(state => state.user));
@@ -18,7 +19,7 @@ export const SecurityDashboard: React.FC = () => {
                 const optSuggestions = await agentOptimizer.analyzePerformance(user.uid);
                 setSuggestions(optSuggestions);
             } catch (err) {
-                console.error('Failed to load agent optimizations', err);
+                logger.error('Failed to load agent optimizations', err);
             } finally {
                 setLoading(false);
             }

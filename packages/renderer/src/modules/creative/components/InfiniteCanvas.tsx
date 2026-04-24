@@ -119,7 +119,7 @@ export default function InfiniteCanvas() {
                         if (typeof image!.removeAttribute === 'function') image!.removeAttribute('crossOrigin');
                         image!.src = `data:${mimeType};base64,${base64}`;
                     }).catch(err => {
-                        console.error("Failed to load canvas image via safe fetch:", src, err);
+                        logger.error("Failed to load canvas image via safe fetch:", src, err);
                         // Fallback
                         image!.crossOrigin = 'anonymous';
                         image!.src = src + (src.includes('?') ? '&' : '?') + 'cb=' + Date.now();
@@ -131,7 +131,7 @@ export default function InfiniteCanvas() {
 
                 image.onload = () => requestDraw();
                 image.onerror = () => {
-                    console.error("Failed to load canvas image:", src);
+                    logger.error("Failed to load canvas image:", src);
                 };
             }
 
