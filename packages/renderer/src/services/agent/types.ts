@@ -437,6 +437,23 @@ export type WorkflowExecutionStatus =
     | 'cancelled'
     | 'skipped';
 
+export interface WorkflowEdge {
+    from: string;
+    to: string;
+    condition?: (state: WorkflowExecution) => boolean; // Evaluates if the edge should be traversed
+    label?: string; // Human-readable label for the transition
+    metadata?: Record<string, any>; // Arbitrary metadata for the transition
+}
+
+export interface WorkflowStep {
+    id: string; // Unique identifier for the step within the workflow
+    agentId: string;
+    prompt: string;
+    priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+    timeoutMs?: number; // Optional timeout for this specific step
+    retryCount?: number; // How many times to retry on failure
+}
+
 /**
  * Persisted state for a single step within a workflow execution.
  */
@@ -463,6 +480,7 @@ export interface WorkflowExecution {
     userId: string;
     status: WorkflowExecutionStatus;
     steps: Record<string, WorkflowStepExecution>;
+    edges: WorkflowEdge[];
     currentStepIndex: number;
     createdAt: number;
     updatedAt: number;
