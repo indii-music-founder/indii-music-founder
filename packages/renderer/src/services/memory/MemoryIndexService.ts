@@ -9,7 +9,7 @@
  */
 
 import { logger } from '@/utils/logger';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import type { Memory, MemoryLayer } from './PersistentMemoryService';
 
 interface EmbeddingIndex {
@@ -28,7 +28,7 @@ interface SearchResult {
 }
 
 export class MemoryIndexService {
-  private genAI: GoogleGenerativeAI | null = null;
+  private genAI: GoogleGenAI | null = null;
   private embeddings: Map<string, EmbeddingIndex> = new Map();
   private similarityThreshold = 0.65;
   private initialized = false;
@@ -40,7 +40,7 @@ export class MemoryIndexService {
         throw new Error('VITE_API_KEY not configured');
       }
 
-      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.genAI = new GoogleGenAI({ apiKey });
       this.initialized = true;
       logger.info('[MemoryIndex] Initialized with Google Generative AI');
     } catch (error) {
@@ -61,11 +61,11 @@ export class MemoryIndexService {
         throw new Error('GenAI not initialized');
       }
 
-      const model = this.genAI.getGenerativeModel({
-        model: 'embedding-001'
+      const result = await this.genAI.embedContent({
+        model: 'models/embedding-001',
+        content: { parts: [{ text }] }
       });
 
-      const result = await model.embedContent(text);
       return result.embedding.values;
     } catch (error) {
       logger.error('[MemoryIndex] Failed to generate embedding', error);

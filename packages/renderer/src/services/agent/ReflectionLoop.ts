@@ -13,7 +13,7 @@
  */
 
 import { logger } from '@/utils/logger';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 interface ReflectionInput {
   originalPrompt: string;
@@ -53,7 +53,7 @@ interface ReflectionLoopState {
 }
 
 export class ReflectionLoop {
-  private genAI: GoogleGenerativeAI | null = null;
+  private genAI: GoogleGenAI | null = null;
   private state: ReflectionLoopState = {
     isRunning: false,
     currentIteration: 0,
@@ -70,7 +70,7 @@ export class ReflectionLoop {
         throw new Error('VITE_API_KEY not configured');
       }
 
-      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.genAI = new GoogleGenAI({ apiKey });
       this.initialized = true;
       logger.info('[ReflectionLoop] Initialized');
     } catch (error) {
@@ -91,12 +91,14 @@ export class ReflectionLoop {
         throw new Error('GenAI not initialized');
       }
 
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
       const reflectionPrompt = this.buildReflectionPrompt(input);
 
-      const result = await model.generateContent(reflectionPrompt);
-      const responseText = result.response.text();
+      const result = await this.genAI.generateContent({
+        model: 'models/gemini-1.5-flash',
+        contents: [{ role: 'user', parts: [{ text: reflectionPrompt }] }]
+      });
+
+      const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
       const reflection = this.parseReflectionResponse(responseText);
 
