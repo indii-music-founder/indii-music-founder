@@ -5,7 +5,9 @@
     "type": "module",
     "scripts": {
         "typecheck": "tsc --noEmit",
-        "test": "vitest"
+        "test": "vitest",
+        "storybook": "storybook dev -p 6006",
+        "build-storybook": "storybook build"
     },
     "dependencies": {
         "@emotion/is-prop-valid": "1.4.0",
@@ -107,6 +109,17 @@
         "vite": "6.4.1",
         "vite-plugin-pwa": "^0.19.8",
         "vitest": "4.0.18",
-        "vitest-axe": "^0.1.0"
+        "vitest-axe": "^0.1.0",
+        "storybook": "^10.3.5",
+        "@storybook/react-vite": "^10.3.5",
+        "@chromatic-com/storybook": "^5.1.2",
+        "@storybook/addon-vitest": "^10.3.5",
+        "@storybook/addon-a11y": "^10.3.5",
+        "@storybook/addon-docs": "^10.3.5",
+        "@storybook/addon-onboarding": "^10.3.5",
+        "eslint-plugin-storybook": "^10.3.5",
+        "playwright": "^1.59.1",
+        "@vitest/browser-playwright": "^4.0.18",
+        "@vitest/coverage-v8": "^4.0.18"
     }
 }

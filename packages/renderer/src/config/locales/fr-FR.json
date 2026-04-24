@@ -1,0 +1,17 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "logout": "Déconnexion",
+    "loading": "Chargement..."
+  },
+  "auth": {
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "email": "E-mail",
+    "password": "Mot de passe"
+  }
+}
