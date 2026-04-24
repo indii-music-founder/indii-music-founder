@@ -1,4 +1,5 @@
  
+import { validateWorkflowGraph } from './WorkflowGraphUtils';
 import { AgentContext } from './types';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { WORKFLOW_REGISTRY, WorkflowDefinition } from './WorkflowRegistry';
@@ -37,6 +38,7 @@ export class OrchestrationService {
             userId,
             workflowId,
             workflow.steps,
+            workflow.edges,
             context.projectId
         );
 
@@ -67,51 +69,6 @@ export class OrchestrationService {
         return this.runSteps(executionId, workflow, context, userId, traceId);
     }
 
-    private hasCycles(workflow: WorkflowDefinition): boolean {
-        const visited = new Set<string>();
-        const recursionStack = new Set<string>();
-
-        // Build adjacency list from edges
-        const adjList = new Map<string, string[]>();
-        for (const step of workflow.steps) {
-            adjList.set(step.id, []);
-        }
-        for (const edge of workflow.edges) {
-            const deps = adjList.get(edge.from);
-            if (deps) {
-                deps.push(edge.to);
-            }
-        }
-
-        const dfs = (nodeId: string): boolean => {
-            if (recursionStack.has(nodeId)) return true;
-            if (visited.has(nodeId)) return false;
-
-            visited.add(nodeId);
-            recursionStack.add(nodeId);
-
-            const neighbors = adjList.get(nodeId);
-            if (neighbors) {
-                for (const neighbor of neighbors) {
-                    if (dfs(neighbor)) return true;
-                }
-            }
-
-            recursionStack.delete(nodeId);
-            return false;
-        };
-
-        for (const step of workflow.steps) {
-            if (dfs(step.id)) return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Core graph execution loop. Processes parallel steps using batch execution,
-     * resolving dependencies via explicit edges and persisting state.
-     */
     private async runSteps(
         executionId: string,
         workflow: WorkflowDefinition,
@@ -119,9 +76,8 @@ export class OrchestrationService {
         userId: string,
         traceId: string
     ): Promise<string> {
-        if (this.hasCycles(workflow)) {
-            throw new Error(`Workflow ${workflow.id} contains a cyclic dependency.`);
-        }
+        // Validate graph before execution
+        validateWorkflowGraph(workflow);
 
         let report = `# 🚀 Workflow Report: ${workflow.name}\n\n**Description**: ${workflow.description}\n\n---\n\n`;
 

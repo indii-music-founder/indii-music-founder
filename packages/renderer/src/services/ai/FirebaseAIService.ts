@@ -787,7 +787,7 @@ export class FirebaseAIService implements AIContext {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string, timeout?: number }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools, options);
     }
