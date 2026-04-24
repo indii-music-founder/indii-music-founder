@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, ExternalLink, Lock, CheckCircle, Clock, AlertCircle, Copy } from 'lucide-react';
+import { Users, ExternalLink, Lock, CheckCircle, Clock, AlertCircle, Copy, type LucideIcon } from 'lucide-react';
 
 /* ================================================================== */
 /*  Item 154 — Stripe Connect Custom Accounts                          */
@@ -19,7 +19,7 @@ interface Collaborator {
 
 const INITIAL_COLLABORATORS: Collaborator[] = [];
 
-const STATUS_CONFIG: Record<ConnectStatus, { label: string; color: string; icon: React.ElementType }> = {
+const STATUS_CONFIG: Record<ConnectStatus, { label: string; color: string; icon: LucideIcon }> = {
     active: { label: 'Active', color: 'text-green-400 bg-green-500/10 border-green-500/20', icon: CheckCircle },
     pending: { label: 'Pending', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20', icon: Clock },
     not_started: { label: 'Not Started', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20', icon: AlertCircle },

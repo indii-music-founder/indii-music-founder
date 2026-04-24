@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { Clock } from 'lucide-react';
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
     const invalid = ['initial', 'animate', 'exit', 'transition', 'whileHover', 'whileTap', 'layout'];
@@ -60,7 +61,7 @@ describe('HistoryDashboard', () => {
 
 describe('FilterItem', () => {
     it('renders label and active state', () => {
-        render(<FilterItem icon={() => <span>I</span>} label="Test Filter" active />);
+        render(<FilterItem icon={Clock} label="Test Filter" active />);
         expect(screen.getByText('Test Filter')).toBeInTheDocument();
     });
 });

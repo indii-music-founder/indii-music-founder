@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, TrendingDown, Minus, BarChart2, Heart, Users, Share2, Music } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, BarChart2, Heart, Users, Share2, Music, type LucideIcon } from 'lucide-react';
 import type { ComputedMetrics } from '@/services/analytics/types';
 
 interface MetricsGridProps {
@@ -12,7 +12,7 @@ interface MetricCardProps {
     label: string;
     value: string;
     subtitle: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     trend: 'up' | 'down' | 'neutral';
     color: string;
     delay: number;
