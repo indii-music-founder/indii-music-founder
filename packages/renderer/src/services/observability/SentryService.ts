@@ -111,3 +111,25 @@ export function captureException(error: unknown, context?: Record<string, unknow
         Sentry.captureException(error);
     });
 }
+
+/** Report Core Web Vitals metrics to Sentry. */
+export function reportWebVitals(vitals: Record<string, number>): void {
+    Sentry.withScope((scope) => {
+        scope.setLevel('info');
+        Object.entries(vitals).forEach(([name, value]) => {
+            scope.setTag(`vital_${name}`, value.toString());
+        });
+        Sentry.captureMessage('Web Vitals collected', 'info');
+    });
+}
+
+/** Report bundle metrics to Sentry. */
+export function reportBundleMetrics(jsSize: number, cssSize: number, totalSize: number): void {
+    Sentry.withScope((scope) => {
+        scope.setLevel('info');
+        scope.setTag('bundle_js_bytes', (jsSize / 1024).toFixed(1));
+        scope.setTag('bundle_css_bytes', (cssSize / 1024).toFixed(1));
+        scope.setTag('bundle_total_bytes', (totalSize / 1024).toFixed(1));
+        Sentry.captureMessage('Bundle metrics collected', 'info');
+    });
+}
