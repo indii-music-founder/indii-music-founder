@@ -93,10 +93,8 @@ describe('AgentGraphService', () => {
 
         (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
         (agentGraphStateService.getExecution as any)
-            .mockResolvedValueOnce(state1) // Start of loop 1
-            .mockResolvedValueOnce(state1) // Check after task start
-            .mockResolvedValueOnce(state2) // Start of loop 2
-            .mockResolvedValueOnce(state2) // Check after task start
+            .mockResolvedValueOnce(state1) // Start of loop 1: node-1
+            .mockResolvedValueOnce(state2) // Start of loop 2: node-2
             .mockResolvedValueOnce(state3); // Final check to exit
 
         (agentService.delegateTask as any)
@@ -123,8 +121,8 @@ describe('AgentGraphService', () => {
             id: 'parallel-graph',
             nodes: [
                 { id: 'node-1', agentId: 'generalist', taskTemplate: 'Start', waitCondition: 'all' },
-                { id: 'node-2', agentId: 'agent-A', taskTemplate: 'Parallel A', waitCondition: 'all' },
-                { id: 'node-3', agentId: 'agent-B', taskTemplate: 'Parallel B', waitCondition: 'all' },
+                { id: 'node-2', agentId: 'generalist', taskTemplate: 'Parallel A', waitCondition: 'all' },
+                { id: 'node-3', agentId: 'generalist', taskTemplate: 'Parallel B', waitCondition: 'all' },
             ],
             edges: [
                 { sourceId: 'node-1', targetId: 'node-2' },
@@ -165,9 +163,7 @@ describe('AgentGraphService', () => {
         (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
         (agentGraphStateService.getExecution as any)
             .mockResolvedValueOnce(state1) // Loop 1: node 1
-            .mockResolvedValueOnce(state1) // node 1 start
             .mockResolvedValueOnce(state2) // Loop 2: node 2 & 3
-            .mockResolvedValueOnce(state2) // node 2 & 3 start
             .mockResolvedValueOnce(state3); // Exit
 
         (agentService.delegateTask as any)
@@ -198,8 +194,8 @@ describe('AgentGraphService', () => {
             id: 'conditional-graph',
             nodes: [
                 { id: 'node-1', agentId: 'generalist', taskTemplate: 'Evaluate', waitCondition: 'all' },
-                { id: 'node-2', agentId: 'success-agent', taskTemplate: 'Success Path', waitCondition: 'all' },
-                { id: 'node-3', agentId: 'failure-agent', taskTemplate: 'Failure Path', waitCondition: 'all' },
+                { id: 'node-2', agentId: 'generalist', taskTemplate: 'Success Path', waitCondition: 'all' },
+                { id: 'node-3', agentId: 'generalist', taskTemplate: 'Failure Path', waitCondition: 'all' },
             ],
             edges: [
                 { sourceId: 'node-1', targetId: 'node-2', condition: 'SUCCESS' },
@@ -242,9 +238,7 @@ describe('AgentGraphService', () => {
         (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
         (agentGraphStateService.getExecution as any)
             .mockResolvedValueOnce(state1) // Loop 1: node 1
-            .mockResolvedValueOnce(state1)
             .mockResolvedValueOnce(state2) // Loop 2: node 2 executes, node 3 skips
-            .mockResolvedValueOnce(state2)
             .mockResolvedValueOnce(state3);
 
         (agentService.delegateTask as any)
@@ -275,7 +269,6 @@ describe('AgentGraphService', () => {
 
         (agentGraphStateService.createExecution as any).mockResolvedValue(state1);
         (agentGraphStateService.getExecution as any)
-            .mockResolvedValueOnce(state1)
             .mockResolvedValueOnce(state1);
 
         (agentService.delegateTask as any).mockRejectedValue(new Error('Agent Crash'));
@@ -285,6 +278,58 @@ describe('AgentGraphService', () => {
 
         expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
             mockUserId, mockExecutionId, 'failed'
+        );
+    });
+
+    it('should resume a previously interrupted graph execution', async () => {
+        const resumeGraphDef: AgentGraph = {
+            ...mockGraph,
+            id: 'resume-graph',
+            nodes: [
+                { id: 'node-1', agentId: 'generalist', taskTemplate: 'Task 1', waitCondition: 'all' },
+                { id: 'node-2', agentId: 'generalist', taskTemplate: 'Task 2', waitCondition: 'all' },
+            ],
+            edges: [{ sourceId: 'node-1', targetId: 'node-2' }],
+        };
+
+        const mockExecutionId = 'exec-resume';
+        
+        // Initial state: node-1 complete, node-2 planned
+        const state1 = {
+            graphId: 'resume-graph',
+            executionId: mockExecutionId,
+            status: 'executing',
+            nodeStates: {
+                'node-1': { status: 'step_complete', output: 'Output 1' },
+                'node-2': { status: 'planned' },
+            }
+        };
+
+        // Final state
+        const state2 = {
+            ...state1,
+            nodeStates: {
+                'node-1': { status: 'step_complete', output: 'Output 1' },
+                'node-2': { status: 'step_complete', output: 'Output 2' },
+            },
+            status: 'executing'
+        };
+
+        (agentGraphStateService.getExecution as any)
+            .mockResolvedValueOnce(state1) // resumeGraph setup
+            .mockResolvedValueOnce(state1) // Loop 1: finds node-2 ready
+            .mockResolvedValueOnce(state2); // Loop 2: exit (status is completed)
+
+        (agentService.delegateTask as any).mockResolvedValue('Output 2');
+
+        // We need to provide the graph to AgentGraphService somehow or let it be passed to resumeGraph
+        // For now, let's update resumeGraph signature in implementation or mock it.
+        await agentGraphService.resumeGraph(mockExecutionId, mockContext, resumeGraphDef);
+
+        expect(agentService.delegateTask).toHaveBeenCalledTimes(1);
+        expect((agentService.delegateTask as any).mock.calls[0][1]).toBe('Task 2');
+        expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
+            mockUserId, mockExecutionId, 'completed'
         );
     });
 });
