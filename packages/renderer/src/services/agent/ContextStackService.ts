@@ -65,6 +65,8 @@ export class ContextStackService {
     const parentFrameId = this.state.frames.length > 0
       ? this.state.frames[this.state.frames.length - 1]!.frameId
       : undefined;
+    const lastFrame = this.state.frames[this.state.frames.length - 1];
+    const parentFrameId = lastFrame?.frameId;
 
     const frame: ContextFrame = {
       frameId,
@@ -127,6 +129,8 @@ export class ContextStackService {
   peek(): ContextFrame | null {
     if (this.state.frames.length === 0) return null;
     return this.state.frames[this.state.frames.length - 1] ?? null;
+    const frame = this.state.frames[this.state.frames.length - 1];
+    return frame ?? null;
   }
 
   /**
