@@ -11,7 +11,8 @@ import {
     List,
     Loader2,
     Sparkles,
-    Crown
+    Crown,
+    type LucideIcon
 } from 'lucide-react';
 import { usePublicist } from './hooks/usePublicist';
 import { CampaignCard } from './components/CampaignCard';
@@ -384,7 +385,7 @@ export default function PublicistDashboard() {
 }
 
 // Sub-component for Sidebar Navigation Buttons
-function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActive: boolean; onClick: () => void; icon: React.ElementType; label: string; disabled?: boolean }) {
+function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActive: boolean; onClick: () => void; icon: LucideIcon; label: string; disabled?: boolean }) {
     return (
         <button
             onClick={onClick}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { Zap } from 'lucide-react';
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
     const invalid = ['initial', 'animate', 'exit', 'transition', 'whileHover', 'whileTap', 'layout'];
@@ -53,7 +54,7 @@ describe('DesktopDashboard', () => {
 describe('SettingCard', () => {
     it('renders enabled state', () => {
         const onClick = vi.fn();
-        const { container } = render(<SettingCard icon={() => <span>IC</span>} title="Test" description="Desc" enabled={true} onClick={onClick} />);
+        const { container } = render(<SettingCard icon={Zap} title="Test" description="Desc" enabled={true} onClick={onClick} />);
         expect(screen.getByText('Test')).toBeInTheDocument();
         expect(screen.getByText('Desc')).toBeInTheDocument();
     });

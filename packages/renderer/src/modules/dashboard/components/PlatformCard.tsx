@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Monitor, Globe, Check, Lock, Cpu, HardDrive, Radio, Upload, Headphones, Zap, ArrowRight, X, Flame, ShieldAlert, Activity } from 'lucide-react';
+import { Monitor, Globe, Check, Lock, Cpu, HardDrive, Radio, Upload, Headphones, Zap, ArrowRight, X, Flame, ShieldAlert, Activity, LucideIcon } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -7,7 +7,7 @@ const isElectron = typeof window !== 'undefined' && !!(window as unknown as Reco
 
 interface FeatureRow {
     label: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     web: boolean | 'limited';
     desktop: boolean;
 }
