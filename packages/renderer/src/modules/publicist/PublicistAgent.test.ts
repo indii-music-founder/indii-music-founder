@@ -3,22 +3,20 @@ import { PUBLICIST_TOOLS } from './tools';
 import { GenAI } from '@/services/ai/GenAI';
 
 // Mock AI Service with alias path
-vi.mock('@/services/ai/FirebaseAIService', () => ({
-    GenAI: {
-        generateContent: vi.fn().mockResolvedValue({
-            response: {
-                text: () => JSON.stringify({
-                    headline: "Test Headline",
-                    content: "Mocked AI Response",
-                    contactInfo: "test@example.com",
-                    response: "Mocked AI Response",
-                    sentimentAnalysis: "Positive",
-                    nextSteps: ["Step 1"]
-                })
-            }
-        })
-    }
-}));
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 // Mock MemoryService to avoid IndexedDB issues
 vi.mock('@/services/agent/MemoryService', () => ({

@@ -7,12 +7,22 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // Mocks
 vi.mock('@/core/store');
 
-vi.mock('../../ai/FirebaseAIService', () => ({
-    GenAI: {
+vi.mock('../../ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
-        analyzeImage: vi.fn().mockResolvedValue('Mocked temporal analysis result.'),
-    }
-}));
+        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        analyzeImage: vi.fn().mockResolvedValue('Mock analysis text')
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: {
