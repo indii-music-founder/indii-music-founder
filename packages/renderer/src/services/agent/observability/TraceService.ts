@@ -50,7 +50,7 @@ export class TraceService {
                 startTime: serverTimestamp() as unknown as import('firebase/firestore').Timestamp,
 
                 steps: [],
-                swarmId: metadata?.swarmId || (parentTraceId ? null : traceId),
+                swarmId: (metadata?.swarmId as string | undefined) || (parentTraceId ? undefined : traceId),
                 metadata: {
                     ...(metadata || {}),
                     ...(parentTraceId ? { parentTraceId } : {})
@@ -109,14 +109,19 @@ export class TraceService {
         // 3. Calculate
         if (!pricing) return 0;
 
-        if (pricing.perGeneration) {
-            return pricing.perGeneration;
+        const perGen = pricing.perGeneration as number | undefined;
+        if (perGen) {
+            return perGen;
         }
 
-        if (usage.promptTokenCount !== undefined && usage.candidatesTokenCount !== undefined) {
+        const promptTokens = usage.promptTokenCount as number | undefined;
+        const candidateTokens = usage.candidatesTokenCount as number | undefined;
+        if (promptTokens !== undefined && candidateTokens !== undefined) {
             // Pricing is usually per 1M tokens
-            const inputCost = (usage.promptTokenCount / 1_000_000) * (pricing.input || 0);
-            const outputCost = (usage.candidatesTokenCount / 1_000_000) * (pricing.output || 0);
+            const inputPrice = pricing.input as number || 0;
+            const outputPrice = pricing.output as number || 0;
+            const inputCost = (promptTokens / 1_000_000) * inputPrice;
+            const outputCost = (candidateTokens / 1_000_000) * outputPrice;
             return inputCost + outputCost;
         }
 
@@ -139,10 +144,10 @@ export class TraceService {
         let usage: UsageMetrics | undefined;
         if (rawUsage) {
             usage = {
-                promptTokens: rawUsage.promptTokenCount || 0,
-                candidatesTokens: rawUsage.candidatesTokenCount || 0,
-                totalTokens: rawUsage.totalTokenCount || 0,
-                cachedContentTokens: rawUsage.cachedContentTokenCount,
+                promptTokens: (rawUsage.promptTokenCount as number) || 0,
+                candidatesTokens: (rawUsage.candidatesTokenCount as number) || 0,
+                totalTokens: (rawUsage.totalTokenCount as number) || 0,
+                cachedContentTokens: rawUsage.cachedContentTokenCount as number | undefined,
                 estimatedCost: this.calculateCost(modelId, rawUsage)
             };
         }

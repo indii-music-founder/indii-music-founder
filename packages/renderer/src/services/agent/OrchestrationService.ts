@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
+ 
 import { AgentContext } from './types';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { WORKFLOW_REGISTRY, WorkflowDefinition } from './WorkflowRegistry';
@@ -193,9 +193,6 @@ export class OrchestrationService {
                     const res = results[i];
 
                     if (!step || !res) continue;
-                    if (!step) continue;
-
-                    const res: any = results[i];
 
                     const resultText = res?.text || res?.message || 'No output';
                     const success = res?.success !== false;
