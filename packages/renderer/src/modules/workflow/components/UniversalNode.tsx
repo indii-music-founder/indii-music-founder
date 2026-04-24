@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { DepartmentNodeData, LogicNodeData, Status, AnyAsset } from '../types';
 import { getNodeDefinition, getJobDefinition, DATA_TYPE_COLORS, DataType } from '../services/nodeRegistry';
-import { CheckCircle, Hourglass, LoaderCircle, AlertTriangle, Settings, Pencil } from 'lucide-react';
+import { CheckCircle, Hourglass, LoaderCircle, AlertTriangle, Settings, Pencil, LucideIcon } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -25,7 +25,7 @@ interface WorkflowResultAsset extends AnyAsset {
 }
 
 interface StatusStyle {
-    icon: React.ElementType;
+    icon: LucideIcon;
     color: string;
     animate?: boolean;
 }

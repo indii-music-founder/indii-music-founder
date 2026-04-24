@@ -22,6 +22,7 @@ import {
     Link2,
     Palette,
     Shield,
+    LucideIcon,
 } from 'lucide-react';
 
 import ProfileSection from './settings-panel/ProfileSection';
@@ -36,7 +37,7 @@ import SecuritySection from './settings-panel/SecuritySection';
 
 type SettingsSection = 'profile' | 'connections' | 'notifications' | 'appearance' | 'security';
 
-const SECTIONS: Array<{ id: SettingsSection; label: string; icon: React.ElementType; description: string }> = [
+const SECTIONS: Array<{ id: SettingsSection; label: string; icon: LucideIcon; description: string }> = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Name, avatar, and bio' },
     { id: 'connections', label: 'Connected Services', icon: Link2, description: 'Email, social, and integrations' },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push, email, and sound preferences' },

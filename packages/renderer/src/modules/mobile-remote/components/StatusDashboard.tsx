@@ -5,7 +5,7 @@
 
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
-import { Wifi, WifiOff, Cpu, Activity, Layers, Clock, Zap } from 'lucide-react';
+import { Wifi, WifiOff, Cpu, Activity, Layers, Clock, Zap, type LucideIcon } from 'lucide-react';
 
 interface StatusDashboardProps {
     connectionStatus: 'idle' | 'pairing' | 'connected' | 'error';
@@ -13,7 +13,7 @@ interface StatusDashboardProps {
 }
 
 function StatusCard({ icon: Icon, label, value, accent = false }: {
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
     value: string;
     accent?: boolean;
