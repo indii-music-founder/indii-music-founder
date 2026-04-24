@@ -3,32 +3,19 @@ import { ReceiptOCRService } from './ReceiptOCRService';
 
 // Mock FirebaseAIService
 vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
     return {
         FirebaseAIService: class {
-            bootstrap = vi.fn().mockResolvedValue(undefined);
-            rawGenerateContent = vi.fn();
-        }
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
     };
 });
-
-// Mock AI_MODELS config
-vi.mock('@/core/config/ai-models', () => {
-    return {
-        AI_MODELS: {
-            TEXT: {
-                AGENT: 'test-model'
-            }
-        }
-    };
-});
-
-// Mock logger
-vi.mock('@/utils/logger', () => ({
-    logger: {
-        info: vi.fn(),
-        error: vi.fn()
-    }
-}));
 
 describe('ReceiptOCRService', () => {
     let service: ReceiptOCRService;

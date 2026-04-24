@@ -61,16 +61,22 @@ const mockGenerateContent = vi.fn().mockResolvedValue({
 const mockEmbedContent = vi.fn().mockResolvedValue({ values: [0.1, 0.2, 0.3] });
 const mockBatchEmbedContents = vi.fn().mockResolvedValue([[0.1, 0.2, 0.3]]);
 
-vi.mock('../../ai/FirebaseAIService', () => ({
-    FirebaseAIService: {
-        getInstance: () => ({
-            generateText: mockGenerateText,
-            generateContent: mockGenerateContent,
-            embedContent: mockEmbedContent,
-            batchEmbedContents: mockBatchEmbedContents,
-        }),
-    },
-}));
+vi.mock('../../ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
+        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 // Mock AI models
 vi.mock('@/core/config/ai-models', () => ({

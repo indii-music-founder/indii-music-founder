@@ -4,12 +4,22 @@ import { VideoGenerationOptions } from '@/modules/video/schemas';
 import { GenAI } from '@/services/ai/GenAI';
 
 // Mock Dependencies
-vi.mock('../ai/FirebaseAIService', () => ({
-    GenAI: { 
-        analyzeImage: vi.fn(),
-        generateVideo: vi.fn().mockResolvedValue('blob:http://localhost/video-123')
-    }
-}));
+vi.mock('../ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
+        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/core/store', () => ({
     useStore: {
