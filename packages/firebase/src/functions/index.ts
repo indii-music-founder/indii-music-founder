@@ -13,3 +13,9 @@ export * from './analytics/bigquery-pipeline';
 
 // Webhooks & Event Dispatch
 export * from './webhooks/dispatcher';
+
+// Job Orchestration (Inngest)
+export { inngest } from './orchestration/inngest';
+
+// OpenAPI Schema Generation
+export { generateOpenAPISpec, writeOpenAPISpec } from './openapi';
