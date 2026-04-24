@@ -50,7 +50,7 @@ export class TraceService {
                 startTime: serverTimestamp() as unknown as import('firebase/firestore').Timestamp,
 
                 steps: [],
-                swarmId: (metadata?.swarmId as string | undefined) || (parentTraceId ? undefined : traceId),
+                swarmId: (metadata?.swarmId as string | null | undefined) || (parentTraceId ? null : traceId),
                 metadata: {
                     ...(metadata || {}),
                     ...(parentTraceId ? { parentTraceId } : {})
