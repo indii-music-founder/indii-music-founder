@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map, Truck, Coffee, ChevronRight, Route, FileText, ListMusic, Globe, Settings } from 'lucide-react';
+import { Map, Truck, Coffee, ChevronRight, Route, FileText, ListMusic, Globe, Settings, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export type TouringTab = 'planning' | 'on-the-road' | 'rider' | 'route-optimizer' | 'tech-rider' | 'setlist' | 'visa';
@@ -10,7 +10,7 @@ interface RoadManagerSidebarProps {
 }
 
 export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTab, setActiveTab }) => {
-    const navItems: { id: TouringTab; label: string; icon: React.ElementType; description: string }[] = [
+    const navItems: { id: TouringTab; label: string; icon: LucideIcon; description: string }[] = [
         { id: 'planning', label: 'Tour Planning', icon: Map, description: 'Logistics & Routing' },
         { id: 'on-the-road', label: 'On The Road', icon: Truck, description: 'Live Telemetry' },
         { id: 'rider', label: 'Hospitality Rider', icon: Coffee, description: 'Inventory & Needs' },

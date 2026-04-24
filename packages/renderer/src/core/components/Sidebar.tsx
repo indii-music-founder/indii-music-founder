@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Activity, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Activity, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +17,7 @@ const NAV_DEBOUNCE_MS = 150;
 
 interface SidebarItem {
     id: ModuleId;
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
 }
 
