@@ -226,8 +226,9 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* ═══════════════ 5. STATS BAR ═══════════════ */}
       <section className="w-full max-w-5xl px-4 mb-24 z-20 relative">
-        <div className="flex flex-wrap justify-center gap-8 md:gap-16 py-12 border-y border-white/[0.04]">
+        <div className="flex flex-wrap justify-center gap-8 md:gap-16 py-12 border-y border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5">
           <AnimatedStat value="15" suffix=" Minds" label="The Collective" />
           <AnimatedStat value="100" suffix="%" label="Soul Certified" />
           <AnimatedStat value="0" suffix="%" label="Extraction Rate" />

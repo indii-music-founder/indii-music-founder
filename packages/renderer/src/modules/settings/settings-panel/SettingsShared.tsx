@@ -9,6 +9,7 @@
  */
 
 import React from 'react';
+import { LucideIcon } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -16,7 +17,7 @@ import React from 'react';
 
 export type SettingsSection = 'profile' | 'connections' | 'notifications' | 'appearance' | 'security';
 
-export const SECTIONS: Array<{ id: SettingsSection; label: string; icon: React.ElementType; description: string }> = [];
+export const SECTIONS: Array<{ id: SettingsSection; label: string; icon: LucideIcon; description: string }> = [];
 // NOTE: The actual SECTIONS array is defined below after icon imports in the barrel index.
 // This placeholder is here for type safety; the real data lives in the parent SettingsPanel.
 
@@ -36,7 +37,7 @@ export const SectionHeader: React.FC<{ title: string; description: string }> = (
 // ---------------------------------------------------------------------------
 
 export const SettingRow: React.FC<{
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
     description?: string;
     children: React.ReactNode;
