@@ -99,6 +99,18 @@ Promise.all([
     logger.warn('[Phase 2] Failed to initialize orchestration services (non-blocking):', err);
 });
 
+// Phase 3: Initialize observability and performance monitoring
+Promise.all([
+    import('@/services/observability/RealUserMonitoringService').then(({ initializeRealUserMonitoring }) => initializeRealUserMonitoring()),
+    import('@/services/observability/CoreWebVitalsReporter').then(({ getCoreWebVitalsReporter }) => getCoreWebVitalsReporter()),
+    import('@/services/observability/RequestTracingService').then(({ getRequestTracingService }) => getRequestTracingService()),
+    import('@/services/observability/BundleAnalysisService').then(({ getBundleAnalysisService }) => getBundleAnalysisService()),
+]).then(() => {
+    logger.info('[Phase 3] Observability and performance monitoring initialized');
+}).catch(err => {
+    logger.warn('[Phase 3] Failed to initialize observability services (non-blocking):', err);
+});
+
 // Item 260: Core Web Vitals reporting
 import('@/lib/webVitals').then(({ initWebVitals }) => initWebVitals()).catch(() => { });
 
