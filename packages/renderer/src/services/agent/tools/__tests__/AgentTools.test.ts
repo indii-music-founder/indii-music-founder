@@ -17,13 +17,20 @@ vi.mock('@/services/ai/GenAI', () => ({
 // Mock the Firebase AI service (for BrandTools)
 import { GenAI } from '@/services/ai/GenAI';
 
-vi.mock('@/services/ai/FirebaseAIService', () => ({
-    GenAI: {
-        generateStructuredData: vi.fn(),
-        generateContent: vi.fn(),
-        parseJSON: vi.fn((text) => JSON.parse(text))
-    }
-}));
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 // Mock MarketingService (for persistence)
 vi.mock('@/services/marketing/MarketingService', () => ({
