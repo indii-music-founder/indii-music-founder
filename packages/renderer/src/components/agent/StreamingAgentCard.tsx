@@ -8,7 +8,8 @@
 import React, { useState } from 'react';
 import { useAgentStream } from '@/hooks/useAgentStream';
 import { Loader, Copy, Download, X } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import clsx from 'clsx';
 
 interface StreamingAgentCardProps {
@@ -32,7 +33,9 @@ export const StreamingAgentCard: React.FC<StreamingAgentCardProps> = ({
   title = 'Agent Response',
   className = ''
 }) => {
-  const { user } = useAuth();
+  const { user } = useStore(useShallow(state => ({
+    user: state.user
+  })));
   const [copied, setCopied] = useState(false);
   const [expandedMetadata, setExpandedMetadata] = useState(false);
 

@@ -225,7 +225,7 @@ export class AgentStreamingService {
 
   private async getIdToken(): Promise<string> {
     try {
-      const { auth } = await import('@/lib/firebase');
+      const { auth } = await import('@/services/firebase');
       if (!auth.currentUser) {
         throw new Error('User not authenticated');
       }
