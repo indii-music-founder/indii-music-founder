@@ -25,7 +25,8 @@ export type MemoryLayer =
   | 'session'
   | 'core-vault'
   | 'captain-logs'
-  | 'rag-index';
+  | 'rag-index'
+  | 'deep-hive';
 
 export interface Memory {
   id: string;
