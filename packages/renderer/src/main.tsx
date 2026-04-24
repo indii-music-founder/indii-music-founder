@@ -84,6 +84,21 @@ Promise.all([
     logger.error('[Phase 1] Failed to initialize offline services:', err);
 });
 
+// Phase 2: Initialize memory and orchestration services
+Promise.all([
+    import('@/services/memory/PersistentMemoryService').then(({ initializePersistentMemoryService }) => {
+        // Initialized with user ID after auth
+        return Promise.resolve();
+    }),
+    import('@/services/memory/MemoryIndexService').then(({ initializeMemoryIndexService }) => initializeMemoryIndexService()),
+    import('@/services/agent/ContextStackService').then(({ initializeContextStackService }) => initializeContextStackService()),
+    import('@/services/agent/ReflectionLoop').then(({ initializeReflectionLoop }) => initializeReflectionLoop()),
+]).then(() => {
+    logger.info('[Phase 2] Memory and orchestration services initialized');
+}).catch(err => {
+    logger.warn('[Phase 2] Failed to initialize orchestration services (non-blocking):', err);
+});
+
 // Item 260: Core Web Vitals reporting
 import('@/lib/webVitals').then(({ initWebVitals }) => initWebVitals()).catch(() => { });
 

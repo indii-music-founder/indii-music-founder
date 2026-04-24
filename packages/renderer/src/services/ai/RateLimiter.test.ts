@@ -50,12 +50,14 @@ describe('RateLimiter', () => {
         const limiter = new RateLimiter(1, 1); // 1 request per min
         limiter.tryAcquire();
 
-        const acquirePromise = expect(limiter.acquire(500)).rejects.toThrow('Rate limit acquisition timed out');
+        let error: any;
+        const acquirePromise = limiter.acquire(500).catch(e => { error = e; });
 
-        // Advance time enough to trigger the internal 1000ms setTimeout
+        // Advance time enough to trigger the timeout
         await vi.advanceTimersByTimeAsync(1000);
-
         await acquirePromise;
-        await expect(acquirePromise).rejects.toThrow('Rate limit acquisition timed out');
-    }, 10000); // 10s timeout for this test case
+
+        expect(error).toBeDefined();
+        expect(error.message).toBe('Rate limit acquisition timed out');
+    });
 });

@@ -22,7 +22,7 @@ import { remoteRelayService, type DesktopState } from '@/services/agent/RemoteRe
 import { logger } from '@/utils/logger';
 import {
   LayoutDashboard, Grip, MessageSquare, Image, Music2,
-  CheckSquare, QrCode, Smartphone
+  CheckSquare, QrCode, Smartphone, LucideIcon
 } from 'lucide-react';
 
 // Lazy load sub-components for performance on phone
@@ -39,7 +39,7 @@ type TabId = 'status' | 'control' | 'chat' | 'generate' | 'transport' | 'approve
 
 interface Tab {
   id: TabId;
-  icon: React.ElementType;
+  icon: LucideIcon;
   label: string;
 }
 
