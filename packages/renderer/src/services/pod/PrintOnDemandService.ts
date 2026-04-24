@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { logger } from '@/utils/logger';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
@@ -22,6 +21,47 @@ import { db, auth } from '@/services/firebase';
  */
 
 import { z } from 'zod';
+
+// ============================================================================
+// External API Response Types
+// ============================================================================
+
+export interface PrintfulProductResponse {
+    id: string | number;
+    external_id?: string;
+    name: string;
+    description?: string;
+    type?: string;
+    type_name?: string;
+    retail_price?: number;
+    thumbnail_url?: string;
+    sync_variants?: PrintfulVariantResponse[];
+    variants?: PrintfulVariantResponse[];
+}
+
+export interface PrintfulVariantResponse {
+    id: string | number;
+    name: string;
+    size?: string;
+    color?: string;
+    color_code?: string;
+    retail_price?: number;
+    availability_status?: string;
+}
+
+export interface PrintfulOrderResponse {
+    id: string | number;
+    external_id?: string;
+    status: string;
+    items?: Array<{
+        [key: string]: unknown;
+    }>;
+    total: number;
+    shipping?: number;
+    address?: {
+        [key: string]: unknown;
+    };
+}
 
 // ============================================================================
 // Types & Schemas
@@ -388,7 +428,7 @@ class PrintfulProvider implements PODProviderAdapter {
         throw new Error('Mockup generation timed out');
     }
 
-    private mapProduct(raw: any): PODProduct {
+    private mapProduct(raw: PrintfulProductResponse): PODProduct {
         return {
             id: String(raw.id),
             externalId: String(raw.external_id || raw.id),
@@ -398,7 +438,7 @@ class PrintfulProvider implements PODProviderAdapter {
             type: raw.type_name || raw.type || 'Unknown',
             basePrice: raw.retail_price || 0,
             currency: 'USD',
-            variants: (raw.sync_variants || raw.variants || []).map((v: any) => ({
+            variants: (raw.sync_variants || raw.variants || []).map((v: PrintfulVariantResponse) => ({
                 id: String(v.id),
                 name: v.name,
                 size: v.size,
@@ -415,13 +455,13 @@ class PrintfulProvider implements PODProviderAdapter {
         };
     }
 
-    private mapOrder(raw: any): PODOrder {
+    private mapOrder(raw: PrintfulOrderResponse): PODOrder {
         return {
             id: String(raw.id),
             externalId: raw.external_id,
             provider: 'printful',
             status: this.mapOrderStatus(raw.status),
-            items: (raw.items || []).map((item: any) => ({
+            items: (raw.items || []).map((item: Record<string, unknown>) => ({
                 productId: String(item.sync_product_id),
                 variantId: String(item.sync_variant_id),
                 quantity: item.quantity,
