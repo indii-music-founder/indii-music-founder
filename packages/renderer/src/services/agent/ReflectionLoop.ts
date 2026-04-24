@@ -36,7 +36,7 @@ interface ReflectionOutput {
   passesFinal: boolean;
 }
 
-interface ReflectionIteration {
+export interface ReflectionIteration {
   iteration: number;
   input: string;
   output: string;
