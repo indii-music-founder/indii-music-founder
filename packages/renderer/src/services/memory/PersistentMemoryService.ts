@@ -122,13 +122,13 @@ export class PersistentMemoryService {
           break;
 
         case 'core-vault':
-          await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, memory as Record<string, unknown>);
+          await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, (memory as unknown) as Record<string, unknown>);
           break;
 
         case 'captain-logs':
           await this.appendToFirestore(
             `users/${this.userId}/captain-logs`,
-            memory as Record<string, unknown>
+            (memory as unknown) as Record<string, unknown>
           );
           break;
 
@@ -179,7 +179,7 @@ export class PersistentMemoryService {
             .limit(1)
             .get();
 
-          if (logsSnapshot.empty) return null;
+          if (logsSnapshot.empty || !logsSnapshot.docs[0]) return null;
           return logsSnapshot.docs[0].data() as Record<string, unknown>;
         }
 
