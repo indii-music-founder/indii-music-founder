@@ -1,6 +1,9 @@
-// indiiOS Cloud Functions - V1.1
+// indiiOS Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+
+// Phase 2a: Agent Streaming (v2 - SSE support for Phase 2 orchestration)
+export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
 import { Inngest } from "inngest";
 import { serve } from "inngest/express";
 import corsLib from "cors";
