@@ -1,11 +1,11 @@
 import { logger } from '@/utils/logger';
 
-interface KeyPair {
+export interface KeyPair {
   publicKey: CryptoKey;
   privateKey: CryptoKey;
 }
 
-interface EncryptedMessage {
+export interface EncryptedMessage {
   ciphertext: string;
   iv: string;
   algorithm: string;
@@ -14,7 +14,7 @@ interface EncryptedMessage {
   recipientId: string;
 }
 
-interface MessageEnvelope {
+export interface MessageEnvelope {
   id: string;
   encrypted: EncryptedMessage;
   signature: string;
@@ -156,7 +156,7 @@ export class E2EEncryptionService {
       };
 
       // Sign the encrypted message
-      const signature = await this.signMessage(encrypted, senderId);
+      const signature = await this.signMessage(encrypted as unknown as Record<string, unknown>, senderId);
 
       // Store session key for later reference
       const messageId = this.generateMessageId();
@@ -186,7 +186,7 @@ export class E2EEncryptionService {
       const { encrypted, signature } = envelope;
 
       // Verify signature
-      const isValid = await this.verifySignature(encrypted, signature, encrypted.senderId);
+      const isValid = await this.verifySignature(encrypted as unknown as Record<string, unknown>, signature, encrypted.senderId);
       if (!isValid) {
         throw new Error('Message signature verification failed');
       }

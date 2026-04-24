@@ -61,6 +61,18 @@ export interface PrintfulOrderResponse {
     address?: {
         [key: string]: unknown;
     };
+    costs?: {
+        subtotal?: number;
+        shipping?: number;
+        tax?: number;
+        total?: number;
+    };
+    shipments?: Array<{
+        tracking_number?: string;
+        tracking_url?: string;
+    }>;
+    created?: string;
+    updated?: string;
 }
 
 // ============================================================================
@@ -461,26 +473,29 @@ class PrintfulProvider implements PODProviderAdapter {
             externalId: raw.external_id,
             provider: 'printful',
             status: this.mapOrderStatus(raw.status),
-            items: (raw.items || []).map((item: Record<string, unknown>) => ({
-                productId: String(item.sync_product_id),
-                variantId: String(item.sync_variant_id),
-                quantity: item.quantity,
-                designUrl: item.files?.[0]?.url || '',
-                printArea: item.files?.[0]?.position || 'front'
-            })),
+            items: (raw.items || []).map((item: Record<string, unknown>) => {
+                const files = item.files as Array<{ url: string; position: string }> | undefined;
+                return {
+                    productId: String(item.sync_product_id),
+                    variantId: String(item.sync_variant_id),
+                    quantity: (item.quantity as number) || 1,
+                    designUrl: files?.[0]?.url || '',
+                    printArea: files?.[0]?.position || 'front'
+                };
+            }),
             shippingAddress: {
-                name: raw.recipient?.name || '',
-                company: raw.recipient?.company,
-                address1: raw.recipient?.address1 || '',
-                address2: raw.recipient?.address2,
-                city: raw.recipient?.city || '',
-                stateCode: raw.recipient?.state_code || '',
-                countryCode: raw.recipient?.country_code || '',
-                postalCode: raw.recipient?.zip || '',
-                phone: raw.recipient?.phone,
-                email: raw.recipient?.email
+                name: (raw.address as { name?: string } | undefined)?.name || '',
+                company: (raw.address as { company?: string } | undefined)?.company,
+                address1: (raw.address as { address1?: string } | undefined)?.address1 || '',
+                address2: (raw.address as { address2?: string } | undefined)?.address2,
+                city: (raw.address as { city?: string } | undefined)?.city || '',
+                stateCode: (raw.address as { state_code?: string } | undefined)?.state_code || '',
+                countryCode: (raw.address as { country_code?: string } | undefined)?.country_code || '',
+                postalCode: (raw.address as { zip?: string } | undefined)?.zip || '',
+                phone: (raw.address as { phone?: string } | undefined)?.phone,
+                email: (raw.address as { email?: string } | undefined)?.email
             },
-            shippingMethod: raw.shipping,
+            shippingMethod: String(raw.shipping || ''),
             subtotal: raw.costs?.subtotal || 0,
             shippingCost: raw.costs?.shipping || 0,
             tax: raw.costs?.tax || 0,
@@ -488,8 +503,8 @@ class PrintfulProvider implements PODProviderAdapter {
             currency: 'USD',
             trackingNumber: raw.shipments?.[0]?.tracking_number,
             trackingUrl: raw.shipments?.[0]?.tracking_url,
-            createdAt: raw.created,
-            updatedAt: raw.updated
+            createdAt: raw.created || new Date().toISOString(),
+            updatedAt: raw.updated || new Date().toISOString()
         };
     }
 
