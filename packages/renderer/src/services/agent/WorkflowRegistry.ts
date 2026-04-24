@@ -1,15 +1,5 @@
-export type WorkflowEdge = {
-    from: string;
-    to: string;
-    condition?: (state: any) => boolean; // Evaluates if the edge should be traversed
-};
-
-export type WorkflowStep = {
-    id: string; // Unique identifier for the step within the workflow
-    agentId: string;
-    prompt: string;
-    priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
-};
+import type { WorkflowEdge, WorkflowStep } from './types';
+import { validateWorkflowGraph } from './WorkflowGraphUtils';
 
 export type WorkflowDefinition = {
     id: string;
@@ -165,3 +155,16 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
         ]
     }
 };
+
+// Validate all workflows on load to prevent cyclic dependencies
+Object.values(WORKFLOW_REGISTRY).forEach(workflow => {
+    try {
+        validateWorkflowGraph(workflow);
+    } catch (error) {
+        console.error(`[WorkflowRegistry] Validation failed for ${workflow.id}:`, error);
+        // In a production environment, we might just log, but in dev we want to know.
+        if (process.env.NODE_ENV === 'development') {
+            throw error;
+        }
+    }
+});

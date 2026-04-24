@@ -5,8 +5,9 @@ import type {
     WorkflowExecution,
     WorkflowStepExecution,
     WorkflowExecutionStatus,
+    WorkflowStep,
+    WorkflowEdge,
 } from './types';
-import type { WorkflowStep } from './WorkflowRegistry';
 
 /**
  * WorkflowStateService — Persistent Workflow State Machine
@@ -31,6 +32,7 @@ class WorkflowStateServiceImpl {
         userId: string,
         workflowId: string,
         steps: WorkflowStep[],
+        edges: WorkflowEdge[],
         sessionId?: string
     ): Promise<WorkflowExecution> {
         const service = this.getService(userId);
@@ -55,13 +57,14 @@ class WorkflowStateServiceImpl {
             userId,
             status: 'planned',
             steps: stepExecutions,
+            edges,
             currentStepIndex: 0,
             createdAt: now,
             updatedAt: now,
         };
 
         await service.set(id, execution);
-        logger.info(`[WorkflowState] Created execution ${id} for workflow '${workflowId}' with ${steps.length} steps`);
+        logger.info(`[WorkflowState] Created execution ${id} for workflow '${workflowId}' with ${steps.length} steps and ${edges.length} edges`);
         return execution;
     }
 
