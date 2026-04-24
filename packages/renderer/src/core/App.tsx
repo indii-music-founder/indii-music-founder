@@ -21,6 +21,8 @@ import LoginForm from './components/auth/LoginForm';
 import { ApprovalModal } from './components/ApprovalModal';
 import { BiometricGate } from './components/auth/BiometricGate';
 import { OfflineBanner } from './components/OfflineBanner';
+import { SyncQueueIndicator } from '@/components/sync/SyncQueueIndicator';
+import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
@@ -529,10 +531,12 @@ export default function App() {
         // Item 276: MotionConfig reducedMotion="user" causes all Framer Motion
         // animations to respect the OS prefers-reduced-motion setting globally.
         <MotionConfig reducedMotion="user">
-            <VoiceProvider>
-                <ThemeProvider>
-                    <ToastProvider>
-                        <OfflineBanner />
+            <ResponsiveLayoutProvider>
+                <VoiceProvider>
+                    <ThemeProvider>
+                        <ToastProvider>
+                            <OfflineBanner />
+                            <SyncQueueIndicator className="fixed top-4 right-4 z-40" />
                         <SessionTimeoutOverlay />
                         {/* Skip to content link for keyboard accessibility */}
                         <a
@@ -639,6 +643,7 @@ export default function App() {
                     </ToastProvider>
                 </ThemeProvider>
             </VoiceProvider>
+            </ResponsiveLayoutProvider>
         </MotionConfig>
     );
 }
