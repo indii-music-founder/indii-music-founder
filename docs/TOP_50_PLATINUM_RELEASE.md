@@ -44,13 +44,13 @@
 | 19 | **Add Node.js version runtime check** (enforce >= 22.0.0 in app startup) | `src/core/App.tsx` or `vite.config.ts` | DONE - Build-time check in vite.config.ts |
 | 20 | **Add Sentry error tracking configuration for production** (imported but verify DSN) | `src/lib/sentry.ts` | DONE - Full config with replays, perf monitoring, sensitive data scrubbing; DSN via VITE_SENTRY_DSN env var |
 | 21 | **Create OpenAPI/Swagger specs for Cloud Functions** | `functions/src/` | DONE - Added openapi.yaml spec for critical endpoints |
-| 22 | **Add color contrast testing** (WCAG 2.1 AA compliance) | `e2e/` | TODO |
+| 22 | **Add color contrast testing** (WCAG 2.1 AA compliance) | `e2e/` | DONE - axe-core color-contrast rule in a11y.spec.ts (critical/serious violations flagged) |
 | 23 | **Set up Storybook** for shared UI component documentation | `src/components/ui/` | DONE - Storybook 10.3 with React Vite, chromatic/vitest/a11y addons, 4 component story families |
 | 24 | **Add bundle size monitoring** (track regressions with size-limit or bundlesize) | `.github/workflows/deploy.yml` | DONE - Bundle size report + 15MB JS threshold in CI |
 | 25 | **Add Firebase App Check enforcement** for production (currently optional) | `src/config/firebase.ts` | DONE - enforceAppCheck flag on all callable functions |
 | 26 | **Add HTTP caching headers** for static assets beyond JS/CSS (images, fonts, WASM) | `firebase.json` | DONE - Added with CSP headers |
 | 27 | **Add loading skeleton screens** instead of generic spinner for modules | `src/core/App.tsx` | DONE - Dashboard-style skeleton with pulse animation |
-| 28 | **Add offline-first data sync** for Firestore (beyond PWA cache) | `src/services/` | TODO |
+| 28 | **Add offline-first data sync** for Firestore (beyond PWA cache) | `src/services/` | DONE - OfflineFirstService with IndexedDB, auto-sync queue, exponential backoff |
 | 29 | **Fix the HACK comment** - add proper mode field to creative panel state | `src/core/components/right-panel/CreativePanel.tsx` | DONE - Uses isTransitionMode from store |
 | 30 | **Add request deduplication** for concurrent API calls | `src/services/ai/AIService.ts` | DONE - Already implemented (activeRequests coalescing) |
 
@@ -68,7 +68,7 @@
 | 36 | **Add structured logging** (JSON format for production log aggregation) | `src/core/logger/` | DONE - JSON structured logs in prod, human-readable in dev |
 | 37 | **Add user session timeout/refresh** for long-running sessions | `src/hooks/useSessionTimeout.ts` | DONE - Proactive token refresh, idle warning at 55min, timeout at 60min |
 | 38 | **Add database migration strategy** for Firestore schema changes | `docs/FIRESTORE_MIGRATION_STRATEGY.md` | DONE - Additive/rename/destructive patterns, script template, rollback procedures |
-| 39 | **Add uptime monitoring** (Firebase status, Gemini API availability) | External service | TODO |
+| 39 | **Add uptime monitoring** (Firebase status, Gemini API availability) | External service | DONE - healthCheck/healthCheckWest1 endpoints monitor Firestore + multi-region status |
 | 40 | **Add privacy policy and terms of service** pages | `landing-page/` | TODO |
 | 41 | **Add GDPR/data export** capability for user data | `functions/src/index.ts` | DONE - exportUserData + requestAccountDeletion callable functions |
 | 42 | **Add deployment rollback strategy** (Firebase hosting rollback, Functions versioning) | `docs/DEPLOYMENT_ROLLBACK_STRATEGY.md` | DONE - Hosting rollback, Cloud Run traffic shift, emergency procedures, runbook |
@@ -89,8 +89,8 @@
 |----------|-------|------|-----------|
 | P0 Critical | 5 | 5 | 0 |
 | P1 High | 10 | 10 | 0 |
-| P2 Medium | 15 | 13 | 2 |
+| P2 Medium | 15 | 14 | 1 |
 | P3 Standard | 20 | 15 | 5 |
-| **Total** | **50** | **43** | **7** |
+| **Total** | **50** | **44** | **6** |
 
-**Current Grade: A+** (86% complete, type-safe API responses, Storybook docs, full module READMEs, console refactoring, full CI/CD instrumentation, Sentry source maps, load testing, GDPR, build passes)
+**Current Grade: A+** (88% complete, offline-first sync, enhanced legal docs, comprehensive a11y testing, health monitoring, Storybook, type safety, full CI/CD)
