@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import type { TrackReport, BreakoutAlert } from '@/services/analytics/types';
 import type { VitalsReport, RequestTrace, BundleMetrics } from '@/services/observability';
+import type { AnalyticsEvent } from '@indiios/shared';
 
 export interface AnalyticsSlice {
     // Selected track for detail view
@@ -35,6 +36,23 @@ export interface AnalyticsSlice {
 
     performanceBundle: BundleMetrics | null;
     setPerformanceBundle: (metrics: BundleMetrics | null) => void;
+
+    // Phase 4: Analytics Events & Queries
+    analyticsEvents: AnalyticsEvent[];
+    addAnalyticsEvent: (event: AnalyticsEvent) => void;
+    clearAnalyticsEvents: () => void;
+    setAnalyticsEvents: (events: AnalyticsEvent[]) => void;
+
+    // Cached query results
+    queryResults: Record<string, AnalyticsEvent[]>;
+    setQueryResults: (queryKey: string, results: AnalyticsEvent[]) => void;
+    clearQueryResults: () => void;
+
+    // Event filters state
+    eventTypeFilter: string | null;
+    setEventTypeFilter: (type: string | null) => void;
+    dateRangeFilter: { start: string; end: string } | null;
+    setDateRangeFilter: (range: { start: string; end: string } | null) => void;
 }
 
 export const createAnalyticsSlice: StateCreator<AnalyticsSlice> = (set) => ({
@@ -72,4 +90,23 @@ export const createAnalyticsSlice: StateCreator<AnalyticsSlice> = (set) => ({
 
     performanceBundle: null,
     setPerformanceBundle: (metrics) => set({ performanceBundle: metrics }),
+
+    // Phase 4: Analytics Events
+    analyticsEvents: [],
+    addAnalyticsEvent: (event) =>
+        set(state => ({ analyticsEvents: [event, ...state.analyticsEvents].slice(0, 1000) })),
+    clearAnalyticsEvents: () => set({ analyticsEvents: [] }),
+    setAnalyticsEvents: (events) => set({ analyticsEvents: events }),
+
+    // Query Results
+    queryResults: {},
+    setQueryResults: (queryKey, results) =>
+        set(state => ({ queryResults: { ...state.queryResults, [queryKey]: results } })),
+    clearQueryResults: () => set({ queryResults: {} }),
+
+    // Filters
+    eventTypeFilter: null,
+    setEventTypeFilter: (type) => set({ eventTypeFilter: type }),
+    dateRangeFilter: null,
+    setDateRangeFilter: (range) => set({ dateRangeFilter: range }),
 });
