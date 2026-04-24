@@ -59,8 +59,9 @@
 
 ## Phase 2: Agent Orchestration & Memory
 
-**Status:** Pending (blocked on Phase 1)  
-**Weeks:** 3-5  
+**Status:** 🔧 Phase 2a.1 COMPLETE - SSE Streaming Unblocked  
+**Branch:** `phase-2-agent-orchestration`  
+**Latest Commit:** 38b3f06 (agentStreamResponse v2 function)  
 **Target Completion:** 2026-05-22  
 
 ### Implementation Checklist
@@ -213,11 +214,38 @@
    - Hooks: useGestures
    - Integration: App.tsx + main.tsx
 
-**Next Phase (Phase 2):**
-- Agent Orchestration & Memory (Weeks 3-5)
-- Branch: `phase-2-agent-orchestration` (ready for development)
-- Requires: Cloud Functions v2 migration for SSE support
-- Start with: PersistentMemoryService and streaming token handling
+---
+
+## Phase 2a: Cloud Functions v2 Streaming (PREREQUISITE)
+
+**Status:** ✅ Phase 2a.1 COMPLETE  
+**Commits:**
+1. `e8ea9a6` docs: Cloud Functions v2 migration guide
+2. `38b3f06` feat: Phase 2a.1 - SSE streaming function
+
+**What's Done:**
+- ✅ agentStreamResponse (v2, SSE-capable endpoint)
+- ✅ agentStreamHealth (health check)
+- ✅ Coexists with v1 functions (no breaking changes)
+- ✅ Build succeeds (41.96s)
+- ✅ Ready for Phase 2 proper
+
+**Architecture:**
+- agentStreamResponse: POST /api/agents/stream
+  - Accepts: userId, agentId, input, context
+  - Returns: SSE stream of tokens with timestamps
+  - Timeout: 600s (10 min)
+  - Memory: 1GB
+- agentStreamHealth: GET /api/agents/stream/health
+  - Public health check
+  - Returns: service status + capabilities
+
+**Strategy:**
+- Phase 2a.1: ✅ SSE streaming function (v2) - COMPLETE
+- Phase 2a.2: Full v2 migration of remaining functions (follow-up)
+- Phase 2 proper: PersistentMemoryService, MemoryIndexService, etc.
+
+**Next:** Implement Phase 2 memory and orchestration services
 
 ## Branch Pattern
 
