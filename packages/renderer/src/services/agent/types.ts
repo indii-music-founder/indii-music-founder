@@ -215,6 +215,28 @@ export interface AgentContext {
      * @see AgentIdentityCard
      */
     agentIdentity?: AgentIdentityCard;
+
+    // ---- Phase 2: Agent Orchestration & Memory ----
+
+    /**
+     * When true, BaseAgent runs the ReflectionLoop after generating output.
+     * The loop re-evaluates quality and may trigger additional iterations.
+     * @default false
+     */
+    enableReflection?: boolean;
+
+    /**
+     * Prior turn context frames from ContextStackService.
+     * Injected before agent execution to provide multi-turn reasoning state.
+     */
+    contextStack?: ContextFrame[];
+
+    /**
+     * Compressed summary of the full context stack.
+     * Used in the system prompt to give agents awareness of prior turns
+     * without consuming excessive token budget.
+     */
+    contextSummary?: string;
 }
 
 export type AgentRunner = (
@@ -444,4 +466,115 @@ export interface WorkflowExecution {
     currentStepIndex: number;
     createdAt: number;
     updatedAt: number;
+}
+
+// ============================================================================
+// Phase 2: Agent Orchestration & Memory Types
+// ============================================================================
+
+/**
+ * The 5 memory layers in the IndiiOS Persistent Memory hierarchy.
+ * Each layer has different persistence, TTL, and authority semantics.
+ */
+export type MemoryLayer = 'scratchpad' | 'session' | 'vault' | 'captains_log' | 'rag_index';
+
+/**
+ * A single memory entry that can exist in any of the 5 layers.
+ * This is the universal currency of the PersistentMemoryService facade.
+ */
+export interface MemoryEntry {
+    /** Unique identifier within the layer */
+    id: string;
+    /** Which memory layer this entry belongs to */
+    layer: MemoryLayer;
+    /** Lookup key (e.g., "artist_name", "preferred_genre") */
+    key: string;
+    /** The stored value (type depends on the layer) */
+    value: unknown;
+    /** Provenance and lifecycle metadata */
+    metadata: {
+        createdAt: number;
+        updatedAt: number;
+        /** Which agent wrote this entry (null = user-written) */
+        agentId?: string;
+        /** Project scope (null = global) */
+        projectId?: string;
+        /** Time-to-live in milliseconds (only for scratchpad/session layers) */
+        ttl?: number;
+        /** Source of truth for conflict resolution */
+        source?: 'user' | 'agent' | 'webhook' | 'import' | 'onboarding';
+    };
+}
+
+/**
+ * Assembled context window from all 5 memory layers.
+ * Used by agents to receive structured memory before execution.
+ */
+export interface ContextWindow {
+    /** In-memory task-scoped key-value pairs */
+    scratchpad: Record<string, unknown>;
+    /** Recent session memories (last 24h) */
+    sessionMemories: MemoryEntry[];
+    /** Authoritative facts from CORE Vault */
+    vaultFacts: string[];
+    /** Recent Captain's Log entries */
+    recentLogs: string[];
+    /** Semantically matched RAG results */
+    ragResults: MemoryEntry[];
+    /** Estimated token count of the full context window */
+    totalTokenEstimate: number;
+}
+
+/**
+ * A single frame in the multi-turn context stack.
+ * Represents one conversational turn's state snapshot.
+ */
+export interface ContextFrame {
+    /** Unique identifier for this turn */
+    turnId: string;
+    /** When this turn occurred */
+    timestamp: number;
+    /** The user's message for this turn */
+    userMessage: string;
+    /** The agent's response for this turn */
+    agentResponse: string;
+    /** Tool calls made during this turn */
+    toolCalls: { name: string; args: unknown; result: unknown }[];
+    /** Key decisions made this turn (for summarization) */
+    decisions: string[];
+    /** Memory keys written during this turn (for rollback tracking) */
+    memoryWrites: string[];
+}
+
+/**
+ * Result of a ReflectionLoop evaluation pass.
+ * Determines whether the agent should re-iterate on its output.
+ */
+export interface ReflectionResult {
+    /** Whether the agent should produce another iteration */
+    shouldIterate: boolean;
+    /** Quality score from 0-10 (threshold: 7) */
+    score: number;
+    /** Specific feedback for improvement */
+    feedback: string;
+    /** Which iteration this result is from (1-indexed) */
+    iterationCount: number;
+    /** Hard cap on iterations (default: 3) */
+    maxIterations: number;
+}
+
+/**
+ * Callbacks for token-by-token streaming from AgentStreamingService.
+ */
+export interface StreamCallbacks {
+    /** Called for each text token received */
+    onToken: (token: string) => void;
+    /** Called when the agent invokes a tool mid-stream */
+    onToolCall: (name: string, args: Record<string, unknown>) => void;
+    /** Called when a tool execution completes */
+    onToolResult: (name: string, result: unknown) => void;
+    /** Called when streaming is fully complete */
+    onComplete: (response: AgentResponse) => void;
+    /** Called on any error during streaming */
+    onError: (error: Error) => void;
 }
