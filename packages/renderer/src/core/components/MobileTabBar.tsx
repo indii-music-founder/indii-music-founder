@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import {
-    LayoutDashboard, Palette, MessageCircle, DollarSign, Menu, X, Plus
+    LayoutDashboard, Palette, MessageCircle, DollarSign, Menu, X, Plus, type LucideIcon
 } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { type ModuleId } from '@/core/constants';
@@ -24,7 +24,7 @@ import { QuickCapture } from '@/modules/capture/QuickCapture';
 
 interface TabItem {
     id: ModuleId | 'more';
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
 }
 

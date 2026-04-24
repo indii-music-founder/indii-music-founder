@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
     RefreshCw, Brain, TrendingUp, Globe, Bell,
     BarChart2, GitBranch, Plug, Settings,
+    type LucideIcon
 } from 'lucide-react';
 
 import { useStore } from '@/core/store';
@@ -41,7 +42,7 @@ import { PlatformConnector } from './components/PlatformConnector';
 
 type TabId = 'overview' | 'patterns' | 'platforms' | 'regions' | 'alerts';
 
-const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
+const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: 'overview',  label: 'Overview',  icon: TrendingUp },
     { id: 'patterns',  label: 'Patterns',  icon: GitBranch  },
     { id: 'platforms', label: 'Platforms', icon: BarChart2   },

@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import {
     Sparkles, Film, Megaphone, Book, GitBranch, Scale,
     DollarSign, Globe, Network, Briefcase, FileText, Users,
+    type LucideIcon
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -18,7 +19,7 @@ import {
 interface QuickAction {
     id: ModuleId;
     name: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     hint: string;
 }
 

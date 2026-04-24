@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { CreditCard, TrendingUp, Users, ArrowUpRight } from 'lucide-react';
+import { CreditCard, TrendingUp, Users, ArrowUpRight, type LucideIcon } from 'lucide-react';
 
 interface MetricsGridProps {
     activeLicensesCount: number;
@@ -43,7 +43,7 @@ interface MetricCardProps {
     title: string;
     value: string;
     trend: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     color: string;
     gradient: string;
 }
