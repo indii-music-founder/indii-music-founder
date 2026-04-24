@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Dynamic types: XML/IPC/observability */
 import { db } from '@/services/firebase';
 import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { AgentTrace, TraceStep, UsageMetrics } from './types';
@@ -22,7 +21,7 @@ export class TraceService {
         userId: string,
         agentId: string,
         input: string,
-        metadata?: Record<string, any>,
+        metadata?: Record<string, unknown>,
         parentTraceId?: string
     ): Promise<string> {
         if (!userId) {
@@ -69,11 +68,11 @@ export class TraceService {
     /**
      * Calculate estimated cost for a step
      */
-    private static calculateCost(modelId: string, usage: any): number {
+    private static calculateCost(modelId: string, usage: Record<string, unknown>): number {
         // 1. Validations
         if (!modelId || !usage) return 0;
 
-        let pricing: any = MODEL_PRICING[modelId as keyof typeof MODEL_PRICING];
+        let pricing: Record<string, unknown> | undefined = MODEL_PRICING[modelId as keyof typeof MODEL_PRICING];
 
         // 2. Check Remote Config for overrides
         try {
@@ -130,10 +129,10 @@ export class TraceService {
     static async addStepWithUsage(
         traceId: string,
         type: TraceStep['type'],
-        content: any,
+        content: unknown,
         modelId: string,
-        rawUsage?: any,
-        metadata?: Record<string, any>
+        rawUsage?: Record<string, unknown>,
+        metadata?: Record<string, unknown>
     ): Promise<void> {
         if (!traceId) return;
 
@@ -193,14 +192,14 @@ export class TraceService {
     /**
      * Legacy method for adding steps without explicit usage
      */
-    static async addStep(traceId: string, type: TraceStep['type'], content: any, metadata?: Record<string, any>): Promise<void> {
+    static async addStep(traceId: string, type: TraceStep['type'], content: unknown, metadata?: Record<string, unknown>): Promise<void> {
         return this.addStepWithUsage(traceId, type, content, '', undefined, metadata);
     }
 
     /**
      * Mark trace as completed
      */
-    static async completeTrace(traceId: string, output?: any): Promise<void> {
+    static async completeTrace(traceId: string, output?: unknown): Promise<void> {
         if (!traceId) return;
 
         const ref = doc(db, this.COLLECTION, traceId);

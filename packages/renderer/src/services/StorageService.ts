@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 
 import { storage } from './firebase';
-import { Timestamp, where, orderBy, limit, query, onSnapshot, Unsubscribe, QuerySnapshot, DocumentData } from 'firebase/firestore';
+import { Timestamp, where, orderBy, limit, query, onSnapshot, Unsubscribe, QuerySnapshot, DocumentData, QueryDocumentSnapshot, FirestoreError } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
 import { HistoryItem } from '@/core/types/history';
 import { FirestoreService } from './FirestoreService';
@@ -379,12 +379,12 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         let isUnsubscribed = false;
 
         const originalUnsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
-            const items = snapshot.docs.map((doc: any) => {
+            const items = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
                 const data = doc.data() as HistoryDocument;
                 return this.mapDocumentToItem({ ...data, id: doc.id });
             });
             onUpdate(items);
-        }, (error: any) => {
+        }, (error: FirebaseError) => {
             // Check if it's an index error, fallback to un-ordered query if so
             if (error.code === 'failed-precondition' || error.message.includes('index')) {
                 logger.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
@@ -400,14 +400,14 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
                 const fallbackQ = query(this.collection, ...fallbackConstraints);
 
-                unsubscribe = onSnapshot(fallbackQ, (fallbackSnap: any) => {
-                    const items = fallbackSnap.docs.map((doc: any) => {
+                unsubscribe = onSnapshot(fallbackQ, (fallbackSnap: QuerySnapshot<DocumentData>) => {
+                    const items = fallbackSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
                         const data = doc.data() as HistoryDocument;
                         return this.mapDocumentToItem({ ...data, id: doc.id });
                     });
 
                     // Client-side sort
-                    items.sort((a: any, b: any) => b.timestamp - a.timestamp);
+                    items.sort((a: HistoryItem, b: HistoryItem) => b.timestamp - a.timestamp);
                     onUpdate(items);
                 }, onError);
 
