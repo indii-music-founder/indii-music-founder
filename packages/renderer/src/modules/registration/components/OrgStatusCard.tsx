@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Clock, AlertCircle, Circle, ChevronRight, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, Circle, ChevronRight, ExternalLink, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OrgAdapter, RegistrationStatus } from '../types';
 import { CATEGORY_LABELS } from '../types';
@@ -13,7 +13,7 @@ interface OrgStatusCardProps {
 }
 
 const STATUS_CONFIG: Record<RegistrationStatus, {
-  icon: React.ElementType;
+  icon: LucideIcon;
   label: string;
   color: string;
   dot: string;

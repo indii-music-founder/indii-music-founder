@@ -1,9 +1,9 @@
 import React from 'react';
-import { ToggleLeft, ToggleRight } from 'lucide-react';
+import { ToggleLeft, ToggleRight, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SettingCardProps {
-    icon: React.ElementType;
+    icon: LucideIcon;
     title: string;
     description: string;
     enabled: boolean;

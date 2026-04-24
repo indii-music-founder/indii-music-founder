@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
     TrendingUp, Zap, DollarSign, BarChart2,
-    Calendar, Activity, Flame, Loader2
+    Calendar, Activity, Flame, Loader2, type LucideIcon
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -31,7 +31,7 @@ const MILESTONE_EVENTS: MilestoneEvent[] = [
 const RANGE_DAYS: Record<DateRange, number> = { '7d': 7, '30d': 30, '90d': 90 };
 
 // Key moments would be populated from release analytics — empty until a release is tracked
-const KEY_MOMENTS: { day: number; icon: React.ElementType; text: string; color: string }[] = [];
+const KEY_MOMENTS: { day: number; icon: LucideIcon; text: string; color: string }[] = [];
 
 interface CustomTooltipProps {
     active?: boolean;

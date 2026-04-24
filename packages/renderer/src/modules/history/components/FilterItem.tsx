@@ -1,8 +1,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { type LucideIcon } from 'lucide-react';
 
 interface FilterItemProps {
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
     active?: boolean;
     onClick?: () => void;

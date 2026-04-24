@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { HistoryItem } from '@/core/types/history';
 import {
     ChevronRight, Image as ImageIcon, Video, Music,
-    FileText, Search, Eye, Grid3X3, List, X
+    FileText, Search, Eye, Grid3X3, List, X, type LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -133,7 +133,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
         files: allAssets.filter(a => a.type === 'text').length,
     }), [allAssets]);
 
-    const filterButtons: { id: AssetFilter; label: string; icon: React.ElementType; count: number }[] = [
+    const filterButtons: { id: AssetFilter; label: string; icon: LucideIcon; count: number }[] = [
         { id: 'all', label: 'All', icon: Grid3X3, count: counts.all },
         { id: 'images', label: 'Images', icon: ImageIcon, count: counts.images },
         { id: 'videos', label: 'Videos', icon: Video, count: counts.videos },
