@@ -215,8 +215,17 @@
 
 **Next Phase (Phase 2):**
 - Agent Orchestration & Memory (Weeks 3-5)
+- Branch: `phase-2-agent-orchestration` (ready for development)
 - Requires: Cloud Functions v2 migration for SSE support
 - Start with: PersistentMemoryService and streaming token handling
+
+## Branch Pattern
+
+Each phase gets its own branch:
+- Phase 1: commits on `main` (historical)
+- Phase 2+: `phase-N-<description>` branches
+- Example: `phase-2-agent-orchestration`, `phase-3-performance-observability`, etc.
+- Commit to phase branch, push, then decide on merge strategy
 
 ---
 
