@@ -160,16 +160,22 @@ describe('📚 ContextStackService', () => {
         });
 
         it('should respect maxSummaryChars budget', () => {
-            // Fill with long messages that will exceed the 500-char budget
+            // Use a very tight budget to guarantee eviction triggers
+            const tightService = new ContextStackServiceImpl({
+                maxFrames: 10,
+                maxSummaryChars: 200,
+            });
+
+            // Fill with messages that will exceed the tight budget
             for (let i = 0; i < 5; i++) {
-                service.push(createTestFrame({
+                tightService.push(createTestFrame({
                     userMessage: 'A'.repeat(200),
                     agentResponse: 'B'.repeat(200),
                 }));
             }
 
-            const summary = service.summarize();
-            expect(summary.length).toBeLessThanOrEqual(600); // budget + some header overhead
+            const summary = tightService.summarize();
+            expect(summary.length).toBeLessThanOrEqual(400); // budget + some header overhead
             expect(summary).toContain('older turns omitted');
         });
     });

@@ -211,9 +211,9 @@ export class E2EEncryptionService {
       // Note: In a real implementation, we would decrypt the session key
       // For now, we decrypt directly with a pre-shared session key
       const message = await crypto.subtle.decrypt(
-        { ...ENCRYPTION_ALGORITHM, iv },
+        { ...ENCRYPTION_ALGORITHM, iv: iv.buffer as ArrayBuffer },
         keyPair.privateKey,
-        encryptedCiphertext
+        encryptedCiphertext.buffer as ArrayBuffer
       );
 
       const decrypted = JSON.parse(new TextDecoder().decode(message));
@@ -272,7 +272,7 @@ export class E2EEncryptionService {
       const isValid = await crypto.subtle.verify(
         'RSASSA-PKCS1-v1_5',
         senderPublicKey,
-        signatureBuffer,
+        signatureBuffer.buffer as ArrayBuffer,
         messageBuffer
       );
 
