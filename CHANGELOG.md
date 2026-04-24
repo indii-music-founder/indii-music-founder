@@ -2,6 +2,20 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.56.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.4...v1.56.0) (2026-04-23)
+
+
+### Features
+
+* **ci:** sync and sanitize local state for clean CI validation ([0ec3137](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0ec31375dcb74063fac217f05e56c64353956543))
+* implement DDEX metadata validation schemas ([868f96a](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/868f96a2718887195cdc004e468390b5b3f1eaeb))
+* **workflow:** add support for conditional steps and skipping ([9c7e9dc](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9c7e9dca60c343f554d30c641a62b87cf30715bd))
+
+
+### Bug Fixes
+
+* **tests:** mock ModelArmor in agent tests to prevent prompt rejection and fix RateLimiter unhandled rejection ([6dd1547](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6dd1547777049bfe9d8db1f231de010ac1d33ec6))
+
 ## [1.55.4](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.3...v1.55.4) (2026-04-23)
 
 
