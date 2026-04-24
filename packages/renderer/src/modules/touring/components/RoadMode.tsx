@@ -19,6 +19,7 @@ import {
     ExternalLink,
     X,
     ArrowLeft,
+    LucideIcon,
 } from 'lucide-react';
 import { useVoice } from '@/core/context/VoiceContext';
 import { useTouring } from '../hooks/useTouring';
@@ -37,7 +38,7 @@ import { logger } from '@/utils/logger';
 
 interface QuickAction {
     id: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
     color: string;
     bgColor: string;
