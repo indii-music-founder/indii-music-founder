@@ -3,6 +3,7 @@ import { logger } from '@/utils/logger';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { useStore } from '@/core/store';
 import { AgentRunner } from './types';
+import { TraceService } from './observability/TraceService';
 
 export type TaskPriority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
 
@@ -42,6 +43,17 @@ export class MaestroBatchingService {
 
         // Add to global state for UI visibility
         useStore.getState().addBatchTask(fullTask);
+
+        // Recursive Delegation Guard
+        if (task.traceId) {
+            const depth = await TraceService.getTraceDepth(task.traceId);
+            if (depth >= 3) {
+                const errorMsg = `[Maestro] Delegation depth limit (3) exceeded for task ${id}. Aborting to prevent infinite recursion.`;
+                logger.warn(errorMsg);
+                useStore.getState().updateBatchTask(id, { status: 'error', error: errorMsg });
+                throw new Error(errorMsg);
+            }
+        }
 
         try {
             const result = await this.batcher.add(fullTask);

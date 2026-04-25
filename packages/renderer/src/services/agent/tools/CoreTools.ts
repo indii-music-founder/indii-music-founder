@@ -123,7 +123,7 @@ export const CoreTools = {
     }) => {
         // AI-driven negotiation simulation using Gemini
         try {
-            const { firebaseAI } = await import('@/services/ai/FirebaseAIService');
+            const { GenAI } = await import('@/services/ai/GenAI');
             const { AI_MODELS } = await import('@/core/config/ai-models');
 
             const prompt = `Simulate a 3-turn multi-agent negotiation in the music industry.
@@ -135,7 +135,7 @@ Apply standard music industry conventions (royalty splits, licensing windows, te
 Return JSON: { "negotiationLog": ["msg1","msg2","msg3"], "finalTerms": "...", "outcome": "accepted|rejected|counter_proposed" }
 Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
 
-            const result = await firebaseAI.generateStructuredData<{
+            const result = await GenAI.generateStructuredData<{
                 negotiationLog: string[];
                 finalTerms: string;
                 outcome: string;
@@ -147,7 +147,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                     outcome: { type: 'STRING' as const },
                 },
                 required: ['negotiationLog', 'finalTerms', 'outcome'],
-            } as Parameters<typeof firebaseAI.generateStructuredData>[1], undefined, undefined, AI_MODELS.TEXT.FAST);
+            } as Parameters<typeof GenAI.generateStructuredData>[1], undefined, undefined, AI_MODELS.TEXT.FAST);
 
             return {
                 success: true,

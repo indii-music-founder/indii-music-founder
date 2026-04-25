@@ -11,7 +11,7 @@
  * This is the quality gate between creation and DDEX distribution.
  * A track that fails CANNOT proceed to distribution without human sign-off.
  */
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { Schema } from 'firebase/ai';
 import { Logger } from '@/core/logger/Logger';
@@ -173,7 +173,7 @@ CRITICAL RULES:
 - 0.01% phase shift detection standard: Log any phase anomalies, no matter how small.
 `;
 
-            const result = await firebaseAI.generateStructuredData<SoulCertificationResult>(
+            const result = await GenAI.generateStructuredData<SoulCertificationResult>(
                 [
                     { text: prompt },
                     {

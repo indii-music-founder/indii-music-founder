@@ -1,15 +1,25 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/video/schemas';
-import { firebaseAI } from '../ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
 // Mock Dependencies
-vi.mock('../ai/FirebaseAIService', () => ({
-    firebaseAI: { 
-        analyzeImage: vi.fn(),
-        generateVideo: vi.fn().mockResolvedValue('blob:http://localhost/video-123')
-    }
-}));
+vi.mock('../ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
+        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/core/store', () => ({
     useStore: {
@@ -80,7 +90,7 @@ describe('VideoGenerationService Integration', () => {
         const result = await service.generateVideo(validOptions);
 
         expect(result[0]!.id).toBe('job-123');
-        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining("A cyberpunk city")
         }));
     });

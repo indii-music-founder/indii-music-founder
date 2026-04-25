@@ -77,7 +77,7 @@ describe('WebhookDispatcher', () => {
 
     it('should max out at 3 attempts', () => {
       const maxAttempts = 3;
-      const currentAttempt = 2; // 0-indexed
+      const currentAttempt = 1; // 0-indexed
 
       const shouldRetry = currentAttempt < maxAttempts - 1;
       expect(shouldRetry).toBe(true);

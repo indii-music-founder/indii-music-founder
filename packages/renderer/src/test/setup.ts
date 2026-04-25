@@ -453,6 +453,8 @@ vi.mock('@/services/agent/AgentZeroService', () => ({
     agentZeroService: null
 }));
 
+
+
 // Mock lucide-react with Proxy-based auto-generating stub factory
 // This ensures ANY icon import works without needing to enumerate them all
 vi.mock('lucide-react', async () => {
