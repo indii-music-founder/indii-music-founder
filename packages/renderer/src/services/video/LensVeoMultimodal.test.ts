@@ -40,9 +40,9 @@ vi.mock('../ai/FirebaseAIService', () => {
         generateText: vi.fn().mockResolvedValue('Mock AI response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
-        generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
+        generateVideo: mocks.generateVideo,
         generateContent: vi.fn().mockResolvedValue('Mock AI response'),
-        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+        analyzeImage: mocks.analyzeImage
     };
     return {
         FirebaseAIService: class {

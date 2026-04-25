@@ -62,9 +62,8 @@ export class ContextStackService {
     }
 
     const frameId = this.generateFrameId();
-    const parentFrameId = this.state.frames.length > 0
-      ? this.state.frames[this.state.frames.length - 1]!.frameId
-      : undefined;
+    const lastFrame = this.state.frames[this.state.frames.length - 1];
+    const parentFrameId = lastFrame?.frameId;
 
     const frame: ContextFrame = {
       frameId,

@@ -361,10 +361,26 @@ export class AgentGraphService {
                         });
                         AgentEventBus.emitNodeEvent('GRAPH_NODE_FAILED', graph.id, res.nodeId, executionId, res.error);
                         
-                        // Terminal failure: stop graph if node fails (strict reliability)
-                        logger.error(`[AgentGraph] Failing graph ${executionId} due to node ${res.nodeId} failure.`);
-                        await agentGraphStateService.finalizeStatus(userId, executionId, 'failed');
-                        throw new Error(`Node ${res.nodeId} failed: ${res.error || 'Unknown error'}`);
+                        if (res.error) {
+                            // Path Pruning: If a node fails, prune its descendants and mark them as skipped.
+                            // The graph execution continues for other branches unless all paths are blocked.
+                            logger.warn(`[AgentGraph] Node ${res.nodeId} failed. Pruning descendants.`);
+                            await this.pruneDescendants(userId, executionId, res.nodeId, graph);
+                            
+                            // Check if there are any nodes still planned or executing
+                            const latestState = await agentGraphStateService.getExecution(userId, executionId);
+                            const hasActiveNodes = latestState && Object.values(latestState.nodeStates).some(
+                                s => s.status === 'planned' || s.status === 'executing'
+                            );
+
+                            if (!hasActiveNodes) {
+                                logger.info(`[AgentGraph] No more active nodes after pruning. Finalizing graph ${executionId}.`);
+                                const hasCompletions = latestState && Object.values(latestState.nodeStates).some(s => s.status === 'step_complete');
+                                await agentGraphStateService.finalizeStatus(userId, executionId, hasCompletions ? 'completed' : 'failed');
+                                break;
+                            }
+                            continue;
+                        }
                     }
                 }
             } catch (err: unknown) {
@@ -455,7 +471,28 @@ export class AgentGraphService {
             }
         }
 
-        // 3. Final Cleanup: If any placeholders remain from non-existent inputs, 
+        // 3. Handle Global JSONPath Resolution: {{nodeId.path}}
+        // This allows nodes to reference ANY completed node in the graph, not just direct parents.
+        const globalPlaceholderRegex = /\{\{([^.}]+)\.([^}]+)\}\}/g;
+        let match;
+        while ((match = globalPlaceholderRegex.exec(prompt)) !== null) {
+            const [fullMatch, nodeId, path] = match as unknown as [string, string, string];
+            const sourceState = state.nodeStates[nodeId];
+            
+            if (sourceState && sourceState.output) {
+                try {
+                    const parsed = JSON.parse(sourceState.output);
+                    const value = this.getNestedValue(parsed, path);
+                    if (value !== undefined) {
+                        prompt = prompt.replace(fullMatch, String(value));
+                    }
+                } catch (_e) {
+                    // Ignore resolution errors for global paths
+                }
+            }
+        }
+
+        // 4. Final Cleanup: If any placeholders remain from non-existent inputs, 
         // we might want to warn or strip them. For now, leave them as is for visibility.
         return prompt;
     }
@@ -468,6 +505,36 @@ export class AgentGraphService {
         return path.split('.').reduce((prev, curr) => {
             return prev ? prev[curr] : undefined;
         }, obj);
+    }
+
+    /**
+     * Recursively prunes (skips) all descendant nodes of a failed node.
+     */
+    private async pruneDescendants(userId: string, executionId: string, failedNodeId: string, graph: AgentGraph): Promise<void> {
+        const queue = [failedNodeId];
+        const visited = new Set<string>();
+
+        while (queue.length > 0) {
+            const currentId = queue.shift()!;
+            if (visited.has(currentId)) continue;
+            visited.add(currentId);
+
+            // Find all nodes that depend on this node
+            const descendants = graph.edges
+                .filter(e => e.sourceId === currentId)
+                .map(e => e.targetId);
+
+            for (const descId of descendants) {
+                if (!visited.has(descId)) {
+                    logger.debug(`[AgentGraph] Pruning node ${descId} (descendant of ${failedNodeId})`);
+                    await agentGraphStateService.updateNodeStatus(userId, executionId, descId, {
+                        status: 'skipped',
+                        error: `Skipped due to upstream failure in node: ${failedNodeId}`
+                    });
+                    queue.push(descId);
+                }
+            }
+        }
     }
 }
 

@@ -45,9 +45,10 @@ export function initSentry(): void {
             if (event.breadcrumbs) {
                 event.breadcrumbs.forEach((breadcrumb) => {
                     if (breadcrumb.category === 'fetch' || breadcrumb.category === 'xhr') {
-                        const data = breadcrumb.data as Record<string, any> | undefined;
-                        if (data?.headers?.Authorization) {
-                            data.headers.Authorization = '[REDACTED]';
+                        const data = breadcrumb.data as Record<string, unknown> | undefined;
+                        const headers = data?.headers as Record<string, unknown> | undefined;
+                        if (headers?.Authorization) {
+                            headers.Authorization = '[REDACTED]';
                         }
                     }
                 });
@@ -78,7 +79,7 @@ export function initSentry(): void {
 
     // Register instance for global debugging if needed
     if (typeof window !== 'undefined') {
-        (window as any).__sentryInstance = Sentry;
+        (window as unknown as Record<string, unknown>).__sentryInstance = Sentry;
     }
 }
 
@@ -109,5 +110,27 @@ export function captureException(error: unknown, context?: Record<string, unknow
     Sentry.withScope((scope) => {
         if (context) scope.setExtras(context);
         Sentry.captureException(error);
+    });
+}
+
+/** Report Core Web Vitals metrics to Sentry. */
+export function reportWebVitals(vitals: Record<string, number>): void {
+    Sentry.withScope((scope) => {
+        scope.setLevel('info');
+        Object.entries(vitals).forEach(([name, value]) => {
+            scope.setTag(`vital_${name}`, value.toString());
+        });
+        Sentry.captureMessage('Web Vitals collected', 'info');
+    });
+}
+
+/** Report bundle metrics to Sentry. */
+export function reportBundleMetrics(jsSize: number, cssSize: number, totalSize: number): void {
+    Sentry.withScope((scope) => {
+        scope.setLevel('info');
+        scope.setTag('bundle_js_bytes', (jsSize / 1024).toFixed(1));
+        scope.setTag('bundle_css_bytes', (cssSize / 1024).toFixed(1));
+        scope.setTag('bundle_total_bytes', (totalSize / 1024).toFixed(1));
+        Sentry.captureMessage('Bundle metrics collected', 'info');
     });
 }

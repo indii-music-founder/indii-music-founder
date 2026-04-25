@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Activity, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, type LucideIcon } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Activity, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -160,6 +160,7 @@ export default function Sidebar() {
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
+        { id: 'maestro', icon: Layers, label: 'Maestro' },
     ];
 
     const departmentItems: SidebarItem[] = [

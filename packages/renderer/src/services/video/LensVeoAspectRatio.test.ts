@@ -28,6 +28,7 @@ vi.mock('firebase/firestore', () => ({
     doc: vi.fn(() => ({ id: 'mock-doc' })),
     setDoc: vi.fn(() => Promise.resolve()),
     updateDoc: vi.fn(() => Promise.resolve()),
+    addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc' })),
     collection: vi.fn(() => ({ id: 'mock-coll' })),
     serverTimestamp: vi.fn(() => new Date()),
     getFirestore: vi.fn(),
@@ -59,7 +60,7 @@ vi.mock('../ai/FirebaseAIService', () => {
         generateText: vi.fn().mockResolvedValue('Mock AI response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
-        generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
+        generateVideo: vi.fn().mockResolvedValue('blob:mock-video-url'),
         generateContent: vi.fn().mockResolvedValue('Mock AI response'),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };

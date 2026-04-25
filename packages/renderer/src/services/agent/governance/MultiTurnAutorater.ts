@@ -69,7 +69,7 @@ Return the evaluation in structured JSON matching the requested schema.
 
             const result = await GenAI.generateStructuredData<AutoraterScore>(
                 prompt,
-                schema as any,
+                schema as unknown as Record<string, unknown>,
                 undefined,
                 undefined,
                 AI_MODELS.TEXT.AGENT
