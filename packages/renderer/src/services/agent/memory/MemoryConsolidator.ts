@@ -112,9 +112,10 @@ export class MemoryConsolidator {
 
             // Mark the old memories as consolidated
             const batch = writeBatch(db);
+            const nowTimestamp = Timestamp.now();
             for (const m of memories) {
                 const ref = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', m.id);
-                batch.update(ref, { consolidated: true, updatedAt: Timestamp.now() });
+                batch.update(ref, { consolidated: true, updatedAt: nowTimestamp });
             }
             await batch.commit();
 
@@ -419,6 +420,7 @@ export class MemoryConsolidator {
 
             const batch = writeBatch(db);
             const now = Date.now();
+            const nowTimestamp = Timestamp.now();
             let decayedCount = 0;
 
             for (const docSnap of snapshot.docs) {
@@ -437,7 +439,7 @@ export class MemoryConsolidator {
                     const ref = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', docSnap.id);
                     batch.update(ref, {
                         importance: parseFloat(newImportance.toFixed(4)),
-                        updatedAt: Timestamp.now(),
+                        updatedAt: nowTimestamp,
                     });
                     decayedCount++;
                 }
@@ -483,6 +485,7 @@ export class MemoryConsolidator {
 
             const batch = writeBatch(db);
             const now = Date.now();
+            const nowTimestamp = Timestamp.now();
             let tiersChanged = 0;
 
             for (const docSnap of snapshot.docs) {
@@ -514,7 +517,7 @@ export class MemoryConsolidator {
                     const ref = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', docSnap.id);
                     batch.update(ref, {
                         tier: newTier,
-                        updatedAt: Timestamp.now(),
+                        updatedAt: nowTimestamp,
                     });
                     tiersChanged++;
                 }
