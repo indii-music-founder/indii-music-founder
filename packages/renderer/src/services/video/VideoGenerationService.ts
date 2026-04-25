@@ -461,7 +461,7 @@ export class VideoGenerationService {
             // 🔥 Fire-and-forget: Upload blob to Firebase Storage for durable persistence.
             // Blob URLs are session-scoped and won't survive page refresh.
             // This background upload ensures the video remains accessible in future sessions.
-            if (videoUrl.startsWith('blob:')) {
+            if (typeof videoUrl === 'string' && videoUrl.startsWith('blob:')) {
                 (async () => {
                     try {
                         const blobResponse = await fetch(videoUrl);
