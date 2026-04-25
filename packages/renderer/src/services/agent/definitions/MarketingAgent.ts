@@ -1,5 +1,5 @@
 import { AgentConfig } from "../types";
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { SovereignTools } from '../tools/SovereignTools';
 
@@ -231,7 +231,7 @@ Include:
 - Success Metrics (KPIs)`;
 
             try {
-                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { brief: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -247,7 +247,7 @@ Provide:
 - Best times to post`;
 
             try {
-                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { analysis: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -256,7 +256,7 @@ Provide:
         schedule_content: async (args: { posts: Record<string, unknown>[] }) => {
             // Future: Call SocialService.schedulePost
             const prompt = `Simulate scheduling posts.Count: ${args.posts.length}. Return a confirmation message.`;
-            const confirmation = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+            const confirmation = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return {
                 success: true,
                 data: {
@@ -269,7 +269,7 @@ Provide:
         track_performance: async (args: { campaignId: string }) => {
             const prompt = `Generate a realistic performance report for campaign "${args.campaignId}".Metrics: Impressions, Clicks, CTR, ROI.Return as JSON.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' });
+                const response = await GenAI.generateStructuredData(prompt, { type: 'object' });
                 return { success: true, data: response };
             } catch (e: unknown) {
                 return { success: false, error: (e as Error).message };

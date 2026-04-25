@@ -3,11 +3,21 @@ import { FinanceTools } from '../FinanceTools';
 import { AI_MODELS } from '@/core/config/ai-models';
 
 // Mock Dependencies
-vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
-        generateContent: vi.fn()
-    }
-}));
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue('Mock analysis text'),
+        generateContent: vi.fn().mockResolvedValue('Mock AI response')
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/core/config/distributors', () => ({
     DISTRIBUTORS: {
@@ -23,12 +33,12 @@ vi.mock('@/core/config/distributors', () => ({
 }));
 
 describe('FinanceTools', () => {
-    let firebaseAI: any;
+    let GenAI: any;
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const module = await import('@/services/ai/FirebaseAIService');
-        firebaseAI = module.firebaseAI;
+        const module = await import('@/services/ai/GenAI');
+        GenAI = module.GenAI;
     });
 
     describe('analyze_receipt', () => {
@@ -41,7 +51,7 @@ describe('FinanceTools', () => {
                 description: 'Printer Paper'
             });
 
-            firebaseAI.generateContent.mockResolvedValue({
+            GenAI.generateContent.mockResolvedValue({
                 response: {
                     text: () => mockResponseText
                 }
@@ -54,7 +64,7 @@ describe('FinanceTools', () => {
 
             const result = await FinanceTools.analyze_receipt(args);
 
-            expect(firebaseAI.generateContent).toHaveBeenCalledWith(
+            expect(GenAI.generateContent).toHaveBeenCalledWith(
                 expect.arrayContaining([
                     expect.objectContaining({
                         role: 'user',
@@ -76,7 +86,7 @@ describe('FinanceTools', () => {
         });
 
         it('should handle AI errors gracefully via wrapTool', async () => {
-            firebaseAI.generateContent.mockRejectedValue(new Error('AI Error'));
+            GenAI.generateContent.mockRejectedValue(new Error('AI Error'));
 
             const args = {
                 image_data: 'data',

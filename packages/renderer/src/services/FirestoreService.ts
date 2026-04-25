@@ -179,6 +179,22 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
             if (onError) onError(error as Error);
         });
     }
+
+    /**
+     * Subscribes to real-time updates for a single document.
+     */
+    subscribeDoc(id: string, callback: (data: T | null) => void, onError?: (error: Error) => void): Unsubscribe {
+        const docRef = doc(db, this.collectionPath, id);
+        return onSnapshot(docRef, (snapshot) => {
+            if (snapshot.exists()) {
+                callback({ id: snapshot.id, ...snapshot.data() } as unknown as T);
+            } else {
+                callback(null);
+            }
+        }, (error) => {
+            if (onError) onError(error as Error);
+        });
+    }
 }
 
 // Note: Each service that needs Firestore should instantiate its own typed FirestoreService

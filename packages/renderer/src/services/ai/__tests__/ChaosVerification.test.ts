@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { firebaseAI } from '../FirebaseAIService';
+import { GenAI } from '../GenAI';
 import { wcpInstance } from '../../agent/WebSocketControlPlane';
 import { Content } from 'firebase/ai';
 
@@ -59,7 +59,7 @@ describe('ChaosVerification', () => {
     describe('FirebaseAIService Race Conditions', () => {
         it('should NOT coalesce requests with different multimodal data', async () => {
             // This test verifies if different binary payloads are correctly distinguished in the request coalescing map
-            const rawGenerateSpy = vi.spyOn(firebaseAI as unknown as { rawGenerateContent: any }, 'rawGenerateContent');
+            const rawGenerateSpy = vi.spyOn(GenAI as unknown as { rawGenerateContent: any }, 'rawGenerateContent');
 
             const promptA: Content[] = [{
                 role: 'user',
@@ -76,14 +76,14 @@ describe('ChaosVerification', () => {
             // We need to mock the underlying model.generateContent or similar if possible
             // but for a quick check, we can just see if the Map 'activeRequests' handles them as different keys.
 
-            const activeRequests = (firebaseAI as unknown as { activeRequests: Map<any, any> }).activeRequests;
+            const activeRequests = (GenAI as unknown as { activeRequests: Map<any, any> }).activeRequests;
 
             // Start Request A (don't wait)
-            const promiseA = firebaseAI.rawGenerateContent(promptA, undefined, {}, undefined, [], { skipCache: true });
+            const promiseA = GenAI.rawGenerateContent(promptA, undefined, {}, undefined, [], { skipCache: true });
             const keyA = Array.from(activeRequests.keys())[0];
 
             // Start Request B
-            const promiseB = firebaseAI.rawGenerateContent(promptB, undefined, {}, undefined, [], { skipCache: true });
+            const promiseB = GenAI.rawGenerateContent(promptB, undefined, {}, undefined, [], { skipCache: true });
             const keyB = Array.from(activeRequests.keys()).find(k => k !== keyA);
 
             // If keyB is undefined or same as keyA, we have a collision
@@ -102,12 +102,12 @@ describe('ChaosVerification', () => {
             const timeout = 100; // 100ms
 
             // Mock ensureInitialized to bypass bootstrap
-            vi.spyOn(firebaseAI as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
+            vi.spyOn(GenAI as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
 
             // Mock a long running operation (e.g. rateLimiter.acquire)
-            vi.spyOn((firebaseAI as unknown as { rateLimiter: { acquire: any } }).rateLimiter, 'acquire').mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
+            vi.spyOn((GenAI as unknown as { rateLimiter: { acquire: any } }).rateLimiter, 'acquire').mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
 
-            const promise = firebaseAI.rawGenerateContent('Slow request', undefined, {}, undefined, [], { timeout });
+            const promise = GenAI.rawGenerateContent('Slow request', undefined, {}, undefined, [], { timeout });
 
             await expect(promise).rejects.toThrow('AI Request timed out');
             const end = Date.now();
@@ -131,11 +131,11 @@ describe('ChaosVerification', () => {
                 });
 
             // Mock ensureInitialized to return a custom object with generateContent
-            vi.spyOn(firebaseAI as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
-            (firebaseAI as unknown as { useFallbackMode: boolean }).useFallbackMode = false;
+            vi.spyOn(GenAI as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
+            (GenAI as unknown as { useFallbackMode: boolean }).useFallbackMode = false;
 
             // Reset circuit breaker state from any prior test
-            (firebaseAI as unknown as { contentBreaker: { reset: () => void } }).contentBreaker.reset();
+            (GenAI as unknown as { contentBreaker: { reset: () => void } }).contentBreaker.reset();
 
             // Re-mock firebase/ai with the hoisted mock
             vi.mock('firebase/ai', async (importOriginal) => {
@@ -149,7 +149,7 @@ describe('ChaosVerification', () => {
             });
 
             // Trigger
-            const result = await firebaseAI.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });
+            const result = await GenAI.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });
 
             // The first call fails with 503, then at least one subsequent call succeeds.
             // The exact count depends on internal retry/circuit-breaker timing (2 or 3).

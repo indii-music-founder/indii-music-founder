@@ -1,0 +1,24 @@
+
+> indiios-monorepo@1.56.0 typecheck
+> tsc -b packages/shared packages/main packages/renderer
+
+packages/renderer/src/core/theme/moduleColors.ts(85,14): error TS2741: Property 'maestro' is missing in type '{ brand: { text: string; bg: string; border: string; ring: string; hoverText: string; hoverBg: string; cssVar: string; }; road: { text: string; bg: string; border: string; ring: string; hoverText: string; hoverBg: string; cssVar: string; }; ... 33 more ...; registration: { ...; }; }' but required in type 'Record<"analytics" | "marketing" | "video" | "debug" | "dashboard" | "creative" | "legal" | "workflow" | "knowledge" | "road" | "social" | "brand" | "campaign" | "publicist" | "publishing" | ... 21 more ... | "maestro", ModuleColor>'.
+packages/renderer/src/core/themes/ModuleTheme.ts(21,14): error TS2741: Property 'maestro' is missing in type '{ dashboard: { officeName: string; accent: string; backgroundGradient: string; ambientConfig: { type: "grid"; opacity: number; }; }; creative: { officeName: string; accent: string; backgroundGradient: string; ambientConfig: { ...; }; }; ... 33 more ...; registration: { ...; }; }' but required in type 'Record<"analytics" | "marketing" | "video" | "debug" | "dashboard" | "creative" | "legal" | "workflow" | "knowledge" | "road" | "social" | "brand" | "campaign" | "publicist" | "publishing" | ... 21 more ... | "maestro", ModuleTheme>'.
+packages/renderer/src/services/agent/AgentService.ts(4,22): error TS2307: Cannot find module '@/core/firebase' or its corresponding type declarations.
+packages/renderer/src/services/agent/AgentService.ts(470,30): error TS2551: Property 'graph' does not exist on type 'GraphExecutionState'. Did you mean 'graphId'?
+packages/renderer/src/services/agent/AgentService.ts(472,80): error TS2551: Property 'graph' does not exist on type 'GraphExecutionState'. Did you mean 'graphId'?
+packages/renderer/src/services/agent/AgentService.ts(484,34): error TS2551: Property 'graph' does not exist on type 'GraphExecutionState'. Did you mean 'graphId'?
+packages/renderer/src/services/agent/AgentService.ts(493,71): error TS2551: Property 'graph' does not exist on type 'GraphExecutionState'. Did you mean 'graphId'?
+packages/renderer/src/services/agent/AgentService.ts(527,71): error TS2345: Argument of type '{ agentId: string; prompt: string; context: AgentContext; description: string; }[]' is not assignable to parameter of type 'Omit<BatchedTask, "status" | "id">[]'.
+  Type '{ agentId: string; prompt: string; context: AgentContext; description: string; }' is missing the following properties from type 'Omit<BatchedTask, "status" | "id">': params, priority
+packages/renderer/src/services/agent/orchestration/GraphDecompositionService.ts(83,32): error TS2339: Property 'PRO' does not exist on type '{ readonly AGENT: "gemini-3-pro-preview"; readonly FAST: "gemini-3-flash-preview"; }'.
+packages/renderer/src/services/agent/orchestration/GraphDecompositionService.ts(121,9): error TS2322: Type '{ id: string; agentId: "marketing" | "video" | "security" | "creative" | "legal" | "road" | "social" | "brand" | "publicist" | "publishing" | "finance" | "licensing" | "distribution" | ... 8 more ... | "generalist"; taskTemplate: string; waitCondition: string; contextOverrides: any; }[]' is not assignable to type 'GraphNode[]'.
+  Type '{ id: string; agentId: "marketing" | "video" | "security" | "creative" | "legal" | "road" | "social" | "brand" | "publicist" | "publishing" | "finance" | "licensing" | "distribution" | ... 8 more ... | "generalist"; taskTemplate: string; waitCondition: string; contextOverrides: any; }' is not assignable to type 'GraphNode'.
+    Types of property 'waitCondition' are incompatible.
+      Type 'string' is not assignable to type '"all" | "any"'.
+packages/renderer/src/services/agent/tools/__tests__/LegalTools.test.ts(21,30): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+packages/renderer/src/services/agent/tools/__tests__/LegalTools.test.ts(21,30): error TS18048: 'LegalTools.generate_nda' is possibly 'undefined'.
+packages/renderer/src/services/agent/tools/__tests__/LegalTools.test.ts(40,30): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+packages/renderer/src/services/agent/tools/__tests__/LegalTools.test.ts(40,30): error TS18048: 'LegalTools.draft_contract' is possibly 'undefined'.
+packages/renderer/src/services/agent/tools/__tests__/NarrativeTools.test.ts(6,10): error TS2300: Duplicate identifier 'GenAI'.
+packages/renderer/src/services/agent/tools/__tests__/NarrativeTools.test.ts(51,10): error TS2300: Duplicate identifier 'GenAI'.

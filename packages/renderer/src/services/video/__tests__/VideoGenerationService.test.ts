@@ -1,17 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { firebaseAI } from '../../ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('../../ai/FirebaseAIService', () => ({
-    serverTimestamp: vi.fn(),
-    firebaseAI: {
-        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result."),
+vi.mock('../../ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
-    }
-}));
+        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        analyzeImage: vi.fn().mockResolvedValue('Mock analysis text')
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
@@ -91,7 +100,7 @@ describe('VideoGenerationService', () => {
             expect(result[0]!.id).toBeDefined();
             expect(result[0]!.url).toBe('https://storage.googleapis.com/mock-video.mp4');
             // Verify it calls the direct SDK path, not Cloud Functions
-            expect(firebaseAI.generateVideo).toHaveBeenCalled();
+            expect(GenAI.generateVideo).toHaveBeenCalled();
         });
 
         it('should throw error if quota is exceeded', async () => {
@@ -111,7 +120,7 @@ describe('VideoGenerationService', () => {
                 firstFrame: 'data:image/png;base64,start'
             });
 
-            expect(firebaseAI.analyzeImage).toHaveBeenCalled();
+            expect(GenAI.analyzeImage).toHaveBeenCalled();
         });
 
         it('should handle long-form video generation', async () => {
@@ -123,7 +132,7 @@ describe('VideoGenerationService', () => {
             expect(result).toHaveLength(1);
             expect(result[0]!.id).toMatch(/^long_/);
             // Long-form should also call generateVideo for each segment
-            expect(firebaseAI.generateVideo).toHaveBeenCalled();
+            expect(GenAI.generateVideo).toHaveBeenCalled();
         });
     });
 

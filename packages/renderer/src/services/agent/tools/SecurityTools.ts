@@ -1,4 +1,4 @@
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { doc, getDoc } from 'firebase/firestore';
@@ -197,7 +197,7 @@ export const SecurityTools = {
         Identify potential risks (e.g., too many Admins, external guests).
         `;
 
-        const data = await firebaseAI.generateStructuredData(
+        const data = await GenAI.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );

@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -66,7 +66,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await firebaseAI.generateStructuredData<z.infer<typeof VerifyOutputSchema>>(prompt, schema as Record<string, unknown>);
+        const data = await GenAI.generateStructuredData<z.infer<typeof VerifyOutputSchema>>(prompt, schema as Record<string, unknown>);
         const validated = VerifyOutputSchema.parse(data);
         return {
             ...validated,
@@ -122,7 +122,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await firebaseAI.generateStructuredData<z.infer<typeof AnalyzeBrandConsistencySchema>>(prompt, schema as Record<string, unknown>);
+        const data = await GenAI.generateStructuredData<z.infer<typeof AnalyzeBrandConsistencySchema>>(prompt, schema as Record<string, unknown>);
         const validated = AnalyzeBrandConsistencySchema.parse(data);
         return {
             ...validated,
@@ -142,7 +142,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await firebaseAI.generateStructuredData<z.infer<typeof GenerateBrandGuidelinesSchema>>(prompt, schema as Record<string, unknown>);
+        const data = await GenAI.generateStructuredData<z.infer<typeof GenerateBrandGuidelinesSchema>>(prompt, schema as Record<string, unknown>);
         const validated = GenerateBrandGuidelinesSchema.parse(data);
         return {
             ...validated,
@@ -160,7 +160,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await firebaseAI.generateStructuredData<z.infer<typeof AuditVisualAssetsSchema>>(prompt, schema as Record<string, unknown>);
+        const data = await GenAI.generateStructuredData<z.infer<typeof AuditVisualAssetsSchema>>(prompt, schema as Record<string, unknown>);
         const validated = AuditVisualAssetsSchema.parse(data);
         return {
             ...validated,

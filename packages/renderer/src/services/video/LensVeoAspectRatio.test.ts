@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 import { UserProfile } from '@/modules/workflow/types';
-import { firebaseAI } from '../ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
@@ -28,6 +28,7 @@ vi.mock('firebase/firestore', () => ({
     doc: vi.fn(() => ({ id: 'mock-doc' })),
     setDoc: vi.fn(() => Promise.resolve()),
     updateDoc: vi.fn(() => Promise.resolve()),
+    addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc' })),
     collection: vi.fn(() => ({ id: 'mock-coll' })),
     serverTimestamp: vi.fn(() => new Date()),
     getFirestore: vi.fn(),
@@ -54,12 +55,22 @@ vi.mock('../firebase', () => ({
     remoteConfig: {},
 }));
 
-vi.mock('../ai/FirebaseAIService', () => ({
-    firebaseAI: {
-        analyzeImage: vi.fn().mockResolvedValue('Analyzed context'),
-        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock/video.mp4')
-    }
-}));
+vi.mock('../ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        generateVideo: vi.fn().mockResolvedValue('blob:mock-video-url'),
+        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: mocks.subscriptionService
@@ -90,7 +101,7 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             duration: 5
         });
 
-        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining('Cinematic sunset'),
             config: expect.objectContaining({
                 aspectRatio: '16:9',
@@ -114,14 +125,14 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             // No explicit aspect ratio
         });
 
-        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             config: expect.objectContaining({
                 aspectRatio: '9:16',
             }),
         }));
 
         // Verify prompt enrichment
-        const callArgs = (firebaseAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+        const callArgs = (GenAI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0]![0];
         expect(callArgs.prompt).toContain('Optimized for Spotify Canvas');
         expect(callArgs.prompt).toContain('9:16');
     });
@@ -141,7 +152,7 @@ describe('Lens 🎥 - Veo 3.1 Aspect Ratio Compliance', () => {
             userProfile: userProfile as UserProfile
         });
 
-        expect(firebaseAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
+        expect(GenAI.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
             config: expect.objectContaining({
                 aspectRatio: '16:9',
             }),

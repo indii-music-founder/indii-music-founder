@@ -11,15 +11,22 @@ import {
 import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('@/services/ai/FirebaseAIService', () => ({
-    serverTimestamp: vi.fn(),
-    firebaseAI: {
-        generateStructuredData: vi.fn(),
-        generateContent: vi.fn()
-    }
-}));
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal();
@@ -109,7 +116,7 @@ describe('SecurityTools (Mocked)', () => {
             expect(viewerRole.count).toBe(2);
 
             // AI should NOT be called
-            expect(firebaseAI.generateStructuredData).not.toHaveBeenCalled();
+            expect(GenAI.generateStructuredData).not.toHaveBeenCalled();
         });
 
         it('should fallback to AI if Firestore returns empty/error', async () => {
@@ -124,13 +131,13 @@ describe('SecurityTools (Mocked)', () => {
                 recommendations: []
             };
 
-            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockAIResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+            vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockAIResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
             const result = await audit_permissions({ project_id: 'test-project' });
             const parsed = result.data;
 
             expect(parsed.status).toBe("AI Audit");
-            expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
+            expect(GenAI.generateStructuredData).toHaveBeenCalled();
         });
     });
 
