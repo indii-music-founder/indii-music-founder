@@ -1,0 +1,44 @@
+{
+  "name": "@indiios/sdk",
+  "version": "0.1.0-beta.1",
+  "description": "Official TypeScript SDK for indiiOS REST API",
+  "author": "IndiiOS LLC",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/build-cjs.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "dependencies": {
+    "@indiios/shared": "*",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "5.8.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "indiiOS",
+    "api",
+    "sdk",
+    "typescript",
+    "rest"
+  ]
+}
