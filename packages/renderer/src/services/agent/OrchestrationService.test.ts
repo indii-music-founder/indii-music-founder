@@ -41,13 +41,13 @@ describe('OrchestrationService', () => {
             workflowId: 'CAMPAIGN_LAUNCH',
             userId: 'test-user',
             status: 'planned',
-            currentStepIndex: 0,
             steps: {
                 'brand_analysis': { stepId: 'brand_analysis', agentId: 'brand', prompt: 'Analyze brand', status: 'planned' } as WorkflowStepExecution,
                 'press_release': { stepId: 'press_release', agentId: 'publicist', prompt: 'Generate press release', status: 'planned' } as WorkflowStepExecution,
                 'marketing_strategy': { stepId: 'marketing_strategy', agentId: 'marketing', prompt: 'Marketing strategy', status: 'planned' } as WorkflowStepExecution,
                 'social_drafts': { stepId: 'social_drafts', agentId: 'social', prompt: 'Social drop posts', status: 'planned' } as WorkflowStepExecution,
             },
+            edges: WORKFLOW_REGISTRY['CAMPAIGN_LAUNCH']!.edges,
             createdAt: 1000,
             updatedAt: 1000,
         };
@@ -89,12 +89,12 @@ describe('OrchestrationService', () => {
             workflowId: 'AI_MERCH_DROP',
             userId: 'test-user',
             status: 'planned',
-            currentStepIndex: 0,
             steps: {
                 'design_concepts': { stepId: 'design_concepts', agentId: 'creative', prompt: 'Generate designs', status: 'planned' } as WorkflowStepExecution,
                 'pricing_strategy': { stepId: 'pricing_strategy', agentId: 'marketing', prompt: 'Product description', status: 'planned' } as WorkflowStepExecution,
                 'teaser_campaign': { stepId: 'teaser_campaign', agentId: 'social', prompt: 'Teaser campaign', status: 'planned' } as WorkflowStepExecution,
             },
+            edges: WORKFLOW_REGISTRY['AI_MERCH_DROP']!.edges,
             createdAt: 1000,
             updatedAt: 1000,
         };
@@ -150,11 +150,11 @@ describe('OrchestrationService', () => {
             workflowId: 'INDII_GROWTH_PROTOCOL',
             userId: 'test-user',
             status: 'planned',
-            currentStepIndex: 0,
             steps: {
                 'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'planned' } as WorkflowStepExecution,
                 'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'planned' } as WorkflowStepExecution,
             },
+            edges: WORKFLOW_REGISTRY['INDII_GROWTH_PROTOCOL']!.edges,
             createdAt: 1000,
             updatedAt: 1000,
         };
@@ -222,13 +222,13 @@ describe('OrchestrationService', () => {
             workflowId: 'PARALLEL_WORKFLOW',
             userId: 'test-user',
             status: 'planned',
-            currentStepIndex: 0,
             steps: {
                 'step1': { stepId: 'step1', agentId: 'agent1', prompt: 'prompt1', status: 'planned' } as WorkflowStepExecution,
                 'step2a': { stepId: 'step2a', agentId: 'agent2', prompt: 'prompt2a', status: 'planned' } as WorkflowStepExecution,
                 'step2b': { stepId: 'step2b', agentId: 'agent3', prompt: 'prompt2b', status: 'planned' } as WorkflowStepExecution,
                 'step3': { stepId: 'step3', agentId: 'agent4', prompt: 'prompt3', status: 'planned' } as WorkflowStepExecution,
             },
+            edges: WORKFLOW_REGISTRY['PARALLEL_WORKFLOW']!.edges,
             createdAt: 1000,
             updatedAt: 1000,
         };
@@ -309,12 +309,12 @@ describe('OrchestrationService', () => {
             workflowId: 'CONDITIONAL_WORKFLOW',
             userId: 'test-user',
             status: 'planned',
-            currentStepIndex: 0,
             steps: {
                 'step1': { stepId: 'step1', agentId: 'agent1', prompt: 'prompt1', status: 'planned' } as WorkflowStepExecution,
                 'step2': { stepId: 'step2', agentId: 'agent2', prompt: 'prompt2', status: 'planned' } as WorkflowStepExecution,
                 'step3': { stepId: 'step3', agentId: 'agent3', prompt: 'prompt3', status: 'planned' } as WorkflowStepExecution,
             },
+            edges: WORKFLOW_REGISTRY['CONDITIONAL_WORKFLOW']!.edges,
             createdAt: 1000,
             updatedAt: 1000,
         };

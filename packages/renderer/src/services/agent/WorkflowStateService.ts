@@ -58,7 +58,6 @@ class WorkflowStateServiceImpl {
             status: 'planned',
             steps: stepExecutions,
             edges,
-            currentStepIndex: 0,
             createdAt: now,
             updatedAt: now,
         };

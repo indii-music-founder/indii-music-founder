@@ -32,9 +32,12 @@ describe('PUBLICIST_TOOLS', () => {
                     response: 'Crisis Response',
                     sentimentAnalysis: 'Negative sentiment detected',
                     nextSteps: ['Step 1', 'Step 2']
-                })
+                }),
+                inlineDataParts: [],
+                functionCalls: [],
+                thoughtSummary: ""
             }
-        });
+        } as any);
 
         const result = await PUBLICIST_TOOLS.generate_crisis_response({
             issue: "Test Issue",
@@ -63,9 +66,12 @@ describe('PUBLICIST_TOOLS', () => {
 
         vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
             response: {
-                text: () => JSON.stringify(mockCampaign)
+                text: () => JSON.stringify(mockCampaign),
+                inlineDataParts: [],
+                functionCalls: [],
+                thoughtSummary: ""
             }
-        });
+        } as any);
 
         const result = await PUBLICIST_TOOLS.generate_campaign_assets({
             trackTitle: "Neon Nights",
