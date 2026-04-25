@@ -70,16 +70,6 @@ async function visitModule(browser, mod) {
       fullPage: false,
     });
 
-    // Persist console + network captures
-    await fs.writeFile(
-      path.join(CONSOLE_DIR, `2.2-${mod}.txt`),
-      consoleErrors.join('\n') || '(no console errors)',
-    );
-    await fs.writeFile(
-      path.join(NETWORK_DIR, `2.2-${mod}.txt`),
-      networkFailures.join('\n') || '(no network failures)',
-    );
-
     return {
       module: mod,
       verdict: classify(consoleErrors, networkFailures),
@@ -88,6 +78,14 @@ async function visitModule(browser, mod) {
       note: '',
     };
   } catch (err) {
+    // Best-effort error screenshot
+    try {
+      await page.screenshot({
+        path: path.join(SCREENSHOT_DIR, `2.2-${mod}-error.png`),
+        fullPage: false,
+      });
+    } catch (e) { /* ignore */ }
+
     return {
       module: mod,
       verdict: 'RED',
@@ -96,6 +94,15 @@ async function visitModule(browser, mod) {
       note: `navigation/load error: ${err.message}`,
     };
   } finally {
+    // Persist console + network captures regardless of success/failure
+    await fs.writeFile(
+      path.join(CONSOLE_DIR, `2.2-${mod}.txt`),
+      consoleErrors.join('\n') || '(no console errors)',
+    );
+    await fs.writeFile(
+      path.join(NETWORK_DIR, `2.2-${mod}.txt`),
+      networkFailures.join('\n') || '(no network failures)',
+    );
     await context.close();
   }
 }

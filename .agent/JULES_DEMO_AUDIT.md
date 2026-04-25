@@ -5,7 +5,7 @@ now invoked by **two paths**:
 
 | Invoker | Frequency | Scope | Outputs to |
 |---|---|---|---|
-| `.github/workflows/weekly-demo-audit.yml` | Weekly (Mondays 06:00 UTC) | Hours 1, 2, 4 (skips Hour 3 — human-only) | New GitHub issue tagged `demo-audit` |
+| `.github/workflows/weekly-demo-audit.yml` | Weekly (Mondays 06:00 UTC) | Hours 1, 2, 4 (skips Hour 3 — human-only) | New GitHub issue tagged `demo-audit`, plus `DEMO_GO_NOGO.md` |
 | Human / smaller model on demand | Ad hoc, before a real demo | All four hours | `.agent/AUDIT_HOUR{1..4}.md` + `.agent/DEMO_GO_NOGO.md` |
 
 **Goal:** Produce a binary GO / NO-GO verdict on whether the app is demo-ready
@@ -44,7 +44,7 @@ runner, on William's laptop, and on Jules's sandbox.
 - Demo-path modules: onboarding, dashboard, creative, video, agent, distribution,
   finance, publishing, marketing, social, settings, files. (12 of 39 total.)
 
-## Output artifacts (you must produce all five for an ad-hoc run; the workflow produces 1, 2, 4 only)
+## Output artifacts (you must produce all five for an ad-hoc run; the workflow produces 1, 2, 4, and 5)
 1. `.agent/AUDIT_HOUR1.md`
 2. `.agent/AUDIT_HOUR2.md`
 3. `.agent/DEMO_SCRIPT.md` *(human-only — workflow skips)*
