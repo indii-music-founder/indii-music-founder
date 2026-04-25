@@ -272,7 +272,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                                         Connect your Printful account to enable automatic order fulfillment.
                                     </p>
                                     <p className="text-[10px] text-neutral-500">
-                                        Add VITE_PRINTFUL_API_KEY to your environment variables.
+                                        Ensure your Printful API key is securely configured in your backend environment.
                                     </p>
                                 </div>
                             )}
