@@ -49,7 +49,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
-import { GenAI } from '@/services/ai/GenAI';
+
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 

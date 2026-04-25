@@ -51,6 +51,7 @@ class AgentGraphStateServiceImpl {
                 completedAt?: number 
             }>,
             status: 'planned',
+            graph,
         };
 
         // We use set here to ensure the record exists
@@ -94,8 +95,6 @@ class AgentGraphStateServiceImpl {
         // Also update overall graph status if this node transition implies it
         if (updates.status === 'executing') {
             fieldUpdates.status = 'executing';
-        } else if (updates.status === 'failed') {
-            fieldUpdates.status = 'failed';
         }
 
         await service.update(executionId, fieldUpdates as Partial<GraphExecutionState>);

@@ -14,8 +14,19 @@
 
 import { logger } from '@/utils/logger';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  addDoc, 
+  query as firestoreQuery, 
+  where, 
+  orderBy, 
+  limit as firestoreLimit 
+} from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { collection, doc, setDoc, getDoc, getDocs, query as fsQuery, orderBy, limit as fsLimit, where, addDoc } from 'firebase/firestore';
 
 // ============================================================================
 // Memory Types
@@ -124,13 +135,13 @@ export class PersistentMemoryService {
           break;
 
         case 'core-vault':
-          await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, (memory as unknown) as Record<string, unknown>);
+          await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, memory as unknown as Record<string, unknown>);
           break;
 
         case 'captain-logs':
           await this.appendToFirestore(
             `users/${this.userId}/captain-logs`,
-            (memory as unknown) as Record<string, unknown>
+            memory as unknown as Record<string, unknown>
           );
           break;
 
@@ -174,10 +185,10 @@ export class PersistentMemoryService {
           );
 
         case 'captain-logs': {
-          const q = fsQuery(
+          const q = firestoreQuery(
             collection(db, `users/${this.userId}/captain-logs`),
             orderBy('timestamp', 'desc'),
-            fsLimit(1)
+            firestoreLimit(1)
           );
           const logsSnapshot = await getDocs(q);
 
@@ -227,11 +238,11 @@ export class PersistentMemoryService {
           results.push(...matches);
         } else if (layer === 'core-vault') {
           // Query Firestore for matching patterns
-          const q = fsQuery(
+          const q = firestoreQuery(
             collection(db, `users/${this.userId}/core-vault`),
             where('key', '>=', query),
             where('key', '<=', query + ''),
-            fsLimit(limit)
+            firestoreLimit(limit)
           );
           const snapshot = await getDocs(q);
 

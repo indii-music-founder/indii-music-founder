@@ -453,40 +453,7 @@ vi.mock('@/services/agent/AgentZeroService', () => ({
     agentZeroService: null
 }));
 
-// Mock FirebaseAIService for tests that depend on GenAI facade
-vi.mock('@/services/ai/FirebaseAIService', () => {
-    const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
-        generateContent: vi.fn().mockResolvedValue({
-            response: {
-                text: () => JSON.stringify({ headline: 'Test', content: 'Test content', contactInfo: 'test@example.com' })
-            }
-        }),
-        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
-        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
-        generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
-        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} }),
-        embedContent: vi.fn().mockResolvedValue([]),
-        analyzeMultimodal: vi.fn().mockResolvedValue({ analysis: {} }),
-        generateGroundedContent: vi.fn().mockResolvedValue({ response: { text: () => 'Grounded response' } }),
-        getLiveModel: vi.fn().mockReturnValue({ model: 'gemini-3-mock' }),
-        generateContentStream: vi.fn().mockResolvedValue({
-            stream: (async function* () { yield { text: () => 'Stream' }; })()
-        }),
-        bootstrap: vi.fn().mockResolvedValue(true),
-        ensureInitialized: vi.fn().mockResolvedValue(true),
-        batchEmbedContents: vi.fn().mockResolvedValue([]),
-        withRetry: vi.fn((fn: () => Promise<any>) => fn()),
-        handleError: vi.fn().mockReturnValue({ retryable: false, message: 'Error' }),
-        generateSpeech: vi.fn().mockResolvedValue({ audioUrl: 'mock-audio.mp3' })
-    };
-    return {
-        FirebaseAIService: class {
-            static getInstance() { return mockFirebaseAI; }
-        },
-        firebaseAI: mockFirebaseAI
-    };
-});
+
 
 // Mock lucide-react with Proxy-based auto-generating stub factory
 // This ensures ANY icon import works without needing to enumerate them all

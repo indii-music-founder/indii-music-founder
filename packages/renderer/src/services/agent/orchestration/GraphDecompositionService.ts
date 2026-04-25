@@ -45,7 +45,8 @@ export class GraphDecompositionService {
         2. Assign each task to the most appropriate specialist agent.
         3. Define the execution order (edges). Parallelize tasks that have no data dependency.
         4. Use placeholders like {{input}} for the initial user query.
-        5. Use placeholders like {{nodeId}} to pass the output of a parent node to a child.
+        5. Use placeholders like {{nodeId}} to pass the full output of a parent node to a child.
+        6. ADVANCED: Use {{nodeId.path.to.key}} (e.g. {{analysis.summary}}) to pull specific JSON fields from ANY node in the graph.
         
         OUTPUT SCHEMA (JSON):
         {
@@ -55,7 +56,7 @@ export class GraphDecompositionService {
                 {
                     "id": "node_id_1", // unique alphanumeric slug
                     "agentId": "agent_id", // MUST be from AVAILABLE AGENTS
-                    "taskTemplate": "Detailed instructions for the agent. Use {{input}} or {{parent_node_id}}.",
+                    "taskTemplate": "Instructions. Can use {{input}}, {{parent_node}}, or {{global_node.field}}.",
                     "waitCondition": "all" | "any"
                 }
             ],
@@ -64,7 +65,10 @@ export class GraphDecompositionService {
                     "sourceId": "node_id_1",
                     "targetId": "node_id_2",
                     "condition": "string", // Optional regex condition on parent output
-                    "inputMapping": { "sourceKey": "targetPlaceholder" } // e.g. { "output": "brand_guide" }
+                    "inputMapping": { 
+                        "output": "targetPlaceholder", // Full output
+                        "data.key": "targetPlaceholder" // Nested JSON extraction from parent
+                    }
                 }
             ],
             "entryNodeId": "node_id_1"
@@ -80,7 +84,7 @@ export class GraphDecompositionService {
         try {
             const response = await AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
-                AI_MODELS.TEXT.PRO, // Use Pro for complex architecture
+                AI_MODELS.TEXT.AGENT, // Use Agent for complex architecture
                 {
                     ...AI_CONFIG.THINKING.HIGH,
                     responseMimeType: 'application/json'
@@ -122,7 +126,7 @@ export class GraphDecompositionService {
             id: String(n.id),
             agentId: VALID_AGENT_IDS.includes(n.agentId as ValidAgentId) ? (n.agentId as ValidAgentId) : 'generalist',
             taskTemplate: String(n.taskTemplate),
-            waitCondition: n.waitCondition === 'any' ? 'any' : 'all',
+            waitCondition: (n.waitCondition === 'any' ? 'any' : 'all') as 'all' | 'any',
             contextOverrides: n.contextOverrides || {}
         })).slice(0, 10); // Hard limit
     }

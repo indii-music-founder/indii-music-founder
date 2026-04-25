@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import ReactFlow, { 
     Background, 
     Controls, 
@@ -11,10 +12,10 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import MaestroNode from './MaestroNode';
 import { agentGraphStateService } from '@/services/agent/orchestration/AgentGraphStateService';
-import { workflowRegistry } from '@/services/agent/orchestration/WorkflowRegistry';
+import { WORKFLOW_REGISTRY } from '@/services/agent/WorkflowRegistry';
 import { GraphExecutionState, AgentGraph } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
-import { useAuthStore } from '@/core/store/slices/auth';
+import { useStore } from '@/core/store';
 
 const nodeTypes = {
     maestroNode: MaestroNode,
@@ -22,25 +23,17 @@ const nodeTypes = {
 
 interface MaestroGraphProps {
     executionId?: string;
-    graphId?: string;
+    graph?: AgentGraph;
 }
 
-const MaestroGraph: React.FC<MaestroGraphProps> = ({ executionId, graphId }) => {
-    const { user } = useAuthStore();
+const MaestroGraph: React.FC<MaestroGraphProps> = ({ executionId, graph }) => {
+    const { user } = useStore();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [graphDefinition, setGraphDefinition] = useState<AgentGraph | null>(null);
     const [executionState, setExecutionState] = useState<GraphExecutionState | null>(null);
 
-    // 1. Load Graph Definition
-    useEffect(() => {
-        if (graphId) {
-            const graph = workflowRegistry.getGraph(graphId);
-            if (graph) {
-                setGraphDefinition(graph);
-            }
-        }
-    }, [graphId]);
+    // 1. Graph Definition is passed as prop
+    const graphDefinition = graph;
 
     // 2. Subscribe to Execution State
     useEffect(() => {
@@ -81,14 +74,14 @@ const MaestroGraph: React.FC<MaestroGraphProps> = ({ executionId, graphId }) => 
         const currentNodesInLevel: Record<number, number> = {};
 
         const rfNodes: Node[] = graphDefinition.nodes.map((n) => {
-            const level = nodeLevels[n.id];
+            const level = nodeLevels[n.id] || 0;
             const index = currentNodesInLevel[level] || 0;
             currentNodesInLevel[level] = index + 1;
 
             const x = level * 350 + 50;
             const y = index * 200 + 50;
 
-            const nodeState = executionState?.nodeStates[n.id];
+            const nodeState = executionState?.nodeStates?.[n.id];
 
             return {
                 id: n.id,
@@ -110,10 +103,10 @@ const MaestroGraph: React.FC<MaestroGraphProps> = ({ executionId, graphId }) => 
             id: `edge-${idx}`,
             source: e.sourceId,
             target: e.targetId,
-            animated: executionState?.nodeStates[e.sourceId]?.status === 'executing' || 
-                      executionState?.nodeStates[e.targetId]?.status === 'executing',
+            animated: executionState?.nodeStates?.[e.sourceId]?.status === 'executing' || 
+                      executionState?.nodeStates?.[e.targetId]?.status === 'executing',
             style: { 
-                stroke: executionState?.nodeStates[e.sourceId]?.status === 'step_complete' ? '#14b8a6' : '#333',
+                stroke: executionState?.nodeStates?.[e.sourceId]?.status === 'step_complete' ? '#14b8a6' : '#333',
                 strokeWidth: 2 
             },
             type: ConnectionLineType.SmoothStep,
@@ -148,32 +141,25 @@ const MaestroGraph: React.FC<MaestroGraphProps> = ({ executionId, graphId }) => 
                         {executionId ? `Execution: ${executionId.slice(0, 8)}...` : 'Blueprint View'}
                     </p>
                 </div>
+            </div>
                 
-                {executionState?.status === 'executing' && (
-                    <div className="flex items-center gap-2 bg-teal-500/10 border border-teal-500/20 px-3 py-1.5 rounded-lg animate-pulse">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full" />
-                        <span className="text-[10px] font-bold text-teal-400 uppercase tracking-widest">Neural Sequence Active</span>
+            {/* Active Status Overlay */}
+            {executionState?.status === 'executing' && (
+                <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute top-24 left-6 z-10 flex items-center gap-3 bg-teal-500/10 backdrop-blur-xl border border-teal-500/30 px-4 py-2 rounded-2xl shadow-[0_0_30px_rgba(20,184,166,0.1)]"
+                >
+                    <div className="relative">
+                        <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-ping absolute inset-0" />
+                        <div className="w-2.5 h-2.5 bg-teal-500 rounded-full relative" />
                     </div>
-                )}
-            </div>
-
-            {/* Legend */}
-            <div className="absolute bottom-6 right-6 z-10 bg-black/60 backdrop-blur-md border border-white/10 p-3 rounded-xl pointer-events-none">
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-teal-500" />
-                        <span className="text-[10px] text-gray-300 font-medium">Complete</span>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-teal-400 uppercase tracking-[0.2em]">Neural Sequence Active</span>
+                        <span className="text-[8px] text-teal-400/60 font-mono">BROADCASTING_TO_SPECIALISTS...</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-400" />
-                        <span className="text-[10px] text-gray-300 font-medium">Executing</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-600" />
-                        <span className="text-[10px] text-gray-300 font-medium">Planned</span>
-                    </div>
-                </div>
-            </div>
+                </motion.div>
+            )}
         </div>
     );
 };
