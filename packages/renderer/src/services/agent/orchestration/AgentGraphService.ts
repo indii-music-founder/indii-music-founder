@@ -64,9 +64,7 @@ export class AgentGraphService {
 
         logger.info(`[AgentGraph] Resuming graph execution: ${executionId}, state: ${state.status}`);
 
-        // If graph is not provided, we should ideally fetch it from a registry using state.graphId
-        // For now, we require it or throw.
-        const graphToUse = graph || (context as any).graph; 
+        const graphToUse = graph; 
         if (!graphToUse) throw new Error(`Graph definition required to resume execution ${executionId}`);
 
         return await this.runGraphLoop(userId, graphToUse, executionId, context, context.traceId || uuidv4());
@@ -293,7 +291,7 @@ export class AgentGraphService {
         try {
             const regex = new RegExp(condition, 'i');
             return regex.test(output);
-        } catch (e) {
+        } catch (_e) {
             return output.includes(condition);
         }
     }
@@ -317,7 +315,7 @@ export class AgentGraphService {
             
             // Apply input mappings if defined
             if (edge.inputMapping) {
-                for (const [sourceKey, targetPlaceholder] of Object.entries(edge.inputMapping)) {
+                for (const [, targetPlaceholder] of Object.entries(edge.inputMapping)) {
                     // Simple placeholder replacement for now. 
                     // Future: Add JSON path or regex extraction from sourceKey.
                     prompt = prompt.replace(new RegExp(`\\{\\{${targetPlaceholder}\\}\\}`, 'g'), parentOutput);

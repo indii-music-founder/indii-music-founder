@@ -1,5 +1,6 @@
-import type { WorkflowEdge, WorkflowStep } from './types';
+import type { WorkflowStep, WorkflowEdge } from './types';
 import { validateWorkflowGraph } from './WorkflowGraphUtils';
+
 
 export type WorkflowDefinition = {
     id: string;

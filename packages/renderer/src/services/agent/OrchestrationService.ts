@@ -76,28 +76,33 @@ export class OrchestrationService {
         userId: string,
         traceId: string
     ): Promise<string> {
-        // Validate graph before execution
+        // Validate graph before execution to prevent cyclic dependency deadlocks
         validateWorkflowGraph(workflow);
 
         let report = `# 🚀 Workflow Report: ${workflow.name}\n\n**Description**: ${workflow.description}\n\n---\n\n`;
 
         let executing = true;
+        const processedNodes = new Set<string>();
+
         while (executing) {
             const execution = await workflowStateService.getExecution(userId, executionId);
-            if (!execution) throw new Error(`Execution ${executionId} not found.`);
+            if (!execution) throw new Error(`Execution ${executionId} lost during orchestration.`);
 
-            // Find all steps that are ready to run
+            // Find all steps that are ready to run (Graph-Based Identification)
             const readySteps = workflow.steps.filter(step => {
-                const state = execution.steps[step.id];
-                if (!state) return false;
-                if (state.status !== 'planned' && state.status !== 'failed') return false;
+                const stepState = execution.steps[step.id];
+                if (!stepState) return false;
+                
+                // Only process planned or failed (resumable) steps
+                if (stepState.status !== 'planned' && stepState.status !== 'failed') return false;
 
-                // A step is ready if ALL incoming edges from other steps have their conditions met
-                // AND the origin steps are complete/skipped.
+                // Identify incoming edges
                 const incomingEdges = workflow.edges.filter(edge => edge.to === step.id);
-                if (incomingEdges.length === 0) return true; // No dependencies
+                
+                // Roots (zero incoming edges) are immediately ready
+                if (incomingEdges.length === 0) return true;
 
-                // Check if all dependencies are complete or skipped
+                // For non-roots, check if all upstream dependencies are resolved (complete or skipped)
                 return incomingEdges.every(edge => {
                     const depState = execution.steps[edge.from];
                     return depState && (depState.status === 'step_complete' || depState.status === 'skipped');
@@ -105,27 +110,40 @@ export class OrchestrationService {
             });
 
             if (readySteps.length === 0) {
+                // Check if we're actually done or just stuck
+                const hasPending = workflow.steps.some(s => {
+                    const status = execution.steps[s.id]?.status;
+                    return status === 'planned' || status === 'executing' || status === 'failed';
+                });
+                
+                if (!hasPending) {
+                    logger.info(`[Orchestration] Workflow ${workflow.name} completed all reachable nodes.`);
+                } else {
+                    logger.warn(`[Orchestration] Workflow ${workflow.name} reached a deadlock. Unreachable pending nodes exist.`);
+                }
+                
                 executing = false;
                 break;
             }
 
-            const stepsToRun = [];
-            let stepsSkipped = false;
+            const stepsToRun: typeof workflow.steps = [];
+            let stepsSkippedInThisIteration = false;
 
             for (const step of readySteps) {
                 let shouldExecute = true;
                 
-                // Evaluate conditions on all incoming edges
+                // Evaluate conditions on all active incoming paths
                 const incomingEdges = workflow.edges.filter(edge => edge.to === step.id);
                 for (const edge of incomingEdges) {
                     if (edge.condition) {
                         try {
+                            // Conditions are evaluated against the current global execution state
                             if (!edge.condition(execution)) {
                                 shouldExecute = false;
                                 break;
                             }
                         } catch (error) {
-                            logger.warn(`[Orchestration] Condition evaluation threw an error for edge to step ${step.id}, defaulting to skip`, error);
+                            logger.error(`[Orchestration] Condition failure for edge ${edge.from} -> ${edge.to}. Defaulting to skip.`, error);
                             shouldExecute = false;
                             break;
                         }
@@ -136,35 +154,34 @@ export class OrchestrationService {
                     stepsToRun.push(step);
                     await workflowStateService.markStepExecuting(userId, executionId, step.id);
                 } else {
-                    await workflowStateService.skipStep(userId, executionId, step.id, 'Condition not met');
+                    await workflowStateService.skipStep(userId, executionId, step.id, 'Graph condition evaluated to false');
                     report += `## ⏭️ Step: ${step.id} [${step.agentId.toUpperCase()}] (SKIPPED)\n`;
-                    report += `Edge condition evaluated to false.\n\n---\n\n`;
-                    stepsSkipped = true;
+                    report += `Conditional path not taken.\n\n---\n\n`;
+                    stepsSkippedInThisIteration = true;
                 }
             }
 
+            // If we only skipped steps, we immediately continue to find the next ready steps
             if (stepsToRun.length === 0) {
-                if (stepsSkipped) {
-                    // Loop again because skipping steps may have unlocked dependent steps
-                    continue;
-                } else {
-                    // This shouldn't happen, but just in case
-                    executing = false;
-                    break;
-                }
+                if (stepsSkippedInThisIteration) continue;
+                executing = false;
+                break;
             }
 
+            // Pillar 2: Maestro Batching & Parallelism
+            // Convert graph steps into Maestro-compatible tasks
             const tasks = stepsToRun.map(step => ({
                 agentId: step.agentId,
                 prompt: step.prompt,
-                description: step.prompt,
-                params: { projectId: context.projectId, traceId },
+                description: `Workflow Step: ${step.id}`,
+                params: { projectId: context.projectId, workflowId: workflow.id, traceId },
                 context,
                 priority: step.priority,
                 traceId
             }));
 
             try {
+                logger.info(`[Orchestration] Batching ${tasks.length} parallel steps for workflow ${workflow.id}`);
                 const results = await maestroBatchingService.executeBatch(tasks);
 
                 let batchFailed = false;
@@ -174,16 +191,15 @@ export class OrchestrationService {
 
                     if (!step || !res) continue;
 
-                    const resultText = res?.text || res?.message || 'No output';
-                    const success = res?.success !== false;
+                    const resultText = res.text || res.message || 'Node executed successfully.';
+                    const success = res.success !== false;
 
                     if (success) {
                         await workflowStateService.advanceStep(userId, executionId, step.id, resultText);
-                        const statusIcon = '✅';
-                        report += `## ${statusIcon} Step: ${step.id} [${step.agentId.toUpperCase()}]\n`;
+                        report += `## ✅ Step: ${step.id} [${step.agentId.toUpperCase()}]\n`;
                         report += `${resultText}\n\n---\n\n`;
                     } else {
-                        const errorMsg = res?.error || 'Unknown error';
+                        const errorMsg = res.error || 'Execution failed without error message.';
                         await workflowStateService.failStep(userId, executionId, step.id, errorMsg);
                         report += `## ❌ Step: ${step.id} [${step.agentId.toUpperCase()}] (FAILED)\n`;
                         report += `${errorMsg}\n\n---\n\n`;
@@ -192,34 +208,32 @@ export class OrchestrationService {
                 }
 
                 if (batchFailed) {
-                    report += `⚠️ **Workflow paused due to failure.** Remaining steps preserved for resumption.\n`;
-                    report += `Resume with execution ID: \`${executionId}\`\n`;
+                    report += `⚠️ **Workflow execution halted.** Address failures and resume via ID: \`${executionId}\`\n`;
                     return report;
                 }
-            } catch (error: unknown) {
-                const errorMsg = error instanceof Error ? error.message : String(error);
+            } catch (error: any) {
+                const errorMsg = error.message || 'Batch execution exception';
+                logger.error(`[Orchestration] Critical failure in batch execution:`, error);
+                
                 for (const step of stepsToRun) {
                     await workflowStateService.failStep(userId, executionId, step.id, errorMsg);
                 }
-                logger.error(`[Orchestration] Batch failed:`, error);
-                report += `## ❌ Batch Execution Failed (EXCEPTION)\n`;
+                
+                report += `## ❌ Critical Batch Failure\n`;
                 report += `${errorMsg}\n\n---\n\n`;
-                report += `⚠️ **Workflow interrupted.** Resume with execution ID: \`${executionId}\`\n`;
                 return report;
             }
         }
 
-        const finalExecution = await workflowStateService.getExecution(userId, executionId);
-        const allCompleteOrSkipped = Object.values(finalExecution!.steps).every(s => s.status === 'step_complete' || s.status === 'skipped');
+        const finalState = await workflowStateService.getExecution(userId, executionId);
+        const allDone = Object.values(finalState?.steps || {}).every(s => s.status === 'step_complete' || s.status === 'skipped');
         
-        if (allCompleteOrSkipped) {
-            report += `✅ **Orchestration Complete.** All graph steps processed successfully or skipped.`;
+        if (allDone) {
+            report += `✅ **Graph Orchestration Complete.** All reachable nodes have been processed.`;
+        } else if (finalState?.status === 'cancelled') {
+            report += `🛑 **Workflow Cancelled.**`;
         } else {
-            if (finalExecution?.status === 'cancelled') {
-                 report += `🛑 **Workflow Cancelled.**`;
-            } else if (finalExecution?.status !== 'failed') {
-                 report += `⚠️ **Workflow stuck.** Unresolved dependencies.`;
-            }
+             report += `⚠️ **Workflow terminated with unresolved nodes.** Check graph connectivity.`;
         }
 
         return report;

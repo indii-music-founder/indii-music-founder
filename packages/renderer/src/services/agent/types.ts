@@ -440,7 +440,7 @@ export type WorkflowExecutionStatus =
 export interface WorkflowEdge {
     from: string;
     to: string;
-    condition?: (state: WorkflowExecution) => boolean; // Evaluates if the edge should be traversed
+    condition?: (execution: WorkflowExecution) => boolean; // Evaluates if the edge should be traversed
     label?: string; // Human-readable label for the transition
     metadata?: Record<string, any>; // Arbitrary metadata for the transition
 }
@@ -481,7 +481,6 @@ export interface WorkflowExecution {
     status: WorkflowExecutionStatus;
     steps: Record<string, WorkflowStepExecution>;
     edges: WorkflowEdge[];
-    currentStepIndex: number;
     createdAt: number;
     updatedAt: number;
 }
