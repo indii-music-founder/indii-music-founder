@@ -125,8 +125,12 @@ class MemoryBankService {
 
         try {
             const content = `[Graph Execution ${executionId}]\nQuery: ${query}\nFinal Report: ${report}`;
-            await this.addMemory(userId, content);
-            logger.info(`[MemoryBank] Indexed graph execution ${executionId}`);
+            const results = await this.addMemory(userId, content);
+            if (results && results.length > 0) {
+                logger.info(`[MemoryBank] Indexed graph execution ${executionId}`);
+            } else {
+                logger.warn(`[MemoryBank] Failed to index graph execution ${executionId} (addMemory returned no results)`);
+            }
         } catch (error) {
             logger.error(`[MemoryBank] Failed to index graph ${executionId}:`, error);
         }

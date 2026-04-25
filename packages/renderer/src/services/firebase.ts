@@ -193,7 +193,7 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
     if (typeof window === 'undefined') return null;
 
     try {
-        const supported = await isMessagingSupported();
+        const supported = await isMessagingSupported().catch(() => false);
         if (!supported) {
             logger.debug('[Firebase] Messaging not supported in this browser — skipping FCM init.');
             return null;
