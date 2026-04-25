@@ -2,6 +2,18 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.57.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.57.0...v1.57.1) (2026-04-25)
+
+
+### Bug Fixes
+
+* **agents:** optimize ISRC routing to Publishing agent ([#1582](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1582)) ([b1bbd25](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b1bbd2590d763a555cdee9aa1d610d6339ec3289))
+* **agents:** update Conductor to route ISRC tasks to Publishing agent ([#1581](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1581)) ([561c3cf](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/561c3cf31ab2078dcb2edbfabd1730bc392f4d2e))
+* **auto:** resolve Sentry/CodeRabbit issues ([dc760a6](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/dc760a67dd44e80c0ace151e8d11f85ed78996c1))
+* **conductor:** route Spotify release clearance questions to Distribution agent ([#1583](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1583)) ([6aaccb5](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6aaccb544ffa02a1ce9dd9d0de9c2c7587ed9eaf))
+* **firebase:** prevent Sentry from capturing unsupported-browser messaging init errors ([6dfa12e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6dfa12e98ee7a19832ec5ed0117fb16758b4fc64))
+* safely check videoUrl string type before calling startsWith ([d084ad1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d084ad14688dfb0fd7e385a2a1c4b866c5cfa84c))
+
 ## [1.57.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.56.0...v1.57.0) (2026-04-25)
 
 
