@@ -24,7 +24,7 @@ vi.mock('../../AgentService', () => ({
 vi.mock('../../memory/MemoryBankService', () => ({
     memoryBankService: {
         searchMemories: vi.fn().mockResolvedValue([]),
-        addMemory: vi.fn().mockResolvedValue({ id: 'mem-123' }),
+        addMemory: vi.fn().mockResolvedValue([{ id: 'mem-123' }]),
     },
 }));
 
@@ -312,13 +312,13 @@ describe('AgentGraphService', () => {
                 'node-1': { status: 'step_complete', output: 'Output 1' },
                 'node-2': { status: 'step_complete', output: 'Output 2' },
             },
-            status: 'executing'
+            status: 'completed'
         };
 
         (agentGraphStateService.getExecution as any)
             .mockResolvedValueOnce(state1) // resumeGraph setup
             .mockResolvedValueOnce(state1) // Loop 1: finds node-2 ready
-            .mockResolvedValueOnce(state2); // Loop 2: exit (status is completed)
+            .mockResolvedValueOnce(state2); // Loop 2: exit (all nodes complete)
 
         (agentService.delegateTask as any).mockResolvedValue('Output 2');
 

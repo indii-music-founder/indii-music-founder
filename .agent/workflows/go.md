@@ -15,6 +15,17 @@ description: Universal recursive loop for progress review, re-evaluation, and ta
 - `run_command("git status")`: Check safety.
 - **Audit:** Re-read ALL user prompts. specificall check: Acknowledged? Implemented? Verified?
 
+## 1.5 Preventative Maintenance Medicine
+
+**Execute these tools immediately (// turbo):**
+
+- `view_file(path=".agent/skills/error_memory/ERROR_LEDGER.md")`: Read the error ledger to inject awareness of CI-breaking patterns into your context. Specifically, watch out for:
+  - Duplicate identifiers from mass squashes (Pattern 5)
+  - Missing `vi.mock` for dynamic imports or Electron modules
+  - A11y test assertions drifting from component source
+  - Missing `.catch()` on async ops causing silent canvas/component failures
+  - Agent routing typos in prompts
+
 ## 2. State Snapshot (Output)
 
 **Output this block before acting:**
