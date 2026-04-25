@@ -379,6 +379,7 @@ export class BaseAgent implements SpecializedAgent {
                                     originalPrompt: task,
                                     agentOutput: fullText,
                                     context: context as Record<string, unknown> | undefined,
+                                    context
                                 });
                             } catch (err) {
                                 logger.warn('[BaseAgent] Reflection evaluation skipped', err);

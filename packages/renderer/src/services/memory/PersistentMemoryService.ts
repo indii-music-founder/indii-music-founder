@@ -134,6 +134,7 @@ export class PersistentMemoryService {
           break;
 
         case 'core-vault':
+          await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, memory as unknown as Record<string, unknown>);
           await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, (memory as unknown) as Record<string, unknown>);
           await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, memory as unknown as Record<string, unknown>);
           break;
@@ -141,6 +142,7 @@ export class PersistentMemoryService {
         case 'captain-logs':
           await this.appendToFirestore(
             `users/${this.userId}/captain-logs`,
+            memory as unknown as Record<string, unknown>
             (memory as unknown) as Record<string, unknown>
             memory as unknown as Record<string, unknown>
           );
@@ -186,6 +188,16 @@ export class PersistentMemoryService {
           );
 
         case 'captain-logs': {
+          const logsSnapshot = await admin
+            .firestore()
+            .collection(`users/${this.userId}/captain-logs`)
+            .orderBy('timestamp', 'desc')
+            .limit(1)
+            .get();
+
+          if (logsSnapshot.empty) return null;
+          const doc = logsSnapshot.docs[0];
+          return doc ? (doc.data() as Record<string, unknown>) : null;
           const q = firestoreQuery(
             collection(db, `users/${this.userId}/captain-logs`),
             orderBy('timestamp', 'desc'),
