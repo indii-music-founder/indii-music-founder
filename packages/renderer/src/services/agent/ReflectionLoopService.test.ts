@@ -7,16 +7,16 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReflectionLoop } from '@/services/agent/ReflectionLoop';
+import { GenAI } from '@/services/ai/GenAI';
 
 // ============================================================================
 // Mock FirebaseAIService.getInstance()
 // ============================================================================
 
-const mockGenerateContent = vi.fn();
-
 vi.mock('@/services/ai/FirebaseAIService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn(),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
@@ -28,6 +28,12 @@ vi.mock('@/services/ai/FirebaseAIService', () => {
         firebaseAI: mockFirebaseAI
     };
 });
+
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
+        generateContent: vi.fn()
+    }
+}));
 
 vi.mock('@/core/config/ai-models', () => ({
     AI_MODELS: {
@@ -65,8 +71,11 @@ function mockAIResponse(text: string) {
                 },
             ],
             text: () => text,
+            inlineDataParts: () => [],
+            functionCalls: () => [],
+            thoughtSummary: () => "",
         },
-    };
+    } as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>;
 }
 
 // ============================================================================
@@ -90,7 +99,7 @@ describe('🔍 ReflectionLoop', () => {
 
     describe('evaluate()', () => {
         it('should return shouldIterate=false for high-quality responses', async () => {
-            mockGenerateContent.mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(GenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 9,
                 shouldIterate: false,
                 feedback: 'PASS',
@@ -106,7 +115,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should return shouldIterate=true for low-quality responses', async () => {
-            mockGenerateContent.mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(GenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 4,
                 shouldIterate: true,
                 feedback: 'Response is too vague. Add specific distribution metrics.',
@@ -120,7 +129,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should clamp scores to 0-10 range', async () => {
-            mockGenerateContent.mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(GenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 15,
                 shouldIterate: false,
                 feedback: 'PASS',
@@ -131,7 +140,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should clamp negative scores to 0', async () => {
-            mockGenerateContent.mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(GenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: -3,
                 shouldIterate: true,
                 feedback: 'Terrible',
@@ -153,7 +162,7 @@ describe('🔍 ReflectionLoop', () => {
             expect(result.shouldIterate).toBe(false);
             expect(result.score).toBe(-1);
             expect(result.feedback).toContain('Max iterations');
-            expect(mockGenerateContent).not.toHaveBeenCalled();
+            expect(vi.mocked(GenAI.generateContent)).not.toHaveBeenCalled();
         });
 
         it('should force acceptance when iterationCount exceeds maxIterations', async () => {
@@ -161,7 +170,7 @@ describe('🔍 ReflectionLoop', () => {
 
             expect(result.shouldIterate).toBe(false);
             expect(result.score).toBe(-1);
-            expect(mockGenerateContent).not.toHaveBeenCalled();
+            expect(vi.mocked(GenAI.generateContent)).not.toHaveBeenCalled();
         });
     });
 
@@ -171,7 +180,7 @@ describe('🔍 ReflectionLoop', () => {
 
     describe('Error Resilience', () => {
         it('should accept output when AI evaluation fails', async () => {
-            mockGenerateContent.mockRejectedValue(new Error('API timeout'));
+            vi.mocked(GenAI.generateContent).mockRejectedValue(new Error('API timeout'));
 
             const result = await service.evaluate('task', 'response', 1);
 
@@ -181,7 +190,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should handle malformed JSON from the model', async () => {
-            mockGenerateContent.mockResolvedValue(
+            vi.mocked(GenAI.generateContent).mockResolvedValue(
                 mockAIResponse('This is not JSON at all, but score is 6')
             );
 
@@ -193,7 +202,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should handle JSON wrapped in markdown code blocks', async () => {
-            mockGenerateContent.mockResolvedValue(
+            vi.mocked(GenAI.generateContent).mockResolvedValue(
                 mockAIResponse('```json\n{"score": 8, "shouldIterate": false, "feedback": "PASS"}\n```')
             );
 
@@ -258,7 +267,7 @@ describe('🔍 ReflectionLoop', () => {
 
     describe('Model Call Parameters', () => {
         it('should use the FAST model with low temperature', async () => {
-            mockGenerateContent.mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(GenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 8,
                 shouldIterate: false,
                 feedback: 'PASS',
@@ -266,7 +275,7 @@ describe('🔍 ReflectionLoop', () => {
 
             await service.evaluate('task', 'response', 1);
 
-            expect(mockGenerateContent).toHaveBeenCalledWith(
+            expect(vi.mocked(GenAI.generateContent)).toHaveBeenCalledWith(
                 expect.stringContaining('Task Being Evaluated'),
                 'gemini-3-flash-preview',
                 expect.objectContaining({
@@ -278,7 +287,7 @@ describe('🔍 ReflectionLoop', () => {
         });
 
         it('should truncate long responses before sending to evaluation', async () => {
-            mockGenerateContent.mockResolvedValue(mockAIResponse(JSON.stringify({
+            vi.mocked(GenAI.generateContent).mockResolvedValue(mockAIResponse(JSON.stringify({
                 score: 7,
                 shouldIterate: false,
                 feedback: 'PASS',
@@ -287,7 +296,7 @@ describe('🔍 ReflectionLoop', () => {
             const longResponse = 'Y'.repeat(10000);
             await service.evaluate('task', longResponse, 1);
 
-            const evaluationPrompt = mockGenerateContent.mock.calls[0]![0] as string;
+            const evaluationPrompt = vi.mocked(GenAI.generateContent).mock.calls[0]![0] as string;
             expect(evaluationPrompt).toContain('[... truncated for evaluation]');
             expect(evaluationPrompt.length).toBeLessThan(longResponse.length);
         });
