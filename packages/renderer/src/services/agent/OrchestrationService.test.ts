@@ -123,7 +123,7 @@ describe('OrchestrationService', () => {
 
         expect(result).toContain('FAILED');
         expect(result).toContain('exec-2'); // Execution ID for resumption
-        expect(result).toContain('Remaining steps preserved');
+        expect(result).toContain('Workflow execution halted.');
         expect(workflowStateService.failStep).toHaveBeenCalledWith('test-user', 'exec-2', 'design_concepts', 'Generation failed');
         // Step 2 and 3 were never attempted
         expect(workflowStateService.advanceStep).not.toHaveBeenCalled();
@@ -185,6 +185,7 @@ describe('OrchestrationService', () => {
         expect(workflowStateService.createExecution).toHaveBeenCalledWith(
             'test-user',
             'INDII_GROWTH_PROTOCOL',
+            expect.any(Array),
             expect.any(Array),
             'test-project'
         );
@@ -358,8 +359,8 @@ describe('OrchestrationService', () => {
             mockContext as unknown as Parameters<typeof orchestrationService.executeWorkflow>[1]
         );
 
-        expect(workflowStateService.skipStep).toHaveBeenCalledWith('test-user', 'exec-cond', 'step2', 'Condition not met');
+        expect(workflowStateService.skipStep).toHaveBeenCalledWith('test-user', 'exec-cond', 'step2', 'Graph condition evaluated to false');
         expect(result).toContain('(SKIPPED)');
-        expect(result).toContain('Edge condition evaluated to false.');
+        expect(result).toContain('Conditional path not taken.');
     });
 });
