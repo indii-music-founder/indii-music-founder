@@ -26,6 +26,7 @@ vi.mock('@/services/ai/FirebaseAIService', () => {
 vi.mock('@/services/ai/GenAI', () => ({
     GenAI: {
         generateContent: vi.fn(),
+        generateStructuredData: vi.fn(),
         generateVideo: vi.fn()
     }
 }));
