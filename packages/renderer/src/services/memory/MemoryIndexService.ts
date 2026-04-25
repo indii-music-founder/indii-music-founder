@@ -65,6 +65,7 @@ export class MemoryIndexService {
         model: 'models/embedding-001',
         contents: [{ role: 'user', parts: [{ text }] }]
         contents: { parts: [{ text }] }
+        contents: [{ role: 'user', parts: [{ text }] }]
       });
 
       const values = result.embeddings?.[0]?.values;
