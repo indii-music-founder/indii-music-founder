@@ -187,6 +187,7 @@ jobs:
         run: |
           set +e
           [ -n "$DEV_PID" ] && kill "$DEV_PID" 2>/dev/null
+          h1_dev_outcome="${{ steps.h1_dev.outcome }}"
           h1_outcome="${{ steps.h1_install.outcome == 'success' && steps.h1_typecheck.outcome == 'success' && steps.h1_lint.outcome == 'success' && steps.h1_tests.outcome == 'success' && steps.h1_build.outcome == 'success' && steps.h1_dev.outcome == 'success' }}"
           h2_outcome="${{ steps.h2_walk.outcome }}"
           h4_outcome="${{ steps.h4_plat.outcome }}"
@@ -201,6 +202,10 @@ jobs:
             echo "**Generated:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
             echo "**Commit:** $(git rev-parse --short HEAD)"
             echo "**Verdict:** **$verdict**"
+            if [ "$h2_outcome" = "skipped" ] && [ "$h1_dev_outcome" != "success" ]; then
+              echo ""
+              echo "**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped."
+            fi
             echo ""
             echo "## Hour summary"
             echo "| Hour | Outcome |"
@@ -244,6 +249,11 @@ jobs:
             const h1 = safeRead('.agent/AUDIT_HOUR1.md');
             const h2 = safeRead('.agent/AUDIT_HOUR2.md');
             const h4 = safeRead('.agent/AUDIT_HOUR4.md');
+            const h2_outcome = '${{ steps.h2_walk.outcome }}';
+            const h1_dev_outcome = '${{ steps.h1_dev.outcome }}';
+            const h2Content = (h2 === '_(not produced)_' && h2_outcome === 'skipped' && h1_dev_outcome !== 'success')
+              ? '_(not produced)_\\n\\n**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped.'
+              : h2;
             const verdictMd = safeRead('.agent/DEMO_GO_NOGO.md');
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
@@ -260,7 +270,7 @@ jobs:
               h1,
               ``,
               `## Hour 2 — Cold-start journey`,
-              h2,
+              h2Content,
               ``,
               `## Hour 4 — Polish & /plat`,
               h4,

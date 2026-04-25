@@ -47,7 +47,9 @@ function classify(consoleErrors, networkFailures) {
   return 'GREEN';
 }
 
-async function visitModule(page, mod) {
+async function visitModule(browser, mod) {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await context.newPage();
   const consoleErrors = [];
   const networkFailures = [];
 
@@ -94,8 +96,7 @@ async function visitModule(page, mod) {
       note: `navigation/load error: ${err.message}`,
     };
   } finally {
-    page.removeAllListeners('console');
-    page.removeAllListeners('response');
+    await context.close();
   }
 }
 
@@ -119,17 +120,15 @@ async function writeReport(rows) {
 async function main() {
   await ensureDirs();
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
 
-  // Auth/landing first
-  const page = await context.newPage();
   const rows = [];
-  const landing = await visitModule(page, ''); // root path
+  // Auth/landing first
+  const landing = await visitModule(browser, ''); // root path
   landing.module = 'auth/landing';
   rows.push(landing);
 
   for (const mod of MODULES) {
-    const result = await visitModule(page, mod);
+    const result = await visitModule(browser, mod);
     rows.push(result);
   }
 
