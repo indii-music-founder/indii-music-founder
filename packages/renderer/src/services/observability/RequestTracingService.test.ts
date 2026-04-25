@@ -79,11 +79,15 @@ describe('RequestTracingService', () => {
 
   describe('Performance Analysis', () => {
     it('should identify slow traces', () => {
+      let now = 0;
+      const perfSpy = vi.spyOn(performance, 'now').mockImplementation(() => {
+        const current = now;
+        now += 1000;
+        return current;
+      });
       const correlationId = service.startTrace('GET', 'http://localhost/api');
-      vi.useFakeTimers();
-      vi.advanceTimersByTime(1000);
       service.endTrace(correlationId, 200);
-      vi.useRealTimers();
+      perfSpy.mockRestore();
 
       const slowTraces = service.getSlowTraces(500);
       expect(slowTraces.length).toBeGreaterThan(0);

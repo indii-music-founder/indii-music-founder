@@ -51,23 +51,26 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 // Mock AI Service
-const mockGenerateText = vi.fn().mockResolvedValue('Test summary of the content');
-const mockGenerateContent = vi.fn().mockResolvedValue({
-    response: {
-        text: () => 'Description of media content',
-        candidates: [{ content: { parts: [{ text: 'Description of media content' }] } }],
-    },
+const { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedContents } = vi.hoisted(() => {
+    const mockGenerateText = vi.fn().mockResolvedValue('Test summary of the content');
+    const mockGenerateContent = vi.fn().mockResolvedValue({
+        response: {
+            text: () => 'Description of media content',
+            candidates: [{ content: { parts: [{ text: 'Description of media content' }] } }],
+        },
+    });
+    const mockEmbedContent = vi.fn().mockResolvedValue({ values: [0.1, 0.2, 0.3] });
+    const mockBatchEmbedContents = vi.fn().mockResolvedValue([[0.1, 0.2, 0.3]]);
+    return { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedContents };
 });
-const mockEmbedContent = vi.fn().mockResolvedValue({ values: [0.1, 0.2, 0.3] });
-const mockBatchEmbedContents = vi.fn().mockResolvedValue([[0.1, 0.2, 0.3]]);
 
 vi.mock('../../ai/FirebaseAIService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: mockGenerateText,
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
-        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: mockGenerateContent,
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
     };
     return {

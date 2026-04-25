@@ -40,7 +40,7 @@ vi.mock('../FirestoreService', () => ({
 
 vi.mock('../ai/FirebaseAIService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: mocks.generateText,
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),

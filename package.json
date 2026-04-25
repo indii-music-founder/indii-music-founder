@@ -34,6 +34,7 @@
     "typecheck:renderer": "tsc -b packages/renderer",
     "typecheck:main": "tsc -b packages/main",
     "test": "vitest",
+    "test:ci": "vitest --run",
     "test:renderer": "vitest --project packages/renderer",
     "test:main": "vitest --project packages/main",
     "test:e2e": "npx playwright test --project=chromium",
