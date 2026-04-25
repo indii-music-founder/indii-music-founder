@@ -1467,3 +1467,4 @@ export * from './mcp';
 
 // Agent Orchestration State Machine
 export * from './orchestration';
+export * from './pod/printful';
