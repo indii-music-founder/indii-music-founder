@@ -39,6 +39,7 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn(() => ({ id: 'mock-doc' })),
+    addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
     setDoc: vi.fn(() => Promise.resolve()),
     updateDoc: vi.fn(() => Promise.resolve()),
     collection: vi.fn(() => ({ id: 'mock-coll' })),
