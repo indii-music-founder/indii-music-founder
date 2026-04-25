@@ -40,7 +40,7 @@ describe('Standard Grammar Tools', () => {
                 title: "Test Scene",
                 elements: [{ type: "slugline", text: "INT. TEST - DAY" }]
             });
-            vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+            vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce({
                 response: { text: () => mockJson }
             } as any);
 
@@ -58,7 +58,7 @@ describe('Standard Grammar Tools', () => {
                 callTime: "08:00 AM",
                 cast: []
             });
-            vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+            vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce({
                 response: { text: () => mockJson }
             } as any);
 
@@ -78,7 +78,7 @@ describe('Standard Grammar Tools', () => {
         it('draft_contract includes mandatory header', async () => {
             const mockContent = '# LEGAL AGREEMENT\n\nThis agreement...';
             const mockResponse = { response: { text: () => mockContent } };
-            vi.mocked(GenAI.generateContent).mockResolvedValueOnce(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
+            vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
             const result = await LegalTools.draft_contract!({
                 type: 'NDA',

@@ -13,7 +13,7 @@ vi.mock('../../publicist/PublicistService', () => ({
 // Mock FirebaseAI
 vi.mock('@/services/ai/FirebaseAIService', () => {
     const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateText: vi.fn().mockResolvedValue('Mocked AI Content Response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })

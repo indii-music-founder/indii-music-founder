@@ -16,6 +16,9 @@ describe('PUBLICIST_TOOLS', () => {
     });
 
     it('write_press_release should return text', async () => {
+        vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce({
+            response: { text: () => 'Mocked Press Release', inlineDataParts: [], functionCalls: [], thoughtSummary: '' }
+        } as any);
         const result = await PUBLICIST_TOOLS.write_press_release({
             headline: "Test Headline",
             company_name: "Test Company",
@@ -26,7 +29,7 @@ describe('PUBLICIST_TOOLS', () => {
     });
 
     it('generate_crisis_response should return text', async () => {
-        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+        vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify({
                     response: 'Crisis Response',
@@ -64,7 +67,7 @@ describe('PUBLICIST_TOOLS', () => {
             }
         };
 
-        vi.mocked(GenAI.generateContent).mockResolvedValueOnce({
+        vi.spyOn(GenAI, 'generateContent').mockResolvedValueOnce({
             response: {
                 text: () => JSON.stringify(mockCampaign),
                 inlineDataParts: [],
