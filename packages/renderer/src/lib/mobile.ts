@@ -8,8 +8,7 @@ import { logger } from '@/utils/logger';
 // Haptic Feedback
 // ============================================================================
 
-import { getFirebaseMessaging } from '@/services/firebase';
-import { getToken, onMessage } from 'firebase/messaging';
+import { pushNotificationService } from '@/services/notifications/PushNotificationService';
 
 export type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
 
@@ -381,29 +380,8 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     }
 
     try {
-        const messaging = await getFirebaseMessaging();
-        if (!messaging) {
-            logger.warn('[Notifications] Messaging not supported');
-            return false;
-        }
-
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            logger.debug('[Notifications] Permission granted');
-
-            try {
-                const vapidKey = (import.meta as unknown as { env: Record<string, string> }).env.VITE_FIREBASE_VAPID_KEY;
-                if (vapidKey) {
-                    const token = await getToken(messaging, { vapidKey });
-                    if (token) logger.debug('[Notifications] Token:', token);
-                }
-            } catch (e: unknown) {
-                logger.warn('[Notifications] Token retrieval warning:', e);
-            }
-
-            return true;
-        }
-        return false;
+        const token = await pushNotificationService.requestPermissionAndGetToken();
+        return !!token;
     } catch (error: unknown) {
         logger.error('[Notifications] Error requesting permission:', error);
         return false;
@@ -414,19 +392,8 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
  * Listen for foreground messages
  */
 export const onMessageListener = (callback: (payload: unknown) => void) => {
-    // Fire-and-forget async setup
-    getFirebaseMessaging().then((messaging) => {
-        if (!messaging) return;
-        try {
-            onMessage(messaging, (payload) => {
-                logger.debug('[Notifications] Foreground message received:', payload);
-                callback(payload);
-            });
-        } catch (e: unknown) {
-            logger.error('[Notifications] Error setting up listener:', e);
-        }
-    });
-    return () => { };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return pushNotificationService.onForegroundMessage(callback as any);
 };
 
 // ============================================================================
