@@ -68,18 +68,15 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/ai/FirebaseAIService', () => {
-    const mockFirebaseAI = {
-        generateText: vi.fn().mockResolvedValue('Mock AI response'),
-        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
-        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
-        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
-    };
+vi.mock('@/services/ai/GenAI', () => {
     return {
-        FirebaseAIService: class {
-            static getInstance() { return mockFirebaseAI; }
-        },
-        firebaseAI: mockFirebaseAI
+        GenAI: {
+            generateText: vi.fn().mockResolvedValue('Mock AI response'),
+            generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+            generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+            generateVideo: vi.fn().mockResolvedValue('https://mock-video.mp4'),
+            analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+        }
     };
 });
 

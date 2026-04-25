@@ -17,16 +17,6 @@ import { AppErrorCode, AppException } from '@/shared/types/errors';
 import type { GenerateVideoRequest } from '@/shared/types/ai.dto';
 import { logger } from '@/utils/logger';
 
-/**
- * Video model alias map — resolves abbreviated UI names to full model IDs.
- */
-const VIDEO_MODEL_ALIASES: Record<string, string> = {
-    'pro': AI_MODELS.VIDEO.PRO,
-    'fast': AI_MODELS.VIDEO.FAST,
-    'lite': AI_MODELS.VIDEO.LITE,
-    'edit': AI_MODELS.VIDEO.EDIT,
-    'generation': AI_MODELS.VIDEO.GENERATION,
-};
 
 /**
  * Resolution map — maps UI resolution strings to Veo API enum values.
@@ -56,6 +46,18 @@ export async function generateVideo(
     options: GenerateVideoRequest & { timeoutMs?: number }
 ): Promise<string> {
     const { calculateVideoTimeout, AI_CONFIG } = await import('@/core/config/ai-models');
+    
+    /**
+     * Video model alias map — resolves abbreviated UI names to full model IDs.
+     */
+    const VIDEO_MODEL_ALIASES: Record<string, string> = {
+        'pro': AI_MODELS.VIDEO.PRO,
+        'fast': AI_MODELS.VIDEO.FAST,
+        'lite': AI_MODELS.VIDEO.LITE,
+        'edit': AI_MODELS.VIDEO.EDIT,
+        'generation': AI_MODELS.VIDEO.GENERATION,
+    };
+
     const durationSeconds = options.config?.durationSeconds || AI_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS;
     const timeoutMs = options.timeoutMs || calculateVideoTimeout(durationSeconds);
 

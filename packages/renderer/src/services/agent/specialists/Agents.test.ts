@@ -30,7 +30,12 @@ vi.mock('@/services/ai/GenAI', () => ({
                 reason: "Meets goals"
             })
         }),
-        generateContentStream: vi.fn()
+        generateContentStream: vi.fn(),
+        generateStructuredData: vi.fn().mockResolvedValue({
+            score: 8,
+            approved: true,
+            critique: "Meets goals"
+        })
     }
 }));
 
