@@ -663,4 +663,6 @@ export interface GraphExecutionState {
     }>;
     /** Overall status of the graph execution. */
     status: WorkflowExecutionStatus;
+    /** Arbitrary execution metadata (e.g. initial input). */
+    metadata?: Record<string, any>;
 }

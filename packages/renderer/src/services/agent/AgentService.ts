@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
-// useStore removed
+import { auth } from '@/core/firebase';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HybridOrchestrator } from './hybrid/HybridOrchestrator';
@@ -15,6 +15,7 @@ import { maestroBatchingService } from './MaestroBatchingService';
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { agentGraphService } from './orchestration/AgentGraphService';
+import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
 
 /**
@@ -407,8 +408,7 @@ export class AgentService {
         const { 
             updateAgentMessage, 
             setActiveGraphDefinition, 
-            startListeningToGraphExecution, 
-            stopListeningToGraphExecution 
+            startListeningToGraphExecution 
         } = useStore.getState();
 
         updateAgentMessage(responseId, { 
@@ -443,10 +443,58 @@ export class AgentService {
                 text: `❌ **Orchestration Error:** ${error.message || 'Failed to execute multi-step plan.'}`,
                 isStreaming: false
             });
-        } finally {
-            // We keep the listener active so the user can see the final state,
-            // but we might want to stop it eventually or when the session changes.
-            // For now, we leave it to allow the UI to persist the final graph state.
+        }
+    }
+
+    /**
+     * Retries a specific node in a graph execution.
+     */
+    async retryGraphNode(executionId: string, nodeId: string): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        await agentGraphService.retryNode(userId, executionId, nodeId);
+        
+        // Re-trigger the graph loop in the background if it's not running
+        this.executeGraphInBackground(executionId, userId);
+    }
+
+    /**
+     * Resets a node and its descendants to planned state.
+     */
+    async resetGraphBranch(executionId: string, nodeId: string): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const state = await agentGraphStateService.getExecution(userId, executionId);
+        if (!state || !state.graph) return;
+
+        await agentGraphService.resetBranch(userId, executionId, nodeId, state.graph);
+        
+        // Re-trigger the graph loop
+        this.executeGraphInBackground(executionId, userId);
+    }
+
+    /**
+     * Helper to resume graph execution in the background (e.g. after retry/reset).
+     */
+    private async executeGraphInBackground(executionId: string, userId: string): Promise<void> {
+        try {
+            const state = await agentGraphStateService.getExecution(userId, executionId);
+            if (!state || !state.graph) return;
+
+            const context: AgentContext = {
+                userId,
+                activeModule: 'generalist', // Fallback or retrieve from state
+                traceId: uuidv4()
+            };
+
+            // This resumes the loop without blocking the main UI thread's response
+            agentGraphService.resumeGraph(executionId, context, state.graph).catch(err => {
+                logger.error('[AgentService] Background graph resumption failed:', err);
+            });
+        } catch (err) {
+            logger.error('[AgentService] executeGraphInBackground error:', err);
         }
     }
 

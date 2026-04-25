@@ -38,7 +38,8 @@ export const MODULE_IDS = [
     'desktop',
     'founders-checkout',
     'video-popout',
-    'registration'
+    'registration',
+    'maestro'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
