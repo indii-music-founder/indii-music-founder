@@ -23,29 +23,47 @@ import { memoryBankService } from '../memory/MemoryBankService';
 export class AgentGraphService {
 
     /**
+     * Initializes a new graph execution state in persistence.
+     * Useful when the caller needs the execution ID before starting the loop.
+     */
+    async createExecution(userId: string, graph: AgentGraph): Promise<GraphExecutionState> {
+        return await agentGraphStateService.createExecution(userId, graph);
+    }
+
+    /**
      * Executes an entire AgentGraph from scratch.
      */
-    async executeGraph(graph: AgentGraph, context: AgentContext, initialInput?: string): Promise<string> {
+    async executeGraph(
+        graph: AgentGraph, 
+        context: AgentContext, 
+        initialInput?: string,
+        existingExecutionId?: string
+    ): Promise<string> {
         const userId = context.userId;
         if (!userId) throw new Error('userId is required for graph execution');
 
         const traceId = context.traceId || uuidv4();
-        logger.info(`[AgentGraph] Starting graph execution: ${graph.name} (${graph.id}), trace: ${traceId}`);
-
-        // Create the initial execution state in persistence
-        const state = await agentGraphStateService.createExecution(userId, graph);
         
-        AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_STARTED', graph.id, state.executionId, `Name: ${graph.name}`);
+        let executionId = existingExecutionId;
+        if (!executionId) {
+            const state = await this.createExecution(userId, graph);
+            executionId = state.executionId;
+        }
+
+        logger.info(`[AgentGraph] Starting graph execution: ${graph.name} (${graph.id}), trace: ${traceId}, execution: ${executionId}`);
+        
+        AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_STARTED', graph.id, executionId, `Name: ${graph.name}`);
 
         try {
-            const result = await this.runGraphLoop(userId, graph, state.executionId, context, traceId, initialInput);
-            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_COMPLETED', graph.id, state.executionId);
+            const result = await this.runGraphLoop(userId, graph, executionId, context, traceId, initialInput);
+            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_COMPLETED', graph.id, executionId);
             return result;
         } catch (error: any) {
-            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', graph.id, state.executionId, error.message);
+            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', graph.id, executionId, error.message);
             throw error;
         }
     }
+
 
     /**
      * Resumes a previously interrupted graph execution.
