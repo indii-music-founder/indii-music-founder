@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore, StoreApi } from 'zustand';
-import { buildAgentOrchestrationState, AgentOrchestrationSlice } from '../agentOrchestrationSlice';
+import { buildAgentOrchestrationState, AgentOrchestrationSlice } from '../agent/agentOrchestrationSlice';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { auth } from '@/services/firebase';
 

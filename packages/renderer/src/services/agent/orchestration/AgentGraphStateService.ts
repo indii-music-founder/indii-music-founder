@@ -109,6 +109,34 @@ class AgentGraphStateServiceImpl {
         await service.update(executionId, { status } as Partial<GraphExecutionState>);
         logger.info(`[GraphState] Execution ${executionId} finalized with status: ${status}`);
     }
+
+    /**
+     * Updates top-level metadata for the execution.
+     */
+    async updateExecutionMetadata(userId: string, executionId: string, metadata: Record<string, any>): Promise<void> {
+        const service = this.getService(userId);
+        
+        const fieldUpdates: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(metadata)) {
+            fieldUpdates[`metadata.${key}`] = value;
+        }
+
+        await service.update(executionId, fieldUpdates as Partial<GraphExecutionState>);
+    }
+
+    /**
+     * Subscribes to changes in a graph execution state.
+     */
+    subscribeToExecution(
+        userId: string,
+        executionId: string,
+        callback: (state: GraphExecutionState) => void
+    ): () => void {
+        const service = this.getService(userId);
+        return service.subscribeDoc(executionId, (data) => {
+            if (data) callback(data);
+        });
+    }
 }
 
 export const agentGraphStateService = new AgentGraphStateServiceImpl();

@@ -89,6 +89,62 @@ export class AgentGraphService {
     }
 
     /**
+     * Retries a specific failed node.
+     * Pillar 3: Persistence & Scalability
+     */
+    async retryNode(userId: string, executionId: string, nodeId: string): Promise<void> {
+        logger.info(`[AgentGraph] Retrying node ${nodeId} in execution ${executionId}`);
+        await agentGraphStateService.updateNodeStatus(userId, executionId, nodeId, {
+            status: 'planned',
+            error: undefined
+        });
+        // Note: The main loop (if running) will pick this up automatically.
+    }
+
+    /**
+     * Resets a node and all its downstream descendants to 'planned' state.
+     * Useful for correcting a path and re-running.
+     */
+    async resetBranch(userId: string, executionId: string, nodeId: string, graph: AgentGraph): Promise<void> {
+        logger.info(`[AgentGraph] Resetting branch starting at ${nodeId}`);
+        
+        const descendants = this.getDescendants(nodeId, graph);
+        const nodesToReset = [nodeId, ...descendants];
+
+        for (const id of nodesToReset) {
+            await agentGraphStateService.updateNodeStatus(userId, executionId, id, {
+                status: 'planned',
+                output: undefined,
+                error: undefined,
+                startedAt: undefined,
+                completedAt: undefined
+            });
+        }
+    }
+
+    private getDescendants(nodeId: string, graph: AgentGraph): string[] {
+        const descendants: string[] = [];
+        const queue = [nodeId];
+        const visited = new Set<string>();
+
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            if (visited.has(current)) continue;
+            visited.add(current);
+
+            const children = graph.edges
+                .filter(e => e.sourceId === current)
+                .map(e => e.targetId);
+            
+            for (const child of children) {
+                descendants.push(child);
+                queue.push(child);
+            }
+        }
+        return Array.from(new Set(descendants));
+    }
+
+    /**
      * The main execution loop for the graph.
      * Continues as long as there are nodes ready to be executed.
      */
@@ -105,6 +161,11 @@ export class AgentGraphService {
         let iteration = 0;
         const MAX_ITERATIONS = 1000; // Safety break
 
+        // Preserve initial input in state for resumption
+        if (initialInput) {
+            await agentGraphStateService.updateExecutionMetadata(userId, executionId, { initialInput });
+        }
+
         while (running) {
             iteration++;
             if (iteration > MAX_ITERATIONS) {
@@ -116,6 +177,9 @@ export class AgentGraphService {
             const state = await agentGraphStateService.getExecution(userId, executionId);
             if (!state) throw new Error(`Execution ${executionId} lost during run`);
 
+            // If we are resuming, pull initialInput from state if not provided
+            const inputToUse = initialInput || state.metadata?.initialInput;
+
             if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
                 running = false;
                 break;
@@ -124,9 +188,17 @@ export class AgentGraphService {
             // 1. Identify ready nodes and handle conditional skipping
             const readyNodes: GraphNode[] = [];
             const nodesToSkip: string[] = [];
+            let isWaitingForApproval = false;
             
             for (const node of graph.nodes) {
                 const nodeState = state.nodeStates[node.id];
+                
+                // HITL check: If any node is waiting for approval, the loop pauses execution
+                if (nodeState?.status === 'awaiting_approval') {
+                    isWaitingForApproval = true;
+                    continue;
+                }
+
                 // Only consider nodes that haven't been processed yet
                 if (!nodeState || (nodeState.status !== 'planned' && nodeState.status !== 'failed')) continue;
 
@@ -187,6 +259,13 @@ export class AgentGraphService {
                 });
             }
 
+            if (isWaitingForApproval) {
+                logger.info(`[AgentGraph] Execution ${executionId} paused: Waiting for human approval.`);
+                // We don't terminate the loop, but we sleep to avoid CPU spinning
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                continue;
+            }
+
             if (readyNodes.length === 0) {
                 const hasPlanned = graph.nodes.some(n => state.nodeStates[n.id]?.status === 'planned');
                 const hasExecuting = graph.nodes.some(n => state.nodeStates[n.id]?.status === 'executing');
@@ -210,7 +289,7 @@ export class AgentGraphService {
             logger.info(`[AgentGraph] Iteration ${iteration}: Starting ${readyNodes.length} nodes in parallel: ${readyNodes.map(n => n.id).join(', ')}`);
             
             const tasks = await Promise.all(readyNodes.map(async (node) => {
-                const prompt = this.resolveNodePrompt(node, graph, state, initialInput);
+                const prompt = this.resolveNodePrompt(node, graph, state, inputToUse);
                 
                 // GEAP Pillar 2: SCALE - Pull relevant memories before execution
                 let memoryContext = '';
@@ -296,7 +375,19 @@ export class AgentGraphService {
             }
         }
 
-        return `Graph execution finished. Final output snippet: ${lastOutput.slice(0, 200)}...`;
+        const finalReport = `Graph execution finished. Final output snippet: ${lastOutput.slice(0, 200)}...`;
+        
+        // GEAP Pillar 2: SCALE - Index completed graph for future RAG retrieval
+        try {
+            const inputToUse = initialInput || (await agentGraphStateService.getExecution(userId, executionId))?.metadata?.initialInput;
+            if (inputToUse) {
+                await memoryBankService.indexGraphExecution(userId, executionId, inputToUse, finalReport);
+            }
+        } catch (memErr) {
+            logger.warn(`[AgentGraph] Failed to index completed graph ${executionId}`, memErr);
+        }
+
+        return finalReport;
     }
 
     /**
@@ -317,34 +408,66 @@ export class AgentGraphService {
 
     /**
      * Resolves placeholders in the task template using parent outputs and initial input.
+     * Supports JSONPath-like extraction if inputMapping is provided.
      */
     private resolveNodePrompt(node: GraphNode, graph: AgentGraph, state: GraphExecutionState, initialInput?: string): string {
         let prompt = node.taskTemplate;
 
-        // Replace global input
+        // 1. Replace global input placeholder
         if (initialInput) {
             prompt = prompt.replace(/\{\{input\}\}/g, initialInput);
         }
 
-        // Find parent edges to map outputs
+        // 2. Resolve data flow from parents
         const parentEdges = graph.edges.filter(e => e.targetId === node.id);
+        
         for (const edge of parentEdges) {
-            const parentOutput = state.nodeStates[edge.sourceId]?.output || '';
+            const parentState = state.nodeStates[edge.sourceId];
+            if (!parentState || parentState.status !== 'step_complete') continue;
+
+            const parentOutput = parentState.output || '';
             
-            // Apply input mappings if defined
-            if (edge.inputMapping) {
-                for (const [, targetPlaceholder] of Object.entries(edge.inputMapping)) {
-                    // Simple placeholder replacement for now. 
-                    // Future: Add JSON path or regex extraction from sourceKey.
-                    prompt = prompt.replace(new RegExp(`\\{\\{${targetPlaceholder}\\}\\}`, 'g'), parentOutput);
+            // Handle specific input mappings (Pillar 3: Data Flow)
+            if (edge.inputMapping && Object.keys(edge.inputMapping).length > 0) {
+                for (const [sourceKey, targetPlaceholder] of Object.entries(edge.inputMapping)) {
+                    let extractedValue = parentOutput;
+
+                    // Support JSON extraction if sourceKey is not 'output' or '*'
+                    if (sourceKey !== 'output' && sourceKey !== '*') {
+                        try {
+                            const parsed = JSON.parse(parentOutput);
+                            // Enhanced extraction supporting nested paths (e.g., "data.summary")
+                            const value = this.getNestedValue(parsed, sourceKey);
+                            extractedValue = value !== undefined ? String(value) : parentOutput;
+                        } catch (_e) {
+                            // If not JSON or path doesn't exist, use the raw output
+                            extractedValue = parentOutput;
+                        }
+                    }
+
+                    const placeholderRegex = new RegExp(`\\{\\{${targetPlaceholder}\\}\\}`, 'g');
+                    prompt = prompt.replace(placeholderRegex, extractedValue);
                 }
             } else {
-                // Default: replace source node ID placeholder
-                prompt = prompt.replace(new RegExp(`\\{\\{${edge.sourceId}\\}\\}`, 'g'), parentOutput);
+                // Default fallback: replace {{sourceNodeId}} with the full parent output
+                const defaultRegex = new RegExp(`\\{\\{${edge.sourceId}\\}\\}`, 'g');
+                prompt = prompt.replace(defaultRegex, parentOutput);
             }
         }
 
+        // 3. Final Cleanup: If any placeholders remain from non-existent inputs, 
+        // we might want to warn or strip them. For now, leave them as is for visibility.
         return prompt;
+    }
+
+    /**
+     * Safely retrieves a nested value from an object using a dot-notated path.
+     */
+    private getNestedValue(obj: any, path: string): any {
+        if (!path || !obj) return undefined;
+        return path.split('.').reduce((prev, curr) => {
+            return prev ? prev[curr] : undefined;
+        }, obj);
     }
 }
 
