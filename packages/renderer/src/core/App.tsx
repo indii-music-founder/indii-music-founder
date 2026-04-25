@@ -100,6 +100,7 @@ const DesktopDashboard = lazy(() => import('../modules/desktop/DesktopDashboard'
 const FoundersCheckout = lazy(() => import('../modules/founders/FoundersCheckout'));
 const VideoPopout = lazy(() => import('../modules/video/editor/VideoPopout'));
 const RegistrationCenter = lazy(() => import('../modules/registration/RegistrationCenter'));
+const MaestroModule = lazy(() => import('../modules/maestro/MaestroModule'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -149,6 +150,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'founders-checkout': FoundersCheckout,
     'video-popout': VideoPopout,
     'registration': RegistrationCenter,
+    'maestro': MaestroModule,
 };
 
 // ============================================================================

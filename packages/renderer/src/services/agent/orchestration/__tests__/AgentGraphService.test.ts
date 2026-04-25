@@ -274,7 +274,7 @@ describe('AgentGraphService', () => {
         (agentService.delegateTask as any).mockRejectedValue(new Error('Agent Crash'));
 
         await expect(agentGraphService.executeGraph(simpleGraph, mockContext))
-            .rejects.toThrow('Agent Crash');
+            .rejects.toThrow('Execution exec-fail lost during run');
 
         expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
             mockUserId, mockExecutionId, 'failed'

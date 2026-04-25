@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
-import { auth } from '@/core/firebase';
+import { auth } from '@/services/firebase';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HybridOrchestrator } from './hybrid/HybridOrchestrator';
@@ -453,6 +453,12 @@ export class AgentService {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
 
+        const state = await agentGraphStateService.getExecution(userId, executionId);
+        if (!state || !state.graph) {
+            logger.warn(`[AgentService] Cannot retry node: Graph not found for execution ${executionId}`);
+            return;
+        }
+
         await agentGraphService.retryNode(userId, executionId, nodeId);
         
         // Re-trigger the graph loop in the background if it's not running
@@ -467,7 +473,10 @@ export class AgentService {
         if (!userId) return;
 
         const state = await agentGraphStateService.getExecution(userId, executionId);
-        if (!state || !state.graph) return;
+        if (!state || !state.graph) {
+            logger.error(`[AgentService] Cannot reset branch: Graph not found for execution ${executionId}`);
+            return;
+        }
 
         await agentGraphService.resetBranch(userId, executionId, nodeId, state.graph);
         
@@ -519,9 +528,10 @@ export class AgentService {
         try {
             const tasks = subtasks.map(s => ({
                 agentId: s.agentId,
-                prompt: s.subtask,
-                context,
-                description: `Parallel Task: ${s.subtask}`
+                description: `Parallel Task: ${s.subtask}`,
+                priority: 'MEDIUM' as const,
+                params: { prompt: s.subtask },
+                context
             }));
 
             const results = await maestroBatchingService.executeBatch(tasks);

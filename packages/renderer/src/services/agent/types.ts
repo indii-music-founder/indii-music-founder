@@ -231,12 +231,10 @@ export interface AgentContext {
      */
     contextStack?: ContextFrame[];
 
-    /**
-     * Compressed summary of the full context stack.
-     * Used in the system prompt to give agents awareness of prior turns
-     * without consuming excessive token budget.
-     */
+    /** Compressed summary of the full context stack */
     contextSummary?: string;
+    /** Active session ID */
+    sessionId?: string;
 }
 
 export type AgentRunner = (
@@ -663,6 +661,8 @@ export interface GraphExecutionState {
     }>;
     /** Overall status of the graph execution. */
     status: WorkflowExecutionStatus;
+    /** Snapshot of the graph definition at the time of execution start. */
+    graph?: AgentGraph;
     /** Arbitrary execution metadata (e.g. initial input). */
     metadata?: Record<string, any>;
 }

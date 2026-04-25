@@ -7,6 +7,7 @@ import { SocialService } from '@/services/social/SocialService';
 vi.mock('@/services/ai/FirebaseAIService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateContent: vi.fn().mockResolvedValue({ response: { text: () => 'Mock response' } }),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
         generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
         analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
@@ -18,6 +19,12 @@ vi.mock('@/services/ai/FirebaseAIService', () => {
         firebaseAI: mockFirebaseAI
     };
 });
+
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
+        generateContent: vi.fn()
+    }
+}));
 
 vi.mock('@/services/social/SocialService', () => ({
   SocialService: {
