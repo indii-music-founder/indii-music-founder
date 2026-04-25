@@ -312,7 +312,7 @@ describe('AgentGraphService', () => {
                 'node-1': { status: 'step_complete', output: 'Output 1' },
                 'node-2': { status: 'step_complete', output: 'Output 2' },
             },
-            status: 'completed'
+            status: 'executing'
         };
 
         (agentGraphStateService.getExecution as any)
