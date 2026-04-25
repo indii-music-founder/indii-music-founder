@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
-// useStore removed
+import { auth } from '@/services/firebase';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HybridOrchestrator } from './hybrid/HybridOrchestrator';
@@ -14,6 +14,9 @@ import { agentRegistry } from './registry';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { agentGraphService } from './orchestration/AgentGraphService';
+import { agentGraphStateService } from './orchestration/AgentGraphStateService';
+import { AgentGraph } from './types';
 
 /**
  * AgentService is the primary entry point for agent-related operations.
@@ -314,24 +317,33 @@ export class AgentService {
             return;
         }
 
-        // 1. Resolve Active Agent ID if not forced
-        let agentId = forcedAgentId;
-
-        if (!agentId) {
-            const state = useStore.getState();
-            const session = state.sessions?.[state.activeSessionId || ''];
-            agentId = session?.participants?.[0] || 'generalist';
+        // 1. Resolve Orchestration Path
+        let orchestration;
+        if (forcedAgentId) {
+            orchestration = { type: 'single' as const, agentId: forcedAgentId, reasoning: 'Forced by user' };
+        } else {
+            orchestration = await this.orchestrator.determineOrchestrationPath(context, text);
         }
 
-        // 2. Delegate directly to the Agent Executor (indii Conductor handles routing natively)
+        logger.info(`[AgentService] Orchestration Path: ${orchestration.type}`, { reasoning: orchestration.reasoning });
 
-        // Update agent ID in the placeholder (Native/Agent path)
+        // 2. Route Execution
+        if (orchestration.type === 'graph' && orchestration.graph) {
+            await this.handleGraphExecutionFlow(orchestration.graph, context, text, responseId);
+            return;
+        }
+
+        if (orchestration.type === 'parallel' && orchestration.subtasks) {
+            await this.handleParallelExecutionFlow(orchestration.subtasks, context, text, responseId);
+            return;
+        }
+
+        // Default: Single Agent Execution
+        const agentId = orchestration.agentId || 'generalist';
         updateAgentMessage(responseId, { agentId });
 
         let currentStreamedText = '';
-
-        // Pass REDACTED text to the executor
-        const result = await this.executor.execute(agentId || 'generalist', text, context as PipelineContext, (event) => {
+        const result = await this.executor.execute(agentId, text, context as PipelineContext, (event) => {
             if (event.type === 'token') {
                 currentStreamedText += event.content;
                 updateAgentMessage(responseId, { text: currentStreamedText });
@@ -339,24 +351,18 @@ export class AgentService {
 
             if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
                 const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
-
-                // Firestore explicitly rejects 'undefined' values. We must sanitize.
                 const newThought: AgentThought = {
                     id: uuidv4(),
-                    text: event.content || '', // Ensure no undefined text
+                    text: event.content || '',
                     timestamp: Date.now(),
-                    type: event.type as AgentThought["type"], // Typed in interface
+                    type: event.type as AgentThought["type"],
                 };
 
                 if (event.type === 'tool' || event.type === 'tool_result') {
-                    if (event.toolName) {
-                        newThought.toolName = event.toolName;
-                    }
+                    if (event.toolName) newThought.toolName = event.toolName;
                 }
 
-                // AGGRESSIVE SANITIZATION: Firestore chokes on undefined.
                 const safeThought = JSON.parse(JSON.stringify(newThought));
-
                 if (currentMsg) {
                     updateAgentMessage(responseId, {
                         thoughts: [...(currentMsg.thoughts || []), safeThought]
@@ -366,14 +372,12 @@ export class AgentService {
         }, undefined, undefined, attachments);
 
         if (result && result.text) {
-            // Final update with full text and signature
             updateAgentMessage(responseId, {
                 text: result.text,
                 thoughtSignature: result.thoughtSignature
             });
 
-            // Tier 2: Index model response for semantic recall
-            const state = useStore.getState();
+            // Tier 2: Index model response
             if (state.currentProjectId && state.activeSessionId && result.text.length > 20) {
                 memoryService.saveMemory(
                     state.currentProjectId,
@@ -387,6 +391,168 @@ export class AgentService {
         } else {
             updateAgentMessage(responseId, {
                 thoughtSignature: result?.thoughtSignature
+            });
+        }
+    }
+
+    /**
+     * Handles complex multi-step execution using the AgentGraphService.
+     */
+    private async handleGraphExecutionFlow(
+        graph: AgentGraph,
+        context: AgentContext,
+        initialInput: string,
+        responseId: string
+    ): Promise<void> {
+        const { useStore } = await import('@/core/store');
+        const { 
+            updateAgentMessage, 
+            setActiveGraphDefinition, 
+            startListeningToGraphExecution 
+        } = useStore.getState();
+
+        updateAgentMessage(responseId, { 
+            agentId: 'orchestrator', 
+            text: '⛓️ **Decomposing complex request into sequential steps...**' 
+        });
+
+        // Initialize UI state for graph visualization
+        setActiveGraphDefinition(graph);
+
+        try {
+            const userId = context.userId;
+            if (!userId) throw new Error('userId is required for graph execution');
+
+            // 1. Pre-create the execution to get an ID
+            const executionState = await agentGraphService.createExecution(userId, graph);
+            const executionId = executionState.executionId;
+
+            // 2. Start listening to Firestore updates for real-time UI mapping
+            await startListeningToGraphExecution(executionId);
+
+            // 3. Execute the dynamic graph loop
+            const finalReport = await agentGraphService.executeGraph(graph, context, initialInput, executionId);
+            
+            updateAgentMessage(responseId, {
+                text: finalReport,
+                isStreaming: false
+            });
+        } catch (error: any) {
+            logger.error('[AgentService] Graph execution failed:', error);
+            updateAgentMessage(responseId, {
+                text: `❌ **Orchestration Error:** ${error.message || 'Failed to execute multi-step plan.'}`,
+                isStreaming: false
+            });
+        }
+    }
+
+    /**
+     * Retries a specific node in a graph execution.
+     */
+    async retryGraphNode(executionId: string, nodeId: string): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const state = await agentGraphStateService.getExecution(userId, executionId);
+        if (!state || !state.graph) {
+            logger.warn(`[AgentService] Cannot retry node: Graph not found for execution ${executionId}`);
+            return;
+        }
+
+        await agentGraphService.retryNode(userId, executionId, nodeId);
+        
+        // Re-trigger the graph loop in the background if it's not running
+        this.executeGraphInBackground(executionId, userId);
+    }
+
+    /**
+     * Resets a node and its descendants to planned state.
+     */
+    async resetGraphBranch(executionId: string, nodeId: string): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const state = await agentGraphStateService.getExecution(userId, executionId);
+        if (!state || !state.graph) {
+            logger.error(`[AgentService] Cannot reset branch: Graph not found for execution ${executionId}`);
+            return;
+        }
+
+        await agentGraphService.resetBranch(userId, executionId, nodeId, state.graph);
+        
+        // Re-trigger the graph loop
+        this.executeGraphInBackground(executionId, userId);
+    }
+
+    /**
+     * Helper to resume graph execution in the background (e.g. after retry/reset).
+     */
+    private async executeGraphInBackground(executionId: string, userId: string): Promise<void> {
+        try {
+            const state = await agentGraphStateService.getExecution(userId, executionId);
+            if (!state || !state.graph) return;
+
+            const context: AgentContext = {
+                userId,
+                activeModule: 'generalist', // Fallback or retrieve from state
+                traceId: uuidv4()
+            };
+
+            // This resumes the loop without blocking the main UI thread's response
+            agentGraphService.resumeGraph(executionId, context, state.graph).catch(err => {
+                logger.error('[AgentService] Background graph resumption failed:', err);
+            });
+        } catch (err) {
+            logger.error('[AgentService] executeGraphInBackground error:', err);
+        }
+    }
+
+
+    /**
+     * Handles parallel fan-out execution.
+     */
+    private async handleParallelExecutionFlow(
+        subtasks: Array<{ agentId: string; subtask: string }>,
+        context: AgentContext,
+        originalQuery: string,
+        responseId: string
+    ): Promise<void> {
+        const { useStore } = await import('@/core/store');
+        const { updateAgentMessage } = useStore.getState();
+
+        updateAgentMessage(responseId, { 
+            agentId: 'orchestrator', 
+            text: `🔀 **Fanning out to ${subtasks.length} agents in parallel...**` 
+        });
+
+        try {
+            const tasks = subtasks.map(s => ({
+                agentId: s.agentId,
+                description: `Parallel Task: ${s.subtask}`,
+                priority: 'MEDIUM' as const,
+                params: { prompt: s.subtask },
+                context
+            }));
+
+            const results = await maestroBatchingService.executeBatch(tasks);
+            
+            let combinedReport = `✅ **Parallel Execution Complete**\n\n`;
+            results.forEach((res, i) => {
+                const subtask = subtasks[i];
+                combinedReport += `### 🤖 ${subtask?.agentId.toUpperCase()}\n`;
+                combinedReport += `**Task**: ${subtask?.subtask}\n`;
+                combinedReport += `${res.text || res.message || 'Execution failed'}\n\n---\n\n`;
+            });
+
+            updateAgentMessage(responseId, {
+                text: combinedReport,
+                isStreaming: false
+            });
+        } catch (error: any) {
+            logger.error('[AgentService] Parallel execution failed:', error);
+            updateAgentMessage(responseId, {
+                text: `❌ **Parallel Orchestration Error:** ${error.message}`,
+                isStreaming: false
             });
         }
     }
@@ -763,6 +929,21 @@ If the user asks you to do something that requires active tools (like generating
             parentTraceId,
             attachments || context.attachments
         );
+    }
+
+    /**
+     * Alias for runAgent to maintain compatibility with Graph Orchestration.
+     */
+    async delegateTask(agentId: string, task: string, context?: AgentContext): Promise<string> {
+        const result = await this.runAgent(agentId, task, context);
+        return result.text;
+    }
+
+    /**
+     * Entry point for executing an AgentGraph.
+     */
+    async executeGraph(graph: AgentGraph, context: AgentContext, initialInput?: string): Promise<string> {
+        return await agentGraphService.executeGraph(graph, context, initialInput);
     }
 
     private async addSystemMessage(text: string): Promise<void> {

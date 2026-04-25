@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { MapsTools } from './MapsTools';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
@@ -80,7 +80,7 @@ export const RoadTools = {
         3. Do NOT just list the cities; calculate the connections.
         `;
 
-        const data = await firebaseAI.generateStructuredData(
+        const data = await GenAI.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
@@ -154,7 +154,7 @@ export const RoadTools = {
         const fullPrompt = `You are a Road Manager. ${promptInfo}`;
         const schema = zodToJsonSchema(ItinerarySchema);
 
-        const data = await firebaseAI.generateStructuredData(
+        const data = await GenAI.generateStructuredData(
             [{ text: fullPrompt }],
             schema as Record<string, unknown>
         );
@@ -225,7 +225,7 @@ export const RoadTools = {
         and estimated audience reach.
         `;
 
-        const data = await firebaseAI.generateStructuredData(
+        const data = await GenAI.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );
@@ -262,7 +262,7 @@ export const RoadTools = {
         5. Any backline that should be provided by venue
         `;
 
-        const data = await firebaseAI.generateStructuredData(
+        const data = await GenAI.generateStructuredData(
             [{ text: prompt }],
             schema as Record<string, unknown>
         );

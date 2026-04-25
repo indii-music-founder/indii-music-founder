@@ -12,7 +12,7 @@ export const createNodeFromDrop = (
     const nodeType = event.dataTransfer.getData('application/reactflow');
 
     if (nodeType === 'departmentNode') {
-        const departmentName = event.dataTransfer.getData('application/departmentName');
+        const departmentName = event.dataTransfer.getData('application/departmentname');
         const newNode = {
             id: `${departmentName.replace(/\s+/g, '')}-${crypto.randomUUID().slice(0, 8)}`,
             type: 'departmentNode',
@@ -28,8 +28,8 @@ export const createNodeFromDrop = (
     }
 
     if (nodeType === 'logicNode') {
-        const departmentName = event.dataTransfer.getData('application/departmentName'); // 'Logic'
-        const jobId = event.dataTransfer.getData('application/jobId');
+        const departmentName = event.dataTransfer.getData('application/departmentname'); // 'Logic'
+        const jobId = event.dataTransfer.getData('application/jobid');
         const newNode = {
             id: `logic-${jobId}-${crypto.randomUUID().slice(0, 8)}`,
             type: 'logicNode',
@@ -70,6 +70,22 @@ export const createNodeFromDrop = (
             data: {
                 nodeType: 'output',
                 status: Status.PENDING
+            },
+        };
+        addNode(newNode);
+        return;
+    }
+
+    if (nodeType === 'audioSegmentNode') {
+        const newNode = {
+            id: `audio-segment-${crypto.randomUUID().slice(0, 8)}`,
+            type: 'audioSegmentNode',
+            position,
+            data: {
+                nodeType: 'audioSegment',
+                segmentLabel: 'New Audio Segment',
+                startTime: 0,
+                endTime: 10,
             },
         };
         addNode(newNode);

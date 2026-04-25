@@ -37,7 +37,8 @@ export type MemoryLayer =
   | 'session'
   | 'core-vault'
   | 'captain-logs'
-  | 'rag-index';
+  | 'rag-index'
+  | 'deep-hive';
 
 export interface Memory {
   id: string;
@@ -135,15 +136,11 @@ export class PersistentMemoryService {
 
         case 'core-vault':
           await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, memory as unknown as Record<string, unknown>);
-          await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, (memory as unknown) as Record<string, unknown>);
-          await this.writeToFirestore(`users/${this.userId}/core-vault/${key}`, memory as unknown as Record<string, unknown>);
           break;
 
         case 'captain-logs':
           await this.appendToFirestore(
             `users/${this.userId}/captain-logs`,
-            memory as unknown as Record<string, unknown>
-            (memory as unknown) as Record<string, unknown>
             memory as unknown as Record<string, unknown>
           );
           break;
@@ -188,16 +185,6 @@ export class PersistentMemoryService {
           );
 
         case 'captain-logs': {
-          const logsSnapshot = await admin
-            .firestore()
-            .collection(`users/${this.userId}/captain-logs`)
-            .orderBy('timestamp', 'desc')
-            .limit(1)
-            .get();
-
-          if (logsSnapshot.empty) return null;
-          const doc = logsSnapshot.docs[0];
-          return doc ? (doc.data() as Record<string, unknown>) : null;
           const q = firestoreQuery(
             collection(db, `users/${this.userId}/captain-logs`),
             orderBy('timestamp', 'desc'),
@@ -207,16 +194,6 @@ export class PersistentMemoryService {
 
           if (logsSnapshot.empty || !logsSnapshot.docs[0]) return null;
           return logsSnapshot.docs[0].data() as Record<string, unknown>;
-          const logsSnapshot = await admin
-            .firestore()
-            .collection(`users/${this.userId}/captain-logs`)
-            .orderBy('timestamp', 'desc')
-            .limit(1)
-            .get();
-
-          if (logsSnapshot.empty) return null;
-          const doc = logsSnapshot.docs[0];
-          return doc ? (doc.data() as Record<string, unknown>) : null;
         }
 
         case 'rag-index': {

@@ -1,6 +1,6 @@
 
 import { AgentContext } from './types';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { fileSystemService } from '@/services/FileSystemService';
 
@@ -145,7 +145,7 @@ export class WorkflowCoordinator {
             Be direct, creative, and concise. Do not use tools.`;
 
             // We use generating content directly with the FAST model
-            const response = await firebaseAI.generateContent(
+            const response = await GenAI.generateContent(
                 [
                     { role: 'model', parts: [{ text: systemPrompt }] },
                     { role: 'user', parts: [{ text: message }] }

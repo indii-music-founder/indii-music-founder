@@ -23,16 +23,21 @@ vi.mock('@/services/firebase', () => ({
     db: {},
 }));
 
-// ── Mock firebaseAI (used by negotiation) ────────────────────────────────────
-vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
-        generateStructuredData: vi.fn().mockResolvedValue({
-            negotiationLog: ['[A] Proposed terms', '[B] Counter-proposal', '[A] Agreed'],
-            finalTerms: 'Agreed terms',
-            outcome: 'accepted',
-        }),
-    },
-}));
+// ── Mock GenAI (used by negotiation) ────────────────────────────────────
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/core/config/ai-models', () => ({
     AI_MODELS: { TEXT: { FAST: 'gemini-flash' } },

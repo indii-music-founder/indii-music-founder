@@ -231,12 +231,10 @@ export interface AgentContext {
      */
     contextStack?: ContextFrame[];
 
-    /**
-     * Compressed summary of the full context stack.
-     * Used in the system prompt to give agents awareness of prior turns
-     * without consuming excessive token budget.
-     */
+    /** Compressed summary of the full context stack */
     contextSummary?: string;
+    /** Active session ID */
+    sessionId?: string;
 }
 
 export type AgentRunner = (
@@ -437,6 +435,23 @@ export type WorkflowExecutionStatus =
     | 'cancelled'
     | 'skipped';
 
+export interface WorkflowEdge {
+    from: string;
+    to: string;
+    condition?: (execution: WorkflowExecution) => boolean; // Evaluates if the edge should be traversed
+    label?: string; // Human-readable label for the transition
+    metadata?: Record<string, any>; // Arbitrary metadata for the transition
+}
+
+export interface WorkflowStep {
+    id: string; // Unique identifier for the step within the workflow
+    agentId: string;
+    prompt: string;
+    priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+    timeoutMs?: number; // Optional timeout for this specific step
+    retryCount?: number; // How many times to retry on failure
+}
+
 /**
  * Persisted state for a single step within a workflow execution.
  */
@@ -463,7 +478,7 @@ export interface WorkflowExecution {
     userId: string;
     status: WorkflowExecutionStatus;
     steps: Record<string, WorkflowStepExecution>;
-    currentStepIndex: number;
+    edges: WorkflowEdge[];
     createdAt: number;
     updatedAt: number;
 }
@@ -577,4 +592,77 @@ export interface StreamCallbacks {
     onComplete: (response: AgentResponse) => void;
     /** Called on any error during streaming */
     onError: (error: Error) => void;
+}
+// ============================================================================
+// Phase 4: Graph-Based Orchestration (NEXT)
+// ============================================================================
+
+/**
+ * A specialized node in an Agentic Graph.
+ * Nodes represent individual agent executions or logic gates.
+ */
+export interface GraphNode {
+    id: string;
+    agentId: ValidAgentId;
+    /** The task template for this node. Can use placeholders like {{input}}. */
+    taskTemplate: string;
+    /** Whether this node must wait for all parents or just any parent. */
+    waitCondition: 'all' | 'any';
+    /** Optional hardcoded context overrides for this node. */
+    contextOverrides?: Partial<AgentContext>;
+}
+
+/**
+ * A directed edge between graph nodes.
+ * Edges represent data flow and execution order.
+ */
+export interface GraphEdge {
+    sourceId: string;
+    targetId: string;
+    /** Optional condition to traverse this edge (e.g. tool output matches regex). */
+    condition?: string;
+    /** Maps source output to target input placeholders. */
+    inputMapping?: Record<string, string>;
+}
+
+/**
+ * A non-linear workflow represented as a Directed Acyclic Graph (DAG).
+ * Maps to GEAP Pillar 3: Graph-Based Orchestration.
+ */
+export interface AgentGraph {
+    id: string;
+    name: string;
+    description: string;
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    /** The node where execution begins. */
+    entryNodeId: string;
+    /** Metadata for tracking versioning and ownership. */
+    metadata: {
+        version: string;
+        author: string;
+        createdAt: number;
+    };
+}
+
+/**
+ * The execution state of a running graph.
+ */
+export interface GraphExecutionState {
+    graphId: string;
+    executionId: string;
+    /** Map of node ID to its current execution status and output. */
+    nodeStates: Record<string, {
+        status: WorkflowExecutionStatus;
+        output?: string;
+        error?: string;
+        startedAt?: number;
+        completedAt?: number;
+    }>;
+    /** Overall status of the graph execution. */
+    status: WorkflowExecutionStatus;
+    /** Snapshot of the graph definition at the time of execution start. */
+    graph?: AgentGraph;
+    /** Arbitrary execution metadata (e.g. initial input). */
+    metadata?: Record<string, any>;
 }

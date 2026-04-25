@@ -1,16 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { firebaseAI } from '../../ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('../../ai/FirebaseAIService', () => ({
-    serverTimestamp: vi.fn(),
-    firebaseAI: {
-        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result."),
-        generateVideo: vi.fn().mockResolvedValue('https://storage.googleapis.com/mock-video.mp4'),
-    }
-}));
+vi.mock('../../ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
+        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
@@ -204,8 +213,8 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 fps: 24
             });
 
-            // Inspect the call to firebaseAI.generateVideo (direct SDK path)
-            const callArgs = vi!.mocked(firebaseAI.generateVideo).mock.calls[0]![0];
+            // Inspect the call to GenAI.generateVideo (direct SDK path)
+            const callArgs = vi!.mocked(GenAI.generateVideo).mock.calls[0]![0];
 
             // Verify camera movement enrichment
             expect(callArgs.prompt).toContain('cinematic pan right camera movement');
