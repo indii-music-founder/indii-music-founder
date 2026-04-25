@@ -32,7 +32,6 @@ class AgentGraphStateServiceImpl {
     ): Promise<GraphExecutionState> {
         const service = this.getService(userId);
         const id = uuidv4();
-        const now = Date.now();
 
         const nodeStates: Record<string, { status: WorkflowExecutionStatus }> = {};
         for (const node of graph.nodes) {
@@ -70,6 +69,7 @@ class AgentGraphStateServiceImpl {
 
     /**
      * Updates a node's execution status and records start/completion times.
+     * Uses atomic updates to prevent race conditions during parallel execution.
      */
     async updateNodeStatus(
         userId: string,
@@ -84,25 +84,21 @@ class AgentGraphStateServiceImpl {
         }
     ): Promise<void> {
         const service = this.getService(userId);
-        const execution = await service.get(executionId);
-        if (!execution) throw new Error(`Execution ${executionId} not found`);
-
-        const nodeState = execution.nodeStates[nodeId];
-        if (!nodeState) throw new Error(`Node ${nodeId} not found in execution ${executionId}`);
-
-        execution.nodeStates[nodeId] = {
-            ...nodeState,
-            ...updates,
-        };
-
-        // Update overall graph status if needed
-        if (updates.status === 'executing') {
-            execution.status = 'executing';
-        } else if (updates.status === 'failed') {
-            execution.status = 'failed';
+        
+        // Prepare atomic update object using dot-notation for nested fields
+        const fieldUpdates: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(updates)) {
+            fieldUpdates[`nodeStates.${nodeId}.${key}`] = value;
         }
 
-        await service.set(executionId, execution);
+        // Also update overall graph status if this node transition implies it
+        if (updates.status === 'executing') {
+            fieldUpdates.status = 'executing';
+        } else if (updates.status === 'failed') {
+            fieldUpdates.status = 'failed';
+        }
+
+        await service.update(executionId, fieldUpdates as Partial<GraphExecutionState>);
     }
 
     /**
@@ -110,11 +106,7 @@ class AgentGraphStateServiceImpl {
      */
     async finalizeStatus(userId: string, executionId: string, status: WorkflowExecutionStatus): Promise<void> {
         const service = this.getService(userId);
-        const execution = await service.get(executionId);
-        if (!execution) throw new Error(`Execution ${executionId} not found`);
-
-        execution.status = status;
-        await service.set(executionId, execution);
+        await service.update(executionId, { status } as Partial<GraphExecutionState>);
         logger.info(`[GraphState] Execution ${executionId} finalized with status: ${status}`);
     }
 }
