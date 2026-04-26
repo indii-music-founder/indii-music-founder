@@ -1,6 +1,6 @@
 # Founders Program — Implementation Plan
 
-**Date:** 2026-03-17
+**Date:** 2026-03-17 (Updated 2026-04-25)
 **Scope:** Sign-up flow fix + $2,500 Founders Pass (10 seats, lifetime)
 
 ---
@@ -10,7 +10,7 @@
 Two tightly coupled features:
 
 1. **A working sign-up flow** — prerequisite for everything
-2. **The Founders Pass** — $2,500 one-time, 10 seats, lifetime access, names permanently encoded in the codebase as cryptographic proof
+2. **The Founders Pass** — $2,500 one-time, 10 seats, lifetime access, names permanently encoded in the codebase as cryptographic proof, and delivery of standalone desktop applications (DMG for Mac, EXE for Windows).
 
 ---
 
@@ -39,43 +39,38 @@ Add a "New to indiiOS? **Create account →**" link that points to `/signup`. En
 
 ## Part 2 — Founders Pass ($2,500, 10 seats, Lifetime)
 
-### The Promise (Covenant Terms)
+### The Promise (Agreement Terms)
 
 These terms will be encoded immutably in `src/config/founders.ts` and signed:
 
-- **Price:** $2,500 USD, one-time payment (no recurring charges, ever)
-- **Access:** All current and future indiiOS features for the lifetime of the software
-- **API costs:** Pass-through at cost — founders are not charged a markup, but are responsible for their own Gemini/Vertex AI token consumption billed monthly at Anthropic/Google cost
+- **Price:** $2,500 USD, one-time payment. We explicitly DO NOT use Stripe for this investment to avoid SEC/investing compliance issues. Accepted methods: Cash App, Wire Transfer, or Check.
+- **Access:** All current and future indiiOS features for the lifetime of the software.
+- **Desktop Application Delivery:** Founders will receive standalone, installable applications (DMG for macOS, EXE for Windows) so they can run the system natively on their computers.
+- **API costs:** Pass-through at cost — founders are not charged a markup, but are responsible for their own Gemini/Vertex AI token consumption billed monthly at Anthropic/Google cost.
 - **Seats:** Exactly 10 founders total. No exceptions.
 - **Name in code:** Each founder's name (or handle, their choice) is committed to the git repository in `src/config/founders.ts` and remains there for the lifetime of the software. This is their proof.
-- **Covenant hash:** `SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")` is returned to the founder at checkout and stored in Firestore. If terms are ever disputed, the hash proves what was promised. The pipe-delimited formula is the canonical recipe — founders can recompute it at any time.
+- **Agreement hash:** `SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")` is returned to the founder at checkout and stored in Firestore. If terms are ever disputed, the hash proves what was promised. The pipe-delimited formula is the canonical recipe — founders can recompute it at any time.
 
 ---
 
-### Architecture
+### Architecture & Delivery
 
 ```text
-Landing page                Studio app              Cloud Functions
-────────────                ──────────              ───────────────
-FoundersSection.tsx         FounderBadge.tsx        activateFounderPass()
- └─ "10 seats" counter       └─ badge on profile     ├─ verify payment
- └─ Covenant preview          └─ covenant viewer      ├─ check seat count
- └─ [Become a Founder]                                ├─ write Firestore
-      │                                               ├─ return covenant hash
-      ▼                                               └─ trigger git commit
-createOneTimeCheckout()
- └─ $2,500 one-time
- └─ metadata: { type: 'founder_pass', name, handle }
-      │
-      ▼
-stripeWebhook (existing)
- └─ payment_intent.succeeded
-      │
-      ▼
-activateFounderPass()
- └─ Firestore: founders/{uid}
- └─ subscriptions/{uid}: tier = 'founder'
- └─ GitHub API: commit founders.ts update
+Landing page                Admin / Alternative Payment    Cloud Functions
+────────────                ───────────────────────────    ───────────────
+FoundersSection.tsx         Offline/Alt Payment            activateFounderPass()
+ └─ "10 seats" counter        │                              ├─ verify payment (Manual/Alt)
+ └─ Agreement preview         ▼                              ├─ check seat count
+ └─ [Become a Founder]      Manual Verification / Webhook    ├─ write Firestore
+                              │                              ├─ return verification hash
+                              ▼                              └─ trigger git commit
+                            Admin calls trigger
+                             └─ activateFounderPass()
+
+Desktop Build (Electron)
+────────────────────────
+Build process creates DMG and EXE.
+Delivered securely to the verified founder.
 ```
 
 ---
@@ -88,21 +83,22 @@ The permanent on-disk record. Committed to git. Immutable by design (git history
 
 ```typescript
 /**
- * FOUNDERS COVENANT
+ * FOUNDERS AGREEMENT
  *
  * This file is a permanent record of indiiOS founding members.
- * Entries are append-only. Removal of any entry is a breach of covenant.
- * Hash verification: SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")
+ * Entries are append-only. Removal of any entry is a breach of agreement.
+ * Hash verification: SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")
  *
  * indiiOS LLC — chartered 2024
  */
 
-export const COVENANT_VERSION = '1.0.0';
+export const AGREEMENT_VERSION = '1.0.0';
 
-export const COVENANT_TERMS = {
+export const AGREEMENT_TERMS = {
   price_usd: 2500,
   seats_total: 10,
   access: 'lifetime',
+  desktop_delivery: ['macOS DMG', 'Windows EXE'],
   api_costs: 'pass_through_at_cost',
   features: 'all_current_and_future',
   software_lifetime: true,
@@ -112,7 +108,7 @@ export interface FounderRecord {
   seat: number;               // 1–10, permanent
   name: string;               // public display name or handle
   joinedAt: string;           // ISO date, UTC
-  covenantHash: string;       // SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")
+  verificationHash: string;       // SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")
 }
 
 export const FOUNDERS: FounderRecord[] = [
@@ -120,33 +116,21 @@ export const FOUNDERS: FounderRecord[] = [
   // Each entry is a permanent commitment by indiiOS LLC.
 ];
 
-export const FOUNDERS_SEATS_REMAINING = COVENANT_TERMS.seats_total - FOUNDERS.length;
+export const FOUNDERS_SEATS_REMAINING = AGREEMENT_TERMS.seats_total - FOUNDERS.length;
 ```
 
-#### NEW: `functions/src/subscription/activateFounderPass.ts`
+#### MODIFIED: `functions/src/subscription/activateFounderPass.ts`
 
 Cloud Function (`onCall`) that:
-1. Verifies the caller is authenticated
-2. Sanitizes `displayName` input (character whitelist, 64-char max length cap)
-3. Short-circuits duplicate activations via `paymentIntentId` idempotency guard
-4. Confirms a `payment_intent` was paid via Stripe API
-5. Validates payment amount ($2,500 USD), currency, no refunds/disputes
-6. Checks `founders` collection count < 10 atomically via Firestore transaction
-7. Generates covenant hash: `SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")`
-8. Writes to Firestore `founders/{uid}` and `subscriptions/{uid}` with `tier: 'founder'`
-9. Makes a commit to `main` via the GitHub Contents API (PUT), writing the new entry permanently to `src/config/founders.ts` — with a 15s AbortController timeout per API call
-10. Returns `{ covenantHash, seat, joinedAt, message, githubCommitPending }` to the client
-
-> **Note on PR vs Direct Push (Open Question #3, resolved):**
-> The current implementation uses a direct push to `main` for immediate public verifiability.
-> This is acceptable for the initial 10-seat program because:
-> - The file SHA provides optimistic locking (concurrent commits will conflict-fail)
-> - `injectFounderEntry` uses `JSON.stringify` for all string values (proper escaping)
-> - `displayName` is sanitized server-side before any file generation
-> - If CI is a concern, a future iteration can switch to the GitHub Pull Request API
->   with auto-merge after CI passes — the GitH commit queue already handles failures gracefully.
-
-The direct commit to `main` makes the record immediately permanent and publicly verifiable. If the GitHub commit fails or times out (non-fatal), the Firestore record remains authoritative and the commit is queued for manual retry via `founder_github_commit_queue`. The `githubCommitPending` flag in the response lets the client distinguish committed vs queued states.
+1. Verifies the caller is authenticated as an Admin OR handles an authenticated server-side webhook from the alternative payment provider.
+2. Sanitizes `displayName` input (character whitelist, 64-char max length cap).
+3. Short-circuits duplicate activations via idempotency guard (based on transaction ID).
+4. Confirms payment was made via the alternative payment provider.
+5. Checks `founders` collection count < 10 atomically via Firestore transaction.
+6. Generates verification hash: `SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")`.
+7. Writes to Firestore `founders/{uid}` and `subscriptions/{uid}` with `tier: 'founder'`.
+8. Makes a commit to `main` via the GitHub Contents API (PUT), writing the new entry permanently to `src/config/founders.ts`.
+9. Returns `{ verificationHash, seat, joinedAt, message, githubCommitPending }` to the client.
 
 #### MODIFIED: `functions/src/shared/subscription/SubscriptionTier.ts`
 
@@ -156,10 +140,6 @@ Add `FOUNDER = 'founder'` to the enum. Add to `TIER_CONFIGS` with:
 - `label: 'Founder'`
 - `price: 0` (paid upfront — no recurring)
 
-#### MODIFIED: `functions/src/stripe/webhookHandler.ts`
-
-Add handler for `checkout.session.completed` where `metadata.type === 'founder_pass'`. This calls `activateFounderPass` internally (or triggers via Firestore write that a separate function picks up).
-
 #### MODIFIED: `src/services/StorageQuotaService.ts`
 
 Add `founder` → `Infinity` (or 10_000 GB as practical limit) to `TIER_LIMITS_GB`.
@@ -167,78 +147,48 @@ Add `founder` → `Infinity` (or 10_000 GB as practical limit) to `TIER_LIMITS_G
 #### NEW: `landing-page/src/components/FoundersSection.tsx`
 
 Marketing section for the landing page showing:
-- "10 Founding Seats" with live counter (reads from Firestore `founders_meta/count`)
-- Covenant terms displayed (price, what's included, the "name in code" commitment)
-- A "Become a Founder" CTA that initiates the Stripe checkout
-- Names of existing founders (publicly visible once they join)
+- "10 Founding Seats" with live counter (reads from Firestore `founders_meta/count`).
+- Agreement terms displayed (price, desktop app access, the "name in code" commitment).
+- A "Become a Founder" CTA that initiates the alternative checkout/onboarding flow.
+- Names of existing founders (publicly visible once they join).
 
 #### NEW: `src/modules/settings/components/FounderBadge.tsx`
 
 UI component shown in the studio settings/profile page for users with `tier === 'founder'`:
-- Gold/founders badge
-- Their seat number and covenant hash
-- A "Verify your covenant" link that checks the hash against `founders.ts`
+- Gold/founders badge.
+- Their seat number and verification hash.
+- A "Verify your agreement" link that checks the hash against `founders.ts`.
+- Download links for their standalone Desktop Apps (DMG / EXE).
 
 ---
 
-### Stripe Configuration (Manual — GCP Console)
+### Desktop App Delivery (DMG / EXE)
 
-Create one new Stripe Product:
-- **Name:** "indiiOS Founders Pass"
-- **Type:** One-time payment
-- **Price:** $2,500.00 USD
-- **Metadata:** `{ type: 'founder_pass' }`
-- Add `STRIPE_PRICE_FOUNDER_PASS` to GitHub Secrets and Cloud Function env
-
----
-
-### GitHub Configuration (Manual)
-
-Add a `GITHUB_TOKEN_FOUNDERS` secret with a fine-grained PAT scoped to:
-- `contents: write` on `the-walking-agency-det/indiiOS-Alpha-Electron`
-- Used only by `activateFounderPass` CF to commit the new founder entry
+Since the project uses Electron, generating platform-specific binaries is already natively supported.
+**Building the Binaries:**
+- Run `npm run build:desktop:mac` to produce the macOS `.dmg` file.
+- Run `npm run build:desktop:win` to produce the Windows `.exe` file.
+**Delivery Mechanism:**
+- The compiled binaries can be securely hosted (e.g., in a protected Firebase Storage bucket).
+- Access to download these binaries is restricted via Firebase Security Rules to users where `tier === 'founder'`.
+- The `FounderBadge.tsx` will display secure download links.
 
 ---
 
-### Implementation Order
+### Gotchas & Edge Cases
 
-1. `SubscriptionTier.ts` — add `FOUNDER` tier (15 min)
-2. `src/config/founders.ts` — create the covenant file (15 min)
-3. `activateFounderPass.ts` — Cloud Function with payment verification, input sanitization, idempotency guard, refund/dispute checks, Firestore transaction, GitHub commit with timeout (1–2 days, including unit tests, integration tests, manual Stripe test-mode validation, and security review for GitHub token usage)
-4. `webhookHandler.ts` — add `founder_pass` metadata routing (30 min)
-5. `StorageQuotaService.ts` — add founder → unlimited (5 min)
-6. `LoginForm.tsx` (studio) — sign-up mode toggle UI fix (1 hr)
-7. `FoundersSection.tsx` (landing page) — marketing + CTA (2–3 hrs)
-8. `FounderBadge.tsx` (studio settings) — profile badge + covenant viewer (1 hr)
-9. Wire checkout: `createOneTimeCheckout` called with founder product price ID (30 min)
-10. E2E staging test with Stripe test-mode for full activation flow
-11. Monitoring/alerting for `founder_github_commit_queue` failures
-12. Documentation of rollback/recovery procedure
+1. **Alternative Payment Processing:** Since we are moving away from Stripe to avoid legal issues, we need a reliable alternative. **Gotcha:** Manual processing or a different payment gateway means we cannot rely on `stripeWebhook`. We must build a custom admin endpoint or a new webhook handler to trigger `activateFounderPass()` securely.
+2. **Desktop App Auto-Updates:** **Gotcha:** If a founder downloads a standalone DMG/EXE, they need to receive updates when new features are pushed. We must ensure Electron Auto-Updater is configured (e.g., using GitHub Releases or a dedicated update server) so their local app stays in sync with the web version.
+3. **Authentication in Desktop Apps:** **Gotcha:** The desktop app must still connect to Firebase Auth to verify their Founder tier. The standalone app isn't "offline only"; it serves as a native client to the cloud infrastructure.
+4. **GitHub API Rate Limits/Failures:** **Gotcha:** Direct commits to `main` via the GitHub API can fail due to network issues or concurrent edits. The `githubCommitPending` flag and a manual retry queue (`founder_github_commit_queue`) are critical to ensure the `founders.ts` file is eventually updated if the initial commit fails.
 
 ---
 
-### What "Permanently In Code" Means (For Founders)
+### Open Questions (Resolved / Updated)
 
-When a founder pays:
-
-1. Their name and a cryptographic hash of their deal terms are committed to `src/config/founders.ts` in this repository
-2. That commit is permanent in the git history — it cannot be erased without also erasing all subsequent commits (which would be publicly visible)
-3. The hash is computed as: `SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")` and is returned to them at checkout as their receipt
-4. They can verify their hash at any time by recomputing it — if it matches what's in `founders.ts`, the deal is intact
-5. The covenant terms (`COVENANT_TERMS` constant) define exactly what they were promised — also committed to the same file
-
-This gives founders a trust mechanism that doesn't rely on a database (which can be edited) — it relies on git history (which is auditable and public).
-
----
-
-### Open Questions (Resolved)
-
-1. **API cost pass-through:** **Decision: Founders provide their own API keys.** This is the simplest approach — founders set their own `VITE_API_KEY` in the studio settings. No monthly invoicing or credit balance needed. The covenant promise is "pass-through at cost" — with their own key, cost is exactly what Google charges.
-
-2. **Name in code:** **Decision: Founder's choice — public name/handle or `Founder #N`.** The `displayName` field in `activateFounderPass` is sanitized (character whitelist, 64-char max) but can be any valid string. If a founder prefers anonymity, they can use "Founder #N" as their display name.
-
-3. **GitHub commit:** **Decision: Direct push to `main` (current implementation).** The file SHA provides optimistic locking. `injectFounderEntry` uses `JSON.stringify` for proper escaping. Input is sanitized server-side. The `founder_github_commit_queue` handles failures. A PR-based flow can be added later if CI gating is desired.
-
-4. **Landing page:** **Decision: Always visible.** The `FoundersSection` component shows the seat counter and existing founders — this builds credibility and FOMO. When all seats are taken, it displays "All 10 founding seats have been claimed" with a link to Pro/Studio plans.
-
-5. **VITE_STUDIO_URL:** **TODO:** Set production studio URL in `landing-page/.env.production`. The `SignupForm` and `FoundersSection` both use `getStudioUrl()` which reads `VITE_STUDIO_URL`. For local development, defaults to `http://localhost:4242`.
+1. **API cost pass-through:** **Decision:** Founders provide their own API keys.
+2. **Name in code:** **Decision:** Founder's choice — public name/handle or `Founder #N`.
+3. **GitHub commit:** **Decision:** Direct push to `main` (current implementation), with fallback queue.
+4. **Landing page:** **Decision:** Always visible, creates FOMO.
+5. **Desktop App Access:** **Decision:** DMG/EXE builds generated via Electron Forge/Builder and hosted in secure Cloud Storage for founder downloads.
+6. **Alternative Checkout:** **TODO:** Finalize the payment processing method that replaces Stripe for this specific tier.

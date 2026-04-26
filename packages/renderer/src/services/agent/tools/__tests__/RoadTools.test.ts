@@ -1,13 +1,22 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RoadTools } from '../RoadTools';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 
-vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
-        generateStructuredData: vi.fn(),
-    }
-}));
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 describe('RoadTools', () => {
     beforeEach(() => {
@@ -41,7 +50,7 @@ describe('RoadTools', () => {
             estimatedDuration: "2 hours",
             legs: []
         };
-        vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateStructuredData>>);
+        vi.mocked(GenAI.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateStructuredData>>);
 
         const result = await RoadTools.plan_tour_route({ locations: ["A", "B"] });
 
@@ -49,7 +58,7 @@ describe('RoadTools', () => {
         expect(result.data).toEqual(mockResponse);
 
         // Verify prompt enhancement
-        const callArgs = vi.mocked(firebaseAI.generateStructuredData).mock.calls[0]!;
+        const callArgs = vi.mocked(GenAI.generateStructuredData).mock.calls[0]!;
         expect(callArgs[0]).toEqual(expect.arrayContaining([expect.objectContaining({ text: expect.stringContaining("You are a Logistics Engine") })]));
     });
 });

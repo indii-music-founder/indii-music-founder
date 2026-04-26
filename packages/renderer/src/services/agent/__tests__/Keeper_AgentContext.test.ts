@@ -116,7 +116,7 @@ vi.mock('../WorkflowCoordinator', () => ({
 // 7. Mock AgentOrchestrator
 vi.mock('../components/AgentOrchestrator', () => ({
     AgentOrchestrator: class {
-        determineAgent = vi.fn().mockResolvedValue('generalist');
+        determineOrchestrationPath = vi.fn().mockResolvedValue({ type: 'single', agentId: 'generalist' });
     }
 }));
 

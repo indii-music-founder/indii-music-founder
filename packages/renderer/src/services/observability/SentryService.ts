@@ -45,9 +45,10 @@ export function initSentry(): void {
             if (event.breadcrumbs) {
                 event.breadcrumbs.forEach((breadcrumb) => {
                     if (breadcrumb.category === 'fetch' || breadcrumb.category === 'xhr') {
-                        const data = breadcrumb.data as Record<string, any> | undefined;
-                        if (data?.headers?.Authorization) {
-                            data.headers.Authorization = '[REDACTED]';
+                        const data = breadcrumb.data as Record<string, unknown> | undefined;
+                        const headers = data?.headers as Record<string, unknown> | undefined;
+                        if (headers?.Authorization) {
+                            headers.Authorization = '[REDACTED]';
                         }
                     }
                 });
@@ -78,7 +79,7 @@ export function initSentry(): void {
 
     // Register instance for global debugging if needed
     if (typeof window !== 'undefined') {
-        (window as any).__sentryInstance = Sentry;
+        (window as unknown as Record<string, unknown>).__sentryInstance = Sentry;
     }
 }
 

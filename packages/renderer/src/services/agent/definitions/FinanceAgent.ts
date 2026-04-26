@@ -1,6 +1,6 @@
 import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 export const FinanceAgent: AgentConfig = {
     id: "finance",
@@ -176,7 +176,7 @@ If a task is outside Finance, say:
             Query: ${args.query}`;
 
             try {
-                const response = await firebaseAI.generateText(prompt);
+                const response = await GenAI.generateText(prompt);
                 return { success: true, data: { answer: response } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -207,7 +207,7 @@ If a task is outside Finance, say:
                 ];
 
                 // Using standard generateContent to handle multimodal inputs natively
-                const result = await firebaseAI.generateContent(contents, AI_MODELS.TEXT.FAST);
+                const result = await GenAI.generateContent(contents, AI_MODELS.TEXT.FAST);
                 const textResult = result.response?.text() || '{}';
 
                 // Extract JSON if it's wrapped in markdown code blocks
@@ -226,7 +226,7 @@ If a task is outside Finance, say:
              */
             const prompt = `Audit the track "${args.trackTitle}" for distribution readiness on ${args.distributor}. List 3 common metadata pitfalls for this specific platform.`;
             try {
-                const advice = await firebaseAI.generateText(prompt);
+                const advice = await GenAI.generateText(prompt);
                 return { success: true, data: { status: "Audited", advice } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);

@@ -16,7 +16,8 @@ const LAYER_COLORS: Record<MemoryLayer, string> = {
   'session': 'bg-green-100 text-green-800',
   'core-vault': 'bg-purple-100 text-purple-800',
   'captain-logs': 'bg-orange-100 text-orange-800',
-  'rag-index': 'bg-pink-100 text-pink-800'
+  'rag-index': 'bg-pink-100 text-pink-800',
+  'deep-hive': 'bg-indigo-100 text-indigo-800'
 };
 
 const LAYER_LABELS: Record<MemoryLayer, string> = {
@@ -24,7 +25,8 @@ const LAYER_LABELS: Record<MemoryLayer, string> = {
   'session': 'Session (24h)',
   'core-vault': 'Core Vault',
   'captain-logs': 'Captain\'s Logs',
-  'rag-index': 'RAG Index'
+  'rag-index': 'RAG Index',
+  'deep-hive': 'Deep Hive'
 };
 
 interface MemoryBrowserPanelProps {

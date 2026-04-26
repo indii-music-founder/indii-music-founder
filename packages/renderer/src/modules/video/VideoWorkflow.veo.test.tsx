@@ -26,8 +26,17 @@ vi.mock('@/core/store', () => {
 
 // Mock Editor Store
 vi.mock('./store/videoEditorStore', () => {
-    const fn = vi.fn();
-    (fn as any).getState = vi.fn(() => ({ status: 'idle', setProgress: vi.fn() }));
+    const mockState = { 
+        status: 'idle', 
+        viewMode: 'director',
+        setProgress: vi.fn(),
+        setStatus: vi.fn(),
+        setJobId: vi.fn(),
+        setViewMode: vi.fn()
+    };
+    const fn = vi.fn((selector) => selector ? selector(mockState) : mockState);
+    (fn as any).getState = vi.fn(() => mockState);
+    (fn as any).setState = vi.fn((patch: any) => Object.assign(mockState, typeof patch === 'function' ? patch(mockState) : patch));
     return { useVideoEditorStore: fn };
 });
 
@@ -69,6 +78,18 @@ vi.mock('./components/FrameSelectionModal', () => ({
 // Mock VideoStage
 vi.mock('./components/VideoStage', () => ({
     VideoStage: ({ jobStatus }: any) => <div data-testid="video-stage">Status: {jobStatus}</div>
+}));
+
+// Mock SceneBuilder (3D Visualizer) as it uses @react-three/fiber which fails in JSDOM
+vi.mock('./visualizer/SceneBuilder', () => ({
+    SceneBuilder: () => <div data-testid="scene-builder">3D Stage</div>
+}));
+
+// Mock WhiskService
+vi.mock('../../services/WhiskService', () => ({
+    WhiskService: {
+        synthesizeVideoPrompt: vi.fn((p) => p)
+    }
 }));
 
 // Mock Editor

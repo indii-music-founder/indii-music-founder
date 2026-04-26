@@ -1,4 +1,4 @@
-import { firebaseAI } from '../ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
 import { v4 as uuidv4 } from 'uuid';
 import { db, auth } from '@/services/firebase';
@@ -202,7 +202,7 @@ export class VideoGenerationService {
 
             Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
 
-            return await firebaseAI.analyzeImage(analysisPrompt, image);
+            return await GenAI.analyzeImage(analysisPrompt, image);
         } catch (__e: unknown) {
             // Temporal analysis failure should not block generation
             return "";
@@ -437,14 +437,14 @@ export class VideoGenerationService {
                 }),
             };
 
-            logger.info('[VideoGeneration] 🚀 Calling firebaseAI.generateVideo() with:', {
+            logger.info('[VideoGeneration] 🚀 Calling GenAI.generateVideo() with:', {
                 model: aiRequest.model,
                 promptLength: aiRequest.prompt.length,
                 hasImage: !!aiRequest.image,
                 config: JSON.stringify(aiRequest.config),
             });
 
-            const videoUrl = await firebaseAI.generateVideo(aiRequest);
+            const videoUrl = await GenAI.generateVideo(aiRequest);
 
             // Update Firestore with completed status for UI subscription
             const { updateDoc } = await import('firebase/firestore');
@@ -461,7 +461,7 @@ export class VideoGenerationService {
             // 🔥 Fire-and-forget: Upload blob to Firebase Storage for durable persistence.
             // Blob URLs are session-scoped and won't survive page refresh.
             // This background upload ensures the video remains accessible in future sessions.
-            if (videoUrl.startsWith('blob:')) {
+            if (typeof videoUrl === 'string' && videoUrl.startsWith('blob:')) {
                 (async () => {
                     try {
                         const blobResponse = await fetch(videoUrl);
@@ -736,7 +736,7 @@ export class VideoGenerationService {
                 //   - Fails fast on 400, 401, 403, quota, safety violations
                 //   - Respects Retry-After headers when present
                 const videoUrl = await this.withRetry(
-                    () => firebaseAI.generateVideo({
+                    () => GenAI.generateVideo({
                         prompt: segmentPrompt,
                         model: options.model || DEFAULT_VIDEO_MODEL,
                         image: previousLastFrame

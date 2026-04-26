@@ -1,34 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ReceiptOCRService } from './ReceiptOCRService';
 
-// Mock FirebaseAIService
 vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        bootstrap: vi.fn().mockResolvedValue(true),
+        rawGenerateContent: vi.fn().mockResolvedValue({ response: { text: () => '{}' } }),
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
     return {
         FirebaseAIService: class {
-            bootstrap = vi.fn().mockResolvedValue(undefined);
-            rawGenerateContent = vi.fn();
-        }
+            bootstrap = mockFirebaseAI.bootstrap;
+            rawGenerateContent = mockFirebaseAI.rawGenerateContent;
+            generateText = mockFirebaseAI.generateText;
+            generateStructuredData = mockFirebaseAI.generateStructuredData;
+            generateImage = mockFirebaseAI.generateImage;
+            analyzeImage = mockFirebaseAI.analyzeImage;
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
     };
 });
-
-// Mock AI_MODELS config
-vi.mock('@/core/config/ai-models', () => {
-    return {
-        AI_MODELS: {
-            TEXT: {
-                AGENT: 'test-model'
-            }
-        }
-    };
-});
-
-// Mock logger
-vi.mock('@/utils/logger', () => ({
-    logger: {
-        info: vi.fn(),
-        error: vi.fn()
-    }
-}));
 
 describe('ReceiptOCRService', () => {
     let service: ReceiptOCRService;
@@ -86,7 +80,8 @@ describe('ReceiptOCRService', () => {
 
             const [contentsArgs, modelArgs, configArgs] = aiServiceMock.rawGenerateContent.mock.calls[0];
             expect(contentsArgs[0].parts[1].inlineData.data).toBe('mockbase64data');
-            expect(modelArgs).toBe('test-model');
+            // Check for the actual model used in the service (gemini-3-pro-preview or similar image model)
+            expect(modelArgs).toBe('gemini-3-pro-preview');
             expect(configArgs.responseMimeType).toBe('application/json');
 
             expect(result).toMatchObject(mockAiResponse);
@@ -97,7 +92,7 @@ describe('ReceiptOCRService', () => {
             const mockFile = new File(['mock content'], 'receipt.jpg', { type: 'image/jpeg' });
 
             const aiServiceMock = (service as any).aiService;
-            aiServiceMock.bootstrap.mockRejectedValue(new Error('AI Service unavailable'));
+            aiServiceMock.bootstrap.mockRejectedValueOnce(new Error('AI Service unavailable'));
 
             await expect(service.processReceipt(mockFile)).rejects.toThrow('AI Service unavailable');
         });

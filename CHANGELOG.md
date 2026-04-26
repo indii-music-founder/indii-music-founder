@@ -2,6 +2,61 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.57.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.57.0...v1.57.1) (2026-04-25)
+
+
+### Bug Fixes
+
+* **agents:** optimize ISRC routing to Publishing agent ([#1582](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1582)) ([b1bbd25](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b1bbd2590d763a555cdee9aa1d610d6339ec3289))
+* **agents:** update Conductor to route ISRC tasks to Publishing agent ([#1581](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1581)) ([561c3cf](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/561c3cf31ab2078dcb2edbfabd1730bc392f4d2e))
+* **auto:** resolve Sentry/CodeRabbit issues ([dc760a6](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/dc760a67dd44e80c0ace151e8d11f85ed78996c1))
+* **conductor:** route Spotify release clearance questions to Distribution agent ([#1583](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1583)) ([6aaccb5](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6aaccb544ffa02a1ce9dd9d0de9c2c7587ed9eaf))
+* **firebase:** prevent Sentry from capturing unsupported-browser messaging init errors ([6dfa12e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6dfa12e98ee7a19832ec5ed0117fb16758b4fc64))
+* safely check videoUrl string type before calling startsWith ([d084ad1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d084ad14688dfb0fd7e385a2a1c4b866c5cfa84c))
+
+## [1.57.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.56.0...v1.57.0) (2026-04-25)
+
+
+### Features
+
+* **agent:** implement Phase 2 GEAP ADK Export and Model Armor ([8f2d1b4](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8f2d1b455d240668ca6105eb5068d09bfeafddc2))
+* complete TOP_50 Platinum Release - achieve 100% readiness ([ea1f6bc](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ea1f6bcd93eaa8e6e90dd31ecc0349415fe7f181))
+* implement code signing for Electron desktop builds (Item [#46](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/46)) ([50adb92](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/50adb9225333bb9d0b1c0a4ef6347dd5f0edaa6f))
+* implement end-to-end encryption for agent communication (Item [#43](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/43)) ([e00ce19](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e00ce192cc02b206825aa62c94e40ba1b990d3c1))
+* implement internationalization (i18n) framework (Item [#48](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/48)) ([b7100fb](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b7100fb50c726bd108899441687cbeaea7b3a5b0))
+* implement offline-first data sync service (Item [#28](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/28)) ([a7b5340](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a7b534056746104a5c342df7281660b4bf848cbd))
+* implement Phase 1 - Mobile & Offline (PWA) architecture ([cd0b3cb](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cd0b3cb91d3187fbd013fdccd3d1e95c8e1ad186))
+* Phase 2 - add core orchestration services and hooks ([e5b6d77](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e5b6d77c4d62bd51bab06a9bebea499f9f1af522))
+* Phase 2 - add PersistentMemoryService for 5-layer memory architecture ([776ca93](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/776ca930a4f017d22dda61815321b78382c5571f))
+* Phase 2.1 - add UI panels and remaining hooks ([a9a900c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a9a900c52f526d2d663164115f2366513d05a053))
+* Phase 2.2 - add AgentMemorySlice for Zustand store integration ([0104b6d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0104b6d755d7d9fb5decf778e1695f418bec0b1e))
+* Phase 2.3 - add streamingExecute() to BaseAgent for SSE integration ([6d56822](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6d568229f4805abb00744a6476df07a085f321e5))
+* Phase 2a.1 - add SSE streaming function for agent orchestration ([38b3f06](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/38b3f064406f6113062ad95242d5864fcabad5c5))
+* Phase 3.0 - observability and performance monitoring services ([3d1eeee](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3d1eeee04b62b129ffbd3e89c1e8150a80f3d5a0))
+* Phase 3.1-3.2 - observability dashboard, CI integration, and Sentry RUM ([ed76644](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ed766440a2780c9b217320f574c758146be8eb7b))
+* Phase 4.0 - analytics foundations and API schemas ([a3ecf50](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a3ecf50ff0aba2e3993550f5911d88029e39449c))
+* Phase 4.1 - @indiios/sdk TypeScript SDK (2,500 LOC) ([35496a8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/35496a8e0236aa9c4410621eceb07e3485f003ed))
+* Phase 4.2-4.3 - Cloud Functions implementation (770 LOC) ([0dc07f8](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/0dc07f89f63fad4e4ac365ffd0e638f0cd74be49))
+* Phase 4.4 - Orchestration & Integration (650 LOC) ([e5a1a5d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e5a1a5df45761e35673506ee9d947679d100d3fb))
+* Phase 4.5 - Testing & Quality Assurance (2,200+ LOC) ([3c9d1a1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3c9d1a15d3fc24a761b6bb8510aa3c3756f97582))
+* refine Agent Swarm landing components and enhance agent governance & memory systems ([e8c637f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e8c637fb8f1fb6a8988c3b45affb43e8371aa4be))
+* set up Storybook for UI component documentation and reduce any types ([3676254](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/367625479bb4a999de8941446911147e42ebfdba))
+
+
+### Bug Fixes
+
+* analyticsSlice.test.ts - correct AnalyticsEvent schema (eventId, timestamp) ([9ee570e](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9ee570e2072d9d2f43c25e0e0acf52418b7a541a))
+* correct swarmId type to accept null for parentTraceId case ([bb6a216](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bb6a216acbcb74cc60df2f977082384a8ef8e5bc))
+* E2EEncryptionService Uint8Array BufferSource TS errors; stabilize phase-2 agent services ([3839715](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/3839715eb4eec1dcce3f5f5af7114bc2c496db27))
+* regenerate package-lock.json to include all updated dependencies ([47573c2](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/47573c262d63d90c801a8070d32217c5b71b87ff))
+* **renderer:** mock @react-three/fiber and drei in test setup to fix CI failures ([e78a1ef](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e78a1efc8a09168e361534f18ff8642d94353ce0))
+* resolve CI blockers in Phase 2 services - critical TypeScript errors ([a2a1a2c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a2a1a2cf53377cbe5151c6d39c50c029570f4a80))
+* resolve TypeScript compilation errors for CI/CD ([ccfb3aa](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/ccfb3aa13a09d28518c667b8be0d4f9c4cb9628b))
+* resolve TypeScript errors in Phase 2 services and components ([48f4f75](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/48f4f7528dd67816f3cf8f7c7bef13fd343386dd))
+* restore package-lock.json to fix CI and update PersistentMemoryService imports ([4ddcc89](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/4ddcc898c4a3c5ef3cd1bcc3db2fd35a340dda83))
+* restore swarmId nullification logic in TraceService to match test expectations ([f57ec39](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/f57ec392b97b34740366dd3a75c98e093c39df37))
+* update Phase 2 services to use @google/genai instead of @google/generative-ai ([93f2c9b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/93f2c9b9dcead8bb28289b311f2716a99eb165c6))
+
 ## [1.56.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.55.4...v1.56.0) (2026-04-23)
 
 

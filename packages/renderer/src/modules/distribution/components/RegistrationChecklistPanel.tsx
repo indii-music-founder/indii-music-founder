@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Circle, AlertCircle, FileAudio, Image as ImageIcon, AlignLeft, Hash, Users, Receipt, ChevronDown, ChevronUp, Radio, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, AlertCircle, FileAudio, Image as ImageIcon, AlignLeft, Hash, Users, Receipt, ChevronDown, ChevronUp, Radio, Loader2, LucideIcon } from 'lucide-react';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -9,7 +9,7 @@ type ItemStatus = 'complete' | 'missing' | 'warning' | 'checking';
 interface ChecklistItem {
     id: string;
     label: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     status: ItemStatus;
     required: boolean;
     actionText?: string;

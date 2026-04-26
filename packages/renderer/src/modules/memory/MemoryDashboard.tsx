@@ -27,6 +27,7 @@ import {
     RefreshCw,
     Send,
     Upload,
+    LucideIcon
 } from 'lucide-react';
 import type { AlwaysOnMemory, AlwaysOnMemoryCategory, MemoryTier } from '@/types/AlwaysOnMemory';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
@@ -336,7 +337,7 @@ export default function MemoryDashboard() {
 
 // ─── Sub-Components ─────────────────────────────────────────────
 
-function StatBadge({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number }) {
+function StatBadge({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number }) {
     return (
         <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <Icon size={12} />

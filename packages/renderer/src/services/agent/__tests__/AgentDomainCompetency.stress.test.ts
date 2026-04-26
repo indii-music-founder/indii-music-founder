@@ -49,13 +49,20 @@ vi.mock('@/services/ai/GenAI', () => ({
     },
 }));
 
-vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
-        generateContent: vi.fn().mockResolvedValue({
-            response: { text: () => 'Safe response' },
-        }),
-    },
-}));
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/services/ai/AIResponseCache', () => ({
     AIResponseCache: class {

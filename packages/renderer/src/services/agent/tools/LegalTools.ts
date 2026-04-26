@@ -1,4 +1,4 @@
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -36,7 +36,7 @@ Structure with standard clauses: Definitions, Obligations, Term, Termination, Go
         const prompt = `Draft a ${args.type} between ${args.parties.join(' and ')}.
 Key Terms: ${args.terms}`;
 
-        const response = await firebaseAI.generateContent(
+        const response = await GenAI.generateContent(
             prompt,
             AI_MODELS.TEXT.AGENT,
             undefined,

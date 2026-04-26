@@ -34,25 +34,25 @@ export class MultiTurnAutorater {
     ): Promise<AutoraterScore | null> {
         try {
             const prompt = `
-            You are an expert AI Autorater for the Gemini Enterprise Agent Platform. Your job is to evaluate a multi-turn conversation trace between a user and an AI agent.
-            
-            Goal of the conversation:
-            ${goalDescription}
-            
-            Guidelines the agent must follow:
-            ${guidelines.length > 0 ? guidelines.map((g, i) => `${i + 1}. ${g}`).join('\n') : 'None specified.'}
-            
-            Conversation Trace:
-            ${messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n')}
-            
-            Please evaluate the agent's performance and provide scores from 0 to 10 for:
-            - Goal Completion
-            - Adherence to Guidelines
-            - Coherence & Logic
-            - Tool Efficiency (Did it use tools well, without unnecessary loops?)
-            
-            Return the evaluation in structured JSON matching the requested schema.
-            `;
+You are an expert AI Autorater for the Gemini Enterprise Agent Platform. Your job is to evaluate a multi-turn conversation trace between a user and an AI agent.
+
+Goal of the conversation:
+${goalDescription}
+
+Guidelines the agent must follow:
+${guidelines.length > 0 ? guidelines.map((g, i) => `${i + 1}. ${g}`).join('\n') : 'None specified.'}
+
+Conversation Trace:
+${messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n')}
+
+Please evaluate the agent's performance and provide scores from 0 to 10 for:
+- Goal Completion
+- Adherence to Guidelines
+- Coherence & Logic
+- Tool Efficiency (Did it use tools well, without unnecessary loops?)
+
+Return the evaluation in structured JSON matching the requested schema.
+`.replace(/^\s+/gm, '').trim();
 
             const schema: JSONSchemaObject = {
                 type: 'object',
@@ -69,7 +69,7 @@ export class MultiTurnAutorater {
 
             const result = await GenAI.generateStructuredData<AutoraterScore>(
                 prompt,
-                schema as any,
+                schema as unknown as Record<string, unknown>,
                 undefined,
                 undefined,
                 AI_MODELS.TEXT.AGENT
@@ -102,7 +102,8 @@ export class MultiTurnAutorater {
         const score = await this.evaluateTrace(traceId, messages, goalDescription, guidelines);
         
         // Threshold: Must pass overall and have high goal completion and efficiency
-        if (score && score.overallPass && score.goalCompletion >= 8 && score.toolEfficiency >= 7) {
+        // A "10/10" mindset requires high bars for automated data collection.
+        if (score && score.overallPass && score.goalCompletion >= 9 && score.toolEfficiency >= 9) {
             await this.registerForFineTuning(userId, agentId, traceId, messages, score);
         }
         
@@ -124,10 +125,14 @@ export class MultiTurnAutorater {
             const datasetRef = collection(db, 'users', userId, 'fineTuningDataset');
             const targetModel = getFineTunedModel(agentId) || 'base_model';
             
+            // Calculate quality average for easy sorting/filtering in the ADK Export phase
+            const qualityAverage = (score.goalCompletion + score.adherence + score.coherence + score.toolEfficiency) / 4;
+
             await addDoc(datasetRef, {
                 agentId,
                 traceId,
                 targetModel,
+                qualityAverage,
                 score: {
                     goalCompletion: score.goalCompletion,
                     adherence: score.adherence,
@@ -136,12 +141,18 @@ export class MultiTurnAutorater {
                     reasoning: score.reasoning
                 },
                 messages,
+                metadata: {
+                    evaluatedAt: new Date().toISOString(),
+                    autoraterModel: AI_MODELS.TEXT.AGENT,
+                    version: '1.1.0-platinum'
+                },
                 createdAt: serverTimestamp(),
                 status: 'pending_export' // for the R5 jobs
             });
-            logger.info(`[MultiTurnAutorater] Trace ${traceId} registered for fine-tuning (Agent: ${agentId})`);
+            logger.info(`[MultiTurnAutorater] Trace ${traceId} (Quality: ${qualityAverage.toFixed(1)}/10) registered for fine-tuning (Agent: ${agentId})`);
         } catch (error) {
             logger.error(`[MultiTurnAutorater] Failed to register trace ${traceId} for fine-tuning:`, error);
         }
     }
 }
+
