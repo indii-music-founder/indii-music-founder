@@ -87,7 +87,6 @@ import { registerSchedulerHandlers } from './handlers/scheduler';
 import { SchedulerService } from './services/SchedulerService';
 import { configureSecurity, auditSessionCookies } from './security';
 import { applyCSP } from './security/csp';
-import { SidecarService } from './services/SidecarService';
 import { mcpClientService } from './services/mcp/MCPClientService';
 import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
 import Store from 'electron-store';
@@ -264,62 +263,9 @@ const createWindow = async () => {
     win.once('ready-to-show', () => {
         setupMenu(win);
         win.show();
-        startHealthMonitoring(win);
     });
 };
 
-/**
- * Sidecar Health Monitor
- */
-let healthCheckInterval: NodeJS.Timeout | null = null;
-let sidecarFailureCount = 0;
-const MAX_SIDECAR_FAILURES = 3;
-let autoRestartCount = 0;
-const MAX_AUTO_RESTARTS = 3;
-
-const checkSidecarHealth = async (window: BrowserWindow) => {
-    try {
-        // Fetch is available in Node.js 18+ (Project requires Node 22)
-        const response = await fetch('http://localhost:50080/healthz');
-        if (response.ok) {
-            sidecarFailureCount = 0;
-            autoRestartCount = 0; // Reset restart count on success
-            window.webContents.send('sidecar:status-update', 'online');
-        } else {
-            throw new Error('Health check response not OK');
-        }
-    } catch (_err) {
-        sidecarFailureCount++;
-        log.warn(`[Sidecar] Health check failed (${sidecarFailureCount}/${MAX_SIDECAR_FAILURES})`);
-        window.webContents.send('sidecar:status-update', 'offline');
-
-        if (sidecarFailureCount >= MAX_SIDECAR_FAILURES && autoRestartCount < MAX_AUTO_RESTARTS) {
-            log.info('[Sidecar] Attempting automatic restart...');
-            sidecarFailureCount = 0;
-            autoRestartCount++;
-
-            // Item 404: Surface "restarting" status to renderer before attempting restart
-            window.webContents.send('sidecar:status-update', 'restarting');
-            showNotification('System Service Issue', 'The Python back-end seems to have crashed. Attempting auto-restart...');
-
-            SidecarService.restartSystem().catch(restartErr => {
-                log.error(`[Sidecar] Auto-restart failed: ${restartErr}`);
-            });
-        }
-    }
-};
-
-const startHealthMonitoring = (window: BrowserWindow) => {
-    if (healthCheckInterval) clearInterval(healthCheckInterval);
-
-    // Initial check
-    checkSidecarHealth(window);
-
-    // 30s interval
-    healthCheckInterval = setInterval(() => {
-        checkSidecarHealth(window);
-    }, 30000);
-};
 
 /**
  * Tray Management
@@ -445,20 +391,7 @@ if (!gotTheLock) {
         registerVideoHandlers();
         registerSonicBridgeHandlers();
 
-        // Register Sidecar Handlers
-        ipcMain.handle('sidecar:restart', async () => {
-            log.info('[Main] Manual sidecar restart requested via IPC');
-            const result = await SidecarService.restartSystem();
-
-            // Trigger immediate health check after restart if a window exists
-            const windows = BrowserWindow.getAllWindows();
-            if (windows.length > 0) {
-                // Wait 5s for container to fully wrap up its internal init
-                setTimeout(() => checkSidecarHealth(windows[0]), 5000);
-            }
-
-            return result;
-        });
+        // Register Sidecar Handlers (Removed)
 
         // Item 373: IPC channel allowlist audit — log any unregistered channels on startup
         const KNOWN_IPC_CHANNELS = new Set([
@@ -480,7 +413,7 @@ if (!gotTheLock) {
             'security:rotate-credentials', 'security:scan-vulnerabilities',
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
             'video:render', 'video:open-folder', 'video:save-asset',
-            'sidecar:restart', 'power:get-state', 'mobile-remote:stop',
+            'power:get-state', 'mobile-remote:stop',
             'updater:check', 'updater:install',
             'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',
             'test:browser-agent', 'show-notification',
@@ -490,10 +423,7 @@ if (!gotTheLock) {
         // Item 375: Audit session cookies for security flags on startup
         auditSessionCookies();
 
-        // Ensure AI Services are running
-        SidecarService.ensureStarted().catch(err => {
-            log.error(`[Main] Initial Docker startup failed: ${err.message}`);
-        });
+
         registerMobileRemoteHandlers();
 
         // Built-in Task Scheduler
@@ -590,7 +520,6 @@ app.on('will-quit', async () => {
         await sftpService.disconnect().catch(e => log.warn('[Main] SFTP disconnect on quit error:', e));
     }
     await mcpClientService.disconnect().catch(e => log.warn('[Main] MCP disconnect error:', e));
-    await SidecarService.stopSystem();
     await stopMobileRemoteServer().catch(e => log.warn('[Main] Mobile remote shutdown error:', e));
 });
 

@@ -116,8 +116,8 @@ const agents: AgentDef[] = [
     title: 'Global Freedom',
     tagline: 'Kill the Middlemen.',
     description:
-      'Upload once, dominate everywhere. No labels, no commissions, no gatekeepers. 100% of your royalties and total sovereignty over your masters.',
-    keywords: ['Zero Commissions', 'Master Sovereignty', 'Global Reach', 'No Middlemen', 'Instant Deployment'],
+      'Upload once, dominate everywhere. No labels, no commissions, no gatekeepers. 100% of your royalties and total ownership of your masters.',
+    keywords: ['Zero Commissions', 'Master Ownership', 'Global Reach', 'No Middlemen', 'Instant Deployment'],
     icon: Globe,
     colorClass: 'text-blue-400',
     bgClass: 'bg-blue-500/10',
@@ -166,8 +166,8 @@ const agents: AgentDef[] = [
     title: 'Career Command',
     tagline: 'CEO Status.',
     description:
-      'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career sovereignty without the bloodsucking managers.',
-    keywords: ['Direct Command', 'Secure Ops', 'Zero Management', 'Total Sovereignty', 'Identity Guard'],
+      'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career independence without the bloodsucking managers.',
+    keywords: ['Direct Command', 'Secure Ops', 'Zero Management', 'Total Independence', 'Identity Guard'],
     icon: ShieldCheck,
     colorClass: 'text-violet-400',
     bgClass: 'bg-violet-500/10',
@@ -179,7 +179,7 @@ const agents: AgentDef[] = [
   {
     id: 'finance',
     name: 'Finance',
-    title: 'Sovereign Revenue',
+    title: 'Independent Revenue',
     tagline: 'Real-Time Splits.',
     description:
       'Track every stream and every dollar in real-time. Automated payouts and a transparent ledger so you and your team get paid instantly.',
@@ -229,7 +229,7 @@ const agents: AgentDef[] = [
   {
     id: 'publishing',
     name: 'Publishing',
-    title: 'Sovereign Rights',
+    title: 'Independent Rights',
     tagline: 'Collect Every Cent.',
     description: 'Bypass the paperwork. Automatically register your works with global rights organizations and track every writer split. If your music is playing, you are getting paid.',
     keywords: ['Global Registration', 'Writer Splits', 'Royalty Recovery', 'Ownership Control'],
@@ -593,7 +593,7 @@ export default function AgentGrid() {
           Zero labels. Zero gatekeepers. Professional-grade tools 
           working for you as your personal crew. Take back control 
           of your career with global distribution and smart audio 
-          analysis. indiiOS is your <strong>sovereign creative engine</strong>.
+          analysis. indiiOS is your <strong>independent creative engine</strong>.
         </p>
       </motion.div>
 

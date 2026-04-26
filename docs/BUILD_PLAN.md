@@ -47,46 +47,15 @@ File: `src/modules/distribution/` (QCPanel component)
 
 ---
 
-## Task 2: Docker-Free Python Sidecar for Desktop
+## Task 2: Python Sidecar Removal (Completed)
 
-Agent Zero currently requires Docker on the user's machine. This is a blocker for shipping a DMG or Windows exe. The solution: bundle the Python runtime as a standalone binary that Electron spawns as a child process.
+Agent Zero previously required Docker or a bundled Python sidecar. This architectural dependency was formally removed. The application now uses the native TypeScript `AgentGraphService` as the undisputed "OpenClaw" orchestrator.
 
-### 2a. Create PyInstaller spec
-
-File: `python/build/agent_sidecar.spec`
-
-- Entry point: `python/helpers/mcp_server.py` (the HTTP server that listens on a configurable port, default 50080)
-- Bundle: all tools in `python/tools/`, all helpers, all agent definitions
-- Output: single-file binary per platform (`agent_sidecar-mac`, `agent_sidecar-win.exe`, `agent_sidecar-linux`)
-- Add `scripts/build_sidecar.sh` to produce the binary as part of the desktop build
-
-### 2b. Update Electron main process
-
-File: `electron/main.ts`
-
-- Replace Docker health-check logic (current `fetch('http://localhost:50080/health')` with retry) with:
-  1. Resolve sidecar binary path (bundled inside `resources/` in packaged app, dev path in dev)
-  2. Spawn binary as `child_process.spawn()` with piped stdout/stderr
-  3. Poll the `/health` endpoint with a defined timeout to robustly verify sidecar readiness before forwarding IPC calls
-  4. On app quit, kill the child process cleanly
-- Keep the existing health-check loop — just point it at the spawned process instead of Docker
-
-### 2c. Add sidecar to Electron packaging
-
-File: `package.json` (inside the `build` configuration object via `electron-builder`)
-
-- Add `extraResources` entry to copy the platform-specific sidecar binary into the app bundle
-- Ensure binary is marked executable on Mac/Linux post-install
-
-### 2d. Dev mode fallback
-
-- In dev mode (`!app.isPackaged`), keep existing Docker behavior as fallback so the dev loop is not broken
-- Add a `VITE_FORCE_SIDECAR` env flag to test the bundled path locally without packaging
-
-### 2e. Update preload / AgentZeroService
-
-- No changes needed to `AgentZeroService.ts` — it already talks to `localhost:50080` regardless of what's running there
-- Update `electron/preload.ts` `proxyZero` handler if needed to surface sidecar start errors to the UI
+### Details of Removal
+- The `/python/` directory and all Python-based sidecar scripts were removed.
+- Electron no longer attempts to bundle or spawn a Python process.
+- All orchestration logic is now handled in `packages/renderer/src/services/agent/`.
+- `CodeExecutionTools` and its related `execute_code` endpoints were explicitly disabled, as arbitrary code execution is now handled differently or planned for native WASM support.
 
 ---
 
@@ -95,15 +64,9 @@ File: `package.json` (inside the `build` configuration object via `electron-buil
 ```text
 Phase 1 — Distribution (no external build deps, purely Python + TypeScript)
   1a → 1b → 1c → 1d
-
-Phase 2 — Sidecar (requires PyInstaller installed, platform-specific)
-  2a → 2b → 2c → 2d → 2e
 ```
 
 Phase 1 can be done entirely in this repo without any new tooling.
-Phase 2 requires `pyinstaller` (`pip install pyinstaller`) and a Python environment with all deps installed.
-
-**CI/CD Strategy:** Use GitHub Actions matrix builds to conditionally compile the sidecar binaries for Mac (Intel/Apple Silicon), Windows, and Linux. Store compiled binaries as release artifacts or trigger rebuilds automatically to ensure consistent distribution without requiring local python compilation for Electron devs.
 
 ---
 
@@ -112,9 +75,6 @@ Phase 2 requires `pyinstaller` (`pip install pyinstaller`) and a Python environm
 - [ ] Distribution: "Submit Release" button triggers real DDEX XML build → QC check → SFTP upload
 - [ ] Distribution: ISRC is assigned and written back to the release record
 - [ ] Distribution: QC panel shows real per-check results from the audio file
-- [ ] Sidecar: `npm run build:desktop` produces a DMG/exe with no Docker requirement
-- [ ] Sidecar: Agent chat works in the packaged app on a machine with no Docker installed
-- [ ] Dev mode: existing Docker workflow still works unchanged
+- [x] Sidecar Removal: The Python sidecar was completely ripped out, and the UI successfully interacts with the native `AgentGraphService`.
 - [ ] Testing: Unit tests cover Python handler scripts and distribution logic
 - [ ] Testing: Integration tests verify the DDEX end-to-end flow with a mock distributor
-- [ ] Testing: E2E Playwright tests verify the packaged app can successfully spawn and communicate with the sidecar
