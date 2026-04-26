@@ -83,12 +83,12 @@ describe('CoreWebVitalsReporter', () => {
             id: 'lcp-1',
             navigationType: 'navigate',
           },
-          FID: {
-            name: 'FID',
-            value: 80,
+          INP: {
+            name: 'INP',
+            value: 150,
             delta: 0,
             rating: 'good',
-            id: 'fid-1',
+            id: 'inp-1',
             navigationType: 'navigate',
           },
         },
@@ -115,12 +115,12 @@ describe('CoreWebVitalsReporter', () => {
             id: 'lcp-1',
             navigationType: 'navigate',
           },
-          FID: {
-            name: 'FID',
+          INP: {
+            name: 'INP',
             value: 500,
             delta: 0,
             rating: 'poor',
-            id: 'fid-1',
+            id: 'inp-1',
             navigationType: 'navigate',
           },
         },
@@ -135,7 +135,7 @@ describe('CoreWebVitalsReporter', () => {
   describe('Thresholds', () => {
     it('should return correct thresholds', () => {
       expect(CoreWebVitalsReporter.getThreshold('LCP')).toBe(2500);
-      expect(CoreWebVitalsReporter.getThreshold('FID')).toBe(100);
+      expect(CoreWebVitalsReporter.getThreshold('INP')).toBe(200);
       expect(CoreWebVitalsReporter.getThreshold('CLS')).toBe(0.1);
       expect(CoreWebVitalsReporter.getThreshold('FCP')).toBe(1800);
       expect(CoreWebVitalsReporter.getThreshold('TTFB')).toBe(600);
@@ -167,7 +167,8 @@ describe('CoreWebVitalsReporter', () => {
       };
 
       const report = reporter.reportMetrics(snapshot);
-      expect(report.warnings).toContain(expect.stringContaining('LCP'));
+      expect(report.warnings.length).toBeGreaterThan(0);
+      expect(report.warnings[0]).toMatch(/LCP/);
     });
   });
 });
