@@ -6,7 +6,9 @@
 
 ---
 
-## Implementation Progress (Updated 2025-01-29)
+## Implementation Progress (Updated 2026-04-26)
+
+> **Architectural Shift (2026-04-26):** The Python-based Docker sidecar (and all associated `python/` APIs, `AgentZeroService`, and Docker configurations) was formally removed in favor of a 100% native TypeScript implementation (`AgentGraphService`). The security patterns described below (R2A2, Secrets Broker, etc.) are now implemented or planned natively within the Node/Electron execution layer, eliminating the Docker dependency.
 
 ### All Tasks Completed
 
