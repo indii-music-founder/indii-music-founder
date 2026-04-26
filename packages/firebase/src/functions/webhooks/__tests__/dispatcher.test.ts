@@ -77,14 +77,14 @@ describe('WebhookDispatcher', () => {
 
     it('should max out at 3 attempts', () => {
       const maxAttempts = 3;
+      const attempt1 = 0;
+      const attempt2 = 1;
+      const attempt3 = 2;
       const currentAttempt = 1; // 0-indexed
 
-      const shouldRetry = currentAttempt < maxAttempts - 1;
-      expect(shouldRetry).toBe(true);
-
-      const finalAttempt = maxAttempts - 1;
-      const shouldRetryFinal = finalAttempt < maxAttempts - 1;
-      expect(shouldRetryFinal).toBe(false);
+      expect(attempt1 < maxAttempts - 1).toBe(true);
+      expect(attempt2 < maxAttempts - 1).toBe(true);
+      expect(attempt3 < maxAttempts - 1).toBe(false);
     });
 
     it('should not retry on 4xx client errors', () => {
