@@ -1,0 +1,284 @@
+name: Weekly Demo Audit
+
+# Runs the .agent/JULES_DEMO_AUDIT.md runbook end-to-end (except Hour 3, which
+# requires a human). Produces an artifact bundle and opens a GitHub issue with
+# the GO/NO-GO verdict and links to the artifacts.
+#
+# Cadence: Monday 06:00 UTC (~02:00 ET, ~23:00 PT Sunday). Picked so the report
+# is waiting first thing each work week.
+#
+# To run on demand: Actions → "Weekly Demo Audit" → Run workflow.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: weekly-demo-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Hours 1, 2, 4 (Hour 3 is human-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      AUDIT_WEEK: ${{ github.run_id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install system dependencies (for Electron native modules)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+            libgbm1 libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
+
+      - name: Synthesize minimal .env from secrets (so dev:web can boot)
+        env:
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
+          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
+        run: |
+          {
+            echo "VITE_API_KEY=$VITE_API_KEY"
+            echo "VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY"
+            echo "VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID"
+            echo "VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN"
+            echo "VITE_FIREBASE_STORAGE_BUCKET=$VITE_FIREBASE_STORAGE_BUCKET"
+            echo "VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID"
+            echo "VITE_VERTEX_PROJECT_ID=$VITE_VERTEX_PROJECT_ID"
+            echo "VITE_VERTEX_LOCATION=$VITE_VERTEX_LOCATION"
+            echo "VITE_SKIP_ONBOARDING=true"
+          } > .env
+
+      - name: Initialize artifact directories
+        run: mkdir -p .agent/screenshots .agent/console_logs .agent/network
+
+      # ─── Hour 1 — Build & Boot Evidence ───────────────────────────────────
+      - name: Hour 1.1 — Install dependencies
+        id: h1_install
+        run: npm ci --ignore-scripts 2>&1 | tee .agent/h1_install.log
+
+      - name: Hour 1.2 — Typecheck
+        id: h1_typecheck
+        if: success() || failure()
+        run: npm run typecheck 2>&1 | tee .agent/h1_typecheck.log
+
+      - name: Hour 1.3 — Lint
+        id: h1_lint
+        if: success() || failure()
+        run: npm run lint 2>&1 | tee .agent/h1_lint.log
+
+      - name: Hour 1.4 — Tests
+        id: h1_tests
+        if: success() || failure()
+        timeout-minutes: 20
+        run: npm run test:ci 2>&1 | tee .agent/h1_tests.log
+
+      - name: Hour 1.5 — Production build
+        id: h1_build
+        if: success() || failure()
+        timeout-minutes: 15
+        run: npm run build 2>&1 | tee .agent/h1_build.log
+
+      - name: Hour 1.6 — Dev-web smoke test
+        id: h1_dev
+        if: success() || failure()
+        run: |
+          npm run dev:web > .agent/h1_dev_server.log 2>&1 &
+          DEV_PID=$!
+          echo "DEV_PID=$DEV_PID" >> "$GITHUB_ENV"
+          # Poll up to 60s for the server to come up
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://localhost:4243/ 2>/dev/null; then
+              echo "Dev server up after ${i}x2s"
+              echo "h1_dev_status=PASS" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Dev server did NOT come up in 60s"
+          echo "h1_dev_status=FAIL" >> "$GITHUB_OUTPUT"
+          exit 1
+
+      - name: Hour 1.7 — Write AUDIT_HOUR1.md
+        if: success() || failure()
+        run: |
+          set +e
+          status() { [ "$1" = "success" ] && echo "PASS" || echo "FAIL"; }
+          {
+            echo "# Hour 1 Audit — Build & Boot"
+            echo ""
+            echo "**Run:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            echo "**Commit:** $(git rev-parse --short HEAD)"
+            echo ""
+            echo "| Step | Status | Log |"
+            echo "|------|--------|-----|"
+            echo "| 1.1 Install | $(status '${{ steps.h1_install.outcome }}') | h1_install.log |"
+            echo "| 1.2 Typecheck | $(status '${{ steps.h1_typecheck.outcome }}') | h1_typecheck.log |"
+            echo "| 1.3 Lint | $(status '${{ steps.h1_lint.outcome }}') | h1_lint.log |"
+            echo "| 1.4 Tests | $(status '${{ steps.h1_tests.outcome }}') | h1_tests.log |"
+            echo "| 1.5 Build | $(status '${{ steps.h1_build.outcome }}') | h1_build.log |"
+            echo "| 1.6 Dev boot | $(status '${{ steps.h1_dev.outcome }}') | h1_dev_server.log |"
+          } > .agent/AUDIT_HOUR1.md
+
+      # ─── Hour 2 — Cold-start journey ──────────────────────────────────────
+      - name: Hour 2 prep — Install Playwright
+        id: h2_install
+        if: steps.h1_dev.outcome == 'success'
+        run: |
+          npx playwright install --with-deps chromium
+
+      - name: Hour 2 — Walk demo path with Playwright
+        id: h2_walk
+        if: steps.h1_dev.outcome == 'success'
+        timeout-minutes: 30
+        run: node scripts/weekly-demo-audit.mjs 2>&1 | tee .agent/h2_walk.log
+
+      # ─── Hour 4 — Polish & /plat gate ─────────────────────────────────────
+      - name: Hour 4 — Git hygiene checks
+        id: h4_plat
+        if: success() || failure()
+        run: |
+          {
+            echo "# Hour 4 Audit — Polish & /plat"
+            echo ""
+            echo "**Run:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            echo ""
+            echo "## Git status"
+            echo '```'
+            git status
+            echo '```'
+            echo ""
+            echo "## Recent commits on demo-path module dirs (last 5 each)"
+            for dir in packages/renderer/src/modules/onboarding packages/renderer/src/modules/dashboard packages/renderer/src/modules/creative packages/renderer/src/modules/video packages/renderer/src/modules/agent packages/renderer/src/modules/distribution packages/renderer/src/modules/finance; do
+              [ -d "$dir" ] || continue
+              echo "### $dir"
+              echo '```'
+              git log --oneline -5 -- "$dir" || true
+              echo '```'
+            done
+          } > .agent/AUDIT_HOUR4.md
+
+      # ─── Roll-up verdict ──────────────────────────────────────────────────
+      - name: Compose DEMO_GO_NOGO.md and stop dev server
+        if: always()
+        run: |
+          set +e
+          [ -n "$DEV_PID" ] && kill "$DEV_PID" 2>/dev/null
+          h1_dev_outcome="${{ steps.h1_dev.outcome }}"
+          h1_outcome="${{ steps.h1_install.outcome == 'success' && steps.h1_typecheck.outcome == 'success' && steps.h1_lint.outcome == 'success' && steps.h1_tests.outcome == 'success' && steps.h1_build.outcome == 'success' && steps.h1_dev.outcome == 'success' }}"
+          h2_outcome="${{ steps.h2_walk.outcome }}"
+          h4_outcome="${{ steps.h4_plat.outcome }}"
+          if [ "$h1_outcome" = "true" ] && [ "$h2_outcome" = "success" ] && [ "$h4_outcome" = "success" ]; then
+            verdict="GO"
+          else
+            verdict="NO-GO"
+          fi
+          {
+            echo "# Demo Go / No-Go Verdict"
+            echo ""
+            echo "**Generated:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            echo "**Commit:** $(git rev-parse --short HEAD)"
+            echo "**Verdict:** **$verdict**"
+            if [ "$h2_outcome" = "skipped" ] && [ "$h1_dev_outcome" != "success" ]; then
+              echo ""
+              echo "**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped."
+            fi
+            echo ""
+            echo "## Hour summary"
+            echo "| Hour | Outcome |"
+            echo "|------|---------|"
+            echo "| 1 Build & boot | $h1_outcome (true = all 6 substeps PASS) |"
+            echo "| 2 Cold-start (Playwright) | $h2_outcome |"
+            echo "| 3 Demo script | SKIPPED — human only |"
+            echo "| 4 Polish + /plat | $h4_outcome |"
+          } > .agent/DEMO_GO_NOGO.md
+          echo "VERDICT=$verdict" >> "$GITHUB_ENV"
+
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-demo-audit-${{ github.run_id }}
+          path: |
+            .agent/AUDIT_HOUR1.md
+            .agent/AUDIT_HOUR2.md
+            .agent/AUDIT_HOUR4.md
+            .agent/DEMO_GO_NOGO.md
+            .agent/h1_*.log
+            .agent/h2_walk.log
+            .agent/screenshots/
+            .agent/console_logs/
+            .agent/network/
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Open / update tracking issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const verdict = process.env.VERDICT || 'UNKNOWN';
+            const week = new Date().toISOString().slice(0, 10);
+            const title = `Weekly Demo Audit ${week} — ${verdict}`;
+            const safeRead = p => { try { return fs.readFileSync(p, 'utf8'); } catch { return '_(not produced)_'; } };
+            const h1 = safeRead('.agent/AUDIT_HOUR1.md');
+            const h2 = safeRead('.agent/AUDIT_HOUR2.md');
+            const h4 = safeRead('.agent/AUDIT_HOUR4.md');
+            const h2_outcome = '${{ steps.h2_walk.outcome }}';
+            const h1_dev_outcome = '${{ steps.h1_dev.outcome }}';
+            const h2Content = (h2 === '_(not produced)_' && h2_outcome === 'skipped' && h1_dev_outcome !== 'success')
+              ? '_(not produced)_\\n\\n**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped.'
+              : h2;
+            const verdictMd = safeRead('.agent/DEMO_GO_NOGO.md');
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `Automated weekly demo-readiness audit. Verdict: **${verdict}**`,
+              ``,
+              `- Run: ${runUrl}`,
+              `- Artifacts: see "Weekly Demo Audit" run artifacts (screenshots + logs)`,
+              `- Hour 3 (demo script + rehearsal) is human-only and not run by the workflow.`,
+              ``,
+              `## Verdict`,
+              verdictMd,
+              ``,
+              `## Hour 1 — Build & boot`,
+              h1,
+              ``,
+              `## Hour 2 — Cold-start journey`,
+              h2Content,
+              ``,
+              `## Hour 4 — Polish & /plat`,
+              h4,
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['demo-audit', verdict === 'GO' ? 'audit:go' : 'audit:no-go'],
+            });
