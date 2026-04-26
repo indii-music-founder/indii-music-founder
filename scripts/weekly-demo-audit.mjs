@@ -86,6 +86,12 @@ async function visitModule(browser, mod) {
       });
     } catch (e) { /* ignore */ }
 
+    // Best-effort HTML capture
+    try {
+      const content = await page.content();
+      await fs.writeFile(path.join(CONSOLE_DIR, `2.2-${mod}-error-dom.html`), content);
+    } catch (e) { /* ignore */ }
+
     return {
       module: mod,
       verdict: 'RED',
@@ -103,6 +109,13 @@ async function visitModule(browser, mod) {
       path.join(NETWORK_DIR, `2.2-${mod}.txt`),
       networkFailures.join('\n') || '(no network failures)',
     );
+    
+    // Explicitly cleanup listeners to prevent any chance of memory leaks/cross-module interference
+    try {
+      page.removeAllListeners('console');
+      page.removeAllListeners('response');
+    } catch (e) { /* ignore */ }
+
     await context.close();
   }
 }

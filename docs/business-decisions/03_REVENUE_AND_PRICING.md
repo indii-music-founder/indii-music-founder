@@ -13,7 +13,7 @@ The platform already has:
 - ✅ Stripe integration (Cloud Functions)
 - ✅ Subscription tier system (`SubscriptionTier.ts`)
 - ✅ Storage quotas per tier (`StorageQuotaService.ts`)
-- ✅ Founders Pass covenant file (`src/config/founders.ts`)
+- ✅ Founders Pass agreement file (`src/config/founders.ts`)
 - ✅ Payment webhook handler (`functions/src/stripe/webhookHandler.ts`)
 
 What's missing: **real Stripe price IDs** and **your final pricing decisions**.
@@ -106,7 +106,7 @@ What's missing: **real Stripe price IDs** and **your final pricing decisions**.
 | B4c | Access level | All features, forever | ✅ |
 | B4d | API costs | Founders bring their own key | ✅ |
 | B4e | Name in code | Permanent git entry in `src/config/founders.ts` | ✅ |
-| B4f | Covenant verification | SHA-256 hash returned at checkout | ✅ |
+| B4f | Agreement verification | SHA-256 hash returned at checkout | ✅ |
 
 **All items confirmed?** `[ ] Yes`
 

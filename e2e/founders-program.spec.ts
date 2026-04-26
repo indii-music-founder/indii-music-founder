@@ -54,7 +54,7 @@ test.describe('Founders Program Flow', () => {
         // The route mock for 'createOneTimeCheckout' will redirect the page to the success URL
         await page.waitForURL('**/founders-checkout?payment=success*');
 
-        // Assert we are on the 'Sign the Covenant' step
+        // Assert we are on the 'Sign the Founders Agreement' step
         const signHeading = page.locator('h1:has-text("Cement Your Legacy")');
         await expect(signHeading).toBeVisible();
 
@@ -77,7 +77,7 @@ test.describe('Founders Program Flow', () => {
                     data: {
                         seat: 7,
                         message: 'Your Founder #7 pass was already activated.',
-                        covenantHash: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+                        verificationHash: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
                         joinedAt: new Date().toISOString(),
                         githubCommitPending: true
                     }
@@ -86,7 +86,7 @@ test.describe('Founders Program Flow', () => {
         });
 
         // Click Complete
-        const encodeButton = page.locator('button:has-text("Encode My Covenant")');
+        const encodeButton = page.locator('button:has-text("Generate Verification Hash")');
         await encodeButton.click();
 
         // Verify success screen

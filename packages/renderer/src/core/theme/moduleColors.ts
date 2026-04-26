@@ -429,6 +429,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-amber-500/20',
         cssVar: '--color-dept-brand',
     },
+    'founders-portal': {
+        // Founders Portal
+        text: 'text-amber-400',
+        bg: 'bg-amber-500/10',
+        border: 'border-amber-500/30',
+        ring: 'focus-within:ring-amber-500/50',
+        hoverText: 'hover:text-amber-300',
+        hoverBg: 'hover:bg-amber-500/20',
+        cssVar: '--color-dept-brand',
+    },
     'video-popout': {
         text: 'text-gray-300',
         bg: 'bg-black',
