@@ -252,6 +252,7 @@ jobs:
             const h2_outcome = '${{ steps.h2_walk.outcome }}';
             const h1_dev_outcome = '${{ steps.h1_dev.outcome }}';
             const h2Content = (h2 === '_(not produced)_' && h2_outcome === 'skipped' && h1_dev_outcome !== 'success')
+              ? `_(not produced)_\n\n**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped.`
               ? '_(not produced)_\\n\\n**Root Cause:** Dev server failed to start (Hour 1.6). Hour 2 was skipped.'
               : h2;
             const verdictMd = safeRead('.agent/DEMO_GO_NOGO.md');
@@ -275,6 +276,39 @@ jobs:
               `## Hour 4 — Polish & /plat`,
               h4,
             ].join('\n');
+            const labels = ['demo-audit', verdict === 'GO' ? 'audit:go' : 'audit:no-go'];
+            
+            // Ensure labels exist to avoid 404/422 failures during issue creation
+            for (const name of labels) {
+              try {
+                await github.rest.issues.getLabel({ owner: context.repo.owner, repo: context.repo.repo, name });
+              } catch (e) {
+                if (e.status === 404) {
+                  const color = name.includes('no-go') ? 'd73a4a' : (name.includes('go') ? '28a745' : '0075ca');
+                  try {
+                    await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, name, color });
+                  } catch (ce) { console.warn(`Could not create label ${name}:`, ce.message); }
+                }
+              }
+            }
+
+            try {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels,
+              });
+            } catch (err) {
+              console.warn('Failed to create issue with labels, trying without labels:', err.message);
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            }
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
