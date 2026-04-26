@@ -144,7 +144,7 @@ export class SubscriptionService {
     userId?: string
   ): Promise<QuotaCheckResult> {
     // GOD MODE: Bypass via custom claim
-    if (auth.currentUser) {
+    if (auth.currentUser && typeof auth.currentUser.getIdTokenResult === 'function') {
       try {
         const tokenResult = await auth.currentUser.getIdTokenResult();
         if (tokenResult?.claims?.god_mode === true) {
