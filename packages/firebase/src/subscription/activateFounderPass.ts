@@ -1,25 +1,21 @@
 /**
- * Firebase Cloud Function: Activate Founders Pass
+ * Firebase Cloud Function: Activate Founders Pass (Manual Flow)
  *
- * Called after a successful $2,500 one-time Stripe payment.
+ * Called manually by an Admin after receiving alternative payments (Cash App, Wire).
  * This function:
- *   1. Verifies the Stripe payment intent was paid
- *   2. Validates amount ($2,500 USD), currency, metadata, and no refunds/disputes
- *   3. Short-circuits duplicate activations (idempotency via paymentIntentId)
- *   4. Checks that fewer than 10 founders have been seated
- *   5. Sanitizes displayName input (whitelist characters, enforce length)
- *   6. Generates a SHA-256 covenant hash as the founder's receipt
- *   7. Writes the founder record to Firestore
- *   8. Sets the user's subscription tier to FOUNDER (lifetime)
- *   9. Commits the new entry to src/config/founders.ts via the GitHub API
+ *   1. Verifies the caller is an Admin
+ *   2. Checks that fewer than 10 founders have been seated
+ *   3. Checks if targetUid is already a founder to avoid duplicates
+ *   4. Sanitizes displayName input (whitelist characters, enforce length)
+ *   5. Generates a SHA-256 agreement hash as the founder's receipt
+ *   6. Writes the founder record to Firestore
+ *   7. Sets the user's subscription tier to FOUNDER (lifetime)
+ *   8. Commits the new entry to src/config/founders.ts via the GitHub API
  *      (making the record permanent and publicly verifiable)
- *  10. Returns { seat, covenantHash, joinedAt } to the client
  *
  * Security:
- *   - Caller must be authenticated (Firebase Auth uid === userId)
- *   - Stripe payment intent must be in 'succeeded' state with no refunds/disputes
+ *   - Caller must be an Admin
  *   - Seat count is checked inside a Firestore transaction (no double-seating)
- *   - Idempotency: paymentIntentId is used as the dedup key
  *   - displayName is sanitized (character whitelist + length cap)
  *   - GitHub token is a fine-grained PAT (contents:write on this repo only)
  *   - GitHub API calls have an explicit 15s timeout via AbortController
@@ -28,15 +24,14 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createHash } from 'crypto';
-import { stripe } from '../stripe/config';
-import { stripeSecretKey, githubTokenFounders } from '../config/secrets';
+import { githubTokenFounders } from '../config/secrets';
 import { SubscriptionTier } from '../shared/subscription/types';
 
 const GITHUB_REPO_OWNER = 'the-walking-agency-det';
 const GITHUB_REPO_NAME = 'indiiOS-Alpha-Electron';
-const FOUNDERS_FILE_PATH = 'src/config/founders.ts';
+const FOUNDERS_FILE_PATH = 'packages/renderer/src/config/founders.ts'; // Fixing path to point to renderer config
 const MAX_FOUNDER_SEATS = 10;
-const COVENANT_VERSION = '1.0.0';
+const AGREEMENT_VERSION = '1.0.0';
 
 /** Timeout (ms) for individual GitHub API calls */
 const GITHUB_API_TIMEOUT_MS = 15_000;
@@ -52,15 +47,14 @@ const MAX_DISPLAY_NAME_LENGTH = 64;
 const DISPLAY_NAME_PATTERN = /^[\p{L}\p{N}\s\-_'.]+$/u;
 
 export interface ActivateFounderPassParams {
-    userId: string;
-    sessionId: string;
+    targetUid: string;
     /** Founder's chosen public name or handle */
     displayName: string;
 }
 
 export interface ActivateFounderPassResult {
     seat: number;
-    covenantHash: string;
+    verificationHash: string;
     joinedAt: string;
     message: string;
     /** true when the GitHub commit failed and was queued for manual retry */
@@ -94,11 +88,11 @@ function sanitizeDisplayName(raw: string): string {
 }
 
 /**
- * Generate SHA-256 covenant hash: SHA-256("{name}|{COVENANT_VERSION}|{joinedAt}")
+ * Generate SHA-256 agreement hash: SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")
  */
-function generateCovenantHash(name: string, joinedAt: string): string {
+function generateAgreementHash(name: string, joinedAt: string): string {
     return createHash('sha256')
-        .update(`${name}|${COVENANT_VERSION}|${joinedAt}`)
+        .update(`${name}|${AGREEMENT_VERSION}|${joinedAt}`)
         .digest('hex');
 }
 
@@ -150,12 +144,12 @@ async function getFoundersFileSha(
  */
 function injectFounderEntry(
     fileContent: string,
-    record: { seat: number; name: string; joinedAt: string; covenantHash: string }
+    record: { seat: number; name: string; joinedAt: string; verificationHash: string }
 ): string {
     // Use JSON.stringify for string values to properly escape quotes,
     // newlines, and backslashes. uid is deliberately omitted from the
     // public git record (it stays in Firestore only).
-    const entry = `  {\n    seat: ${record.seat},\n    name: ${JSON.stringify(record.name)},\n    joinedAt: ${JSON.stringify(record.joinedAt)},\n    covenantHash: ${JSON.stringify(record.covenantHash)},\n  },`;
+    const entry = `  {\n    seat: ${record.seat},\n    name: ${JSON.stringify(record.name)},\n    joinedAt: ${JSON.stringify(record.joinedAt)},\n    verificationHash: ${JSON.stringify(record.verificationHash)},\n  },`;
 
     // Replace the placeholder comment line with the new entry + placeholder preserved
     const placeholder = "  // ── Founder entries are appended here automatically ──";
@@ -187,7 +181,7 @@ async function commitFounderToGitHub(
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            message: `feat(founders): add Founder #${founder.seat} — ${founder.name}\n\nCovenant seat activated. This entry is permanent per the IndiiOS Founders Agreement.\nSee src/config/founders.ts for covenant terms.\n\n[founders-program]`,
+            message: `feat(founders): add Founder #${founder.seat} — ${founder.name}\n\nFounder seat activated. This entry is permanent per the IndiiOS Founders Agreement.\nSee ${FOUNDERS_FILE_PATH} for agreement terms.\n\n[founders-program]`,
             content: encodedContent,
             sha: fileSha,
             branch: 'main',
@@ -204,106 +198,29 @@ async function commitFounderToGitHub(
 }
 
 export const activateFounderPass = onCall({
-    secrets: [stripeSecretKey, githubTokenFounders],
+    secrets: [githubTokenFounders],
     timeoutSeconds: 120,
     memory: '256MiB',
     enforceAppCheck: process.env.SKIP_APP_CHECK !== 'true',
 }, async (request): Promise<ActivateFounderPassResult> => {
-    const { userId, sessionId, displayName } = request.data as ActivateFounderPassParams;
+    const { targetUid, displayName } = request.data as ActivateFounderPassParams;
 
-    // Auth check
-    if (!request.auth?.uid || request.auth.uid !== userId) {
-        throw new HttpsError('unauthenticated', 'Must be signed in as the purchasing user.');
+    // Admin Guard
+    if (!request.auth || request.auth.token.admin !== true) {
+        throw new HttpsError('permission-denied', 'Must be an admin to activate a founder pass.');
     }
 
-    if (!sessionId || !displayName?.trim()) {
-        throw new HttpsError('invalid-argument', 'sessionId and displayName are required.');
+    if (!targetUid || !displayName?.trim()) {
+        throw new HttpsError('invalid-argument', 'targetUid and displayName are required.');
     }
 
     // ── Input sanitization ──────────────────────────────────────────────
     const name = sanitizeDisplayName(displayName);
 
-    // ── Idempotency guard: short-circuit if this sessionId was already used ──
     const db = getFirestore();
-    const existingBySession = await db.collection('founders')
-        .where('sessionId', '==', sessionId)
-        .limit(1)
-        .get();
-
-    if (!existingBySession.empty) {
-        const existing = existingBySession.docs[0].data();
-        console.log(`[activateFounderPass] Duplicate call with sessionId=${sessionId}, returning existing record.`);
-        return {
-            seat: existing.seat,
-            covenantHash: existing.covenantHash,
-            joinedAt: existing.joinedAt,
-            message: `Your Founder #${existing.seat} pass was already activated.`,
-            githubCommitPending: existing.githubCommitPending ?? false,
-        };
-    }
-
-    // 1. Verify payment with Stripe
-    let session;
-    let paymentIntent;
-    try {
-        session = await stripe.checkout.sessions.retrieve(sessionId, {
-            expand: ['payment_intent', 'payment_intent.latest_charge'],
-        });
-        paymentIntent = session.payment_intent;
-    } catch (err) {
-        throw new HttpsError('internal', `Stripe session retrieval failed: ${err}`);
-    }
-
-    if (!paymentIntent || typeof paymentIntent === 'string') {
-        throw new HttpsError('failed-precondition', 'No payment intent associated with this session.');
-    }
-
-    if (paymentIntent.status !== 'succeeded') {
-        throw new HttpsError('failed-precondition', `Payment not completed. Status: ${paymentIntent.status}`);
-    }
-
-    // Verify this payment was for the founders pass
-    if (paymentIntent.metadata?.type !== 'founder_pass') {
-        throw new HttpsError('invalid-argument', 'Payment intent is not for a founders pass.');
-    }
-
-    // Verify the payment belongs to this user
-    if (paymentIntent.metadata?.userId !== userId) {
-        throw new HttpsError('permission-denied', 'Payment intent does not belong to this user.');
-    }
-
-    // Verify the payment amount and currency match the founders pass price
-    const FOUNDER_PASS_AMOUNT_CENTS = 250_000; // $2,500.00
-    if (!paymentIntent.amount || paymentIntent.amount < FOUNDER_PASS_AMOUNT_CENTS) {
-        throw new HttpsError(
-            'failed-precondition',
-            `Payment amount ($${((paymentIntent.amount ?? 0) / 100).toFixed(2)}) is below the required $2,500.00.`
-        );
-    }
-    if (paymentIntent.currency?.toLowerCase() !== 'usd') {
-        throw new HttpsError(
-            'failed-precondition',
-            `Payment currency (${paymentIntent.currency}) is not USD.`
-        );
-    }
-
-    // ── Refund / dispute check ──────────────────────────────────────────
-    // The latest_charge was expanded above. Check for refunds and disputes.
-    const latestCharge = paymentIntent.latest_charge;
-    if (latestCharge && typeof latestCharge === 'object') {
-        if (latestCharge.refunded) {
-            throw new HttpsError('failed-precondition', 'This payment has been refunded.');
-        }
-        if (latestCharge.disputed) {
-            throw new HttpsError('failed-precondition', 'This payment has an active dispute.');
-        }
-        if (latestCharge.amount_refunded && latestCharge.amount_refunded > 0) {
-            throw new HttpsError('failed-precondition', 'This payment has been partially refunded.');
-        }
-    }
 
     const joinedAt = new Date().toISOString();
-    const covenantHash = generateCovenantHash(name, joinedAt);
+    const verificationHash = generateAgreementHash(name, joinedAt);
 
     // 2. Check seat count + write records in a transaction (no double-seating)
     let seat: number;
@@ -318,10 +235,10 @@ export const activateFounderPass = onCall({
             }
 
             // Check this user hasn't already activated a founder pass
-            const existingRef = db.collection('founders').doc(userId);
+            const existingRef = db.collection('founders').doc(targetUid);
             const existing = await tx.get(existingRef);
             if (existing.exists) {
-                throw new HttpsError('already-exists', 'You already have a founders pass activated.');
+                throw new HttpsError('already-exists', 'This user already has a founders pass activated.');
             }
 
             const seatNumber = currentCount + 1;
@@ -331,16 +248,15 @@ export const activateFounderPass = onCall({
                 seat: seatNumber,
                 name,
                 joinedAt,
-                covenantHash,
-                covenantVersion: COVENANT_VERSION,
-                sessionId,
-                paymentIntentId: (paymentIntent as any).id || '',
-                uid: userId,
+                verificationHash,
+                agreementVersion: AGREEMENT_VERSION,
+                uid: targetUid,
                 createdAt: FieldValue.serverTimestamp(),
+                activatedBy: request.auth?.uid,
             });
 
             // Update subscription tier to FOUNDER (lifetime)
-            tx.set(db.collection('subscriptions').doc(userId), {
+            tx.set(db.collection('subscriptions').doc(targetUid), {
                 tier: SubscriptionTier.FOUNDER,
                 status: 'active',
                 currentPeriodStart: Date.now(),
@@ -358,9 +274,6 @@ export const activateFounderPass = onCall({
     }
 
     // 3. Commit the founder entry to GitHub (best-effort — Firestore already committed)
-    //    Uses AbortController to enforce a 15s timeout per API call. If GitHub hangs,
-    //    we gracefully fall back to the commit queue rather than exhausting the
-    //    120s Cloud Function timeout.
     let githubCommitPending = false;
     try {
         const githubToken = githubTokenFounders.value();
@@ -381,7 +294,7 @@ export const activateFounderPass = onCall({
             seat,
             name,
             joinedAt,
-            covenantHash,
+            verificationHash,
         });
 
         // Commit with timeout
@@ -394,8 +307,6 @@ export const activateFounderPass = onCall({
 
         console.log(`[activateFounderPass] Founder #${seat} (${name}) successfully committed to repo.`);
     } catch (gitErr) {
-        // Non-fatal: Firestore record is the authoritative source.
-        // GitHub commit will be retried manually if needed.
         githubCommitPending = true;
         const isTimeout = gitErr instanceof Error && gitErr.name === 'AbortError';
         console.error(
@@ -407,8 +318,8 @@ export const activateFounderPass = onCall({
             seat,
             name,
             joinedAt,
-            covenantHash,
-            uid: userId,
+            verificationHash,
+            uid: targetUid,
             error: String(gitErr),
             timedOut: isTimeout,
             createdAt: FieldValue.serverTimestamp(),
@@ -416,12 +327,12 @@ export const activateFounderPass = onCall({
     }
 
     const message = githubCommitPending
-        ? `Welcome, Founder #${seat}. Your covenant hash is your permanent receipt. It is stored in Firestore; the repository commit is pending and will be completed shortly.`
-        : `Welcome, Founder #${seat}. Your covenant hash is your permanent receipt. It has been committed to the indiiOS repository.`;
+        ? `Founder #${seat} activated. The agreement hash is stored in Firestore; the repository commit is pending and will be completed shortly.`
+        : `Founder #${seat} activated. The agreement hash has been committed to the indiiOS repository.`;
 
     return {
         seat,
-        covenantHash,
+        verificationHash,
         joinedAt,
         message,
         githubCommitPending,

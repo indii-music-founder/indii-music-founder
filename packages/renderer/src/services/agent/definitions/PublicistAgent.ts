@@ -1,6 +1,6 @@
 import { createAgent } from '../sdk/AgentBuilder';
 import { PublicistService } from '../../publicist/PublicistService';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
@@ -201,7 +201,7 @@ When a request falls outside your scope:
         Format as a standard press release.`;
 
         try {
-            const content = await firebaseAI.generateText(prompt);
+            const content = await GenAI.generateText(prompt);
             return {
                 success: true,
                 data: {
@@ -244,7 +244,7 @@ When a request falls outside your scope:
         Strategy: Acknowledge, Empathize, Redirect. Keep it professional.`;
 
         try {
-            const response = await firebaseAI.generateText(prompt);
+            const response = await GenAI.generateText(prompt);
             return {
                 success: true,
                 data: {
@@ -281,7 +281,7 @@ When a request falls outside your scope:
         Include relevant hashtags.`;
 
         try {
-            const post = await firebaseAI.generateText(prompt);
+            const post = await GenAI.generateText(prompt);
             return {
                 success: true,
                 data: {
@@ -537,9 +537,9 @@ Format as JSON array with keys: outlet, subject, body, angle
 Return only valid JSON, no markdown fences.`;
 
         try {
-            const { firebaseAI } = await import('@/services/ai/FirebaseAIService');
+            const { GenAI } = await import('@/services/ai/GenAI');
             const { AI_MODELS } = await import('@/core/config/ai-models');
-            const raw = await firebaseAI.generateText(prompt, AI_MODELS.TEXT.FAST);
+            const raw = await GenAI.generateText(prompt, AI_MODELS.TEXT.FAST);
             // Strip any markdown wrapping
             const cleaned = raw.replace(/```(?:json)?\n?/g, '').replace(/```$/g, '').trim();
             const pitches: Array<{ outlet: string; subject: string; body: string; angle: string }> = JSON.parse(cleaned);

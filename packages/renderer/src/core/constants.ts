@@ -37,14 +37,16 @@ export const MODULE_IDS = [
     'analytics',
     'desktop',
     'founders-checkout',
+    'founders-portal',
     'video-popout',
-    'registration'
+    'registration',
+    'maestro'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
 
 // Modules that hide the sidebar and command bar
-export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding', 'investor', 'capture', 'mobile-remote', 'desktop', 'founders-checkout', 'video-popout'];
+export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding', 'investor', 'capture', 'mobile-remote', 'desktop', 'founders-checkout', 'founders-portal', 'video-popout'];
 
 // ============================================================================
 // Type Guard

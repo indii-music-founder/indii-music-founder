@@ -11,6 +11,8 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 vi.mock('@/services/firebase', () => ({
     db: {},
     auth: { currentUser: { uid: 'test-user-123' } },
+    functions: {},
+    functionsWest1: {},
 }));
 
 const mockSetDoc = vi.fn();
@@ -23,6 +25,11 @@ vi.mock('firebase/firestore', () => ({
     setDoc: (...args: unknown[]) => mockSetDoc(...args),
     getDoc: (...args: unknown[]) => mockGetDoc(...args),
     updateDoc: (...args: unknown[]) => mockUpdateDoc(...args),
+}));
+
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(),
+    httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: {} })),
 }));
 
 // We import after mocks are set

@@ -116,3 +116,14 @@ HANDOFF_STATE.md
 **/CHECKPOINT*.md
 .claude/settings.local.json
 test-results.json
+
+build_output.txt
+
+# Debug artifacts — local-only output from ad-hoc GitHub/Sentry queries
+/ci_logs.txt
+/fetch_issues.js
+/issue_comments.json
+/pr_comments.json
+/sentry_issues.json
+/sentry_issues_electron.json
+/sentry_projects.json

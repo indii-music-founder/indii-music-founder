@@ -1,5 +1,4 @@
-import React from 'react';
-import { Disc3, Image, Share2, Sparkles, Music, Palette } from 'lucide-react';
+import { Disc3, Image, Share2, Sparkles, Music, Palette, type LucideIcon } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'motion/react';
@@ -9,7 +8,7 @@ import type { TargetMedia } from '@/core/store/slices/creative';
 export interface StylePreset {
     id: string;
     label: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     prompt: string;
     aspectRatio: string;
     targetMedia?: TargetMedia; // 'image' | 'video' | 'both'

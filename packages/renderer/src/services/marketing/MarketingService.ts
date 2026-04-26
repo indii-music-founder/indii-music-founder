@@ -15,7 +15,7 @@ import { useStore } from '@/core/store';
 import { CampaignAsset, CampaignStatus, MarketingStats } from '@/modules/marketing/types';
 import { CampaignAssetSchema, MarketingStatsSchema } from '@/modules/marketing/schemas';
 import { logger } from '@/utils/logger';
-import { firebaseAI } from '../ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 export class MarketingService {
@@ -45,7 +45,7 @@ export class MarketingService {
           "summary": "string"
         }`;
 
-        const response = await firebaseAI.generateContent(
+        const response = await GenAI.generateContent(
             [{ role: 'user', parts: [{ text: prompt }] }],
             AI_MODELS.TEXT.FAST, // Use Flash for high-speed analysis
             {
@@ -54,7 +54,7 @@ export class MarketingService {
             }
         );
 
-        const parsed = firebaseAI.parseJSON(response.response.text()) as { score?: number, label?: string, trendingTopics?: string[], summary?: string };
+        const parsed = GenAI.parseJSON(response.response.text()) as { score?: number, label?: string, trendingTopics?: string[], summary?: string };
         return {
             score: typeof parsed.score === 'number' ? parsed.score : 0,
             label: parsed.label && ['positive', 'neutral', 'negative'].includes(parsed.label) ? parsed.label as 'positive' | 'neutral' | 'negative' : 'neutral',

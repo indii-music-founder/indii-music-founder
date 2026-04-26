@@ -12,6 +12,7 @@ import {
     Palette,
     ShoppingBag,
     MapPin,
+    LucideIcon,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -39,7 +40,7 @@ export interface Widget {
     order: number;
 }
 
-export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: React.ElementType; description: string }> = {
+export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: LucideIcon; description: string }> = {
     streams_today: { label: 'Streams Today', icon: Music, description: 'Daily stream count across all DSPs' },
     revenue_mtd: { label: 'Revenue MTD', icon: DollarSign, description: 'Month-to-date royalty revenue' },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },

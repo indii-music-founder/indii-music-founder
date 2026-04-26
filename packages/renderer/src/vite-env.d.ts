@@ -50,7 +50,6 @@ interface ImportMetaEnv {
     readonly VITE_TIDAL_SFTP_HOST?: string
 
     // Printful (Merchandise)
-    readonly VITE_PRINTFUL_API_KEY?: string
 
     // Pinata (IPFS)
     readonly VITE_PINATA_API_KEY?: string

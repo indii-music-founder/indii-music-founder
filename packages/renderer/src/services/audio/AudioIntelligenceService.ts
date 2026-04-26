@@ -1,5 +1,5 @@
 import { audioAnalysisService } from './AudioAnalysisService';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AudioIntelligenceProfile, AudioSemanticData } from './types';
 import { Schema } from 'firebase/ai';
 import { fingerprintService } from './FingerprintService';
@@ -223,7 +223,7 @@ CRITICAL RULES:
 - 'aiArtifacts' must be based on audio evidence, not assumption.
 `;
 
-        const response = await firebaseAI.generateStructuredData<AudioSemanticData>(
+        const response = await GenAI.generateStructuredData<AudioSemanticData>(
             [
                 { text: systemPrompt },
                 {

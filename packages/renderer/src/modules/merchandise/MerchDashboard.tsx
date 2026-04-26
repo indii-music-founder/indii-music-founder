@@ -6,7 +6,7 @@ import {
     TrendingUp, ShoppingBag, DollarSign, Plus, Loader2,
     LayoutGrid, PenTool, Package, Settings, LogOut,
     Palette, Truck, BarChart3, Sparkles,
-    Store, Flame, Globe, Wallet, Shield, Lock
+    Store, Flame, Globe, Wallet, Shield, Lock, type LucideIcon
 } from 'lucide-react';
 
 import { useMerchandise, MerchStats } from './hooks/useMerchandise';
@@ -142,7 +142,7 @@ export default function MerchDashboard() {
                         { id: 'pricing', label: 'Pricing', icon: TrendingUp },
                         { id: 'pod', label: 'POD Partners', icon: Truck },
                         { id: 'web3', label: 'Web3', icon: Shield },
-                    ] as { id: CenterTab; label: string; icon: React.ElementType }[]).map(tab => (
+                    ] as { id: CenterTab; label: string; icon: LucideIcon }[]).map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setCenterTab(tab.id)}
@@ -294,7 +294,7 @@ export default function MerchDashboard() {
                                     { id: 'contracts', label: 'Smart Contracts', icon: Shield },
                                     { id: 'ledger', label: 'Ledger', icon: Globe },
                                     { id: 'gated', label: 'Gated Previews', icon: Lock },
-                                ] as { id: Web3SubTab; label: string; icon: React.ElementType }[]).map(t => (
+                                ] as { id: Web3SubTab; label: string; icon: LucideIcon }[]).map(t => (
                                     <button
                                         key={t.id}
                                         onClick={() => setWeb3SubTab(t.id)}

@@ -248,6 +248,31 @@ export class TraceService {
     }
 
     /**
+     * Get the recursion depth of a trace by traversing parentTraceIds
+     */
+    static async getTraceDepth(traceId: string): Promise<number> {
+        if (!traceId || !db) return 0;
+
+        try {
+            const docRef = doc(db, this.COLLECTION, traceId);
+            const docSnap = await getDoc(docRef);
+
+            if (!docSnap.exists()) return 0;
+
+            const data = docSnap.data() as AgentTrace;
+            const parentTraceId = data.metadata?.parentTraceId as string | undefined;
+
+            if (!parentTraceId) return 0;
+
+            // Tail recursive depth check
+            return 1 + (await this.getTraceDepth(parentTraceId));
+        } catch (error) {
+            logger.error(`[TraceService] Error calculating depth for ${traceId}:`, error);
+            return 0;
+        }
+    }
+
+    /**
      * Get all traces in a swarm
      */
     static getSwarmQuery(swarmId: string) {

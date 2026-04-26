@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import {
     AudioWaveform, FolderOpen, Video, Map, Briefcase,
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
-    Building, ShieldAlert, Cpu, Workflow
+    Building, ShieldAlert, Cpu, Workflow, Gem
 } from 'lucide-react';
 
 export function UnifiedCommandMenu() {
@@ -92,6 +92,10 @@ export function UnifiedCommandMenu() {
                     </Command.Group>
 
                     <Command.Group heading="Business Strategy" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
+                        <Command.Item onSelect={() => runCommand(() => setModule('founders-checkout'))} className="flex items-center gap-3 cursor-pointer">
+                            <Gem className="w-4 h-4 text-amber-400" />
+                            <span>Back the Vision (Founders Program)</span>
+                        </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('finance'))} className="flex items-center gap-3 cursor-pointer">
                             <CreditCard className="w-4 h-4 text-emerald-500" />
                             <span>Finance & Royalties</span>

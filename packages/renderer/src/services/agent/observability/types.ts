@@ -29,7 +29,7 @@ export interface AgentTrace {
     endTime?: Timestamp; // Firestore Timestamp (always Timestamp on read)
     steps: TraceStep[];
     metadata?: Record<string, unknown>;
-    swarmId?: string;
+    swarmId?: string | null;
     error?: string;
     durationMs?: number;
     totalUsage?: UsageMetrics;

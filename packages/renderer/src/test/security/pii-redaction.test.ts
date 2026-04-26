@@ -29,7 +29,7 @@ vi.mock('../../services/agent/components/ContextPipeline', () => {
 vi.mock('../../services/agent/components/AgentOrchestrator', () => {
     return {
         AgentOrchestrator: class {
-            determineAgent = vi.fn().mockResolvedValue('generalist');
+            determineOrchestrationPath = vi.fn().mockResolvedValue({ type: 'single', agentId: 'generalist' });
         }
     };
 });

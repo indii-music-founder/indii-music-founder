@@ -31,11 +31,22 @@ vi.mock("@/services/ai/GenAI", () => ({
   },
 }));
 
-vi.mock("@/services/ai/FirebaseAIService", () => ({
-  firebaseAI: {
-    generateContent: vi.fn(),
-  },
-}));
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        generateVideo: vi.fn().mockResolvedValue({ videoId: 'mock-video-id' }),
+        generateContent: vi.fn().mockResolvedValue('Mock AI response'),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock("@/services/ai/generators/DirectImageEditor", () => ({
   editImageDirectly: vi.fn(),
@@ -297,14 +308,14 @@ describe("ImageGenerationService", () => {
   });
 });
 describe("captionImage", () => {
-  it("should call firebaseAI.generateContent and return caption text", async () => {
-    const { firebaseAI } = await import("@/services/ai/FirebaseAIService");
+  it("should call GenAI.generateContent and return caption text", async () => {
+    const { GenAI } = await import('@/services/ai/GenAI');
     const mockResponse = {
       response: {
         text: vi.fn().mockReturnValue("A glowing orb in a dark forest."),
       },
     };
-    vi.mocked(firebaseAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof firebaseAI.generateContent>>);
+    vi.mocked(GenAI.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof GenAI.generateContent>>);
 
     const result = await ImageGeneration.captionImage(
       { mimeType: "image/png", data: "cleanBase64Data" },
@@ -312,6 +323,6 @@ describe("captionImage", () => {
     );
 
     expect(result).toBe("A glowing orb in a dark forest.");
-    expect(firebaseAI.generateContent).toHaveBeenCalledOnce();
+    expect(GenAI.generateContent).toHaveBeenCalledOnce();
   });
 });

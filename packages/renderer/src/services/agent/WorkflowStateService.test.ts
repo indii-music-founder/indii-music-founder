@@ -33,8 +33,7 @@ vi.mock('uuid', () => ({
 }));
 
 import { workflowStateService } from './WorkflowStateService';
-import type { WorkflowStep } from './WorkflowRegistry';
-import type { WorkflowExecution } from './types';
+import type { WorkflowStep, WorkflowExecution } from './types';
 
 describe('WorkflowStateService', () => {
     const userId = 'test-user';
@@ -55,6 +54,7 @@ describe('WorkflowStateService', () => {
                 userId,
                 'CAMPAIGN_LAUNCH',
                 mockSteps,
+                [], // No edges
                 'session-123'
             );
 
@@ -66,7 +66,6 @@ describe('WorkflowStateService', () => {
             expect(execution.steps['step_0']!.status).toBe('planned');
             expect(execution.steps['step_1']!.status).toBe('planned');
             expect(execution.steps['step_2']!.status).toBe('planned');
-            expect(execution.currentStepIndex).toBe(0);
             expect(mockSet).toHaveBeenCalledOnce();
         });
     });
@@ -78,12 +77,12 @@ describe('WorkflowStateService', () => {
                 workflowId: 'CAMPAIGN_LAUNCH',
                 userId,
                 status: 'executing',
-                currentStepIndex: 0,
                 steps: {
                     'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'executing', startedAt: 1000, idempotencyKey: 'test-key-0' },
                     'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'planned', idempotencyKey: 'test-key-1' },
                     'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'planned', idempotencyKey: 'test-key-2' },
                 },
+                edges: [],
                 createdAt: 1000,
                 updatedAt: 1000,
             };
@@ -104,12 +103,12 @@ describe('WorkflowStateService', () => {
                 workflowId: 'CAMPAIGN_LAUNCH',
                 userId,
                 status: 'executing',
-                currentStepIndex: 2,
                 steps: {
                     'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete', result: 'Done', idempotencyKey: 'test-key-0' },
                     'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'step_complete', result: 'Done', idempotencyKey: 'test-key-1' },
                     'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'executing', startedAt: 2000, idempotencyKey: 'test-key-2' },
                 },
+                edges: [],
                 createdAt: 1000,
                 updatedAt: 2000,
             };
@@ -130,12 +129,12 @@ describe('WorkflowStateService', () => {
                 workflowId: 'CAMPAIGN_LAUNCH',
                 userId,
                 status: 'executing',
-                currentStepIndex: 1,
                 steps: {
                     'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete', result: 'Done', idempotencyKey: 'test-key-0' },
                     'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'executing', startedAt: 1500, idempotencyKey: 'test-key-1' },
                     'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'planned', idempotencyKey: 'test-key-2' },
                 },
+                edges: [],
                 createdAt: 1000,
                 updatedAt: 1500,
             };
@@ -158,12 +157,12 @@ describe('WorkflowStateService', () => {
                 workflowId: 'CAMPAIGN_LAUNCH',
                 userId,
                 status: 'executing',
-                currentStepIndex: 0,
                 steps: {
                     'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'step_complete', result: 'Done', idempotencyKey: 'test-key-0' },
                     'step_1': { stepId: 'step_1', agentId: 'marketing', prompt: 'Create strategy', status: 'planned', idempotencyKey: 'test-key-1' },
                     'step_2': { stepId: 'step_2', agentId: 'social', prompt: 'Draft posts', status: 'planned', idempotencyKey: 'test-key-2' },
                 },
+                edges: [],
                 createdAt: 1000,
                 updatedAt: 1000,
             };
@@ -183,11 +182,11 @@ describe('WorkflowStateService', () => {
     describe('getResumableExecutions', () => {
         it('should return only non-terminal executions', async () => {
             const executions: WorkflowExecution[] = [
-                { id: '1', workflowId: 'A', userId, status: 'completed', steps: {}, currentStepIndex: 0, createdAt: 1, updatedAt: 1 },
-                { id: '2', workflowId: 'B', userId, status: 'failed', steps: {}, currentStepIndex: 0, createdAt: 2, updatedAt: 2 },
-                { id: '3', workflowId: 'C', userId, status: 'cancelled', steps: {}, currentStepIndex: 0, createdAt: 3, updatedAt: 3 },
-                { id: '4', workflowId: 'D', userId, status: 'planned', steps: {}, currentStepIndex: 0, createdAt: 4, updatedAt: 4 },
-                { id: '5', workflowId: 'E', userId, status: 'executing', steps: {}, currentStepIndex: 0, createdAt: 5, updatedAt: 5 },
+                { id: '1', workflowId: 'A', userId, status: 'completed', steps: {}, edges: [], createdAt: 1, updatedAt: 1 },
+                { id: '2', workflowId: 'B', userId, status: 'failed', steps: {}, edges: [], createdAt: 2, updatedAt: 2 },
+                { id: '3', workflowId: 'C', userId, status: 'cancelled', steps: {}, edges: [], createdAt: 3, updatedAt: 3 },
+                { id: '4', workflowId: 'D', userId, status: 'planned', steps: {}, edges: [], createdAt: 4, updatedAt: 4 },
+                { id: '5', workflowId: 'E', userId, status: 'executing', steps: {}, edges: [], createdAt: 5, updatedAt: 5 },
             ];
 
             mockList.mockResolvedValue(executions);

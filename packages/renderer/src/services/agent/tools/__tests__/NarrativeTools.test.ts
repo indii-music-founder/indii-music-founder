@@ -3,21 +3,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NarrativeTools } from '../NarrativeTools';
 import { DirectorTools } from '../DirectorTools';
 import { VideoTools } from '../VideoTools';
-import { GenAI as AI } from '@/services/ai/GenAI';
+import { GenAI } from '@/services/ai/GenAI';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
-vi.mock('@/services/ai/FirebaseAIService', () => ({
-    firebaseAI: {
-        generateStructuredData: vi.fn(),
-        generateText: vi.fn(),
-        analyzeImage: vi.fn()
-    }
-}));
+vi.mock('@/services/ai/FirebaseAIService', () => {
+    const mockFirebaseAI = {
+        generateText: vi.fn().mockResolvedValue('Mock AI response'),
+        generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
+        generateContent: vi.fn().mockResolvedValue({ response: { text: () => 'Mock response' } }),
+        generateImage: vi.fn().mockResolvedValue({ url: 'https://mock-image.png' }),
+        analyzeImage: vi.fn().mockResolvedValue({ analysis: {} })
+    };
+    return {
+        FirebaseAIService: class {
+            static getInstance() { return mockFirebaseAI; }
+        },
+        firebaseAI: mockFirebaseAI
+    };
+});
 
 vi.mock('@/services/ai/GenAI', () => ({
     GenAI: {
         generateContent: vi.fn(),
+        generateStructuredData: vi.fn(),
         generateVideo: vi.fn()
     }
 }));
@@ -40,7 +49,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 
@@ -75,14 +84,13 @@ describe('Filmmaking Grammar Tools', () => {
                 beats: [{ beat: 1, name: "Intro" }]
             };
 
-            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse);
+            vi.mocked(GenAI.generateStructuredData).mockResolvedValueOnce(mockResponse);
 
             const result = await NarrativeTools.generate_visual_script({ synopsis: "A test story" });
 
             expect(result.success).toBe(true);
             expect(result.message).toContain("Test Script");
             expect(result.data.title).toBe("Test Script");
-            expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
         });
     });
 

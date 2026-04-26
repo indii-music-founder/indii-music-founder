@@ -80,6 +80,7 @@ describe('WebhookDispatcher', () => {
       const attempt1 = 0;
       const attempt2 = 1;
       const attempt3 = 2;
+      const currentAttempt = 1; // 0-indexed
 
       expect(attempt1 < maxAttempts - 1).toBe(true);
       expect(attempt2 < maxAttempts - 1).toBe(true);
