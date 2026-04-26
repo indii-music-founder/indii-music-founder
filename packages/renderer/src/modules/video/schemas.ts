@@ -19,7 +19,7 @@ export const AspectRatioSchema = z.enum([
 ]);
 
 export const VideoAspectRatioSchema = z.enum([
-    '16:9', '9:16'
+    '16:9', '9:16', '1:1'
 ]);
 
 export const ReferenceImageSchema = z.object({

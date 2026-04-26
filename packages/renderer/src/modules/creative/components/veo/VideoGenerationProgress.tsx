@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Loader2, Video, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Video, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import clsx from 'clsx';
 
 export type JobStatus = 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching';
@@ -15,9 +15,10 @@ export interface VideoGenerationJob {
 
 interface VideoGenerationProgressProps {
     job: VideoGenerationJob;
+    onCancel?: (jobId: string) => void;
 }
 
-export function VideoGenerationProgress({ job }: VideoGenerationProgressProps) {
+export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgressProps) {
     const isError = job.status === 'failed';
     const isCompleted = job.status === 'completed';
     const isProcessing = job.status === 'processing' || job.status === 'stitching';
@@ -45,6 +46,20 @@ export function VideoGenerationProgress({ job }: VideoGenerationProgressProps) {
                         ease: "linear"
                     }}
                 />
+            )}
+
+            {onCancel && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onCancel(job.id);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors z-20"
+                    title="Cancel Job"
+                    aria-label="Cancel Job"
+                >
+                    <X size={14} />
+                </button>
             )}
 
             <div className="relative z-10 flex flex-col items-center gap-4 w-full">
