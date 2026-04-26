@@ -80,17 +80,26 @@ describe('RequestTracingService', () => {
   describe('Performance Analysis', () => {
     it('should identify slow traces', () => {
       let now = 0;
+      vi.spyOn(performance, 'now').mockImplementation(() => {
+        now += 600;
+        return now;
+      });
+
+      const correlationId = service.startTrace('GET', 'http://localhost/api');
+      service.endTrace(correlationId, 200);
       const perfSpy = vi.spyOn(performance, 'now').mockImplementation(() => {
         const current = now;
         now += 1000;
         return current;
       });
-      const correlationId = service.startTrace('GET', 'http://localhost/api');
-      service.endTrace(correlationId, 200);
+      const correlationId2 = service.startTrace('GET', 'http://localhost/api');
+      service.endTrace(correlationId2, 200);
       perfSpy.mockRestore();
 
       const slowTraces = service.getSlowTraces(500);
       expect(slowTraces.length).toBeGreaterThan(0);
+
+      vi.restoreAllMocks();
     });
 
     it('should identify error traces', () => {
