@@ -162,6 +162,14 @@ Hour 1 gate: any FAIL → write `DEMO_GO_NOGO.md` NO-GO, STOP. Any PASS+YELLOW �
 ---
 
 
+**Verdict:** GO / YELLOW / NO-GO
+```
+
+Hour 1 gate: any FAIL → write `DEMO_GO_NOGO.md` NO-GO, STOP. Any PASS+YELLOW → continue.
+
+---
+
+
 ```markdown
 # Hour 1 Audit — Build & Boot
 | Step | Status | Notes |
@@ -223,6 +231,7 @@ Hour 2 fix protocol (only if William picks "fix now", ad-hoc only):
 This hour requires William's voice for rehearsal and a recorded fallback video.
 Cloud automation cannot do this. The workflow notes "Hour 3 skipped — human-only"
 in the issue body.
+
 
 
 ## Hour 3 — Lock the demo (60 min) *(HUMAN ONLY — workflow SKIPS this)*
@@ -291,6 +300,15 @@ Step 4.5 — Write `AUDIT_HOUR4.md` from template.
 ---
 
 ## Final — `DEMO_GO_NOGO.md`
+
+Roll up the four (or three, in workflow mode) hour-files. Single verdict block,
+hour summary table, GO checklist or NO-GO blocker list, recommended next demo
+window if NO-GO.
+
+---
+
+## Stop conditions
+
 
 Roll up the four (or three, in workflow mode) hour-files. Single verdict block,
 hour summary table, GO checklist or NO-GO blocker list, recommended next demo
