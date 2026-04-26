@@ -85,7 +85,7 @@ describe('CoreWebVitalsReporter', () => {
           },
           INP: {
             name: 'INP',
-            value: 80,
+            value: 150,
             delta: 0,
             rating: 'good',
             id: 'inp-1',
@@ -169,7 +169,7 @@ describe('CoreWebVitalsReporter', () => {
       const report = reporter.reportMetrics(snapshot);
       expect(report.warnings.length).toBeGreaterThan(0);
       expect(report.warnings[0]).toMatch(/LCP/);
-      expect(report.warnings[0]).toContain('LCP');
+
     });
   });
 });
