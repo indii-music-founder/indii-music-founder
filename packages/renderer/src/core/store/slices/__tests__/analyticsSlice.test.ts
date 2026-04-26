@@ -41,7 +41,7 @@ describe('analyticsSlice Phase 4', () => {
     });
 
     it('should clear all events', () => {
-      const events: AnalyticsEvent[] = [mockEvent];
+      const _events: AnalyticsEvent[] = [mockEvent];
       const cleared: AnalyticsEvent[] = [];
 
       expect(cleared.length).toBe(0);
@@ -78,7 +78,7 @@ describe('analyticsSlice Phase 4', () => {
     });
 
     it('should clear all cached queries', () => {
-      const queryResults: Record<string, AnalyticsEvent[]> = {
+      const _queryResults: Record<string, AnalyticsEvent[]> = {
         'filter-1': [mockEvent],
       };
 
@@ -196,7 +196,7 @@ describe('analyticsSlice Phase 4', () => {
   describe('State Immutability', () => {
     it('should not mutate existing state when adding events', () => {
       const originalEvents: AnalyticsEvent[] = [];
-      const newEvents = [mockEvent, ...originalEvents];
+      const _newEvents = [mockEvent, ...originalEvents];
 
       // Original reference shouldn't change
       expect(originalEvents.length).toBe(0);

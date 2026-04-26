@@ -25,7 +25,6 @@ vi.mock('react-router-dom', () => ({
 let mockStore: Record<string, unknown> = {};
 vi.mock('@/core/store', () => ({ useStore: (s: (st: Record<string, unknown>) => unknown) => s(mockStore) }));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
-vi.mock('@/services/payment/PaymentService', () => ({ createOneTimePayment: vi.fn() }));
 vi.mock('@/utils/logger', () => ({ logger: { error: vi.fn() } }));
 
 import FoundersCheckout from './FoundersCheckout';
@@ -33,20 +32,20 @@ import FoundersCheckout from './FoundersCheckout';
 describe('FoundersCheckout', () => {
     beforeEach(() => {
         mockStore = {
-            user: { uid: 'user-1' },
             setModule: vi.fn(),
         };
     });
 
-    it('renders the pre-checkout view with CTA', () => {
+    it('renders the checkout instructions view', () => {
         render(<FoundersCheckout />);
         expect(screen.getByText(/Back The/)).toBeInTheDocument();
-        expect(screen.getByText(/Support The Vision/)).toBeInTheDocument();
+        expect(screen.getByText(/Cash App/)).toBeInTheDocument();
+        expect(screen.getByText(/Wire Transfer/)).toBeInTheDocument();
     });
 
     it('shows the Founders Round badge', () => {
         render(<FoundersCheckout />);
-        expect(screen.getByText('Founders Round')).toBeInTheDocument();
+        expect(screen.getByText('Founders Round — 10 Seats Maximum')).toBeInTheDocument();
     });
 
     it('renders the return to studio button', () => {

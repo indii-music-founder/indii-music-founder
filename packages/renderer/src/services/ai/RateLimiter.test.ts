@@ -60,5 +60,14 @@ describe('RateLimiter', () => {
 
         // Cancel the promise to clean up
         result.catch(() => {});
+        let error: any;
+        const acquirePromise = limiter.acquire(500).catch(e => { error = e; });
+
+        // Advance time enough to trigger the timeout
+        await vi.advanceTimersByTimeAsync(1000);
+        await acquirePromise;
+
+        expect(error).toBeDefined();
+        expect(error.message).toBe('Rate limit acquisition timed out');
     });
 });

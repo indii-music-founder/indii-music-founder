@@ -1,5 +1,5 @@
 import { AgentConfig } from "../types";
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 
 export const BrandAgent: AgentConfig = {
@@ -189,7 +189,7 @@ If a task is outside Brand, say:
             
             Provide a pass/fail assessment and specific feedback.`;
             try {
-                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { critique: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -212,7 +212,7 @@ If a task is outside Brand, say:
                 
                 Evaluate: Tone of Voice, Visual/Descriptive Alignment, and Core Values.
                 Return a Score (0-100) and actionable feedback.`;
-                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { analysis: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -228,7 +228,7 @@ If a task is outside Brand, say:
             3. Visual Identity Pillars
             4. Do's and Don'ts`;
             try {
-                const response = await firebaseAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { guidelines: response } };
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -239,7 +239,7 @@ If a task is outside Brand, say:
             for (const assetUrl of args.assets) {
                 try {
                     const prompt = `Critique this visual asset against standard brand guidelines (Logo usage, Color palette, Typography). Provide a pass/fail score (0-100) and specific feedback.`;
-                    const analysis = await firebaseAI.analyzeImage(prompt, assetUrl);
+                    const analysis = await GenAI.analyzeImage(prompt, assetUrl);
                     results.push({ asset: assetUrl, analysis });
                 } catch (e: unknown) {
                     results.push({ asset: assetUrl, error: (e as Error).message });

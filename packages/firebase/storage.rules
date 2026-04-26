@@ -146,6 +146,19 @@ service firebase.storage {
     }
 
     // ========================================
+    // APP RELEASES (Founders)
+    // ========================================
+
+    // Releases like DMG and EXE files
+    match /founders/releases/{allPaths=**} {
+      allow read: if isAuthenticated() && 
+                  (firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.subscriptionTier == 'founder' ||
+                   firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.tier == 'founder' ||
+                   firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isFounder == true);
+      allow write: if false; // Admin uploads only via Firebase Console or Admin SDK
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 

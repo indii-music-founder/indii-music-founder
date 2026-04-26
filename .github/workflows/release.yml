@@ -63,3 +63,37 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Setup Firebase CLI
+        run: npm install -g firebase-tools@13.29.1
+
+      - name: Authenticate with Firebase
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/gcloud-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+
+      - name: Upload Installer to Firebase Storage (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Upload DMG files from packages/main/dist or dist folder. 
+          # Note: Adjust source path if electron-builder output directory is different.
+          DMG_FILE=$(find . -name "*.dmg" -type f | head -n 1)
+          if [ -n "$DMG_FILE" ]; then
+            firebase storage:upload "$DMG_FILE" founders/releases/indiiOS-Installer.dmg --project indiios-v-1-1 --non-interactive
+          fi
+        continue-on-error: true
+
+      - name: Upload Installer to Firebase Storage (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          # Upload EXE files
+          EXE_FILE=$(find . -name "*.exe" -type f | head -n 1)
+          if [ -n "$EXE_FILE" ]; then
+            firebase storage:upload "$EXE_FILE" founders/releases/indiiOS-Setup.exe --project indiios-v-1-1 --non-interactive
+          fi
+        continue-on-error: true
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f $HOME/gcloud-key.json

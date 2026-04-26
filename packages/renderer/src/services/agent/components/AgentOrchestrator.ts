@@ -5,6 +5,8 @@ import { TraceService } from '../observability/TraceService';
 import { auth } from '@/services/firebase';
 
 import { agentRegistry } from '../registry';
+import { graphDecompositionService } from '../orchestration/GraphDecompositionService';
+import { AgentGraph } from '../types';
 
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
@@ -256,6 +258,63 @@ export class AgentOrchestrator {
         } catch (e: unknown) {
             logger.warn('[indii:Orchestrator] Fan-out decomposition failed, single agent fallback.', e);
             return [{ agentId: 'generalist', subtask: userQuery }];
+        }
+    }
+
+    /**
+     * Determines the optimal execution path for a user request.
+     * Routes between:
+     * 1. 'single': Single specialist agent (fastest)
+     * 2. 'parallel': Independent subtasks (fan-out)
+     * 3. 'graph': Complex sequential/dependent subtasks (dynamic DAG)
+     */
+    async determineOrchestrationPath(context: AgentContext, userQuery: string): Promise<{
+        type: 'single' | 'parallel' | 'graph';
+        agentId?: string;
+        subtasks?: Array<{ agentId: string; subtask: string }>;
+        graph?: AgentGraph;
+        reasoning: string;
+    }> {
+        // 1. Check for complexity using a fast thinking model
+        const complexityPrompt = `
+        Analyze this request for complexity: "${userQuery}"
+        
+        Is this a:
+        - "SIMPLE" request (one clear goal, one agent)?
+        - "PARALLEL" request (multiple independent tasks, e.g. "make a post AND an image")?
+        - "COMPLEX" request (multi-step, sequential dependencies, e.g. "analyze my track THEN write lyrics based on the mood THEN generate a storyboard")?
+        
+        Return ONLY a JSON object: { "type": "SIMPLE" | "PARALLEL" | "COMPLEX", "reasoning": "..." }
+        `;
+
+        try {
+            const res = await AI.generateContent(
+                [{ role: 'user', parts: [{ text: complexityPrompt }] }],
+                AI_MODELS.TEXT.FAST,
+                { responseMimeType: 'application/json' }
+            );
+            const decision = JSON.parse(res.response.text() || '{"type":"SIMPLE"}');
+
+            if (decision.type === 'COMPLEX') {
+                logger.info('[AgentOrchestrator] Complex request detected, decomposing into dynamic graph.');
+                const graph = await graphDecompositionService.decompose(userQuery, context);
+                return { type: 'graph', graph, reasoning: decision.reasoning };
+            }
+
+            if (decision.type === 'PARALLEL') {
+                logger.info('[AgentOrchestrator] Parallel request detected, fanning out.');
+                const subtasks = await this.determineFanOut(context, userQuery);
+                return { type: 'parallel', subtasks, reasoning: decision.reasoning };
+            }
+
+            // Default to single agent
+            const agentId = await this.determineAgent(context, userQuery);
+            return { type: 'single', agentId, reasoning: decision.reasoning };
+
+        } catch (error) {
+            logger.warn('[AgentOrchestrator] Path determination failed, falling back to single agent.', error);
+            const agentId = await this.determineAgent(context, userQuery);
+            return { type: 'single', agentId, reasoning: 'Fallback due to orchestration error' };
         }
     }
 }

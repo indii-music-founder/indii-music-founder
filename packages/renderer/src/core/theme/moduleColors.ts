@@ -429,6 +429,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-amber-500/20',
         cssVar: '--color-dept-brand',
     },
+    'founders-portal': {
+        // Founders Portal
+        text: 'text-amber-400',
+        bg: 'bg-amber-500/10',
+        border: 'border-amber-500/30',
+        ring: 'focus-within:ring-amber-500/50',
+        hoverText: 'hover:text-amber-300',
+        hoverBg: 'hover:bg-amber-500/20',
+        cssVar: '--color-dept-brand',
+    },
     'video-popout': {
         text: 'text-gray-300',
         bg: 'bg-black',
@@ -447,6 +457,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-dept-licensing',
         hoverBg: 'hover:bg-dept-licensing/5',
         cssVar: '--color-dept-licensing',
+    },
+    'maestro': {
+        // Maestro — Indigo for complex orchestration & harmony
+        text: 'text-indigo-400',
+        bg: 'bg-indigo-500/10',
+        border: 'border-indigo-500',
+        ring: 'focus-within:ring-indigo-500/50',
+        hoverText: 'hover:text-indigo-300',
+        hoverBg: 'hover:bg-indigo-500/5',
+        cssVar: '--color-dept-default',
     },
 };
 

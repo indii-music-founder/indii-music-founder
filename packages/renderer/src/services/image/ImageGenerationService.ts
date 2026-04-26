@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 import { withServiceError } from '@/lib/errors';
 import { functionsWest1 as functions, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { firebaseAI } from '../ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
@@ -525,7 +525,7 @@ export class ImageGenerationService {
 
     async extractStyle(image: { mimeType: string; data: string }): Promise<{ prompt_desc?: string, style_context?: string, negative_prompt?: string }> {
         return withServiceError('ImageGeneration', 'extractStyle', async () => {
-            const response = await firebaseAI.generateContent(
+            const response = await GenAI.generateContent(
                 [{
                     role: 'user',
                     parts: [
@@ -540,7 +540,7 @@ export class ImageGenerationService {
                 }
             );
 
-            return firebaseAI.parseJSON(response.response.text());
+            return GenAI.parseJSON(response.response.text());
         });
     }
 
@@ -659,7 +659,7 @@ export class ImageGenerationService {
                 style: "Describe the artistic style, lighting, mood, color palette, and camera technique of this image. Focus on the visual 'vibe' rather than the content."
             };
 
-            const response = await firebaseAI.generateContent(
+            const response = await GenAI.generateContent(
                 [{
                     role: 'user',
                     parts: [

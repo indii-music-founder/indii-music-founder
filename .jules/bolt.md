@@ -47,3 +47,8 @@
 
 **Learning:** When deploying a new version of the application, dynamically imported chunks may be invalidated by the bundler (e.g., Vite/Rollup), leading to "Failed to fetch dynamically imported module" errors in lazy-loaded routes if the user hasn't refreshed their browser.
 **Action:** Detect chunk load errors (by matching the specific error message string) within the global `ModuleErrorBoundary` and trigger an automatic `window.location.reload()` to silently recover from version mismatch errors instead of showing an unactionable generic error screen.
+
+## 2024-05-27 - Batch Write Timestamp Instantiation
+
+**Learning:** Initializing sentinel objects or class instances like `admin.firestore.FieldValue.serverTimestamp()` or `Timestamp.now()` inside a loop (e.g. while building a Firestore writeBatch) results in unnecessary object allocations and method calls per iteration.
+**Action:** When building batches or looping to update identical fields across many objects, hoist the instantiation of objects like `Timestamp.now()` or `serverTimestamp()` outside the loop. This minimizes memory allocation, saves CPU cycles, and strictly enforces that all documents in the batch get the exact same timestamp.

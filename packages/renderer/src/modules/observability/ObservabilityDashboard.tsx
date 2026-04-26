@@ -169,7 +169,10 @@ export const ObservabilityDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
               <XAxis dataKey="name" stroke="#94a3b8" />
               <YAxis stroke="#94a3b8" />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} formatter={(value: number | undefined) => value ? (value / 1024).toFixed(1) : '0'} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} 
+                formatter={(value: any) => [`${(Number(value) / 1024).toFixed(1)} KB`, 'Size']}
+              />
               <Legend />
               <Bar dataKey="jsSize" fill="#3b82f6" name="JS" />
               <Bar dataKey="cssSize" fill="#10b981" name="CSS" />

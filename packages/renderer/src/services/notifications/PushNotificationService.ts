@@ -64,30 +64,53 @@ export class PushNotificationService {
      * Listens for foreground messages when the app is active.
      */
     public onForegroundMessage(callback: (payload: MessagePayload) => void): () => void {
-        // Kick off async init; if not ready yet, return no-op
         const messaging = this.messaging;
+        
         if (!messaging) {
+            let unsubscribe: (() => void) | null = null;
+            
             // Try to init lazily and set up listener once ready
             this.ensureMessaging().then((m) => {
-                if (m) onMessage(m, callback);
+                if (m) {
+                    try {
+                        unsubscribe = onMessage(m, (payload) => {
+                            logger.info('[PushNotificationService] Received foreground message:', payload);
+                            if (payload.notification) {
+                                new Notification(payload.notification.title || 'indiiOS Notification', {
+                                    body: payload.notification.body,
+                                    icon: '/pwa-192x192.png'
+                                });
+                            }
+                            callback(payload);
+                        });
+                    } catch (e: unknown) {
+                        logger.error('[PushNotificationService] Error setting up onMessage:', e);
+                    }
+                }
+            }).catch((e: unknown) => {
+                logger.error('[PushNotificationService] ensureMessaging failed:', e);
             });
-            return () => { };
+            
+            return () => {
+                if (unsubscribe) unsubscribe();
+            };
         }
 
-        return onMessage(messaging, (payload) => {
-            logger.info('[PushNotificationService] Received foreground message:', payload);
-
-            // Optionally, we can manually trigger a local browser notification here
-            // if we want to show it even when the app is in the foreground
-            if (payload.notification) {
-                new Notification(payload.notification.title || 'indiiOS Notification', {
-                    body: payload.notification.body,
-                    icon: '/pwa-192x192.png'
-                });
-            }
-
-            callback(payload);
-        });
+        try {
+            return onMessage(messaging, (payload) => {
+                logger.info('[PushNotificationService] Received foreground message:', payload);
+                if (payload.notification) {
+                    new Notification(payload.notification.title || 'indiiOS Notification', {
+                        body: payload.notification.body,
+                        icon: '/pwa-192x192.png'
+                    });
+                }
+                callback(payload);
+            });
+        } catch (e: unknown) {
+            logger.error('[PushNotificationService] Error setting up onMessage:', e);
+            return () => {};
+        }
     }
 
     /**

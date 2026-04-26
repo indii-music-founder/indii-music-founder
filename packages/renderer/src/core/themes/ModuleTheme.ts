@@ -223,6 +223,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(245, 158, 11, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'particles', opacity: 0.1 }
     },
+    'founders-portal': {
+        officeName: 'Founders Portal',
+        accent: '#f59e0b', // Amber
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(245, 158, 11, 0.06), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'particles', opacity: 0.1 }
+    },
     'video-popout': {
         officeName: 'Video Ext. Display',
         accent: '#0d1117',
@@ -233,6 +239,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         accent: '#009688', // Teal (filing/compliance feel)
         backgroundGradient: 'radial-gradient(circle at 30% 70%, rgba(0, 150, 136, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 },
+    },
+    'maestro': {
+        officeName: 'Maestro Orchestrator',
+        accent: '#9C27B0', // Purple (Strategic/High-level)
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(156, 39, 176, 0.1), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'vectors', opacity: 0.3 }
     },
 };
 

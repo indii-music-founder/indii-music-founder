@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Invoke Jules AutoAgent Harness
-        uses: google-labs-code/jules-invoke@v1
+        uses: google-labs-code/jules-action@v1.0.0
         with:
           prompt: |
             Read optimization/autoagent/program.md and execute the optimization experiment loop.

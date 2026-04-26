@@ -9,6 +9,8 @@ export interface Organization {
     name: string;
     plan: 'free' | 'pro' | 'enterprise';
     members: string[];
+    ownerId?: string;
+    memberRoles?: Record<string, 'owner' | 'manager' | 'producer' | 'member'>;
 }
 
 export interface ProfileSlice {
@@ -128,7 +130,9 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         id: doc.id,
                         name: data.name || 'Untitled Org',
                         plan: data.plan || 'free',
-                        members: data.members || []
+                        members: data.members || [],
+                        ownerId: data.ownerId,
+                        memberRoles: data.memberRoles
                     });
                 });
 
