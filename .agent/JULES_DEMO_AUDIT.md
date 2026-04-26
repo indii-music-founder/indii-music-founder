@@ -63,6 +63,16 @@ runner, on William's laptop, and on Jules's sandbox.
 ---
 
 
+**Supplementary Evidence Artifacts** (Captured and uploaded by the workflow):
+- `.agent/h1_*.log` (Build & Boot step logs)
+- `.agent/h2_walk.log` (Playwright execution output)
+- `.agent/screenshots/` (Visual proof of all modules pre/post action and on error)
+- `.agent/console_logs/` (Browser console captures and DOM errors)
+- `.agent/network/` (Network failure captures)
+
+---
+
+
 ---
 
 ## Pre-flight (5 min)
@@ -93,6 +103,7 @@ mkdir -p "$REPO/.agent" "$REPO/.agent/screenshots" "$REPO/.agent/console_logs" "
 ```
 
 If any preflight fails: write `.agent/BLOCKED.md` (or post to the issue) with the failure and STOP.
+
 
 ---
 
@@ -153,6 +164,7 @@ Step 1.7 — Write `AUDIT_HOUR1.md` from template:
 | 1.4 Tests | ... | ... |
 | 1.5 Build | ... | ... |
 | 1.6 Dev boot | ... | ... |
+
 
 **Verdict:** GO / YELLOW / NO-GO
 ```
@@ -233,6 +245,13 @@ Cloud automation cannot do this. The workflow notes "Hour 3 skipped — human-on
 in the issue body.
 
 
+## Hour 3 — Lock the demo (60 min) *(HUMAN ONLY — workflow SKIPS this)*
+
+This hour requires William's voice for rehearsal and a recorded fallback video.
+Cloud automation cannot do this. The workflow notes "Hour 3 skipped — human-only"
+in the issue body.
+
+
 
 ## Hour 3 — Lock the demo (60 min) *(HUMAN ONLY — workflow SKIPS this)*
 
@@ -296,6 +315,19 @@ Step 4.4 — Browser hygiene (ad-hoc only):
 - OS-level do-not-disturb on.
 
 Step 4.5 — Write `AUDIT_HOUR4.md` from template.
+
+---
+
+## Final — `DEMO_GO_NOGO.md`
+
+Roll up the four (or three, in workflow mode) hour-files. Single verdict block,
+hour summary table, GO checklist or NO-GO blocker list, recommended next demo
+window if NO-GO.
+
+---
+
+## Stop conditions
+
 
 ---
 
