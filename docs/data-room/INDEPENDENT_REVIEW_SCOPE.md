@@ -139,6 +139,6 @@ The reviewer produces a PDF report with:
 
 ---
 
-**Last Updated:** 2026-04-27  
+**Last Updated:** 2026-04-27
 **Prepared By:** William Roberts (valuation phase)  
 **For:** Independent technical reviewer
