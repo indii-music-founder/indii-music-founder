@@ -123,6 +123,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     },
 };
 
+
 class MembershipServiceImpl {
     /**
      * Check if the current user is a builder/dev account.
@@ -145,6 +146,7 @@ class MembershipServiceImpl {
                 if (tokenResult?.claims?.god_mode === true) {
                     return true;
                 }
+
             }
 
             return false;
