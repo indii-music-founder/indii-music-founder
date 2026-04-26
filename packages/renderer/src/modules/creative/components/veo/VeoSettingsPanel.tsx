@@ -15,7 +15,7 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
         setStudioControls: state.setStudioControls
     })));
 
-    const aspectRatios = ['16:9', '9:16', '1:1', '4:3', '3:4'];
+    const aspectRatios = ['16:9', '9:16', '1:1'];
     const durations = [4, 5, 6, 8];
     const cameraMovements = ['Static', 'Pan', 'Tilt', 'Zoom', 'Orbit'];
 
