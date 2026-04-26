@@ -7,6 +7,8 @@ import { WhiskService } from '@/services/WhiskService';
 import { logger } from '@/utils/logger';
 import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
+import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
+import { VideoJob } from '@/types/video';
 
 export function useDirectGeneration() {
     const {
@@ -49,11 +51,85 @@ export function useDirectGeneration() {
     }, [setPrompt]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<HistoryItem[]>([]);
+    const [activeJobs, setActiveJobs] = useState<VideoGenerationJob[]>([]);
     const [sequence, setSequence] = useState<SequenceBlock[]>([]);
     const [bpm, setBpm] = useState<number>(120);
 
     // Guard against double-submit while a generation is in-flight
     const generatingRef = useRef(false);
+    const unsubsRef = useRef<Record<string, () => void>>({});
+
+    // Cleanup subscriptions on unmount
+    useEffect(() => {
+        return () => {
+            Object.values(unsubsRef.current).forEach(unsub => unsub());
+            unsubsRef.current = {};
+        };
+    }, []);
+
+    // Job polling/subscription loop
+    useEffect(() => {
+        activeJobs.forEach(job => {
+            if (unsubsRef.current[job.id]) return; // already subscribed
+            if (job.status === 'completed' || job.status === 'failed') return;
+
+            const unsub = VideoGeneration.subscribeToJob(job.id, (updatedJob: VideoJob | null) => {
+                if (!updatedJob) return;
+
+                setActiveJobs(prev => {
+                    const idx = prev.findIndex(j => j.id === updatedJob.id);
+                    if (idx === -1) return prev;
+
+                    const newJobs = [...prev];
+                    newJobs[idx] = {
+                        ...newJobs[idx],
+                        status: updatedJob.status as any,
+                        progress: updatedJob.progress,
+                        error: updatedJob.error
+                    } as VideoGenerationJob;
+                    return newJobs;
+                });
+
+                if (updatedJob.status === 'completed' && (updatedJob.output?.url || updatedJob.videoUrl || updatedJob.url)) {
+                    const finalUrl = updatedJob.output?.url || updatedJob.videoUrl || updatedJob.url || '';
+                    const finalItem: HistoryItem = {
+                        id: updatedJob.id,
+                        url: finalUrl,
+                        type: 'video' as const,
+                        prompt: updatedJob.prompt || job.prompt,
+                        timestamp: Date.now(),
+                        projectId: currentProjectId,
+                        origin: 'generated' as const
+                    };
+
+                    setResults(prev => {
+                        if (prev.some(p => p.id === finalItem.id)) return prev;
+                        return [finalItem, ...prev];
+                    });
+                    addToHistory({ ...finalItem });
+                    toast.success('Video generation finished!');
+                    
+                    setTimeout(() => {
+                        setActiveJobs(prev => prev.filter(j => j.id !== updatedJob.id));
+                        if (unsubsRef.current[updatedJob.id]) {
+                            unsubsRef.current[updatedJob.id]?.();
+                            delete unsubsRef.current[updatedJob.id];
+                        }
+                    }, 3000);
+                } else if (updatedJob.status === 'failed') {
+                    setTimeout(() => {
+                        setActiveJobs(prev => prev.filter(j => j.id !== updatedJob.id));
+                        if (unsubsRef.current[updatedJob.id]) {
+                            unsubsRef.current[updatedJob.id]?.();
+                            delete unsubsRef.current[updatedJob.id];
+                        }
+                    }, 5000);
+                }
+            });
+
+            unsubsRef.current[job.id] = unsub;
+        });
+    }, [activeJobs, currentProjectId, addToHistory, toast]);
 
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
@@ -186,12 +262,26 @@ export function useDirectGeneration() {
                 origin: 'generated' as const
             }));
 
-            if (newItems.every(i => !i.url)) {
-                toast.info('Video job queued. Check gallery for results.');
-            } else {
-                setResults(prev => [...newItems, ...prev]);
-                newItems.forEach(item => addToHistory({ ...item }));
+            const immediatelyReady = newItems.filter(i => i.url);
+            const queuedJobs = newItems.filter(i => !i.url);
+
+            if (immediatelyReady.length > 0) {
+                setResults(prev => [...immediatelyReady, ...prev]);
+                immediatelyReady.forEach(item => addToHistory({ ...item }));
                 toast.success('Video generated successfully');
+            }
+
+            if (queuedJobs.length > 0) {
+                setActiveJobs(prev => [
+                    ...prev,
+                    ...queuedJobs.map(job => ({
+                        id: job.id,
+                        prompt: job.prompt || localPrompt,
+                        status: 'queued' as const,
+                        progress: 0
+                    }))
+                ]);
+                toast.info('Video job queued. Check gallery for results.');
             }
         }
     }, [studioControls, localPrompt, currentProjectId, addToHistory, toast, sequence, bpm, videoInputs?.ingredients]);
@@ -232,12 +322,21 @@ export function useDirectGeneration() {
         }
     }, [localPrompt, mode, whiskState, toast, handleImageGenerate, handleVideoGenerate]);
 
+    const cancelJob = useCallback((jobId: string) => {
+        setActiveJobs(prev => prev.filter(j => j.id !== jobId));
+        if (unsubsRef.current[jobId]) {
+            unsubsRef.current[jobId]?.();
+            delete unsubsRef.current[jobId];
+        }
+    }, []);
+
     return {
         mode,
         localPrompt,
         setLocalPrompt,
         isGenerating,
         results,
+        activeJobs,
         handleModeSwitch,
         handleGenerate,
         mappedIngredients,
@@ -248,6 +347,7 @@ export function useDirectGeneration() {
         sequence,
         setSequence,
         bpm,
-        setBpm
+        setBpm,
+        cancelJob
     };
 }
