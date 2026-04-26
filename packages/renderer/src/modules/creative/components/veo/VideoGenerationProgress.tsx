@@ -96,7 +96,7 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
                             <motion.div 
                                 className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
                                 initial={{ width: 0 }}
-                                animate={{ width: `${job.progress * 100}%` }}
+                                animate={{ width: `${job.progress}%` }}
                                 transition={{ type: "spring", bounce: 0, duration: 0.5 }}
                             />
                         ) : (
