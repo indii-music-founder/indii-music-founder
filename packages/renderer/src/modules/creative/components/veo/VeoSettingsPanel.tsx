@@ -43,7 +43,7 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
                                     {aspectRatios.map(ar => (
                                         <button
                                             key={ar}
-                                            onClick={() => setStudioControls({ aspectRatio: ar as any })}
+                                            onClick={() => setStudioControls({ aspectRatio: ar })}
                                             className={clsx(
                                                 "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                                                 studioControls.aspectRatio === ar
