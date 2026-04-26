@@ -19,3 +19,6 @@ export { inngest } from './orchestration/inngest';
 
 // OpenAPI Schema Generation
 export { generateOpenAPISpec, writeOpenAPISpec } from './openapi';
+
+// Admin operations
+export { setGodMode } from './admin/setGodMode';
