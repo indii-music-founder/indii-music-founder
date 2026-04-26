@@ -46,7 +46,7 @@ describe('RateLimiter', () => {
         await expect(acquirePromise).resolves.toBeUndefined();
     });
 
-    it('should support timeout parameter in acquire', () => {
+    it('should support timeout parameter in acquire', async () => {
         const limiter = new RateLimiter(1, 1);
         limiter.tryAcquire();
 
