@@ -85,7 +85,6 @@ describe('CoreWebVitalsReporter', () => {
           },
           INP: {
             name: 'INP',
-            value: 150,
             value: 80,
             delta: 0,
             rating: 'good',

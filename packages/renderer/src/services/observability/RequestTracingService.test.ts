@@ -92,8 +92,8 @@ describe('RequestTracingService', () => {
         now += 1000;
         return current;
       });
-      const correlationId = service.startTrace('GET', 'http://localhost/api');
-      service.endTrace(correlationId, 200);
+      const correlationId2 = service.startTrace('GET', 'http://localhost/api');
+      service.endTrace(correlationId2, 200);
       perfSpy.mockRestore();
 
       const slowTraces = service.getSlowTraces(500);
