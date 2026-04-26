@@ -101,6 +101,9 @@ export { processRelayCommand } from './relay/relayCommandProcessor';
 export { telegramWebhook } from './relay/telegramWebhook';
 export { generateTelegramLinkCode, getTelegramLinkStatus } from './relay/telegramLink';
 
+// App Releases (Founder Delivery)
+export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
+
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
 //   1. Set up reCAPTCHA Enterprise in GCP Console for your project.

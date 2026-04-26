@@ -51,6 +51,13 @@ runner, on William's laptop, and on Jules's sandbox.
 4. `.agent/AUDIT_HOUR4.md`
 5. `.agent/DEMO_GO_NOGO.md`
 
+**Supplementary Evidence Artifacts** (Captured and uploaded by the workflow):
+- `.agent/h1_*.log` (Build & Boot step logs)
+- `.agent/h2_walk.log` (Playwright execution output)
+- `.agent/screenshots/` (Visual proof of all modules pre/post action and on error)
+- `.agent/console_logs/` (Browser console captures and DOM errors)
+- `.agent/network/` (Network failure captures)
+
 ---
 
 ## Pre-flight (5 min)
