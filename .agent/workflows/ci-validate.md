@@ -53,7 +53,7 @@ or a component with aria-labels, those patterns apply to you.
 
 ## CI Debug Cheatsheet (when a shard fails on CI but not locally)
 
-```bash
+```text
 # 1. Find the failing job ID
 curl -sL -H "Accept: application/vnd.github+json" \
   "https://api.github.com/repos/the-walking-agency-det/indiiOS-Clean/actions/runs/{RUN_ID}/jobs?per_page=20" \
