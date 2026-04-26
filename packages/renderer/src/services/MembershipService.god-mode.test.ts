@@ -14,7 +14,7 @@ describe('MembershipService - God Mode Bypass', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = require('./MembershipService').MembershipService;
+    service = MembershipService;
   });
 
   it('should grant enterprise tier when god_mode claim is true', async () => {
