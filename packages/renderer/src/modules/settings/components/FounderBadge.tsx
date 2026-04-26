@@ -3,7 +3,7 @@
  *
  * Shown in the Profile section. Displays:
  * - Gold founders badge with seat number
- * - Covenant hash (their permanent receipt)
+ * - Agreement hash (their permanent receipt)
  * - Link to verify the hash in the git repository
  * - Summary of founder benefits
  */
@@ -19,8 +19,8 @@ interface FounderData {
     seat: number;
     name: string;
     joinedAt: string;
-    covenantHash: string;
-    covenantVersion: string;
+    verificationHash: string;
+    agreementVersion: string;
 }
 
 export default function FounderBadge() {
@@ -43,9 +43,9 @@ export default function FounderBadge() {
     }, [user?.uid]);
 
     const copyHash = async () => {
-        if (!founder?.covenantHash) return;
+        if (!founder?.verificationHash) return;
         try {
-            await navigator.clipboard.writeText(founder.covenantHash);
+            await navigator.clipboard.writeText(founder.verificationHash);
             setHashCopied(true);
             setTimeout(() => setHashCopied(false), 2000);
         } catch (err: unknown) {
@@ -85,12 +85,12 @@ export default function FounderBadge() {
                     <p className="text-slate-500 text-xs mt-0.5">Founder since {joinedDate}</p>
                 </div>
 
-                {/* Covenant hash */}
+                {/* Agreement hash */}
                 <div>
-                    <p className="text-xs text-slate-400 font-mono uppercase tracking-wider mb-1.5">Covenant Hash (your receipt)</p>
+                    <p className="text-xs text-slate-400 font-mono uppercase tracking-wider mb-1.5">Verification Hash (your receipt)</p>
                     <div className="flex items-center gap-2">
                         <code className="flex-1 text-xs font-mono text-amber-300/80 bg-black/40 px-3 py-2 rounded-xl border border-white/5 truncate">
-                            {founder.covenantHash}
+                            {founder.verificationHash}
                         </code>
                         <button
                             onClick={copyHash}
@@ -100,7 +100,7 @@ export default function FounderBadge() {
                         </button>
                     </div>
                     <p className="text-[10px] text-slate-600 mt-1.5 font-mono">
-                        SHA-256({founder.name}|{founder.covenantVersion || '1.0.0'}|{founder.joinedAt})
+                        SHA-256({founder.name}|{founder.agreementVersion || '1.0.0'}|{founder.joinedAt})
                     </p>
                 </div>
 
@@ -127,7 +127,7 @@ export default function FounderBadge() {
                     className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-amber-400 transition-colors font-mono"
                 >
                     <span>↗</span>
-                    Verify your covenant in the repository
+                    Verify your agreement in the repository
                 </a>
             </div>
         </motion.div>

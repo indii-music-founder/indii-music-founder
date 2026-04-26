@@ -301,7 +301,7 @@ export default function Home() {
               10 Seats Maximum • Lifetime Access
             </div>
             <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
-              The Founders Covenant
+              The Founders Agreement
             </h2>
             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
               We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indiiOS Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indiiOS infrastructure — all 15 agents, the Conductor, and every future update — with zero recurring fees. Own the means of production on an architecture of togetherness.
@@ -314,7 +314,7 @@ export default function Home() {
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Immutable Legacy</h4>
-                <p className="text-sm text-gray-400">Your signature and a record of your covenant are committed directly into the indiiOS infrastructure forever. You are part of the engine.</p>
+                <p className="text-sm text-gray-400">Your signature and a record of your agreement are committed directly into the indiiOS infrastructure forever. You are part of the engine.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 15-Piece Crew</h4>
