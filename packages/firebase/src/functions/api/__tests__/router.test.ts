@@ -184,7 +184,7 @@ describe('API Router', () => {
     });
 
     it('should return 401 for unauthorized requests', async () => {
-      // Auth would fail
+      mockRequest.headers = {};
       expect(() => {
         if (!mockRequest.headers.authorization) throw new Error('Unauthorized');
       }).toThrow();
