@@ -143,13 +143,20 @@ export class SubscriptionService {
     amount: number = 1,
     userId?: string
   ): Promise<QuotaCheckResult> {
-    // GOD MODE: Bypass for Builder
-    if (auth.currentUser?.email === 'the.walking.agency.det@gmail.com') {
-      if (action === 'generateVideo' && amount > 120) {
-        logger.warn(`[SubscriptionService] God Mode blocked: single request too large (${amount}s)`);
-        return { allowed: false, reason: 'God Mode blocked: Single generation request too large.' };
+    // GOD MODE: Bypass via custom claim
+    if (auth.currentUser) {
+      try {
+        const tokenResult = await auth.currentUser.getIdTokenResult();
+        if (tokenResult?.claims?.god_mode === true) {
+          if (action === 'generateVideo' && amount > 120) {
+            logger.warn(`[SubscriptionService] God Mode blocked: single request too large (${amount}s)`);
+            return { allowed: false, reason: 'God Mode blocked: Single generation request too large.' };
+          }
+          return { allowed: true };
+        }
+      } catch (err) {
+        logger.warn('[SubscriptionService] Failed to check god_mode claim', err);
       }
-      return { allowed: true };
     }
 
     const targetUserId = userId || auth.currentUser?.uid;
