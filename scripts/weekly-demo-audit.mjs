@@ -88,6 +88,20 @@ async function visitModule(browser, mod) {
       note: '',
     };
   } catch (err) {
+    // Best-effort error screenshot
+    try {
+      await page.screenshot({
+        path: path.join(SCREENSHOT_DIR, `2.2-${mod}-error.png`),
+        fullPage: false,
+      });
+    } catch (e) { /* ignore */ }
+
+    // Best-effort HTML capture
+    try {
+      const content = await page.content();
+      await fs.writeFile(path.join(CONSOLE_DIR, `2.2-${mod}-error-dom.html`), content);
+    } catch (e) { /* ignore */ }
+
     return {
       module: mod,
       verdict: 'RED',
@@ -96,6 +110,22 @@ async function visitModule(browser, mod) {
       note: `navigation/load error: ${err.message}`,
     };
   } finally {
+    // Persist console + network captures regardless of success/failure
+    await fs.writeFile(
+      path.join(CONSOLE_DIR, `2.2-${mod}.txt`),
+      consoleErrors.join('\n') || '(no console errors)',
+    );
+    await fs.writeFile(
+      path.join(NETWORK_DIR, `2.2-${mod}.txt`),
+      networkFailures.join('\n') || '(no network failures)',
+    );
+    
+    // Explicitly cleanup listeners to prevent any chance of memory leaks/cross-module interference
+    try {
+      page.removeAllListeners('console');
+      page.removeAllListeners('response');
+    } catch (e) { /* ignore */ }
+
     await context.close();
   }
 }

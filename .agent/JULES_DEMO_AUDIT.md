@@ -5,6 +5,7 @@ now invoked by **two paths**:
 
 | Invoker | Frequency | Scope | Outputs to |
 |---|---|---|---|
+| `.github/workflows/weekly-demo-audit.yml` | Weekly (Mondays 06:00 UTC) | Hours 1, 2, 4 (skips Hour 3 — human-only) | New GitHub issue tagged `demo-audit`, plus `DEMO_GO_NOGO.md` |
 | `.github/workflows/weekly-demo-audit.yml` | Weekly (Mondays 06:00 UTC) | Hours 1, 2, 4 (skips Hour 3 — human-only) | New GitHub issue tagged `demo-audit` |
 | Human / smaller model on demand | Ad hoc, before a real demo | All four hours | `.agent/AUDIT_HOUR{1..4}.md` + `.agent/DEMO_GO_NOGO.md` |
 
@@ -44,12 +45,20 @@ runner, on William's laptop, and on Jules's sandbox.
 - Demo-path modules: onboarding, dashboard, creative, video, agent, distribution,
   finance, publishing, marketing, social, settings, files. (12 of 39 total.)
 
+## Output artifacts (you must produce all five for an ad-hoc run; the workflow produces 1, 2, 4, and 5)
 ## Output artifacts (you must produce all five for an ad-hoc run; the workflow produces 1, 2, 4 only)
 1. `.agent/AUDIT_HOUR1.md`
 2. `.agent/AUDIT_HOUR2.md`
 3. `.agent/DEMO_SCRIPT.md` *(human-only — workflow skips)*
 4. `.agent/AUDIT_HOUR4.md`
 5. `.agent/DEMO_GO_NOGO.md`
+
+**Supplementary Evidence Artifacts** (Captured and uploaded by the workflow):
+- `.agent/h1_*.log` (Build & Boot step logs)
+- `.agent/h2_walk.log` (Playwright execution output)
+- `.agent/screenshots/` (Visual proof of all modules pre/post action and on error)
+- `.agent/console_logs/` (Browser console captures and DOM errors)
+- `.agent/network/` (Network failure captures)
 
 ---
 
@@ -81,6 +90,9 @@ mkdir -p "$REPO/.agent" "$REPO/.agent/screenshots" "$REPO/.agent/console_logs" "
 ```
 
 If any preflight fails: write `.agent/BLOCKED.md` (or post to the issue) with the failure and STOP.
+
+---
+
 
 ---
 
@@ -124,6 +136,25 @@ Step 1.6 — Dev-web smoke test
 - Leave dev server running for Hour 2.
 
 Step 1.7 — Write `AUDIT_HOUR1.md` from template:
+
+```markdown
+# Hour 1 Audit — Build & Boot
+| Step | Status | Notes |
+|------|--------|-------|
+| 1.1 Install | PASS/YELLOW/FAIL | ... |
+| 1.2 Typecheck | ... | ... |
+| 1.3 Lint | ... | ... |
+| 1.4 Tests | ... | ... |
+| 1.5 Build | ... | ... |
+| 1.6 Dev boot | ... | ... |
+
+**Verdict:** GO / YELLOW / NO-GO
+```
+
+Hour 1 gate: any FAIL → write `DEMO_GO_NOGO.md` NO-GO, STOP. Any PASS+YELLOW → continue.
+
+---
+
 
 ```markdown
 # Hour 1 Audit — Build & Boot
