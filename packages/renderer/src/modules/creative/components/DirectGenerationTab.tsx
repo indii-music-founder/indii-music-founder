@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
 import { VideoPromptBuilder } from './veo/VideoPromptBuilder';
+import { VeoSettingsPanel } from './veo/VeoSettingsPanel';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -104,6 +105,9 @@ export default function DirectGenerationTab() {
                                 )}
                             </button>
                         </VideoPromptBuilder>
+                        {mode === 'video' && (
+                            <VeoSettingsPanel isOpen={isPromptBuilderOpen} />
+                        )}
                     </div>
                 </div>
 
