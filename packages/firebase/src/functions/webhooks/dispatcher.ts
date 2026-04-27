@@ -8,7 +8,10 @@
  * - Event deduplication with idempotency keys
  */
 
-import * as functions from 'firebase-functions/v2/firestore';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onRequest } from 'firebase-functions/v2/https';
+import * as express from 'express';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 
@@ -49,7 +52,7 @@ function generateSignature(secret: string, payload: string): string {
 /**
  * Verify webhook signature
  */
-function verifySignature(secret: string, signature: string, payload: string): boolean {
+export function verifySignature(secret: string, signature: string, payload: string): boolean {
   const expected = generateSignature(secret, payload);
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
@@ -190,8 +193,7 @@ async function processWebhookDelivery(
 /**
  * Firestore trigger: Send webhook when event created
  */
-export const sendWebhookOnEvent = functions.firestore
-  .onDocumentCreated('events/{eventId}', async (change) => {
+export const sendWebhookOnEvent = onDocumentCreated('events/{eventId}', async (change) => {
     try {
       const eventData = change.data?.data();
       if (!eventData) return;
@@ -244,11 +246,11 @@ export const sendWebhookOnEvent = functions.firestore
 /**
  * Scheduled function: Process webhook queue every 30 seconds
  */
-export const processWebhookQueue = functions.scheduler.onSchedule(
+export const processWebhookQueue = onSchedule(
   {
     schedule: 'every 30 seconds',
     timeoutSeconds: 300,
-    memory: '256MB',
+    memory: '256MiB',
   },
   async () => {
     try {
@@ -297,7 +299,7 @@ export const processWebhookQueue = functions.scheduler.onSchedule(
 /**
  * HTTP endpoint: Create webhook subscription
  */
-export const createWebhook = functions.https.onRequest(async (req, res) => {
+export const createWebhook = onRequest(async (req: express.Request, res: express.Response) => {
   try {
     const { userId, url, secret, events } = req.body;
 
@@ -318,7 +320,7 @@ export const createWebhook = functions.https.onRequest(async (req, res) => {
     };
 
     await db.collection('users').doc(userId).collection('webhooks').doc(webhookId).set(webhook);
-    res.status(201).json({ id: webhookId, ...webhook });
+    res.status(201).json({ ...webhook, id: webhookId });
   } catch (err) {
     console.error('[WebhookDispatcher] Create webhook failed:', err);
     res.status(500).json({ error: 'Internal server error' });

@@ -13,6 +13,13 @@ interface IAgentRunner {
 }
 
 /**
+ * @deprecated HybridOrchestrator is being deprecated in favor of indii Conductor (AgentZeroService).
+ * 
+ * MIGRATION PLAN:
+ * Callers currently relying on HybridOrchestrator for complex orchestration should migrate to 
+ * using the indii Conductor (AgentZeroService) hub-and-spoke model located in 
+ * `src/services/agent/AgentZeroService.ts`.
+ * 
  * HybridOrchestrator: The "Best of Both Worlds" engine.
  * Merges system/browser integration with autonomous multi-turn reasoning — indii's native orchestration engine.
  */

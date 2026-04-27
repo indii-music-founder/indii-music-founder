@@ -1,0 +1,4 @@
+
+> indiios-monorepo@1.57.1 typecheck:renderer
+> tsc -b packages/renderer
+

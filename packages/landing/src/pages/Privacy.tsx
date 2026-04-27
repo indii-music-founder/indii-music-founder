@@ -7,7 +7,7 @@ export default function Privacy() {
       <p className="text-gray-400 mb-6">Last updated: April 2026</p>
 
       <p className="text-gray-300 leading-relaxed mb-8">
-        IndiiOS LLC ("Company," "we," "our," or "us") is committed to protecting your privacy.
+        New Detroit Music LLC ("Company," "we," "our," or "us") is committed to protecting your privacy.
         This Privacy Policy explains how we collect, use, disclose, and safeguard your information
         when you use our website, applications, and services (collectively, the "Service").
       </p>
@@ -161,7 +161,7 @@ export default function Privacy() {
             </a>
           </p>
           <p>
-            Address: IndiiOS LLC, United States
+            Address: New Detroit Music LLC, United States
           </p>
         </div>
       </section>

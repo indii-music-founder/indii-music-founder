@@ -46,28 +46,15 @@ describe('RateLimiter', () => {
         await expect(acquirePromise).resolves.toBeUndefined();
     });
 
-    it('should support timeout parameter in acquire', async () => {
+    it('should timeout if token never available', async () => {
         const limiter = new RateLimiter(1, 1);
         limiter.tryAcquire();
 
-        // Verify that the acquire method supports a timeout parameter
-        const acquireMethod = limiter.acquire;
-        expect(typeof acquireMethod).toBe('function');
-
-        // The method should return a Promise
-        const result = limiter.acquire(1000);
-        expect(result instanceof Promise).toBe(true);
-
-        // Cancel the promise to clean up
-        result.catch(() => {});
-        let error: any;
-        const acquirePromise = limiter.acquire(500).catch(e => { error = e; });
+        const acquirePromise = limiter.acquire(500);
 
         // Advance time enough to trigger the timeout
         await vi.advanceTimersByTimeAsync(1000);
-        await acquirePromise;
 
-        expect(error).toBeDefined();
-        expect(error.message).toBe('Rate limit acquisition timed out');
+        await expect(acquirePromise).rejects.toThrow('Rate limit acquisition timed out');
     });
 });

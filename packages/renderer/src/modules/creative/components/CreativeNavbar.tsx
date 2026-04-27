@@ -65,7 +65,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 <div className="flex items-center gap-2 md:gap-3 min-w-0">
                     <div className="flex items-center gap-2 text-gray-400 shrink-0">
                         <Palette size={15} className="text-purple-400" />
-                        <h1 className="text-xs font-bold text-gray-300 tracking-tight hidden sm:block">Creative Director</h1>
+                        <h1 className="text-xs font-bold text-gray-300 tracking-tight hidden sm:block">Studio</h1>
                     </div>
 
                     <div className="h-3.5 w-px bg-white/8 mx-0.5" />

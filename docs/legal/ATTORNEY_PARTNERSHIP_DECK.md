@@ -165,7 +165,7 @@ lift.
 ---
 
 **Contact**
-IndiiOS LLC · Detroit, MI
+New Detroit Music LLC · Detroit, MI
 legal@indiios.com
 
 *This document is confidential and intended solely for the recipient.*

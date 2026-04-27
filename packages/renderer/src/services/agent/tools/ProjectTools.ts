@@ -159,6 +159,23 @@ export const ProjectTools = {
             const error = e as Error;
             return toolError(`Failed to update task: ${error.message}`);
         }
+    }),
+
+    update_project_metadata: wrapTool('update_project_metadata', async (args: { projectId: string; metadata: Record<string, any> }) => {
+        try {
+            const { useStore } = await import('@/core/store');
+            const store = useStore.getState();
+
+            await store.updateProjectMetadata(args.projectId, args.metadata);
+
+            return toolSuccess({
+                projectId: args.projectId,
+                metadata: args.metadata
+            }, `Successfully updated metadata for project ${args.projectId}.`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            return toolError(`Failed to update project metadata: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -168,5 +185,6 @@ export const {
     open_project,
     create_task,
     list_tasks,
-    update_task_status
+    update_task_status,
+    update_project_metadata
 } = ProjectTools;

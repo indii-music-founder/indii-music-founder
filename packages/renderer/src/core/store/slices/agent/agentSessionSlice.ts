@@ -17,6 +17,8 @@ export interface AgentMessage {
     source?: MessageSource;
     /** Optional device/context metadata (device name, IP, etc.) */
     metadata?: Record<string, unknown>;
+    /** Optional Living Plan ID for Talk-to-Execute bridge */
+    planId?: string;
 }
 
 export interface AgentThought {
