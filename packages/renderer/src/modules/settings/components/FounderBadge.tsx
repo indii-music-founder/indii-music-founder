@@ -59,7 +59,7 @@ export default function FounderBadge() {
         year: 'numeric', month: 'long', day: 'numeric'
     });
 
-    const verifyUrl = `https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/blob/main/src/config/founders.ts`;
+    const verifyUrl = `https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron/blob/main/src/config/founders.ts`;
 
     return (
         <motion.div

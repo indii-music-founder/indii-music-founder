@@ -11,6 +11,7 @@ import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useGatedModules } from '@/config/featureFlags';
+import { ProjectList } from './sidebar/ProjectList';
 
 // Navigation debounce interval in ms — prevents Firestore b815 crash from rapid module switching
 const NAV_DEBOUNCE_MS = 150;
@@ -346,6 +347,9 @@ export default function Sidebar() {
             </div>
 
             <div className="flex-1 py-4 space-y-2">
+                {/* Projects */}
+                <ProjectList isSidebarOpen={isSidebarOpen} />
+
                 {/* Manager's Office */}
                 <div data-testid="manager-section" className="mb-2">
                     {isSidebarOpen && (

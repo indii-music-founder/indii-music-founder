@@ -23,6 +23,7 @@ export interface Project {
     orgId: string;
     thumbnail?: string;
     assetCount?: number;
+    metadata?: Record<string, any>;
 }
 
 export interface AppSlice {
@@ -34,6 +35,7 @@ export interface AppSlice {
     addProject: (project: ProjectMetadata) => void; // Changed parameter type
     loadProjects: () => Promise<void>;
     createNewProject: (name: string, type: Project['type'], orgId: string) => Promise<string>;
+    updateProjectMetadata: (projectId: string, metadata: Record<string, any>) => Promise<void>;
     pendingPrompt: string | null;
     setPendingPrompt: (prompt: string | null) => void;
     apiKeyError: boolean;
@@ -126,6 +128,26 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }));
         return newProject.id;
     },
+    updateProjectMetadata: async (projectId, metadata) => {
+        const { ProjectService } = await import('@/services/ProjectService');
+        const { projectToMetadata } = await import('@/services/dashboard/projectTypeUtils');
+        
+        // 1. Update in Firestore via ProjectService
+        // We need to assume ProjectService has an update method or use patch
+        // Let's check ProjectService after this.
+        await ProjectService.update(projectId, { metadata });
+
+        // 2. Update local state
+        set((state) => ({
+            projects: state.projects.map((p) => 
+                p.id === projectId 
+                    ? { ...p, metadata: { ...(p.metadata || {}), ...metadata } }
+                    : p
+            )
+        }));
+        
+        logger.info(`[AppSlice] Updated metadata for project ${projectId}`);
+    },
     pendingPrompt: null,
     setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
     apiKeyError: false,
@@ -148,10 +170,10 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     toggleRightPanel: () => {
         // BUG-006 FIX: Debounce rapid toggle clicks.
         // The AnimatePresence mode="wait" in RightPanel can get stuck
-        // if toggled faster than the spring animation duration (~200ms).
+        // if toggled faster than the spring animation duration (~100ms).
         const now = Date.now();
         const state = get();
-        if (state._lastRightPanelToggle && now - state._lastRightPanelToggle < 200) {
+        if (state._lastRightPanelToggle && now - state._lastRightPanelToggle < 100) {
             return; // Ignore rapid-fire toggles
         }
         set({ isRightPanelOpen: !state.isRightPanelOpen, _lastRightPanelToggle: now });

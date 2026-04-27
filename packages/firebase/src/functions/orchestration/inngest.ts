@@ -19,10 +19,6 @@ const db = admin.firestore();
 export const inngest = new Inngest({
   id: 'indiios-api',
   name: 'IndiiOS Analytics & Distribution API',
-  retryConfig: {
-    initialDelayMs: 1000,
-    maxAttempts: 3,
-  },
 });
 
 interface DistributionJobPayload {
@@ -55,7 +51,7 @@ interface OnboardingPayload {
  * Job: Process distribution across multiple platforms
  */
 export const processDistribution = inngest.createFunction(
-  { id: 'process-distribution', retryConfig: { maxAttempts: 3 } },
+  { id: 'process-distribution', retries: 3 },
   { event: 'distribution/created' },
   async ({ event, step }) => {
     const { distributionId, userId, distributors, tracks } = event.data as DistributionJobPayload;
@@ -97,7 +93,7 @@ export const processDistribution = inngest.createFunction(
  * Job: Export analytics data
  */
 export const exportAnalytics = inngest.createFunction(
-  { id: 'export-analytics', retryConfig: { maxAttempts: 2 } },
+  { id: 'export-analytics', retries: 2 },
   { event: 'analytics/export-requested' },
   async ({ event, step }) => {
     const { userId, format, startDate, endDate } = event.data as AnalyticsExportPayload;
@@ -139,10 +135,10 @@ export const exportAnalytics = inngest.createFunction(
  * Job: Retry failed webhook deliveries
  */
 export const retryWebhookDelivery = inngest.createFunction(
-  { id: 'retry-webhook-delivery', retryConfig: { maxAttempts: 2 } },
+  { id: 'retry-webhook-delivery', retries: 2 },
   { event: 'webhook/retry-scheduled' },
   async ({ event, step }) => {
-    const { webhookEventId, userId, attempt } = event.data as WebhookRetryPayload;
+    const { webhookEventId, attempt } = event.data as WebhookRetryPayload;
 
     const result = await step.run(`attempt-${attempt}`, async () => {
       const webhookEvent = await db.collection('webhook_queue').doc(webhookEventId).get();
@@ -219,7 +215,7 @@ export const sendOnboardingWorkflow = inngest.createFunction(
   { id: 'send-onboarding-workflow' },
   { event: 'user/onboarded' },
   async ({ event, step }) => {
-    const { userId, email, name } = event.data as OnboardingPayload;
+    const { userId, email } = event.data as OnboardingPayload;
 
     // Step 1: Send welcome email
     await step.run('send-welcome', async () => {

@@ -430,7 +430,7 @@ When a request falls outside your scope:
     ${args.content.split('\n').map(line => `<p>${line}</p>`).join('')}
   </div>
   <div class="footer">
-    <p>© ${new Date().getFullYear()} IndiiOS LLC. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} New Detroit Music LLC. All rights reserved.</p>
   </div>
 </body>
 </html>`;

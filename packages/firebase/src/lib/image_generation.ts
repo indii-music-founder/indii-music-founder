@@ -60,6 +60,8 @@ interface GeminiCandidate {
     content?: {
         parts?: GeminiContentPart[];
     };
+    finishReason?: string;
+    safetyRatings?: any[];
     groundingMetadata?: Record<string, unknown>;
 }
 

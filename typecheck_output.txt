@@ -1,15 +1,6 @@
 
-> indiios-monorepo@1.56.0 typecheck
-> tsc -b packages/shared packages/main packages/renderer
+> indiios-monorepo@1.57.1 typecheck:renderer
+> tsc -b packages/renderer
 
-packages/renderer/src/modules/maestro/components/MaestroGraph.tsx(77,47): error TS2538: Type 'undefined' cannot be used as an index type.
-packages/renderer/src/modules/maestro/components/MaestroGraph.tsx(78,33): error TS2538: Type 'undefined' cannot be used as an index type.
-packages/renderer/src/modules/maestro/components/MaestroGraph.tsx(80,23): error TS18048: 'level' is possibly 'undefined'.
-packages/renderer/src/modules/maestro/MaestroModule.tsx(32,22): error TS18048: 'entryNode' is possibly 'undefined'.
-packages/renderer/src/modules/observability/ObservabilityDashboard.tsx(173,99): error TS2322: Type '(value: number) => string' is not assignable to type 'Formatter<number, NameType>'.
-  Types of parameters 'value' and 'value' are incompatible.
-    Type 'number | undefined' is not assignable to type 'number'.
-      Type 'undefined' is not assignable to type 'number'.
-packages/renderer/src/services/agent/AgentService.ts(472,74): error TS2345: Argument of type 'string' is not assignable to parameter of type 'AgentGraph'.
-packages/renderer/src/services/agent/AgentService.ts(493,65): error TS2345: Argument of type 'string' is not assignable to parameter of type 'AgentGraph'.
-packages/renderer/src/services/agent/ReflectionLoopService.test.ts(24,32): error TS2554: Expected 1-6 arguments, but got 0.
+packages/renderer/src/services/agent/AgentService.ts(915,21): error TS2322: Type '"success" | "logic"' is not assignable to type '"error" | "logic" | "tool" | "tool_result" | undefined'.
+  Type '"success"' is not assignable to type '"error" | "logic" | "tool" | "tool_result" | undefined'.

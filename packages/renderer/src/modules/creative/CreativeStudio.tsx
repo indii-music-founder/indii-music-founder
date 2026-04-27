@@ -66,7 +66,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         }
     }, [initialMode, setGenerationMode]);
 
-    // P0 FIX: Restore canvas editor when returning to Creative Director
+    // P0 FIX: Restore canvas editor when returning to Studio
     // If the store still has a selectedItem from before navigation, re-open the editor.
     // This prevents the "state lost" feeling when users navigate away and come back.
     useEffect(() => {
@@ -257,7 +257,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     }, [pendingPrompt, generationMode, whiskState, setPrompt, setPendingPrompt, studioControls, addToHistory, currentProjectId, userProfile, toast]);
 
     return (
-        <ModuleErrorBoundary moduleName="Creative Director">
+        <ModuleErrorBoundary moduleName="Studio">
             <div className="flex flex-col h-full w-full bg-background selection:bg-dept-creative/30">
                 <CreativeNavbar data-testid="creative-navbar" />
 

@@ -1,7 +1,7 @@
 # Business Decisions — Master Index
 
 > **Created:** 2026-03-18  
-> **For:** Founder, IndiiOS LLC  
+> **For:** Founder, New Detroit Music LLC  
 > **Purpose:** This directory contains all business decisions blocking production launch.  
 > None of these are code gaps — every code path is implemented and waiting for your input.
 

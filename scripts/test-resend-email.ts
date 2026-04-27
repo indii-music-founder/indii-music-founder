@@ -97,7 +97,7 @@ async function sendTestEmail() {
             </div>
             <div class="footer">
                 <p>Powered by <a href="https://indiios.com">indiiOS</a> — The Creative Operating System</p>
-                <p style="margin-top: 8px;">© ${new Date().getFullYear()} IndiiOS LLC. All rights reserved.</p>
+                <p style="margin-top: 8px;">© ${new Date().getFullYear()} New Detroit Music LLC. All rights reserved.</p>
             </div>
         </div>
     </div>
@@ -115,7 +115,7 @@ async function sendTestEmail() {
             to: [TARGET_EMAIL],
             subject: '🚀 indiiOS Email Pipeline — Live & Operational',
             html: html,
-            text: `indiiOS Email Pipeline — Live & Operational\n\nYour email delivery system is now fully operational. This confirms the Resend integration is working end-to-end.\n\nCapabilities:\n- Contract Delivery (NDA, IP, Performance PDFs)\n- Notifications (Distribution, releases, alerts)\n- Team Invitations\n- DMCA Notices\n\nSent at: ${new Date().toISOString()}\n\n© ${new Date().getFullYear()} IndiiOS LLC`,
+            text: `indiiOS Email Pipeline — Live & Operational\n\nYour email delivery system is now fully operational. This confirms the Resend integration is working end-to-end.\n\nCapabilities:\n- Contract Delivery (NDA, IP, Performance PDFs)\n- Notifications (Distribution, releases, alerts)\n- Team Invitations\n- DMCA Notices\n\nSent at: ${new Date().toISOString()}\n\n© ${new Date().getFullYear()} New Detroit Music LLC`,
         }),
     });
 
