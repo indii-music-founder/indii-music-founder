@@ -49,7 +49,7 @@ export function getFirebaseAI(): AI | null {
 
     try {
         _aiInstance = getAI(app, {
-            backend: new VertexAIBackend('us-central1'),
+            backend: new VertexAIBackend(import.meta.env.VITE_VERTEX_LOCATION || 'us-central1'),
             useLimitedUseAppCheckTokens: false
         });
         logger.debug('[Firebase] Firebase AI initialized with Vertex AI backend (us-central1)');
