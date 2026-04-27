@@ -128,7 +128,7 @@ describe('CreativeNavbar', () => {
             </ToastProvider>
         );
         // The mode dropdown was replaced by a static "Creative Studio" label
-        expect(screen.getByText('Creative Director')).toBeInTheDocument();
+        expect(screen.getByText('Studio')).toBeInTheDocument();
     });
 
     it('opens and closes brand assets drawer', async () => {

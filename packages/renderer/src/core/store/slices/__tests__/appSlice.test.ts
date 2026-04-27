@@ -68,15 +68,15 @@ describe('appSlice', () => {
             useStore.getState().toggleRightPanel();
             expect(useStore.getState().isRightPanelOpen).toBe(true);
 
-            // Advance time slightly (under 200ms)
-            vi.advanceTimersByTime(100);
+            // Advance time slightly (under 100ms)
+            vi.advanceTimersByTime(50);
 
             // Second toggle (should be ignored)
             useStore.getState().toggleRightPanel();
             expect(useStore.getState().isRightPanelOpen).toBe(true); // Still true
 
             // Advance time past debounce window
-            vi.advanceTimersByTime(150); // Total 250ms
+            vi.advanceTimersByTime(100); // Total 150ms
 
             // Third toggle (should work)
             useStore.getState().toggleRightPanel();
