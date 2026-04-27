@@ -204,7 +204,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // AI Sidecar
     sidecar: {
-        restart: () => ipcRenderer.invoke('sidecar:restart'),
+        // NOTE: restart handler removed from main process — do not expose orphaned IPC
         onStatusUpdate: (callback: (status: string) => void) => {
             const handle = (_e: unknown, status: string) => callback(status);
             ipcRenderer.on('sidecar:status-update', handle);

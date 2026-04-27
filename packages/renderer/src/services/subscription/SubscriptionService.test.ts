@@ -196,4 +196,21 @@ describe('SubscriptionService (Ledger Checks)', () => {
         expect(result.upgradeRequired).toBe(true);
     });
 
+    it('💸 "God Mode Gate": Verifies custom claim god_mode bypasses limits', async () => {
+        // Setup: Free Tier User
+        mockBackendResponse(SubscriptionTier.FREE);
+
+        // Add god_mode claim to current user
+        (auth.currentUser as any).getIdTokenResult = vi.fn().mockResolvedValue({ claims: { god_mode: true } });
+
+        // Generate within god mode limits (e.g. 100 seconds)
+        const result = await subscriptionService.canPerformAction('generateVideo', 100);
+        expect(result.allowed).toBe(true);
+
+        // Even with god_mode, requests > 120s are blocked
+        const resultBlocked = await subscriptionService.canPerformAction('generateVideo', 121);
+        expect(resultBlocked.allowed).toBe(false);
+        expect(resultBlocked.reason).toContain('God Mode blocked: Single generation request too large');
+    });
+
 });
