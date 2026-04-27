@@ -32,7 +32,7 @@ The codebase includes references to both "IndiiOS LLC" and "New Detroit Music LL
 - **`package.json`:** May list `IndiiOS LLC` in author field
 - **DDEX Config (`src/core/config/ddex.ts`):** Correctly references Party ID registered to `New Detroit Music LLC`
 
-**Clarification:** "IndiiOS" is the **product name**. "New Detroit Music LLC" is the **legal entity** that owns and develops indiiOS.
+**Clarification:** "IndiiOS" is the **product name** and operates as a DBA (Doing Business As) under the parent company **New Detroit Music LLC**. "New Detroit Music LLC" is the **legal entity** that owns and develops indiiOS.
 
 ---
 
