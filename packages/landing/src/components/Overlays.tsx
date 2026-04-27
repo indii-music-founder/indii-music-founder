@@ -148,7 +148,7 @@ export default function Overlays() {
                     <div className="p-10 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors backdrop-blur-md group">
                         <h3 className="text-3xl font-bold mb-2 group-hover:text-neon-purple transition-colors">Manage</h3>
                         <p className="text-white/40 text-sm leading-relaxed">
-                            Organize your team, your files, and your finances in one command center.
+                            Organize your team, your files, and your finances in one unified workspace.
                         </p>
                     </div>
                 </div>

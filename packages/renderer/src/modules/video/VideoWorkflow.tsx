@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { VideoAspectRatioSchema } from '@/modules/video/schemas';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
@@ -344,12 +345,16 @@ export default function VideoWorkflow() {
 
             let results: { id: string; url: string; prompt: string; }[] = [];
 
+            // Validate aspect ratio against the schema; fall back to '16:9' only for truly unsupported values.
+            const validatedAR = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
+            const effectiveAspectRatio = validatedAR.success ? validatedAR.data : '16:9';
+
             // Check for long-form Video (Daisy Chain or duration > 8s)
             if (studioControls.duration > 8 || videoInputs.isDaisyChain) {
                 results = await VideoGeneration.generateLongFormVideo({
                     prompt: finalPrompt,
                     totalDuration: Math.max(studioControls.duration, 8), // Ensure at least 1 block
-                    aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
+                    aspectRatio: effectiveAspectRatio,
                     resolution: studioControls.resolution,
                     negativePrompt: audioNegativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
@@ -367,7 +372,7 @@ export default function VideoWorkflow() {
                 results = await VideoGeneration.generateVideo({
                     prompt: finalPrompt,
                     resolution: studioControls.resolution,
-                    aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
+                    aspectRatio: effectiveAspectRatio,
                     negativePrompt: audioNegativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     fps: studioControls.fps,
