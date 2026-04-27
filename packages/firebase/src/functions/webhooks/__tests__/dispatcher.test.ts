@@ -5,7 +5,7 @@
  */
 
 import * as crypto from 'crypto';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('WebhookDispatcher', () => {
   const secret = 'test-secret-key';
@@ -80,7 +80,7 @@ describe('WebhookDispatcher', () => {
       const attempt1 = 0;
       const attempt2 = 1;
       const attempt3 = 2;
-      const currentAttempt = 1; // 0-indexed
+      const _currentAttempt = 1; // 0-indexed — kept for documentation
 
       expect(attempt1 < maxAttempts - 1).toBe(true);
       expect(attempt2 < maxAttempts - 1).toBe(true);

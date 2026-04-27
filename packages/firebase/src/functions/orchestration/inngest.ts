@@ -174,7 +174,7 @@ export const batchAnalyticsAggregation = inngest.createFunction(
         .limit(1000)
         .get();
 
-      const eventsByUser: Record<string, any[]> = {};
+      const eventsByUser: Record<string, Record<string, unknown>[]> = {};
       snapshot.docs.forEach(doc => {
         const data = doc.data();
         if (!eventsByUser[data.userId]) {
@@ -188,8 +188,9 @@ export const batchAnalyticsAggregation = inngest.createFunction(
         const aggregation = {
           date: yesterday.toISOString().split('T')[0],
           totalEvents: events.length,
-          eventsByType: events.reduce((acc: Record<string, number>, e: any) => {
-            acc[e.eventType] = (acc[e.eventType] || 0) + 1;
+          eventsByType: events.reduce((acc: Record<string, number>, e: Record<string, unknown>) => {
+            const eventType = e.eventType as string;
+            acc[eventType] = (acc[eventType] || 0) + 1;
             return acc;
           }, {}),
           createdAt: new Date().toISOString(),
@@ -254,7 +255,7 @@ async function submitToDistributor(
   userId: string,
   distributor: string,
   tracks: Array<{ trackId: string; title: string }>
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   // This would integrate with actual distributor APIs
   // For now, return mock success
   return {
@@ -268,7 +269,7 @@ async function submitToDistributor(
 /**
  * Helper: Convert events to CSV format
  */
-function convertToCSV(events: any[]): string {
+function convertToCSV(events: Record<string, unknown>[]): string {
   if (events.length === 0) return '';
 
   const headers = ['eventId', 'eventType', 'userId', 'timestamp', 'data'];

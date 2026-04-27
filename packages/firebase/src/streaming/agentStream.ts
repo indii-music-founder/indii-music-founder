@@ -90,7 +90,7 @@ export const agentStreamResponse = onRequest(
       let decodedToken;
       try {
         decodedToken = await admin.auth().verifyIdToken(authToken);
-      } catch (error) {
+      } catch (_error) {
         throw new HttpsError("unauthenticated", "Invalid ID token");
       }
 
