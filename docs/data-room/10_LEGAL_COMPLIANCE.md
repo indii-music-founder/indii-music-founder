@@ -23,7 +23,7 @@ indiiOS operates under three primary third-party agreements:
 
 ### Parties
 
-- **Merchant:** New Detroit Music LLC (indiiOS)
+- **Merchant:** New Detroit Music LLC (dba indiiOS)
 - **Owner/Signatory:** William Roberts
 - **Account Status:** Active, in good standing
 - **Account Created:** 2025-Q3
