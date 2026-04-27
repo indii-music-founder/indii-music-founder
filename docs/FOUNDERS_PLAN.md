@@ -89,7 +89,7 @@ The permanent on-disk record. Committed to git. Immutable by design (git history
  * Entries are append-only. Removal of any entry is a breach of agreement.
  * Hash verification: SHA-256("{name}|{AGREEMENT_VERSION}|{joinedAt}")
  *
- * indiiOS LLC — chartered 2024
+ * New Detroit Music LLC — chartered 2024
  */
 
 export const AGREEMENT_VERSION = '1.0.0';
@@ -113,7 +113,7 @@ export interface FounderRecord {
 
 export const FOUNDERS: FounderRecord[] = [
   // Entries added here as founders join.
-  // Each entry is a permanent commitment by indiiOS LLC.
+  // Each entry is a permanent commitment by New Detroit Music LLC.
 ];
 
 export const FOUNDERS_SEATS_REMAINING = AGREEMENT_TERMS.seats_total - FOUNDERS.length;

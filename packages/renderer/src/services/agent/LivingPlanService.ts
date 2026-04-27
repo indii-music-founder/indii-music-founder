@@ -14,7 +14,6 @@ import {
 
 export type PlanShape = 'atomic' | 'workflow' | 'timeline';
 export type PlanStatus = 'drafting' | 'awaiting_approval' | 'executing' | 'proposed' | 'completed' | 'failed' | 'cancelled';
-export type PlanStatus = 'drafting' | 'awaiting_approval' | 'executing' | 'completed' | 'failed' | 'cancelled';
 
 export interface PlanStep {
   id: string;
@@ -74,8 +73,10 @@ export interface LivingPlan {
 }
 
 export class LivingPlanService {
+  /**
+   * Create a new living plan.
+   */
   async create(
-  static async create(
     userId: string,
     projectId: string,
     goal: string,
@@ -104,8 +105,10 @@ export class LivingPlanService {
     };
   }
 
+  /**
+   * Retrieve a specific plan by ID.
+   */
   async getPlan(projectId: string, planId: string): Promise<LivingPlan | null> {
-  static async get(projectId: string, planId: string): Promise<LivingPlan | null> {
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const snapshot = await getDoc(docRef);
     return snapshot.exists()
@@ -113,11 +116,16 @@ export class LivingPlanService {
       : null;
   }
 
-  // Alias for backward compatibility or tool usage
+  /**
+   * Alias for getPlan.
+   */
   async get(projectId: string, planId: string): Promise<LivingPlan | null> {
     return this.getPlan(projectId, planId);
   }
 
+  /**
+   * List all plans for a project, optionally filtered by status.
+   */
   async getPlansForProject(projectId: string, status?: PlanStatus): Promise<LivingPlan[]> {
     const q = status 
       ? query(
@@ -129,12 +137,15 @@ export class LivingPlanService {
         );
     
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    return snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
     } as LivingPlan));
   }
 
+  /**
+   * Update the status of a plan.
+   */
   async updatePlanStatus(
     projectId: string,
     planId: string,
@@ -148,8 +159,10 @@ export class LivingPlanService {
     });
   }
 
+  /**
+   * Update the draft of a plan.
+   */
   async updateDraft(
-  static async updateDraft(
     projectId: string,
     planId: string,
     draft: PlanDraft,
@@ -161,15 +174,16 @@ export class LivingPlanService {
     });
   }
 
+  /**
+   * Add a revision to the plan's history.
+   */
   async addRevision(
-  static async addRevision(
     projectId: string,
     planId: string,
     revision: Omit<Revision, 'timestamp'>,
   ): Promise<void> {
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const plan = await this.getPlan(projectId, planId);
-    const plan = await this.get(projectId, planId);
     if (!plan) throw new Error('Plan not found');
 
     await updateDoc(docRef, {
@@ -184,6 +198,9 @@ export class LivingPlanService {
     });
   }
 
+  /**
+   * Approve a plan and set it to executing.
+   */
   async approve(
     projectId: string,
     planId: string,
@@ -191,6 +208,9 @@ export class LivingPlanService {
     return this.updatePlanStatus(projectId, planId, 'executing');
   }
 
+  /**
+   * Update the status of a specific step in the plan.
+   */
   async updateStepStatus(
     projectId: string,
     planId: string,
@@ -212,19 +232,14 @@ export class LivingPlanService {
 
     await updateDoc(docRef, {
       'draft.steps': newSteps,
-  static async approve(
-    projectId: string,
-    planId: string,
-  ): Promise<void> {
-    const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
-    await updateDoc(docRef, {
-      status: 'awaiting_approval',
-      approvedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
   }
 
-  static async execute(
+  /**
+   * Execute a plan by associating it with an execution reference.
+   */
+  async execute(
     projectId: string,
     planId: string,
     executionRef: LivingPlan['executionRef'],
@@ -237,6 +252,9 @@ export class LivingPlanService {
     });
   }
 
+  /**
+   * Cancel a plan.
+   */
   async cancel(
     projectId: string,
     planId: string,
@@ -244,6 +262,9 @@ export class LivingPlanService {
     return this.updatePlanStatus(projectId, planId, 'cancelled');
   }
 
+  /**
+   * Complete a plan.
+   */
   async complete(
     projectId: string,
     planId: string,
@@ -251,42 +272,33 @@ export class LivingPlanService {
     return this.updatePlanStatus(projectId, planId, 'completed');
   }
 
+  /**
+   * List plans for a project that are currently in a "live" state.
+   */
   async listByProject(projectId: string): Promise<LivingPlan[]> {
     const q = query(
       collection(db, 'projects', projectId, 'livingPlans'),
       where('status', 'in', ['drafting', 'awaiting_approval', 'executing', 'proposed']),
-  static async complete(
-    projectId: string,
-    planId: string,
-  ): Promise<void> {
-    const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
-    await updateDoc(docRef, {
-      status: 'completed',
-      updatedAt: serverTimestamp(),
-    });
-  }
-
-  static async listByProject(projectId: string): Promise<LivingPlan[]> {
-    const q = query(
-      collection(db, 'projects', projectId, 'livingPlans'),
-      where('status', 'in', ['drafting', 'awaiting_approval', 'executing']),
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    return snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
     } as LivingPlan));
   }
 
-  static async listAwaitingApproval(projectId: string): Promise<LivingPlan[]> {
+  /**
+   * List plans awaiting approval.
+   */
+  async listAwaitingApproval(projectId: string): Promise<LivingPlan[]> {
     const q = query(
       collection(db, 'projects', projectId, 'livingPlans'),
       where('status', '==', 'awaiting_approval'),
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    return snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
     } as LivingPlan));
   }
 }

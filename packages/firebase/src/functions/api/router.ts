@@ -32,7 +32,7 @@ async function verifyAuth(req: Request): Promise<string> {
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken.uid;
-  } catch (err) {
+  } catch (_err) {
     throw new HttpsError('unauthenticated', 'Invalid token');
   }
 }
