@@ -140,14 +140,18 @@ class MembershipServiceImpl {
 
         try {
             // Check for god_mode custom claim on Firebase Auth
-            const currentUser = (await import('@/services/firebase')).auth.currentUser;
+            const firebaseModule = await import('@/services/firebase');
+            console.log('firebase module auth:', !!firebaseModule.auth, !!firebaseModule.auth?.currentUser);
+            const currentUser = firebaseModule.auth.currentUser;
             if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
                 const tokenResult = await currentUser.getIdTokenResult();
+                console.log('tokenResult:', tokenResult);
                 if (tokenResult?.claims?.god_mode === true) {
+                    console.log('god_mode is true!');
                     return true;
                 }
-
             }
+            console.log('returning false from isBuilderAccount');
 
             return false;
         } catch {
