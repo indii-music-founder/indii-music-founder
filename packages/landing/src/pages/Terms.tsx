@@ -77,7 +77,7 @@ export default function Terms() {
             <h3 className="text-xl font-semibold text-gray-200 mb-2">AI-Generated Content</h3>
             <p>
               Content generated using our AI tools is owned by you. You may use it for commercial or
-              personal purposes, subject to applicable laws and our terms regarding DDEX distribution.
+              personal purposes, subject to applicable laws and our terms regarding global distribution.
             </p>
           </div>
         </div>

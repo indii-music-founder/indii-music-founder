@@ -84,7 +84,7 @@ export default function Overlays() {
                         indii
                     </h2>
                     <p className="text-2xl text-white/80 font-light mb-8 leading-tight">
-                        Your independent creative engine.
+                        Your AI production manager.
                     </p>
 
                     <div className="flex flex-col items-end gap-6 text-white/50">
@@ -130,7 +130,7 @@ export default function Overlays() {
                         The Vault
                     </h2>
                     <p className="text-xl md:text-2xl text-white/60 font-light max-w-2xl mx-auto">
-                        Your intellectual property, secured forever.
+                        Your intellectual property, secured on-chain.
                         <br />Smart contracts for simpler splits.
                     </p>
                 </div>
@@ -199,7 +199,7 @@ export default function Overlays() {
                 </div>
 
                 <footer className="mt-40 text-center text-white/20 text-xs font-mono">
-                    <p>&copy; 2026 indiiOS Inc. The operating system for your musical independence.</p>
+                    <p>&copy; 2025 THE WALKING AGENCY. ALL RIGHTS RESERVED.</p>
                 </footer>
             </section>
         </div>
