@@ -14,6 +14,7 @@ import {
 
 export type PlanShape = 'atomic' | 'workflow' | 'timeline';
 export type PlanStatus = 'drafting' | 'awaiting_approval' | 'executing' | 'proposed' | 'completed' | 'failed' | 'cancelled';
+export type PlanStatus = 'drafting' | 'awaiting_approval' | 'executing' | 'completed' | 'failed' | 'cancelled';
 
 export interface PlanStep {
   id: string;
@@ -74,6 +75,7 @@ export interface LivingPlan {
 
 export class LivingPlanService {
   async create(
+  static async create(
     userId: string,
     projectId: string,
     goal: string,
@@ -103,6 +105,7 @@ export class LivingPlanService {
   }
 
   async getPlan(projectId: string, planId: string): Promise<LivingPlan | null> {
+  static async get(projectId: string, planId: string): Promise<LivingPlan | null> {
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const snapshot = await getDoc(docRef);
     return snapshot.exists()
@@ -146,6 +149,7 @@ export class LivingPlanService {
   }
 
   async updateDraft(
+  static async updateDraft(
     projectId: string,
     planId: string,
     draft: PlanDraft,
@@ -158,12 +162,14 @@ export class LivingPlanService {
   }
 
   async addRevision(
+  static async addRevision(
     projectId: string,
     planId: string,
     revision: Omit<Revision, 'timestamp'>,
   ): Promise<void> {
     const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
     const plan = await this.getPlan(projectId, planId);
+    const plan = await this.get(projectId, planId);
     if (!plan) throw new Error('Plan not found');
 
     await updateDoc(docRef, {
@@ -206,6 +212,27 @@ export class LivingPlanService {
 
     await updateDoc(docRef, {
       'draft.steps': newSteps,
+  static async approve(
+    projectId: string,
+    planId: string,
+  ): Promise<void> {
+    const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
+    await updateDoc(docRef, {
+      status: 'awaiting_approval',
+      approvedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  static async execute(
+    projectId: string,
+    planId: string,
+    executionRef: LivingPlan['executionRef'],
+  ): Promise<void> {
+    const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
+    await updateDoc(docRef, {
+      status: 'executing',
+      executionRef,
       updatedAt: serverTimestamp(),
     });
   }
@@ -228,6 +255,33 @@ export class LivingPlanService {
     const q = query(
       collection(db, 'projects', projectId, 'livingPlans'),
       where('status', 'in', ['drafting', 'awaiting_approval', 'executing', 'proposed']),
+  static async complete(
+    projectId: string,
+    planId: string,
+  ): Promise<void> {
+    const docRef = doc(db, 'projects', projectId, 'livingPlans', planId);
+    await updateDoc(docRef, {
+      status: 'completed',
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  static async listByProject(projectId: string): Promise<LivingPlan[]> {
+    const q = query(
+      collection(db, 'projects', projectId, 'livingPlans'),
+      where('status', 'in', ['drafting', 'awaiting_approval', 'executing']),
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    } as LivingPlan));
+  }
+
+  static async listAwaitingApproval(projectId: string): Promise<LivingPlan[]> {
+    const q = query(
+      collection(db, 'projects', projectId, 'livingPlans'),
+      where('status', '==', 'awaiting_approval'),
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map((doc) => ({
