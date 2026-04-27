@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, AlertCircle, Zap } from 'lucide-react';
-import type { LivingPlan, PlanDraft } from '@/services/agent/LivingPlanService';
+import type { LivingPlan } from '@/services/agent/LivingPlanService';
 
 interface PlanCardProps {
   plan: LivingPlan;

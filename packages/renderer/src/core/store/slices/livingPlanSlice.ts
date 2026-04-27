@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { LivingPlan, PlanDraft } from '@/services/agent/LivingPlanService';
+import { Timestamp } from 'firebase/firestore';
 
 interface LivingPlanSlice {
   selectedPlanId: string | null;
@@ -48,7 +49,7 @@ export const useLivingPlanSlice = create<LivingPlanSlice>((set) => ({
       const plan = state.plans.get(planId);
       if (!plan) return state;
 
-      const updated = { ...plan, draft, updatedAt: new Date() };
+      const updated: LivingPlan = { ...plan, draft, updatedAt: Timestamp.now() };
       const newPlans = new Map(state.plans);
       newPlans.set(planId, updated);
 
