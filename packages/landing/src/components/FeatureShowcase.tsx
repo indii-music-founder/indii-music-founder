@@ -8,7 +8,7 @@ const features = [
         id: 'publishing',
         title: 'Global Connection',
         subtitle: 'Distribution Module',
-        description: 'Directly connect your music to 100+ global platforms. No middlemen, no confusion. Just share your sound everywhere at once.',
+        description: 'Directly connect your music to 100+ global platforms. Direct distribution, no confusion. Just share your sound everywhere at once.',
         icon: Disc,
         color: 'text-electric-blue',
         gradient: 'from-blue-500/20 to-cyan-500/20',
