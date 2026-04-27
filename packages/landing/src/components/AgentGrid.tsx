@@ -117,7 +117,7 @@ const agents: AgentDef[] = [
     tagline: 'Direct Distribution.',
     description:
       'Upload once, dominate everywhere. No labels, no commissions, no gatekeepers. 100% of your royalties and total ownership of your masters.',
-    keywords: ['Zero Commissions', 'Master Ownership', 'Global Reach', 'No Middlemen', 'Instant Deployment'],
+    keywords: ['No Commissions', 'Master Ownership', 'Global Reach', 'Direct Release', 'Instant Deployment'],
     icon: Globe,
     colorClass: 'text-blue-400',
     bgClass: 'bg-blue-500/10',
@@ -167,7 +167,7 @@ const agents: AgentDef[] = [
     tagline: 'CEO Status.',
     description:
       'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career independence without the bloodsucking managers.',
-    keywords: ['Direct Command', 'Secure Ops', 'Zero Management', 'Total Independence', 'Identity Guard'],
+    keywords: ['Direct Control', 'Secure Ops', 'No Management', 'Total Independence', 'Identity Guard'],
     icon: ShieldCheck,
     colorClass: 'text-violet-400',
     bgClass: 'bg-violet-500/10',
@@ -198,8 +198,8 @@ const agents: AgentDef[] = [
     title: 'Rights Guard',
     tagline: 'Secure the Bag.',
     description:
-      'Instant AI-powered contract review and cryptographic copyright protection. Secure your splits and your legacy without the billable hours.',
-    keywords: ['Contract AI', 'Rights Registry', 'Split Protection', 'Zero Legal Fees', 'Legacy Guard'],
+      'Instant automated contract review and cryptographic copyright protection. Secure your splits and your legacy without the billable hours.',
+    keywords: ['Contract System', 'Rights Registry', 'Split Protection', 'No Legal Fees', 'Legacy Guard'],
     icon: Scale,
     colorClass: 'text-indigo-400',
     bgClass: 'bg-indigo-500/10',
@@ -590,10 +590,9 @@ export default function AgentGrid() {
           </span>
         </h2>
         <p className="text-gray-500 max-w-4xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed font-light px-4">
-          Zero labels. Zero gatekeepers. Professional-grade tools 
-          working for you as your personal crew. Take back control 
-          of your career with global distribution and smart audio 
-          analysis. indiiOS is your <strong>independent creative engine</strong>.
+          No labels. No gatekeepers. Your music, your rules. Take control 
+          of your career with global distribution, smart audio 
+          analysis, and individually trained agents organized to perform specialized tasks for your team. indiiOS is your <strong>independent creative engine</strong>.
         </p>
       </motion.div>
 
