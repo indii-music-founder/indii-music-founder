@@ -2,7 +2,7 @@
   "name": "indiios-monorepo",
   "version": "1.57.1",
   "description": "The Operating System for Independent Artists — npm Workspace Monorepo",
-  "author": "IndiiOS LLC <info@indiios.com>",
+  "author": "New Detroit Music LLC <info@indiios.com>",
   "type": "module",
   "private": true,
   "main": "dist/main/index.js",
@@ -123,7 +123,7 @@
     ],
     "publish": [
       {
-        "owner": "the-walking-agency-det",
+        "owner": "new-detroit-music-llc",
         "private": true,
         "provider": "github",
         "repo": "indiiOS-Alpha-Electron"
@@ -162,7 +162,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
-    "url": "https://github.com/the-walking-agency-det/indiiOS-Clean.git"
+    "url": "https://github.com/new-detroit-music-llc/indiiOS-Clean.git"
   },
   "dependencies": {
     "jspdf": "^4.2.1"

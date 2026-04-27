@@ -18,7 +18,7 @@ When you've filled in a field, change the status from 🔴 to 🟢.
 
 | # | Field | Your Answer | Status |
 |---|-------|------------|--------|
-| F1 | **Legal entity name** | IndiiOS LLC | 🟢 |
+| F1 | **Legal entity name** | New Detroit Music LLC | 🟢 |
 | F2 | **Registered address** (the official LLC address filed with Michigan) | `_________________________________` | 🔴 |
 | F3 | **State of incorporation** | Michigan | 🟢 |
 | F4 | **EIN (Employer Identification Number)** — needed for Stripe, banking, ASCAP/BMI | `_________________________________` | 🔴 |
@@ -38,7 +38,7 @@ When you've filled in a field, change the status from 🔴 to 🟢.
 ## 1.3 DMCA Safe Harbor
 
 > ⚠️ **This is non-negotiable for a platform that hosts user content.**  
-> Without DMCA safe harbor registration, IndiiOS LLC is directly liable for every copyright-infringing upload.  
+> Without DMCA safe harbor registration, New Detroit Music LLC is directly liable for every copyright-infringing upload.  
 > Registration costs $6/year and takes 10 minutes.
 
 | # | Field | Your Answer | Status |
@@ -54,7 +54,7 @@ When you've filled in a field, change the status from 🔴 to 🟢.
 2. Click "Register a DMCA Agent"
 3. Create a copyright.gov account (if you don't have one)
 4. Fill in:
-   - **Service Provider:** IndiiOS LLC
+   - **Service Provider:** New Detroit Music LLC
    - **Alternative Names:** indiiOS, indiios.com
    - **Agent Name:** (your answer to F6)
    - **Agent Address:** (your answer to F2)

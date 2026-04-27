@@ -57,7 +57,7 @@
   ],
   "publish": {
     "provider": "github",
-    "owner": "the-walking-agency-det",
+    "owner": "new-detroit-music-llc",
     "repo": "indiiOS-Clean",
     "releaseType": "release"
   },

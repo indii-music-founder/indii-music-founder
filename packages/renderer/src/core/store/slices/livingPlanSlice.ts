@@ -10,6 +10,7 @@ interface LivingPlanSlice {
   error: string | null;
 
   setSelectedPlan: (plan: LivingPlan | null) => void;
+  setSelectedPlanId: (planId: string | null) => void;
   setPlan: (plan: LivingPlan) => void;
   updateDraft: (planId: string, draft: PlanDraft) => void;
   setLoading: (loading: boolean) => void;
@@ -30,6 +31,13 @@ export const useLivingPlanSlice = create<LivingPlanSlice>((set) => ({
       selectedPlan: plan,
       error: null,
     }),
+
+  setSelectedPlanId: (planId) =>
+    set((state) => ({
+      selectedPlanId: planId,
+      selectedPlan: planId ? state.plans.get(planId) || null : null,
+      error: null,
+    })),
 
   setPlan: (plan) =>
     set((state) => {

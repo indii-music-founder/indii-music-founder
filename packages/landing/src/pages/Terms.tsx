@@ -7,7 +7,7 @@ export default function Terms() {
       <p className="text-gray-400 mb-6">Last updated: April 2026</p>
 
       <p className="text-gray-300 leading-relaxed mb-8">
-        These Terms of Service ("Terms") are a binding agreement between you and IndiiOS LLC ("Company").
+        These Terms of Service ("Terms") are a binding agreement between you and New Detroit Music LLC ("Company").
         By accessing or using indiiOS, you agree to be bound by these Terms. If you do not agree, do not use the Service.
       </p>
 
@@ -59,7 +59,7 @@ export default function Terms() {
           <div>
             <h3 className="text-xl font-semibold text-gray-200 mb-2">Our Content</h3>
             <p>
-              The Service and its original content, features, and functionality are owned by IndiiOS LLC
+              The Service and its original content, features, and functionality are owned by New Detroit Music LLC
               and are protected by international copyright, trademark, and other intellectual property laws.
             </p>
           </div>
@@ -121,7 +121,7 @@ export default function Terms() {
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">8. Indemnification</h2>
         <p className="text-gray-300 leading-relaxed">
-          You agree to indemnify and hold harmless IndiiOS LLC from any claims, damages, losses, or expenses
+          You agree to indemnify and hold harmless New Detroit Music LLC from any claims, damages, losses, or expenses
           arising from your use of the Service, violation of these Terms, or infringement of third-party rights.
         </p>
       </section>
@@ -182,7 +182,7 @@ export default function Terms() {
         <h2 className="text-2xl font-semibold mb-4">14. Entire Agreement</h2>
         <p className="text-gray-300 leading-relaxed">
           These Terms, along with our Privacy Policy and any other policies referenced herein, constitute
-          the entire agreement between you and IndiiOS LLC and supersede all prior agreements.
+          the entire agreement between you and New Detroit Music LLC and supersede all prior agreements.
         </p>
       </section>
 
@@ -199,7 +199,7 @@ export default function Terms() {
             </a>
           </p>
           <p>
-            Address: IndiiOS LLC, United States
+            Address: New Detroit Music LLC, United States
           </p>
         </div>
       </section>

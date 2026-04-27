@@ -7,7 +7,8 @@
  * - Automatic schema validation
  */
 
-import * as functions from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, QueryDocumentSnapshot, FirestoreEvent } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { BigQuery } from '@google-cloud/bigquery';
 import type { AnalyticsEvent } from '@indiios/shared';
@@ -26,7 +27,7 @@ const DATASET_ID = 'analytics';
 const TABLE_ID = 'events';
 const SAMPLING_RATE = 0.1; // 10% sampling
 const BATCH_SIZE = 100;
-const DEDUPE_WINDOW_MS = 60000; // 1 minute
+
 
 /**
  * Generate idempotency key to prevent duplicates
@@ -112,11 +113,11 @@ async function streamEventsToBigQuery(events: AnalyticsEvent[]): Promise<void> {
 /**
  * Scheduled function: Batch events to BigQuery every 5 minutes
  */
-export const batchEventsScheduled = functions.scheduler.onSchedule(
+export const batchEventsScheduled = onSchedule(
   {
     schedule: 'every 5 minutes',
     timeoutSeconds: 300,
-    memory: '512MB',
+    memory: '512MiB',
   },
   async () => {
     try {
@@ -131,9 +132,9 @@ export const batchEventsScheduled = functions.scheduler.onSchedule(
       }
 
       const events = snapshot.docs.map(doc => ({
-        id: doc.id,
+        eventId: doc.id,
         ...doc.data(),
-      } as AnalyticsEvent));
+      } as unknown as AnalyticsEvent));
 
       await streamEventsToBigQuery(events);
 
@@ -153,8 +154,7 @@ export const batchEventsScheduled = functions.scheduler.onSchedule(
 /**
  * Firestore trigger: Stream events in real-time (sampled)
  */
-export const streamEventOnCreate = functions.firestore
-  .onDocumentCreated('events/{eventId}', async (event) => {
+export const streamEventOnCreate = onDocumentCreated('events/{eventId}', async (event: FirestoreEvent<QueryDocumentSnapshot | undefined, { eventId: string }>) => {
     try {
       if (!shouldSample()) return;
 
@@ -162,10 +162,9 @@ export const streamEventOnCreate = functions.firestore
       if (!data) return;
 
       const analyticsEvent: AnalyticsEvent = {
-        id: data.id,
+        eventId: data.eventId || event.params.eventId,
         eventType: data.eventType,
         userId: data.userId,
-        sessionId: data.sessionId,
         timestamp: data.timestamp,
         data: data.data || {},
       };
@@ -185,7 +184,7 @@ export const streamEventOnCreate = functions.firestore
       };
 
       await table.insert([row]);
-      console.log('[BigQueryEventsPipeline] Streamed event:', analyticsEvent.id);
+      console.log('[BigQueryEventsPipeline] Streamed event:', analyticsEvent.eventId);
     } catch (err) {
       console.error('[BigQueryEventsPipeline] Stream failed:', err);
       // Non-blocking: don't throw to prevent retry loop

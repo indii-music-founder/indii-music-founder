@@ -100,7 +100,7 @@ No pressure either way.
 
 Best,
 [Your name]
-IndiiOS LLC
+New Detroit Music LLC
 [Your email]
 [Calendar link if you have one — Calendly, etc.]
 

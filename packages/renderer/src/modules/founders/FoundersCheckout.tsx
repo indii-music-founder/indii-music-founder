@@ -81,7 +81,7 @@ export default function FoundersCheckout() {
                         <h3 className="text-xl font-bold text-white mb-2">Physical Check</h3>
                         <p className="text-gray-400 text-sm mb-6 h-12">Mail a certified check. Seat is reserved upon receipt and tracking confirmation.</p>
                         <div className="bg-black/50 p-4 rounded-xl border border-white/5 text-sm text-gray-300">
-                            <span className="text-white font-semibold block mb-1">IndiiOS LLC</span>
+                            <span className="text-white font-semibold block mb-1">New Detroit Music LLC</span>
                             1001 Woodward Ave<br />
                             Detroit, MI 48226
                         </div>

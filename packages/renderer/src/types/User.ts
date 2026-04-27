@@ -164,6 +164,11 @@ export interface UserProfile {
     goals?: string[];
     currentOrganizationId?: string; // Cloud-synced active organization
 
+    // Subscription & Access
+    subscriptionTier?: 'free' | 'pro' | 'enterprise' | 'founder';
+    tier?: string;
+    isFounder?: boolean;
+
     // Social & Commerce
     accountType: 'fan' | 'artist' | 'label' | 'admin';
     socialStats?: SocialStats;

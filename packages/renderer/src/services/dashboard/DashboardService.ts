@@ -13,6 +13,7 @@ export interface ProjectMetadata {
     lastModified: number;
     assetCount: number;
     thumbnail?: string;
+    metadata?: Record<string, any>;
 }
 
 export interface StorageStats {

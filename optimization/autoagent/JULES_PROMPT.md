@@ -62,7 +62,7 @@ Open a PR with all accumulated improvements when the session ends.
 
 ## Setup Checklist (before giving this to Jules)
 
-1. **Connect repo:** Make sure `the-walking-agency-det/indiiOS-Clean` is connected in Jules at [jules.google.com](https://jules.google.com)
+1. **Connect repo:** Make sure `new-detroit-music-llc/indiiOS-Clean` is connected in Jules at [jules.google.com](https://jules.google.com)
 2. **API key:** Generate at Jules settings if using the API or GitHub Action
 3. **Starting branch:** `main`
 4. **Scheduling:** For nightly runs, create a Scheduled Task set to `Daily` at 2:00 AM

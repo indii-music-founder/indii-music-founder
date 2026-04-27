@@ -5,9 +5,10 @@
  * All endpoints require authentication via Firebase ID token
  */
 
-import * as functions from 'firebase-functions/v2/https';
+import { onRequest, Request, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import type { Track, CreateTrack, Distribution, CreateDistribution, AnalyticsEvent } from '@indiios/shared';
+import type { CreateTrack, CreateDistribution } from '@indiios/shared';
+import type * as express from 'express';
 
 const db = admin.firestore();
 
@@ -18,17 +19,13 @@ interface ApiResponse<T = unknown> {
   meta: { timestamp: number; requestId: string; version: string };
 }
 
-interface PaginationParams {
-  limit?: number;
-  offset?: number;
-  sort?: 'asc' | 'desc';
-}
+
 
 // Middleware: Verify Firebase auth token
-async function verifyAuth(req: functions.Request): Promise<string> {
+async function verifyAuth(req: Request): Promise<string> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
-    throw new functions.HttpsError('unauthenticated', 'Missing or invalid auth token');
+    throw new HttpsError('unauthenticated', 'Missing or invalid auth token');
   }
 
   const token = authHeader.slice(7);
@@ -36,7 +33,7 @@ async function verifyAuth(req: functions.Request): Promise<string> {
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken.uid;
   } catch (err) {
-    throw new functions.HttpsError('unauthenticated', 'Invalid token');
+    throw new HttpsError('unauthenticated', 'Invalid token');
   }
 }
 
@@ -62,7 +59,7 @@ function errorResponse(code: string, message: string, requestId: string): ApiRes
 }
 
 // GET /api/tracks/:id - Get track details
-export const getTrack = functions.https.onRequest(async (req, res) => {
+export const getTrack = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -86,7 +83,7 @@ export const getTrack = functions.https.onRequest(async (req, res) => {
 
     res.status(200).json(respond(doc.data(), requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -95,7 +92,7 @@ export const getTrack = functions.https.onRequest(async (req, res) => {
 });
 
 // POST /api/tracks - Create new track
-export const createTrack = functions.https.onRequest(async (req, res) => {
+export const createTrack = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'POST') {
@@ -117,7 +114,7 @@ export const createTrack = functions.https.onRequest(async (req, res) => {
     await db.collection('users').doc(userId).collection('tracks').doc(trackId).set(track);
     res.status(201).json(respond(track, requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -126,7 +123,7 @@ export const createTrack = functions.https.onRequest(async (req, res) => {
 });
 
 // GET /api/analytics/events - Query analytics events
-export const queryAnalytics = functions.https.onRequest(async (req, res) => {
+export const queryAnalytics = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -151,7 +148,7 @@ export const queryAnalytics = functions.https.onRequest(async (req, res) => {
     const events = snapshot.docs.slice(offset).map(d => d.data());
     res.status(200).json(respond(events, requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -160,7 +157,7 @@ export const queryAnalytics = functions.https.onRequest(async (req, res) => {
 });
 
 // PUT /api/tracks/:id - Update track
-export const updateTrack = functions.https.onRequest(async (req, res) => {
+export const updateTrack = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'PUT') {
@@ -183,7 +180,7 @@ export const updateTrack = functions.https.onRequest(async (req, res) => {
 
     res.status(200).json(respond(updated.data(), requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -192,7 +189,7 @@ export const updateTrack = functions.https.onRequest(async (req, res) => {
 });
 
 // DELETE /api/tracks/:id - Delete track
-export const deleteTrack = functions.https.onRequest(async (req, res) => {
+export const deleteTrack = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'DELETE') {
@@ -210,7 +207,7 @@ export const deleteTrack = functions.https.onRequest(async (req, res) => {
     await db.collection('users').doc(userId).collection('tracks').doc(trackId).delete();
     res.status(204).send();
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -219,7 +216,7 @@ export const deleteTrack = functions.https.onRequest(async (req, res) => {
 });
 
 // GET /api/tracks - List tracks with pagination
-export const listTracks = functions.https.onRequest(async (req, res) => {
+export const listTracks = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -241,7 +238,7 @@ export const listTracks = functions.https.onRequest(async (req, res) => {
     const tracks = snapshot.docs.slice(offset).map(d => d.data());
     res.status(200).json(respond(tracks, requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -250,7 +247,7 @@ export const listTracks = functions.https.onRequest(async (req, res) => {
 });
 
 // POST /api/distributions - Create distribution
-export const createDistribution = functions.https.onRequest(async (req, res) => {
+export const createDistribution = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'POST') {
@@ -282,7 +279,7 @@ export const createDistribution = functions.https.onRequest(async (req, res) => 
 
     res.status(201).json(respond(distribution, requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -291,7 +288,7 @@ export const createDistribution = functions.https.onRequest(async (req, res) => 
 });
 
 // GET /api/distributions/:id - Get distribution details
-export const getDistribution = functions.https.onRequest(async (req, res) => {
+export const getDistribution = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -314,7 +311,7 @@ export const getDistribution = functions.https.onRequest(async (req, res) => {
 
     res.status(200).json(respond(doc.data(), requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -323,7 +320,7 @@ export const getDistribution = functions.https.onRequest(async (req, res) => {
 });
 
 // POST /api/distributions/:id/submit - Submit distribution
-export const submitDistribution = functions.https.onRequest(async (req, res) => {
+export const submitDistribution = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'POST') {
@@ -344,7 +341,7 @@ export const submitDistribution = functions.https.onRequest(async (req, res) => 
 
     res.status(200).json(respond(updated.data(), requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -353,7 +350,7 @@ export const submitDistribution = functions.https.onRequest(async (req, res) => 
 });
 
 // GET /api/profile - Get user profile
-export const getProfile = functions.https.onRequest(async (req, res) => {
+export const getProfile = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -373,7 +370,7 @@ export const getProfile = functions.https.onRequest(async (req, res) => {
 
     res.status(200).json(respond(profile, requestId));
   } catch (err) {
-    if (err instanceof functions.HttpsError) {
+    if (err instanceof HttpsError) {
       res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
     } else {
       res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
@@ -382,7 +379,7 @@ export const getProfile = functions.https.onRequest(async (req, res) => {
 });
 
 // Health check endpoint (no auth required)
-export const health = functions.https.onRequest((_req, res) => {
+export const health = onRequest((_req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   res.status(200).json({
     status: 'ok',
