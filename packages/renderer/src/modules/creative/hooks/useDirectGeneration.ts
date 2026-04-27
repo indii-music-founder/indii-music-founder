@@ -9,6 +9,7 @@ import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
 import { VideoJob } from '@/types/video';
+import { VideoAspectRatioSchema } from '@/modules/video/schemas';
 
 export function useDirectGeneration() {
     const {
@@ -58,6 +59,10 @@ export function useDirectGeneration() {
     // Guard against double-submit while a generation is in-flight
     const generatingRef = useRef(false);
     const unsubsRef = useRef<Record<string, () => void>>({});
+    // Ref to capture the latest projectId for use inside async subscription callbacks,
+    // preventing stale closures when the user switches projects mid-generation.
+    const currentProjectIdRef = useRef(currentProjectId);
+    useEffect(() => { currentProjectIdRef.current = currentProjectId; }, [currentProjectId]);
 
     // Cleanup subscriptions on unmount
     useEffect(() => {
@@ -98,7 +103,7 @@ export function useDirectGeneration() {
                         type: 'video' as const,
                         prompt: updatedJob.prompt || job.prompt,
                         timestamp: Date.now(),
-                        projectId: currentProjectId,
+                        projectId: currentProjectIdRef.current,
                         origin: 'generated' as const
                     };
 
@@ -229,10 +234,14 @@ export function useDirectGeneration() {
 
         const ingredientsList = videoInputs?.ingredients || [];
 
+        // Validate aspect ratio against the schema; fall back to '16:9' only for truly unsupported values.
+        const validatedAspectRatio = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
+        const effectiveAspectRatio = validatedAspectRatio.success ? validatedAspectRatio.data : '16:9';
+
         const generated = await VideoGeneration.generateVideo({
             prompt: sequencePrompt,
             resolution: effectiveResolution,
-            aspectRatio: (studioControls.aspectRatio === '16:9' || studioControls.aspectRatio === '9:16') ? studioControls.aspectRatio : '16:9',
+            aspectRatio: effectiveAspectRatio,
             duration: finalDuration,
             durationSeconds: finalDuration,
             model: studioControls.model, // Will be resolved by FirebaseAIService

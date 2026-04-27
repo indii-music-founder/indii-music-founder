@@ -207,7 +207,7 @@ export default function ConductorSection() {
       >
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-8 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
           <BrainCircuit size={12} />
-          The Operating System for Independence
+          Musical Independence Architecture
         </div>
         <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
           Your Vision.{' '}
