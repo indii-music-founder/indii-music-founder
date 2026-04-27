@@ -11,7 +11,7 @@ export const DDEX_CONFIG = {
     PARTY_NAME: 'New Detroit Music LLC',
 
     // Doing Business As (DBA)
-    TRADING_NAME: 'indiiOS LLC',
+    TRADING_NAME: 'indiiOS',
 
     // Default version for ERN messages
     ERN_VERSION: '4.3',
