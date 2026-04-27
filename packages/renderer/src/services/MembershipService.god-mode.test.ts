@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import MembershipService from './MembershipService';
+import { MembershipService } from '@/services/MembershipService';
 
 // Mock Firebase auth
 vi.mock('@/services/firebase', () => ({
@@ -14,7 +14,7 @@ describe('MembershipService - God Mode Bypass', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = require('./MembershipService').default;
+    service = require('./MembershipService').MembershipService;
   });
 
   it('should grant enterprise tier when god_mode claim is true', async () => {
@@ -31,7 +31,7 @@ describe('MembershipService - God Mode Bypass', () => {
     };
 
     vi.mocked(require('@/core/store')).useStore.mockReturnValue({
-      authUser: mockUser,
+      user: mockUser,
       userProfile: { id: '9NYyLqEcKQQcr0HSfEkmfuSX9Xx1', email: 'test@example.com' },
       organizations: [],
       currentOrganizationId: null,
@@ -53,7 +53,7 @@ describe('MembershipService - God Mode Bypass', () => {
     };
 
     vi.mocked(require('@/core/store')).useStore.mockReturnValue({
-      authUser: mockUser,
+      user: mockUser,
       userProfile: { id: 'other-user-id', email: 'other@example.com' },
       organizations: [{ id: 'org-1', plan: 'free' as const }],
       currentOrganizationId: 'org-1',
@@ -76,7 +76,7 @@ describe('MembershipService - God Mode Bypass', () => {
     };
 
     vi.mocked(require('@/core/store')).useStore.mockReturnValue({
-      authUser: mockUser,
+      user: mockUser,
       userProfile: { id: '9NYyLqEcKQQcr0HSfEkmfuSX9Xx1', email: 'test@example.com' },
       organizations: [],
       currentOrganizationId: null,
