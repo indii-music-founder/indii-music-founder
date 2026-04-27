@@ -5,7 +5,7 @@
  * This file is a permanent, append-only record of indiiOS founding members.
  * It is committed to the git repository as cryptographic proof of agreement.
  *
- * Governance rules (enforced by IndiiOS LLC):
+ * Governance rules (enforced by New Detroit Music LLC):
  *   1. Entries are APPEND-ONLY. Existing entries must never be modified or removed.
  *   2. The AGREEMENT_TERMS below represent binding commitments to every founder listed.
  *   3. Removal of any entry constitutes a material breach of the founder agreement.
@@ -43,7 +43,7 @@ export const AGREEMENT_TERMS = {
   // Investment Rollover: The initial $2,500 acts as a credited basis for any future
   // investment rounds. (e.g. A subsequent $5,000 investment yields a $7,500 return basis).
   investment_rollover_basis: true,
-  indiiOS_entity: 'IndiiOS LLC',
+  indiiOS_entity: 'New Detroit Music LLC',
   agreement_established: '2026-03-17',
 } as const;
 
@@ -68,7 +68,7 @@ export interface FounderRecord {
  * THE FOUNDERS
  *
  * Seats 1–10. Each entry below represents a permanent agreement between
- * IndiiOS LLC and the named individual. This array is the on-chain record.
+ * New Detroit Music LLC and the named individual. This array is the on-chain record.
  *
  * New entries are appended automatically by the activateFounderPass
  * Cloud Function via the GitHub API upon confirmed payment.

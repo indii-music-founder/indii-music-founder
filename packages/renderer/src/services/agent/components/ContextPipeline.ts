@@ -1,8 +1,10 @@
 import { ContextResolver } from './ContextResolver';
 import { AgentContext } from '../types';
+import { PlanStep } from '../LivingPlanService';
 import { HistoryManager } from './HistoryManager';
 import { memoryService } from '../MemoryService';
 import { bigBrainEngine } from '../memory/BigBrainEngine';
+import { livingPlanService } from '../LivingPlanService';
 import { logger } from '@/utils/logger';
 
 export interface PipelineContext extends AgentContext {
@@ -12,6 +14,8 @@ export interface PipelineContext extends AgentContext {
     memoryContext: string;
     /** Big Brain auto-recall block (XML-formatted, all 4 layers) */
     autoRecallBlock: string;
+    /** Current active execution plan (XML-formatted) */
+    activePlanBlock?: string;
     swarmId?: string | null;
     traceId?: string;
     attachments?: { mimeType: string; base64: string }[];
@@ -88,7 +92,42 @@ export class ContextPipeline {
             relevantMemories = await this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString);
         }
 
-        // 4. Format legacy memory context for backward compatibility
+        // 4. Fetch Active Living Plans (V2 Continuity)
+        let activePlanBlock = '';
+        if (stateContext.projectId) {
+            try {
+                const activePlans = await livingPlanService.getPlansForProject(stateContext.projectId, 'executing');
+                if (activePlans.length > 0) {
+                    // Use the most recent executing plan
+                    const plan = activePlans[0];
+                    if (plan) {
+                        activePlanBlock = `
+<active_execution_plan id="${plan.id}" title="${plan.draft.summary}">
+  <status>${plan.status}</status>
+  <steps>
+${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step index="${i}" status="${s.status}">
+      <description>${s.description}</description>
+      ${s.result ? `<result>${s.result}</result>` : ''}
+      ${s.error ? `<error>${s.error}</error>` : ''}
+    </step>`).join('\n') : ''}
+  </steps>
+  <instruction>
+    You are currently EXECUTING this plan. 
+    1. Check which steps are 'pending'.
+    2. Continue with the next logical step using your tools.
+    3. Update step progress using 'complete_step' or 'fail_plan' tools.
+    4. When all steps are done, use 'complete_plan'.
+  </instruction>
+</active_execution_plan>
+`.trim();
+                    }
+                }
+            } catch (err) {
+                logger.warn('[ContextPipeline] Failed to fetch active plans:', err);
+            }
+        }
+
+        // 5. Format legacy memory context for backward compatibility
         const memoryContext = this.formatMemoryContext(relevantMemories);
 
         // 5. Assemble Pipeline Context
@@ -99,6 +138,7 @@ export class ContextPipeline {
             userAlignmentRules,
             memoryContext,
             autoRecallBlock,
+            activePlanBlock,
         };
     }
 
@@ -147,7 +187,7 @@ export class ContextPipeline {
         return `
 ## Long-Term Memory (Relevant Context)
 The following memories from previous sessions may be relevant:
-${memories.map((m, i) => `${i + 1}. ${m}`).join('\n')}
+${memories.map((m: string, i: number) => `${i + 1}. ${m}`).join('\n')}
 
 Use these memories to maintain continuity and apply learned preferences/rules.
 `.trim();

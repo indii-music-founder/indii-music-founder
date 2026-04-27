@@ -15,8 +15,7 @@ export default function FoundersPortal() {
     const [isWinLoading, setIsWinLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const profile = userProfile as any;
-    const isFounder = profile?.subscriptionTier === 'founder' || profile?.tier === 'founder' || profile?.isFounder === true;
+    const isFounder = userProfile?.subscriptionTier === 'founder' || userProfile?.tier === 'founder' || userProfile?.isFounder === true;
 
     const handleDownload = async (platform: 'mac' | 'windows') => {
         if (platform === 'mac') setIsMacLoading(true);

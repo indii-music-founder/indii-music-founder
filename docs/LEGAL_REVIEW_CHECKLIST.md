@@ -24,7 +24,7 @@ will need before they can write a single sentence. Gather these first.
 |---|------------------------|-------------|
 | F1 | **Launch date** — What is the actual go-live date? Needed for "Effective date" on all legal docs. | `___________` |
 | F2 | **Company registered address** — The official LLC address on file with the state. | `___________` |
-| F3 | **DMCA designated agent** — Who at IndiiOS LLC will receive copyright takedown notices? (Can be you, a co-founder, or a registered agent service.) | `___________` |
+| F3 | **DMCA designated agent** — Who at New Detroit Music LLC will receive copyright takedown notices? (Can be you, a co-founder, or a registered agent service.) | `___________` |
 | F4 | **Contact phone for DMCA agent** — Required by the Copyright Office for DMCA safe harbor registration. | `___________` |
 | F5 | **Governing state** — Michigan is assumed (Detroit-area LLC). Confirm or correct. | Michigan / other: `___` |
 | F6 | **Dispute resolution preference** — Arbitration (cheaper, limits class actions) or standard litigation? This is a business call, not a legal one. | `___________` |

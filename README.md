@@ -8,7 +8,7 @@
 
 indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, sovereign creative workspace designed to empower independent music producers, visual artists, and labels. By unifying AI-powered asset generation, automated distribution, and intelligent business operations, indiiOS enables creators to own their infrastructure, their data, and their future.
 
-[![Version](https://img.shields.io/badge/Version-0.1.0--beta.3-blue)](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron)
+[![Version](https://img.shields.io/badge/Version-0.1.0--beta.3-blue)](https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron)
 [![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indiios-studio.web.app)
 [![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
@@ -25,7 +25,7 @@ indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-ten
 
 ```bash
 # 1. Clone (1 min)
-git clone https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron.git
+git clone https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron.git
 cd indiiOS-Alpha-Electron
 
 # 2. Bootstrap environment (5 min)
@@ -578,7 +578,7 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 ### Installation
 
 ```bash
-git clone https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron.git
+git clone https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron.git
 cd indiiOS-Alpha-Electron
 make prime                 # installs deps + runs health check
 ```
@@ -816,7 +816,7 @@ Rewrote the music agent training dataset to remove DAW/mixing scenarios and enfo
 
 #### 🔒 Repository Sealing
 
-- Added `LICENSE` (Proprietary, © 2026 IndiiOS LLC)
+- Added `LICENSE` (Proprietary, © 2026 New Detroit Music LLC)
 - Added `/1percent` workflow — the "Final 1%" sealing protocol for release readiness
 - Bundle size, branch protection, and secret scanning verified
 
@@ -913,7 +913,7 @@ The `WorkflowEngine` now executes every node type with real service calls:
 
 ## ⚖️ License
 
-Proprietary. © 2026 IndiiOS LLC. All Rights Reserved.
+Proprietary. © 2026 New Detroit Music LLC. All Rights Reserved.
 
 <div align="center">
   <sub>Built by Artists, for Artists. Powered by High-Intelligence.</sub>

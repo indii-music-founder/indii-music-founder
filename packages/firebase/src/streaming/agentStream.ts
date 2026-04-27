@@ -50,8 +50,7 @@ export const agentStreamResponse = onRequest(
   {
     region: "us-central1",
     timeoutSeconds: 600, // 10 minutes for long-running agent tasks
-    memory: "1GB",
-    enforceAppCheck: true,
+    memory: "1GiB",
     secrets: ["GEMINI_API_KEY"]
   },
   async (req: Request, res: Response): Promise<void> => {
@@ -71,8 +70,7 @@ export const agentStreamResponse = onRequest(
       const {
         userId,
         agentId,
-        input,
-        context
+        input
       } = body as Partial<AgentStreamRequest>;
 
       // Validate required fields
@@ -169,8 +167,7 @@ export const agentStreamResponse = onRequest(
  */
 export const agentStreamHealth = onRequest(
   {
-    region: "us-central1",
-    enforceAppCheck: false // Public health check
+    region: "us-central1"
   },
   (req: Request, res: Response) => {
     if (req.method !== "GET") {

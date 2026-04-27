@@ -139,6 +139,45 @@ export const PlanCard: React.FC<PlanCardProps> = ({
 
       {/* Action Buttons */}
       <div className="mt-4 flex gap-2">
+        {plan.status === 'drafting' ? (
+          <>
+            {!draft.autoApprove ? (
+              <button
+                onClick={onApprove}
+                disabled={isLoading}
+                className="flex-1 rounded bg-cyan-500/20 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50"
+              >
+                {isLoading ? 'Running...' : 'Approve & Start'}
+              </button>
+            ) : (
+              <button
+                onClick={onApprove}
+                disabled={isLoading}
+                className="flex-1 rounded bg-green-500/20 px-3 py-2 text-xs font-semibold text-green-300 hover:bg-green-500/30 disabled:opacity-50"
+              >
+                {isLoading ? <Zap size={14} className="animate-pulse inline mr-1" /> : '✓ Start Auto-plan'}
+              </button>
+            )}
+            <button
+              onClick={onRefine}
+              disabled={isLoading}
+              className="rounded bg-white/5 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-white/10 disabled:opacity-50"
+            >
+              Refine
+            </button>
+            <button
+              onClick={onCancel}
+              disabled={isLoading}
+              className="rounded bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/20 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <div className="flex-1 rounded bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-400 text-center border border-cyan-500/20">
+            {plan.status === 'cancelled' ? 'Plan Cancelled' : 'Plan Active'}
+          </div>
+        )}
         {!draft.autoApprove && (
           <button
             onClick={onApprove}

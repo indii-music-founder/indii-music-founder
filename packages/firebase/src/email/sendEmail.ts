@@ -134,7 +134,7 @@ function getEmailTemplate(
             </div>
             <div class="footer">
                 <p>Powered by <a href="https://indiios.com">indiiOS</a> — The Creative Operating System</p>
-                <p style="margin-top: 8px;">© ${new Date().getFullYear()} IndiiOS LLC. All rights reserved.</p>
+                <p style="margin-top: 8px;">© ${new Date().getFullYear()} New Detroit Music LLC. All rights reserved.</p>
             </div>
         </div>
     </div>
@@ -175,7 +175,7 @@ function getEmailTemplate(
                 <p>${data.message || ''}</p>
             </div>
             <div class="footer">
-                <p>© ${new Date().getFullYear()} IndiiOS LLC</p>
+                <p>© ${new Date().getFullYear()} New Detroit Music LLC</p>
             </div>
         </div>
     </div>
@@ -218,7 +218,7 @@ function getEmailTemplate(
                 <p style="font-size: 13px; color: #64748b;">This invitation expires in 7 days.</p>
             </div>
             <div class="footer">
-                <p>© ${new Date().getFullYear()} IndiiOS LLC</p>
+                <p>© ${new Date().getFullYear()} New Detroit Music LLC</p>
             </div>
         </div>
     </div>

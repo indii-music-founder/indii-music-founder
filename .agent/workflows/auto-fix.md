@@ -18,7 +18,7 @@ When the `/auto-fix` workflow is triggered, Antigravity should autonomously find
 2. **Check GitHub PRs for CodeRabbit Comments**
    Fetch open PRs and their review comments:
    ```bash
-   export $(grep -v '^#' .env | xargs) && curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/the-walking-agency-det/indiiOS-Clean/pulls?state=open" | jq '.[0:3] | map({number, title})'
+   export $(grep -v '^#' .env | xargs) && curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/new-detroit-music-llc/indiiOS-Clean/pulls?state=open" | jq '.[0:3] | map({number, title})'
    ```
    For each PR, fetch the comments. If CodeRabbit has left actionable feedback, read the files and apply the requested changes.
 
