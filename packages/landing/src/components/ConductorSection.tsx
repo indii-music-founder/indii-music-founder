@@ -175,8 +175,8 @@ const hubCapabilities = [
   },
   {
     icon: Globe,
-    title: 'Total Command',
-    description: 'Autonomous orchestration of your specialist crew. The Conductor ensures every move aligns with your brand and protects your identity.',
+    title: 'Unified Flow',
+    description: 'Autonomous orchestration of your specialist team. The Conductor ensures every move aligns with your brand and protects your identity.',
   },
   {
     icon: BrainCircuit,
@@ -186,7 +186,7 @@ const hubCapabilities = [
   {
     icon: BarChart3,
     title: 'Total Clarity',
-    description: 'Complete transparency into every action. Always see exactly how your crew is moving the needle on your career and your independence.',
+    description: 'Complete transparency into every action. Always see exactly how your team is moving the needle on your career and your independence.',
   },
 ];
 
@@ -210,14 +210,14 @@ export default function ConductorSection() {
           The Operating System for Independence
         </div>
         <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
-          One Brain.{' '}
+          Your Vision.{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-            Total Command.
+            Seamless Orchestration.
           </span>
         </h2>
         <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed font-light">
           The indii Conductor is your mission control for independence. Tell it what you want
-          to achieve, and it coordinates your specialist crew to handle the labor—leaving you 
+          to achieve, and it coordinates your specialist team to handle the labor—leaving you 
           free to stay focused on the art.
         </p>
       </motion.div>
@@ -274,7 +274,7 @@ export default function ConductorSection() {
               <BrainCircuit size={12} className="text-amber-400" />
             </div>
             <span className="text-[10px] font-mono font-bold tracking-[0.15em] uppercase text-gray-500">
-              Example Command
+              Example Workflow
             </span>
           </div>
           <p className="text-white text-lg md:text-xl font-medium leading-relaxed mb-4">

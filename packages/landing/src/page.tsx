@@ -169,7 +169,7 @@ export default function Home() {
           <strong className="text-white font-medium block mb-4 text-2xl">
             Independence doesn&apos;t mean being alone.
           </strong>
-          indiiOS is your personal tech collective. A specialist crew of AI minds designed to handle the labor, dismantle the gatekeepers, and amplify your creative life force. 
+          indiiOS is your personal tech collective. A specialist team of AI minds designed to handle the labor, dismantle the gatekeepers, and amplify your creative life force. 
           <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl italic">&ldquo;It&apos;s the operating system for your musical independence.&rdquo;</span>
         </motion.p>
 
@@ -191,7 +191,7 @@ export default function Home() {
             href="#capabilities"
             className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-gray-400 border border-white/10 rounded-full hover:text-white hover:border-white/20 transition-all"
           >
-            Meet Your Crew
+            Meet Your Team
           </a>
         </motion.div>
       </motion.section>
@@ -262,7 +262,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { step: '01', icon: Music, title: 'Sonic Identity', desc: 'Unlock your sound\'s DNA. Extract the life force of your tracks—tempo, key, and emotional weight—to prime your creative universe.' },
-            { step: '02', icon: BrainCircuit, title: 'Your AI Crew', desc: 'Deploy your specialist crew of AI minds. From visual manifestos to legal guard, your specialists build your vision in parallel.' },
+            { step: '02', icon: BrainCircuit, title: 'Your AI Team', desc: 'Deploy your specialist team of AI minds. From visual manifestos to legal guard, your specialists build your vision in parallel.' },
             { step: '03', icon: Globe2, title: 'Global Impact', desc: 'Release your tracks directly to global platforms. No gatekeepers, no noise, just total independence and 100% of the bag.' },
           ].map((s, i) => (
             <motion.div
@@ -304,20 +304,20 @@ export default function Home() {
               The Founders Agreement
             </h2>
             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
-              We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indiiOS Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indiiOS infrastructure — all 15 agents, the Conductor, and every future update — with zero recurring fees. Own the means of production on an architecture of togetherness.
+              We are issuing exactly <strong className="text-white">10 lifetime seats</strong> to the indiiOS Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indiiOS infrastructure — all 15 agents, the Conductor, and every future update — with no recurring fees. Own the means of production on an architecture of togetherness.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Cpu size={16} /> Your Keys, Your Sound</h4>
-                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. Zero markup. True creative independence for the artist.</p>
+                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. No markup. True creative independence for the artist.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Immutable Legacy</h4>
                 <p className="text-sm text-gray-400">Your signature and a record of your agreement are committed directly into the indiiOS infrastructure forever. You are part of the engine.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 15-Piece Crew</h4>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 15-Piece Team</h4>
                 <p className="text-sm text-gray-400">Distribution, Creative, Music, Legal, Finance, Marketing, Publishing, Analytics, Brand, Video, Social, Licensing, Merch, Publicist, Road. The collective is yours.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
