@@ -424,7 +424,7 @@ export default function LoginForm() {
 
             {/* Footer */}
             <div className="absolute bottom-8 left-0 w-full text-center text-[10px] text-gray-600 font-mono tracking-widest uppercase pointer-events-none">
-                <a href="/privacy" className="hover:text-gray-400 transition-colors pointer-events-auto">Privacy Policy</a> • <a href="/terms" className="hover:text-gray-400 transition-colors pointer-events-auto">Terms of Service</a> • © 2026 indiiOS LLC
+                <a href="/privacy" className="hover:text-gray-400 transition-colors pointer-events-auto">Privacy Policy</a> • <a href="/terms" className="hover:text-gray-400 transition-colors pointer-events-auto">Terms of Service</a> • © 2026 New Detroit Music LLC
             </div>
         </div>
     );
