@@ -1,4 +1,5 @@
 /**
+ * FOUNDERS AGREEMENT
  * FOUNDERS COVENANT
  * New Detroit Music LLC — chartered 2024
  *
