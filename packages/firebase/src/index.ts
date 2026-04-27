@@ -84,6 +84,8 @@ export { deliverScheduledPosts } from './social/deliverScheduledPosts';
 
 // Timeline Orchestrator (Progressive Campaign Engine — polls every 15 min for due milestones)
 export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
+export { pulseTick } from './orchestration/pulseTick';
+export { onMilestoneScheduled } from './timeline/onMilestoneScheduled';
 
 // Email OAuth Token Manager (Gmail / Outlook — server-side token exchange & refresh)
 export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email/tokenManager';
