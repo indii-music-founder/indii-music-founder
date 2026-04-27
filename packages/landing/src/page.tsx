@@ -310,7 +310,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Cpu size={16} /> Your Keys, Your Sound</h4>
-                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. Zero markup. True creative independence for the artist.</p>
+                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. No markup. True creative independence for the artist.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
                 <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Immutable Legacy</h4>

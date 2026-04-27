@@ -216,7 +216,7 @@ export default function ConductorSection() {
           </span>
         </h2>
         <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-          The indii Conductor is your creative orchestrator for independence. Tell it what you want
+          The indii Conductor is your mission control for independence. Tell it what you want
           to achieve, and it coordinates your specialist team to handle the labor—leaving you 
           free to stay focused on the art.
         </p>
