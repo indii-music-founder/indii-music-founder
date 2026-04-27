@@ -99,21 +99,24 @@ export const pollTimelineMilestones = onSchedule(
         const inngest = getInngest();
 
         try {
-            // Get all user timeline collections
-            // Structure: timelines/{userId}/items/{timelineId}
-            const usersSnapshot = await db.collection('timelines').listDocuments();
+            // OPTIMIZATION: Use collectionGroup to find ALL active timelines across ALL users in one query
+            // Requires a Firestore index: collectionGroup('items') with status == 'active'
+            const activeTimelinesSnap = await db.collectionGroup('items')
+                .where('status', '==', 'active')
+                .get();
 
-            for (const userDoc of usersSnapshot) {
-                const userId = userDoc.id;
-                const itemsRef = userDoc.collection('items');
+            console.log(`[pollTimelineMilestones] Found ${activeTimelinesSnap.size} active timelines across the platform.`);
 
-                // Query active timelines for this user
-                const activeTimelinesSnap = await itemsRef
-                    .where('status', '==', 'active')
-                    .get();
+            for (const timelineDoc of activeTimelinesSnap.docs) {
+                // The parent doc id is the userId in our structure: timelines/{userId}/items/{timelineId}
+                const userId = timelineDoc.ref.parent.parent?.id;
+                if (!userId) {
+                    console.warn(`[pollTimelineMilestones] Could not determine userId for timeline ${timelineDoc.id}`);
+                    continue;
+                }
 
-                for (const timelineDoc of activeTimelinesSnap.docs) {
-                    const timeline = timelineDoc.data() as Timeline;
+                const timeline = timelineDoc.data() as Timeline;
+
                     let updated = false;
 
                     // Find due milestones
@@ -214,9 +217,7 @@ export const pollTimelineMilestones = onSchedule(
                             transaction.update(timelineDoc.ref, updates);
                         });
                     }
-                }
             }
-
             console.log(
                 `[pollTimelineMilestones] Done. Found ${totalDue} due milestones, dispatched ${totalProcessed} to Inngest.`
             );
