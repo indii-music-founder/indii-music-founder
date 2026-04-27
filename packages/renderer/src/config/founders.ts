@@ -1,6 +1,6 @@
 /**
  * FOUNDERS AGREEMENT
- * indiiOS LLC — chartered 2024
+ * New Detroit Music LLC — chartered 2024
  *
  * This file is a permanent, append-only record of indiiOS founding members.
  * It is committed to the git repository as cryptographic proof of agreement.

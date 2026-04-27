@@ -97,7 +97,7 @@ export default function Home() {
         <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[1000px] h-[800px] bg-amber-900/15 blur-[120px] rounded-full mix-blend-screen" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[800px] h-[600px] bg-purple-900/10 blur-[120px] rounded-full mix-blend-screen" />
         <div className="absolute top-[40%] left-[-5%] w-[600px] h-[400px] bg-cyan-900/8 blur-[100px] rounded-full mix-blend-screen" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] mix-blend-overlay" />
       </div>
 
       {/* ═══════════════ 2. NAVIGATION ═══════════════ */}
@@ -216,7 +216,7 @@ export default function Home() {
           </div>
           <div className="flex-1 flex bg-[#030303] relative overflow-hidden border-t border-white/5">
             <img
-              src="/brand/screenshot-dashboard.png"
+              src="/studio-hero.png"
               alt="indiiOS Dashboard Interface"
               className="w-full h-[150%] object-cover object-top opacity-90 transition-opacity duration-1000 hover:opacity-100"
               style={{ filter: 'contrast(1.05) brightness(0.95)' }}
