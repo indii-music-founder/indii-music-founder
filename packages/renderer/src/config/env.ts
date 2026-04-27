@@ -93,6 +93,7 @@ const processEnv = {
     firebaseDatabaseURL: getEnv(getSafeMetaEnv('VITE_FIREBASE_DATABASE_URL'), getProcessEnv('VITE_FIREBASE_DATABASE_URL')),
     appCheckKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_KEY'), getProcessEnv('VITE_FIREBASE_APP_CHECK_KEY')),
     appCheckDebugToken: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'), getProcessEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN')),
+    appId: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), getProcessEnv('VITE_FIREBASE_APP_ID')),
 
     skipOnboarding: toBoolean(getSafeMetaEnv('VITE_SKIP_ONBOARDING') || getProcessEnv('VITE_SKIP_ONBOARDING')),
     VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), getProcessEnv('VITE_EXPOSE_INTERNALS')),
@@ -167,7 +168,7 @@ export const firebaseConfig = {
     projectId: firebaseEnv.firebaseProjectId || "",
     storageBucket: firebaseEnv.firebaseStorageBucket || "",
     messagingSenderId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'), getProcessEnv('VITE_FIREBASE_MESSAGING_SENDER_ID')) || "",
-    appId: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), getProcessEnv('VITE_FIREBASE_APP_ID')) || "",
+    appId: firebaseEnv.appId || getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), getProcessEnv('VITE_FIREBASE_APP_ID')) || "",
     measurementId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MEASUREMENT_ID'), getProcessEnv('VITE_FIREBASE_MEASUREMENT_ID')) || ""
 };
 
