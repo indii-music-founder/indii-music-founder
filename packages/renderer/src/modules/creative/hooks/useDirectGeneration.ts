@@ -169,12 +169,12 @@ export function useDirectGeneration() {
                 url: ing.dataUrl,
                 prompt: 'Uploaded Reference',
                 timestamp: Date.now(),
-                projectId: currentProjectId,
+                projectId: currentProjectIdRef.current,
                 origin: 'uploaded'
             };
         });
         setVideoInputs({ ingredients: newHistoryItems });
-    }, [setVideoInputs, currentProjectId]);
+    }, [setVideoInputs]);
 
     const handleImageGenerate = useCallback(async (finalPrompt: string) => {
         const { generateImageDirectly } = await import('@/services/ai/generators/DirectImageGenerator');
@@ -210,7 +210,7 @@ export function useDirectGeneration() {
 
             toast.success('Image generated directly successfully');
         }
-    }, [studioControls.model, studioControls.aspectRatio, localPrompt, currentProjectId, addToHistory, setSelectedItem, setViewMode, toast]);
+    }, [studioControls.model, studioControls.aspectRatio, localPrompt, addToHistory, setSelectedItem, setViewMode, toast]);
 
     const handleVideoGenerate = useCallback(async (finalPrompt: string) => {
         // ISSUE-008 FIX: Auto-downscale 4K to 1080p for video (Veo doesn't support 4K)
@@ -293,7 +293,7 @@ export function useDirectGeneration() {
                 toast.info('Video job queued. Check gallery for results.');
             }
         }
-    }, [studioControls, localPrompt, currentProjectId, addToHistory, toast, sequence, bpm, videoInputs?.ingredients]);
+    }, [studioControls, localPrompt, addToHistory, toast, sequence, bpm, videoInputs?.ingredients]);
 
     const handleGenerate = useCallback(async () => {
         if (!localPrompt.trim()) return;
