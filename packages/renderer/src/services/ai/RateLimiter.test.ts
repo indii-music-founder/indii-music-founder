@@ -51,12 +51,14 @@ describe('RateLimiter', () => {
         limiter.tryAcquire();
 
         let error: any;
-        const acquirePromise = limiter.acquire(500).catch(e => {
+        const acquirePromise = limiter.acquire(200).catch(e => {
             error = e;
             return undefined;
         });
 
         // Advance time enough to trigger the timeout
+        // Refill rate is 1/60s, so it waits 1s per loop.
+        // We set timeout to 200ms, and wait 1000ms.
         await vi.advanceTimersByTimeAsync(1000);
 
         expect(error).toBeDefined();
