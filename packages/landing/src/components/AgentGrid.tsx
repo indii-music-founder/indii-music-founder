@@ -114,10 +114,10 @@ const agents: AgentDef[] = [
     id: 'distribution',
     name: 'Access',
     title: 'Global Freedom',
-    tagline: 'Kill the Middlemen.',
+    tagline: 'Direct Distribution.',
     description:
-      'Upload once, dominate everywhere. No labels, no commissions, no gatekeepers. 100% of your royalties and total sovereignty over your masters.',
-    keywords: ['Zero Commissions', 'Master Sovereignty', 'Global Reach', 'No Middlemen', 'Instant Deployment'],
+      'Upload once, dominate everywhere. No labels, no commissions, no gatekeepers. 100% of your royalties and total ownership of your masters.',
+    keywords: ['No Commissions', 'Master Ownership', 'Global Reach', 'Direct Release', 'Instant Deployment'],
     icon: Globe,
     colorClass: 'text-blue-400',
     bgClass: 'bg-blue-500/10',
@@ -148,8 +148,8 @@ const agents: AgentDef[] = [
     title: 'Sonic Auditor',
     tagline: 'Know your DNA.',
     description:
-      'Deep audio forensics for BPM, key, mood, and energy. Ensure your mixes are industry-hardened and platform-ready before you hit upload.',
-    keywords: ['BPM & Key', 'Mood Matrix', 'Forensic Audit', 'Sonic Identity', 'Mix Hardening'],
+      'Deep audio analysis for BPM, key, mood, and energy. Ensure your mixes are industry-hardened and platform-ready before you hit upload.',
+    keywords: ['BPM & Key', 'Mood Matrix', 'Sonic Audit', 'Sonic Identity', 'Mix Hardening'],
     icon: AudioWaveform,
     colorClass: 'text-cyan-400',
     bgClass: 'bg-cyan-500/10',
@@ -162,12 +162,12 @@ const agents: AgentDef[] = [
   /* ---- TIER 2: BUSINESS OPS ---- */
   {
     id: 'governance',
-    name: 'Command',
-    title: 'Career Command',
+    name: 'Operations',
+    title: 'Career Operations',
     tagline: 'CEO Status.',
     description:
-      'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career sovereignty without the bloodsucking managers.',
-    keywords: ['Direct Command', 'Secure Ops', 'Zero Management', 'Total Sovereignty', 'Identity Guard'],
+      'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career independence without the bloodsucking managers.',
+    keywords: ['Direct Control', 'Secure Ops', 'No Management', 'Total Independence', 'Identity Guard'],
     icon: ShieldCheck,
     colorClass: 'text-violet-400',
     bgClass: 'bg-violet-500/10',
@@ -179,7 +179,7 @@ const agents: AgentDef[] = [
   {
     id: 'finance',
     name: 'Finance',
-    title: 'Sovereign Revenue',
+    title: 'Independent Revenue',
     tagline: 'Real-Time Splits.',
     description:
       'Track every stream and every dollar in real-time. Automated payouts and a transparent ledger so you and your team get paid instantly.',
@@ -198,8 +198,8 @@ const agents: AgentDef[] = [
     title: 'Rights Guard',
     tagline: 'Secure the Bag.',
     description:
-      'Instant forensic contract review and cryptographic copyright protection. Secure your splits and your legacy without the billable hours.',
-    keywords: ['Contract AI', 'Rights Registry', 'Split Protection', 'Zero Legal Fees', 'Legacy Guard'],
+      'Instant automated contract review and cryptographic copyright protection. Secure your splits and your legacy without the billable hours.',
+    keywords: ['Contract System', 'Rights Registry', 'Split Protection', 'No Legal Fees', 'Legacy Guard'],
     icon: Scale,
     colorClass: 'text-indigo-400',
     bgClass: 'bg-indigo-500/10',
@@ -211,7 +211,7 @@ const agents: AgentDef[] = [
   {
     id: 'marketing',
     name: 'Marketing',
-    title: 'Fan Hunter',
+    title: 'Audience Builder',
     tagline: 'Find your 1,000 True Fans.',
     description:
       'No more guessing where your fans are. We use high-end data to find the people who actually want to connect with your sound—and help you turn them into your tribe.',
@@ -229,7 +229,7 @@ const agents: AgentDef[] = [
   {
     id: 'publishing',
     name: 'Publishing',
-    title: 'Sovereign Rights',
+    title: 'Independent Rights',
     tagline: 'Collect Every Cent.',
     description: 'Bypass the paperwork. Automatically register your works with global rights organizations and track every writer split. If your music is playing, you are getting paid.',
     keywords: ['Global Registration', 'Writer Splits', 'Royalty Recovery', 'Ownership Control'],
@@ -261,7 +261,7 @@ const agents: AgentDef[] = [
     name: 'Video',
     title: 'Visual Director',
     tagline: 'Cinematic Alchemy.',
-    description: 'High-fidelity lyric videos and short-form social clips generated directly from your sonic DNA. Professional visuals, no crew required.',
+    description: 'High-fidelity lyric videos and short-form social clips generated directly from your sonic DNA. Professional visuals, no production team required.',
     keywords: ['4K Lyric Videos', 'Social Clips', 'Pro Fidelity', 'Visual Chemistry'],
     icon: Video,
     colorClass: 'text-violet-400',
@@ -289,9 +289,9 @@ const agents: AgentDef[] = [
   {
     id: 'licensing',
     name: 'Licensing',
-    title: 'Sync Commander',
+    title: 'Sync Specialist',
     tagline: 'Own the Screen.',
-    description: 'Command high-paying placements in film, TV, and gaming. Automated pitching and clearing to turn your catalog into a revenue machine.',
+    description: 'Secure high-paying placements in film, TV, and gaming. Automated pitching and clearing to turn your catalog into a revenue machine.',
     keywords: ['Sync Placements', 'Film & TV', 'Direct Pitching', 'Deal Flow'],
     icon: Key,
     colorClass: 'text-yellow-400',
@@ -306,8 +306,8 @@ const agents: AgentDef[] = [
     name: 'Merchandise',
     title: 'Physical Identity',
     tagline: 'Wear the Sound.',
-    description: 'Design and deploy premium apparel for your tribe without inventory risks. High-end pieces, global shipping, zero overhead.',
-    keywords: ['Tribe Gear', 'Physical Assets', 'Zero Inventory', 'Global Shipping'],
+    description: 'Design and deploy premium apparel for your tribe without inventory risks. High-end pieces, global shipping, no overhead.',
+    keywords: ['Tribe Gear', 'Physical Assets', 'No Inventory', 'Global Shipping'],
     icon: ShoppingBag,
     colorClass: 'text-lime-400',
     bgClass: 'bg-lime-500/10',
@@ -334,10 +334,10 @@ const agents: AgentDef[] = [
   {
     id: 'road',
     name: 'Road',
-    title: 'Road Commander',
+    title: 'Tour Logistics',
     tagline: 'Dominate the Stage.',
-    description: 'Venues, routes, and logistics handled autonomously. Focus on the performance while your road crew secures the tour.',
-    keywords: ['Venue Command', 'Route Mapping', 'Logistics AI', 'Live Execution'],
+    description: 'Venues, routes, and logistics handled autonomously. Focus on the performance while your digital tour team secures the dates.',
+    keywords: ['Venue Coordination', 'Route Mapping', 'Logistics AI', 'Live Execution'],
     icon: MapPin,
     colorClass: 'text-red-400',
     bgClass: 'bg-red-500/10',
@@ -584,16 +584,15 @@ export default function AgentGrid() {
           The Architecture of Togetherness
         </div>
         <h2 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-white mb-12 pb-4 leading-[0.85]">
-          The Swarm <br className="hidden md:block" />
+          A Specialized Team <br className="hidden md:block" />
           <span className="text-chrome glow-text inline-block transform -rotate-1 skew-x-1">
-            Replaces the Middlemen.
+            Working For You.
           </span>
         </h2>
         <p className="text-gray-500 max-w-4xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed font-light px-4">
-          Zero labels. Zero gatekeepers. Professional-grade tools 
-          working for you as your personal crew. Take back control 
-          of your career with global distribution and smart audio 
-          analysis. indiiOS is your <strong>sovereign creative engine</strong>.
+          No labels. No gatekeepers. Your music, your rules. Take control 
+          of your career with global distribution, smart audio 
+          analysis, and individually trained agents organized to perform specialized tasks for your team. indiiOS is your <strong>independent creative engine</strong>.
         </p>
       </motion.div>
 

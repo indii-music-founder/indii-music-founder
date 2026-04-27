@@ -128,7 +128,6 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * Add new test emails here — this is the SINGLE source of truth.
  */
 const BUILDER_EMAILS = new Set([
-    'the.walking.agency.det@gmail.com',
     'qa@indiios.com',
     'founder@indiios.local',
     'e2e@indiios.test',
@@ -151,6 +150,15 @@ class MembershipServiceImpl {
         }
 
         try {
+            // Check for god_mode custom claim on Firebase Auth
+            const currentUser = (await import('@/services/firebase')).auth.currentUser;
+            if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
+                const tokenResult = await currentUser.getIdTokenResult();
+                if (tokenResult?.claims?.god_mode === true) {
+                    return true;
+                }
+            }
+
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
 
@@ -168,7 +176,7 @@ class MembershipServiceImpl {
 
             return false;
         } catch {
-            return (import.meta.env && import.meta.env.DEV) || false;
+            return (import.meta.env && import.meta.env.DEV && !import.meta.env.VITEST) || false;
         }
     }
 

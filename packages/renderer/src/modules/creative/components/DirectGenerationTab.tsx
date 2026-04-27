@@ -3,15 +3,20 @@ import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download, ChevronD
 import { motion, AnimatePresence } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
+import { VideoPromptBuilder } from './veo/VideoPromptBuilder';
+import { VeoSettingsPanel } from './veo/VeoSettingsPanel';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { VideoGenerationProgress } from './veo/VideoGenerationProgress';
+import { WhiskService } from '@/services/WhiskService';
 
 export default function DirectGenerationTab() {
-    const { setGenerationMode, isPromptBuilderOpen, togglePromptBuilder } = useStore(useShallow(state => ({
+    const { setGenerationMode, isPromptBuilderOpen, togglePromptBuilder, whiskState } = useStore(useShallow(state => ({
         setGenerationMode: state.setGenerationMode,
         isPromptBuilderOpen: state.isPromptBuilderOpen,
-        togglePromptBuilder: state.togglePromptBuilder
+        togglePromptBuilder: state.togglePromptBuilder,
+        whiskState: state.whiskState
     })));
 
     const {
@@ -26,10 +31,19 @@ export default function DirectGenerationTab() {
         handleIngredientsChange,
         setSelectedItem,
         setViewMode,
-        studioControls
+        studioControls,
+        activeJobs,
+        cancelJob
     } = useDirectGeneration();
 
     const videoClipCount = results.filter(r => r.type === 'video').length;
+
+    const synthesizedPrompt = localPrompt.trim() 
+        ? (mode === 'image' 
+            ? WhiskService.synthesizeWhiskPrompt(localPrompt, whiskState)
+            : WhiskService.synthesizeVideoPrompt(localPrompt, whiskState))
+        : '';
+    const hasWhiskModifiers = synthesizedPrompt !== localPrompt && synthesizedPrompt.length > 0;
 
     return (
         <div className="flex flex-col h-full w-full bg-background text-foreground">
@@ -63,56 +77,57 @@ export default function DirectGenerationTab() {
                     </div>
 
                     {/* Prompt Input */}
-                    <div className="flex-1 relative group flex flex-col gap-2">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-linear-to-r from-dept-creative/10 to-dept-marketing/10 rounded-xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                            <input
-                                type="text"
-                                value={localPrompt}
-                                onChange={(e) => setLocalPrompt(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleGenerate()}
-                                placeholder={`Describe your ${mode}...`}
-                                data-testid="direct-prompt-input"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-12 pr-32 text-sm focus:outline-none focus:border-dept-creative/50 focus:ring-1 focus:ring-dept-creative/20 transition-all relative z-10"
-                            />
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground z-20">
-                                {mode === 'image' ? <ImageIcon size={16} /> : <Video size={16} />}
+                    <div className="flex-1 flex flex-col gap-2">
+                        <VideoPromptBuilder
+                            mode={mode}
+                            prompt={localPrompt}
+                            onChange={setLocalPrompt}
+                            onGenerate={handleGenerate}
+                            disabled={isGenerating}
+                        >
+                            <button
+                                onClick={togglePromptBuilder}
+                                data-testid="toggle-prompt-builder"
+                                className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                title={isPromptBuilderOpen ? 'Hide Prompt Builder' : 'Show Prompt Builder'}
+                                aria-label={isPromptBuilderOpen ? 'Hide Prompt Builder' : 'Show Prompt Builder'}
+                                aria-expanded={isPromptBuilderOpen}
+                            >
+                                {isPromptBuilderOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                            <span className="text-[10px] text-muted-foreground uppercase font-mono px-2 border-r border-white/5">
+                                {studioControls.model.toUpperCase()}
+                            </span>
+                            <button
+                                onClick={handleGenerate}
+                                data-testid="direct-generate-btn"
+                                disabled={isGenerating || !localPrompt.trim()}
+                                className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span className="sr-only">Generating...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={16} />
+                                        <span className="sr-only">Generate</span>
+                                    </>
+                                )}
+                            </button>
+                        </VideoPromptBuilder>
+                        
+                        {hasWhiskModifiers && (
+                            <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg mt-1">
+                                <p className="text-[10px] uppercase font-bold text-gray-500 mb-1">Final Synthesized Prompt</p>
+                                <p className="text-xs text-gray-400 italic line-clamp-3">{synthesizedPrompt}</p>
                             </div>
+                        )}
 
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center gap-2">
-                                <button
-                                    onClick={togglePromptBuilder}
-                                    data-testid="toggle-prompt-builder"
-                                    className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                                    title={isPromptBuilderOpen ? 'Hide Prompt Builder' : 'Show Prompt Builder'}
-                                    aria-label={isPromptBuilderOpen ? 'Hide Prompt Builder' : 'Show Prompt Builder'}
-                                    aria-expanded={isPromptBuilderOpen}
-                                >
-                                    {isPromptBuilderOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                </button>
-                                <span className="text-[10px] text-muted-foreground uppercase font-mono px-2 border-r border-white/5">
-                                    {studioControls.model.toUpperCase()}
-                                </span>
-                                <button
-                                    onClick={handleGenerate}
-                                    data-testid="direct-generate-btn"
-                                    disabled={isGenerating || !localPrompt.trim()}
-                                    className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                            <Loader2 size={16} className="animate-spin" />
-                                            <span className="sr-only">Generating...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send size={16} />
-                                            <span className="sr-only">Generate</span>
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
+                        {mode === 'video' && (
+                            <VeoSettingsPanel isOpen={isPromptBuilderOpen} />
+                        )}
                     </div>
                 </div>
 
@@ -129,7 +144,7 @@ export default function DirectGenerationTab() {
 
             {/* Main Content: Results Grid */}
             <div className="flex-1 overflow-y-auto p-6">
-                {results.length === 0 ? (
+                {results.length === 0 && activeJobs.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-gray-600 gap-4">
                         <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
                             <Settings2 size={32} className="opacity-50" />
@@ -142,51 +157,61 @@ export default function DirectGenerationTab() {
                 ) : (
                     <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {results.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="group relative aspect-square bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all cursor-pointer"
-                                    onClick={() => {
-                                        setSelectedItem(item);
-                                        setViewMode('editor');
-                                    }}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
+                        <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <AnimatePresence mode="popLayout">
+                                {activeJobs.map((job) => (
+                                    <VideoGenerationProgress key={job.id} job={job} onCancel={cancelJob} />
+                                ))}
+                                {results.filter(r => !activeJobs.some(j => j.id === r.id)).map((item) => (
+                                    <motion.div
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+                                        key={item.id}
+                                        className="group relative aspect-square bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all cursor-pointer"
+                                        onClick={() => {
                                             setSelectedItem(item);
                                             setViewMode('editor');
-                                        }
-                                    }}
-                                    data-testid={`direct-result-${item.id}`}
-                                >
-                                    {item.type === 'video' ? (
-                                        <div className="w-full h-full">
-                                            <CreativeVideoPlayer 
-                                                jobId={item.url ? undefined : item.id} 
-                                                url={item.url || undefined} 
-                                                autoPlay={false}
-                                                className="w-full h-full border-none rounded-none"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <img src={item.url} alt={item.prompt} className="w-full h-full object-cover" />
-                                    )}
+                                        }}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setSelectedItem(item);
+                                                setViewMode('editor');
+                                            }
+                                        }}
+                                        data-testid={`direct-result-${item.id}`}
+                                    >
+                                        {item.type === 'video' ? (
+                                            <div className="w-full h-full">
+                                                <CreativeVideoPlayer 
+                                                    jobId={item.url ? undefined : item.id} 
+                                                    url={item.url || undefined} 
+                                                    autoPlay={false}
+                                                    className="w-full h-full border-none rounded-none"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <img src={item.url} alt={item.prompt} className="w-full h-full object-cover" />
+                                        )}
 
-                                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
-                                        <p className="text-white text-xs line-clamp-2 mb-2">{item.prompt}</p>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[10px] uppercase font-bold text-gray-400">{item.type}</span>
-                                            <button aria-label="Download asset" className="text-gray-400 hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>
-                                                <Download size={14} />
-                                            </button>
+                                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                                            <p className="text-white text-xs line-clamp-2 mb-2">{item.prompt}</p>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[10px] uppercase font-bold text-gray-400">{item.type}</span>
+                                                <button aria-label="Download asset" className="text-gray-400 hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>
+                                                    <Download size={14} />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </motion.div>
                     </div>
                 )}
             </div>

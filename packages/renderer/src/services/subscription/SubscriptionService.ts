@@ -27,7 +27,7 @@ import { SubscriptionSchema, UsageStatsSchema } from './schemas';
 import { logger } from '@/utils/logger';
 
 export class SubscriptionService {
-  private subscriptionCache: Map<string, Subscription> = new Map();
+  private subscriptionCache: Map<string, { subscription: Subscription; timestamp: number }> = new Map();
   private usageCache: Map<string, { stats: UsageStats; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -41,13 +41,16 @@ export class SubscriptionService {
 
     // Check cache
     if (!forceRefresh && this.subscriptionCache.has(userId)) {
-      return this.subscriptionCache.get(userId)!;
+      const cached = this.subscriptionCache.get(userId)!;
+      if (Date.now() - cached.timestamp < this.CACHE_TTL) {
+        return cached.subscription;
+      }
     }
 
     // Check cache service
     const cached = cacheService.get<Subscription>(`subscription:${userId}`);
     if (cached && !forceRefresh) {
-      this.subscriptionCache.set(userId, cached);
+      this.subscriptionCache.set(userId, { subscription: cached, timestamp: Date.now() });
       return cached;
     }
 
@@ -68,7 +71,7 @@ export class SubscriptionService {
       const subscription: Subscription = parsed.data as Subscription;
 
       // Update caches
-      this.subscriptionCache.set(userId, subscription);
+      this.subscriptionCache.set(userId, { subscription, timestamp: Date.now() });
       cacheService.set(`subscription:${userId}`, subscription, this.CACHE_TTL);
 
       return subscription;
@@ -143,13 +146,20 @@ export class SubscriptionService {
     amount: number = 1,
     userId?: string
   ): Promise<QuotaCheckResult> {
-    // GOD MODE: Bypass for Builder
-    if (auth.currentUser?.email === 'the.walking.agency.det@gmail.com') {
-      if (action === 'generateVideo' && amount > 120) {
-        logger.warn(`[SubscriptionService] God Mode blocked: single request too large (${amount}s)`);
-        return { allowed: false, reason: 'God Mode blocked: Single generation request too large.' };
+    // GOD MODE: Bypass via custom claim
+    if (auth.currentUser && typeof auth.currentUser.getIdTokenResult === 'function') {
+      try {
+        const tokenResult = await auth.currentUser.getIdTokenResult();
+        if (tokenResult?.claims?.god_mode === true) {
+          if (action === 'generateVideo' && amount > 120) {
+            logger.warn(`[SubscriptionService] God Mode blocked: single request too large (${amount}s)`);
+            return { allowed: false, reason: 'God Mode blocked: Single generation request too large.' };
+          }
+          return { allowed: true };
+        }
+      } catch (err) {
+        logger.warn('[SubscriptionService] Failed to check god_mode claim', err);
       }
-      return { allowed: true };
     }
 
     const targetUserId = userId || auth.currentUser?.uid;
@@ -167,9 +177,10 @@ export class SubscriptionService {
 
     try {
       // Add timeout protection to prevent hanging (5s timeout)
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Subscription check timeout')), 5000)
-      );
+      let timeoutId: NodeJS.Timeout | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Subscription check timeout')), 5000);
+      });
 
       const [subscription, usage] = await Promise.race([
         Promise.all([
@@ -178,6 +189,8 @@ export class SubscriptionService {
         ]),
         timeoutPromise
       ]) as [Subscription, UsageStats];
+
+      if (timeoutId) clearTimeout(timeoutId);
 
       const tierConfig = getTierConfig(subscription.tier);
 

@@ -44,7 +44,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 - [x] **26. Window State Memory:** Restore previous window bounds (x, y, width, height, maximized state) on app launch.
 - [x] **27. Deep Linking:** Register a custom protocol (e.g., `indii-os://`) to open the app from web links.
 - [x] **28. Native Menus & Shortcuts:** map CMD+S, CMD+Z, CMD+W strictly to app actions via the Electron main process.
-- [x] **29. Sidecar Daemon Health:** Complete Electron IPC logic to auto-restart the background Python sidecar if it crashes.
+- [x] **29. Sidecar Daemon Health:** (Deprecated: Sidecar removed, orchestration moved to native TS `AgentGraphService`) Complete Electron IPC logic to auto-restart the background Python sidecar if it crashes.
 - [x] **30. Offline Persistence Sync UI:** Present a visible "Offline Mode" banner globally when network drops and indicate pending syncs.
 
 ### Frontend Data & State Management (31-40)

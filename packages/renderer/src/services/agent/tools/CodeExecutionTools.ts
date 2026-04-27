@@ -14,7 +14,6 @@ import { logger } from '@/utils/logger';
  * Requires explicit user approval via DigitalHandshake before execution.
  */
 
-const SIDECAR_BASE = import.meta.env.VITE_SIDECAR_URL || 'http://localhost:50080';
 
 export const CodeExecutionTools = {
     /**
@@ -55,52 +54,13 @@ export const CodeExecutionTools = {
                 return toolError('A human-readable description of the code is required for approval.', 'CODE_NO_DESCRIPTION');
             }
 
-            // Call the Python sidecar code execution endpoint
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s client-side timeout
-
-            const response = await fetch(`${SIDECAR_BASE}/api/execute-code`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    language,
-                    code,
-                    description,
-                    timeout: 30,
-                    memory_limit_mb: 256,
-                }),
-                signal: controller.signal,
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                return toolError(
-                    `Sidecar returned ${response.status}: ${errorText}`,
-                    'CODE_SIDECAR_ERROR'
-                );
-            }
-
-            const result = await response.json();
-
-            if (result.success) {
-                logger.info(`[CodeExecutionTools] Script executed successfully in ${result.execution_time}ms`);
-                return toolSuccess(
-                    {
-                        stdout: result.stdout || '',
-                        stderr: result.stderr || '',
-                        exit_code: result.exit_code,
-                        execution_time_ms: result.execution_time,
-                    },
-                    `Code executed successfully (${result.execution_time}ms). stdout: ${(result.stdout || '').substring(0, 500)}`
-                );
-            } else {
-                return toolError(
-                    `Script failed (exit code ${result.exit_code}): ${result.stderr || 'Unknown error'}`,
-                    'CODE_EXECUTION_FAILED'
-                );
-            }
+            // The Python sidecar has been formally removed.
+            // Return an immediate error explaining this to the agent.
+            return toolError(
+                `Python code execution is currently disabled in this environment (Sidecar removed). ` +
+                `Please try to accomplish the task using native TypeScript tools or suggest an alternative approach.`,
+                'CODE_EXECUTION_DISABLED'
+            );
         } catch (error: unknown) {
             if (error instanceof DOMException && error.name === 'AbortError') {
                 return toolError('Code execution timed out after 35 seconds.', 'CODE_TIMEOUT');

@@ -14,11 +14,9 @@ export const createSidecarSlice: StateCreator<SidecarSlice> = (set) => ({
     sidecarStatus: 'checking',
     setSidecarStatus: (status) => set({ sidecarStatus: status }),
     triggerSidecarRestart: () => {
+        // Sidecar restart IPC handler was removed from the main process.
+        // The sidecar now auto-restarts via docker-compose health checks.
+        logger.warn('[SidecarSlice] Manual sidecar restart is no longer supported. The sidecar auto-recovers via health checks.');
         set({ sidecarStatus: 'checking' });
-        if (window.electronAPI?.sidecar?.restart) {
-            window.electronAPI.sidecar.restart();
-        } else {
-            logger.warn('[SidecarSlice] Sidecar restart IPC not available');
-        }
     },
 });
