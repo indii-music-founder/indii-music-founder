@@ -198,7 +198,7 @@ export function useDirectGeneration() {
                 type: 'image' as const,
                 prompt: localPrompt,
                 timestamp: Date.now(),
-                projectId: currentProjectId,
+                projectId: currentProjectIdRef.current,
                 origin: 'generated' as const
             }));
             
@@ -267,7 +267,7 @@ export function useDirectGeneration() {
                 type: 'video' as const,
                 prompt: localPrompt,
                 timestamp: Date.now(),
-                projectId: currentProjectId,
+                projectId: currentProjectIdRef.current,
                 origin: 'generated' as const
             }));
 
