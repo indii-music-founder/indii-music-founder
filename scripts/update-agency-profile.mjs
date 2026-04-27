@@ -31,7 +31,7 @@ async function updateProfile() {
 
     const userRef = db.collection('users').doc(AGENCY_UID);
 
-    const agencyBio = `The Walking Agency — Detroit-based creative collective and management label. 
+    const agencyBio = `New Detroit Music LLC — Detroit-based creative collective and management label. 
 
 Currently managing tactical artist development and digital identity for:
 - Marcus Deep (Analog Producer / Synth Specialist)
@@ -41,9 +41,9 @@ Currently managing tactical artist development and digital identity for:
 Our mission is the synthesis of hardware grit and digital scale.`;
 
     await userRef.update({
-        displayName: 'The Walking Agency',
+        displayName: 'New Detroit Music LLC',
         bio: agencyBio,
-        'brandKit.brandDescription': 'The Walking Agency — Creative management for Marcus Deep, Max Crownwood, and Rex Chrome.',
+        'brandKit.brandDescription': 'New Detroit Music LLC — Creative management for Marcus Deep, Max Crownwood, and Rex Chrome.',
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 

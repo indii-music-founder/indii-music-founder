@@ -56,12 +56,12 @@ or a component with aria-labels, those patterns apply to you.
 ```text
 # 1. Find the failing job ID
 curl -sL -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/the-walking-agency-det/indiiOS-Clean/actions/runs/{RUN_ID}/jobs?per_page=20" \
+  "https://api.github.com/repos/new-detroit-music-llc/indiiOS-Clean/actions/runs/{RUN_ID}/jobs?per_page=20" \
   | python3 -c "import sys,json; [print('FAIL', j['name'], j['id']) for j in json.load(sys.stdin)['jobs'] if j['conclusion']=='failure']"
 
 # 2. Get annotations (the real error, not the phantom git/gitleaks warning)
 curl -sL -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/the-walking-agency-det/indiiOS-Clean/check-runs/{JOB_ID}/annotations" \
+  "https://api.github.com/repos/new-detroit-music-llc/indiiOS-Clean/check-runs/{JOB_ID}/annotations" \
   | python3 -c "import sys,json; [print(a['annotation_level'], a['path'], a['start_line'], a['message'][:300]) for a in json.load(sys.stdin)]"
 
 # 3. IGNORE annotations where message contains 'git' and path='.github' — those are phantom

@@ -7,7 +7,7 @@ Thank you for your interest in contributing to **indiiOS**! This document explai
 ## ⚡ Quick Setup
 
 ```bash
-git clone https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron.git
+git clone https://github.com/new-detroit-music-llc/indiiOS-Alpha-Electron.git
 cd indiiOS-Alpha-Electron
 make prime          # installs deps + runs health check
 cp .env.example .env  # fill in your API keys

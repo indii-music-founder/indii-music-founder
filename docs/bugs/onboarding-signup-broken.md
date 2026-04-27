@@ -24,7 +24,7 @@ New users cannot sign up for indiiOS. The onboarding flow is completely inaccess
 
 4. **Guest Login Skips Onboarding**
    - Expected: Guest → Onboarding → New profile
-   - Actual: Guest → Existing "The Walking Agency" profile
+   - Actual: Guest → Existing "New Detroit Music LLC" profile
    - No new user setup triggered
 
 ## Impact

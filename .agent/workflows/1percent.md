@@ -25,7 +25,7 @@ cat LICENSE | head -20
 
 - Confirm the license type matches the project's intent (Proprietary for indiiOS).
 - Confirm the copyright year is current.
-- If missing or stale, create/update the LICENSE file with the correct year and entity (IndiiOS LLC).
+- If missing or stale, create/update the LICENSE file with the correct year and entity (New Detroit Music LLC).
 
 ### Step 2 — Verify README.md quality
 
