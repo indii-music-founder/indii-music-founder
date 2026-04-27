@@ -94,7 +94,7 @@ export function TermsOfService() {
             </div>
 
             <div className="mt-12 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
-                © 2026 IndiiOS LLC. All rights reserved.
+                © 2026 New Detroit Music LLC. All rights reserved.
             </div>
         </div>
     );
@@ -201,7 +201,7 @@ export function PrivacyPolicy() {
             </div>
 
             <div className="mt-12 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
-                © 2026 IndiiOS LLC. All rights reserved.
+                © 2026 New Detroit Music LLC. All rights reserved.
             </div>
         </div>
     );
@@ -232,7 +232,7 @@ export function DMCAPolicy() {
                     </p>
                     <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 mt-4 space-y-2">
                         <p><strong className="text-white">Name:</strong> Legal Department, DMCA Agent</p>
-                        <p><strong className="text-white">Organization:</strong> IndiiOS LLC</p>
+                        <p><strong className="text-white">Organization:</strong> New Detroit Music LLC</p>
                         <p><strong className="text-white">Address:</strong> 123 Innovation Drive, Suite 400, Detroit, MI 48226</p>
                         <p><strong className="text-white">Email:</strong> <a href="mailto:dmca@indiios.com" className="text-purple-400 hover:underline">dmca@indiios.com</a></p>
                         <p><strong className="text-white">Phone:</strong> (313) 555-0199</p>
@@ -267,7 +267,7 @@ export function DMCAPolicy() {
             </div>
 
             <div className="mt-12 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
-                © 2026 IndiiOS LLC. All rights reserved.
+                © 2026 New Detroit Music LLC. All rights reserved.
             </div>
         </div>
     );

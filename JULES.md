@@ -53,8 +53,8 @@ bash .claude/scripts/checkpoint.sh
 **indiiOS** is a multi-tenant, AI-native creative platform for independent music producers, visual artists, and creators. It provides a unified workspace combining AI-powered image generation, video production, audio DNA extraction (analyzing finished tracks for BPM, key, mood, energy, genre), distribution, and business operations.
 
 - **Version:** 0.1.0-beta.2
-- **Org:** IndiiOS LLC
-- **Repo:** `the-walking-agency-det/indiiOS-Alpha-Electron`
+- **Org:** New Detroit Music LLC
+- **Repo:** `new-detroit-music-llc/indiiOS-Alpha-Electron`
 - **Node Requirement:** >= 22.0.0
 
 ---

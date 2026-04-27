@@ -2,7 +2,7 @@
   "name": "@indiios/sdk",
   "version": "0.1.0-beta.1",
   "description": "Official TypeScript SDK for indiiOS REST API",
-  "author": "IndiiOS LLC",
+  "author": "New Detroit Music LLC",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",

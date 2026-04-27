@@ -351,8 +351,8 @@ export class WorkflowEngine {
                                     switch (op) {
                                         case '===': evaluated = dataStr === right; break;
                                         case '!==': evaluated = dataStr !== right; break;
-                                        case '==': evaluated = dataStr == right; break; // eslint-disable-line eqeqeq
-                                        case '!=': evaluated = dataStr != right; break; // eslint-disable-line eqeqeq
+                                        case '==': evaluated = dataStr == right; break;  
+                                        case '!=': evaluated = dataStr != right; break;  
                                         case '>': evaluated = isNumeric ? dataNum > rightNum : dataStr > right; break;
                                         case '<': evaluated = isNumeric ? dataNum < rightNum : dataStr < right; break;
                                         case '>=': evaluated = isNumeric ? dataNum >= rightNum : dataStr >= right; break;

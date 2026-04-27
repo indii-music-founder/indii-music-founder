@@ -1723,7 +1723,7 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
   },
   "publish": {
     "provider": "github",
-    "owner": "the-walking-agency-det",
+    "owner": "new-detroit-music-llc",
     "repo": "indiiOS-Alpha-Electron"
   }
 }

@@ -199,7 +199,7 @@ export default function Overlays() {
                 </div>
 
                 <footer className="mt-40 text-center text-white/20 text-xs font-mono">
-                    <p>&copy; 2025 THE WALKING AGENCY. ALL RIGHTS RESERVED.</p>
+                    <p>&copy; 2025 NEW DETROIT MUSIC LLC. ALL RIGHTS RESERVED.</p>
                 </footer>
             </section>
         </div>

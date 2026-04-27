@@ -20,6 +20,11 @@ import { ImageRenderer, ToolImageOutput } from './ToolOutputRenderer';
 import { CodeBlock } from './CodeBlock';
 import { getText } from './utils';
 import { safeJsonParse } from '@/services/utils/json';
+import { PlanCard } from './PlanCard';
+import { livingPlanService, LivingPlan } from '@/services/agent/LivingPlanService';
+import { agentService } from '@/services/agent/AgentService';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/core/context/ToastContext';
 
 // Types
 import { Components } from 'react-markdown';
@@ -34,6 +39,74 @@ interface MessageItemProps {
         initials: string;
     };
 }
+
+const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
+    const [plan, setPlan] = useState<LivingPlan | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const toast = useToast();
+    const currentProjectId = useStore(state => state.currentProjectId);
+
+    useEffect(() => {
+        if (!currentProjectId || !planId) return;
+
+        const fetchPlan = async () => {
+            try {
+                const fetchedPlan = await livingPlanService.get(currentProjectId, planId);
+                setPlan(fetchedPlan);
+            } catch (e) {
+                logger.error('Failed to load living plan:', e);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchPlan();
+    }, [planId, currentProjectId]);
+
+    if (isLoading) return <div className="p-4 animate-pulse bg-cyan-500/5 rounded-lg border border-cyan-500/20 text-xs text-cyan-400">Fetching living plan...</div>;
+    if (!plan) return <div className="p-4 bg-red-500/5 rounded-lg border border-red-500/20 text-xs text-red-400">Plan not found or deleted.</div>;
+
+    const handleApprove = async () => {
+        if (!currentProjectId) return;
+        try {
+            await livingPlanService.approve(currentProjectId, planId);
+            const updated = await livingPlanService.get(currentProjectId, planId);
+            setPlan(updated);
+            toast.success('Plan approved! Strategy is now active.');
+            
+            // Resume the agent loop with the approved plan
+            await agentService.resumeActivePlan(planId);
+        } catch (e) {
+            logger.error('Failed to approve plan:', e);
+            toast.error('Failed to approve plan.');
+        }
+    };
+
+    const handleRefine = () => {
+        toast.info('Refinement mode active. Tell me what to change!');
+    };
+
+    const handleCancel = async () => {
+        if (!currentProjectId) return;
+        try {
+            await livingPlanService.cancel(currentProjectId, planId);
+            const updated = await livingPlanService.get(currentProjectId, planId);
+            setPlan(updated);
+            toast.info('Plan cancelled.');
+        } catch (e) {
+            logger.error('Failed to cancel plan:', e);
+            toast.error('Failed to cancel plan.');
+        }
+    };
+
+    return (
+        <PlanCard 
+            plan={plan}
+            onApprove={handleApprove}
+            onRefine={handleRefine}
+            onCancel={handleCancel}
+        />
+    );
+});
 
 export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIdentity }: MessageItemProps) => {
     // Custom Markdown Components
@@ -84,7 +157,6 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             // Detect Delegate Task Output
             const delegateMatch = text.match(/\[Tool: delegate_task\] Output: (?:Success: )?(\{.*\})/s);
             if (delegateMatch) {
-                // ... existing logic ...
                 try {
                     const json = JSON.parse(delegateMatch[1]!);
                     if (json.text) {
@@ -121,6 +193,18 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                     }
                 } catch (e: unknown) { logger.warn("Failed to parse delegate tool output:", e); }
             }
+
+            // Detect Living Plan Proposal
+            const planMatch = text.match(/\[Tool: propose_plan\] Output: (?:Success: )?(\{.*\})/s);
+            if (planMatch) {
+                try {
+                    const json = JSON.parse(planMatch[1]!);
+                    if (json.planId) {
+                        return <LivingPlanToolRenderer planId={json.planId} />;
+                    }
+                } catch (e: unknown) { logger.warn("Failed to parse plan tool output:", e); }
+            }
+
             return <p className="mb-4 last:mb-0">{children}</p>;
         },
         pre: ({ children, ...props }: { children?: React.ReactNode }) => {
@@ -208,6 +292,13 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                         {msg.text}
                     </ReactMarkdown>
                 </div>
+
+                {/* Metadata-driven Plan Rendering (Fallback/Secondary) */}
+                {msg.role === 'model' && !!(msg.planId || msg.metadata?.planId) && !msg.text.includes('[Tool: propose_plan]') && (
+                    <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <LivingPlanToolRenderer planId={(msg.planId || msg.metadata?.planId) as string} />
+                    </div>
+                )}
 
                 {msg.role === 'system' && <span>{msg.text}</span>}
 

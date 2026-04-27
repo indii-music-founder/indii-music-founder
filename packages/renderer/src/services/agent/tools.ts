@@ -43,6 +43,8 @@ import { CanvasTools } from './tools/CanvasTools';
 import { CodeExecutionTools } from './tools/CodeExecutionTools';
 import { NotificationTools } from './tools/NotificationTools';
 import { BugReportTools } from './tools/BugReportTools';
+import { LivingPlanTools } from './tools/LivingPlanTools';
+import { MediaTools } from './tools/MediaTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -95,6 +97,9 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...NotificationTools,
     // Bug Reporting
     ...BugReportTools,
+    // Living Plans
+    ...LivingPlanTools,
+    ...MediaTools,
 };
 
 
@@ -220,4 +225,9 @@ AVAILABLE TOOLS:
 106. execute_code(language, code, description) - Execute a Python script via the sandboxed sidecar. HIGH RISK — requires user approval.
 --- NOTIFICATIONS ---
 107. send_notification(title, body, urgency?, action_url?) - Send a notification (info/warning/critical) to the user outside the app.
+108. propose_plan(draft: object) - Propose a structured living plan for a career goal or release.
+109. refine_plan(planId: string, updates: object) - Refine an existing plan draft.
+110. get_plan(planId: string) - Get details of a specific plan.
+111. resize_image_for_socials(imageUrl: string, platforms?: string[]) - Resize image for TikTok, Instagram, YouTube, etc. using AI outpainting.
+112. analyze_audio_dna(audioUrl: string) - Extract BPM, Key, Mood, Genre, and Energy from an audio file.
 `;

@@ -6,7 +6,7 @@ The Marketplace is the commercial hub of indiiOS, where creators can discover, p
 - **Asset Discovery:** Filterable search for audio samples, design templates, and video keyframes.
 - **Direct Licensing:** Integrated sync licensing at the point of purchase.
 - **Artist Storefronts:** Personalized spaces for creators to sell their own high-fidelity assets.
-- **Platform Bundles:** Curated packs of brand-building tools and assets provided by IndiiOS LLC.
+- **Platform Bundles:** Curated packs of brand-building tools and assets provided by New Detroit Music LLC.
 
 ## 🏗️ Technical Architecture
 - **`MarketplaceService`**: Manages the catalog, shopping cart, and transaction lifecycle.

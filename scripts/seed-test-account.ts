@@ -90,7 +90,7 @@ const ISRC_REGISTRY = [
         isrc: "US-DET-24-00001",
         releaseId: "REL-001",
         trackTitle: "Neon Dreams (Original Mix)",
-        artistName: "The Walking Agency",
+        artistName: "New Detroit Music LLC",
         assignedAt: Timestamp.now(),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
@@ -105,7 +105,7 @@ const TAX_PROFILE = {
     certified: true,
     payoutStatus: "ACTIVE",
     certTimestamp: Timestamp.now(),
-    legalName: "The Walking Agency DET",
+    legalName: "New Detroit Music LLC",
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now()
 };
