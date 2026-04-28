@@ -2,6 +2,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MCPClientService } from './MCPClientService';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
+vi.mock('electron', () => ({
+    app: {
+        isPackaged: false,
+        getAppPath: vi.fn().mockReturnValue('/mock/app/path'),
+    },
+}));
+
+vi.mock('electron-log', () => ({
+    default: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+    },
+}));
+
 vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
     return {
         Client: vi.fn().mockImplementation(function() {
