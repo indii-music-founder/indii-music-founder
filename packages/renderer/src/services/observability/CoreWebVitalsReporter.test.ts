@@ -169,7 +169,7 @@ describe('CoreWebVitalsReporter', () => {
       const report = reporter.reportMetrics(snapshot);
       expect(report.warnings.length).toBeGreaterThan(0);
       expect(report.warnings[0]).toMatch(/LCP/);
-      expect(report.warnings[0]).toContain('LCP');
+
     });
   });
 });

@@ -1,3 +1,11 @@
+/**
+ * STATUS: STUB — NOT PRODUCTION READY
+ *
+ * This function returns mock tax form request status. Full DocuSign + Stripe 1099
+ * integration is deferred pending GMV threshold or explicit business request.
+ * See docs/KNOWN_GAPS.md for details and remediation trigger.
+ */
+
 import * as functions from "firebase-functions/v1";
 
 export const requestTaxForms = functions

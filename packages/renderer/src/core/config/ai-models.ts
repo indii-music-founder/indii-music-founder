@@ -12,8 +12,8 @@ import { logger } from '@/utils/logger';
 export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3-pro-preview',
     TEXT_FAST: 'gemini-3-flash-preview',
-    IMAGE_GEN: 'gemini-3-pro-preview',           // Native image gen via responseModalities
-    IMAGE_FAST: 'gemini-3-flash-preview',         // Fast image gen via responseModalities
+    IMAGE_GEN: 'gemini-3-pro-image-preview',           // Native image gen via responseModalities
+    IMAGE_FAST: 'gemini-3.1-flash-image-preview',         // Fast image gen via responseModalities
     // Direct mode — bleeding-edge preview models for client-side SDK calls
     DIRECT_PRO: 'gemini-3-pro-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
     DIRECT_FAST: 'gemini-3.1-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
@@ -120,6 +120,8 @@ export const AI_CONFIG = {
  * gemini-2.5-flash: $0.15 input /  $0.60 output per 1M tokens
  */
 export const MODEL_PRICING = {
+    'gemini-2.5-pro': { input: 1.25, output: 10.00 },
+    'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-3-pro-preview': { input: 1.25, output: 10.00 },
     'gemini-3-flash-preview': { input: 0.15, output: 0.60 },
     'veo-3.1-generate-preview': {

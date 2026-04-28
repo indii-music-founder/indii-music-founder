@@ -1,5 +1,6 @@
 /**
  * FOUNDERS AGREEMENT
+ * FOUNDERS COVENANT
  * New Detroit Music LLC — chartered 2024
  *
  * This file is a permanent, append-only record of indiiOS founding members.
@@ -44,7 +45,7 @@ export const AGREEMENT_TERMS = {
   // investment rounds. (e.g. A subsequent $5,000 investment yields a $7,500 return basis).
   investment_rollover_basis: true,
   indiiOS_entity: 'New Detroit Music LLC',
-  agreement_established: '2026-03-17',
+  covenant_established: '2026-03-17',
 } as const;
 
 /**
@@ -67,7 +68,7 @@ export interface FounderRecord {
 /**
  * THE FOUNDERS
  *
- * Seats 1–10. Each entry below represents a permanent agreement between
+ * Seats 1–10. Each entry below represents a permanent covenant between
  * New Detroit Music LLC and the named individual. This array is the on-chain record.
  *
  * New entries are appended automatically by the activateFounderPass

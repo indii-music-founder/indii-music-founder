@@ -50,9 +50,11 @@ bash .claude/scripts/checkpoint.sh
 
 ## Project Overview
 
-**indiiOS** is a multi-tenant, AI-native creative platform for independent music producers, visual artists, and creators. It provides a unified workspace combining AI-powered image generation, video production, audio DNA extraction (analyzing finished tracks for BPM, key, mood, energy, genre), distribution, and business operations.
+> **Canonical product documentation lives in `.agent-os/product/`. Read those 5 files first before acting on instructions in this file.**
 
-- **Version:** 0.1.0-beta.2
+**indiiOS** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
+
+- **Version:** 1.55.3
 - **Org:** New Detroit Music LLC
 - **Repo:** `new-detroit-music-llc/indiiOS-Alpha-Electron`
 - **Node Requirement:** >= 22.0.0
@@ -97,83 +99,21 @@ You operate within a 3-layer architecture designed to maximize reliability by se
 
 ```
 indiiOS-Alpha-Electron/
-├── src/                        # Main React application source
-│   ├── core/                   # App infrastructure (App.tsx, store, contexts, themes)
-│   │   ├── App.tsx             # Main entry - lazy-loads all modules
-│   │   ├── store.ts            # Zustand root store
-│   │   ├── store/slices/       # Domain-specific state slices
-│   │   ├── components/         # Shell UI (Sidebar, CommandBar, RightPanel, ChatOverlay)
-│   │   ├── context/            # React contexts (Toast, Voice, Theme)
-│   │   └── constants.ts        # Module IDs, standalone modules
-│   ├── modules/                # 20+ lazy-loaded feature modules
-│   │   ├── agent/              # Agent orchestration UI
-│   │   ├── creative/           # AI image generation studio
-│   │   ├── video/              # Video production (Veo 3.1)
-│   │   ├── dashboard/          # Main dashboard
-│   │   ├── distribution/       # Multi-distributor release management
-│   │   ├── finance/            # Revenue tracking, royalty management
-│   │   ├── legal/              # Contract review, rights management
-│   │   ├── licensing/          # Licensing management
-│   │   ├── marketing/          # Campaigns, brand assets, AI copywriting
-│   │   ├── merchandise/        # Merchandise and POD integration
-│   │   ├── publishing/         # Publishing dashboard
-│   │   ├── social/             # Social media integration
-│   │   ├── touring/            # Road/tour management
-│   │   ├── workflow/           # Node-based automation editor
-│   │   ├── knowledge/          # Knowledge base
-│   │   ├── onboarding/         # Onboarding flow
-│   │   └── ...                 # debug, files, history, observability, publicist, tools
-│   ├── services/               # 40+ business logic services
-│   │   ├── agent/              # indii Conductor orchestration
-│   │   ├── ai/                 # Gemini, Vertex AI wrappers
-│   │   ├── audio/              # Audio analysis (Essentia.js)
-│   │   ├── ddex/               # DDEX ERN/DSR handling
-│   │   ├── distribution/       # Multi-distributor facade
-│   │   ├── image/              # Image generation
-│   │   ├── video/              # Video processing
-│   │   └── ...                 # cache, finance, identity, legal, marketing, payment, etc.
-│   ├── components/             # Shared UI components
-│   │   ├── ui/                 # Basic UI components (Radix-based)
-│   │   ├── kokonutui/          # Custom UI kit
-│   │   ├── studio/             # Studio-specific components
-│   │   └── shared/             # General shared components
-│   ├── hooks/                  # Custom React hooks
-│   ├── lib/                    # Utility libraries
-│   ├── types/                  # TypeScript type definitions
-│   └── config/                 # App configuration
-│
-├── functions/                  # Firebase Cloud Functions (Node.js 22, Gen 2)
-│   └── src/
-│       ├── stripe/             # Stripe payment integration
-│       ├── subscription/       # Subscription management
-│       ├── analytics/          # Analytics functions
-│       └── shared/             # Shared types and schemas
-│
-├── electron/                   # Electron desktop wrapper
-│   ├── main.ts                 # Main process entry
-│   └── preload.ts              # IPC bridge to renderer
-│
+├── packages/
+│   ├── renderer/               # Main React application source (indiiOS studio)
+│   ├── main/                   # Electron desktop wrapper
+│   ├── firebase/               # Firebase Cloud Functions (Node.js 22, Gen 2)
+│   ├── shared/                 # Shared types and schemas
+│   ├── landing/                # Separate marketing site (React + Vite)
+│   ├── sdk/                    # SDKs
+│   └── mcp-server-local/       # Local MCP server
 ├── agents/                     # AI agent definitions (hub-and-spoke architecture)
-│   ├── agent0/                 # Hub orchestrator (indii Conductor)
-│   ├── creative/               # Creative direction agent
-│   ├── indii_executor/         # Task executor
-│   └── [specialist agents]/    # brand, finance, legal, licensing, marketing,
-│                               # music, publicist, publishing, road, social, video
-│
 ├── execution/                  # Deterministic scripts for agent tools (Layer 3)
-│   ├── distribution/           # DDEX generation, SFTP upload, QC validation, ISRC
-│   ├── audio/                  # Audio forensics, fidelity audit
-│   └── finance/                # Waterfall payout calculations
-│
 ├── directives/                 # AI agent SOPs (Layer 1)
-│
 ├── python/                     # Python agent tools and API handlers
-│   ├── tools/                  # 20+ custom tools (image gen, video gen, audio, browser, DDEX, etc.)
-│   ├── api/                    # REST API handlers
-│   └── helpers/                # MCP server, task scheduler
-│
 ├── e2e/                        # Playwright E2E tests (60+ spec files)
-├── landing-page/               # Separate marketing site (React + Vite)
+├── docs/                       # Documentation (specs, plans, design, testing)
+├── .agent/                     # Agent system configuration and error memory
 ├── docs/                       # Documentation (specs, plans, design, testing)
 ├── scripts/                    # Build and utility scripts
 ├── .github/workflows/          # CI/CD (deploy.yml)
@@ -188,16 +128,16 @@ indiiOS-Alpha-Electron/
 
 | Category | Technology | Notes |
 |----------|-----------|-------|
-| Framework | React 18 | With lazy-loaded modules |
-| Build | Vite 6.4 | Port 4242 for dev |
-| Styling | TailwindCSS 4.1 | With tailwind-merge, clsx |
-| State | Zustand 5.0 | Slice-based store pattern |
+| Framework | React 18.3.1 | With lazy-loaded modules |
+| Build | Vite 6.4.1 | Port 4242 for dev |
+| Styling | TailwindCSS 4.1.17 | With tailwind-merge, clsx |
+| State | Zustand 5.0.8 | Slice-based store pattern |
 | Animation | Framer Motion 12.x | |
 | Canvas | Fabric.js 6.9 | Image editing |
 | Graph Editor | React Flow 11.11 | Workflow automation |
-| Audio | Wavesurfer.js 7.11 + Essentia.js | Analysis & visualization |
-| Video | Remotion 4.0 | Video rendering |
-| 3D | Three.js 0.182 | Via @react-three/fiber |
+| Audio | Wavesurfer.js 7.11.1 + Essentia.js 0.1.3 | Analysis & visualization |
+| Video | Remotion 4.0.445 | Video rendering |
+| 3D | Three.js 0.182.0 | Via @react-three/fiber |
 | Charts | Recharts 3.6 | Data visualization |
 | Router | React Router 7.11 | URL sync |
 | UI Kit | Radix UI + Lucide icons | Accessible primitives |
@@ -207,15 +147,15 @@ indiiOS-Alpha-Electron/
 
 | Category | Technology | Notes |
 |----------|-----------|-------|
-| Functions | Firebase Functions 7.0 (Gen 2) | Node.js 22 runtime |
-| AI | Genkit AI 1.26 + @google/genai 1.30 | Gemini models |
+| Functions | Firebase Functions 7.0.5 (Gen 2) | Node.js 22 runtime |
+| AI | Genkit AI 1.26 (pinned) + @google/genai^1.48.0 | Gemini models |
 | Jobs | Inngest 3.46 | Background job orchestration |
 | Payments | Stripe 20.1 | Subscription billing |
 | Database | Firestore | With security rules |
 | Storage | Firebase Storage | With security rules |
 | Analytics | BigQuery | Revenue analytics |
 
-### Desktop (Electron 33)
+### Desktop (Electron 41.1.1)
 
 | Component | Purpose |
 |-----------|---------|
@@ -228,8 +168,8 @@ indiiOS-Alpha-Electron/
 
 | Tool | Purpose |
 |------|---------|
-| Vitest 4.0 | Unit tests (jsdom environment) |
-| Playwright 1.57 | E2E tests (60+ specs) |
+| Vitest 4.0.18 | Unit tests (jsdom environment) |
+| Playwright 1.58.2 | E2E tests (60+ specs) |
 | Testing Library 16.3 | Component testing |
 | axe-core 4.11 | Accessibility testing |
 
@@ -240,7 +180,8 @@ indiiOS-Alpha-Electron/
 ### Daily Development
 
 ```bash
-npm run dev                    # Start Vite dev server on :4242
+electron-vite dev              # Start Electron dev server
+npm run dev:web                # Start Vite dev server for web-only on :4243
 npm run desktop:dev            # Run Electron dev (requires :4242 running)
 ```
 
@@ -294,8 +235,8 @@ import { AgentDef } from '@agents/creative';             // agents/*
 
 ### State Management (Zustand)
 
-- Root store at `src/core/store.ts`
-- Domain slices in `src/core/store/slices/`:
+- Root store at `packages/renderer/src/core/store/index.ts`
+- Domain slices in `packages/renderer/src/core/store/slices/`:
   - `appSlice.ts` - UI state, current module, navigation
   - `authSlice.ts` - Firebase auth, user state
   - `agentSlice.ts` - Agent orchestration state
@@ -310,7 +251,7 @@ import { AgentDef } from '@agents/creative';             // agents/*
 
 ### Module System
 
-- All feature modules are **lazy-loaded** via `React.lazy()` in `src/core/App.tsx`
+- All feature modules are **lazy-loaded** via `React.lazy()` in `packages/renderer/src/core/App.tsx`
 - Module components mapped in `MODULE_COMPONENTS` record by `ModuleId`
 - Standalone modules (no chrome/sidebar) defined in `STANDALONE_MODULES`
 - Each module lives in `src/modules/<name>/` with its own components, hooks, and types
@@ -362,14 +303,16 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 
 ### Unit Tests (Vitest)
 
-- Test setup: `src/test/setup.ts` - provides centralized Firebase mocks, ResizeObserver/Canvas/matchMedia mocks
+- Test setup: `packages/renderer/src/test/setup.ts` - provides centralized Firebase mocks, ResizeObserver/Canvas/matchMedia mocks
 - Environment: jsdom with `@testing-library/jest-dom`
 - Co-locate tests with source: `*.test.ts` / `*.test.tsx`
 - Firebase services are fully mocked (auth, firestore, storage, functions, messaging, app-check, AI)
-- indii Conductor replaced AgentZeroService (tombstone export retained in `src/services/agent/AgentZeroService.ts`) — mock in `src/test/setup.ts` prevents import errors
+- indii Conductor replaced AgentZeroService (tombstone export retained in `src/services/agent/AgentZeroService.ts`) — mock in `packages/renderer/src/test/setup.ts` prevents import errors
 - Run: `npm test` (watch) or `npm test -- --run` (CI)
 
 ### E2E Tests (Playwright)
+
+- Note: Google Antigravity is used for live browser testing alongside Playwright during pre-demo QA.
 
 - Test files in `/e2e/` directory (60+ specs)
 - Categories: agent flows, chat interaction, creative persistence, mobile responsiveness, maestro workflows, chaos testing
@@ -519,21 +462,21 @@ Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a no
 
 | File | Purpose |
 |------|---------|
-| `src/core/App.tsx` | Main app entry, module routing, lazy loading |
-| `src/core/store.ts` | Zustand root store |
-| `src/core/store/slices/` | Domain state slices (app, auth, agent, creative, distribution, etc.) |
-| `src/core/constants.ts` | Module IDs, standalone module list |
-| `vite.config.ts` | Build config, path aliases, PWA, chunk splitting |
+| `packages/renderer/src/core/App.tsx` | Main app entry, module routing, lazy loading |
+| `packages/renderer/src/core/store/index.ts` | Zustand root store |
+| `packages/renderer/src/core/store/slices/` | Domain state slices (app, auth, agent, creative, distribution, etc.) |
+| `packages/renderer/src/core/constants.ts` | Module IDs, standalone module list |
+| `electron.vite.config.ts` | Build config, path aliases (plus `packages/renderer/vite.config.ts` for web-only), PWA, chunk splitting |
 | `tsconfig.json` | TypeScript config (ES2022, strict, bundler resolution) |
 | `eslint.config.js` | ESLint flat config with React/TS rules |
 | `firebase.json` | Firebase hosting (2 targets), Firestore, Storage config |
-| `firestore.rules` | Firestore security rules |
-| `storage.rules` | Cloud Storage security rules |
-| `electron/main.ts` | Electron main process |
-| `electron/preload.ts` | Electron IPC bridge |
+| `packages/firebase/firestore.rules` | Firestore security rules |
+| `packages/firebase/storage.rules` | Cloud Storage security rules |
+| `packages/main/src/main.ts` | Electron main process |
+| `packages/main/src/preload.ts` | Electron IPC bridge |
 | `docker-compose.yml` | AI Sidecar + Ollama containers |
 | `.env.example` | Environment variable template |
-| `src/test/setup.ts` | Vitest global test setup and Firebase mocks |
+| `packages/renderer/src/test/setup.ts` | Vitest global test setup and Firebase mocks |
 | `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Seven Anti-Patterns, pre-commit checklist |
 | `docs/PLATINUM_POLISH_REPORT.md` | Codebase audit snapshot (type safety, log hygiene) |
 | `docs/DATABASE_PLATINUM_PROTOCOL.md` | Database-layer platinum protocol |

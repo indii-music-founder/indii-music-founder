@@ -2,6 +2,32 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.57.2](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.57.1...v1.57.2) (2026-04-27)
+
+
+### Bug Fixes
+
+* **ci:** properly configure release-please v4 manifest with correct tag format ([b39cc3d](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b39cc3dd84bc06430eae9f4baf43bda3b93738cb))
+* **ci:** repair corrupt release-please-config.json from botched merge ([5ac5b09](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5ac5b091ff4b14f503bb9516b9d43a74885d9d96))
+* update R5 endpoints, entity structure, and test configurations ([9715104](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9715104a8bdb6701e10cd66c20e20959e966bf92))
+
+
+### Refactoring
+
+* **membership:** replace hardcoded email bypass with god_mode custom claim ([031ecc7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/031ecc70ad191540e720bfb224a71c862bc47533))
+
+
+### Documentation
+
+* add diligence and founder retention runbook to project documentation ([704d120](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/704d1209330ae1d36fed6e0a2c48b2b8cd7369f5))
+* add founder retention term sheet and succession plan for acquisition ([bc65aac](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bc65aac804a69c070f0cae998b193ecfb5555792))
+* add IP assignment and AI authorship disclosure for diligence ([a964934](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/a96493487565aea531387ff9baa98a0c5c78776c))
+* add KNOWN_GAPS inventory with tax forms stub deferral ([2ac1499](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2ac1499f4883e92a5ad5b946238f3778173d5079))
+* assemble acquisition data room with 14-entry directory structure ([c2de810](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c2de810f68f2e6be433b4c83e90b973b62a827b3))
+* clarify entity ownership (New Detroit Music LLC owns indiiOS) ([e67fcc1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e67fcc150e80f577479d871d45213ffd8ee75bb8))
+* create reviewer briefing pack for independent code review engagement ([bfe375c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/bfe375c7a9c1b18aa4dedf78afe306be17e9b47f))
+* define independent review scope and reviewer selection options ([6b0b165](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6b0b1651e599b2baa2f88a070880dd43160dcfa3))
+
 ## [1.57.1](https://github.com/new-detroit-music-llc/indiiOS-Clean/compare/v1.57.0...v1.57.1) (2026-04-25)
 
 

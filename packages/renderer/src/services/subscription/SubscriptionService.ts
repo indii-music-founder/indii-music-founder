@@ -157,8 +157,8 @@ export class SubscriptionService {
           }
           return { allowed: true };
         }
-      } catch (err) {
-        logger.warn('[SubscriptionService] Failed to check god_mode claim', err);
+      } catch (e: unknown) {
+        logger.warn('[SubscriptionService] Failed to check god_mode claim:', e);
       }
     }
 
