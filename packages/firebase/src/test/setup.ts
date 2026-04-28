@@ -165,3 +165,24 @@ vi.mock('firebase-functions/params', () => ({
     defineString: vi.fn(() => ({ value: vi.fn(() => 'mock-string-value') })),
     defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
+
+// ─── Native Module Mocks ─────────────────────────────────────────────────────
+// `sharp` is used by lib/image_resizing.ts and is loaded transitively whenever
+// a test imports from the barrel file (index.ts). On CI (ubuntu-latest) the
+// sharp native binary for linux-x64 may not be installed, causing all firebase
+// tests to crash at module resolution time. Mocking it here once prevents every
+// individual test file from needing its own mock.
+vi.mock('sharp', () => {
+    const sharpInstance = {
+        resize: vi.fn().mockReturnThis(),
+        jpeg: vi.fn().mockReturnThis(),
+        png: vi.fn().mockReturnThis(),
+        webp: vi.fn().mockReturnThis(),
+        toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock-image-data')),
+        toFile: vi.fn().mockResolvedValue({ width: 100, height: 100 }),
+        metadata: vi.fn().mockResolvedValue({ width: 100, height: 100, format: 'png' }),
+    };
+    return {
+        default: vi.fn(() => sharpInstance),
+    };
+});
