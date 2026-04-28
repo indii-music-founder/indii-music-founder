@@ -45,55 +45,79 @@ export class RoyaltyService {
         try {
             let totalPayoutsStored = 0;
 
+            // Group items by releaseId to minimize database queries
+            const releaseGroups: Record<string, RevenueReportItem[]> = {};
+
             for (const item of items) {
                 const trackData = metadataMap[item.isrc];
                 if (!trackData) continue;
 
                 const releaseId = trackData.id || item.isrc;
+                if (!releaseGroups[releaseId]) {
+                    releaseGroups[releaseId] = [];
+                }
+                releaseGroups[releaseId].push(item);
+            }
 
-                // Use transaction for atomic recoupment update and payout recording
+            const transactionPromises = Object.entries(releaseGroups).map(async ([releaseId, groupItems]) => {
+                let payoutsStoredInThisTx = 0;
+                // Use transaction for atomic recoupment update and payout recording per release
                 await runTransaction(db, async (transaction) => {
                     const recoupRef = doc(db, this.RECOUPMENT_COLLECTION, releaseId);
                     const recoupDoc = await transaction.get(recoupRef);
 
-                    let unallocatedRevenue = item.grossRevenue;
                     let currentBalance = 0;
 
                     if (recoupDoc.exists()) {
                         const data = recoupDoc.data() as RecoupmentBalance;
                         currentBalance = data.balance;
+                    }
+
+                    const initialBalance = currentBalance;
+
+                    for (const item of groupItems) {
+                        const trackData = metadataMap[item.isrc];
+                        if (!trackData) continue;
+
+                        let unallocatedRevenue = item.grossRevenue;
 
                         if (currentBalance > 0) {
                             const deduction = Math.min(unallocatedRevenue, currentBalance);
                             currentBalance -= deduction;
                             unallocatedRevenue -= deduction;
+                        }
 
-                            transaction.update(recoupRef, {
-                                balance: currentBalance,
-                                updatedAt: serverTimestamp()
+                        if (unallocatedRevenue <= 0) continue;
+
+                        // Calculate splits on the remaining revenue for this item
+                        const payouts = this.calculateSplitsFromUnallocated(unallocatedRevenue, trackData, item);
+
+                        // Record each payout in the transaction
+                        for (const payout of payouts) {
+                            const payoutRef = doc(collection(db, this.PAYOUTS_COLLECTION));
+                            transaction.set(payoutRef, {
+                                ...payout,
+                                reportId,
+                                status: 'pending',
+                                createdAt: serverTimestamp()
                             });
-                            logger.debug(`[RoyaltyService] Recooped ${deduction} for ${releaseId}. Remaining: ${currentBalance}`);
+                            payoutsStoredInThisTx++;
                         }
                     }
 
-                    if (unallocatedRevenue <= 0) return;
-
-                    // Calculate splits on the remaining revenue
-                    const payouts = this.calculateSplitsFromUnallocated(unallocatedRevenue, trackData, item);
-
-                    // Record each payout in the transaction
-                    for (const payout of payouts) {
-                        const payoutRef = doc(collection(db, this.PAYOUTS_COLLECTION));
-                        transaction.set(payoutRef, {
-                            ...payout,
-                            reportId,
-                            status: 'pending',
-                            createdAt: serverTimestamp()
+                    if (initialBalance !== currentBalance) {
+                        transaction.update(recoupRef, {
+                            balance: currentBalance,
+                            updatedAt: serverTimestamp()
                         });
-                        totalPayoutsStored++;
+                        logger.debug(`[RoyaltyService] Recooped ${initialBalance - currentBalance} for ${releaseId}. Remaining: ${currentBalance}`);
                     }
                 });
-            }
+                return payoutsStoredInThisTx;
+            });
+
+            const results = await Promise.all(transactionPromises);
+            totalPayoutsStored = results.reduce((acc, count) => acc + count, 0);
 
             return { success: true, payoutCount: totalPayoutsStored };
         } catch (error: unknown) {
