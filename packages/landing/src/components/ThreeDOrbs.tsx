@@ -12,7 +12,7 @@ const COUNT = 15;
 
 export default function ThreeDOrbs() {
     const { viewport, camera } = useThree();
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const meshRef = useRef<any>(null!);
     const noise2D = useMemo(() => createNoise2D(), []);
 
     // Subscribe to audio store

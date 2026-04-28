@@ -2,13 +2,14 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Play, Pause, X, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
+import { audioContextManager } from '@/services/audio/AudioContextManager';
 import { motion } from 'framer-motion';
 import { logger } from '@/utils/logger';
 
 export default function AudioPIPPlayer() {
     const {
         currentTrack, isPlaying, volume, isPIPVisible,
-        pauseTrack, resumeTrack, stopTrack, setVolume, updatePlaybackProgress
+        pauseTrack, resumeTrack, stopTrack, setVolume, updatePlaybackProgress, setFrequencyData
     } = useStore(useShallow(state => ({
         currentTrack: state.currentTrack,
         isPlaying: state.isPlaying,
@@ -18,13 +19,100 @@ export default function AudioPIPPlayer() {
         resumeTrack: state.resumeTrack,
         stopTrack: state.stopTrack,
         setVolume: state.setVolume,
-        updatePlaybackProgress: state.updatePlaybackProgress
+        updatePlaybackProgress: state.updatePlaybackProgress,
+        setFrequencyData: state.setFrequencyData
     })));
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
+
+    // Initialize Web Audio API nodes
+    useEffect(() => {
+        if (audioRef.current && !sourceNodeRef.current) {
+            try {
+                const ctx = audioContextManager.initialize();
+                
+                // Set crossOrigin to allow analysis of external tracks
+                audioRef.current.crossOrigin = 'anonymous';
+
+                const source = ctx.createMediaElementSource(audioRef.current);
+                const analyser = ctx.createAnalyser();
+                
+                // FFT size 1024 gives 512 bins, which we can map to our 31 bands
+                analyser.fftSize = 1024;
+                analyser.smoothingTimeConstant = 0.85;
+
+                source.connect(analyser);
+                analyser.connect(ctx.destination);
+
+                sourceNodeRef.current = source;
+                analyserRef.current = analyser;
+
+                logger.debug('[AudioPIPPlayer] Web Audio nodes initialized');
+            } catch (err) {
+                logger.error('[AudioPIPPlayer] Failed to initialize Web Audio nodes:', err);
+            }
+        }
+
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, []);
+
+    // Frequency Analysis Loop
+    useEffect(() => {
+        if (isPlaying && analyserRef.current) {
+            const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+            
+            const updateFrequency = () => {
+                if (!analyserRef.current) return;
+                
+                analyserRef.current.getByteFrequencyData(dataArray);
+                
+                // Map the 512 bins to 31 bands for the visualizer
+                // Logarithmic mapping is better for music as it matches human hearing
+                const bands = new Array(31).fill(0);
+                const totalBins = dataArray.length;
+                
+                for (let i = 0; i < 31; i++) {
+                    // Exponentially increasing bin ranges
+                    const startBin = Math.floor(Math.pow(i / 31, 2) * totalBins);
+                    const endBin = Math.max(startBin + 1, Math.floor(Math.pow((i + 1) / 31, 2) * totalBins));
+                    
+                    let sum = 0;
+                    let count = 0;
+                    for (let j = startBin; j < endBin && j < totalBins; j++) {
+                        sum += dataArray[j] || 0;
+                        count++;
+                    }
+                    bands[i] = (sum / (count || 1)) / 255; // Normalize to 0-1
+                }
+
+                // Update the store
+                setFrequencyData({ bands });
+
+                animationFrameRef.current = requestAnimationFrame(updateFrequency);
+            };
+
+            animationFrameRef.current = requestAnimationFrame(updateFrequency);
+        } else if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+        }
+
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, [isPlaying, setFrequencyData]);
 
     useEffect(() => {
         if (currentTrack && audioRef.current) {

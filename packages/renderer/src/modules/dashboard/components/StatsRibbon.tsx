@@ -62,26 +62,26 @@ export default function StatsRibbon() {
     return (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard
-                icon={<FolderOpen size={16} className="text-blue-400" />}
+                icon={<FolderOpen size={16} className="text-emerald-400" />}
                 label="Projects"
                 value={projects.length}
-                color="bg-blue-500/10"
+                color="bg-emerald-500/10"
                 delay={0.05}
             />
             <StatCard
-                icon={<HardDrive size={16} className="text-indigo-400" />}
+                icon={<HardDrive size={16} className="text-emerald-500" />}
                 label="Storage Used"
                 value={storagePercent}
                 suffix="%"
                 precision={1}
-                color="bg-indigo-500/10"
+                color="bg-emerald-500/15"
                 delay={0.1}
             />
             <StatCard
-                icon={<MessageSquare size={16} className="text-purple-400" />}
+                icon={<MessageSquare size={16} className="text-emerald-300" />}
                 label="Messages"
                 value={agentHistory.length}
-                color="bg-purple-500/10"
+                color="bg-emerald-500/10"
                 delay={0.15}
             />
             <StatCard
@@ -92,6 +92,7 @@ export default function StatsRibbon() {
                 color="bg-emerald-500/10"
                 delay={0.2}
             />
+
         </div>
     );
 }

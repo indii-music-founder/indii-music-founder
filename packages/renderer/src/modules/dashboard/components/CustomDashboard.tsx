@@ -115,12 +115,12 @@ export function CustomDashboard() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-inner shadow-indigo-500/10">
-                        <LayoutDashboard size={16} className="text-indigo-400" />
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-inner shadow-emerald-500/10">
+                        <LayoutDashboard size={16} className="text-emerald-400" />
                     </div>
                     <div>
                         <h2 className="text-xl font-semibold text-white tracking-wide">My Dashboard</h2>
-                        <p className="text-[10px] text-indigo-200/60 font-medium uppercase tracking-[0.1em] mt-0.5">{widgets.length} widget{widgets.length !== 1 ? 's' : ''} · drag to reorder</p>
+                        <p className="text-[10px] text-emerald-200/60 font-medium uppercase tracking-[0.1em] mt-0.5">{widgets.length} widget{widgets.length !== 1 ? 's' : ''} · drag to reorder</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -138,7 +138,7 @@ export function CustomDashboard() {
                     <button
                         onClick={() => setIsEditMode((v) => !v)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${isEditMode
-                            ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                             : 'bg-white/5 text-gray-400 hover:bg-white/10'
                             }`}
                     >
@@ -147,7 +147,7 @@ export function CustomDashboard() {
                     </button>
                     <button
                         onClick={() => setShowPicker((v) => !v)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold transition-colors"
                     >
                         <Plus size={10} />
                         Add Widget
@@ -213,8 +213,8 @@ export function CustomDashboard() {
                                 onDrop={(e) => handleDrop(e, widget.id)}
                                 onDragEnd={() => { setDragId(null); setDragOverId(null); }}
                                 className={`relative rounded-2xl p-4 border transition-all min-h-[180px] shadow-lg ${isOver
-                                    ? 'border-indigo-500/40 bg-indigo-500/5 shadow-indigo-500/10'
-                                    : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 shadow-black/20'
+                                    ? 'border-emerald-500/40 bg-emerald-500/5 shadow-emerald-500/10'
+                                    : 'border-white/5 bg-[#0a0a0a]/50 hover:bg-[#0a0a0a]/80 hover:border-white/10 shadow-black/20'
                                     } ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
                             >
                                 {/* Edit mode controls */}

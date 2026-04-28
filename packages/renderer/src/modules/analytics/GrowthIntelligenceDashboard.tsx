@@ -59,8 +59,8 @@ function NoPlatformsState({ onConnected }: { onConnected: () => void }) {
         <div className="h-full overflow-y-auto p-6">
             <div className="max-w-2xl mx-auto">
                 <div className="text-center mb-8 pt-4">
-                    <div className="inline-flex p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl mb-4">
-                        <Plug size={32} className="text-indigo-400" />
+                    <div className="inline-flex p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl mb-4">
+                        <Plug size={32} className="text-emerald-400" />
                     </div>
                     <h2 className="text-xl font-bold text-white mb-2">Connect Your Platforms</h2>
                     <p className="text-sm text-slate-400 max-w-md mx-auto">
@@ -196,8 +196,8 @@ export default function GrowthIntelligenceDashboard() {
             <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/8 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-500/15 border border-indigo-500/30 rounded-xl">
-                            <Brain size={18} className="text-indigo-400" />
+                        <div className="p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl">
+                            <Brain size={18} className="text-emerald-400" />
                         </div>
                         <div>
                             <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
@@ -217,8 +217,8 @@ export default function GrowthIntelligenceDashboard() {
             {/* ── Header ── */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/8 shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-500/15 border border-indigo-500/30 rounded-xl">
-                        <Brain size={18} className="text-indigo-400" />
+                    <div className="p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl">
+                        <Brain size={18} className="text-emerald-400" />
                     </div>
                     <div>
                         <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
@@ -237,7 +237,7 @@ export default function GrowthIntelligenceDashboard() {
                         onClick={() => setShowConnector(prev => !prev)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                             showConnector
-                                ? 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30'
+                                ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30'
                                 : 'text-slate-400 bg-slate-800 border-white/10 hover:bg-slate-700'
                         }`}
                     >
@@ -355,7 +355,7 @@ export default function GrowthIntelligenceDashboard() {
                                             onClick={() => setActiveTab(tab.id)}
                                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 ${
                                                 activeTab === tab.id
-                                                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                                                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
                                             }`}
                                         >
@@ -480,7 +480,7 @@ export default function GrowthIntelligenceDashboard() {
                                             <p>Connect YouTube to unlock geographic breakdown data.</p>
                                             <button
                                                 onClick={() => setShowConnector(true)}
-                                                className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 underline"
+                                                className="mt-3 text-xs text-emerald-400 hover:text-emerald-300 underline"
                                             >
                                                 Connect YouTube Analytics
                                             </button>

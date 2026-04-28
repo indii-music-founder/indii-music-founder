@@ -67,7 +67,7 @@ export function ProfileProgressPanel({
                                         <div className="w-1.5 h-1.5 rounded-full bg-transparent" />
                                     </div>
                                 ) : (
-                                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-black">
+                                    <div className="w-5 h-5 rounded-full bg-dept-creative flex items-center justify-center text-black">
                                         <CheckCircle size={12} fill="currentColor" className="text-black" />
                                     </div>
                                 )}
@@ -88,7 +88,7 @@ export function ProfileProgressPanel({
                 </div>
                 <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/10">
                     <div
-                        className="h-full bg-purple-500 transition-all duration-700 ease-out"
+                        className="h-full bg-dept-creative transition-all duration-700 ease-out shadow-[0_0_10px_rgba(0,255,102,0.3)]"
                         style={{ width: `${releaseProgress}%` }}
                     />
                 </div>
@@ -102,8 +102,8 @@ export function ProfileProgressPanel({
                                         <div className="w-1.5 h-1.5 rounded-full bg-transparent" />
                                     </div>
                                 ) : (
-                                    <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white">
-                                        <CheckCircle size={12} fill="currentColor" className="text-white" />
+                                    <div className="w-5 h-5 rounded-full bg-dept-creative flex items-center justify-center text-black">
+                                        <CheckCircle size={12} fill="currentColor" className="text-black" />
                                     </div>
                                 )}
                                 <span className={isMissing ? 'text-gray-500' : 'text-gray-200 font-medium'}>

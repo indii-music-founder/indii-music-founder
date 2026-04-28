@@ -14,7 +14,7 @@
         "@react-three/fiber": "9.5.0",
         "@react-three/postprocessing": "3.0.4",
         "@tailwindcss/vite": "^4.2.2",
-        "@types/three": "0.181.0",
+        "@types/three": "0.183.1",
         "autoprefixer": "10.4.22",
         "clsx": "2.1.1",
         "debounce": "3.0.0",
@@ -31,7 +31,7 @@
         "simplex-noise": "4.0.3",
         "tailwind-merge": "3.4.0",
         "tailwindcss": "^4.2.2",
-        "three": "0.181.2"
+        "three": "0.182.0"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.2.2",

@@ -159,7 +159,7 @@ export default function GenerationMonitor() {
             {generatedImages.length > 0 && (
                 <div className="px-3 pb-3">
                     <div className="flex items-center gap-2 mb-2">
-                        <LayoutGrid className="w-3.5 h-3.5 text-purple-400" />
+                        <LayoutGrid className="w-3.5 h-3.5 text-dept-creative" />
                         <span className="text-xs text-[#8b949e]">
                             {generatedImages.length} generated
                         </span>
@@ -200,7 +200,7 @@ export default function GenerationMonitor() {
                                 {isSending ? inputPrompt : (storePrompt || 'Processing...')}
                             </p>
                             <div className="mt-2 h-1 rounded-full bg-[#21262d] overflow-hidden">
-                                <div className="h-full rounded-full bg-linear-to-r from-blue-500 to-purple-500 animate-pulse w-2/3" />
+                                <div className="h-full rounded-full bg-linear-to-r from-dept-creative to-emerald-500 animate-pulse w-2/3" />
                             </div>
                         </div>
                     </div>
@@ -210,10 +210,10 @@ export default function GenerationMonitor() {
             {/* ── Agent Processing in Creative Module ───────────────────── */}
             {isAgentProcessing && currentModule === 'creative' && !isSending && (
                 <div className="flex flex-col items-center justify-center py-4 text-center px-3">
-                    <div className="w-12 h-12 rounded-xl bg-purple-900/20 border border-purple-600/30 flex items-center justify-center mb-3">
-                        <Sparkles className="w-6 h-6 text-purple-400 animate-pulse" />
+                    <div className="w-12 h-12 rounded-xl bg-dept-creative/10 border border-dept-creative/30 flex items-center justify-center mb-3">
+                        <Sparkles className="w-6 h-6 text-dept-creative animate-pulse" />
                     </div>
-                    <p className="text-sm text-purple-400">Creative Director working…</p>
+                    <p className="text-sm text-dept-creative">Creative Director working…</p>
                     <p className="text-xs text-[#484f58] mt-1">A generation may start soon</p>
                 </div>
             )}
@@ -231,7 +231,7 @@ export default function GenerationMonitor() {
             {!isGenerating && !isSending && !isAgentProcessing && generatedImages.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
                     <div className="w-12 h-12 rounded-xl bg-[#161b22] border border-[#30363d]/40 flex items-center justify-center mb-3">
-                        <Wand2 className="w-6 h-6 text-purple-400" />
+                        <Wand2 className="w-6 h-6 text-dept-creative" />
                     </div>
                     <p className="text-sm text-[#c9d1d9]">Remote Image Generation</p>
                     <p className="text-xs text-[#484f58] mt-1 px-8">
@@ -250,7 +250,7 @@ export default function GenerationMonitor() {
                             onClick={() => handleStylePreset(preset)}
                             className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors
                                 ${activeStylePreset === preset.label
-                                    ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40'
+                                    ? 'bg-dept-creative/20 text-dept-creative border border-dept-creative/40'
                                     : 'bg-[#161b22] text-[#8b949e] border border-[#30363d]/40 hover:border-[#484f58]'
                                 }`}
                         >
@@ -283,7 +283,7 @@ export default function GenerationMonitor() {
             {/* ── Prompt Input ───────────────────────────────────────────── */}
             <div className="px-3 pb-3">
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#0d1117]/80 border border-[#30363d]/60">
-                    <Wand2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                    <Wand2 className="w-4 h-4 text-dept-creative flex-shrink-0" />
                     <input
                         type="text"
                         value={inputPrompt}
@@ -303,7 +303,7 @@ export default function GenerationMonitor() {
                         disabled={!inputPrompt.trim() || isSending}
                         className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all
                             ${inputPrompt.trim() && !isSending
-                                ? 'bg-linear-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500'
+                                ? 'bg-linear-to-r from-dept-creative to-emerald-600 text-black font-bold hover:from-green-400 hover:to-emerald-500'
                                 : 'bg-[#21262d] text-[#484f58]'
                             }`}
                     >

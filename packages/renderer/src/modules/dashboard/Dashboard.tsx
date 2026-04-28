@@ -71,7 +71,7 @@ export default function Dashboard() {
             {/* Tab Bar */}
             <div className={`flex-shrink-0 border-b border-white/5 flex gap-6 ${isAnyPhone ? 'px-3 gap-3' : 'px-6'}`}>
                 {([
-                    { id: 'agent', label: 'Agent Workspace', icon: Bot, activeClass: 'border-indigo-500 text-indigo-400' },
+                    { id: 'agent', label: 'Agent Workspace', icon: Bot, activeClass: 'border-dept-creative text-dept-creative' },
                     { id: 'custom', label: 'My Dashboard', icon: LayoutDashboard, activeClass: 'border-white text-white' },
                 ] as const).map(({ id, label, icon: Icon, activeClass }) => (
                     <button

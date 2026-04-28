@@ -105,7 +105,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                     </div>
 
                     <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500 to-blue-500 flex-shrink-0 relative overflow-hidden text-white flex items-center justify-center font-bold">
+                        <div className="w-10 h-10 rounded-full bg-dept-creative flex-shrink-0 relative overflow-hidden text-black flex items-center justify-center font-bold">
                             {userProfile?.photoURL ? (
                                 <img src={userProfile.photoURL} alt="Me" className="w-full h-full object-cover" />
                             ) : (
@@ -123,13 +123,13 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
                             {/* Selected Product Preview */}
                             {selectedProductId && (
-                                <div className="mb-3 p-2 bg-blue-900/20 border border-blue-500/30 rounded-lg flex items-center justify-between">
-                                    <span className="text-sm text-blue-200">
+                                <div className="mb-3 p-2 bg-dept-creative/10 border border-dept-creative/30 rounded-lg flex items-center justify-between">
+                                    <span className="text-sm text-dept-creative/90">
                                         Attaching: <span className="font-bold">{artistProducts.find(p => p.id === selectedProductId)?.title}</span>
                                     </span>
                                     <button
                                         onClick={() => setSelectedProductId(null)}
-                                        className="text-xs text-blue-300 hover:text-white"
+                                        className="text-xs text-dept-creative/70 hover:text-white"
                                     >
                                         Remove
                                     </button>
@@ -166,7 +166,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => { }} // Placeholder for image upload
-                                        className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                                        className="text-gray-400 hover:text-dept-creative transition-colors p-2 rounded-full hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none"
                                         aria-label="Add image to post"
                                     >
                                         <ImageIcon size={20} />
@@ -174,8 +174,8 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                     {((userProfile as unknown as Record<string, unknown>)?.accountType === 'artist' || (userProfile as unknown as Record<string, unknown>)?.accountType === 'label') && (
                                         <button
                                             onClick={() => setShowProductPicker(!showProductPicker)}
-                                            className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
-                                                ${selectedProductId ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400'}`}
+                                            className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none
+                                                ${selectedProductId ? 'text-dept-creative' : 'text-gray-400 hover:text-dept-creative'}`}
                                             title="Attach Product (Drop)"
                                             aria-label={selectedProductId ? "Remove attached product" : "Attach product from store"}
                                         >
@@ -189,7 +189,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                 <button
                                     onClick={handleCreatePost}
                                     disabled={!newPostContent.trim() || isPosting}
-                                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-full font-medium text-sm flex items-center gap-2 transition-all"
+                                    className="bg-dept-creative hover:bg-dept-creative/90 disabled:opacity-50 disabled:cursor-not-allowed text-black px-4 py-1.5 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(0,255,102,0.2)]"
                                 >
                                     {isPosting ? 'Posting...' : <>Post <Send size={14} /></>}
                                 </button>
@@ -208,12 +208,12 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                         aria-selected={filter === f}
                         tabIndex={filter === f ? 0 : -1}
                         onClick={() => setFilter(f)}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500
+                        className={`flex-1 py-3 text-sm font-medium transition-colors relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-dept-creative
                             ${filter === f ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         {f.charAt(0).toUpperCase() + f.slice(1)}
                         {filter === f && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full mx-12"></div>
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dept-creative rounded-full mx-12 shadow-[0_0_10px_rgba(0,255,102,0.5)]"></div>
                         )}
                     </button>
                 ))}
@@ -223,7 +223,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <div className="flex justify-center p-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dept-creative"></div>
                     </div>
                 ) : posts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-12 text-center text-gray-500 animate-in fade-in duration-500">
@@ -328,14 +328,14 @@ const FeedItem = React.memo(({ post }: { post: SocialPost }) => {
                             <span className="text-sm">{post.likes}</span>
                         </button>
                         <button
-                            className="flex items-center gap-2 hover:text-blue-500 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1 focus-visible:outline-none"
+                            className="flex items-center gap-2 hover:text-dept-creative transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative rounded px-1 focus-visible:outline-none"
                             aria-label={`Comment on post, ${post.commentsCount} comments`}
                         >
                             <MessageCircle size={18} />
                             <span className="text-sm">{post.commentsCount}</span>
                         </button>
                         <button
-                            className="flex items-center gap-2 hover:text-green-500 transition-colors focus-visible:ring-2 focus-visible:ring-green-500 rounded px-1 focus-visible:outline-none"
+                            className="flex items-center gap-2 hover:text-dept-creative transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative rounded px-1 focus-visible:outline-none"
                             aria-label="Share post"
                         >
                             <Share2 size={18} />

@@ -46,6 +46,7 @@ import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
 import { UploadQueueMonitor } from '@/components/shared/UploadQueueMonitor';
 import { BackgroundJobMonitor } from '@/components/shared/BackgroundJobMonitor';
 import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
+import { AudioVisualizer } from '@/components/shared/AudioVisualizer';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 
 import { cleanupLocalStorage } from '@/lib/storageHealth';
@@ -410,7 +411,7 @@ function GuestGate({ onUpgrade }: { onUpgrade: () => void }) {
             </p>
             <button
                 onClick={onUpgrade}
-                className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-semibold transition-colors"
+                className="px-6 py-2.5 bg-dept-creative hover:bg-dept-creative-glow text-white rounded-lg text-sm font-semibold transition-colors"
             >
                 Create Free Account
             </button>
@@ -436,7 +437,7 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
             <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
                 <div className="text-6xl">404</div>
                 <div className="text-xl font-semibold text-gray-300">Module not found</div>
-                <div className="text-sm text-gray-500">The page <code className="text-purple-400">/{moduleId}</code> doesn't exist.</div>
+                <div className="text-sm text-gray-500">The page <code className="text-dept-creative">/{moduleId}</code> doesn't exist.</div>
             </div>
         );
     }
@@ -456,7 +457,7 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
                 <div className="text-6xl">404</div>
                 <div className="text-xl font-semibold text-gray-300">Not found</div>
                 <div className="text-sm text-gray-500">
-                    <code className="text-purple-400">/{moduleId}/{subPath}</code> doesn't exist.
+                    <code className="text-dept-creative">/{moduleId}/{subPath}</code> doesn't exist.
                 </div>
             </div>
         );
@@ -545,7 +546,7 @@ export default function App() {
                         {/* Skip to content link for keyboard accessibility */}
                         <a
                             href="#main-content"
-                            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:shadow-lg"
+                            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-dept-creative focus:text-white focus:rounded-lg focus:shadow-lg"
                         >
                             Skip to content
                         </a>
@@ -568,6 +569,9 @@ export default function App() {
                                         <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative z-0">
                                             {/* Module Ambient Background */}
                                             <ModuleAmbientBackground />
+
+                                            {/* Audio Visualizer (Background Wave Mesh) */}
+                                            <AudioVisualizer />
 
                                             {/* Mobile Header — phone only */}
                                             {showChrome && (

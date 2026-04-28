@@ -94,7 +94,7 @@ export default function OnboardingPage() {
             <div className="flex flex-col lg:flex-row h-full w-full bg-bg-dark text-white overflow-hidden relative">
                 {/* Background Atmosphere */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
+                    <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-dept-creative/10 blur-[120px] rounded-full" />
                     <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full" />
                 </div>
 
@@ -130,15 +130,15 @@ export default function OnboardingPage() {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md border-2 border-dashed border-purple-400/60 rounded-2xl m-2"
+                                className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md border-2 border-dashed border-dept-creative/60 rounded-2xl m-2"
                             >
                                 <div className="text-center">
                                     <motion.div
                                         animate={{ y: [0, -8, 0] }}
                                         transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                                        className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-400/30 mb-4"
+                                        className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-dept-creative/20 border border-dept-creative/30 mb-4"
                                     >
-                                        <Upload size={28} className="text-purple-400" />
+                                        <Upload size={28} className="text-dept-creative" />
                                     </motion.div>
                                     <p className="text-white font-bold text-lg mb-1">Drop files here</p>
                                     <p className="text-gray-400 text-sm">Images, audio, documents — indii will handle them</p>
@@ -238,7 +238,7 @@ export default function OnboardingPage() {
                                                     <img src={file.preview} alt="" className="w-16 h-16 rounded-xl object-cover border-2 border-white/10 shadow-lg" />
                                                 ) : (
                                                     <div className="w-16 h-16 rounded-xl bg-white/5 border-2 border-white/10 flex flex-col items-center justify-center p-2 shadow-lg">
-                                                        <FileText size={20} className="text-purple-400 mb-1" />
+                                                        <FileText size={20} className="text-dept-creative mb-1" />
                                                         <span className="text-[8px] text-gray-500 truncate w-full text-center">{file.file.name}</span>
                                                     </div>
                                                 )}

@@ -134,7 +134,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
                             Upload Clearance Documents
                         </h2>
                         <p className="text-[10px] text-neutral-500 mt-0.5">
-                            Submit proof of clearance for <span className="text-white">{track.title}</span> &rarr; <span className="text-indigo-400">{brief.project}</span>
+                            Submit proof of clearance for <span className="text-white">{track.title}</span> &rarr; <span className="text-emerald-400">{brief.project}</span>
                         </p>
                     </div>
                     <button onClick={onClose} aria-label="Close clearance upload" className="text-neutral-500 hover:text-white transition-colors">
@@ -160,7 +160,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
                             <ul className="space-y-2">
                                 {files.map((f, i) => (
                                     <li key={i} className="flex items-center gap-2 bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2">
-                                        <FileCheck size={12} className="text-indigo-400 flex-shrink-0" aria-hidden="true" />
+                                        <FileCheck size={12} className="text-emerald-400 flex-shrink-0" aria-hidden="true" />
                                         <span className="text-[11px] text-white flex-1 truncate">{f.name}</span>
                                         <span className="text-[10px] text-neutral-600">{(f.size / 1024).toFixed(0)}KB</span>
                                         <button
@@ -210,7 +210,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
                             <button
                                 onClick={handleSubmit}
                                 disabled={files.length === 0 || status === 'uploading'}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 aria-label="Submit track with clearance documents"
                             >
                                 {status === 'uploading' ? (
@@ -330,7 +330,7 @@ function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack
                                                 <button
                                                     onClick={() => setClearanceTrack(track)}
                                                     aria-label={`Submit ${track.title} for ${brief.project} with clearance docs`}
-                                                    className="flex items-center gap-1 px-2 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg text-[9px] text-indigo-400 font-bold transition-colors whitespace-nowrap"
+                                                    className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-[9px] text-emerald-400 font-bold transition-colors whitespace-nowrap"
                                                 >
                                                     <Upload size={9} aria-hidden="true" />
                                                     Submit
@@ -422,7 +422,7 @@ export function SyncBriefMatcher() {
                             <button
                                 key={t}
                                 onClick={() => setFilter(t)}
-                                className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all ${filter === t ? 'bg-indigo-500 text-white' : 'text-neutral-500 hover:text-white'}`}
+                                className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all ${filter === t ? 'bg-emerald-500 text-white' : 'text-neutral-500 hover:text-white'}`}
                             >
                                 {t}
                             </button>
@@ -442,7 +442,7 @@ export function SyncBriefMatcher() {
             {/* Stats row */}
             <div className="grid grid-cols-4 gap-3">
                 {[
-                    { label: 'Open Briefs', value: loading ? '…' : briefs.length, icon: <Film size={13} />, color: 'text-indigo-400' },
+                    { label: 'Open Briefs', value: loading ? '…' : briefs.length, icon: <Film size={13} />, color: 'text-emerald-400' },
                     { label: 'High Match (75%+)', value: loading ? '…' : highMatchCount, icon: <Star size={13} />, color: 'text-[#FFE135]' },
                     { label: 'Catalog Tracks', value: loading ? '…' : catalog.length, icon: <Music2 size={13} />, color: 'text-green-400' },
                     { label: 'Top Budget', value: loading ? '…' : topBudgetLabel, icon: <Zap size={13} />, color: 'text-purple-400' },

@@ -21,7 +21,7 @@ export const EmptyActionState: React.FC<EmptyActionStateProps> = ({
     onAction,
     secondaryLabel,
     onSecondary,
-    gradient = 'from-indigo-500/20 to-purple-500/20'
+    gradient = 'from-emerald-500/20 to-cyan-500/20'
 }) => {
     return (
         <motion.div
