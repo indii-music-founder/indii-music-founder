@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useStore } from '@/core/store';
 import { Download, Monitor, Apple, ArrowLeft, Loader2, Key } from 'lucide-react';
@@ -33,9 +33,9 @@ export default function FoundersPortal() {
             } else {
                 setError(data.message || 'Failed to generate download link.');
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error('Download error:', err);
-            setError(err.message || 'An error occurred while preparing the download.');
+            setError(err instanceof Error ? err.message : 'An error occurred while preparing the download.');
         } finally {
             if (platform === 'mac') setIsMacLoading(false);
             else setIsWinLoading(false);
