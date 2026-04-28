@@ -55,10 +55,20 @@ describe('RateLimiter', () => {
         expect(typeof acquireMethod).toBe('function');
 
         // The method should return a Promise
-        const result = limiter.acquire(1000);
-        expect(result instanceof Promise).toBe(true);
+        const resultPromise = limiter.acquire(1000);
+        expect(resultPromise instanceof Promise).toBe(true);
 
-        // Cancel the promise to clean up
-        result.catch(() => {});
+        // We catch the error explicitly so Vitest doesn't flag it as an unhandled rejection
+        let caughtError: Error | undefined;
+        resultPromise.catch(e => {
+            caughtError = e;
+        });
+
+        // Advance time to exceed timeout
+        vi.setSystemTime(startTime + 1500);
+        await vi.advanceTimersToNextTimerAsync();
+
+        expect(caughtError).toBeDefined();
+        expect(caughtError?.message).toBe('Rate limit acquisition timed out');
     });
 });
