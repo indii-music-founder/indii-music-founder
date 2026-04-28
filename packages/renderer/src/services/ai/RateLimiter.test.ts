@@ -58,17 +58,12 @@ describe('RateLimiter', () => {
         const resultPromise = limiter.acquire(1000);
         expect(resultPromise instanceof Promise).toBe(true);
 
-        // We catch the error explicitly so Vitest doesn't flag it as an unhandled rejection
-        let caughtError: Error | undefined;
-        resultPromise.catch(e => {
-            caughtError = e;
+        // Advance time to exceed timeout in the background so the promise can reject
+        Promise.resolve().then(async () => {
+            vi.setSystemTime(startTime + 1500);
+            await vi.advanceTimersToNextTimerAsync();
         });
 
-        // Advance time to exceed timeout
-        vi.setSystemTime(startTime + 1500);
-        await vi.advanceTimersToNextTimerAsync();
-
-        expect(caughtError).toBeDefined();
-        expect(caughtError?.message).toBe('Rate limit acquisition timed out');
+        await expect(resultPromise).rejects.toThrow('Rate limit acquisition timed out');
     });
 });

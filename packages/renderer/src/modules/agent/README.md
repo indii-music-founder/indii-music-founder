@@ -8,4 +8,4 @@ The Agent module is the core orchestration hub for indiiOS. It provides the inte
 - `TaskTracker`: Visual representation of ongoing agent tasks and sub-tasks.
 
 ## Architecture
-This module interfaces with `AgentService` and `HybridOrchestrator` to coordinate between local execution and cloud AI models.
+This module interfaces with `AgentService` and the now-deprecated `HybridOrchestrator` (which has been removed from runtime) to coordinate between local execution and cloud AI models.
