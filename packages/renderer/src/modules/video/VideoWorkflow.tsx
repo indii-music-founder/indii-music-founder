@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { VideoAspectRatioSchema } from '@/modules/video/schemas';
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from './store/videoEditorStore';
@@ -678,7 +678,9 @@ export default function VideoWorkflow() {
                         </button>
                     </div>
                     <div className="flex-1 min-h-0">
-                        <SceneBuilder />
+                        <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading 3D Stage...</div>}>
+                            <SceneBuilder />
+                        </Suspense>
                     </div>
                 </div>
             )}
