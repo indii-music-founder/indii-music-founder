@@ -163,6 +163,65 @@ vi.mock('../orchestration', () => ({
     orchestrationListener: vi.fn()
 }));
 
+// ─── Native & Third-Party Module Mocks (CI linux-x64 safety) ─────────────────
+// The barrel file (index.ts) transitively imports sharp via lib/image_resizing.ts.
+// On CI (ubuntu-latest) the sharp native binary for linux-x64 may not be installed.
+vi.mock('sharp', () => {
+    const sharpInstance = {
+        resize: vi.fn().mockReturnThis(),
+        jpeg: vi.fn().mockReturnThis(),
+        png: vi.fn().mockReturnThis(),
+        webp: vi.fn().mockReturnThis(),
+        toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock')),
+        toFile: vi.fn().mockResolvedValue({ width: 100, height: 100 }),
+        metadata: vi.fn().mockResolvedValue({ width: 100, height: 100, format: 'png' }),
+    };
+    return { default: vi.fn(() => sharpInstance) };
+});
+
+// Mock image_resizing to cut the sharp dependency chain entirely
+vi.mock('../lib/image_resizing', () => ({
+    generateThumbnail: vi.fn().mockResolvedValue('https://mock-thumbnail.com/thumb.jpg'),
+}));
+
+// Mock cors (imported at top of index.ts)
+vi.mock('cors', () => ({
+    default: vi.fn(() => vi.fn((_req: unknown, _res: unknown, next: unknown) => {
+        if (typeof next === 'function') next();
+    })),
+}));
+
+// Mock inngest/express (imported at top of index.ts)
+vi.mock('inngest/express', () => ({
+    serve: vi.fn(() => vi.fn()),
+}));
+
+// Mock firebase-functions/v2 submodules (used by barrel-imported modules)
+vi.mock('firebase-functions/v2/https', () => ({
+    onCall: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
+    onRequest: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
+    HttpsError: class extends Error {
+        code: string;
+        constructor(code: string, message: string) { super(message); this.code = code; }
+    },
+}));
+vi.mock('firebase-functions/v2/storage', () => ({
+    onObjectFinalized: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
+}));
+vi.mock('firebase-functions/v2/firestore', () => ({
+    onDocumentCreated: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
+    onDocumentUpdated: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
+}));
+vi.mock('firebase-functions/v2/scheduler', () => ({
+    onSchedule: vi.fn((opts: unknown, handler?: unknown) => handler ?? opts),
+}));
+
+// Mock streaming/agentStream (re-exported from barrel)
+vi.mock('../streaming/agentStream', () => ({
+    agentStreamResponse: vi.fn(),
+    agentStreamHealth: vi.fn(),
+}));
+
 // Mock relay/email/analytics/devops modules that may have network-touching side effects.
 vi.mock('../relay/relayCommandProcessor', () => ({ processRelayCommand: vi.fn() }));
 vi.mock('../relay/telegramWebhook', () => ({ telegramWebhook: vi.fn() }));
