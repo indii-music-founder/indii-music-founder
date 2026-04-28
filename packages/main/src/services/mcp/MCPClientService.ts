@@ -3,6 +3,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import path from 'path';
 import log from 'electron-log';
+import { app } from 'electron';
 
 export class MCPClientService {
     private localClient: Client | null = null;
@@ -19,7 +20,9 @@ export class MCPClientService {
             return;
         }
 
-        const serverPath = path.resolve(__dirname, '../../../../mcp-server-local/dist/index.js');
+        const serverPath = app.isPackaged
+            ? path.join(process.resourcesPath, 'mcp-server-local', 'dist', 'index.js')
+            : path.resolve(__dirname, '../../../../mcp-server-local/dist/index.js');
 
         this.localTransport = new StdioClientTransport({
             command: 'node',
