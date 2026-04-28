@@ -10,21 +10,22 @@ import { createNoise3D } from 'simplex-noise';
 import { audioStore } from '../../store/audioStore';
 
 // Custom Shader Material
+// Uniforms object cast as `any` to avoid TS2322 when duplicate @types/three
+// copies exist in CI hoisting (drei's UniformValue narrows from a different copy
+// than THREE.Color/Vector instances, defeating per-value `as any` casts).
 const WaveShaderMaterial = shaderMaterial(
-    // Uniforms
     {
         uTime: 0,
-        uColorStart: new THREE.Color('#050a05') as any, // Dark Green Base
-        uColorEnd: new THREE.Color('#0a1a0a') as any,   // Forest Green
-        uMouse: new THREE.Vector2(0, 0) as any,
+        uColorStart: new THREE.Color('#050a05'),
+        uColorEnd: new THREE.Color('#0a1a0a'),
+        uMouse: new THREE.Vector2(0, 0),
         uHover: 0,
-        uAudioEQ: new THREE.Vector4(0, 0, 0, 0) as any,
-        // Brand Colors / Frequency Colors
-        uColorBass: new THREE.Color('#00ff66') as any,    // Spring Green
-        uColorLowMid: new THREE.Color('#bfff00') as any,  // Lime
-        uColorHighMid: new THREE.Color('#10b981') as any, // Emerald
-        uColorTreble: new THREE.Color('#ffffff') as any,  // White Sparkle
-    },
+        uAudioEQ: new THREE.Vector4(0, 0, 0, 0),
+        uColorBass: new THREE.Color('#00ff66'),
+        uColorLowMid: new THREE.Color('#bfff00'),
+        uColorHighMid: new THREE.Color('#10b981'),
+        uColorTreble: new THREE.Color('#ffffff'),
+    } as any,
     // Vertex Shader
     `
     varying vec2 vUv;

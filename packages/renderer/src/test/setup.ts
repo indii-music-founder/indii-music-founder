@@ -520,6 +520,12 @@ vi.mock('@react-three/drei', () => ({
     useGLTF: () => ({ scene: { clone: () => ({ traverse: vi.fn() }) } }),
     Html: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
     Text: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
+    shaderMaterial: () => {
+        class MockShaderMaterial {
+            static key = 'mock-shader-material';
+        }
+        return MockShaderMaterial;
+    },
 }));
 
 // Mock ToastContext globally
