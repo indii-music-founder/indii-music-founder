@@ -49,7 +49,7 @@ function ZappingLaser() {
             <Trail
                 width={0.4} // Width of the line
                 length={12} // Length of the trail
-                color={new THREE.Color("#00ffff")} // Cyan
+                color={new THREE.Color("#00ffff") as any} // Cyan
                 attenuation={(t) => t * t} // Taper width
             >
                 {/* The Laser Head */}
@@ -64,7 +64,7 @@ function ZappingLaser() {
             <Trail
                 width={0.2}
                 length={8}
-                color={new THREE.Color("#b026ff")}
+                color={new THREE.Color("#b026ff") as any}
                 attenuation={(t) => t}
                 target={laserRef} // Follow the same mesh
             />

@@ -15,22 +15,22 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ data }) => {
 
     return (
         <div className="my-4 p-4 bg-black/40 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner overflow-hidden relative group">
-            <div className="absolute inset-0 bg-linear-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-linear-to-br from-dept-creative/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <button
                 id={buttonId}
                 onClick={() => setIsOpen(!isOpen)}
                 aria-expanded={isOpen}
                 aria-controls={contentId}
                 className={cn(
-                    "relative z-10 text-[11px] font-bold text-gray-400 hover:text-purple-300 flex items-center gap-3 transition-colors uppercase tracking-widest w-full text-left rounded-lg",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
+                    "relative z-10 text-[11px] font-bold text-gray-400 hover:text-dept-creative flex items-center gap-3 transition-colors uppercase tracking-widest w-full text-left rounded-lg",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
                 )}
             >
                 <div className={`p-1.5 rounded-lg border border-white/10 bg-white/5 transition-transform ${isOpen ? 'rotate-90' : ''}`}>
                     <ChevronRight size={12} />
                 </div>
                 <div className="flex items-center gap-2">
-                    <FileJson size={14} className="text-purple-400/70" />
+                    <FileJson size={14} className="text-dept-creative/70" />
                     <span>{isOpen ? 'Secure Payload' : 'View Payload Data'}</span>
                 </div>
             </button>

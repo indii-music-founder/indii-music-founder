@@ -132,14 +132,14 @@ export function MicroLicensingPortal() {
         URL.revokeObjectURL(url);
     };
 
-    const inputClass = 'w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-indigo-500/50 transition-colors';
+    const inputClass = 'w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 transition-colors';
     const labelClass = 'block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1';
 
     return (
         <div className="space-y-6 pb-6">
             <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                    <FileText size={16} className="text-indigo-400" />
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <FileText size={16} className="text-emerald-400" />
                 </div>
                 <div>
                     <h2 className="text-base font-black text-white uppercase tracking-tight">Beat Leasing Portal</h2>
@@ -198,7 +198,7 @@ export function MicroLicensingPortal() {
                         <div className="flex rounded-lg overflow-hidden border border-white/10">
                             <button
                                 onClick={() => update('leaseType', 'non-exclusive')}
-                                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${form.leaseType === 'non-exclusive' ? 'bg-indigo-500 text-white' : 'bg-white/[0.02] text-gray-500 hover:text-gray-300'}`}
+                                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${form.leaseType === 'non-exclusive' ? 'bg-emerald-500 text-white' : 'bg-white/[0.02] text-gray-500 hover:text-gray-300'}`}
                             >
                                 Non-Exclusive
                             </button>
@@ -267,7 +267,7 @@ export function MicroLicensingPortal() {
                                 >
                                     <div
                                         onClick={() => update(key, !form[key] as LeaseForm[typeof key])}
-                                        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${form[key] ? 'bg-indigo-500 border-indigo-500' : 'border-white/20 group-hover:border-white/40'}`}
+                                        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${form[key] ? 'bg-emerald-500 border-emerald-500' : 'border-white/20 group-hover:border-white/40'}`}
                                     >
                                         {form[key] && <CheckCircle2 size={10} className="text-white" />}
                                     </div>
@@ -280,7 +280,7 @@ export function MicroLicensingPortal() {
                     <button
                         onClick={handleGenerate}
                         disabled={!form.trackTitle.trim()}
-                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                         <FileText size={14} />
                         Generate Contract
@@ -302,7 +302,7 @@ export function MicroLicensingPortal() {
                                 </button>
                                 <button
                                     onClick={handleDownload}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-xs text-indigo-300 transition-colors border border-indigo-500/20"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-xs text-emerald-300 transition-colors border border-emerald-500/20"
                                 >
                                     <Download size={12} />
                                     Download

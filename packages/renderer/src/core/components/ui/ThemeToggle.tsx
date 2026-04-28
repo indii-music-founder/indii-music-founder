@@ -12,7 +12,7 @@ export function ThemeToggle({ className, isMinimized }: { className?: string, is
                 className={cn(
                     "p-1.5 rounded-full transition-all duration-200",
                     theme === "light"
-                        ? "bg-white text-purple-600 shadow-sm"
+                        ? "bg-white text-dept-creative shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 )}
                 title="Light Mode"
@@ -24,7 +24,7 @@ export function ThemeToggle({ className, isMinimized }: { className?: string, is
                 className={cn(
                     "p-1.5 rounded-full transition-all duration-200",
                     theme === "system"
-                        ? "bg-white text-purple-600 shadow-sm"
+                        ? "bg-white text-dept-creative shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 )}
                 title="System Preference"
@@ -36,7 +36,7 @@ export function ThemeToggle({ className, isMinimized }: { className?: string, is
                 className={cn(
                     "p-1.5 rounded-full transition-all duration-200",
                     theme === "dark"
-                        ? "bg-white text-purple-600 shadow-sm"
+                        ? "bg-white text-dept-creative shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 )}
                 title="Dark Mode"

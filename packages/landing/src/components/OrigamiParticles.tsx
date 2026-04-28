@@ -10,7 +10,7 @@ import { audioStore } from '../store/audioStore';
 const COUNT = 200;
 
 export default function OrigamiParticles() {
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const meshRef = useRef<any>(null!);
 
     // Generate particles
     const particles = useMemo(() => {

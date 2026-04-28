@@ -42,7 +42,7 @@ export const RegionalMap: React.FC<RegionalMapProps> = ({ regions, totalStreams 
                             <div className="flex items-center gap-2">
                                 <div className="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden">
                                     <motion.div
-                                        className="h-full bg-indigo-500 rounded-full"
+                                        className="h-full bg-emerald-500 rounded-full"
                                         initial={{ width: 0 }}
                                         animate={{ width: `${share * 100}%` }}
                                         transition={{ duration: 0.6, ease: 'easeOut', delay: i * 0.05 + 0.1 }}

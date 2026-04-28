@@ -80,10 +80,10 @@
   --color-dept-legal-muted: #455A6433;
   --color-dept-legal-glow: #455A6480;
 
-  /* A&R / Creative - Purple: Magic, passion + stability intersection */
-  --color-dept-creative: #9C27B0;
-  --color-dept-creative-muted: #9C27B033;
-  --color-dept-creative-glow: #9C27B080;
+  /* A&R / Creative - Spring Green: Magic, passion + stability intersection */
+  --color-dept-creative: #00ff66;
+  --color-dept-creative-muted: #00ff6633;
+  --color-dept-creative-glow: #00ff6680;
 
   /* Touring & Live (Road Manager) - Deep Orange: Road heat, stage lights */
   --color-dept-touring: #FF5722;
@@ -115,12 +115,12 @@
   --color-dept-campaign-muted: #FF704333;
   --color-dept-campaign-glow: #FF704380;
 
-  /* Neutral Fallback - indiiOS Grey */
-  --color-dept-default: #78909C;
-  --color-dept-default-muted: #78909C33;
+  /* Neutral Fallback - indiiOS Green */
+  --color-dept-default: #00ff66;
+  --color-dept-default-muted: #00ff6633;
 
   /* Sonic OS Identity */
-  --sonic-purple: 270 100% 60%;
+  --sonic-purple: 145 100% 50%; /* Rebranded to Green */
   --sonic-blue: 190 100% 50%;
   --sonic-yellow: 50 100% 50%;
   --sonic-glass: 240 10% 3.9% / 0.7;
@@ -135,17 +135,17 @@
   --popover-foreground: 240 10% 3.9%;
   --primary: 240 5.9% 10%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
+  --secondary: 145 100% 50%;
   --secondary-foreground: 240 5.9% 10%;
   --muted: 240 4.8% 95.9%;
   --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
+  --accent: 145 100% 50%;
   --accent-foreground: 240 5.9% 10%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
-  --ring: 240 10% 3.9%;
+  --ring: 145 100% 50%;
   --radius: 0.5rem;
 }
 
@@ -156,15 +156,15 @@
   --card-foreground: 0 0% 98%;
   --primary: 240 5.9% 10%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 270 100% 60%;
+  --secondary: 145 100% 50%;
   --secondary-foreground: 0 0% 98%;
   --muted: 240 5% 10%;
   --muted-foreground: 240 5% 64.9%;
-  --accent: 190 100% 50%;
+  --accent: 145 100% 50%;
   --accent-foreground: 0 0% 98%;
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
-  --ring: 240 5% 65%;
+  --ring: 145 100% 50%;
 }
 
 @theme {
