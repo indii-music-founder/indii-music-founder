@@ -7,6 +7,7 @@ export const CommonEnvSchema = z.object({
     useVertex: z.boolean().default(false),
     googleMapsApiKey: z.string().optional(),
     firebaseApiKey: z.string().optional(),
+    appId: z.string().optional(),
 });
 
 export type CommonEnv = z.infer<typeof CommonEnvSchema>;
