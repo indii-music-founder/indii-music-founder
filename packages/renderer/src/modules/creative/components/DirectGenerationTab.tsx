@@ -117,7 +117,7 @@ export default function DirectGenerationTab() {
                                 )}
                             </button>
                         </VideoPromptBuilder>
-                        
+
                         {hasWhiskModifiers && (
                             <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg mt-1">
                                 <p className="text-[10px] uppercase font-bold text-gray-500 mb-1">Final Synthesized Prompt</p>

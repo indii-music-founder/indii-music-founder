@@ -8,13 +8,21 @@ vi.mock('@/services/firebase', () => ({
   },
   db: {},
 }));
+import { auth } from '@/services/firebase';
+
+import { useStore } from '@/core/store';
+vi.mock('@/core/store', () => ({
+  useStore: Object.assign(vi.fn(), {
+    getState: vi.fn(),
+  }),
+}));
 
 describe('MembershipService - God Mode Bypass', () => {
   let service: typeof MembershipService;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = require('./MembershipService').MembershipService;
+    service = MembershipService;
   });
 
   it('should grant enterprise tier when god_mode claim is true', async () => {
@@ -29,13 +37,14 @@ describe('MembershipService - God Mode Bypass', () => {
       uid: '9NYyLqEcKQQcr0HSfEkmfuSX9Xx1',
       getIdTokenResult: vi.fn().mockResolvedValue(mockIdTokenResult),
     };
+    (auth as any).currentUser = mockUser;
 
-    vi.mocked(require('@/core/store')).useStore.mockReturnValue({
+    (useStore.getState as any).mockReturnValue({
       user: mockUser,
       userProfile: { id: '9NYyLqEcKQQcr0HSfEkmfuSX9Xx1', email: 'test@example.com' },
       organizations: [],
       currentOrganizationId: null,
-    });
+    } as any);
 
     const tier = await service.getCurrentTier();
     expect(tier).toBe('enterprise');
@@ -51,13 +60,14 @@ describe('MembershipService - God Mode Bypass', () => {
       uid: 'other-user-id',
       getIdTokenResult: vi.fn().mockResolvedValue(mockIdTokenResult),
     };
+    (auth as any).currentUser = mockUser;
 
-    vi.mocked(require('@/core/store')).useStore.mockReturnValue({
+    (useStore.getState as any).mockReturnValue({
       user: mockUser,
       userProfile: { id: 'other-user-id', email: 'other@example.com' },
       organizations: [{ id: 'org-1', plan: 'free' as const }],
       currentOrganizationId: 'org-1',
-    });
+    } as any);
 
     const tier = await service.getCurrentTier();
     expect(tier).toBe('free');
@@ -74,13 +84,14 @@ describe('MembershipService - God Mode Bypass', () => {
       uid: '9NYyLqEcKQQcr0HSfEkmfuSX9Xx1',
       getIdTokenResult: vi.fn().mockResolvedValue(mockIdTokenResult),
     };
+    (auth as any).currentUser = mockUser;
 
-    vi.mocked(require('@/core/store')).useStore.mockReturnValue({
+    (useStore.getState as any).mockReturnValue({
       user: mockUser,
       userProfile: { id: '9NYyLqEcKQQcr0HSfEkmfuSX9Xx1', email: 'test@example.com' },
       organizations: [],
       currentOrganizationId: null,
-    });
+    } as any);
 
     const result = await service.checkQuota('image', 1000);
     expect(result.allowed).toBe(true);

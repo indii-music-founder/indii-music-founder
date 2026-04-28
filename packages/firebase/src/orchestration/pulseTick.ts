@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions/v1";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 
 /**
@@ -9,9 +9,7 @@ import * as admin from "firebase-admin";
  * 2. Update their status to 'thinking' or 'stuck' if necessary.
  * 3. Emit progress events to the UI via Firestore to ensure the user feels "life".
  */
-export const pulseTick = functions
-    .pubsub.schedule("every 1 minutes")
-    .onRun(async (_context) => {
+export const pulseTick = onSchedule("every 1 minutes", async (event) => {
         const db = admin.firestore();
         const now = admin.firestore.Timestamp.now();
         const timeoutThreshold = new Date(Date.now() - 2 * 60 * 1000); // 2 minutes ago

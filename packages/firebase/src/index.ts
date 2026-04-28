@@ -38,7 +38,7 @@ if (!process.env.GCLOUD_PROJECT) {
 admin.initializeApp();
 
 // Admin Functions
-export { setGodMode } from './admin/setGodMode';
+export { setGodMode } from './functions/admin/setGodMode';
 
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
