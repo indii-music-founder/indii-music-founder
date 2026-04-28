@@ -123,6 +123,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     },
 };
 
+
 class MembershipServiceImpl {
     /**
      * Check if the current user is a builder/dev account.
@@ -139,7 +140,8 @@ class MembershipServiceImpl {
 
         try {
             // Check for god_mode custom claim on Firebase Auth
-            const currentUser = (await import('@/services/firebase')).auth.currentUser;
+            const firebaseModule = await import('@/services/firebase');
+            const currentUser = firebaseModule.auth.currentUser;
             if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
                 const tokenResult = await currentUser.getIdTokenResult();
                 if (tokenResult?.claims?.god_mode === true) {
