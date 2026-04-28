@@ -1,6 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as admin from 'firebase-admin';
 
+// Mock sharp — native binary not available in CI
+vi.mock('sharp', () => {
+    const instance = {
+        resize: vi.fn().mockReturnThis(),
+        toFormat: vi.fn().mockReturnThis(),
+        toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock')),
+        metadata: vi.fn().mockResolvedValue({ width: 100, height: 100, format: 'png' }),
+    };
+    return { default: vi.fn(() => instance) };
+});
+
 // Hoisted mocks for direct access in vi.mock
 const mocks = vi.hoisted(() => {
     return {
