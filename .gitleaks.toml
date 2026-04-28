@@ -42,6 +42,20 @@ paths = [
     # Documentation files containing Firebase API key identifiers (not secrets)
     # Per API Credentials Policy: Firebase keys are identifiers, secured by rules
     '''docs/.*\.md$''',
+
+    # Mock user data and legacy test outputs (historical findings)
+    '''users\.json$''',
+    '''test_output\.txt$''',
+    '''test-out\.txt$''',
+    '''test_errors\.txt$''',
+    
+    # Scripts containing mock data or configuration examples
+    '''scripts/.*\.ts$''',
+    
+    # Legacy paths seen in gitleaks findings (historical commits)
+    '''landing-page/.*$''',
+    '''electron/main\.ts$''',
+    '''src/config/env\.ts$''',
 ]
 
 # Also allow specific fake/placeholder values and Firebase identifiers
