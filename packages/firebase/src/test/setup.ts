@@ -1,14 +1,44 @@
 /**
  * Firebase package test setup
  *
- * Provides comprehensive mocks for firebase-admin and firebase-functions/v1
- * to prevent import-time crashes when barrel files (index.ts) are loaded.
+ * Provides comprehensive mocks for firebase-admin, firebase-functions/v1,
+ * firebase-functions/v2/*, and native modules (sharp) to prevent import-time
+ * crashes when barrel files (index.ts) are loaded.
  *
  * The key issue: storageMaintenance.ts uses .pubsub.schedule().timeZone().onRun()
  * which fires during module resolution. Without a complete mock chain, every test
  * that imports from the barrel file crashes.
+ *
+ * CRITICAL: `sharp` must be mocked before any module tries to load its native
+ * binary. On CI (ubuntu-latest / linux-x64) the binary may not exist, causing
+ * a fatal crash at require-time. We place this mock first and use vi.hoisted()
+ * to guarantee it registers before any transitive imports.
  */
 import { vi } from 'vitest';
+
+// ─── Native Module Mocks (MUST be first) ─────────────────────────────────────
+// `sharp` is used by lib/image_resizing.ts and is loaded transitively whenever
+// a test imports from the barrel file (index.ts). On CI (ubuntu-latest) the
+// sharp native binary for linux-x64 may not be installed, causing all firebase
+// tests to crash at module resolution time. Mocking it here once prevents every
+// individual test file from needing its own mock.
+//
+// IMPORTANT: This mock must appear before any other vi.mock() calls to ensure
+// it is hoisted first and registered before any module graph resolution.
+vi.mock('sharp', () => {
+    const sharpInstance = {
+        resize: vi.fn().mockReturnThis(),
+        jpeg: vi.fn().mockReturnThis(),
+        png: vi.fn().mockReturnThis(),
+        webp: vi.fn().mockReturnThis(),
+        toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock-image-data')),
+        toFile: vi.fn().mockResolvedValue({ width: 100, height: 100 }),
+        metadata: vi.fn().mockResolvedValue({ width: 100, height: 100, format: 'png' }),
+    };
+    return {
+        default: vi.fn(() => sharpInstance),
+    };
+});
 
 // ─── Firebase Functions v1 Builder Pattern Mock ──────────────────────────────
 // Every chained builder method must return `this` to support arbitrary chains:
@@ -165,24 +195,72 @@ vi.mock('firebase-functions/params', () => ({
     defineString: vi.fn(() => ({ value: vi.fn(() => 'mock-string-value') })),
     defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
+// ─── Firebase Functions v2 Mocks ─────────────────────────────────────────────
+// The barrel file (index.ts) transitively imports modules that use v2 triggers
+// (image_resizing.ts → firebase-functions/v2/storage, agentStream.ts → v2/https,
+// etc.). Without these mocks, tests crash on import.
 
-// ─── Native Module Mocks ─────────────────────────────────────────────────────
-// `sharp` is used by lib/image_resizing.ts and is loaded transitively whenever
-// a test imports from the barrel file (index.ts). On CI (ubuntu-latest) the
-// sharp native binary for linux-x64 may not be installed, causing all firebase
-// tests to crash at module resolution time. Mocking it here once prevents every
-// individual test file from needing its own mock.
-vi.mock('sharp', () => {
-    const sharpInstance = {
-        resize: vi.fn().mockReturnThis(),
-        jpeg: vi.fn().mockReturnThis(),
-        png: vi.fn().mockReturnThis(),
-        webp: vi.fn().mockReturnThis(),
-        toBuffer: vi.fn().mockResolvedValue(Buffer.from('mock-image-data')),
-        toFile: vi.fn().mockResolvedValue({ width: 100, height: 100 }),
-        metadata: vi.fn().mockResolvedValue({ width: 100, height: 100, format: 'png' }),
-    };
-    return {
-        default: vi.fn(() => sharpInstance),
-    };
-});
+const mockV2Handler = vi.fn((opts: unknown, handler?: unknown) => handler ?? opts);
+
+vi.mock('firebase-functions/v2/https', () => ({
+    onCall: mockV2Handler,
+    onRequest: mockV2Handler,
+    HttpsError: class extends Error {
+        code: string;
+        constructor(code: string, message: string) {
+            super(message);
+            this.code = code;
+        }
+    },
+}));
+
+vi.mock('firebase-functions/v2/storage', () => ({
+    onObjectFinalized: mockV2Handler,
+    onObjectArchived: mockV2Handler,
+    onObjectDeleted: mockV2Handler,
+    onObjectMetadataUpdated: mockV2Handler,
+}));
+
+vi.mock('firebase-functions/v2/firestore', () => ({
+    onDocumentCreated: mockV2Handler,
+    onDocumentUpdated: mockV2Handler,
+    onDocumentDeleted: mockV2Handler,
+    onDocumentWritten: mockV2Handler,
+}));
+
+vi.mock('firebase-functions/v2/scheduler', () => ({
+    onSchedule: mockV2Handler,
+}));
+
+// ─── Third-Party Module Mocks ────────────────────────────────────────────────
+// firebase-functions-test is used by some integration-style tests. It eagerly
+// initializes Firebase Admin, which can trigger transitive module loading.
+// Mocking it prevents side effects during test setup.
+vi.mock('firebase-functions-test', () => ({
+    default: vi.fn(() => ({
+        cleanup: vi.fn(),
+        wrap: vi.fn((fn: unknown) => fn),
+        makeChange: vi.fn(),
+    })),
+}));
+
+// inngest/express is imported by index.ts barrel
+vi.mock('inngest/express', () => ({
+    serve: vi.fn(() => vi.fn()),
+}));
+
+// inngest (main module) is imported for the Inngest client constructor
+vi.mock('inngest', () => ({
+    Inngest: vi.fn(() => ({
+        send: vi.fn().mockResolvedValue({}),
+        createFunction: vi.fn(),
+    })),
+}));
+
+// cors is imported at the top of index.ts
+vi.mock('cors', () => ({
+    default: vi.fn(() => vi.fn((req: unknown, res: unknown, next: unknown) => {
+        if (typeof next === 'function') next();
+    })),
+}));
+
