@@ -10,10 +10,10 @@ import { logger } from '@/utils/logger';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-2.5-pro',
-    TEXT_FAST: 'gemini-2.5-flash',
-    IMAGE_GEN: 'gemini-2.5-pro',           // Native image gen via responseModalities
-    IMAGE_FAST: 'gemini-2.5-flash',         // Fast image gen via responseModalities
+    TEXT_AGENT: 'gemini-3-pro-preview',
+    TEXT_FAST: 'gemini-3-flash-preview',
+    IMAGE_GEN: 'gemini-3-pro-image-preview',           // Native image gen via responseModalities
+    IMAGE_FAST: 'gemini-3.1-flash-image-preview',         // Fast image gen via responseModalities
     // Direct mode — bleeding-edge preview models for client-side SDK calls
     DIRECT_PRO: 'gemini-3-pro-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
     DIRECT_FAST: 'gemini-3.1-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
@@ -25,7 +25,7 @@ export const APPROVED_MODELS = {
     VIDEO_FAST: 'veo-3.1-fast-generate-preview',   // Fast mode — lower latency, lower cost
     VIDEO_LITE: 'veo-3.1-lite-generate-preview',   // Lite mode — lowest cost, good quality
     VIDEO_GEN: 'veo-3.1-generate-preview',    // Alias for backward compatibility
-    BROWSER_AGENT: 'gemini-2.5-pro',
+    BROWSER_AGENT: 'gemini-3-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
 
