@@ -409,8 +409,8 @@ function HeroAgentCard({ agent, index }: { agent: AgentDef; index: number }) {
               <img
                 src={agent.image}
                 alt={`${agent.name} interface`}
-                className="w-full h-64 md:h-80 object-cover object-top opacity-50 group-hover/hero:opacity-95 group-hover/hero:scale-105 transition-all duration-1000 ease-out"
-                style={{ filter: 'contrast(1.2) brightness(0.9) saturate(1.1)' }}
+                className="w-full h-64 md:h-80 object-cover object-top opacity-60 group-hover/hero:opacity-100 group-hover/hero:scale-105 transition-all duration-1000 ease-out mix-blend-screen"
+                style={{ filter: `contrast(1.15) brightness(1.1) saturate(1.3) drop-shadow(0 0 40px ${agent.glowColor})` }}
                 loading="lazy"
               />
               <ScanlineOverlay />
@@ -471,7 +471,8 @@ function CoreAgentCard({ agent, index }: { agent: AgentDef; index: number }) {
             <img 
               src={agent.image} 
               alt="" 
-              className="w-full h-full object-cover scale-150 group-hover:scale-100 transition-transform duration-[2000ms] ease-out opacity-20 group-hover:opacity-60"
+              className="w-full h-full object-cover scale-150 group-hover:scale-105 transition-transform duration-[2000ms] ease-out opacity-20 group-hover:opacity-70 mix-blend-screen"
+              style={{ filter: `contrast(1.25) saturate(1.2) drop-shadow(0 0 30px ${agent.glowColor})` }}
             />
             <ScanlineOverlay />
           </div>
@@ -518,7 +519,8 @@ function ArsenalAgentCard({ agent, index }: { agent: AgentDef; index: number }) 
             <img 
               src={agent.image} 
               alt="" 
-              className="w-full h-full object-cover grayscale opacity-20 transition-all duration-1000 scale-110 group-hover/arsenal:scale-100"
+              className="w-full h-full object-cover opacity-30 transition-all duration-1000 scale-110 group-hover/arsenal:scale-100 mix-blend-overlay group-hover/arsenal:mix-blend-normal"
+              style={{ filter: `contrast(1.3) saturate(1.5) drop-shadow(0 0 20px ${agent.glowColor})` }}
             />
             <ScanlineOverlay />
           </div>
