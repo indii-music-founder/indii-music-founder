@@ -3,6 +3,21 @@ import { GenAI } from '../GenAI';
 import { wcpInstance } from '../../agent/WebSocketControlPlane';
 import { Content } from 'firebase/ai';
 
+// Mock firebase/ai at the top level to avoid vitest warnings
+const { mockGenerate } = vi.hoisted(() => ({
+    mockGenerate: vi.fn()
+}));
+
+vi.mock('firebase/ai', async (importOriginal) => {
+    const actual = await importOriginal() as Record<string, unknown>;
+    return {
+        ...actual,
+        getGenerativeModel: () => ({
+            generateContent: mockGenerate
+        })
+    };
+});
+
 // Mock WCP for connection failure scenarios
 vi.mock('../../agent/WebSocketControlPlane', () => ({
     wcpInstance: {
@@ -115,9 +130,7 @@ describe('ChaosVerification', () => {
         });
 
         it('should succeed after retry for transient 503 errors', async () => {
-            const { mockGenerate } = vi.hoisted(() => ({
-                mockGenerate: vi.fn()
-            }));
+            mockGenerate.mockReset();
 
             // Allow enough successful responses for any extra retry attempts
             mockGenerate
@@ -136,17 +149,6 @@ describe('ChaosVerification', () => {
 
             // Reset circuit breaker state from any prior test
             (GenAI as unknown as { contentBreaker: { reset: () => void } }).contentBreaker.reset();
-
-            // Re-mock firebase/ai with the hoisted mock
-            vi.mock('firebase/ai', async (importOriginal) => {
-                const actual = await importOriginal() as Record<string, unknown>;
-                return {
-                    ...actual,
-                    getGenerativeModel: () => ({
-                        generateContent: mockGenerate
-                    })
-                };
-            });
 
             // Trigger
             const result = await GenAI.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });

@@ -33,8 +33,10 @@ export class GeminiRetrievalService {
         }
         // Default to production if not set, or update local default to correct project
         // Note: For "The Gauntlet" E2E tests which run against local frontend but expect live backend
-        const functionsUrl = env.VITE_FUNCTIONS_URL || '';
-        this.baseUrl = `${functionsUrl}/ragProxy/v1beta`;
+        const projectId = env.projectId || env.firebaseProjectId || 'indiios-v-1-1';
+        const location = env.location || 'us-central1';
+        const functionsUrl = env.VITE_FUNCTIONS_URL || `https://${location}-${projectId}.cloudfunctions.net`;
+        this.baseUrl = env.VITE_RAG_PROXY_URL || `${functionsUrl}/ragProxy/v1beta`;
     }
 
     private async fetch(endpoint: string, options: RequestInit = {}) {

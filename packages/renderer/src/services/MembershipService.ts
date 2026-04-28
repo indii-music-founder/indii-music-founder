@@ -123,24 +123,13 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     },
 };
 
-/**
- * Builder/dev accounts that bypass all budget and quota limits.
- * Add new test emails here — this is the SINGLE source of truth.
- */
-const BUILDER_EMAILS = new Set([
-    'qa@indiios.com',
-    'founder@indiios.local',
-    'e2e@indiios.test',
-]);
 
 class MembershipServiceImpl {
     /**
      * Check if the current user is a builder/dev account.
-     * Checks both the profile email AND the Firebase Auth user email
-     * to guard against the race condition where userProfile.email is
-     * still empty (from IDB cache) while auth.user.email is already set.
+     * Checks for the god_mode custom claim on Firebase Auth.
      * 
-     * @returns True if the account is a whitelisted builder account or in DEV mode.
+     * @returns True if the account has the god_mode claim or in DEV mode.
      */
     private async isBuilderAccount(): Promise<boolean> {
         // ALWAYS bypass limits in local development so the team can test without hitting budget caps
@@ -151,27 +140,13 @@ class MembershipServiceImpl {
 
         try {
             // Check for god_mode custom claim on Firebase Auth
-            const currentUser = (await import('@/services/firebase')).auth.currentUser;
+            const firebaseModule = await import('@/services/firebase');
+            const currentUser = firebaseModule.auth.currentUser;
             if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
                 const tokenResult = await currentUser.getIdTokenResult();
                 if (tokenResult?.claims?.god_mode === true) {
                     return true;
                 }
-            }
-
-            const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
-
-            // Primary: check userProfile.email (populated from Firestore/IDB)
-            const profileEmail = state.userProfile?.email;
-            if (profileEmail && BUILDER_EMAILS.has(profileEmail)) {
-                return true;
-            }
-
-            // Fallback: check Firebase Auth user.email (populated immediately on login)
-            const authEmail = (state as unknown as { user?: { email?: string | null } }).user?.email;
-            if (authEmail && BUILDER_EMAILS.has(authEmail)) {
-                return true;
             }
 
             return false;
@@ -290,7 +265,7 @@ class MembershipServiceImpl {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
 
-            // GOD MODE: Bypass for Builder
+            // GOD MODE: Bypass via custom claim or Dev environment
             if (await this.isBuilderAccount()) {
                 return 'enterprise';
             }
@@ -511,7 +486,7 @@ class MembershipServiceImpl {
             return { allowed: false, currentUsage: 0, maxAllowed: 0 };
         }
 
-        // GOD MODE: Bypass for Builder
+        // GOD MODE: Bypass via custom claim or Dev environment
         if (await this.isBuilderAccount()) {
             return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
         }
