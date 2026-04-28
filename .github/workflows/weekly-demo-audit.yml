@@ -78,7 +78,7 @@ jobs:
       # ─── Hour 1 — Build & Boot Evidence ───────────────────────────────────
       - name: Hour 1.1 — Install dependencies
         id: h1_install
-        run: npm ci --ignore-scripts 2>&1 | tee .agent/h1_install.log
+        run: npm ci 2>&1 | tee .agent/h1_install.log
 
       - name: Hour 1.2 — Typecheck
         id: h1_typecheck
