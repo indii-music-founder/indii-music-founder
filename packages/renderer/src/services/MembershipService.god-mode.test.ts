@@ -12,7 +12,9 @@ import { auth } from '@/services/firebase';
 
 import { useStore } from '@/core/store';
 vi.mock('@/core/store', () => ({
-  useStore: vi.fn(),
+  useStore: Object.assign(vi.fn(), {
+    getState: vi.fn(),
+  }),
 }));
 
 describe('MembershipService - God Mode Bypass', () => {
@@ -37,7 +39,7 @@ describe('MembershipService - God Mode Bypass', () => {
     };
     (auth as any).currentUser = mockUser;
 
-    vi.mocked(useStore).mockReturnValue({
+    (useStore.getState as any).mockReturnValue({
       user: mockUser,
       userProfile: { id: '9NYyLqEcKQQcr0HSfEkmfuSX9Xx1', email: 'test@example.com' },
       organizations: [],
@@ -60,7 +62,7 @@ describe('MembershipService - God Mode Bypass', () => {
     };
     (auth as any).currentUser = mockUser;
 
-    vi.mocked(useStore).mockReturnValue({
+    (useStore.getState as any).mockReturnValue({
       user: mockUser,
       userProfile: { id: 'other-user-id', email: 'other@example.com' },
       organizations: [{ id: 'org-1', plan: 'free' as const }],
@@ -84,7 +86,7 @@ describe('MembershipService - God Mode Bypass', () => {
     };
     (auth as any).currentUser = mockUser;
 
-    vi.mocked(useStore).mockReturnValue({
+    (useStore.getState as any).mockReturnValue({
       user: mockUser,
       userProfile: { id: '9NYyLqEcKQQcr0HSfEkmfuSX9Xx1', email: 'test@example.com' },
       organizations: [],

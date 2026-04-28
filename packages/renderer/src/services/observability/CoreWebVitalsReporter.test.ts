@@ -85,11 +85,7 @@ describe('CoreWebVitalsReporter', () => {
           },
           INP: {
             name: 'INP',
-<<<<<<< HEAD
-            value: 150,
-=======
             value: 80,
->>>>>>> e9b5db7d7 (fix(auto): resolve Sentry/CodeRabbit issues)
             delta: 0,
             rating: 'good',
             id: 'inp-1',
