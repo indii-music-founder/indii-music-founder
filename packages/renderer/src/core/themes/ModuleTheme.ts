@@ -21,20 +21,20 @@ export interface ModuleTheme {
 export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
     'dashboard': {
         officeName: 'HQ Overview',
-        accent: '#6366f1', // indigo-500 (System default)
-        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.08), rgba(0, 0, 0, 0))',
+        accent: '#10b981', // emerald-500 (Premium Green)
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.08), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 }
     },
     'creative': {
         officeName: 'Creative Director Studio',
-        accent: '#9C27B0', // Purple (Official)
-        backgroundGradient: 'linear-gradient(135deg, rgba(156, 39, 176, 0.05), rgba(0, 0, 0, 0))',
+        accent: '#00ff66', // Green (Official)
+        backgroundGradient: 'linear-gradient(135deg, rgba(0, 255, 102, 0.05), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'waves', opacity: 0.3, blendMode: 'screen' }
     },
     'video': {
         officeName: 'Video Editing Bay',
-        accent: '#9C27B0', // Purple (Shares with Creative)
-        backgroundGradient: 'radial-gradient(circle at 100% 50%, rgba(156, 39, 176, 0.05), rgba(0, 0, 0, 0))',
+        accent: '#00ff66', // Green (Shares with Creative)
+        backgroundGradient: 'radial-gradient(circle at 100% 50%, rgba(0, 255, 102, 0.05), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'geometric', opacity: 0.1 }
     },
     'legal': {
@@ -111,8 +111,8 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
     },
     'onboarding': {
         officeName: 'Onboarding Center',
-        accent: '#9C27B0', // Purple
-        backgroundGradient: 'radial-gradient(circle at 50% 50%, rgba(156, 39, 176, 0.08), rgba(0, 0, 0, 0))',
+        accent: '#00ff66', // Green
+        backgroundGradient: 'radial-gradient(circle at 50% 50%, rgba(0, 255, 102, 0.08), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'particles', opacity: 0.5 }
     },
     'select-org': {
@@ -123,8 +123,8 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
     },
     'agent': {
         officeName: 'Agent Diagnostics',
-        accent: '#9C27B0', // Purple
-        backgroundGradient: 'radial-gradient(circle at 100% 0%, rgba(156, 39, 176, 0.06), rgba(0, 0, 0, 0))',
+        accent: '#00ff66', // Green
+        backgroundGradient: 'radial-gradient(circle at 100% 0%, rgba(0, 255, 102, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'vectors', opacity: 0.2 }
     },
     'distribution': {
@@ -207,14 +207,14 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
     },
     'analytics': {
         officeName: 'Growth Intelligence',
-        accent: '#a855f7', // Purple-500
-        backgroundGradient: 'radial-gradient(circle at 80% 0%, rgba(168, 85, 247, 0.06), rgba(0, 0, 0, 0))',
+        accent: '#00ff66', // Green
+        backgroundGradient: 'radial-gradient(circle at 80% 0%, rgba(0, 255, 102, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.2 }
     },
     'desktop': {
         officeName: 'Desktop Main',
-        accent: '#a855f7', // Purple
-        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(168, 85, 247, 0.06), rgba(0, 0, 0, 0))',
+        accent: '#00ff66', // Green
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(0, 255, 102, 0.06), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'dots', opacity: 0.2 }
     },
     'founders-checkout': {
@@ -242,8 +242,8 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
     },
     'maestro': {
         officeName: 'Maestro Orchestrator',
-        accent: '#9C27B0', // Purple (Strategic/High-level)
-        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(156, 39, 176, 0.1), rgba(0, 0, 0, 0))',
+        accent: '#00ff66', // Green (Strategic/High-level)
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(0, 255, 102, 0.1), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'vectors', opacity: 0.3 }
     },
 };

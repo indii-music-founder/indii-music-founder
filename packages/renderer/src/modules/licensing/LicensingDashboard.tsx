@@ -73,9 +73,9 @@ export default function LicensingDashboard() {
             headerIcon={<ShieldCheck size={18} className="text-white" />}
             title="Licensing"
             subtitle="REAL-TIME RIGHTS & CLEARANCES"
-            bgBlobClass="bg-indigo-500/8"
-            iconBgClass="bg-linear-to-br from-indigo-500 to-indigo-400"
-            iconShadowClass="shadow-indigo-500/20"
+            bgBlobClass="bg-emerald-500/8"
+            iconBgClass="bg-linear-to-br from-emerald-500 to-emerald-400"
+            iconShadowClass="shadow-emerald-500/20"
             leftPanel={
                 <>
                     <DealHealthPanel
@@ -100,16 +100,16 @@ export default function LicensingDashboard() {
                 <Tabs defaultValue="overview" className="h-full flex flex-col pt-4 md:pt-6">
                     <div className="px-4 md:px-6 mb-4">
                         <TabsList className="bg-white/5 border border-white/10">
-                            <TabsTrigger value="overview" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
+                            <TabsTrigger value="overview" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
                                 Licensing Overview
                             </TabsTrigger>
-                            <TabsTrigger value="catalog" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
+                            <TabsTrigger value="catalog" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
                                 Sync Catalog Search
                             </TabsTrigger>
-                            <TabsTrigger value="briefs" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
+                            <TabsTrigger value="briefs" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
                                 Brief Matcher
                             </TabsTrigger>
-                            <TabsTrigger value="micro" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
+                            <TabsTrigger value="micro" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
                                 Micro-Licensing
                             </TabsTrigger>
                         </TabsList>
@@ -139,11 +139,11 @@ export default function LicensingDashboard() {
                                             initial={{ opacity: 0, x: -20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: idx * 0.05 }}
-                                            className="group relative bg-white/[0.02] p-5 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all"
+                                            className="group relative bg-white/[0.02] p-5 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all"
                                         >
                                             <div className="flex justify-between items-start gap-4">
                                                 <div className="space-y-1">
-                                                    <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{request.title}</h3>
+                                                    <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{request.title}</h3>
                                                     <p className="text-sm font-medium text-gray-400">{request.artist}</p>
                                                     <div className="flex items-center gap-3 pt-2">
                                                         <span className="text-[10px] px-2 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 font-bold tracking-wider uppercase">
@@ -157,7 +157,7 @@ export default function LicensingDashboard() {
                                                 <div className="flex flex-col items-end gap-3">
                                                     <button
                                                         onClick={() => handleDraftAction(request)}
-                                                        className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-indigo-400/20 shadow-lg shadow-indigo-600/10 transition-all scale-95 group-hover:scale-100"
+                                                        className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-emerald-400/20 shadow-lg shadow-emerald-600/10 transition-all scale-95 group-hover:scale-100"
                                                     >
                                                         <FileText size={14} />
                                                         DRAFT AGREEMENT
@@ -233,12 +233,12 @@ export default function LicensingDashboard() {
                         </section>
 
                         {/* Footer */}
-                        <footer className="flex items-center justify-between p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
-                            <div className="flex items-center gap-3 text-xs text-indigo-300/60 font-medium">
+                        <footer className="flex items-center justify-between p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+                            <div className="flex items-center gap-3 text-xs text-emerald-300/60 font-medium">
                                 <AlertCircle size={14} />
                                 <span>AI licensing tools active. All drafts MUST be reviewed by legal counsel.</span>
                             </div>
-                            <div className="text-[10px] font-bold text-indigo-400 tracking-widest uppercase">
+                            <div className="text-[10px] font-bold text-emerald-400 tracking-widest uppercase">
                                 Security: High
                             </div>
                         </footer>
@@ -270,7 +270,7 @@ function DealHealthPanel({ activeLicenses, pendingRequests, projectedValue }: {
     const items = [
         { label: 'Active Licenses', value: activeLicenses.toString(), icon: ShieldCheck, color: 'text-emerald-400' },
         { label: 'Pending Clearances', value: pendingRequests.toString(), icon: Clock, color: 'text-yellow-400' },
-        { label: 'Projected Value', value: `$${projectedValue.toLocaleString()}`, icon: TrendingUp, color: 'text-indigo-400' },
+        { label: 'Projected Value', value: `$${projectedValue.toLocaleString()}`, icon: TrendingUp, color: 'text-emerald-400' },
     ];
 
     return (
@@ -327,7 +327,7 @@ function ActionButtonsPanel({ toast }: { toast: ReturnType<typeof useToast> }) {
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Quick Actions</h3>
             <div className="space-y-2">
-                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors text-xs text-indigo-300 font-medium border border-indigo-500/10">
+                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors text-xs text-emerald-300 font-medium border border-emerald-500/10">
                     <FileText size={12} /> Draft New Deal
                 </button>
                 <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors text-xs text-white font-medium">

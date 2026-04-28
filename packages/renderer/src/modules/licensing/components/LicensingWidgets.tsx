@@ -73,7 +73,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, trend, icon: Icon
 export const DealFlowChart = () => {
     return (
         <div className="relative h-64 w-full bg-[#1c2128] rounded-2xl border border-white/5 overflow-hidden p-6">
-            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent" />
+            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
 
             <h3 className="relative z-10 text-lg font-bold text-white mb-6">Deal Velocity</h3>
 

@@ -32,13 +32,13 @@ export const TrackSelector: React.FC<TrackSelectorProps> = ({ reports, selectedT
                         onClick={() => onSelect(report.track.trackId)}
                         className={`w-full text-left p-3 rounded-xl border transition-all duration-200 ${
                             isSelected
-                                ? 'border-indigo-500/60 bg-indigo-500/10'
+                                ? 'border-emerald-500/60 bg-emerald-500/10'
                                 : 'border-white/8 bg-slate-800/40 hover:bg-slate-700/50 hover:border-white/15'
                         }`}
                     >
                         <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-indigo-500/20' : 'bg-slate-700/50'}`}>
-                                <Music size={14} className={isSelected ? 'text-indigo-400' : 'text-slate-400'} />
+                            <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-emerald-500/20' : 'bg-slate-700/50'}`}>
+                                <Music size={14} className={isSelected ? 'text-emerald-400' : 'text-slate-400'} />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-white truncate">{report.track.trackName}</p>

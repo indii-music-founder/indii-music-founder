@@ -70,10 +70,10 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
                                 setIsLoading(true);
                                 setSearchQuery(e.target.value);
                             }}
-                            className="w-full bg-black/40 border border-white/10 text-white placeholder:text-gray-500 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-indigo-500/50 transition-colors"
+                            className="w-full bg-black/40 border border-white/10 text-white placeholder:text-gray-500 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-emerald-500/50 transition-colors"
                         />
                         {isLoading && (
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-indigo-500/20 border-t-indigo-400 animate-spin" />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin" />
                         )}
                     </div>
                     <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-xl border border-white/10 transition-colors h-full">
@@ -89,7 +89,7 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
                             key={genre}
                             onClick={() => setActiveGenre(genre)}
                             className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${activeGenre === genre
-                                ? 'bg-indigo-500 text-white border border-indigo-400'
+                                ? 'bg-emerald-500 text-white border border-emerald-400'
                                 : 'bg-white/5 text-gray-400 hover:text-white border border-transparent hover:border-white/10 hover:bg-white/10'
                                 }`}
                         >
@@ -137,8 +137,8 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
 
                                 <div className="relative z-10 flex gap-4 w-full">
                                     {/* Album Art Placeholder icon */}
-                                    <div className="w-16 h-16 flex-shrink-0 bg-white/5 rounded-xl border border-white/5 flex items-center justify-center relative overflow-hidden group-hover:border-indigo-500/30 transition-colors">
-                                        <Music className="w-6 h-6 text-gray-500 group-hover:text-indigo-400 transition-colors" />
+                                    <div className="w-16 h-16 flex-shrink-0 bg-white/5 rounded-xl border border-white/5 flex items-center justify-center relative overflow-hidden group-hover:border-emerald-500/30 transition-colors">
+                                        <Music className="w-6 h-6 text-gray-500 group-hover:text-emerald-400 transition-colors" />
                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Play className="w-6 h-6 text-white fill-white" />
                                         </div>
@@ -148,7 +148,7 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                                         <div className="flex justify-between items-start w-full">
                                             <div className="min-w-0 pr-2">
-                                                <h4 className="text-base font-bold text-white truncate group-hover:text-indigo-300 transition-colors">{track.title}</h4>
+                                                <h4 className="text-base font-bold text-white truncate group-hover:text-emerald-300 transition-colors">{track.title}</h4>
                                                 <p className="text-xs text-gray-400 truncate">{track.artist}</p>
                                             </div>
                                             <span className="text-xs font-mono text-gray-500 flex-shrink-0 mt-0.5">{track.duration}</span>
@@ -167,7 +167,7 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
                                     </div>
                                 </div>
                                 <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button className="w-8 h-8 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                                    <button className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
                                         <Plus className="w-4 h-4" />
                                     </button>
                                 </div>

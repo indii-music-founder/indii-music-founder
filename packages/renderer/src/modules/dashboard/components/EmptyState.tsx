@@ -55,7 +55,7 @@ export function EmptyState({ onCommandSubmit }: EmptyStateProps) {
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-16 h-16 rounded-2xl bg-linear-to-br from-indigo-500/40 to-purple-600/40 flex items-center justify-center shadow-2xl shadow-indigo-500/10 border border-white/10 mb-6 overflow-hidden"
+                className="w-16 h-16 rounded-2xl bg-linear-to-br from-emerald-500/40 to-dept-creative/40 flex items-center justify-center shadow-2xl shadow-emerald-500/10 border border-white/10 mb-6 overflow-hidden"
             >
                 <IndiiFavicon size={44} />
             </motion.div>
@@ -73,7 +73,7 @@ export function EmptyState({ onCommandSubmit }: EmptyStateProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-indigo-200/60 font-medium uppercase tracking-[0.15em] text-[10px] mt-4 mb-10 text-center"
+                className="text-emerald-200/60 font-medium uppercase tracking-[0.15em] text-[10px] mt-4 mb-10 text-center"
             >
                 Your AI Creative Engine • What Would You Like To Do?
             </motion.p>
@@ -92,12 +92,12 @@ export function EmptyState({ onCommandSubmit }: EmptyStateProps) {
                                 onCommandSubmit(s.prompt);
                             }
                         }}
-                        className="group relative flex flex-col p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 text-left overflow-hidden h-full"
+                        className="group relative flex flex-col p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 text-left overflow-hidden h-full"
                     >
                         <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MousePointer2 size={12} className="text-indigo-400" />
+                            <MousePointer2 size={12} className="text-emerald-400" />
                         </div>
-                        <s.icon size={22} className="text-indigo-400 mb-3 group-hover:scale-110 transition-transform duration-300" />
+                        <s.icon size={22} className="text-emerald-400 mb-3 group-hover:scale-110 transition-transform duration-300" />
                         <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5">{s.title}</h3>
                         <p className="text-[10px] text-slate-400 leading-relaxed font-normal group-hover:text-slate-300 transition-colors line-clamp-2">
                             {s.action ? 'Build your own automation pipeline' : s.prompt?.split('.')[0]}
@@ -106,5 +106,6 @@ export function EmptyState({ onCommandSubmit }: EmptyStateProps) {
                 ))}
             </div>
         </div>
+
     );
 }

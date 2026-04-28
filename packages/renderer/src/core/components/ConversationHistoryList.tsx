@@ -54,9 +54,9 @@ const HistoryItem = memo(({
             <button
                 onClick={() => onSelect(session.id)}
                 className={cn(
-                    "w-full text-left p-4 rounded-xl transition-all duration-300 border focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none block",
+                    "w-full text-left p-4 rounded-xl transition-all duration-300 border focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none block",
                     isActive
-                        ? 'bg-purple-500/10 border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.1)]'
+                        ? 'bg-dept-creative/10 border-dept-creative/40 shadow-[0_0_20px_rgba(0,255,102,0.1)]'
                         : 'hover:bg-white/5 border-transparent'
                 )}
                 aria-current={isActive ? 'true' : undefined}
@@ -66,7 +66,7 @@ const HistoryItem = memo(({
                         <div className="flex items-center gap-2 w-full pr-12" onClick={e => e.stopPropagation()}>
                             <input
                                 autoFocus
-                                className="bg-white/10 border border-purple-500/50 rounded px-2 py-1 text-[13px] font-bold text-white w-full focus:outline-none"
+                                className="bg-white/10 border border-dept-creative/50 rounded px-2 py-1 text-[13px] font-bold text-white w-full focus:outline-none"
                                 value={tempTitle}
                                 onChange={e => setTempTitle(e.target.value)}
                                 onKeyDown={e => {
@@ -84,7 +84,7 @@ const HistoryItem = memo(({
                     ) : (
                         <h4 className={cn(
                             "text-[13px] font-bold truncate pr-12 tracking-tight transition-colors",
-                            isActive ? 'text-purple-300' : 'text-gray-200'
+                            isActive ? 'text-dept-creative' : 'text-gray-200'
                         )}>
                             {session.title || 'Temporal Stream'}
                         </h4>
@@ -93,7 +93,7 @@ const HistoryItem = memo(({
 
                 <div className="flex items-center gap-3 text-[10px] text-gray-500 font-mono tracking-wider uppercase">
                     <span className="flex items-center gap-1.5" aria-label={`${session.messages?.length || 0} messages`}>
-                        <MessageSquare size={10} className="text-purple-500/50" aria-hidden="true" />
+                        <MessageSquare size={10} className="text-dept-creative/50" aria-hidden="true" />
                         {session.messages?.length || 0}
                     </span>
                     <span className="w-1 h-1 rounded-full bg-white/10" aria-hidden="true"></span>
@@ -108,7 +108,7 @@ const HistoryItem = memo(({
             <div className="absolute right-3 top-4 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 group-focus-within:translate-x-0 z-10">
                 {!isEditing && (
                     <button
-                        className="p-2 hover:bg-white/10 hover:text-white rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                        className="p-2 hover:bg-white/10 hover:text-white rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none"
                         onClick={handleEditClick}
                         aria-label="Rename session"
                     >
@@ -131,7 +131,7 @@ const HistoryItem = memo(({
             {isActive && (
                 <motion.div
                     layoutId="activeHighlight"
-                    className="absolute left-0 top-3 bottom-3 w-[3px] bg-purple-500 rounded-r-full shadow-[0_0_10px_rgba(168,85,247,0.8)] pointer-events-none"
+                    className="absolute left-0 top-3 bottom-3 w-[3px] bg-dept-creative rounded-r-full shadow-[0_0_10px_rgba(0,255,102,0.8)] pointer-events-none"
                     aria-hidden="true"
                 />
             )}
@@ -167,7 +167,7 @@ export const ConversationHistoryList = ({ className, onClose }: { className?: st
                 <h3 id="history-title" className="font-bold text-[13px] uppercase tracking-[0.2em] text-gray-400">Archives</h3>
                 <button
                     onClick={() => onClose ? onClose() : setRightPanelView('messages')}
-                    className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                    className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none"
                     aria-label="Close history panel"
                 >
                     <X size={14} />

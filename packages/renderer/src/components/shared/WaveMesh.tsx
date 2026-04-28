@@ -1,13 +1,9 @@
- 
-'use client';
-
-import { useRef, useMemo } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
-import { createNoise3D } from 'simplex-noise';
-import { audioStore } from '../../store/audioStore';
+import { useStore } from '@/core/store';
 
 // Custom Shader Material
 const WaveShaderMaterial = shaderMaterial(
@@ -78,26 +74,22 @@ const WaveShaderMaterial = shaderMaterial(
       float angle = atan(modelPosition.z, modelPosition.x);
 
       // --- Band 1: BASS (Deep, slow, central pulse) ---
-      // Acts like a heartbeat or subwoofer cone
       float bassDisplacement = sin(dist * 0.5 - uTime * 1.0) * uAudioEQ.x * 2.0;
       float bassKick = smoothstep(10.0, 0.0, dist) * uAudioEQ.x * 2.0;
 
       // --- Band 2: LOW MID (Rolling waves) ---
-      // Moves from front to back - SLOW
       float lowMidDisplacement = sin(modelPosition.x * 0.5 + uTime * 0.5) * uAudioEQ.y * 1.5;
 
       // --- Band 3: HIGH MID (Interference patterns) ---
-      // Creates cross-hatching or more complex ripples
       float highMidDisplacement = snoise(modelPosition.xz * 0.2 + uTime * 0.5) * uAudioEQ.z * 1.5;
 
       // --- Band 4: TREBLE (Sharp, jagged noise) ---
       float trebleDisplacement = snoise(modelPosition.xz * 1.0 - uTime) * uAudioEQ.w * 0.8;
 
       // Combine displacements
-      // Ideally, the bass is the strongest "shape", others add texture
       float totalDisplacement = bassDisplacement + bassKick + lowMidDisplacement + highMidDisplacement + trebleDisplacement;
       
-      // Add subtle base breathing - SLOW OCEAN SWELL
+      // Add subtle base breathing
       totalDisplacement += sin(modelPosition.x * 1.0 + uTime * 0.2) * 0.2;
 
       modelPosition.y += totalDisplacement;
@@ -122,29 +114,21 @@ const WaveShaderMaterial = shaderMaterial(
     uniform vec3 uColorTreble;
 
     void main() {
-      // Base Gradient with deeper void - sharper mix based on elevation
       float mixStrength = (vElevation + 1.0) * 0.25; 
       vec3 color = mix(uColorStart, uColorEnd, mixStrength);
 
       // --- AUDIO COLOR MIXING ---
-      // Additive mixing for neon glow feel
-      
-      // Bass: Indigo - Boosted INTENSITY
       color += uColorBass * vAudio.x * 0.8;
       
-      // LowMid: Cyan
       float wavePattern = sin(vUv.x * 10.0 + vAudio.y);
       color += uColorLowMid * vAudio.y * 0.6 * smoothstep(0.3, 0.7, wavePattern);
 
-      // HighMid: Magenta
       float ripplePattern = sin(length(vUv - 0.5) * 20.0);
       color += uColorHighMid * vAudio.z * 0.6 * smoothstep(0.3, 0.7, ripplePattern);
 
-      // Treble: White sparks
       float peak = smoothstep(1.0, 3.5, vElevation);
       color += uColorTreble * vAudio.w * peak * 3.5;
 
-      // Vignette
       float vignette = 1.0 - length(vUv - 0.5);
       color *= smoothstep(0.0, 1.5, vignette);
 
@@ -156,76 +140,42 @@ const WaveShaderMaterial = shaderMaterial(
 extend({ WaveShaderMaterial });
 
 // Add type definition for the shader material
-declare module '@react-three/fiber' {
-    interface ThreeElements {
-        waveShaderMaterial: {
-            ref?: React.Ref<any>;
-            uColorStart?: any;
-            uColorEnd?: any;
-            uTime?: number;
-            uMouse?: THREE.Vector2;
-            uHover?: number;
-            uAudioEQ?: THREE.Vector4;
-            uColorBass?: any;
-            uColorLowMid?: any;
-            uColorHighMid?: any;
-            uColorTreble?: any;
-            wireframe?: boolean;
-            transparent?: boolean;
-            opacity?: number;
-            attach?: string;
+/* eslint-disable @typescript-eslint/no-namespace */
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            waveShaderMaterial: any;
         }
     }
 }
 
 export default function WaveMesh() {
-    const meshRef = useRef<any>(null);
     const materialRef = useRef<any>(null);
-    const _noise3D = useMemo(() => createNoise3D(), []);
 
     // Helper to calculate average of a sub-array
     const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
 
-    useFrame((state, delta) => {
+    useFrame((state) => {
         if (materialRef.current) {
-            // Slow down time for massive scale feeling
             materialRef.current.uTime = state.clock.elapsedTime * 0.4;
 
-            // Get Audio Data
-            const { frequencyData } = audioStore.getState();
-            const { bands } = frequencyData; // 31 Bands
+            // Get Audio Data from the global store
+            const { frequencyData } = useStore.getState();
+            const { bands } = frequencyData;
 
-            // Create 4-Band EQ
-            // Band 0 (Bass): 0-3
-            // Band 1 (LowMid): 4-10
-            // Band 2 (HighMid): 11-20
-            // Band 3 (Treble): 21-30
-
-            // Apply non-linear styling (Math.pow) to suppress noise and prevent "wash out" on mastered tracks.
-            // This emphasizes peaks while keeping the average level controlled.
-            const bass = Math.pow(avg(bands.slice(0, 4)), 1.5) * 1.2;     // Solid beat, no overwhelming flood
-            const lowMid = Math.pow(avg(bands.slice(4, 11)), 1.5) * 1.0;  // Body of the music
-            const highMid = Math.pow(avg(bands.slice(11, 21)), 1.5) * 1.0; // Textural details
-            const treble = Math.pow(avg(bands.slice(21, 31)), 1.5) * 1.5; // Sparkles only on real hits
-
-            // Damping/Smoothing could be added here if needed, but framerate is usually high enough
+            // Create 4-Band EQ (Bands 0-30)
+            const bass = Math.pow(avg(bands.slice(0, 4)), 1.5) * 1.2;
+            const lowMid = Math.pow(avg(bands.slice(4, 11)), 1.5) * 1.0;
+            const highMid = Math.pow(avg(bands.slice(11, 21)), 1.5) * 1.0;
+            const treble = Math.pow(avg(bands.slice(21, 31)), 1.5) * 1.5;
 
             materialRef.current.uAudioEQ.set(bass, lowMid, highMid, treble);
         }
     });
 
     return (
-        <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} frustumCulled={false}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} frustumCulled={false}>
             <planeGeometry args={[25, 25, 64, 64]} />
-            {/* 
-                WAVE SHADER CONFIGURATION
-                -------------------------
-                uColorStart/End: Controls the gradient background. 
-                                 Keep Start near-black (#000000) for the "Void" look.
-                uColor[Band]: Controls the color of the wireframe for each audio frequency.
-                opacity: Controls how visible the wireframe is in its resting state (1.0 = fully visible).
-                uTime multiplier (in useFrame): Controls the speed of the wave.
-            */}
             <waveShaderMaterial
                 ref={materialRef}
                 uColorStart={new THREE.Color('#050a05') as any}

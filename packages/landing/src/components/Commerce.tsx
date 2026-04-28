@@ -8,7 +8,7 @@ import { Instances, Instance } from '@react-three/drei';
 import { useAudioStore } from '../store/audioStore';
 
 function ValueStream() {
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const meshRef = useRef<any>(null!);
     const count = 800; // More particles for immersion
 
     // Audio Reactivity

@@ -129,8 +129,8 @@ export default function LoginForm() {
     return (
         <div className="flex flex-col items-center justify-center h-screen w-screen bg-black text-white relative overflow-hidden">
             {/* Background Aesthetics */}
-            <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-black to-blue-900/20 pointer-events-none" />
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
+            <div className="absolute inset-0 bg-linear-to-br from-green-900/20 via-black to-blue-900/20 pointer-events-none" />
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-600/10 blur-[120px] rounded-full animate-pulse" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse-slow" />
 
             <motion.div
@@ -144,7 +144,7 @@ export default function LoginForm() {
                         animate={{ scale: 1 }}
                         className="text-5xl font-black mb-2 tracking-tighter"
                     >
-                        indii<span className="text-purple-500">OS</span>
+                        indii<span className="text-dept-creative">OS</span>
                     </motion.h1>
                     <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v1.0</p>
                 </div>
@@ -199,7 +199,7 @@ export default function LoginForm() {
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 placeholder="artist@indiios.com"
                                                 autoComplete="email"
-                                                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
+                                                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
                                                 required
                                             />
                                         </div>
@@ -220,7 +220,7 @@ export default function LoginForm() {
                                     <button
                                         type="submit"
                                         disabled={authLoading}
-                                        className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-500 transition-all shadow-[0_0_30px_rgba(147,51,234,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                        className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-500 transition-all shadow-[0_0_30px_rgba(0,255,102,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                                     >
                                         {authLoading ? (
                                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -248,7 +248,7 @@ export default function LoginForm() {
                                 <button
                                     type="button"
                                     onClick={() => { switchView('signin'); setConfirmPassword(''); setDateOfBirth(''); }}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${!isSignUpMode ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${!isSignUpMode ? 'bg-green-600 text-white shadow-[0_0_20px_rgba(0,255,102,0.4)]' : 'text-gray-400 hover:text-white'}`}
                                 >
                                     <LogIn className="w-4 h-4" />
                                     Sign In
@@ -257,7 +257,7 @@ export default function LoginForm() {
                                     type="button"
                                     onClick={() => { switchView('signup'); }}
                                     data-testid="toggle-auth-mode"
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isSignUpMode ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isSignUpMode ? 'bg-green-600 text-white shadow-[0_0_20px_rgba(0,255,102,0.4)]' : 'text-gray-400 hover:text-white'}`}
                                 >
                                     <UserPlus className="w-4 h-4" />
                                     Create Account
@@ -279,7 +279,7 @@ export default function LoginForm() {
                                             onChange={(e) => setEmail(e.target.value)}
                                             placeholder="artist@indiios.com"
                                             autoComplete="email"
-                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
+                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
                                             required
                                         />
                                     </div>
@@ -296,7 +296,7 @@ export default function LoginForm() {
                                             onChange={(e) => setPassword(e.target.value)}
                                             placeholder="••••••••"
                                             autoComplete={isSignUpMode ? 'new-password' : 'current-password'}
-                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
+                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
                                             required
                                         />
                                     </div>
@@ -325,7 +325,7 @@ export default function LoginForm() {
                                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                                         placeholder="••••••••"
                                                         autoComplete="new-password"
-                                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
+                                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
                                                         required
                                                     />
                                                 </div>
@@ -342,7 +342,7 @@ export default function LoginForm() {
                                                         value={dateOfBirth}
                                                         onChange={(e) => setDateOfBirth(e.target.value)}
                                                         max={new Date().toISOString().split('T')[0]}
-                                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all text-white [color-scheme:dark]"
+                                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all text-white [color-scheme:dark]"
                                                         required
                                                     />
                                                 </div>
@@ -368,7 +368,7 @@ export default function LoginForm() {
                                     <button
                                         type="submit"
                                         disabled={authLoading}
-                                        className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-500 transition-all shadow-[0_0_30px_rgba(147,51,234,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                        className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-500 transition-all shadow-[0_0_30px_rgba(0,255,102,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                                     >
                                         {authLoading ? (
                                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -393,7 +393,7 @@ export default function LoginForm() {
                                         <button
                                             type="button"
                                             onClick={() => switchView('forgot-password')}
-                                            className="text-xs text-gray-500 hover:text-purple-400 transition-colors font-mono"
+                                            className="text-xs text-gray-500 hover:text-dept-creative transition-colors font-mono"
                                         >
                                             Forgot Password?
                                         </button>
@@ -411,7 +411,7 @@ export default function LoginForm() {
                                     onClick={loginAsGuest}
                                     disabled={authLoading}
                                     data-testid="guest-login-btn"
-                                    className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-amber-500/20 to-purple-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                    className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-amber-500/20 to-green-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                                 >
                                     <User className="w-5 h-5 text-amber-400" />
                                     <span>Explore as Guest</span>
