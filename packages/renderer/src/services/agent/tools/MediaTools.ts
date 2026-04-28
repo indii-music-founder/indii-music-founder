@@ -149,8 +149,54 @@ export const MediaTools = {
             logger.error('[MediaTools] Audio analysis failed:', error);
             return toolError(`Failed to analyze audio: ${error.message}`);
         }
+    }),
+
+    /**
+     * Crops an image to a specific aspect ratio or focus point using AI reframing.
+     */
+    crop_image: wrapTool('crop_image', async (args: { imageUrl: string, aspect: string, focusPoint?: string }) => {
+        const { useStore } = await import('@/core/store');
+        const store = useStore.getState();
+        const { addToHistory, currentProjectId } = store;
+
+        const imgMatch = args.imageUrl.match(/^data:(image\/.+);base64,(.+)$/);
+        if (!imgMatch) return toolError("Invalid imageUrl data. Must be a base64 image data URI.", 'INVALID_INPUT');
+        const image = { mimeType: imgMatch[1]!, data: imgMatch[2]! };
+
+        const jobId = `crop_${Date.now()}`;
+        store.addJob({ id: jobId, title: `Cropping image to ${args.aspect}...`, progress: 0, status: 'running', type: 'ai_generation' });
+
+        try {
+            const prompt = `Crop and reframe this image to a ${args.aspect} aspect ratio. Ensure the main subject ${args.focusPoint ? `(focusing on ${args.focusPoint})` : ''} remains perfectly framed. Do not distort the image.`;
+            
+            const result = await Editing.editImage({
+                image,
+                prompt,
+                model: 'pro',
+                forceHighFidelity: true
+            });
+
+            if (result) {
+                addToHistory({ id: result.id, url: result.url, prompt: `Cropped to ${args.aspect}`, type: 'image', timestamp: Date.now(), projectId: currentProjectId });
+                store.updateJobStatus(jobId, 'success');
+                return toolSuccess({ id: result.id, url: result.url, aspect: args.aspect }, `Successfully cropped image to ${args.aspect}.`);
+            }
+            store.updateJobStatus(jobId, 'error', 'Failed to crop image');
+            return toolError("Failed to generate cropped image.");
+        } catch (error: unknown) {
+            const err = error as Error;
+            store.updateJobStatus(jobId, 'error', err.message);
+            return toolError(`Failed to crop image: ${err.message}`);
+        }
+    }),
+
+    /**
+     * Generates a thumbnail from a video reference.
+     */
+    generate_thumbnail: wrapTool('generate_thumbnail', async (args: { videoUrl: string, timestamp?: string }) => {
+        return toolError("generate_thumbnail is pending FFmpeg server-side integration.", 'NOT_IMPLEMENTED');
     })
 };
 
 // Aliases
-export const { resize_image_for_socials, analyze_audio_dna } = MediaTools;
+export const { resize_image_for_socials, analyze_audio_dna, crop_image, generate_thumbnail } = MediaTools;
