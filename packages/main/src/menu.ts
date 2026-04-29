@@ -25,7 +25,13 @@ export function setupMenu(mainWindow: BrowserWindow) {
                     label: 'Save',
                     accelerator: 'CmdOrCtrl+S',
                     click: () => {
-                        mainWindow.webContents.send('menu:save-triggered');
+                        if (!mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+                            try {
+                                mainWindow.webContents.send('menu:save-triggered');
+                            } catch (err) {
+                                console.warn('[Menu] Failed to send save event:', err);
+                            }
+                        }
                     }
                 },
                 { type: 'separator' },
