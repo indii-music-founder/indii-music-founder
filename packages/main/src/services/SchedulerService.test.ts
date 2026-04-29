@@ -46,7 +46,7 @@ vi.mock('electron', () => ({
     },
     BrowserWindow: {
         getAllWindows: vi.fn().mockReturnValue([
-            { isDestroyed: mockIsDestroyed, webContents: { send: mockSend } },
+            { isDestroyed: mockIsDestroyed, webContents: { isDestroyed: mockIsDestroyed, send: mockSend } },
         ]),
     },
     Notification: vi.fn().mockImplementation(() => ({ show: mockNotifShow })),
