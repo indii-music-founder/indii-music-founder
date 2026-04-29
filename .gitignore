@@ -127,3 +127,9 @@ build_output.txt
 /sentry_issues.json
 /sentry_issues_electron.json
 /sentry_projects.json
+
+# Graphify tool output (generated knowledge graph cache)
+graphify-out/
+
+# Editor/manual backup files
+*.bak

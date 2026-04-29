@@ -12,7 +12,7 @@ export function freezeAgentConfig(agent: any) {
         return;
     }
 
-    logger.debug(`[FreezeDiagnostic] Freezing Agent "${agent.id}" tools schema...`);
+    // logger.debug(`[FreezeDiagnostic] Freezing Agent "${agent.id}" tools schema...`);
 
     // Check for existing corruption before freezing
     agent.tools.forEach((t: any) => {
@@ -57,7 +57,7 @@ export function freezeAgentConfig(agent: any) {
     // Finally freeze the root agent object
     Object.freeze(agent);
 
-    logger.debug(`[FreezeDiagnostic] Agent "${agent.id}" tools schema is now IMMUTABLE.`);
+    // logger.debug(`[FreezeDiagnostic] Agent "${agent.id}" tools schema is now IMMUTABLE.`);
 }
 
 /** @deprecated Use freezeAgentConfig */
