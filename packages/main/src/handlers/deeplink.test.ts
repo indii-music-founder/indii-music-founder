@@ -21,11 +21,13 @@ describe('handleDeepLink', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockWindow = {
+            isDestroyed: vi.fn().mockReturnValue(false),
             isMinimized: vi.fn().mockReturnValue(false),
             restore: vi.fn(),
             show: vi.fn(),
             focus: vi.fn(),
             webContents: {
+                isDestroyed: vi.fn().mockReturnValue(false),
                 send: vi.fn()
             }
         };
