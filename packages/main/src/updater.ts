@@ -121,8 +121,12 @@ export function registerUpdaterHandlers(): void {
 function sendToRenderer(channel: string, data?: Record<string, unknown>): void {
     const windows = BrowserWindow.getAllWindows();
     for (const win of windows) {
-        if (!win.isDestroyed()) {
-            win.webContents.send(channel, data);
+        if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+            try {
+                win.webContents.send(channel, data);
+            } catch (err) {
+                log.warn(`[Updater] Failed to send ${channel} to renderer: ${err}`);
+            }
         }
     }
 }

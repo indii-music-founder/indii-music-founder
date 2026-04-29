@@ -356,6 +356,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // Return unsubscribe function
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            logger.info(`[Auth] onAuthStateChanged fired. User: ${user ? user.uid : 'null'}, lastKnownUser: ${lastKnownUser ? lastKnownUser.uid : 'null'}`);
             if (isE2EMock) {
                 logger.debug('[Auth] Mock Auth Listener Fired', { userUid: user?.uid });
             }
@@ -365,7 +366,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
             // If transitioning FROM a valid user TO null, debounce it.
             // This prevents the brief null flash during Firebase Auth token refresh.
             if (!user && lastKnownUser) {
-                logger.debug('[Auth] User went null — debouncing for 500ms to guard against token refresh race...');
+                logger.info('[Auth] User went null — debouncing for 500ms to guard against token refresh race...');
+                if (debounceTimer) clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
                     // Re-check: if auth.currentUser is STILL null after 500ms,
                     // it's a genuine logout — not a token refresh blip.
@@ -374,7 +376,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                         lastKnownUser = null;
                         set({ user: null, authLoading: false });
                     } else {
-                        logger.debug('[Auth] Token refresh resolved — user is still authenticated.');
+                        logger.info('[Auth] Token refresh resolved — user is still authenticated.');
                         lastKnownUser = auth.currentUser;
                         set({ user: auth.currentUser, authLoading: false });
                     }
@@ -386,11 +388,12 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
             // Firebase may briefly emit null between token refresh cycles,
             // causing spurious logouts under rapid load (100+ clicks/sec).
             if (user && !lastKnownUser) {
-                logger.debug('[Auth] User went from null to valid — debouncing for 500ms to guard against rapid transitions...');
+                logger.info('[Auth] User went from null to valid — debouncing for 500ms to guard against rapid transitions...');
+                if (debounceTimer) clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(async () => {
                     const currentUser = auth.currentUser || user;
                     if (currentUser) {
-                        logger.info('[Auth] Confirmed login after debounce.');
+                        logger.info('[Auth] Confirmed login after debounce. Setting authLoading to false.');
                         lastKnownUser = currentUser;
                         set({ user: currentUser, authLoading: false });
 
@@ -416,6 +419,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                         } catch (e: unknown) {
                             logger.error("[Auth] Failed to sync user to Firestore", e);
                         }
+                    } else {
+                        logger.info('[Auth] Debounce finished but currentUser is null. Setting authLoading to false.');
+                        set({ authLoading: false });
                     }
                 }, 500);
                 return;
@@ -427,6 +433,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                 debounceTimer = null;
             }
 
+            logger.info(`[Auth] Steady state reached. Setting authLoading to false. User: ${user ? user.uid : 'null'}`);
             lastKnownUser = user;
             set({ user, authLoading: false });
 

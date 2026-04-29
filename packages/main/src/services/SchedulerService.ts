@@ -105,8 +105,12 @@ function msUntilNext(nextRunAt: string): number {
 
 function broadcastTick(event: SchedulerTickEvent): void {
     BrowserWindow.getAllWindows().forEach(win => {
-        if (!win.isDestroyed()) {
-            win.webContents.send('scheduler:tick', event);
+        if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+            try {
+                win.webContents.send('scheduler:tick', event);
+            } catch (err) {
+                log.warn(`[Scheduler] Failed to send tick to window: ${err}`);
+            }
         }
     });
 }
@@ -296,12 +300,16 @@ export const SchedulerService = {
         // Broadcast IPC action to renderer
         try {
             BrowserWindow.getAllWindows().forEach(win => {
-                if (!win.isDestroyed()) {
-                    win.webContents.send(task.action, {
-                        taskId,
-                        payload: task.payload,
-                        firedAt,
-                    });
+                if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+                    try {
+                        win.webContents.send(task.action, {
+                            taskId,
+                            payload: task.payload,
+                            firedAt,
+                        });
+                    } catch (err) {
+                        log.warn(`[Scheduler] Failed to send action to window: ${err}`);
+                    }
                 }
             });
         } catch (err) {

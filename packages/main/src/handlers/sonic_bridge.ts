@@ -43,11 +43,17 @@ export function registerSonicBridgeHandlers() {
             const ext = path.extname(filePath).toLowerCase();
             if (['.wav', '.mp3', '.aif', '.flac'].includes(ext)) {
                 log.info(`[SonicBridge] New bounce detected: ${filePath}`);
-                window.webContents.send('sonic-bridge:new-bounce', {
-                    path: filePath,
-                    name: path.basename(filePath),
-                    timestamp: Date.now()
-                });
+                if (!window.isDestroyed() && !window.webContents.isDestroyed()) {
+                    try {
+                        window.webContents.send('sonic-bridge:new-bounce', {
+                            path: filePath,
+                            name: path.basename(filePath),
+                            timestamp: Date.now()
+                        });
+                    } catch (err) {
+                        log.warn(`[SonicBridge] Failed to send new bounce event: ${err}`);
+                    }
+                }
             }
         });
 
