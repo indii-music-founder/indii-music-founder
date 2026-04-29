@@ -254,7 +254,14 @@ class IndiiRemoteService {
         // Pass to Desktop IPC bus, so the React UI can listen and react!
         const windows = electronApp.isReady() ? BrowserWindow.getAllWindows() : [];
         if (windows.length > 0) {
-            windows[0].webContents.send('indii-remote:message-from-mobile', payload);
+            const win = windows[0];
+            if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+                try {
+                    win.webContents.send('indii-remote:message-from-mobile', payload);
+                } catch (err) {
+                    console.warn('[IndiiRemoteService] Failed to send message to desktop:', err);
+                }
+            }
         }
     }
 
@@ -271,7 +278,14 @@ class IndiiRemoteService {
     private broadcastStateToDesktop() {
         const windows = electronApp.isReady() ? BrowserWindow.getAllWindows() : [];
         if (windows.length > 0) {
-            windows[0].webContents.send('indii-remote:status-updated', this.getStatus());
+            const win = windows[0];
+            if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+                try {
+                    win.webContents.send('indii-remote:status-updated', this.getStatus());
+                } catch (err) {
+                    console.warn('[IndiiRemoteService] Failed to broadcast state to desktop:', err);
+                }
+            }
         }
     }
 }

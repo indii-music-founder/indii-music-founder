@@ -142,8 +142,12 @@ function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | nul
     const wins = BrowserWindow.getAllWindows();
     log.info(`[Auth] Notifying ${wins.length} window(s) of successful auth`);
     wins.forEach(w => {
-        if (!w.isDestroyed()) {
-            w.webContents.send('auth:user-update', tokens);
+        if (!w.isDestroyed() && !w.webContents.isDestroyed()) {
+            try {
+                w.webContents.send('auth:user-update', tokens);
+            } catch (err) {
+                log.warn(`[Auth] Failed to send auth success: ${err}`);
+            }
             if (w.isMinimized()) w.restore();
             w.focus();
         }
@@ -154,8 +158,12 @@ function notifyAuthError(message: string) {
     const wins = BrowserWindow.getAllWindows();
     log.info(`[Auth] Notifying ${wins.length} window(s) of auth error: ${message}`);
     wins.forEach(w => {
-        if (!w.isDestroyed()) {
-            w.webContents.send('auth:error', { message });
+        if (!w.isDestroyed() && !w.webContents.isDestroyed()) {
+            try {
+                w.webContents.send('auth:error', { message });
+            } catch (err) {
+                log.warn(`[Auth] Failed to send auth error: ${err}`);
+            }
         }
     });
 }
@@ -176,7 +184,15 @@ export function registerAuthHandlers() {
                 storages: ['cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage']
             });
             const wins = BrowserWindow.getAllWindows();
-            wins.forEach(w => w.webContents.send('auth:user-update', null));
+            wins.forEach(w => {
+                if (!w.isDestroyed() && !w.webContents.isDestroyed()) {
+                    try {
+                        w.webContents.send('auth:user-update', null);
+                    } catch (err) {
+                        log.warn(`[Auth] Failed to send logout update: ${err}`);
+                    }
+                }
+            });
         } catch (e) {
             log.error("Logout failed:", e);
         }

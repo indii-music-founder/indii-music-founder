@@ -457,12 +457,28 @@ if (!gotTheLock) {
         // Power Monitor (Item 165: CPU Throttling)
         powerMonitor.on('on-battery', () => {
             log.info('[PowerMonitor] System is on battery. Throttling CPU-heavy UI (Three.js/Animations).');
-            BrowserWindow.getAllWindows().forEach(win => win.webContents.send('power:on-battery'));
+            BrowserWindow.getAllWindows().forEach(win => {
+                if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+                    try {
+                        win.webContents.send('power:on-battery');
+                    } catch (err) {
+                        log.warn(`[PowerMonitor] Failed to send on-battery event: ${err}`);
+                    }
+                }
+            });
         });
 
         powerMonitor.on('on-ac', () => {
             log.info('[PowerMonitor] System is on AC power. Restoring full UI performance.');
-            BrowserWindow.getAllWindows().forEach(win => win.webContents.send('power:on-ac'));
+            BrowserWindow.getAllWindows().forEach(win => {
+                if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+                    try {
+                        win.webContents.send('power:on-ac');
+                    } catch (err) {
+                        log.warn(`[PowerMonitor] Failed to send on-ac event: ${err}`);
+                    }
+                }
+            });
         });
 
         // Send initial state on load

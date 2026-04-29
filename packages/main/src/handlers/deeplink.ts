@@ -45,7 +45,9 @@ export function handleDeepLink(url: string, mainWindow: BrowserWindow | null) {
         mainWindow.focus();
 
         // Send to renderer for custom routing logic
-        mainWindow.webContents.send('deeplink:received', url);
+        if (!mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+            mainWindow.webContents.send('deeplink:received', url);
+        }
 
     } catch (err) {
         log.error(`[Main] Error handling deep link: ${err}`);
