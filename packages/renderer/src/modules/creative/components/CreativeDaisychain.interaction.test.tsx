@@ -104,6 +104,8 @@ describe('Creative Director Daisychain (6-Click Workflow)', () => {
                     updateWhiskItem: vi.fn(),
                     prompt: 'Initial Prompt',
                     setPrompt: vi.fn(),
+                    creativePrompt: 'Initial Prompt',
+                    setCreativePrompt: vi.fn(),
                     studioControls: { isAndromedaMode: false },
                     enableAndromedaMode: vi.fn(),
                     disableAndromedaMode: vi.fn(),

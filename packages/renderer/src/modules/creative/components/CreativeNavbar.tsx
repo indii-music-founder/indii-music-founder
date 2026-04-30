@@ -20,8 +20,8 @@ interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 export default function CreativeNavbar(props: CreativeNavbarProps) {
     const {
         setVideoInput,
-        prompt,
-        setPrompt,
+        creativePrompt,
+        setCreativePrompt,
         generationMode,
         viewMode,
         setViewMode,
@@ -32,8 +32,8 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         togglePromptBuilder
     } = useStore(useShallow(state => ({
         setVideoInput: state.setVideoInput,
-        prompt: state.prompt,
-        setPrompt: state.setPrompt,
+        creativePrompt: state.creativePrompt,
+        setCreativePrompt: state.setCreativePrompt,
         generationMode: state.generationMode,
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
@@ -201,9 +201,9 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             {/* Prompt Builder Drawer */}
             {showPromptBuilder && (
                 <PromptBuilder
-                    onAddTag={(tag) => setPrompt(prompt ? `${prompt}, ${tag}` : tag)}
-                    currentPrompt={prompt}
-                    onPromptImproved={setPrompt}
+                    onAddTag={(tag) => setCreativePrompt(creativePrompt ? `${creativePrompt}, ${tag}` : tag)}
+                    currentPrompt={creativePrompt}
+                    onPromptImproved={setCreativePrompt}
                 />
             )}
 
