@@ -101,6 +101,8 @@ describe('CreativeNavbar', () => {
         setViewMode: vi.fn(),
         prompt: '',
         setPrompt: mockSetPrompt,
+        creativePrompt: '',
+        setCreativePrompt: mockSetPrompt,
         isPromptBuilderOpen: false,
         togglePromptBuilder: vi.fn(),
         toggleAgentWindow: mockToggleAgentWindow,

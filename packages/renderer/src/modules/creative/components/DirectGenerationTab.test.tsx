@@ -76,6 +76,8 @@ describe('DirectGenerationTab', () => {
         },
         prompt: '',
         setPrompt: vi.fn(),
+        creativePrompt: '',
+        setCreativePrompt: vi.fn(),
         isPromptBuilderOpen: false,
         togglePromptBuilder: vi.fn(),
         addToHistory: vi.fn(),
