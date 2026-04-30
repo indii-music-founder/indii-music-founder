@@ -236,13 +236,73 @@ async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRed
         }
         throw error;
     }
+function notifyBridgeWarning(message: string) {
+    const wins = BrowserWindow.getAllWindows();
+    log.warn(`[Auth] Notifying ${wins.length} window(s) of bridge fallback: ${message}`);
+    wins.forEach(w => {
+        if (!w.isDestroyed() && !w.webContents.isDestroyed()) {
+            try {
+                w.webContents.send('auth:bridge-warning', { message });
+            } catch (err) {
+                log.warn(`[Auth] Failed to send auth bridge warning: ${err}`);
+            }
+        }
+    });
 }
 
 export function registerAuthHandlers() {
     ipcMain.handle('auth:login-google', async () => {
-        const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login-bridge';
-        log.info("[Auth] Redirecting to Login Bridge:", LOGIN_BRIDGE_URL);
-        await shell.openExternal(LOGIN_BRIDGE_URL);
+        const enableBridgeFallback = process.env.INDIIOS_ENABLE_LOGIN_BRIDGE === 'true';
+        const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL;
+
+        if (enableBridgeFallback && LOGIN_BRIDGE_URL) {
+            const bridgeWarning = 'Google login is using the web login bridge fallback.';
+            log.warn(`[Auth] ${bridgeWarning} URL: ${LOGIN_BRIDGE_URL}`);
+            notifyBridgeWarning(bridgeWarning);
+            await shell.openExternal(LOGIN_BRIDGE_URL);
+            return { mode: 'bridge' };
+        }
+
+        if (enableBridgeFallback && !LOGIN_BRIDGE_URL) {
+            const errorMessage = 'Web login bridge fallback is enabled but VITE_LANDING_PAGE_URL is missing.';
+            log.error(`[Auth] ${errorMessage}`);
+            notifyAuthError(errorMessage);
+            return { mode: 'error', message: errorMessage };
+        }
+
+        log.info('[Auth] Starting native desktop Google OAuth flow.');
+        const wins = BrowserWindow.getAllWindows();
+        wins.forEach(w => {
+            if (!w.isDestroyed() && !w.webContents.isDestroyed()) {
+                try {
+                    w.webContents.send('auth:begin-native-google');
+                } catch (err) {
+                    log.warn(`[Auth] Failed to signal native Google auth start: ${err}`);
+                }
+            }
+        });
+
+        return { mode: 'native' };
+    });
+
+    ipcMain.handle('auth:complete-native-google', async (_event, payload: { idToken?: string; accessToken?: string | null; error?: string }) => {
+        if (payload?.error) {
+            notifyAuthError(payload.error);
+            return;
+        }
+
+        if (!payload?.idToken) {
+            notifyAuthError('Native Google login did not provide an ID token.');
+            return;
+        }
+
+        const tokenValidation = validateTokenStructure(payload.idToken);
+        if (!tokenValidation.valid) {
+            notifyAuthError('Invalid authentication token received');
+            return;
+        }
+
+        notifyAuthSuccess({ idToken: payload.idToken, accessToken: payload.accessToken });
     });
 
     ipcMain.handle('auth:logout', async () => {
