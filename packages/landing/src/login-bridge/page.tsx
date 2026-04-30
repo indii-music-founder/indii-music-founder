@@ -25,13 +25,11 @@ export default function LoginBridge() {
         return () => unsubscribe();
     }, []);
 
-    const redirectToApp = (idToken: string, accessToken?: string) => {
+    const redirectToApp = (code: string) => {
         setStatus('success');
         try {
-            // Redirect back to Electron app via deep link with OAuth credentials
             const params = new URLSearchParams();
-            params.append('idToken', idToken);
-            if (accessToken) params.append('accessToken', accessToken);
+            params.append('code', code);
 
             const callbackUrl = `indii-os://auth/callback?${params.toString()}`;
             window.location.href = callbackUrl;
@@ -40,6 +38,28 @@ export default function LoginBridge() {
             setError('Failed to complete authentication');
             setStatus('error');
         }
+    };
+
+
+
+    const createDesktopHandoffCode = async (idToken: string, accessToken?: string | null): Promise<string> => {
+        const endpoint = process.env.NEXT_PUBLIC_AUTH_HANDOFF_URL;
+        if (!endpoint) throw new Error('Auth handoff service is not configured');
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken, accessToken: accessToken ?? null }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to create handoff code (${response.status})`);
+        }
+
+        const data = await response.json() as { code?: string };
+        if (!data.code) throw new Error('Handoff service did not return a code');
+
+        return data.code;
     };
 
     const handleGoogleSignIn = async () => {
@@ -60,7 +80,8 @@ export default function LoginBridge() {
                 throw new Error('No ID token in Google credential');
             }
 
-            redirectToApp(credential.idToken, credential.accessToken);
+            const handoffCode = await createDesktopHandoffCode(credential.idToken, credential.accessToken);
+            redirectToApp(handoffCode);
         } catch (err: any) {
             console.error('Google Sign-In Error:', err);
             setError(err.message || 'Google sign-in failed');
