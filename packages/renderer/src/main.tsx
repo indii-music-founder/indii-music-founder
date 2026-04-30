@@ -19,6 +19,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './core/App';
 import { ErrorBoundary } from './core/components/ErrorBoundary';
 import { initViewportFixes, initKeyboardDetection } from '@/lib/mobile';
+import { renderStartupFallback } from '@/startupFallback';
 import '@/core/i18n'; // Initialize i18n before any component renders
 import './index.css';
 
@@ -53,21 +54,8 @@ try {
     // This prevents the infinite CSS spinner that traps users on a blank page.
     // Incident 2026-03-11: App Check re-throw killed React before mount.
     logger.error('[FATAL] React failed to mount:', fatalError);
-    const root = document.getElementById('root');
-    if (root) {
-        root.innerHTML = `
-            <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0a0f;color:#e4e4e7;font-family:system-ui,sans-serif;padding:2rem;text-align:center">
-                <div style="max-width:420px">
-                    <h1 style="font-size:1.5rem;margin-bottom:1rem;color:#a78bfa">indiiOS</h1>
-                    <p style="margin-bottom:1.5rem;opacity:0.8">Something went wrong during startup. This is usually a temporary issue.</p>
-                    <button onclick="location.reload()" style="background:#7c3aed;color:white;border:none;padding:0.75rem 2rem;border-radius:0.5rem;font-size:1rem;cursor:pointer">
-                        Reload App
-                    </button>
-                    <p style="margin-top:1.5rem;font-size:0.75rem;opacity:0.4">${fatalError instanceof Error ? fatalError.message : 'Unknown error'}</p>
-                </div>
-            </div>
-        `;
-    }
+    const reason = fatalError instanceof Error ? fatalError.message : 'Unknown startup error';
+    renderStartupFallback(`Something went wrong during startup. ${reason}`);
 }
 
 // Initialize mobile utilities (after React root is created)
