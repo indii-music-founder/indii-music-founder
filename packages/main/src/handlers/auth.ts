@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { ipcMain, BrowserWindow, shell, session } from 'electron';
+import { ipcMain, BrowserWindow, session } from 'electron';
 import { authStorage } from '../services/AuthStorage';
 
 // ============================================================================
@@ -170,9 +170,11 @@ function notifyAuthError(message: string) {
 
 export function registerAuthHandlers() {
     ipcMain.handle('auth:login-google', async () => {
-        const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login-bridge';
-        log.info("[Auth] Redirecting to Login Bridge:", LOGIN_BRIDGE_URL);
-        await shell.openExternal(LOGIN_BRIDGE_URL);
+        // NOTE: Explicitly disconnected from the external landing/login bridge.
+        // Auth should occur in-renderer via Firebase signInWithPopup to avoid
+        // cross-app handoff failures and stuck loading states.
+        log.warn('[Auth] auth:login-google IPC called, but external login bridge is disabled. Use renderer Firebase auth flow.');
+        return { ok: false, reason: 'external-login-bridge-disabled' };
     });
 
     ipcMain.handle('auth:logout', async () => {
