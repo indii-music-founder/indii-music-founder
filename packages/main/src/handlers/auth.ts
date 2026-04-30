@@ -177,6 +177,7 @@ type DesktopHandoffRedeemResult = {
 };
 
 const consumedHandoffCodes = new Map<string, number>();
+const inFlightHandoffCodes = new Set<string>();
 const CONSUMED_CODE_TTL_MS = 5 * 60 * 1000;
 
 function markCodeAsConsumed(code: string) {
@@ -199,28 +200,42 @@ async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRed
         throw new Error('Handoff code already redeemed');
     }
 
+    if (inFlightHandoffCodes.has(code)) {
+        throw new Error('Handoff code redemption already in progress');
+    }
+
     const endpoint = process.env.AUTH_HANDOFF_REDEEM_URL;
     if (!endpoint) {
         throw new Error('Handoff redemption endpoint not configured');
     }
 
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-    });
+    inFlightHandoffCodes.add(code);
 
-    if (!response.ok) {
-        if (response.status === 409) throw new Error('Handoff code already redeemed');
-        if (response.status === 410 || response.status === 400) throw new Error('Handoff code expired or invalid');
-        throw new Error(`Failed to redeem handoff code (${response.status})`);
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+        });
+
+        if (!response.ok) {
+            if (response.status === 409) throw new Error('Handoff code already redeemed');
+            if (response.status === 410 || response.status === 400) throw new Error('Handoff code expired or invalid');
+            throw new Error(`Failed to redeem handoff code (${response.status})`);
+        }
+
+        const payload = (await response.json()) as DesktopHandoffRedeemResult;
+        if (!payload.idToken) throw new Error('Redeemed payload missing ID token');
+
+        markCodeAsConsumed(code);
+        inFlightHandoffCodes.delete(code);
+        return payload;
+    } catch (error) {
+        if (!consumedHandoffCodes.has(code)) {
+            inFlightHandoffCodes.delete(code);
+        }
+        throw error;
     }
-
-    const payload = (await response.json()) as DesktopHandoffRedeemResult;
-    if (!payload.idToken) throw new Error('Redeemed payload missing ID token');
-
-    markCodeAsConsumed(code);
-    return payload;
 }
 
 export function registerAuthHandlers() {
@@ -337,6 +352,10 @@ export async function handleDeepLink(url: string) {
         log.info('[Auth] No tokens or errors found in deep link.');
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Invalid auth callback';
+        if (message === 'Handoff code redemption already in progress') {
+            log.info('[Auth] Duplicate deep link ignored: redemption already in progress');
+            return;
+        }
         log.error(`[Auth] Exception in handleDeepLink: ${String(e)}`);
         notifyAuthError(message);
     }
