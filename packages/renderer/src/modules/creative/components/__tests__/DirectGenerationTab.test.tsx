@@ -33,7 +33,8 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
 vi.mock('@/core/store', () => ({
     useStore: (selector: any) => selector({
         studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
-        setPrompt: vi.fn(),
+        creativePrompt: '',
+        setCreativePrompt: vi.fn(),
         addToHistory: vi.fn(),
         currentProjectId: 'test-project',
         whiskState: {},

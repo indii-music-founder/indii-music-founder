@@ -116,6 +116,15 @@ export interface CreativeControlsSlice {
     prompt: string;
     setPrompt: (prompt: string) => void;
 
+    /**
+     * Creative-module-scoped prompt. Used by the Generate input, Canvas,
+     * Gallery "reuse prompt", Prompt History, and the top-nav Prompt Builder.
+     * Non-creative surfaces (e.g. video workflow, right-panel video controls)
+     * continue to use `prompt`/`setPrompt` until they are migrated.
+     */
+    creativePrompt: string;
+    setCreativePrompt: (prompt: string) => void;
+
     isPromptBuilderOpen: boolean;
     setPromptBuilderOpen: (open: boolean) => void;
     togglePromptBuilder: () => void;
@@ -247,6 +256,9 @@ export function buildCreativeControlsState(
 
         prompt: '',
         setPrompt: (prompt) => set({ prompt }),
+
+        creativePrompt: '',
+        setCreativePrompt: (creativePrompt) => set({ creativePrompt }),
 
         isPromptBuilderOpen: false,
         setPromptBuilderOpen: (open) => set({ isPromptBuilderOpen: open }),
