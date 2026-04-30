@@ -28,6 +28,9 @@ import { initSentry } from '@/services/observability/SentryService';
 
 // Initialize Sentry before the app renders. 
 // Item 303: Consent is checked internally within initSentry.
+initSentry();
+
+
 try {
     initSentry();
 } catch (error: unknown) {
