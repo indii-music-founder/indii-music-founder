@@ -23,20 +23,16 @@ import { renderStartupFallback } from '@/startupFallback';
 import '@/core/i18n'; // Initialize i18n before any component renders
 import './index.css';
 
-// Import global test harness
+// Initialize observability
 import { initSentry } from '@/services/observability/SentryService';
 
-// Initialize Sentry before the app renders. 
+// Initialize Sentry before the app renders.
 // Item 303: Consent is checked internally within initSentry.
-initSentry();
-
-
 try {
     initSentry();
 } catch (error: unknown) {
     logger.warn('[Startup] Sentry initialization failed (non-blocking):', error);
 }
-
 
 logger.debug("Indii OS Studio v1.2.6-manual-redeploy");
 document.title = "indiiOS - Studio (v1.2.6)";
