@@ -29,7 +29,7 @@ export function generateSecureHex(length: number): string {
     // Support both browser (window.crypto) and Node.js (global.crypto or require('crypto').webcrypto)
     const crypto = globalThis.crypto;
 
-    if (!crypto || !crypto.getRandomValues) {
+    if (!crypto || typeof crypto.getRandomValues !== 'function') {
         throw new Error('[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.');
     }
 

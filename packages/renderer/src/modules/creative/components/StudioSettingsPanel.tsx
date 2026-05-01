@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { z } from 'zod';
+import { AspectRatioSchema } from '@/modules/video/schemas';
 import {
     Monitor, Smartphone, Square, Zap, Brain, Sparkles,
     Shield, Eye, RotateCcw, ChevronLeft, ChevronRight
@@ -101,9 +103,24 @@ const RESOLUTION_OPTIONS: CycleOption<'720p' | '1080p' | '4k'>[] = [
     { value: '4k', label: '4K', sublabel: 'Ultra quality', icon: <Monitor size={12} /> },
 ];
 
-const ASPECT_RATIO_OPTIONS: CycleOption<'16:9' | '9:16'>[] = [
+type StudioAspectRatio = z.infer<typeof AspectRatioSchema>;
+
+const ASPECT_RATIO_OPTIONS: CycleOption<StudioAspectRatio>[] = [
+    { value: '1:1', label: '1:1', sublabel: 'Square', icon: <Square size={12} /> },
     { value: '16:9', label: '16:9', sublabel: 'Landscape', icon: <Monitor size={12} /> },
     { value: '9:16', label: '9:16', sublabel: 'Portrait', icon: <Smartphone size={12} /> },
+    { value: '21:9', label: '21:9', sublabel: 'Cinematic', icon: <Monitor size={12} /> },
+    { value: '4:3', label: '4:3', sublabel: 'Classic', icon: <Monitor size={12} /> },
+    { value: '3:4', label: '3:4', sublabel: 'Classic Portrait', icon: <Smartphone size={12} /> },
+    { value: '3:2', label: '3:2', sublabel: 'Photo', icon: <Monitor size={12} /> },
+    { value: '2:3', label: '2:3', sublabel: 'Photo Portrait', icon: <Smartphone size={12} /> },
+    { value: '5:4', label: '5:4', sublabel: 'Balanced', icon: <Monitor size={12} /> },
+    { value: '4:5', label: '4:5', sublabel: 'Social Portrait', icon: <Smartphone size={12} /> },
+    { value: '16:10', label: '16:10', sublabel: 'Widescreen', icon: <Monitor size={12} /> },
+    { value: '10:16', label: '10:16', sublabel: 'Vertical Wide', icon: <Smartphone size={12} /> },
+    { value: '9:21', label: '9:21', sublabel: 'Tall Story', icon: <Smartphone size={12} /> },
+    { value: '7:9', label: '7:9', sublabel: 'Portrait Alt', icon: <Smartphone size={12} /> },
+    { value: '9:7', label: '9:7', sublabel: 'Landscape Alt', icon: <Monitor size={12} /> },
 ];
 
 const MODEL_OPTIONS: CycleOption<'fast' | 'pro'>[] = [
@@ -121,6 +138,14 @@ const MEDIA_RES_OPTIONS: CycleOption<'low' | 'medium' | 'high'>[] = [
     { value: 'low', label: 'Low', sublabel: 'Fast input', icon: <Sparkles size={12} /> },
     { value: 'medium', label: 'Medium', sublabel: 'Balanced', icon: <Sparkles size={12} /> },
     { value: 'high', label: 'High', sublabel: 'Max detail', icon: <Sparkles size={12} /> },
+];
+
+const THINKING_LEVELS: Array<{ value: 'none' | 'minimal' | 'low' | 'medium' | 'high'; label: string }> = [
+    { value: 'none', label: 'Off' },
+    { value: 'minimal', label: 'Min' },
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Med' },
+    { value: 'high', label: 'High' },
 ];
 
 export default function StudioSettingsPanel({ onClose }: { onClose: () => void }) {
@@ -215,18 +240,24 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
 
                 {/* Toggle Row */}
                 <div className="flex items-center gap-4 mt-4 pt-3 border-t border-white/4">
-                    <label className="flex items-center gap-2 cursor-pointer" data-testid="settings-thinking-toggle">
-                        <input
-                            type="checkbox"
-                            checked={studioControls.thinkingLevel !== 'none'}
-                            onChange={(e) => setStudioControls({ thinkingLevel: e.target.checked ? 'high' : 'none' })}
-                            className="sr-only peer"
-                        />
-                        <div className="w-7 h-4 bg-white/10 peer-checked:bg-purple-500/50 rounded-full relative transition-colors">
-                            <div className="absolute top-0.5 left-0.5 w-3 h-3 bg-gray-400 peer-checked:bg-purple-300 rounded-full transition-all peer-checked:translate-x-3" />
-                        </div>
+                    <div className="flex items-center gap-2" data-testid="settings-thinking-toggle">
                         <span className="text-[10px] text-gray-400 font-medium">Thinking</span>
-                    </label>
+                        <div className="flex items-center gap-1 bg-white/5 rounded-md p-1 border border-white/10">
+                            {THINKING_LEVELS.map((level) => (
+                                <button
+                                    key={level.value}
+                                    onClick={() => setStudioControls({ thinkingLevel: level.value })}
+                                    className={`px-2 py-1 rounded text-[9px] font-semibold transition-colors ${
+                                        studioControls.thinkingLevel === level.value
+                                            ? 'bg-purple-500/25 text-purple-200'
+                                            : 'text-gray-400 hover:text-gray-200'
+                                    }`}
+                                >
+                                    {level.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
                     <label className="flex items-center gap-2 cursor-pointer" data-testid="settings-grounding-toggle">
                         <input

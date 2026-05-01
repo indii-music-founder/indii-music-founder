@@ -48,6 +48,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         setSelectedItem: mockSetSelectedItem,
         addCharacterReference: vi.fn(),
         setPrompt: vi.fn(),
+        setCreativePrompt: vi.fn(),
         setViewMode: vi.fn(),
         playTrack: vi.fn(),
         pauseTrack: vi.fn(),

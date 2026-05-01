@@ -255,7 +255,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         selectedItem: state.selectedItem,
         setSelectedItem: state.setSelectedItem,
         addCharacterReference: state.addCharacterReference,
-        setPrompt: state.setPrompt,
+        setPrompt: state.setCreativePrompt,
         setViewMode: state.setViewMode,
         playTrack: state.playTrack,
         stopTrack: state.stopTrack,

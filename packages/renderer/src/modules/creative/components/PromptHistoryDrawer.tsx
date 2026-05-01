@@ -5,9 +5,9 @@ import { X, RotateCw, Copy, Clock } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
 export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }) {
-    const { generatedHistory, setPrompt, setViewMode } = useStore(useShallow(state => ({
+    const { generatedHistory, setCreativePrompt, setViewMode } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
-        setPrompt: state.setPrompt,
+        setCreativePrompt: state.setCreativePrompt,
         setViewMode: state.setViewMode
     })));
     const toast = useToast();
@@ -28,7 +28,7 @@ export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }
     }, [generatedHistory]);
 
     const handleUsePrompt = (promptText: string) => {
-        setPrompt(promptText);
+        setCreativePrompt(promptText);
         setViewMode('direct'); // Go to direct generation mode for easy re-rolling
         toast.success("Prompt loaded! Ready to re-roll.");
         onClose();
