@@ -71,6 +71,7 @@ export default function LoginBridge() {
             setError('Could not copy callback token package. Please retry and keep this page open.');
             setStatus('error');
         }
+    };
 
 
     const createDesktopHandoffCode = async (idToken: string, accessToken?: string | null): Promise<string> => {
