@@ -12,6 +12,7 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     VITE_FUNCTIONS_URL: z.string().url().optional(),
     VITE_RAG_PROXY_URL: z.union([z.string().url(), z.literal('')]).optional(),
     VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
+    VITE_ENABLE_GOOGLE_MAPS: z.string().optional(),
     DEV: z.boolean().default(false),
 
     // Firebase specific overrides (optional)
@@ -35,6 +36,7 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     VITE_EXPOSE_INTERNALS: z.string().optional(),
 
     skipOnboarding: z.boolean().default(false),
+    enableGoogleMaps: z.boolean().default(true),
 });
 
 // Initial test env detection removed to fix duplicate declaration
@@ -80,6 +82,10 @@ const processEnv = {
     location: getEnv(getSafeMetaEnv('VITE_VERTEX_LOCATION'), getProcessEnv('VITE_VERTEX_LOCATION')) || "us-central1",
     useVertex: toBoolean(getSafeMetaEnv('VITE_USE_VERTEX') || getProcessEnv('VITE_USE_VERTEX')),
     googleMapsApiKey: getEnv(getSafeMetaEnv('VITE_GOOGLE_MAPS_API_KEY'), getProcessEnv('VITE_GOOGLE_MAPS_API_KEY')),
+    enableGoogleMaps: (() => {
+        const raw = getEnv(getSafeMetaEnv('VITE_ENABLE_GOOGLE_MAPS'), getProcessEnv('VITE_ENABLE_GOOGLE_MAPS'));
+        return raw === undefined ? true : toBoolean(raw);
+    })(),
 
     VITE_FUNCTIONS_URL: getEnv(getSafeMetaEnv('VITE_FUNCTIONS_URL'), getProcessEnv('VITE_FUNCTIONS_URL')),
     VITE_RAG_PROXY_URL: getEnv(getSafeMetaEnv('VITE_RAG_PROXY_URL'), getProcessEnv('VITE_RAG_PROXY_URL')),
@@ -140,6 +146,7 @@ export const env = {
     VITE_VERTEX_PROJECT_ID: runtimeEnv.projectId,
     VITE_VERTEX_LOCATION: runtimeEnv.location,
     VITE_USE_VERTEX: runtimeEnv.useVertex,
+    enableGoogleMaps: runtimeEnv.enableGoogleMaps,
     appCheckKey: processEnv.appCheckKey,
     appCheckDebugToken: processEnv.appCheckDebugToken,
 };

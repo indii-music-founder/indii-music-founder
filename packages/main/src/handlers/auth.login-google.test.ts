@@ -43,7 +43,7 @@ describe('auth:login-google handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.INDIIOS_ENABLE_LOGIN_BRIDGE;
-    delete process.env.LOGIN_BRIDGE_URL;
+    delete process.env.VITE_LANDING_PAGE_URL;
   });
 
   it('uses native desktop path by default', async () => {
@@ -62,7 +62,7 @@ describe('auth:login-google handler', () => {
 
   it('uses web bridge fallback when enabled', async () => {
     process.env.INDIIOS_ENABLE_LOGIN_BRIDGE = 'true';
-    process.env.LOGIN_BRIDGE_URL = 'https://example.com/login-bridge';
+    process.env.VITE_LANDING_PAGE_URL = 'https://example.com/login-bridge';
 
     const { registerAuthHandlers } = await import('./auth');
     registerAuthHandlers();
@@ -86,11 +86,11 @@ describe('auth:login-google handler', () => {
 
     expect(result).toEqual({
       mode: 'error',
-      message: 'Web login bridge fallback is enabled but LOGIN_BRIDGE_URL is missing.',
+      message: 'Web login bridge fallback is enabled but VITE_LANDING_PAGE_URL is missing.',
     });
     expect(openExternalMock).not.toHaveBeenCalled();
     expect(sendMock).toHaveBeenCalledWith('auth:error', {
-      message: 'Web login bridge fallback is enabled but LOGIN_BRIDGE_URL is missing.',
+      message: 'Web login bridge fallback is enabled but VITE_LANDING_PAGE_URL is missing.',
     });
   });
 });
