@@ -27,12 +27,39 @@ vi.mock('../services/AuthStorage', () => ({
   authStorage: { saveToken: vi.fn(), deleteToken: vi.fn() }
 }));
 
-import { handleDeepLink } from './auth';
+import { handleDeepLink, __resetAuthRateLimit } from './auth';
 
 describe('auth handoff deep link', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetAuthRateLimit();
     process.env.AUTH_HANDOFF_REDEEM_URL = 'https://example.com/redeem';
+  });
+
+  it('ignores duplicate deep links while redemption is already in progress', async () => {
+    const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', exp: Math.floor(Date.now()/1000)+300 }), 'utf8').toString('base64url');
+    const idToken = `header.${payload}.sig`;
+    let resolveFetch: ((value: any) => void) | undefined;
+    const fetchPromise = new Promise((resolve) => {
+      resolveFetch = resolve;
+    });
+    const fetchMock = vi.fn().mockReturnValue(fetchPromise);
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const firstAttempt = handleDeepLink('indii-os://auth/callback?code=one-time-1234');
+    const secondAttempt = handleDeepLink('indii-os://auth/callback?code=one-time-1234');
+
+    resolveFetch?.({
+      ok: true,
+      status: 200,
+      json: async () => ({ idToken, accessToken: 'access-token-12345678901234567890' })
+    });
+
+    await Promise.all([firstAttempt, secondAttempt]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sendMock).toHaveBeenCalledWith('auth:user-update', expect.objectContaining({ idToken }));
+    expect(sendMock).not.toHaveBeenCalledWith('auth:error', expect.anything());
   });
 
   it('prevents replay of the same handoff code', async () => {
