@@ -180,11 +180,19 @@ function notifyBridgeWarning(message: string) {
             }
         }
     });
-
-
+}
 
 function isLegacyCallbackEnabled(): boolean {
-    return process.env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true';
+    if (process.env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true') {
+        return true;
+    }
+
+    if (!process.env.AUTH_HANDOFF_REDEEM_URL) {
+        log.warn('[Auth] Legacy callback compatibility is temporarily enabled because AUTH_HANDOFF_REDEEM_URL is not configured');
+        return true;
+    }
+
+    return false;
 }
 
 type DesktopHandoffRedeemResult = {
@@ -207,7 +215,7 @@ function markCodeAsConsumed(code: string) {
     }
 }
 
-async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRedeemResult> {
+async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRedeemResult | null> {
     if (!code || code.length < 8) {
         throw new Error('Invalid handoff code');
     }
@@ -218,7 +226,8 @@ async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRed
 
     const endpoint = process.env.AUTH_HANDOFF_REDEEM_URL;
     if (!endpoint) {
-        throw new Error('Handoff redemption endpoint not configured');
+        log.warn('[Auth] AUTH_HANDOFF_REDEEM_URL is not configured; skipping handoff redemption');
+        return null;
     }
 
     const response = await fetch(endpoint, {
@@ -379,9 +388,23 @@ export async function handleDeepLink(url: string) {
             }
         } else {
             const redeemed = await redeemDesktopHandoffCode(code);
-            idToken = redeemed.idToken;
-            accessToken = redeemed.accessToken ?? null;
-            refreshToken = redeemed.refreshToken ?? null;
+            if (redeemed) {
+                idToken = redeemed.idToken;
+                accessToken = redeemed.accessToken ?? null;
+                refreshToken = redeemed.refreshToken ?? null;
+            } else if (isLegacyCallbackEnabled()) {
+                log.warn('[Auth] Falling back to legacy callback tokens because AUTH_HANDOFF_REDEEM_URL is unset');
+                idToken = urlObj.searchParams.get('idToken');
+                accessToken = urlObj.searchParams.get('accessToken');
+                refreshToken = urlObj.searchParams.get('refreshToken');
+                if (!idToken) {
+                    notifyAuthError('Authentication handoff is not configured. Please update desktop auth settings.');
+                    return;
+                }
+            } else {
+                notifyAuthError('Authentication handoff is not configured. Please contact support.');
+                return;
+            }
         }
 
         // =====================================================================
