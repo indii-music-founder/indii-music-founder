@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { ipcMain, BrowserWindow, shell, session } from 'electron';
+import { ipcMain, BrowserWindow, session, shell } from 'electron';
 import { authStorage } from '../services/AuthStorage';
 
 // ============================================================================
@@ -137,6 +137,13 @@ function checkRateLimit(identifier: string): boolean {
     return true;
 }
 
+/** @internal - For testing only */
+export function __resetAuthRateLimit() {
+    authAttempts.clear();
+    consumedHandoffCodes.clear();
+    inFlightHandoffCodes.clear();
+}
+
 // Notify helper
 function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null }) {
     const wins = BrowserWindow.getAllWindows();
@@ -180,11 +187,19 @@ function notifyBridgeWarning(message: string) {
             }
         }
     });
-
-
+}
 
 function isLegacyCallbackEnabled(): boolean {
-    return process.env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true';
+    if (process.env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true') {
+        return true;
+    }
+
+    if (!process.env.AUTH_HANDOFF_REDEEM_URL) {
+        log.warn('[Auth] Legacy callback compatibility is temporarily enabled because AUTH_HANDOFF_REDEEM_URL is not configured');
+        return true;
+    }
+
+    return false;
 }
 
 type DesktopHandoffRedeemResult = {
@@ -194,6 +209,7 @@ type DesktopHandoffRedeemResult = {
 };
 
 const consumedHandoffCodes = new Map<string, number>();
+const inFlightHandoffCodes = new Set<string>();
 const CONSUMED_CODE_TTL_MS = 5 * 60 * 1000;
 
 function markCodeAsConsumed(code: string) {
@@ -207,7 +223,7 @@ function markCodeAsConsumed(code: string) {
     }
 }
 
-async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRedeemResult> {
+async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRedeemResult | null> {
     if (!code || code.length < 8) {
         throw new Error('Invalid handoff code');
     }
@@ -216,63 +232,52 @@ async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRed
         throw new Error('Handoff code already redeemed');
     }
 
+    if (inFlightHandoffCodes.has(code)) {
+        throw new Error('Handoff code redemption already in progress');
+    }
+
     const endpoint = process.env.AUTH_HANDOFF_REDEEM_URL;
     if (!endpoint) {
-        throw new Error('Handoff redemption endpoint not configured');
+        log.warn('[Auth] AUTH_HANDOFF_REDEEM_URL is not configured; skipping handoff redemption');
+        return null;
     }
 
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-    });
+    inFlightHandoffCodes.add(code);
 
-    if (!response.ok) {
-        if (response.status === 409) throw new Error('Handoff code already redeemed');
-        if (response.status === 410 || response.status === 400) throw new Error('Handoff code expired or invalid');
-        throw new Error(`Failed to redeem handoff code (${response.status})`);
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+        });
+
+        if (!response.ok) {
+            if (response.status === 409) throw new Error('Handoff code already redeemed');
+            if (response.status === 410 || response.status === 400) throw new Error('Handoff code expired or invalid');
+            throw new Error(`Failed to redeem handoff code (${response.status})`);
+        }
+
+        const payload = (await response.json()) as DesktopHandoffRedeemResult;
+        if (!payload.idToken) throw new Error('Redeemed payload missing ID token');
+
+        markCodeAsConsumed(code);
+        inFlightHandoffCodes.delete(code);
+        return payload;
+    } catch (error) {
+        if (!consumedHandoffCodes.has(code)) {
+            inFlightHandoffCodes.delete(code);
+        }
+        throw error;
     }
-
-    const payload = (await response.json()) as DesktopHandoffRedeemResult;
-    if (!payload.idToken) throw new Error('Redeemed payload missing ID token');
-
-    markCodeAsConsumed(code);
-    return payload;
 }
 
 export function registerAuthHandlers() {
     ipcMain.handle('auth:login-google', async () => {
-        const enableBridgeFallback = process.env.INDIIOS_ENABLE_LOGIN_BRIDGE === 'true';
-        const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL;
-
-        if (enableBridgeFallback && LOGIN_BRIDGE_URL) {
-            const bridgeWarning = 'Google login is using the web login bridge fallback.';
-            log.warn(`[Auth] ${bridgeWarning} URL: ${LOGIN_BRIDGE_URL}`);
-            notifyBridgeWarning(bridgeWarning);
-            await shell.openExternal(LOGIN_BRIDGE_URL);
-            return { mode: 'bridge' };
-        }
-
-        if (enableBridgeFallback && !LOGIN_BRIDGE_URL) {
-            const errorMessage = 'Web login bridge fallback is enabled but VITE_LANDING_PAGE_URL is missing.';
-            log.error(`[Auth] ${errorMessage}`);
-            notifyAuthError(errorMessage);
-            return { mode: 'error', message: errorMessage };
-        }
-
-        log.info('[Auth] Starting native desktop Google OAuth flow.');
-        const wins = BrowserWindow.getAllWindows();
-        wins.forEach(w => {
-            if (!w.isDestroyed() && !w.webContents.isDestroyed()) {
-                try {
-                    w.webContents.send('auth:begin-native-google');
-                } catch (err) {
-                    log.warn(`[Auth] Failed to signal native Google auth start: ${err}`);
-                }
-            }
-        });
-
-        return { mode: 'native' };
+        // NOTE: Explicitly disconnected from the external landing/login bridge.
+        // Auth should occur in-renderer via Firebase signInWithPopup to avoid
+        // cross-app handoff failures and stuck loading states.
+        log.warn('[Auth] auth:login-google IPC called, but external login bridge is disabled. Use renderer Firebase auth flow.');
+        return { ok: false, reason: 'external-login-bridge-disabled' };
     });
 
     ipcMain.handle('auth:complete-native-google', async (_event, payload: { idToken?: string; accessToken?: string | null; error?: string }) => {
@@ -379,9 +384,23 @@ export async function handleDeepLink(url: string) {
             }
         } else {
             const redeemed = await redeemDesktopHandoffCode(code);
-            idToken = redeemed.idToken;
-            accessToken = redeemed.accessToken ?? null;
-            refreshToken = redeemed.refreshToken ?? null;
+            if (redeemed) {
+                idToken = redeemed.idToken;
+                accessToken = redeemed.accessToken ?? null;
+                refreshToken = redeemed.refreshToken ?? null;
+            } else if (isLegacyCallbackEnabled()) {
+                log.warn('[Auth] Falling back to legacy callback tokens because AUTH_HANDOFF_REDEEM_URL is unset');
+                idToken = urlObj.searchParams.get('idToken');
+                accessToken = urlObj.searchParams.get('accessToken');
+                refreshToken = urlObj.searchParams.get('refreshToken');
+                if (!idToken) {
+                    notifyAuthError('Authentication handoff is not configured. Please update desktop auth settings.');
+                    return;
+                }
+            } else {
+                notifyAuthError('Authentication handoff is not configured. Please contact support.');
+                return;
+            }
         }
 
         // =====================================================================
@@ -420,6 +439,10 @@ export async function handleDeepLink(url: string) {
         log.info('[Auth] No tokens or errors found in deep link.');
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Invalid auth callback';
+        if (message === 'Handoff code redemption already in progress') {
+            log.info('[Auth] Duplicate deep link ignored: redemption already in progress');
+            return;
+        }
         log.error(`[Auth] Exception in handleDeepLink: ${String(e)}`);
         notifyAuthError(message);
     }
