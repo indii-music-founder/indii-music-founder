@@ -9,6 +9,10 @@ const loadGoogleMaps = (): Promise<void> => {
     if (mapsPromise) return mapsPromise;
 
     mapsPromise = new Promise((resolve, reject) => {
+        if (!env.enableGoogleMaps) {
+            reject(new Error("Google Maps is disabled by feature flag (VITE_ENABLE_GOOGLE_MAPS=false)"));
+            return;
+        }
         if (typeof window === 'undefined') {
             reject(new Error("Browser environment required for Google Maps API"));
             return;
