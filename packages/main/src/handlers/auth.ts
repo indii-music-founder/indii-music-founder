@@ -1,7 +1,7 @@
 import log from 'electron-log';
 import { ipcMain, BrowserWindow, session } from 'electron';
 import { authStorage } from '../services/AuthStorage';
-import { AuthService, type AuthTokens } from '@shared/index';
+import { AuthService, type AuthTokens } from '@shared';
 
 // ============================================================================
 // SECURITY: Rate Limiting
