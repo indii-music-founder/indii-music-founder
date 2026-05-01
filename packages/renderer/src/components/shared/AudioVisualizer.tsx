@@ -1,9 +1,11 @@
-import React, { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { Suspense, lazy } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnimatePresence, motion } from 'framer-motion';
-import WaveMesh from './WaveMesh';
+
+// Lazy-load Canvas and WaveMesh to break the vendor-three → vendor-react circular dependency
+// This ensures Three.js is not loaded during app bootstrap
+const CanvasRenderer = lazy(() => import('./CanvasRenderer'));
 
 export const AudioVisualizer: React.FC = () => {
     const { isPlaying } = useStore(useShallow(state => ({
@@ -20,16 +22,10 @@ export const AudioVisualizer: React.FC = () => {
                     transition={{ duration: 1 }}
                     className="fixed inset-0 z-0 pointer-events-none"
                 >
-                    <Canvas
-                        camera={{ position: [0, 5, 10], fov: 45 }}
-                        dpr={[1, 2]}
-                        gl={{ antialias: true, alpha: true }}
-                    >
-                        <Suspense fallback={null}>
-                            <WaveMesh />
-                        </Suspense>
-                    </Canvas>
-                    
+                    <Suspense fallback={null}>
+                        <CanvasRenderer />
+                    </Suspense>
+
                     {/* Dark overlay to ensure UI readability */}
                     <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px]" />
                 </motion.div>

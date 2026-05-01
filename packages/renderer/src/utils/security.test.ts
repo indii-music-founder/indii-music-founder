@@ -20,6 +20,20 @@ describe('Security Utilities', () => {
       expect(hex).toMatch(/^[0-9a-f]+$/);
     });
 
+
+    it('should throw an error if crypto.getRandomValues is not a function', () => {
+      const originalCrypto = globalThis.crypto;
+      try {
+        Object.defineProperty(globalThis, 'crypto', { value: { getRandomValues: 'not a function' }, configurable: true });
+        expect(() => generateSecureHex(10)).toThrow(
+          '[Security] crypto.getRandomValues is required but not available. Cannot generate secure random values.'
+        );
+      } finally {
+        Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true });
+      }
+    });
+
+
     it('should throw an error if crypto.getRandomValues is not available', () => {
       const originalCrypto = globalThis.crypto;
       try {
