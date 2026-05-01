@@ -136,7 +136,7 @@ export default function LoginBridge() {
             } else {
                 redirectToApp({ idToken: credential.idToken, accessToken: credential.accessToken });
             }
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error('Google Sign-In Error:', err);
             const code = typeof err === 'object' && err && 'code' in err ? String((err as { code?: string }).code ?? '') : '';
             if (code === 'auth/popup-closed-by-user' || code === 'auth/popup-blocked') {
