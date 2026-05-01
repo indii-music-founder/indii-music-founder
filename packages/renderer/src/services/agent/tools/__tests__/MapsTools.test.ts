@@ -4,7 +4,8 @@ import { MapsTools } from '../MapsTools';
 // Mock env
 vi.mock('@/config/env', () => ({
     env: {
-        googleMapsApiKey: 'TEST_API_KEY'
+        googleMapsApiKey: 'TEST_API_KEY',
+        enableGoogleMaps: true,
     }
 }));
 

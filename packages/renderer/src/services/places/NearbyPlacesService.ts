@@ -67,6 +67,9 @@ const ensureGoogleMapsLoaded = (): Promise<void> => {
     if (mapsLoadPromise) return mapsLoadPromise;
 
     mapsLoadPromise = (async () => {
+        if (!env.enableGoogleMaps) {
+            throw new Error('Google Maps is disabled by feature flag (VITE_ENABLE_GOOGLE_MAPS=false)');
+        }
         if (typeof window === 'undefined') {
             throw new Error('Browser environment required for Google Maps API');
         }
