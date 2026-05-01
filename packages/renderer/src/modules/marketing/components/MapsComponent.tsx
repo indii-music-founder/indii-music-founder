@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
+import { env } from '@/config/env';
 
 const render = (status: Status) => {
     if (status === Status.LOADING) return <div className="h-full w-full flex items-center justify-center bg-gray-900 text-gray-500">Loading Maps...</div>;
@@ -62,14 +63,22 @@ const Map: React.FC<MapProps> = ({ center, zoom, markers }) => {
 };
 
 export default function MapsComponent() {
-    // Default to a placeholder if no key is present, to avoid crashing in dev without key
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
+    const apiKey = env.googleMapsApiKey || '';
+
+    if (!env.enableGoogleMaps) {
+        return (
+            <div className="w-full h-full bg-gray-900 rounded-xl flex flex-col items-center justify-center text-gray-500 p-6 text-center border border-gray-800">
+                <p className="mb-2 font-medium text-gray-400">Google Maps Integration</p>
+                <p className="text-sm">Google Maps is disabled by feature flag (VITE_ENABLE_GOOGLE_MAPS=false).</p>
+            </div>
+        );
+    }
 
     if (!apiKey) {
         return (
             <div className="w-full h-full bg-gray-900 rounded-xl flex flex-col items-center justify-center text-gray-500 p-6 text-center border border-gray-800">
                 <p className="mb-2 font-medium text-gray-400">Google Maps Integration</p>
-                <p className="text-sm">Add VITE_GOOGLE_MAPS_KEY to .env to enable live campaign tracking.</p>
+                <p className="text-sm">Add VITE_GOOGLE_MAPS_API_KEY to .env to enable live campaign tracking.</p>
             </div>
         );
     }
