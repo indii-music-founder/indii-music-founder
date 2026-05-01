@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import { Loader2, MapPinOff, Map as MapIcon } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { env } from '@/config/env';
 
 import { MapMarker } from '../types';
 
@@ -13,7 +14,7 @@ interface TourMapProps {
 }
 
 // ─── Graceful Map Unavailable Fallback ─────────────────────────────────────────
-const MapUnavailableFallback: React.FC<{ reason: 'missing_key' | 'auth_failure' | 'load_failure' }> = ({ reason }) => {
+const MapUnavailableFallback: React.FC<{ reason: 'missing_key' | 'auth_failure' | 'load_failure' | 'feature_disabled' }> = ({ reason }) => {
     const messages: Record<string, { title: string; detail: string }> = {
         missing_key: {
             title: 'Map Visualization Disabled',
@@ -26,6 +27,10 @@ const MapUnavailableFallback: React.FC<{ reason: 'missing_key' | 'auth_failure' 
         load_failure: {
             title: 'Map Could Not Load',
             detail: 'Google Maps failed to initialize. Check your API key and ensure the Maps JavaScript API is enabled.',
+        },
+        feature_disabled: {
+            title: 'Map Visualization Disabled',
+            detail: 'Google Maps is currently disabled by feature flag (VITE_ENABLE_GOOGLE_MAPS=false).',
         },
     };
 
@@ -318,12 +323,16 @@ const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ 
 
 // ─── TourMap Wrapper ───────────────────────────────────────────────────────────
 export const TourMap: React.FC<TourMapProps> = (props) => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const apiKey = env.googleMapsApiKey;
     const [authFailed, setAuthFailed] = useState(false);
 
     const handleAuthFailure = useCallback(() => {
         setAuthFailed(true);
     }, []);
+
+    if (!env.enableGoogleMaps) {
+        return <MapUnavailableFallback reason="feature_disabled" />;
+    }
 
     // No API key at all — show clean fallback
     if (!apiKey) {
