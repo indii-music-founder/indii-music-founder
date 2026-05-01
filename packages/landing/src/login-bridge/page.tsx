@@ -1,12 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from 'firebase/auth';
 import app from '../lib/firebase';
 
 type Status = 'loading' | 'ready' | 'authenticating' | 'success' | 'deepLinkFallback' | 'error';
 
 const DEEP_LINK_TIMEOUT_MS = 3000;
+
+type CallbackPayload = {
+    code?: string;
+    idToken?: string;
+    accessToken?: string | null;
+};
 
 export default function LoginBridge() {
     const [status, setStatus] = useState<Status>('loading');
@@ -34,12 +40,22 @@ export default function LoginBridge() {
         };
     }, []);
 
-    const redirectToApp = (code: string) => {
+    const redirectToApp = ({ code, idToken, accessToken }: CallbackPayload) => {
         setStatus('success');
         setError(null);
         try {
             const params = new URLSearchParams();
-            params.append('code', code);
+            if (code) {
+                params.append('code', code);
+            } else {
+                if (!idToken) {
+                    throw new Error('Missing auth callback payload');
+                }
+                params.append('idToken', idToken);
+                if (accessToken) {
+                    params.append('accessToken', accessToken);
+                }
+            }
 
             const callbackUrl = `indii-os://auth/callback?${params.toString()}`;
             setCallbackPackage(callbackUrl);
@@ -62,11 +78,23 @@ export default function LoginBridge() {
         }
     };
 
+    const copyCallbackPackage = async () => {
+        if (!callbackPackage) return;
+        try {
+            await navigator.clipboard.writeText(callbackPackage);
+        } catch (err) {
+            console.error('Failed to copy callback package:', err);
+            setError('Could not copy callback token package. Please retry and keep this page open.');
+            setStatus('error');
+        }
+    };
 
-
-    const createDesktopHandoffCode = async (idToken: string, accessToken?: string | null): Promise<string> => {
+    const createDesktopHandoffCode = async (idToken: string, accessToken?: string | null): Promise<string | null> => {
         const endpoint = process.env.NEXT_PUBLIC_AUTH_HANDOFF_URL;
-        if (!endpoint) throw new Error('Auth handoff service is not configured');
+        if (!endpoint) {
+            console.warn('Auth handoff service URL is not configured; falling back to legacy callback payload');
+            return null;
+        }
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -78,19 +106,10 @@ export default function LoginBridge() {
             throw new Error(`Failed to create handoff code (${response.status})`);
         }
 
-        const data = await response.json() as { code?: string };
+        const data = (await response.json()) as { code?: string };
         if (!data.code) throw new Error('Handoff service did not return a code');
 
         return data.code;
-    const copyCallbackPackage = async () => {
-        if (!callbackPackage) return;
-        try {
-            await navigator.clipboard.writeText(callbackPackage);
-        } catch (err) {
-            console.error('Failed to copy callback package:', err);
-            setError('Could not copy callback token package. Please retry and keep this page open.');
-            setStatus('error');
-        }
     };
 
     const handleGoogleSignIn = async () => {
@@ -112,16 +131,21 @@ export default function LoginBridge() {
             }
 
             const handoffCode = await createDesktopHandoffCode(credential.idToken, credential.accessToken);
-            redirectToApp(handoffCode);
+            if (handoffCode) {
+                redirectToApp({ code: handoffCode });
+            } else {
+                redirectToApp({ idToken: credential.idToken, accessToken: credential.accessToken });
+            }
         } catch (err: any) {
             console.error('Google Sign-In Error:', err);
-            const code = err?.code || '';
+            const code = typeof err === 'object' && err && 'code' in err ? String((err as { code?: string }).code ?? '') : '';
             if (code === 'auth/popup-closed-by-user' || code === 'auth/popup-blocked') {
                 setError('Sign-in popup was closed or blocked. Allow popups for this site and try again.');
                 setStatus('ready');
                 return;
             }
-            setError(err.message || 'Google sign-in failed');
+            const message = typeof err === 'object' && err && 'message' in err ? String((err as { message?: string }).message ?? '') : '';
+            setError(message || 'Google sign-in failed');
             setStatus('error');
         }
     };
@@ -133,6 +157,7 @@ export default function LoginBridge() {
                     <h1 className="text-2xl font-bold mb-2">indiiOS</h1>
                     <p className="text-neutral-400 text-sm">Sign in to continue to the app</p>
                 </div>
+
 
                 {status === 'loading' && (
                     <div className="flex items-center justify-center py-8">
@@ -175,6 +200,7 @@ export default function LoginBridge() {
                 )}
 
                 <div className="mt-6 pt-6 border-t border-neutral-800"><p className="text-neutral-500 text-xs">This page authenticates you with Google and redirects back to the indiiOS desktop app.</p></div>
+
             </div>
         </div>
     );
