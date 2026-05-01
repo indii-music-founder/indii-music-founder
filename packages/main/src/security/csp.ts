@@ -18,7 +18,7 @@ import crypto from 'node:crypto';
 // Configuration
 // ============================================================================
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = process.env.NODE_ENV === 'development' && !process.env.VITEST;
 
 /**
  * Allowed external origins for various CSP directives.
