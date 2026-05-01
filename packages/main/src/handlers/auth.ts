@@ -180,8 +180,7 @@ function notifyBridgeWarning(message: string) {
             }
         }
     });
-
-
+}
 
 function isLegacyCallbackEnabled(): boolean {
     return process.env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true';
