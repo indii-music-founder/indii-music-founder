@@ -28,6 +28,9 @@
             "@agents/*": [
                 "../../agents/*"
             ],
+            "@shared": [
+                "../shared/src/index.ts"
+            ],
             "@shared/*": [
                 "../shared/src/*"
             ]
