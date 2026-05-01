@@ -46,7 +46,7 @@ describe('auth:login-google handler', () => {
     delete process.env.VITE_LANDING_PAGE_URL;
   });
 
-  it('uses native desktop path by default', async () => {
+  it('is explicitly disconnected from external bridge', async () => {
     const { registerAuthHandlers } = await import('./auth');
     registerAuthHandlers();
 
@@ -55,42 +55,8 @@ describe('auth:login-google handler', () => {
 
     const result = await loginHandler();
 
-    expect(result).toEqual({ mode: 'native' });
-    expect(sendMock).toHaveBeenCalledWith('auth:begin-native-google');
+    expect(result).toEqual({ ok: false, reason: 'external-login-bridge-disabled' });
     expect(openExternalMock).not.toHaveBeenCalled();
-  });
-
-  it('uses web bridge fallback when enabled', async () => {
-    process.env.INDIIOS_ENABLE_LOGIN_BRIDGE = 'true';
-    process.env.VITE_LANDING_PAGE_URL = 'https://example.com/login-bridge';
-
-    const { registerAuthHandlers } = await import('./auth');
-    registerAuthHandlers();
-
-    const loginHandler = handleMock.mock.calls.find(([channel]) => channel === 'auth:login-google')?.[1];
-    const result = await loginHandler();
-
-    expect(result).toEqual({ mode: 'bridge' });
-    expect(openExternalMock).toHaveBeenCalledWith('https://example.com/login-bridge');
-    expect(sendMock).toHaveBeenCalledWith('auth:bridge-warning', expect.any(Object));
-  });
-
-  it('returns error when fallback enabled but bridge env var missing', async () => {
-    process.env.INDIIOS_ENABLE_LOGIN_BRIDGE = 'true';
-
-    const { registerAuthHandlers } = await import('./auth');
-    registerAuthHandlers();
-
-    const loginHandler = handleMock.mock.calls.find(([channel]) => channel === 'auth:login-google')?.[1];
-    const result = await loginHandler();
-
-    expect(result).toEqual({
-      mode: 'error',
-      message: 'Web login bridge fallback is enabled but VITE_LANDING_PAGE_URL is missing.',
-    });
-    expect(openExternalMock).not.toHaveBeenCalled();
-    expect(sendMock).toHaveBeenCalledWith('auth:error', {
-      message: 'Web login bridge fallback is enabled but VITE_LANDING_PAGE_URL is missing.',
-    });
+    expect(sendMock).not.toHaveBeenCalled();
   });
 });
