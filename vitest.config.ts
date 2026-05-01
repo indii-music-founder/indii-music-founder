@@ -13,6 +13,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, './packages/renderer/src'),
       '@agents': path.resolve(import.meta.dirname, './agents'),
+      '@shared': path.resolve(import.meta.dirname, './packages/shared/src'),
     },
   },
   test: {
