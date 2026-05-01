@@ -1,101 +1,11 @@
 import log from 'electron-log';
-import { ipcMain, BrowserWindow, session, shell } from 'electron';
+import { ipcMain, BrowserWindow, session } from 'electron';
 import { authStorage } from '../services/AuthStorage';
+import { AuthService, type AuthTokens } from '@shared/index';
 
 // ============================================================================
-// SECURITY: Token Validation
+// SECURITY: Rate Limiting
 // ============================================================================
-
-/**
- * Validates that a JWT token has the expected structure and claims.
- * This is a basic structural validation - Firebase will do full cryptographic verification.
- */
-function validateTokenStructure(token: string): { valid: boolean; error?: string } {
-    if (!token || typeof token !== 'string') {
-        return { valid: false, error: 'Token is empty or not a string' };
-    }
-
-    // JWT must have 3 parts separated by dots
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-        return { valid: false, error: 'Token does not have valid JWT structure (expected 3 parts)' };
-    }
-
-    try {
-        // Decode the payload (middle part)
-        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-
-        // Validate required claims exist
-        if (!payload.iss) {
-            return { valid: false, error: 'Token missing issuer (iss) claim' };
-        }
-
-        // Validate issuer is from Google/Firebase
-        const validIssuers = [
-            'https://accounts.google.com',
-            'accounts.google.com',
-            'https://securetoken.google.com/indiios-v-1-1',
-        ];
-
-        if (!validIssuers.some(iss => payload.iss === iss || payload.iss.includes('securetoken.google.com'))) {
-            return { valid: false, error: `Token has unexpected issuer: ${payload.iss}` };
-        }
-
-        // Check expiration
-        if (payload.exp) {
-            const now = Math.floor(Date.now() / 1000);
-            if (payload.exp < now) {
-                return { valid: false, error: 'Token has expired' };
-            }
-        }
-
-        // Check audience for Firebase tokens
-        if (payload.aud && !payload.aud.includes('indiios')) {
-            // Allow Google OAuth tokens which have different audience
-            if (!payload.iss.includes('accounts.google.com')) {
-                return { valid: false, error: `Token has unexpected audience: ${payload.aud}` };
-            }
-        }
-
-        return { valid: true };
-    } catch (e) {
-        return { valid: false, error: `Failed to parse token payload: ${e}` };
-    }
-}
-
-/**
- * Validates the deep link URL origin and structure
- */
-function validateDeepLinkOrigin(url: string): { valid: boolean; error?: string } {
-    try {
-        const urlObj = new URL(url);
-
-        // Must be our custom protocol
-        if (urlObj.protocol !== 'indii-os:') {
-            return { valid: false, error: `Invalid protocol: ${urlObj.protocol}` };
-        }
-
-        // Must be the auth callback path
-        if (urlObj.hostname !== 'auth' || urlObj.pathname !== '/callback') {
-            return { valid: false, error: `Unexpected path: ${urlObj.hostname}${urlObj.pathname}` };
-        }
-
-        // Check for suspicious parameters that shouldn't be there
-        const suspiciousParams = ['redirect', 'next', 'url', 'goto', 'returnUrl'];
-        for (const param of suspiciousParams) {
-            if (urlObj.searchParams.has(param)) {
-                return { valid: false, error: `Suspicious parameter detected: ${param}` };
-            }
-        }
-
-        return { valid: true };
-    } catch (e) {
-        return { valid: false, error: `Failed to parse URL: ${e}` };
-    }
-}
-
-// In-memory storage for pending auth flows
-const _pendingVerifier: string | null = null;
 
 // Rate limiting for auth attempts
 const authAttempts = new Map<string, { count: number; lastAttempt: number }>();
@@ -144,7 +54,10 @@ export function __resetAuthRateLimit() {
     inFlightHandoffCodes.clear();
 }
 
-// Notify helper
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
 function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null }) {
     const wins = BrowserWindow.getAllWindows();
     log.info(`[Auth] Notifying ${wins.length} window(s) of successful auth`);
@@ -175,38 +88,9 @@ function notifyAuthError(message: string) {
     });
 }
 
-function notifyBridgeWarning(message: string) {
-    const wins = BrowserWindow.getAllWindows();
-    log.warn(`[Auth] Notifying ${wins.length} window(s) of bridge fallback: ${message}`);
-    wins.forEach(w => {
-        if (!w.isDestroyed() && !w.webContents.isDestroyed()) {
-            try {
-                w.webContents.send('auth:bridge-warning', { message });
-            } catch (err) {
-                log.warn(`[Auth] Failed to send auth bridge warning: ${err}`);
-            }
-        }
-    });
-}
-
-function isLegacyCallbackEnabled(): boolean {
-    if (process.env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true') {
-        return true;
-    }
-
-    if (!process.env.AUTH_HANDOFF_REDEEM_URL) {
-        log.warn('[Auth] Legacy callback compatibility is temporarily enabled because AUTH_HANDOFF_REDEEM_URL is not configured');
-        return true;
-    }
-
-    return false;
-}
-
-type DesktopHandoffRedeemResult = {
-    idToken: string;
-    accessToken?: string | null;
-    refreshToken?: string | null;
-};
+// ============================================================================
+// HANDOFF LOGIC
+// ============================================================================
 
 const consumedHandoffCodes = new Map<string, number>();
 const inFlightHandoffCodes = new Set<string>();
@@ -216,6 +100,7 @@ function markCodeAsConsumed(code: string) {
     const now = Date.now();
     consumedHandoffCodes.set(code, now);
 
+    // Occasional cleanup
     for (const [existingCode, consumedAt] of consumedHandoffCodes.entries()) {
         if (now - consumedAt > CONSUMED_CODE_TTL_MS) {
             consumedHandoffCodes.delete(existingCode);
@@ -223,7 +108,7 @@ function markCodeAsConsumed(code: string) {
     }
 }
 
-async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRedeemResult | null> {
+async function redeemDesktopHandoffCode(code: string): Promise<AuthTokens | null> {
     if (!code || code.length < 8) {
         throw new Error('Invalid handoff code');
     }
@@ -257,7 +142,7 @@ async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRed
             throw new Error(`Failed to redeem handoff code (${response.status})`);
         }
 
-        const payload = (await response.json()) as DesktopHandoffRedeemResult;
+        const payload = (await response.json()) as AuthTokens;
         if (!payload.idToken) throw new Error('Redeemed payload missing ID token');
 
         markCodeAsConsumed(code);
@@ -270,6 +155,10 @@ async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRed
         throw error;
     }
 }
+
+// ============================================================================
+// IPC HANDLERS
+// ============================================================================
 
 export function registerAuthHandlers() {
     ipcMain.handle('auth:login-google', async () => {
@@ -291,9 +180,9 @@ export function registerAuthHandlers() {
             return;
         }
 
-        const tokenValidation = validateTokenStructure(payload.idToken);
+        const tokenValidation = AuthService.validateTokenStructure(payload.idToken);
         if (!tokenValidation.valid) {
-            notifyAuthError('Invalid authentication token received');
+            notifyAuthError(tokenValidation.error || 'Invalid authentication token received');
             return;
         }
 
@@ -319,27 +208,25 @@ export function registerAuthHandlers() {
                 }
             });
         } catch (e) {
-            log.error("Logout failed:", e);
+            log.error("Logout failed:", e instanceof Error ? e.message : String(e));
         }
     });
 }
 
+// ============================================================================
+// DEEP LINK HANDLING
+// ============================================================================
+
 export async function handleDeepLink(url: string) {
     log.info(`[Auth] handleDeepLink received URL: ${url}`);
 
-    // =========================================================================
-    // SECURITY: Validate deep link origin and structure
-    // =========================================================================
-    const originValidation = validateDeepLinkOrigin(url);
+    const originValidation = AuthService.validateDeepLinkOrigin(url);
     if (!originValidation.valid) {
         log.error(`[Auth] SECURITY: Blocked invalid deep link - ${originValidation.error}`);
         notifyAuthError('Invalid authentication callback');
         return;
     }
 
-    // =========================================================================
-    // SECURITY: Rate limiting
-    // =========================================================================
     if (!checkRateLimit('deep-link')) {
         log.error('[Auth] SECURITY: Rate limit exceeded for deep link auth');
         notifyAuthError('Too many authentication attempts. Please wait.');
@@ -348,7 +235,6 @@ export async function handleDeepLink(url: string) {
 
     try {
         const urlObj = new URL(url);
-
         const code = urlObj.searchParams.get('code');
         const error = urlObj.searchParams.get('error');
 
@@ -366,9 +252,9 @@ export async function handleDeepLink(url: string) {
             const legacyIdToken = urlObj.searchParams.get('idToken');
             const legacyAccessToken = urlObj.searchParams.get('accessToken');
             const legacyRefreshToken = urlObj.searchParams.get('refreshToken');
-            const hasLegacyTokens = !!legacyIdToken || !!legacyAccessToken;
-            if (hasLegacyTokens) {
-                if (!isLegacyCallbackEnabled()) {
+            
+            if (legacyIdToken || legacyAccessToken) {
+                if (!AuthService.isLegacyCallbackEnabled(process.env)) {
                     log.warn('[Auth] Legacy token query parameters are disabled; expected one-time code');
                     notifyAuthError('Authentication link is out of date. Please sign in again.');
                     return;
@@ -388,26 +274,24 @@ export async function handleDeepLink(url: string) {
                 idToken = redeemed.idToken;
                 accessToken = redeemed.accessToken ?? null;
                 refreshToken = redeemed.refreshToken ?? null;
-            } else if (isLegacyCallbackEnabled()) {
-                log.warn('[Auth] Falling back to legacy callback tokens because AUTH_HANDOFF_REDEEM_URL is unset');
+            } else if (AuthService.isLegacyCallbackEnabled(process.env)) {
+                log.warn('[Auth] Falling back to legacy callback tokens because redemption failed or was skipped');
                 idToken = urlObj.searchParams.get('idToken');
                 accessToken = urlObj.searchParams.get('accessToken');
                 refreshToken = urlObj.searchParams.get('refreshToken');
                 if (!idToken) {
-                    notifyAuthError('Authentication handoff is not configured. Please update desktop auth settings.');
+                    notifyAuthError('Authentication handoff is not configured correctly.');
                     return;
                 }
             } else {
-                notifyAuthError('Authentication handoff is not configured. Please contact support.');
+                notifyAuthError('Authentication handoff failed. Please contact support.');
                 return;
             }
         }
 
-        // =====================================================================
-        // SECURITY: Validate token structure before accepting
-        // =====================================================================
+        // Final Security Checks
         if (idToken) {
-            const tokenValidation = validateTokenStructure(idToken);
+            const tokenValidation = AuthService.validateTokenStructure(idToken);
             if (!tokenValidation.valid) {
                 log.error(`[Auth] SECURITY: ID token validation failed - ${tokenValidation.error}`);
                 notifyAuthError('Invalid authentication token received');
@@ -416,27 +300,25 @@ export async function handleDeepLink(url: string) {
             log.info('[Auth] ID token structure validated successfully');
         }
 
-        if (accessToken) {
-            // Access tokens from Google OAuth have different structure, basic check only
-            if (accessToken.length < 20) {
-                log.error('[Auth] SECURITY: Access token suspiciously short');
-                notifyAuthError('Invalid access token received');
-                return;
-            }
+        if (accessToken && accessToken.length < 20) {
+            log.error('[Auth] SECURITY: Access token suspiciously short');
+            notifyAuthError('Invalid access token received');
+            return;
         }
 
         if (refreshToken) {
             log.info(`[Auth] Received Refresh Token (len: ${refreshToken.length})`);
-            authStorage.saveToken(refreshToken).catch((err: unknown) => log.error("[Auth] Failed to save refresh token: ", err));
+            authStorage.saveToken(refreshToken).catch((err: unknown) => 
+                log.error("[Auth] Failed to save refresh token: ", err instanceof Error ? err.message : String(err))
+            );
         }
 
         if (idToken) {
             log.info(`[Auth] Success: Tokens validated and accepted. ID: ${idToken.substring(0, 20)}..., Access: ${!!accessToken}`);
             notifyAuthSuccess({ idToken, accessToken });
-            return;
+        } else {
+            log.info('[Auth] No tokens or errors found in deep link.');
         }
-
-        log.info('[Auth] No tokens or errors found in deep link.');
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Invalid auth callback';
         if (message === 'Handoff code redemption already in progress') {
