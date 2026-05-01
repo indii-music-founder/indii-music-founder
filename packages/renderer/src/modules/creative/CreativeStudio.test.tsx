@@ -51,6 +51,8 @@ describe('CreativeStudio', () => {
             pendingPrompt: null,
             setPendingPrompt: mockSetPendingPrompt,
             setPrompt: mockSetPrompt,
+            setCreativePrompt: mockSetPrompt,
+            creativePrompt: '',
             setIsGenerating: vi.fn(), // Added missing property
             isGenerating: false,
             studioControls: {

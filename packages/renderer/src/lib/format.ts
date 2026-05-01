@@ -208,12 +208,13 @@ export function formatDuration(seconds: number): string {
  * Format a file size in human-readable form (e.g. "4.5 MB").
  */
 export function formatFileSize(bytes: number, locale?: string): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) {
-        return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(bytes / 1024)} KB`;
-    }
-    if (bytes < 1024 * 1024 * 1024) {
-        return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(bytes / (1024 * 1024))} MB`;
-    }
-    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(bytes / (1024 * 1024 * 1024))} GB`;
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const size = bytes / Math.pow(k, i);
+
+    return `${new Intl.NumberFormat(locale, {
+        maximumFractionDigits: i === 0 ? 0 : i >= 3 ? 2 : 1,
+    }).format(size)} ${sizes[i]}`;
 }

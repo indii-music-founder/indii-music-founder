@@ -17,14 +17,14 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
         setSelectedItem,
         setActiveReferenceImage,
         setViewMode,
-        setPrompt,
+        setCreativePrompt,
         userProfile
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         setSelectedItem: state.setSelectedItem,
         setActiveReferenceImage: state.setActiveReferenceImage,
         setViewMode: state.setViewMode,
-        setPrompt: state.setPrompt,
+        setCreativePrompt: state.setCreativePrompt,
         userProfile: state.userProfile
     })));
     const toast = useToast();
@@ -66,7 +66,7 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
             <button
                 onClick={() => {
                     if (generatedHistory.length > 0) {
-                        setPrompt(generatedHistory[0]!.prompt);
+                        setCreativePrompt(generatedHistory[0]!.prompt);
                         toast.success("Prompt copied from latest image");
                     }
                 }}

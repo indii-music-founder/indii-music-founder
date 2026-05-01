@@ -486,3 +486,46 @@
   -webkit-background-clip: text;
   animation: shine 3s infinite linear;
 }
+/* Startup fallback (CSP-safe: no inline styles/scripts) */
+.startup-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #0a0a0f;
+  color: #e4e4e7;
+  font-family: system-ui, sans-serif;
+  padding: 2rem;
+  text-align: center;
+}
+
+.startup-fallback__card {
+  max-width: 480px;
+}
+
+.startup-fallback__title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #a78bfa;
+}
+
+.startup-fallback__message {
+  margin-bottom: 1rem;
+  opacity: 0.85;
+}
+
+.startup-fallback__reason {
+  margin-bottom: 1.5rem;
+  opacity: 0.65;
+  font-size: 0.9rem;
+}
+
+.startup-fallback__reload {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+}

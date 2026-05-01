@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback, memo, useId } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef, memo, useId } from 'react';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
-import { ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronRight, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -15,13 +15,23 @@ interface PromptBuilderProps {
     setSequence?: (seq: SequenceBlock[]) => void;
     bpm?: number;
     setBpm?: (bpm: number) => void;
-    /** Current prompt text from the input field */
+    /** Current prompt text from the input field. */
     currentPrompt?: string;
-    /** Callback to replace the prompt text with the improved version */
-    onPromptImproved?: (improvedPrompt: string) => void;
+    /**
+     * Replace the entire prompt. Used by the AI improve action and by chip
+     * removal. When omitted, the chip rail and Improve-with-AI button hide.
+     */
+    onSetPrompt?: (prompt: string) => void;
 }
 
-// Memoized tag button to prevent re-renders
+const TAG_SEPARATOR = ', ';
+
+const splitPromptSegments = (prompt: string): string[] =>
+    prompt
+        .split(',')
+        .map(seg => seg.trim())
+        .filter(seg => seg.length > 0);
+
 const TagButton = memo(({ tag, onClick, variant = 'creative' }: { tag: string; onClick: () => void; variant?: 'creative' | 'royalties' }) => (
     <button
         onClick={onClick}
@@ -102,13 +112,13 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
 });
 CategoryDropdown.displayName = 'CategoryDropdown';
 
-function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, bpm, setBpm, currentPrompt = '', onPromptImproved }: PromptBuilderProps) {
+function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, bpm, setBpm, currentPrompt = '', onSetPrompt }: PromptBuilderProps) {
     const [openCategory, setOpenCategory] = useState<string | null>(null);
     const [isImproving, setIsImproving] = useState(false);
     const brandKit = useStore(useShallow(state => state.userProfile?.brandKit));
     const toast = useToast();
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    // Memoize brandTags computation
     const brandTags = useMemo(() => [
         brandKit?.brandDescription,
         brandKit?.releaseDetails?.mood,
@@ -117,14 +127,43 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
         brandKit?.fonts ? `Font: ${brandKit.fonts}` : null
     ].filter(Boolean) as string[], [brandKit]);
 
-    // Memoize tag click handler
+    const segments = useMemo(() => splitPromptSegments(currentPrompt), [currentPrompt]);
+
+    // Tag click no longer auto-closes the popover — users can pile on multiple
+    // tags from the same category without round-tripping. Esc / outside-click
+    // closes it.
     const handleTagClick = useCallback((tag: string) => {
         onAddTag(tag);
-        setOpenCategory(null);
     }, [onAddTag]);
 
+    const handleRemoveSegment = useCallback((index: number) => {
+        if (!onSetPrompt) return;
+        const next = segments.filter((_, i) => i !== index).join(TAG_SEPARATOR);
+        onSetPrompt(next);
+    }, [segments, onSetPrompt]);
+
+    useEffect(() => {
+        if (!openCategory) return;
+
+        const handlePointerDown = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setOpenCategory(null);
+            }
+        };
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setOpenCategory(null);
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [openCategory]);
+
     const handleImprove = useCallback(async () => {
-        if (!currentPrompt.trim() || !onPromptImproved) return;
+        if (!currentPrompt.trim() || !onSetPrompt) return;
 
         setIsImproving(true);
         try {
@@ -132,18 +171,46 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
                 rawPrompt: currentPrompt,
                 mode: mode as 'image' | 'video'
             });
-            onPromptImproved(result.improved);
+            onSetPrompt(result.improved);
             toast.success(`Prompt improved: ${result.reasoning}`);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to improve prompt');
         } finally {
             setIsImproving(false);
         }
-    }, [currentPrompt, mode, onPromptImproved, toast]);
+    }, [currentPrompt, mode, onSetPrompt, toast]);
 
     return (
-        <div className="flex flex-col gap-2 p-2 bg-background/20 border-b border-white/5">
+        <div ref={containerRef} className="flex flex-col gap-2 p-2 bg-background/20 border-b border-white/5">
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Prompt Engineering</p>
+
+            {onSetPrompt && segments.length > 0 && (
+                <div
+                    role="list"
+                    aria-label="Selected prompt tags"
+                    data-testid="prompt-builder-chip-rail"
+                    className="flex flex-wrap gap-1.5 mb-1"
+                >
+                    {segments.map((segment, index) => (
+                        <span
+                            key={`${segment}-${index}`}
+                            role="listitem"
+                            className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-[10px] bg-dept-creative/15 text-dept-creative border border-dept-creative/30 rounded-full"
+                        >
+                            <span>{segment}</span>
+                            <button
+                                onClick={() => handleRemoveSegment(index)}
+                                aria-label={`Remove ${segment}`}
+                                data-testid={`chip-remove-${segment}`}
+                                className="rounded-full hover:bg-dept-creative/30 p-0.5 transition-colors"
+                            >
+                                <X size={10} />
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
+
             <div className="flex flex-wrap gap-2">
                 {/* Brand Category */}
                 <CategoryDropdown
@@ -168,7 +235,7 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
                 ))}
 
                 {/* AI Prompt Improver Button */}
-                {onPromptImproved && (
+                {onSetPrompt && (
                     <button
                         onClick={handleImprove}
                         disabled={isImproving || !currentPrompt.trim()}
@@ -191,11 +258,11 @@ function PromptBuilder({ onAddTag, mode = 'image', sequence = [], setSequence, b
 
             {mode === 'video' && setSequence && setBpm && (
                 <div className="mt-4 pt-4 border-t border-white/5">
-                    <SequenceTimeline 
-                        sequence={sequence} 
-                        onChange={setSequence} 
-                        bpm={bpm} 
-                        onBpmChange={setBpm} 
+                    <SequenceTimeline
+                        sequence={sequence}
+                        onChange={setSequence}
+                        bpm={bpm}
+                        onBpmChange={setBpm}
                     />
                 </div>
             )}

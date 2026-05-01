@@ -46,7 +46,6 @@ import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
 import { UploadQueueMonitor } from '@/components/shared/UploadQueueMonitor';
 import { BackgroundJobMonitor } from '@/components/shared/BackgroundJobMonitor';
 import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
-import { AudioVisualizer } from '@/components/shared/AudioVisualizer';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 
 import { cleanupLocalStorage } from '@/lib/storageHealth';
@@ -103,6 +102,9 @@ const FoundersPortal = lazy(() => import('../modules/founders/FoundersPortal'));
 const VideoPopout = lazy(() => import('../modules/video/editor/VideoPopout'));
 const RegistrationCenter = lazy(() => import('../modules/registration/RegistrationCenter'));
 const MaestroModule = lazy(() => import('../modules/maestro/MaestroModule'));
+
+// Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
+const AudioVisualizer = lazy(() => import('@/components/shared/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -570,8 +572,10 @@ export default function App() {
                                             {/* Module Ambient Background */}
                                             <ModuleAmbientBackground />
 
-                                            {/* Audio Visualizer (Background Wave Mesh) */}
-                                            <AudioVisualizer />
+                                            {/* Audio Visualizer (Background Wave Mesh) — lazy-loaded to defer Three.js init */}
+                                            <Suspense fallback={null}>
+                                                <AudioVisualizer />
+                                            </Suspense>
 
                                             {/* Mobile Header — phone only */}
                                             {showChrome && (
