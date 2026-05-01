@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { ipcMain, BrowserWindow, session } from 'electron';
+import { ipcMain, BrowserWindow, session, shell } from 'electron';
 import { authStorage } from '../services/AuthStorage';
 
 // ============================================================================
@@ -246,37 +246,6 @@ export function registerAuthHandlers() {
         // cross-app handoff failures and stuck loading states.
         log.warn('[Auth] auth:login-google IPC called, but external login bridge is disabled. Use renderer Firebase auth flow.');
         return { ok: false, reason: 'external-login-bridge-disabled' };
-        const enableBridgeFallback = process.env.INDIIOS_ENABLE_LOGIN_BRIDGE === 'true';
-        const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL;
-
-        if (enableBridgeFallback && LOGIN_BRIDGE_URL) {
-            const bridgeWarning = 'Google login is using the web login bridge fallback.';
-            log.warn(`[Auth] ${bridgeWarning} URL: ${LOGIN_BRIDGE_URL}`);
-            notifyBridgeWarning(bridgeWarning);
-            await shell.openExternal(LOGIN_BRIDGE_URL);
-            return { mode: 'bridge' };
-        }
-
-        if (enableBridgeFallback && !LOGIN_BRIDGE_URL) {
-            const errorMessage = 'Web login bridge fallback is enabled but VITE_LANDING_PAGE_URL is missing.';
-            log.error(`[Auth] ${errorMessage}`);
-            notifyAuthError(errorMessage);
-            return { mode: 'error', message: errorMessage };
-        }
-
-        log.info('[Auth] Starting native desktop Google OAuth flow.');
-        const wins = BrowserWindow.getAllWindows();
-        wins.forEach(w => {
-            if (!w.isDestroyed() && !w.webContents.isDestroyed()) {
-                try {
-                    w.webContents.send('auth:begin-native-google');
-                } catch (err) {
-                    log.warn(`[Auth] Failed to signal native Google auth start: ${err}`);
-                }
-            }
-        });
-
-        return { mode: 'native' };
     });
 
     ipcMain.handle('auth:complete-native-google', async (_event, payload: { idToken?: string; accessToken?: string | null; error?: string }) => {
