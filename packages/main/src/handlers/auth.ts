@@ -182,6 +182,63 @@ function notifyBridgeWarning(message: string) {
     });
 }
 
+function isLegacyCallbackEnabled(): boolean {
+    return process.env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true';
+}
+
+type DesktopHandoffRedeemResult = {
+    idToken: string;
+    accessToken?: string | null;
+    refreshToken?: string | null;
+};
+
+const consumedHandoffCodes = new Map<string, number>();
+const CONSUMED_CODE_TTL_MS = 5 * 60 * 1000;
+
+function markCodeAsConsumed(code: string) {
+    const now = Date.now();
+    consumedHandoffCodes.set(code, now);
+
+    for (const [existingCode, consumedAt] of consumedHandoffCodes.entries()) {
+        if (now - consumedAt > CONSUMED_CODE_TTL_MS) {
+            consumedHandoffCodes.delete(existingCode);
+        }
+    }
+}
+
+async function redeemDesktopHandoffCode(code: string): Promise<DesktopHandoffRedeemResult> {
+    if (!code || code.length < 8) {
+        throw new Error('Invalid handoff code');
+    }
+
+    if (consumedHandoffCodes.has(code)) {
+        throw new Error('Handoff code already redeemed');
+    }
+
+    const endpoint = process.env.AUTH_HANDOFF_REDEEM_URL;
+    if (!endpoint) {
+        throw new Error('Handoff redemption endpoint not configured');
+    }
+
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+    });
+
+    if (!response.ok) {
+        if (response.status === 409) throw new Error('Handoff code already redeemed');
+        if (response.status === 410 || response.status === 400) throw new Error('Handoff code expired or invalid');
+        throw new Error(`Failed to redeem handoff code (${response.status})`);
+    }
+
+    const payload = (await response.json()) as DesktopHandoffRedeemResult;
+    if (!payload.idToken) throw new Error('Redeemed payload missing ID token');
+
+    markCodeAsConsumed(code);
+    return payload;
+}
+
 export function registerAuthHandlers() {
     ipcMain.handle('auth:login-google', async () => {
         // NOTE: Explicitly disconnected from the external landing/login bridge.
@@ -266,7 +323,7 @@ export function registerAuthHandlers() {
     });
 }
 
-export function handleDeepLink(url: string) {
+export async function handleDeepLink(url: string) {
     log.info(`[Auth] handleDeepLink received URL: ${url}`);
 
     // =========================================================================
@@ -291,7 +348,7 @@ export function handleDeepLink(url: string) {
     try {
         const urlObj = new URL(url);
 
-        const _code = urlObj.searchParams.get('code');
+        const code = urlObj.searchParams.get('code');
         const error = urlObj.searchParams.get('error');
 
         if (error) {
@@ -300,9 +357,36 @@ export function handleDeepLink(url: string) {
             return;
         }
 
-        const idToken = urlObj.searchParams.get('idToken');
-        const accessToken = urlObj.searchParams.get('accessToken');
-        const refreshToken = urlObj.searchParams.get('refreshToken');
+        let idToken: string | null = null;
+        let accessToken: string | null = null;
+        let refreshToken: string | null = null;
+
+        if (!code) {
+            const legacyIdToken = urlObj.searchParams.get('idToken');
+            const legacyAccessToken = urlObj.searchParams.get('accessToken');
+            const legacyRefreshToken = urlObj.searchParams.get('refreshToken');
+            const hasLegacyTokens = !!legacyIdToken || !!legacyAccessToken;
+            if (hasLegacyTokens) {
+                if (!isLegacyCallbackEnabled()) {
+                    log.warn('[Auth] Legacy token query parameters are disabled; expected one-time code');
+                    notifyAuthError('Authentication link is out of date. Please sign in again.');
+                    return;
+                }
+
+                log.warn('[Auth] Using temporary legacy token callback compatibility mode');
+                idToken = legacyIdToken;
+                accessToken = legacyAccessToken;
+                refreshToken = legacyRefreshToken;
+            } else {
+                log.info('[Auth] No code found in callback URL');
+                return;
+            }
+        } else {
+            const redeemed = await redeemDesktopHandoffCode(code);
+            idToken = redeemed.idToken;
+            accessToken = redeemed.accessToken ?? null;
+            refreshToken = redeemed.refreshToken ?? null;
+        }
 
         // =====================================================================
         // SECURITY: Validate token structure before accepting
@@ -337,9 +421,10 @@ export function handleDeepLink(url: string) {
             return;
         }
 
-        log.info("[Auth] No tokens or errors found in deep link.");
+        log.info('[Auth] No tokens or errors found in deep link.');
     } catch (e) {
+        const message = e instanceof Error ? e.message : 'Invalid auth callback';
         log.error(`[Auth] Exception in handleDeepLink: ${String(e)}`);
-        notifyAuthError('Invalid auth callback');
+        notifyAuthError(message);
     }
 }
