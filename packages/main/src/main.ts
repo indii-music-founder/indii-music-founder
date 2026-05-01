@@ -66,7 +66,7 @@ try {
 log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)}`);
 
 import { registerSystemHandlers } from './handlers/system';
-// import { registerAuthHandlers } from './handlers/auth';
+import { registerAuthHandlers } from './handlers/auth';
 import { handleDeepLink } from './handlers/deeplink';
 import { setupMenu } from './menu';
 import { registerAudioHandlers } from './handlers/audio';
@@ -377,7 +377,7 @@ if (!gotTheLock) {
         applyCSP();
 
         registerSystemHandlers();
-        // registerAuthHandlers(); // Removed
+        registerAuthHandlers();
         registerAudioHandlers();
         registerNetworkHandlers();
         registerCredentialHandlers();

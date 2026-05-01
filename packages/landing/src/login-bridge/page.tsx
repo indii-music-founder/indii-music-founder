@@ -3,16 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from 'firebase/auth';
 import app from '../lib/firebase';
+import { AuthService, type AuthTokens } from '@shared/index';
 
 type Status = 'loading' | 'ready' | 'authenticating' | 'success' | 'deepLinkFallback' | 'error';
 
 const DEEP_LINK_TIMEOUT_MS = 3000;
-
-type CallbackPayload = {
-    code?: string;
-    idToken?: string;
-    accessToken?: string | null;
-};
 
 export default function LoginBridge() {
     const [status, setStatus] = useState<Status>('loading');
@@ -40,7 +35,7 @@ export default function LoginBridge() {
         };
     }, []);
 
-    const redirectToApp = ({ code, idToken, accessToken }: CallbackPayload) => {
+    const redirectToApp = ({ code, idToken, accessToken }: Partial<AuthTokens> & { code?: string }) => {
         setStatus('success');
         setError(null);
         try {
@@ -136,16 +131,20 @@ export default function LoginBridge() {
             } else {
                 redirectToApp({ idToken: credential.idToken, accessToken: credential.accessToken });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Google sign-in failed';
             console.error('Google Sign-In Error:', err);
-            const code = typeof err === 'object' && err && 'code' in err ? String((err as { code?: string }).code ?? '') : '';
-            if (code === 'auth/popup-closed-by-user' || code === 'auth/popup-blocked') {
-                setError('Sign-in popup was closed or blocked. Allow popups for this site and try again.');
-                setStatus('ready');
-                return;
+            
+            if (typeof err === 'object' && err !== null && 'code' in err) {
+                const code = (err as { code: string }).code;
+                if (code === 'auth/popup-closed-by-user' || code === 'auth/popup-blocked') {
+                    setError('Sign-in popup was closed or blocked. Allow popups for this site and try again.');
+                    setStatus('ready');
+                    return;
+                }
             }
-            const message = typeof err === 'object' && err && 'message' in err ? String((err as { message?: string }).message ?? '') : '';
-            setError(message || 'Google sign-in failed');
+            
+            setError(message);
             setStatus('error');
         }
     };
