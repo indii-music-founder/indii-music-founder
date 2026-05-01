@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from 'firebase/auth';
 import app from '../lib/firebase';
-import { AuthService, type AuthTokens } from '@shared/index';
 
 type Status = 'loading' | 'ready' | 'authenticating' | 'success' | 'deepLinkFallback' | 'error';
 
@@ -35,7 +34,7 @@ export default function LoginBridge() {
         };
     }, []);
 
-    const redirectToApp = ({ code, idToken, accessToken }: Partial<AuthTokens> & { code?: string }) => {
+    const redirectToApp = ({ code, idToken, accessToken }: { idToken?: string; accessToken?: string | null; code?: string }) => {
         setStatus('success');
         setError(null);
         try {
