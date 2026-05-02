@@ -72,12 +72,14 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     const [expandedSection, setExpandedSection] = useState<string>('mixer');
 
     const estimatedCost = useMemo(() => {
-        if (whiskState.targetMedia === 'image') return null;
-        const is4k = studioControls.resolution === '4k';
-        if (studioControls.model === 'fast') return is4k ? 0.15 : 0.08;
-        if (studioControls.model === 'pro') return is4k ? 0.80 : 0.50;
+        if (!whiskState || whiskState.targetMedia === 'image') return null;
+        const is4k = studioControls?.resolution === '4k';
+        if (studioControls?.model === 'fast') return is4k ? 0.15 : 0.08;
+        if (studioControls?.model === 'pro') return is4k ? 0.80 : 0.50;
         return 0;
-    }, [whiskState.targetMedia, studioControls.model, studioControls.resolution]);
+    }, [whiskState?.targetMedia, studioControls?.model, studioControls?.resolution]);
+
+    if (!whiskState) return null;
 
     return (
         <div className="flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90">
