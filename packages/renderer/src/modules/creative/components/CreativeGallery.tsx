@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from '
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw, Sparkles } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
@@ -227,6 +227,11 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
             {item.type === 'music' && (
                 <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500/50 rounded-full flex items-center justify-center pointer-events-none">
                     <Download size={10} className="text-white" />
+                </div>
+            )}
+            {item.origin === 'generated' && (
+                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white/80 text-[8px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none z-10 border border-white/10">
+                    <Sparkles size={8} /> SynthID
                 </div>
             )}
         </div>
