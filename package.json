@@ -126,7 +126,8 @@
         "owner": "the-walking-agency-det",
         "private": true,
         "provider": "github",
-        "repo": "indiiOS-Clean"
+        "repo": "indiiOS-Clean",
+        "releaseType": "release"
       }
     ],
     "win": {
