@@ -32,7 +32,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Square size={20} aria-hidden="true" />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-50">Add Rectangle</TooltipContent>
+                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Add Rectangle</TooltipContent>
                 </Tooltip>
                 
                 <Tooltip>
@@ -41,7 +41,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <CircleIcon size={20} aria-hidden="true" />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-50">Add Circle</TooltipContent>
+                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Add Circle</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -50,7 +50,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Type size={20} aria-hidden="true" />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-50">Add Text</TooltipContent>
+                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Add Text</TooltipContent>
                 </Tooltip>
 
                 <div className="w-8 h-px bg-gray-800 my-2" role="separator" />
@@ -61,7 +61,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Scan size={20} aria-hidden="true" />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-50">Detect Objects via AI</TooltipContent>
+                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Detect Objects via AI</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -70,7 +70,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-50">Clear Canvas</TooltipContent>
+                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Clear Canvas</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -79,7 +79,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                             <Wand2 size={20} aria-hidden="true" />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-50">Magic Fill mode</TooltipContent>
+                    <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 z-[9999]">Magic Fill mode</TooltipContent>
                 </Tooltip>
             </div>
         </TooltipProvider>

@@ -82,9 +82,9 @@ export class WhiskService {
     }
 
     /**
-     * Prepares source images for the generation request based on the "Precise" toggle.
+     * Prepares source media for the generation request based on the "Precise" toggle.
      */
-    static getSourceImages(whiskState: WhiskState): { mimeType: string; data: string }[] | undefined {
+    static getSourceMedia(whiskState: WhiskState): { mimeType: string; data: string }[] | undefined {
         if (!whiskState.preciseReference) return undefined;
 
         const allActiveRefs = [
@@ -93,11 +93,11 @@ export class WhiskService {
             ...whiskState.styles.filter(i => i.checked)
         ];
 
-        const imageRefs = allActiveRefs.filter(i => i.type === 'image');
+        const mediaRefs = allActiveRefs.filter(i => i.type === 'image' || i.type === 'video');
 
-        if (imageRefs.length === 0) return undefined;
+        if (mediaRefs.length === 0) return undefined;
 
-        return imageRefs.map(item => {
+        return mediaRefs.map(item => {
             const [mimeType, b64] = item.content.split(',');
             const pureMime = mimeType!.split(':')[1]!.split(';')[0]!;
             return { mimeType: pureMime, data: b64! };

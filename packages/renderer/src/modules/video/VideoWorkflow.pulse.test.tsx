@@ -177,7 +177,7 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
         // 1. IDLE STATE
         expect(screen.getByText(/Director's Chair/i)).toBeInTheDocument();
 
-        const input = screen.getByTestId('director-prompt-input');
+        const input = screen.getByTestId('direct-prompt-input');
         await user.type(input, 'A long cinematic journey');
 
         // 2. TRIGGER GENERATION

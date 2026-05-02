@@ -51,13 +51,17 @@ const NavItem = React.memo(function NavItem({
                             }
                             onNavigate(item.id);
                         }}
-                        style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
                         className={cn(
                             "w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
                             isActive
-                                ? `${colors.text} font-bold bg-white/[0.12] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10`
+                                ? `${colors.text} font-bold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10`
                                 : "text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
                         )}
+                        style={{
+                            '--dept-color': `var(${colors.cssVar})`,
+                            backgroundColor: isActive ? `color-mix(in srgb, var(${colors.cssVar}) 15%, transparent)` : undefined,
+                            borderLeft: isActive ? `3px solid var(${colors.cssVar})` : '3px solid transparent'
+                        } as React.CSSProperties}
                         data-testid={`nav-item-${item.id}`}
                         aria-current={isActive ? 'page' : undefined}
                         aria-label={!isSidebarOpen ? item.label : undefined}
