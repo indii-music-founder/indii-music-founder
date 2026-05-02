@@ -74,7 +74,7 @@ vi.mock('@/core/store', () => {
             motion: [],
             preciseReference: false
         },
-        studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24 }
+        studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24, model: 'fast' }
     }));
     (mockStore as any).subscribe = vi.fn();
     return { useStore: mockStore };
@@ -230,7 +230,8 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                     resolution: '720p',
                     aspectRatio: '16:9',
                     duration: 4,
-                    thinking: true
+                    thinking: true,
+                    model: 'fast'
                 },
                 // Mock properties accessed via getState
                 videoInputs: state.videoInputs,
@@ -282,7 +283,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         const directorTab = screen.getByTestId('director-view-btn');
         fireEvent.click(directorTab);
 
-        const promptInput = screen.getByTestId('director-prompt-input');
+        const promptInput = screen.getByTestId('direct-prompt-input');
         fireEvent.change(promptInput, { target: { value: 'Cinematic morph' } });
 
         // --- STEP 5: Generate ---

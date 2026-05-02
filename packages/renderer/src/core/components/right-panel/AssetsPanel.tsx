@@ -56,21 +56,21 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
 
         // Uploaded images (deduplicate)
         uploadedImages.forEach(item => {
-            if (!assets.find(a => a.id === item.id)) {
+            if (!assets.find(a => a.id === item.id || (a.url && a.url === item.url))) {
                 assets.push(item);
             }
         });
 
         // Uploaded audio (deduplicate)
         uploadedAudio.forEach(item => {
-            if (!assets.find(a => a.id === item.id)) {
+            if (!assets.find(a => a.id === item.id || (a.url && a.url === item.url))) {
                 assets.push(item);
             }
         });
 
         // File nodes → convert to pseudo-HistoryItem for display
         fileNodes.forEach(node => {
-            if (!assets.find(a => a.id === node.id)) {
+            if (!assets.find(a => a.id === node.id || (a.url && a.url === node.data?.url))) {
                 const mime = node.data?.mimeType || '';
                 const nodeType = node.type === 'folder' ? 'text' : (
                     mime.startsWith('image') ? 'image' :

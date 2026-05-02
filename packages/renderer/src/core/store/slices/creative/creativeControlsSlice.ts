@@ -36,7 +36,7 @@ export type TargetMedia = 'image' | 'video' | 'both';
 
 export interface WhiskItem {
     id: string;
-    type: 'text' | 'image';
+    type: 'text' | 'image' | 'video';
     content: string; // user text or original image data/url
     aiCaption?: string; // Generated caption for images
     checked: boolean;
@@ -97,6 +97,10 @@ export interface CreativeControlsSlice {
     // Mode & Inputs
     generationMode: 'image' | 'video';
     setGenerationMode: (mode: 'image' | 'video') => void;
+
+    // Persistence flag
+    isSessionPersistent: boolean;
+    setSessionPersistent: (persistent: boolean) => void;
 
     activeReferenceImage: HistoryItem | null;
     setActiveReferenceImage: (img: HistoryItem | null) => void;
@@ -239,6 +243,9 @@ export function buildCreativeControlsState(
 
         generationMode: 'image',
         setGenerationMode: (mode) => set({ generationMode: mode }),
+
+        isSessionPersistent: true,
+        setSessionPersistent: (persistent) => set({ isSessionPersistent: persistent }),
 
         activeReferenceImage: null,
         setActiveReferenceImage: (img) => set({ activeReferenceImage: img }),

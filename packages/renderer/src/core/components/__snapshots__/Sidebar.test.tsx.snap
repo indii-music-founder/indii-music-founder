@@ -120,7 +120,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-brand"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -137,7 +137,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-road"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -154,7 +154,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-campaign"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -171,7 +171,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-agent"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -188,7 +188,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publicist"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -205,7 +205,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-creative"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -222,7 +222,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-video"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -239,7 +239,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-maestro"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -265,7 +265,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-marketing"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -282,7 +282,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-social"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -299,7 +299,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-legal"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -316,7 +316,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publishing"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -333,7 +333,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-finance"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -350,7 +350,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-distribution"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -367,7 +367,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-licensing"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -384,7 +384,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-merch"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -401,7 +401,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-registration"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -427,7 +427,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-audio-analyzer"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -444,7 +444,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-workflow"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -461,7 +461,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-knowledge"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -478,7 +478,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-memory"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -495,7 +495,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-observability"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -512,7 +512,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-settings"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -738,7 +738,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-brand"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -759,7 +759,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-road"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -780,7 +780,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-campaign"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -801,7 +801,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-agent"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -822,7 +822,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publicist"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -843,7 +843,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-creative"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -864,7 +864,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-video"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -885,7 +885,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-maestro"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -929,7 +929,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-marketing"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -950,7 +950,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-social"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -971,7 +971,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-legal"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -992,7 +992,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publishing"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1013,7 +1013,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-finance"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1034,7 +1034,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-distribution"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1055,7 +1055,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-licensing"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1076,7 +1076,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-merch"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1097,7 +1097,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-registration"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1141,7 +1141,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-audio-analyzer"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1162,7 +1162,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-workflow"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1183,7 +1183,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-knowledge"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1204,7 +1204,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-memory"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1225,7 +1225,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-observability"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -1246,7 +1246,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-settings"
-          style="--dept-color: var(--color-test);"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
           <div
             class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"

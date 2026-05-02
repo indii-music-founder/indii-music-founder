@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { User, X, Upload, AlertTriangle, Grid3x3, Eye, Palette, Pencil } from 'lucide-react';
+import { User, X, Upload, AlertTriangle, Grid3x3, Eye, Palette, Pencil, ImagePlus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
@@ -39,13 +39,14 @@ interface CharacterRefDimensions {
 
 export const CharacterLibrary: React.FC = () => {
     const toast = useToast();
-    const { characterReferences, addCharacterReference, removeCharacterReference, updateCharacterReference, currentProjectId, addUploadedImage } = useStore(useShallow(state => ({
+    const { characterReferences, addCharacterReference, removeCharacterReference, updateCharacterReference, currentProjectId, addUploadedImage, generatedHistory } = useStore(useShallow(state => ({
         characterReferences: state.characterReferences,
         addCharacterReference: state.addCharacterReference,
         removeCharacterReference: state.removeCharacterReference,
         updateCharacterReference: state.updateCharacterReference,
         currentProjectId: state.currentProjectId,
-        addUploadedImage: state.addUploadedImage
+        addUploadedImage: state.addUploadedImage,
+        generatedHistory: state.generatedHistory
     })));
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +57,7 @@ export const CharacterLibrary: React.FC = () => {
     const [isDragging, setIsDragging] = useState(false);
     const dragCounterRef = useRef(0); // Track nested drag events to prevent flicker
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
+    const [showAddOptions, setShowAddOptions] = useState(false);
     const nameInputRef = useRef<HTMLInputElement>(null);
 
     /**
@@ -137,6 +139,31 @@ export const CharacterLibrary: React.FC = () => {
             setIsValidating(false);
         }
     }, [characterReferences.length, processFile, toast]);
+
+    const handleSelectGeneratedImage = useCallback(async (historyItem: any) => {
+        if (characterReferences.length >= 3) {
+            toast.error("Maximum 3 character references allowed.");
+            return;
+        }
+
+        const dims = await getImageDimensions(historyItem.url).catch(() => ({ width: 1024, height: 1024 }));
+
+        const newItem = {
+            id: crypto.randomUUID(),
+            url: historyItem.url,
+            prompt: historyItem.prompt || "Creative Director Generated",
+            type: 'image' as const,
+            timestamp: Date.now(),
+            category: 'headshot' as const,
+            projectId: currentProjectId || 'default-project'
+        };
+
+        addUploadedImage(newItem);
+        addCharacterReference({ image: newItem, referenceType: 'subject', name: `Character ${characterReferences.length + 1}` });
+        setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
+        setShowAddOptions(false);
+        toast.success(`Character reference added from Creative Director.`);
+    }, [characterReferences.length, addUploadedImage, addCharacterReference, currentProjectId, toast]);
 
     /** Drag-and-Drop Handlers */
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -354,7 +381,7 @@ export const CharacterLibrary: React.FC = () => {
 
                 {characterReferences.length < 3 && (
                     <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => setShowAddOptions(true)}
                         disabled={isValidating}
                         className="group relative bg-black/40 aspect-square rounded-lg border border-dashed border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                     >
@@ -376,6 +403,45 @@ export const CharacterLibrary: React.FC = () => {
                     </button>
                 )}
             </div>
+
+            {/* Add Options Modal */}
+            {showAddOptions && (
+                <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-8" onClick={() => setShowAddOptions(false)}>
+                    <div className="w-full max-w-3xl bg-[#0a0a0a] border border-white/10 rounded-xl flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
+                            <h3 className="text-sm font-bold text-white flex items-center gap-2"><ImagePlus size={16} className="text-blue-400" /> ADD CHARACTER REFERENCE</h3>
+                            <button onClick={() => setShowAddOptions(false)} className="text-gray-500 hover:text-white transition-colors"><X size={16} /></button>
+                        </div>
+                        <div className="p-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                            <div className="mb-6">
+                                <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Recently Generated (Creative Director)</h4>
+                                {generatedHistory.filter(h => h.type === 'image' && h.url).length > 0 ? (
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {generatedHistory.filter(h => h.type === 'image' && h.url).slice(0, 8).map((img, idx) => (
+                                            <div key={img.id || idx} onClick={() => handleSelectGeneratedImage(img)} className="aspect-square bg-black rounded-lg border border-white/10 hover:border-blue-500/50 cursor-pointer overflow-hidden relative group">
+                                                <img src={img.url} alt="Generated" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                    <span className="text-[10px] font-bold text-white bg-blue-600/80 px-2 py-1 rounded">Select</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-xs text-gray-500 italic p-4 text-center bg-white/5 rounded-lg border border-dashed border-white/10">No recent images generated yet. Go to Creative Director to make some!</div>
+                                )}
+                            </div>
+                            <div className="border-t border-white/10 pt-6">
+                                <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Upload from Computer</h4>
+                                <button onClick={() => { setShowAddOptions(false); fileInputRef.current?.click(); }} className="w-full flex flex-col items-center justify-center py-8 rounded-xl border border-dashed border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 transition-all cursor-pointer group">
+                                    <Upload size={24} className="text-gray-500 mb-2 group-hover:text-blue-400 transition-colors" />
+                                    <span className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Select File</span>
+                                    <span className="text-[10px] text-gray-500 mt-1">PNG, JPEG, or WebP (Max 10MB)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <input
                 type="file"

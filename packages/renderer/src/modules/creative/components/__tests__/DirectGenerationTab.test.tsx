@@ -29,20 +29,28 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
+import { create } from 'zustand';
+
+const useMockStore = create<any>((set) => ({
+    studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
+    creativePrompt: '',
+    setCreativePrompt: (val: string) => set({ creativePrompt: val }),
+    addToHistory: vi.fn(),
+    currentProjectId: 'test-project',
+    whiskState: {},
+    setSelectedItem: vi.fn(),
+    setViewMode: vi.fn(),
+    videoInputs: { ingredients: [] },
+    setVideoInputs: vi.fn(),
+    generationMode: 'image',
+    setGenerationMode: (val: string) => set({ generationMode: val }),
+    isPromptBuilderOpen: false,
+    togglePromptBuilder: () => set((state: any) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen }))
+}));
+
 // Use a simplified store mock
 vi.mock('@/core/store', () => ({
-    useStore: (selector: any) => selector({
-        studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
-        creativePrompt: '',
-        setCreativePrompt: vi.fn(),
-        addToHistory: vi.fn(),
-        currentProjectId: 'test-project',
-        whiskState: {},
-        setSelectedItem: vi.fn(),
-        setViewMode: vi.fn(),
-        videoInputs: { ingredients: [] },
-        setVideoInputs: vi.fn()
-    }),
+    useStore: (selector: any) => useMockStore(selector),
     logger: {
         error: vi.fn(),
         info: vi.fn()
@@ -57,6 +65,15 @@ vi.mock('@/services/ai/generators/DirectImageGenerator', () => ({
 describe('DirectGenerationTab', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        useMockStore.setState({
+            studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6 },
+            creativePrompt: '',
+            currentProjectId: 'test-project',
+            whiskState: {},
+            videoInputs: { ingredients: [] },
+            generationMode: 'image',
+            isPromptBuilderOpen: false
+        });
     });
 
     it('renders initial state correctly', () => {

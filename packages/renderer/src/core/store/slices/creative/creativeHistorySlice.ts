@@ -65,8 +65,8 @@ export function buildCreativeHistoryState(
                 logger.debug("CreativeSlice: addToHistory called", item.id);
                 const { currentOrganizationId, currentProjectId, createFileNode, user } = useStore.getState();
                 const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
-
-                set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory] }));
+                // Implement eviction policy: cap at 50 items to prevent memory bloat from base64 images
+                set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory].slice(0, 50) }));
                 logger.debug("CreativeSlice: generatedHistory updated", enrichedItem.id);
 
                 // Auto-persistence to project asset folder
@@ -137,7 +137,7 @@ export function buildCreativeHistoryState(
                                     }
 
                                     return {
-                                        generatedHistory: generated,
+                                        generatedHistory: generated.slice(0, 50),
                                         uploadedImages: uploadedImages,
                                         uploadedAudio: uploadedAudio
                                     };

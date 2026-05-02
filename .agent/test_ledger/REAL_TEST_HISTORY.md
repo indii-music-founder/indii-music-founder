@@ -96,3 +96,34 @@
 - [ ] Mobile responsive
 - [ ] Keyboard shortcuts
 - [ ] Drag-and-drop file upload
+
+---
+
+## 2026-05-02 - Detroit Producer - Deep-Interaction Core Phases Stress Test
+- **Modules Tested:** Dashboard, Brand Manager, Creative Director, Video Workflow
+- **Duration:** ~10 minutes
+- **Findings:** 1 issue filed (0 HIGH, 0 MEDIUM, 1 LOW). ISSUE-015 successfully verified as FIXED.
+- **Key Issues:**
+  - ISSUE-016: Persistent "Drop files here" overlay in Creative Director
+- **Coverage Delta:**
+  - ✅ Regression test: 3D SceneBuilder Stability (ISSUE-015)
+  - ✅ First test: Brand Manager Identity Bio editing and AI Chat
+  - ✅ First test: Video mode camera motion and aspect ratio dropdowns
+  - ✅ First test: Drag-and-drop from gallery to Sequence Architect
+- **UX Score:** 30/30
+- **Issues Filed:** ISSUE-016
+
+## 2026-05-02 - Detroit Producer - Creative Director Edge Case Testing
+- **Modules Tested:** Creative Director, Boardroom
+- **Duration:** 4 minutes
+- **Findings:** 3 HIGH, 1 MEDIUM
+- **Key Issues:** Prompt state loss on mode toggle, Boardroom trap, Z-index bleeding.
+- **Coverage Delta:** State persistence and character references tested thoroughly.
+- **UX Score:** 18/30
+
+## 2026-05-02 - Detroit Producer - Universal Deep-Interaction Stress Test
+- **Modules Tested:** Dashboard, Brand Manager, Creative Director, Boardroom
+- **Duration:** 17 minutes
+- **Findings:** 2 CRITICAL, 1 HIGH, 1 MEDIUM
+- **Key Issues:** Global state lost on reload, Vite resolution failure on reload, UI lag on tabs.
+- **UX Score:** NO-GO for Demo

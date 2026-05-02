@@ -177,7 +177,7 @@ describe('Pulse: Video Workflow Error Handling', () => {
         render(<VideoWorkflow />);
 
         // 1. Enter Prompt
-        const input = screen.getByTestId('director-prompt-input');
+        const input = screen.getByTestId('direct-prompt-input');
         await user.type(input, 'A glitchy failure simulation');
 
         // 2. Trigger Generation
@@ -235,7 +235,7 @@ describe('Pulse: Video Workflow Error Handling', () => {
         const mockJobId = 'job-fail-123';
 
         // Manually trigger the flow to get to 'processing'
-        const input = screen.getByTestId('director-prompt-input');
+        const input = screen.getByTestId('direct-prompt-input');
         await user.type(input, 'A heavy render');
         const generateBtn = screen.getByTestId('video-generate-btn');
         await user.click(generateBtn);

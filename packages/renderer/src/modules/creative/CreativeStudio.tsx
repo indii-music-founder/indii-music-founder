@@ -35,7 +35,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         isGenerating,
         studioControls,
         addToHistory, currentProjectId,
-        userProfile, whiskState
+        userProfile, whiskState,
+        characterReferences
     } = useStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
@@ -52,7 +53,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         addToHistory: state.addToHistory,
         currentProjectId: state.currentProjectId,
         userProfile: state.userProfile,
-        whiskState: state.whiskState
+        whiskState: state.whiskState,
+        characterReferences: state.characterReferences
     })));
     const toast = useToast();
     const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
@@ -84,7 +86,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         if (generationMode !== prevGenerationMode.current) {
             if (generationMode === 'video') {
                 // Allow navigating to editor to pick assets even while in video mode
-                if (viewMode !== 'editor' && viewMode !== 'video_production') {
+                if (viewMode !== 'editor' && viewMode !== 'video_production' && viewMode !== 'direct') {
                     setViewMode('video_production');
                 }
             } else if (viewMode === 'video_production') {
@@ -115,7 +117,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                     // Synthesize prompt and get source images for Whisk
                     const finalPrompt = WhiskService.synthesizeWhiskPrompt(pendingPrompt, whiskState);
-                    const sourceImages = WhiskService.getSourceImages(whiskState);
+                    const sourceImages = WhiskService.getSourceMedia(whiskState);
 
                     if (isAndromeda) {
                         const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
@@ -146,7 +148,18 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 duration: 4,
                                 cameraMovement: 'Dynamic',
                                 motionStrength: 0.8,
-                                model: studioControls.model
+                                model: studioControls.model,
+                                referenceImages: (characterReferences || []).map(ref => {
+                                    let bytes = ref.image.url;
+                                    const commaIndex = bytes.indexOf(',');
+                                    if (bytes.startsWith('data:') && commaIndex !== -1) {
+                                        bytes = bytes.substring(commaIndex + 1);
+                                    }
+                                    return {
+                                        image: { imageBytes: bytes, mimeType: 'image/jpeg' },
+                                        referenceType: 'asset' as const
+                                    };
+                                })
                             })
                         );
 

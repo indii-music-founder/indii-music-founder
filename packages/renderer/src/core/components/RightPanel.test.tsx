@@ -19,11 +19,11 @@ vi.mock('./right-panel/AssetsPanel', () => ({
     ),
 }));
 
-vi.mock('./right-panel/CreativePanel', () => ({
+vi.mock('./right-panel/StudioControlsPanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
-        <div data-testid="creative-panel">
-            Creative Panel Content
-            <button onClick={toggleRightPanel} data-testid="close-creative">Close</button>
+        <div data-testid="studio-controls-panel">
+            Studio Controls Content
+            <button onClick={toggleRightPanel} data-testid="close-studio">Close</button>
         </div>
     ),
 }));
@@ -121,7 +121,7 @@ describe('RightPanel', () => {
         expect(screen.getByTitle('Project Assets')).toBeInTheDocument();
         expect(screen.getByTitle('Omni Agent')).toBeInTheDocument();
 
-        expect(screen.queryByTestId('creative-panel')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('studio-controls-panel')).not.toBeInTheDocument();
         expect(screen.queryByTestId('assets-panel')).not.toBeInTheDocument();
     });
 
@@ -143,7 +143,7 @@ describe('RightPanel', () => {
         expect(mockSetRightPanelTab).toHaveBeenCalledWith('agent');
     });
 
-    it('renders CreativePanel when open and tab is context and module is creative', () => {
+    it('renders StudioControlsPanel when open and tab is context and module is creative', () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             ...defaultState,
             rightPanelTab: 'context',
@@ -151,7 +151,7 @@ describe('RightPanel', () => {
             isRightPanelOpen: true,
         });
         render(<RightPanel />);
-        expect(screen.getByTestId('creative-panel')).toBeInTheDocument();
+        expect(screen.getByTestId('studio-controls-panel')).toBeInTheDocument();
     });
 
     it('renders fallback when open and tab is context and module has no panel', () => {
