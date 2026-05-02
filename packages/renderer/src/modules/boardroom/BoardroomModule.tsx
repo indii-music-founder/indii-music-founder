@@ -47,18 +47,19 @@ export function BoardroomModule() {
                 key="boardroom-canvas"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed inset-0 z-40 bg-bg-dark flex flex-col"
+                className="fixed inset-0 z-[99999] bg-bg-dark flex flex-col"
             >
                 {/* Top Bar */}
                 <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 shrink-0">
                     <button
                         onClick={() => setBoardroomMode(false)}
-                        className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all border border-white/10"
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all border border-white/10"
                         title="Exit Boardroom"
+                        aria-label="Back to Studio"
                     >
-                        <ArrowLeft size={18} />
+                        <ArrowLeft size={16} />
+                        <span className="text-xs font-bold uppercase tracking-wider">Back to Studio</span>
                     </button>
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
