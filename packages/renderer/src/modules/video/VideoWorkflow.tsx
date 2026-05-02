@@ -638,6 +638,7 @@ export default function VideoWorkflow() {
                                 }}
                                 onGenerate={() => handleGenerate()}
                                 disabled={jobStatus === 'queued' || jobStatus === 'processing'}
+                                showBuilder={isPromptBuilderOpen}
                             >
                                 <button
                                     onClick={togglePromptBuilder}
