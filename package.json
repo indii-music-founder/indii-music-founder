@@ -123,10 +123,10 @@
     ],
     "publish": [
       {
-        "owner": "new-detroit-music-llc",
+        "owner": "the-walking-agency-det",
         "private": true,
         "provider": "github",
-        "repo": "indiiOS-Alpha-Electron"
+        "repo": "indiiOS-Clean"
       }
     ],
     "win": {
@@ -162,7 +162,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
-    "url": "https://github.com/new-detroit-music-llc/indiiOS-Clean.git"
+    "url": "https://github.com/the-walking-agency-det/indiiOS-Clean.git"
   },
   "dependencies": {
     "express": "4.22.1",
