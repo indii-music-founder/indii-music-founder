@@ -2,6 +2,22 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.58.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.58.0...v1.58.1) (2026-05-01)
+
+
+### Bug Fixes
+
+* add [@shared](https://github.com/shared) path alias to vitest config for CI stability ([d0c5321](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d0c5321315eee887ef4a731e137e965b3df2b556))
+* downgrade @react-three/fiber and drei to fix React 18 compat in prod ([05bdb08](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/05bdb087f13faf79ea6fb13e313d9c73f1505a30))
+* remove [@shared](https://github.com/shared) import from landing page to prevent electronAPI global type conflicts ([6af6876](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6af68766e8c62bc72074f56392fc1ac6d25ff738))
+* resolve [@shared](https://github.com/shared) imports in tsconfig files to pass typecheck ([262fdf6](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/262fdf6c43a7d7a2f217ea51ae1c52ed2bd27783))
+* update tests for disconnected auth and fix CSP test logging ([c673115](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c673115e536ca5c018cae92a21c6e35bed11b9c0))
+
+
+### Refactoring
+
+* centralize auth logic in [@shared](https://github.com/shared) and fix startup hang in main process ([45a973b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/45a973b9c99c0e55ad34947d1e6478b05fbd397e))
+
 ## [1.58.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.57.2...v1.58.0) (2026-05-01)
 
 
