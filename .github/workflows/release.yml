@@ -50,7 +50,9 @@ jobs:
       # macOS code signing — uses Apple certificates from GitHub secrets.
       # Leave CSC_LINK / CSC_KEY_PASSWORD empty on forks; signing is skipped.
       - name: Build & publish desktop installer
-        run: npm run electron:build -- --publish always
+        run: |
+          npm run build:studio
+          npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # macOS signing (optional — set these secrets to enable)
