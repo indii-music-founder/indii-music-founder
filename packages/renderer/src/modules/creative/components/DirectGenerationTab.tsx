@@ -220,18 +220,19 @@ export default function DirectGenerationTab() {
                             <button
                                 onClick={handleGenerate}
                                 data-testid="direct-generate-btn"
-                                disabled={isGenerating || !localPrompt.trim()}
-                                className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                disabled={isGenerating}
+                                title={`Generate ${mode === 'image' ? 'Image' : 'Video'}`}
+                                className="bg-foreground text-background py-1.5 px-3 flex items-center gap-2 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {isGenerating ? (
                                     <>
                                         <Loader2 size={16} className="animate-spin" />
-                                        <span className="sr-only">Generating...</span>
+                                        <span className="text-xs font-bold uppercase hidden sm:inline">Generating</span>
                                     </>
                                 ) : (
                                     <>
                                         <Send size={16} />
-                                        <span className="sr-only">Generate</span>
+                                        <span className="text-xs font-bold uppercase hidden sm:inline">Generate</span>
                                     </>
                                 )}
                             </button>

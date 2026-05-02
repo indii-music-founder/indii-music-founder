@@ -649,8 +649,26 @@ export default function VideoWorkflow() {
                                     {isPromptBuilderOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                 </button>
                                 <span className="text-[10px] text-muted-foreground uppercase font-mono px-2 border-r border-white/5">
-                                    {studioControls.model.toUpperCase()}
+                                    {studioControls?.model?.toUpperCase() || 'PRO'}
                                 </span>
+                                <button
+                                    onClick={() => handleGenerate()}
+                                    data-testid="video-generate-btn"
+                                    disabled={jobStatus === 'queued' || jobStatus === 'processing' || !localPrompt.trim()}
+                                    className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    {(jobStatus === 'queued' || jobStatus === 'processing') ? (
+                                        <>
+                                            <div className="w-4 h-4 animate-spin border-2 border-background border-t-transparent rounded-full" />
+                                            <span className="sr-only">Generating...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div data-testid="icon-Send" className="w-4 h-4" />
+                                            <span className="sr-only">Generate</span>
+                                        </>
+                                    )}
+                                </button>
                             </VideoPromptBuilder>
                         </div>
                     </div>

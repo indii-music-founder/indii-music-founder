@@ -199,7 +199,7 @@ describe('VideoWorkflow', () => {
         );
 
         // Set prompt first
-        const input = screen.getByPlaceholderText(/describe your scene/i);
+        const input = screen.getByPlaceholderText(/describe your video/i);
         fireEvent.change(input, { target: { value: 'Cyberpunk city' } });
 
         const generateBtn = screen.getByRole('button', { name: /generate/i });

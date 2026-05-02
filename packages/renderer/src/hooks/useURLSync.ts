@@ -35,6 +35,9 @@ export function useURLSync() {
         const ROUTE_ALIASES: Record<string, string> = {
             'controller': 'mobile-remote',
             'remote': 'mobile-remote',
+            'video-producer': 'video',
+            'video-studio': 'video',
+            'creative-director': 'creative',
         };
         if (ROUTE_ALIASES[targetModule]) {
             targetModule = ROUTE_ALIASES[targetModule] ?? targetModule;

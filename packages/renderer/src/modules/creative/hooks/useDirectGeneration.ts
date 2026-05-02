@@ -22,7 +22,10 @@ export function useDirectGeneration() {
         setSelectedItem,
         setViewMode,
         videoInputs,
-        setVideoInputs
+        setVideoInputs,
+        characterReferences,
+        generationMode,
+        setGenerationMode
     } = useStore(useShallow(state => ({
         studioControls: state.studioControls,
         creativePrompt: state.creativePrompt,
@@ -33,12 +36,15 @@ export function useDirectGeneration() {
         setSelectedItem: state.setSelectedItem,
         setViewMode: state.setViewMode,
         videoInputs: state.videoInputs,
-        setVideoInputs: state.setVideoInputs
+        setVideoInputs: state.setVideoInputs,
+        characterReferences: state.characterReferences,
+        generationMode: state.generationMode,
+        setGenerationMode: state.setGenerationMode
     })));
     const toast = useToast();
 
     const [localPrompt, setLocalPromptState] = useState(creativePrompt ?? '');
-    const [mode, setMode] = useState<'image' | 'video'>('image');
+    const mode = generationMode;
 
     // Keep local input in sync with store updates (e.g. top-nav Builder pills,
     // "reuse prompt" from Gallery, prompt-history selections).
@@ -139,10 +145,9 @@ export function useDirectGeneration() {
 
     const handleModeSwitch = useCallback((newMode: 'image' | 'video') => {
         if (newMode !== mode) {
-            setLocalPrompt('');
-            setMode(newMode);
+            setGenerationMode(newMode);
         }
-    }, [mode, setLocalPrompt]);
+    }, [mode, setGenerationMode]);
 
     const mappedIngredients: Ingredient[] = videoInputs?.ingredients?.map(hi => ({
         id: hi.id,
@@ -209,7 +214,9 @@ export function useDirectGeneration() {
             setSelectedItem(newItems[0] || null);
             setViewMode('editor');
 
-            toast.success('Image generated directly successfully');
+            setTimeout(() => {
+                toast.success('Image generated directly successfully');
+            }, 500);
         }
     }, [studioControls.model, studioControls.aspectRatio, localPrompt, addToHistory, setSelectedItem, setViewMode, toast]);
 
@@ -248,17 +255,30 @@ export function useDirectGeneration() {
             model: studioControls.model, // Will be resolved by FirebaseAIService
             fps: 24,
             orgId: 'personal', // Force personal for direct test
-            referenceImages: ingredientsList.map(ing => {
-                let bytes = ing.url;
-                const commaIndex = bytes.indexOf(',');
-                if (bytes.startsWith('data:') && commaIndex !== -1) {
-                    bytes = bytes.substring(commaIndex + 1);
-                }
-                return {
-                    image: { imageBytes: bytes, mimeType: ing.type === 'video' ? 'video/mp4' : 'image/jpeg' },
-                    referenceType: 'asset' as const
-                };
-            })
+            referenceImages: [
+                ...(characterReferences || []).map(ref => {
+                    let bytes = ref.image.url;
+                    const commaIndex = bytes.indexOf(',');
+                    if (bytes.startsWith('data:') && commaIndex !== -1) {
+                        bytes = bytes.substring(commaIndex + 1);
+                    }
+                    return {
+                        image: { imageBytes: bytes, mimeType: 'image/jpeg' },
+                        referenceType: 'asset' as const
+                    };
+                }),
+                ...ingredientsList.map(ing => {
+                    let bytes = ing.url;
+                    const commaIndex = bytes.indexOf(',');
+                    if (bytes.startsWith('data:') && commaIndex !== -1) {
+                        bytes = bytes.substring(commaIndex + 1);
+                    }
+                    return {
+                        image: { imageBytes: bytes, mimeType: ing.type === 'video' ? 'video/mp4' : 'image/jpeg' },
+                        referenceType: 'asset' as const
+                    };
+                })
+            ]
         });
 
         if (generated && generated.length > 0) {
@@ -297,7 +317,10 @@ export function useDirectGeneration() {
     }, [studioControls, localPrompt, addToHistory, toast, sequence, bpm, videoInputs?.ingredients]);
 
     const handleGenerate = useCallback(async () => {
-        if (!localPrompt.trim()) return;
+        if (!localPrompt.trim()) {
+            toast.error('Please enter a prompt before generating.');
+            return;
+        }
         if (generatingRef.current) return; // Prevent double-submit
 
         generatingRef.current = true;

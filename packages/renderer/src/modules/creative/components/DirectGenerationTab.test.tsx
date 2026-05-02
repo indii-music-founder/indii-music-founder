@@ -85,6 +85,7 @@ describe('DirectGenerationTab', () => {
         whiskState: {},
         setSelectedItem: vi.fn(),
         setViewMode: vi.fn(),
+        generationMode: 'image',
         setGenerationMode: vi.fn()
     };
 
@@ -127,7 +128,9 @@ describe('DirectGenerationTab', () => {
         });
 
         expect(screen.getByAltText('A cute cat')).toBeInTheDocument();
-        expect(mockToast.success).toHaveBeenCalledWith('Image generated directly successfully');
+        await waitFor(() => {
+            expect(mockToast.success).toHaveBeenCalledWith('Image generated directly successfully');
+        });
     });
 
     it('handles generation error correctly', async () => {

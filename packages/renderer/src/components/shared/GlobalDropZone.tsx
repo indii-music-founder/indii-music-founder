@@ -222,16 +222,25 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
             })();
         };
 
+        const handleReset = () => {
+            dragCounter = 0;
+            setIsDragging(false);
+        };
+
         window.addEventListener('dragenter', handleDragEnter);
         window.addEventListener('dragleave', handleDragLeave);
         window.addEventListener('dragover', handleDragOver);
         window.addEventListener('drop', handleDrop);
+        window.addEventListener('dragend', handleReset);
+        window.addEventListener('mouseup', handleReset);
 
         return () => {
             window.removeEventListener('dragenter', handleDragEnter);
             window.removeEventListener('dragleave', handleDragLeave);
             window.removeEventListener('dragover', handleDragOver);
             window.removeEventListener('drop', handleDrop);
+            window.removeEventListener('dragend', handleReset);
+            window.removeEventListener('mouseup', handleReset);
         };
     }, [toast]);
 

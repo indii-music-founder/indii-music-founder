@@ -143,10 +143,25 @@ describe('Agent Streaming', () => {
             usage: () => undefined
         };
 
-        vi.mocked(AI.generateContentStream).mockResolvedValue({
-            stream: mockStream,
-            response: Promise.resolve(mockResponse)
-        });
+        vi.mocked(AI.generateContentStream)
+            .mockResolvedValueOnce({
+                stream: mockStream,
+                response: Promise.resolve(mockResponse)
+            })
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({
+                    start(controller) {
+                        controller.enqueue({ text: () => 'Done', functionCalls: () => [] });
+                        controller.close();
+                    }
+                }),
+                response: Promise.resolve({
+                    response: {},
+                    text: () => 'Done',
+                    functionCalls: () => [],
+                    usage: () => undefined
+                } as unknown as WrappedResponse)
+            });
 
         // Mock the tool execution (BaseAgent handles superpowers internally)
         // We'll just verify the progress reported 'tool' or 'thought' about tool
