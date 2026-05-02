@@ -2,8 +2,7 @@ import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal } from 'lucide-react';
-import CreativePanel from './right-panel/CreativePanel';
-import VideoPanel from './right-panel/VideoPanel';
+import StudioControlsPanel from './right-panel/StudioControlsPanel';
 import WorkflowPanel from './right-panel/WorkflowPanel';
 import KnowledgePanel from './right-panel/KnowledgePanel';
 import AssetsPanel from './right-panel/AssetsPanel';
@@ -203,9 +202,8 @@ export default function RightPanel() {
         // TAB 1: CONTEXT
         switch (currentModule) {
             case 'creative':
-                return <CreativePanel toggleRightPanel={toggleRightPanel} />;
             case 'video':
-                return <VideoPanel toggleRightPanel={toggleRightPanel} />;
+                return <StudioControlsPanel toggleRightPanel={toggleRightPanel} />;
             case 'workflow':
                 return <WorkflowPanel toggleRightPanel={toggleRightPanel} />;
             case 'knowledge':

@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, FlaskConical, Wand2, Rocket, Settings2
+    Palette, Clock, FlaskConical, Wand2, Rocket
 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import DaisyChainControls from './DaisyChainControls';
 import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import PromptHistoryDrawer from './PromptHistoryDrawer';
-import StudioSettingsPanel from './StudioSettingsPanel';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
@@ -47,7 +47,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const [showBrandAssets, setShowBrandAssets] = useState(false);
     const [showPromptHistory, setShowPromptHistory] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
     const tabs = [
@@ -98,27 +97,16 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 <div className="hidden md:flex items-center gap-2">
                     {generationMode === 'image' ? (
                         <div className="flex items-center gap-1.5">
-                            <div className="relative">
-                                <button
-                                    onClick={togglePromptBuilder}
-                                    data-testid="builder-btn"
-                                    className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
-                                        ${showPromptBuilder
-                                            ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
-                                            : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
-                                >
-                                    <MessageSquare size={10} /> Builder
-                                </button>
-                                {showPromptBuilder && (
-                                    <div className="absolute top-full left-0 mt-2 z-50">
-                                        <PromptBuilder
-                                            onAddTag={(tag) => setCreativePrompt(creativePrompt ? `${creativePrompt}, ${tag}` : tag)}
-                                            currentPrompt={creativePrompt}
-                                            onSetPrompt={setCreativePrompt}
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            <button
+                                onClick={togglePromptBuilder}
+                                data-testid="builder-btn"
+                                className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
+                                    ${showPromptBuilder
+                                        ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
+                                        : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
+                            >
+                                <MessageSquare size={10} /> Builder
+                            </button>
                             <button
                                 onClick={() => setShowBrandAssets(!showBrandAssets)}
                                 className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
@@ -147,20 +135,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         />
                     )}
 
-                    <div className="h-3.5 w-px bg-white/8 mx-0.5" />
-
-                    {/* Studio Settings Toggle */}
-                    <button
-                        onClick={() => setShowSettings(!showSettings)}
-                        data-testid="settings-btn"
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all text-[9px] font-semibold uppercase tracking-wide
-                            ${showSettings
-                                ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
-                                : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
-                    >
-                        <Settings2 size={10} />
-                        <span className="hidden lg:inline">Settings</span>
-                    </button>
 
                     {/* Andromeda Mode Toggle */}
                     <button
@@ -209,6 +183,25 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 </div>
             </div>
 
+            {/* Prompt Builder — Full-width horizontal overlay below navbar */}
+            <AnimatePresence>
+                {showPromptBuilder && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="relative z-50 bg-[#0a0a0c]/98 backdrop-blur-xl border-b border-white/10 shadow-xl"
+                    >
+                        <PromptBuilder
+                            onAddTag={(tag) => setCreativePrompt(creativePrompt ? `${creativePrompt}, ${tag}` : tag)}
+                            currentPrompt={creativePrompt}
+                            onSetPrompt={setCreativePrompt}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Brand Assets Drawer */}
             {showBrandAssets && (
                 <BrandAssetsDrawer onClose={() => setShowBrandAssets(false)} />
@@ -219,10 +212,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 <PromptHistoryDrawer onClose={() => setShowPromptHistory(false)} />
             )}
 
-            {/* Studio Settings Panel */}
-            {showSettings && (
-                <StudioSettingsPanel onClose={() => setShowSettings(false)} />
-            )}
 
             <FrameSelectionModal
                 isOpen={showFrameModal}

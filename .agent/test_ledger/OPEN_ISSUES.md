@@ -296,3 +296,18 @@
 - **User Impact:** New users won't immediately know this is the Generate button. The icon (send arrow) isn't universally associated with "generate image." A first-time user might type a prompt and not know how to submit it.
 - **Screenshot:** Prompt bar with icon-only generate button
 - **Notes:** Add a tooltip on hover ("Generate image"), or add a short text label "Generate" that collapses to icon-only on smaller widths.
+
+---
+
+### ISSUE-015: 3D SceneBuilder crashes with TypeError reading 'S' during load
+- **Status:** FIXED
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Stability / Navigation Clarity
+- **Module:** Creative Director (Video Workflow)
+- **Found:** 2026-05-02 by /real workflow stress test
+- **Fixed:** VideoWorkflow.tsx — Lazy-loaded SceneBuilder to break an ESM circular dependency between vendor-three and vendor-react chunks. This circular import left React bindings undefined during Vite dev-mode initial evaluation.
+- **Steps to Reproduce:**
+  1. Navigate to `/creative` using the guest login or an authenticated session.
+  2. The application crashes immediately with a `TypeError: Cannot read properties of undefined (reading 'S')` in `@react-three/drei`.
+- **User Impact:** The entire Creative Studio fails to render, completely blocking users from accessing both Video Producer and Creative Director.
+- **Notes:** Similar to the `AudioVisualizer` fix, all `@react-three/fiber` integrations must be lazily loaded to avoid eagerly evaluating `react-reconciler` before React is fully resolved.

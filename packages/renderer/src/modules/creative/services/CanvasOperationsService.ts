@@ -237,7 +237,7 @@ export class CanvasOperationsService {
         if (type === 'group') return true;
         
         // Explicitly marked as annotation metadata
-        if (data?.isBoundingBox || data?.isSegmentationMask || data?.colorId) return true;
+        if (data?.isBoundingBox || data?.isSegmentationMask || data?.colorId || data?.isAnnotation) return true;
         
         return false;
     }
@@ -419,27 +419,51 @@ export class CanvasOperationsService {
 
             // Using fabric.Canvas.getObjects directly since group scale could be problematic with clip paths
             const objects = this.canvas!.getObjects();
-            if (objects.length > 0) {
-                const group = new fabric.Group(objects);
+            
+            // Filter out annotations for the export
+            const annotationObjects = objects.filter(obj => this.isAnnotation(obj));
+            const visibilitySnapshot = annotationObjects.map(obj => obj.visible);
+            
+            let dataUrl = '';
+            
+            try {
+                // Hide annotations
+                annotationObjects.forEach(obj => (obj.visible = false));
+                
+                // Hide active selection controls if any
+                const activeObject = this.canvas!.getActiveObject();
+                if (activeObject) {
+                    this.canvas!.discardActiveObject();
+                }
 
-                const scaleX = targetWidth / originalWidth;
-                const scaleY = targetHeight / originalHeight;
-                const scale = Math.min(scaleX, scaleY) * 0.95; // 95% fit
+                // Get visible objects (content only)
+                const visibleObjects = this.canvas!.getObjects().filter(obj => obj.visible !== false);
 
-                group.scale(scale);
-                this.canvas!.centerObject(group);
-                group.setCoords();
+                if (visibleObjects.length > 0) {
+                    const group = new fabric.Group(visibleObjects);
 
-                // Fabric 6 uses remove() or destroys implicitly by returning objects
-                group.removeAll();
-                this.canvas!.renderAll();
+                    const scaleX = targetWidth / originalWidth;
+                    const scaleY = targetHeight / originalHeight;
+                    const scale = Math.min(scaleX, scaleY) * 0.95; // 95% fit
+
+                    group.scale(scale);
+                    this.canvas!.centerObject(group);
+                    group.setCoords();
+
+                    // Fabric 6 uses remove() or destroys implicitly by returning objects
+                    group.removeAll();
+                    this.canvas!.renderAll();
+                }
+
+                dataUrl = this.canvas!.toDataURL({
+                    format: 'png',
+                    quality: 1,
+                    multiplier: 1
+                });
+            } finally {
+                // Restore annotation visibility BEFORE restoring JSON, just in case
+                annotationObjects.forEach((obj, i) => (obj.visible = visibilitySnapshot[i] ?? true));
             }
-
-            const dataUrl = this.canvas!.toDataURL({
-                format: 'png',
-                quality: 1,
-                multiplier: 1
-            });
 
             return new Promise((resolve) => {
                 this.canvas!.loadFromJSON(jsonState, () => {
@@ -507,6 +531,7 @@ export class CanvasOperationsService {
             fill: 'rgba(255,0,0,0.5)',
             width: 100,
             height: 100,
+            data: { isAnnotation: true }
         });
         this.canvas.add(rect);
     }
@@ -521,6 +546,7 @@ export class CanvasOperationsService {
             top: 200,
             fill: 'rgba(0,255,0,0.5)',
             radius: 50,
+            data: { isAnnotation: true }
         });
         this.canvas.add(circle);
     }

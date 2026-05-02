@@ -24,8 +24,8 @@ export function VideoPromptBuilder({ prompt, onChange, onGenerate, disabled, mod
     return (
         <div className="relative w-full group">
             <div className={`absolute inset-0 bg-gradient-to-r ${mode === 'image' ? 'from-dept-creative/10 to-dept-marketing/10' : 'from-purple-500/10 to-pink-500/10'} rounded-xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity`} />
-            <div className={`relative bg-white/5 border border-white/10 rounded-xl flex items-start focus-within:border-${mode === 'image' ? 'dept-creative' : 'purple-500'}/50 focus-within:ring-1 focus-within:ring-${mode === 'image' ? 'dept-creative' : 'purple-500'}/20 transition-all z-10 p-2`}>
-                <div className="pt-2 pl-2 text-muted-foreground flex-shrink-0">
+            <div className={`relative bg-white/5 border border-white/10 rounded-xl flex items-start gap-1 focus-within:border-${mode === 'image' ? 'dept-creative' : 'purple-500'}/50 focus-within:ring-1 focus-within:ring-${mode === 'image' ? 'dept-creative' : 'purple-500'}/20 transition-all z-10 p-2`}>
+                <div className="pt-2 pl-1 text-muted-foreground flex-shrink-0">
                     {mode === 'image' ? <ImageIcon size={16} /> : <Video size={16} />}
                 </div>
                 <textarea
@@ -43,7 +43,7 @@ export function VideoPromptBuilder({ prompt, onChange, onGenerate, disabled, mod
                     }}
                     placeholder={mode === 'image' ? "Describe your image..." : "Describe your video... (Be detailed about cinematic motion, subjects, and style)"}
                     disabled={disabled}
-                    className="flex-1 bg-transparent border-none text-sm px-3 py-2 focus:outline-none resize-none min-h-[44px] max-h-[200px]"
+                    className="flex-1 bg-transparent border-none text-sm px-2 py-2 focus:outline-none resize-none min-h-[44px] max-h-[200px]"
                     rows={1}
                 />
                 {children && (

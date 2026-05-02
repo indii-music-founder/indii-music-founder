@@ -22,8 +22,8 @@ const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_all': 'ALLOW_ALL',
 };
 
-// Lazy load CreativePanel for mobile controls tab
-const CreativePanel = lazy(() => import('@/core/components/right-panel/CreativePanel'));
+// Lazy load StudioControlsPanel for mobile controls tab
+const StudioControlsPanel = lazy(() => import('@/core/components/right-panel/StudioControlsPanel'));
 
 export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
     const {
@@ -283,7 +283,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     {/* Mobile Controls Tab Content */}
                     <div className={`${activeMobileTab === 'controls' ? 'flex' : 'hidden'} md:hidden flex-1 flex-col overflow-y-auto bg-[#0f0f0f]`}>
                         <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading controls...</div>}>
-                            <CreativePanel toggleRightPanel={() => setActiveMobileTab('studio')} />
+                            <StudioControlsPanel toggleRightPanel={() => setActiveMobileTab('studio')} />
                         </Suspense>
                     </div>
 

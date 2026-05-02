@@ -35,6 +35,12 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
  * Daisychaining video generation via Cloud Functions.
  */
 export class VideoGenerationService {
+    // Circuit Breaker State
+    private static circuitFailures = 0;
+    private static circuitOpenUntil = 0;
+    private static readonly MAX_FAILURES = 5;
+    private static readonly COOLDOWN_MS = 60000; // 1 minute
+
 
     /**
      * Retry helper with exponential backoff for transient Veo API failures.
@@ -65,13 +71,29 @@ export class VideoGenerationService {
         let lastError: unknown;
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            if (Date.now() < VideoGenerationService.circuitOpenUntil) {
+                const waitSecs = Math.ceil((VideoGenerationService.circuitOpenUntil - Date.now()) / 1000);
+                throw new Error(`Service temporarily unavailable. Circuit breaker open. Please try again in ${waitSecs} seconds.`);
+            }
+
             try {
-                return await fn();
+                const result = await fn();
+                // Reset circuit on success
+                VideoGenerationService.circuitFailures = 0;
+                return result;
             } catch (error: unknown) {
                 lastError = error;
 
                 // Determine if the error is retryable
                 const isRetryable = this.isRetryableError(error);
+
+                if (isRetryable) {
+                    VideoGenerationService.circuitFailures++;
+                    if (VideoGenerationService.circuitFailures >= VideoGenerationService.MAX_FAILURES) {
+                        logger.error(`[VideoGeneration] 🔴 Circuit breaker tripped after ${VideoGenerationService.circuitFailures} consecutive failures!`);
+                        VideoGenerationService.circuitOpenUntil = Date.now() + VideoGenerationService.COOLDOWN_MS;
+                    }
+                }
 
                 if (!isRetryable || attempt === maxRetries) {
                     // Non-retryable or final attempt — throw immediately
@@ -444,7 +466,12 @@ export class VideoGenerationService {
                 config: JSON.stringify(aiRequest.config),
             });
 
-            const videoUrl = await GenAI.generateVideo(aiRequest);
+            const videoUrl = await this.withRetry(
+                () => GenAI.generateVideo(aiRequest),
+                'generateVideo (atomic)',
+                3,
+                2000
+            );
 
             // Update Firestore with completed status for UI subscription
             const { updateDoc } = await import('firebase/firestore');
