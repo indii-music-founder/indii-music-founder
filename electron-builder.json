@@ -40,8 +40,7 @@
       "dmg",
       "zip"
     ],
-    "certificateFile": "${CSC_LINK}",
-    "certificatePassword": "${CSC_KEY_PASSWORD}",
+
     "notarize": {
       "teamId": "${APPLE_TEAM_ID}"
     }
@@ -65,8 +64,7 @@
     "target": [
       "nsis"
     ],
-    "certificateFile": "${WIN_CSC_LINK}",
-    "certificatePassword": "${WIN_CSC_KEY_PASSWORD}",
+
     "signingHashAlgorithms": [
       "sha256"
     ],
