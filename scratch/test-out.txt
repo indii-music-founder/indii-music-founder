@@ -1,0 +1,277 @@
+
+ RUN  v4.0.18 /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean
+
+(node:16313) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx
+THREE.WARNING: Multiple instances of Three.js being imported.
+
+stdout | packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx > 🖱️ Click: Video Production Daisychain > successfully completes a 5-step video production daisychain
+[VideoGeneration] Prompt selection: {
+  promptOverride: '"Cinematic morph..."',
+  localPrompt: '(empty)',
+  globalPrompt: '(empty)',
+  selected: '"Cinematic morph..."'
+}
+[VideoGeneration] 🔇 Audio suppression enabled — negative prompt augmented
+
+stderr | packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx > 🖱️ Click: Video Production Daisychain > successfully completes a 5-step video production daisychain
+[VideoGeneration] handleGenerate() failed: {
+  errorMessage: '__vite_ssr_import_6__.VideoGeneration.generateLongFormVideo is not a function',
+  errorType: 'TypeError',
+  errorStack: 'TypeError: __vite_ssr_import_6__.VideoGeneration.generateLongFormVideo is not a function\n' +
+    '    at handleGenerate (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/VideoWorkflow.tsx:349:49)\n' +
+    '    at handleGenerate (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/DirectorPromptBar.tsx:142:9)\n' +
+    '    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/n'
+}
+
+stderr | packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx > 🖱️ Click: Video Production Daisychain > successfully completes a 5-step video production daisychain
+Warning: React does not recognize the `whileHover` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `whilehover` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+    at button
+    at children.children (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:12:19)
+    at div
+    at div
+    at div
+    at WhiskPresetStyles (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/creative/components/whisk/WhiskPresetStyles.tsx:16:30)
+    at div
+    at div
+    at div
+    at div
+    at children.children (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:5:19)
+    at div
+    at SectionCard (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/right-panel/CreativePanel.tsx:13:24)
+    at div
+    at div
+    at CreativePanel (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/right-panel/CreativePanel.tsx:73:26)
+    at Suspense
+    at div
+    at div
+    at div
+    at ModuleErrorBoundary (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/ModuleErrorBoundary.tsx:7:1)
+    at CreativeStudio (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/creative/CreativeStudio.tsx:24:27)
+    at DaisychainApp (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:210:49)
+Warning: React does not recognize the `whileTap` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `whiletap` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+    at button
+    at children.children (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:12:19)
+    at div
+    at div
+    at div
+    at WhiskPresetStyles (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/creative/components/whisk/WhiskPresetStyles.tsx:16:30)
+    at div
+    at div
+    at div
+    at div
+    at children.children (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:5:19)
+    at div
+    at SectionCard (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/right-panel/CreativePanel.tsx:13:24)
+    at div
+    at div
+    at CreativePanel (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/right-panel/CreativePanel.tsx:73:26)
+    at Suspense
+    at div
+    at div
+    at div
+    at ModuleErrorBoundary (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/ModuleErrorBoundary.tsx:7:1)
+    at CreativeStudio (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/creative/CreativeStudio.tsx:24:27)
+    at DaisychainApp (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:210:49)
+
+stderr | packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx > 🖱️ Click: Video Production Daisychain > successfully completes a 5-step video production daisychain
+Warning: Received `false` for a non-boolean attribute `initial`.
+
+If you want to write it to the DOM, pass a string instead: initial="false" or initial={value.toString()}.
+
+If you used to conditionally omit it with initial={condition && value}, pass initial={condition ? value : undefined} instead.
+    at div
+    at children.children (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:5:19)
+    at div
+    at SectionCard (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/right-panel/CreativePanel.tsx:13:24)
+    at div
+    at div
+    at CreativePanel (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/right-panel/CreativePanel.tsx:73:26)
+    at Suspense
+    at div
+    at div
+    at div
+    at ModuleErrorBoundary (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/core/components/ModuleErrorBoundary.tsx:7:1)
+    at CreativeStudio (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/creative/CreativeStudio.tsx:24:27)
+    at DaisychainApp (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:210:49)
+
+ ❯ packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx (1 test | 1 failed) 1056ms
+     × successfully completes a 5-step video production daisychain 1055ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx > 🖱️ Click: Video Production Daisychain > successfully completes a 5-step video production daisychain
+AssertionError: expected "vi.fn()" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col h-full w-full bg-background selection:bg-dept-creative/30"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mdata-testid[39m=[32m"creative-navbar"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mdata-testid[39m=[32m"director-view-btn"[39m
+          [36m>[39m
+            [0mDirector[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mdata-testid[39m=[32m"daisy-chain-toggle"[39m
+          [36m>[39m
+            [0mDaisy Chain[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mdata-testid[39m=[32m"set-first-frame-btn"[39m
+          [36m>[39m
+            [0mFirst Frame[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mdata-testid[39m=[32m"set-last-frame-btn"[39m
+          [36m>[39m
+            [0mLast Frame[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"md:hidden flex border-b border-white/10 bg-background shrink-0"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors text-muted-foreground"[39m
+            [33mdata-testid[39m=[32m"mobile-tab-controls"[39m
+          [36m>[39m
+            [0mControls[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors text-dept-creative border-b-2 border-dept-creative bg-white/5"[39m
+            [33mdata-testid[39m=[32m"mobile-tab-studio"[39m
+          [36m>[39m
+            [0mStudio[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 flex overflow-hidden relative"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"hidden md:hidden flex-1 flex-col overflow-y-auto bg-[#0f0f0f]"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm"[39m
+              [36m>[39m
+                [36m<h3[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-white flex items-center gap-2"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"p-1.5 bg-purple-500/10 rounded-lg"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33mclass[39m=[32m"text-purple-400"[39m
+                      [33mdata-testid[39m=[32m"icon-Sliders"[39m
+                      [33msize[39m=[32m"14"[39m
+                    [36m/>[39m
+                  [36m</div>[39m
+                  [0mStudio Controls[0m
+                [36m</h3>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex items-center gap-2"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex gap-1 bg-black/40 p-1 rounded-lg border border-white/5"[39m
+                  [36m>[39m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"p-1.5 rounded-md transition-all bg-purple-500/20 text-purple-400 shadow-sm"[39m
+                      [33mtitle[39m=[32m"Create"[39m
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33mdata-testid[39m=[32m"icon-Wand2"[39m
+                        [33msize[39m=[32m"14"[39m
+                      [36m/>[39m
+                    [36m</button>[39m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"p-1.5 rounded-md transition-all text-gray-500 hover:text-gray-300 hover:bg-white/5"[39m
+                      [33mtitle[39m=[32m"History"[39m
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33mdata-testid[39m=[32m"icon-History"[39m
+                        [33msize[39m=[32m"14"[39m
+                      [36m/>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+                      [33msize[39m=[32m"16"[39m
+                    [36m/>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex-1 overflow-y-auto custom-scrollbar p-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"bg-white/5 rounded-xl border border-white/10 overflow-hidden mb-3"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"w-full p-3 flex items-center justify-between hover:bg-white/5 transition-colors"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-2 text-[11px] font-bold text-white tracking-wide uppercase"[39m
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33mclass[39m=[32m"text-purple-400"[39m
+                        [33mdata-testid[39m=[32m"icon-Sparkles"[39m
+                        [33msize[39m=[32m"14"[39m
+                      [36m/>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"flex items-center justify-between w-full"[39m
+                      [36m>[39m
+                        [36m<span>[39m
+                          [0mReference Mixer[0m
+                        [36m</span>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<svg[39m
+                      [33mclass[39m=[32m"text-gray-500 transition-transform duration-300 rotate-180"[39m
+                      [33mdata-testid[39m=[32m"icon-ChevronDown"[39m
+                      [33msize[39m=[32m"14"[39m
+                    [36m/>[39m
+                  [36m</button>[39m
+                  [36m<div[39m
+                    [33manimate[39m=[32m"[object Object]"[39m
+                    [33mclass[39m=[32m"overflow-hidden"[39m
+                    [33mtransition[39m=[32m"[object Object]"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[...
+ ❯ packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:298:51
+    296| 
+    297|         await waitFor(() => {
+    298|             expect(VideoGeneration.generateVideo).toHaveBeenCalledWith…
+       |                                                   ^
+    299|                 firstFrame: 'img1.jpg',
+    300|                 lastFrame: 'img2.jpg'
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  21:25:07
+   Duration  2.23s (transform 347ms, setup 82ms, import 602ms, tests 1.06s, environment 396ms)
+
+
+::error file=/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Clean/packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx,title=packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx > 🖱️ Click%3A Video Production Daisychain > successfully completes a 5-step video production daisychain,line=298,column=51::AssertionError: expected "vi.fn()" to be called with arguments: [ ObjectContaining{…} ]%0A%0ANumber of calls: 0%0A%0A%0AIgnored nodes: comments, script, style%0A<html>%0A  <head />%0A  <body>%0A    <div>%0A      <div%0A        class="flex flex-col h-full w-full bg-background selection:bg-dept-creative/30"%0A      >%0A        <div%0A          data-testid="creative-navbar"%0A        >%0A          <button%0A            data-testid="director-view-btn"%0A          >%0A            Director%0A          </button>%0A          <button%0A            data-testid="daisy-chain-toggle"%0A          >%0A            Daisy Chain%0A          </button>%0A          <button%0A            data-testid="set-first-frame-btn"%0A          >%0A            First Frame%0A          </button>%0A          <button%0A            data-testid="set-last-frame-btn"%0A          >%0A            Last Frame%0A          </button>%0A        </div>%0A        <div%0A          class="md:hidden flex border-b border-white/10 bg-background shrink-0"%0A        >%0A          <button%0A            class="flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors text-muted-foreground"%0A            data-testid="mobile-tab-controls"%0A          >%0A            Controls%0A          </button>%0A          <button%0A            class="flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors text-dept-creative border-b-2 border-dept-creative bg-white/5"%0A            data-testid="mobile-tab-studio"%0A          >%0A            Studio%0A          </button>%0A        </div>%0A        <div%0A          class="flex-1 flex overflow-hidden relative"%0A        >%0A          <div%0A            class="hidden md:hidden flex-1 flex-col overflow-y-auto bg-[#0f0f0f]"%0A          >%0A            <div%0A              class="flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90"%0A            >%0A              <div%0A                class="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm"%0A              >%0A                <h3%0A                  class="text-sm font-semibold text-white flex items-center gap-2"%0A                >%0A                  <div%0A                    class="p-1.5 bg-purple-500/10 rounded-lg"%0A                  >%0A                    <svg%0A                      class="text-purple-400"%0A                      data-testid="icon-Sliders"%0A                      size="14"%0A                    />%0A                  </div>%0A                  Studio Controls%0A                </h3>%0A                <div%0A                  class="flex items-center gap-2"%0A                >%0A                  <div%0A                    class="flex gap-1 bg-black/40 p-1 rounded-lg border border-white/5"%0A                  >%0A                    <button%0A                      class="p-1.5 rounded-md transition-all bg-purple-500/20 text-purple-400 shadow-sm"%0A                      title="Create"%0A                    >%0A                      <svg%0A                        data-testid="icon-Wand2"%0A                        size="14"%0A                      />%0A                    </button>%0A                    <button%0A                      class="p-1.5 rounded-md transition-all text-gray-500 hover:text-gray-300 hover:bg-white/5"%0A                      title="History"%0A                    >%0A                      <svg%0A                        data-testid="icon-History"%0A                        size="14"%0A                      />%0A                    </button>%0A                  </div>%0A                  <button%0A                    class="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"%0A                  >%0A                    <svg%0A                      data-testid="icon-ChevronRight"%0A                      size="16"%0A                    />%0A                  </button>%0A                </div>%0A              </div>%0A              <div%0A                class="flex-1 overflow-y-auto custom-scrollbar p-3"%0A              >%0A                <div%0A                  class="bg-white/5 rounded-xl border border-white/10 overflow-hidden mb-3"%0A                >%0A                  <button%0A                    class="w-full p-3 flex items-center justify-between hover:bg-white/5 transition-colors"%0A                  >%0A                    <div%0A                      class="flex items-center gap-2 text-[11px] font-bold text-white tracking-wide uppercase"%0A                    >%0A                      <svg%0A                        class="text-purple-400"%0A                        data-testid="icon-Sparkles"%0A                        size="14"%0A                      />%0A                      <div%0A                        class="flex items-center justify-between w-full"%0A                      >%0A                        <span>%0A                          Reference Mixer%0A                        </span>%0A                      </div>%0A                    </div>%0A                    <svg%0A                      class="text-gray-500 transition-transform duration-300 rotate-180"%0A                      data-testid="icon-ChevronDown"%0A                      size="14"%0A                    />%0A                  </button>%0A                  <div%0A                    animate="[object Object]"%0A                    class="overflow-hidden"%0A                    transition="[object Object]"%0A                  >%0A                    <div%0A                      class=[...%0A ❯ packages/renderer/src/modules/video/components/VideoDaisychain.interaction.test.tsx:298:51%0A ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12%0A ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77%0A ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16%0A%0A
