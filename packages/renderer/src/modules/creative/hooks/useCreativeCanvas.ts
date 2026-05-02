@@ -506,22 +506,33 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         try {
             const results = await canvasOps.exportBatchDimensions();
             if (results) {
-                toast.success("Batch formats generated! (TikTok, IG, YT)");
-
-                // Helper to trigger download
-                const download = (url: string, suffix: string) => {
-                    const link = document.createElement('a');
-                    link.download = `format-${suffix}-${item.id}.png`;
-                    link.href = url;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                const { addToHistory } = useStore.getState();
+                
+                const saveToCloud = async (url: string, suffix: string) => {
+                    const res = await fetch(url);
+                    const blob = await res.blob();
+                    const assetId = await saveAssetToStorage(blob);
+                    
+                    const formatAsset: HistoryItem = {
+                        id: assetId,
+                        url: url, // Assuming URL is a blob URL or base64. Ideally we'd use the uploaded URL if saveAssetToStorage returned it, but we can stick to the local URL for instant display
+                        prompt: `${item.prompt || 'untitled'} (${suffix})`,
+                        type: 'image',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId,
+                        origin: 'canvas-export',
+                        parentId: item.id,
+                    };
+                    addToHistory(formatAsset);
                 };
 
-                // Trigger downloads
-                download(results.tiktok, '9-16-tiktok');
-                download(results.instagram, '1-1-ig');
-                download(results.youtube, '16-9-yt');
+                await Promise.all([
+                    saveToCloud(results.tiktok, '9-16-tiktok'),
+                    saveToCloud(results.instagram, '1-1-ig'),
+                    saveToCloud(results.youtube, '16-9-yt')
+                ]);
+
+                toast.success("Batch formats saved to gallery! (TikTok, IG, YT)");
             }
         } catch (_error: unknown) {
             toast.error("Batch export failed.");

@@ -11,11 +11,12 @@ import { WhiskService } from '../../services/WhiskService';
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
-// Components
-import { DirectorPromptBar } from './components/DirectorPromptBar';
+// Prompt Builder
+import { VideoPromptBuilder } from '../creative/components/veo/VideoPromptBuilder';
 import { DailiesStrip } from './components/DailiesStrip';
 import { VideoStage } from './components/VideoStage';
-import { SceneBuilder } from './visualizer/SceneBuilder';
+// Lazy load SceneBuilder to prevent vendor-three → vendor-react circular dependency
+const SceneBuilder = lazy(() => import('./visualizer/SceneBuilder').then(m => ({ default: m.SceneBuilder })));
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
 
 /** Valid job status values for video generation */
@@ -143,7 +144,9 @@ export default function VideoWorkflow() {
         characterReferences,
         setStudioControls,
         isRightPanelOpen,
-        toggleRightPanel
+        toggleRightPanel,
+        isPromptBuilderOpen,
+        togglePromptBuilder
     } = useStore(useShallow((state: import('@/core/store').StoreState) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
@@ -161,7 +164,9 @@ export default function VideoWorkflow() {
         characterReferences: state.characterReferences,
         setStudioControls: state.setStudioControls,
         isRightPanelOpen: state.isRightPanelOpen,
-        toggleRightPanel: state.toggleRightPanel
+        toggleRightPanel: state.toggleRightPanel,
+        isPromptBuilderOpen: state.isPromptBuilderOpen,
+        togglePromptBuilder: state.togglePromptBuilder
     })));
 
     // Editor Store
@@ -480,32 +485,7 @@ export default function VideoWorkflow() {
                 className={`flex-1 flex flex-col relative transition-all duration-500 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 hidden'}`}
             >
 
-                {/* Director Prompt Bar Container */}
-                <div className="w-full pt-8 pb-6 px-8 shrink-0 z-20">
-                    <div className="relative">
-                        <DirectorPromptBar
-                            prompt={localPrompt}
-                            onPromptChange={(val) => {
-                                setLocalPrompt(val);
-                                setPrompt(val); // Sync real-time
-                            }}
-                            onGenerate={handleGenerate}
-                            isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
-                        />
-                        {useVideoEditorStore.getState().inputAudio && (
-                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-purple-500/90 backdrop-blur-md rounded-full border border-purple-400/50 shadow-lg shadow-purple-500/20 animate-in fade-in zoom-in duration-300">
-                                <Music className="w-3 h-3 text-white animate-pulse" />
-                                <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Custom Audio Attached</span>
-                                <button
-                                    onClick={() => useVideoEditorStore.getState().setInputAudio(null)}
-                                    className="ml-1 hover:text-red-200 transition-colors"
-                                >
-                                    <Trash2 className="w-3 h-3" />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
+
 
                 {/* Central Preview Stage (Memoized) */}
                 <div className="flex-1 overflow-hidden px-8 pb-32">
@@ -632,6 +612,49 @@ export default function VideoWorkflow() {
                     onSelect={setActiveVideo}
                     onDragStart={handleDragStart}
                 />
+
+                {/* Bottom Prompt Input Bar */}
+                <div className="flex-none border-t border-white/10 bg-background/80 backdrop-blur-xl p-4 shrink-0 z-30">
+                    <div className="flex items-center gap-4 justify-center max-w-4xl mx-auto w-full">
+                        <div className="flex-1 flex flex-col gap-2 relative">
+                            {useVideoEditorStore.getState().inputAudio && (
+                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-purple-500/90 backdrop-blur-md rounded-full border border-purple-400/50 shadow-lg shadow-purple-500/20 animate-in fade-in zoom-in duration-300">
+                                    <Music className="w-3 h-3 text-white animate-pulse" />
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Custom Audio Attached</span>
+                                    <button
+                                        onClick={() => useVideoEditorStore.getState().setInputAudio(null)}
+                                        className="ml-1 hover:text-red-200 transition-colors"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            )}
+                            <VideoPromptBuilder
+                                mode="video"
+                                prompt={localPrompt}
+                                onChange={(val) => {
+                                    setLocalPrompt(val);
+                                    setPrompt(val);
+                                }}
+                                onGenerate={() => handleGenerate()}
+                                disabled={jobStatus === 'queued' || jobStatus === 'processing'}
+                            >
+                                <button
+                                    onClick={togglePromptBuilder}
+                                    data-testid="toggle-prompt-builder"
+                                    className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                    title={isPromptBuilderOpen ? 'Hide Prompt Builder' : 'Show Prompt Builder'}
+                                    aria-expanded={isPromptBuilderOpen}
+                                >
+                                    {isPromptBuilderOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                </button>
+                                <span className="text-[10px] text-muted-foreground uppercase font-mono px-2 border-r border-white/5">
+                                    {studioControls.model.toUpperCase()}
+                                </span>
+                            </VideoPromptBuilder>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Editor Container (Full Screen Overlay) */}

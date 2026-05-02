@@ -65,7 +65,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize Speech Recognition
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             if (SpeechRecognitionCtor) {
                 const recognitionInstance = new SpeechRecognitionCtor() as unknown as VoiceSpeechRecognitionInstance;
                 recognitionInstance.continuous = true;
