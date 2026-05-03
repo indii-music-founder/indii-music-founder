@@ -107,6 +107,8 @@ ${context?.brandKit ? `
 ## BRAND & IDENTITY
 - **Brand Description:** ${context.brandKit.brandDescription || 'Not provided'}
 - **Aesthetic Style:** ${context.brandKit.aestheticStyle || 'Not provided'}
+- **Career Stage:** ${context.userProfile?.careerStage || 'Unknown'}
+- **Primary Goal:** ${context.userProfile?.goals?.[0] || 'Not set'}
 ${context.brandKit.releaseDetails ? `
 - **CURRENT PROJECT (ALBUM/SINGLE):** ${context.brandKit.releaseDetails.title || 'Untitled Project'}
 - **ARTIST NAME:** ${context.brandKit.releaseDetails.artists || 'Unknown Artist'}
