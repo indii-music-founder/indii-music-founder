@@ -14,7 +14,7 @@ export interface MemoryBankResult {
  */
 class MemoryBankService {
     private apiKey: string;
-    private baseUrl = 'https://api.mem0.ai/v1/memories/';
+    private baseUrl = 'https://api.mem0.ai/v2/memories/';
 
     constructor() {
         this.apiKey = import.meta.env.VITE_MEM0_API_KEY || import.meta.env.MEM0_API_KEY || '';
