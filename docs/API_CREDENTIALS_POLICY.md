@@ -45,6 +45,25 @@
 | **Restrictions** | ✅ Restricted to 24 Firebase APIs (Identity Toolkit, etc.) |
 | **Used In** | `.env` (VITE_FIREBASE_API_KEY) |
 
+### Google Maps API Key
+
+| Property | Value |
+| --- | --- |
+| **Key ID** | `Google Maps Platform Key` |
+| **Project** | `indiios-v-1-1` |
+| **Restrictions** | ✅ Restricted to Maps JavaScript API and Places API |
+| **Used In** | `.env` (VITE_GOOGLE_MAPS_API_KEY) |
+| **Notes** | Migrated from deprecated Client IDs (sunset 2026) |
+
+### Mem0 Memory API Key
+
+| Property | Value |
+| --- | --- |
+| **Key ID** | `Mem0 API Key` |
+| **Project** | `External` |
+| **Restrictions** | ✅ Restricted to Mem0 v2 endpoints (`api.mem0.ai/v2/`) |
+| **Used In** | `.env` (VITE_MEM0_API_KEY) |
+
 ---
 
 ## Keys Requiring Attention
@@ -62,6 +81,8 @@
 # .env (Frontend - Vite)
 VITE_API_KEY=<Gemini Developer API Key>
 VITE_FIREBASE_API_KEY=<Gemini Developer API Key>
+VITE_GOOGLE_MAPS_API_KEY=<Google Maps API Key>
+VITE_MEM0_API_KEY=<Mem0 Memory API Key>
 
 # functions/.env (Cloud Functions)
 GEMINI_API_KEY=<Gemini Developer API Key>
