@@ -103,6 +103,11 @@ describe('DirectGenerationTab', () => {
         // generateImageDirectly returns an array of URL strings (data URIs in production)
         mockGenerateImageDirectly.mockReturnValue(generationPromise);
 
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
+            ...mockStore,
+            creativePrompt: 'A cute cat'
+        });
+
         render(<DirectGenerationTab />);
 
         // Type prompt
@@ -135,6 +140,11 @@ describe('DirectGenerationTab', () => {
 
     it('handles generation error correctly', async () => {
         mockGenerateImageDirectly.mockRejectedValue(new Error('API Error'));
+
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
+            ...mockStore,
+            creativePrompt: 'A crash test'
+        });
 
         render(<DirectGenerationTab />);
 

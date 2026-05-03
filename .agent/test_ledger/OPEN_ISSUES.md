@@ -344,7 +344,7 @@
 ---
 
 ### ISSUE-017: Boardroom Overlay Z-Index Bleed
-- **Status:** OPEN (Regression)
+- **Status:** FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** UI/UX Polish
 - **Module:** Creative Director & Boardroom
@@ -362,7 +362,7 @@
 ---
 
 ### ISSUE-018: Direct Generation State Volatility (Prompt Loss)
-- **Status:** OPEN (Regression)
+- **Status:** FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** State Persistence
 - **Module:** Creative Director (Direct Generation)
@@ -399,7 +399,7 @@
 ---
 
 ### ISSUE-020: "Back to Studio" Button Unreliable
-- **Status:** OPEN (Regression)
+- **Status:** FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Navigation Clarity
 - **Module:** Boardroom
@@ -445,7 +445,7 @@
 ---
 
 ### ISSUE-023: Global State Loss on Page Reload
-- **Status:** OPEN (Regression)
+- **Status:** FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** State Persistence
 - **Module:** Brand Manager
@@ -508,3 +508,20 @@
 - **Found:** 2026-05-02 by Detroit Producer (CI Validation)
 - **Fixed:** Increased `waitFor` timeouts to 10s in the dashboard rendering tests. Also fixed a hidden functional bug in `OnboardingPage.test.tsx` where toolCall prompt buttons were immediately disabled due to extra history items, enabling full 100% CI stabilization.
 - **Notes:** Repository passes all shards sequentially without resource-contention issues under heavy CPU load.
+
+---
+
+### ISSUE-028: Brand Manager State Persistence Fails on Reload
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** State Persistence
+- **Module:** Brand Manager
+- **Found:** 2026-05-03 by Detroit Producer
+- **Steps to Reproduce:**
+  1. Navigate to the Brand Manager module.
+  2. Type text into a field in Identity Core or Visual DNA (e.g., 'My test bio' into Bio).
+  3. Perform a hard reload of the browser page.
+  4. The text entered is missing and reverts to "No bio written yet" or blank.
+- **User Impact:** Data entered by the user is lost upon refresh, making the Brand Manager unreliable.
+- **Screenshot:** real_testing_recent_fixes
+- **Notes:** Fixed by introducing a Last-Write-Wins (LWW) conflict resolution logic in `profileSlice.ts`. `setUserProfile` now bumps the `updatedAt` timestamp, and the `onSnapshot` Firestore listener will ignore stale cloud updates if the local profile timestamp is newer, preserving offline/un-synced changes on reload.

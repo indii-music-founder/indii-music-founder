@@ -199,16 +199,20 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
 
     if (!targetId) return undefined;
 
-    // Strategy: Network First (for Profile, we want accuracy over speed on load)
-    // 1. Try Cloud if authorized
+    // Strategy: Local First (to preserve offline/permission-denied changes)
+    const localProfile = await dbLocal.get(PROFILE_STORE, targetId);
+    if (localProfile) {
+        logger.info('[Repository] Serving profile from Local Cache');
+        // We could trigger a background sync to cloud here if needed
+        return localProfile;
+    }
+
+    // 2. Try Cloud if authorized and local is missing
     if (user && user.uid === targetId) {
         try {
             const docRef = doc(db, 'users', user.uid);
             const snap = await getDoc(docRef);
             if (snap.exists()) {
-                // Firestore snap.data() does NOT include the document ID in the
-                // returned object, but PROFILE_STORE has keyPath: 'id'.
-                // Merge snap.id so IDB never throws DataError.
                 const cloudProfile: UserProfile = { ...(snap.data() as UserProfile), id: snap.id };
                 logger.info('[Repository] Fetched fresh profile from Cloud');
 
@@ -217,15 +221,8 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
                 return cloudProfile;
             }
         } catch (error: unknown) {
-            logger.warn('[Repository] Cloud profile fetch failed, falling back to local:', error);
+            logger.warn('[Repository] Cloud profile fetch failed:', error);
         }
-    }
-
-    // 2. Fallback to Local
-    const localProfile = await dbLocal.get(PROFILE_STORE, targetId);
-    if (localProfile) {
-        logger.info('[Repository] Serving profile from Local Cache');
-        return localProfile;
     }
 
     return undefined;

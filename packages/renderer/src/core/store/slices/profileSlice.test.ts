@@ -63,8 +63,12 @@ describe('ProfileSlice Persistence', () => {
 
         setUserProfile(mockProfile);
 
-        expect(useStore.getState().userProfile).toEqual(mockProfile);
-        expect(saveProfileToStorage).toHaveBeenCalledWith(mockProfile);
+        const stateProfile = useStore.getState().userProfile;
+        expect(stateProfile.id).toBe(mockProfile.id);
+        expect(stateProfile.bio).toBe(mockProfile.bio);
+        expect(stateProfile.updatedAt).toBeDefined();
+        
+        expect(saveProfileToStorage).toHaveBeenCalledWith(stateProfile);
     });
 
     it('updateBrandKit should update state and save to storage', () => {
@@ -74,16 +78,11 @@ describe('ProfileSlice Persistence', () => {
 
         updateBrandKit({ brandDescription: 'New Brand' });
 
-        const expectedProfile = {
-            ...mockProfile,
-            brandKit: {
-                ...mockProfile.brandKit,
-                brandDescription: 'New Brand'
-            }
-        };
+        const stateProfile = useStore.getState().userProfile;
+        expect(stateProfile.brandKit.brandDescription).toBe('New Brand');
+        expect(stateProfile.updatedAt).toBeDefined();
 
-        expect(useStore.getState().userProfile).toEqual(expectedProfile);
-        expect(saveProfileToStorage).toHaveBeenCalledWith(expectedProfile);
+        expect(saveProfileToStorage).toHaveBeenCalledWith(stateProfile);
     });
 
     it('loadUserProfile should load profile from storage', async () => {

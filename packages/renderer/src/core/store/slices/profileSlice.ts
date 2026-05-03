@@ -88,15 +88,17 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     },
     addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
     setUserProfile: (profile) => {
-        set({ userProfile: profile });
+        const newProfile = { ...profile, updatedAt: Timestamp.now() };
+        set({ userProfile: newProfile });
         // Persistence Strategy: Hybrid (IndexedDB for speed + Firestore for cloud backup)
-        saveProfileToStorage(profile).catch(err => logger.error("[ProfileSlice] Failed to save profile:", err));
+        saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save profile:", err));
     },
     updateBrandKit: (updates) => set((state) => {
         const currentBrandKit = state.userProfile.brandKit || DEFAULT_BRAND_KIT;
         const newProfile = {
             ...state.userProfile,
-            brandKit: { ...currentBrandKit, ...updates }
+            brandKit: { ...currentBrandKit, ...updates },
+            updatedAt: Timestamp.now()
         };
         saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save profile update:", err));
         return { userProfile: newProfile };
@@ -190,6 +192,25 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 const unsubscribe = onSnapshot(userRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const cloudProfile = docSnap.data() as UserProfile;
+                        
+                        const currentProfile = get().userProfile;
+                        const getMs = (t: any) => {
+                            if (!t) return 0;
+                            if (typeof t.toMillis === 'function') return t.toMillis();
+                            if (t.seconds) return t.seconds * 1000 + (t.nanoseconds || 0) / 1000000;
+                            // Also handle ISO strings if somehow it was converted
+                            if (typeof t === 'string') return new Date(t).getTime();
+                            return 0;
+                        };
+                        
+                        const currentMs = getMs(currentProfile?.updatedAt);
+                        const cloudMs = getMs(cloudProfile?.updatedAt);
+
+                        if (currentMs > cloudMs) {
+                            logger.info('[Profile] Ignoring stale cloud update (local is newer)');
+                            return;
+                        }
+
                         set({ userProfile: cloudProfile });
                     }
                 }, (error) => {
@@ -222,7 +243,8 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
 
         const newProfile = {
             ...state.userProfile,
-            preferences: { ...preferences, theme }
+            preferences: { ...preferences, theme },
+            updatedAt: Timestamp.now()
         };
         saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save theme update:", err));
         return { userProfile: newProfile };
@@ -231,7 +253,8 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         const currentPrefs = state.userProfile.preferences || { theme: 'system', notifications: true };
         const newProfile = {
             ...state.userProfile,
-            preferences: { ...currentPrefs, ...updates }
+            preferences: { ...currentPrefs, ...updates },
+            updatedAt: Timestamp.now()
         };
         saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save preferences:", err));
         return { userProfile: newProfile };
