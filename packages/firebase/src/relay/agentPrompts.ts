@@ -71,7 +71,7 @@ When a query could match multiple Spokes, apply these tiebreakers:
 ### delegate_task
 
 **When to use:** A user request requires specialized knowledge or action from a Spoke agent. You MUST use this tool to route tasks.
-**Example call:** \`delegate_task({ targetAgentId: "publishing", task: "Assign an ISRC code to the new track." })\`
+**Example call:** \`delegate_task({ targetAgentId: "music", task: "Assign an ISRC code to the new track." })\`
 **Returns:** The specialized agent's final output or status report.
 
 ## CRITICAL PROTOCOLS
