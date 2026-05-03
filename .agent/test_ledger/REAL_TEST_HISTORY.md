@@ -127,3 +127,11 @@
 - **Findings:** 2 CRITICAL, 1 HIGH, 1 MEDIUM
 - **Key Issues:** Global state lost on reload, Vite resolution failure on reload, UI lag on tabs.
 - **UX Score:** NO-GO for Demo
+
+## 2026-05-02 - Detroit Producer - Brand Interview Logic Test
+- **Modules Tested:** Brand Manager (Brand Interview)
+- **Duration:** 5 minutes
+- **Findings:** 1 HIGH
+- **Key Issues:** AI returns empty bubbles due to Firebase permission-denied / empty responses.
+- **Coverage Delta:** Validated function call extraction (failed gracefully but exposed backend error).
+- **UX Score:** 15/30

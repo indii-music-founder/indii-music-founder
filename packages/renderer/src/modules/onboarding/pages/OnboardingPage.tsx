@@ -177,7 +177,7 @@ export default function OnboardingPage() {
                                                     {msg.toolCall?.name === 'askMultipleChoice' && (
                                                         <MultipleChoiceRenderer
                                                             options={msg.toolCall.args.options}
-                                                            hasBeenAnswered={idx < history.length - 1}
+                                                            hasBeenAnswered={history.slice(idx + 1).some(m => m.role === 'user')}
                                                             onSelect={(opt) => handleSend(opt)}
                                                         />
                                                     )}

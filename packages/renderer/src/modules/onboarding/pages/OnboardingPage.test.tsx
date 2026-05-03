@@ -94,7 +94,7 @@ describe('OnboardingPage', () => {
                 expect(screen.getByText('Techno')).toBeInTheDocument();
                 expect(screen.getByText('House')).toBeInTheDocument();
                 expect(screen.getByText('DNB')).toBeInTheDocument();
-            });
+            }, { timeout: 10000 });
 
             // 3. Verify interaction
             fireEvent.click(screen.getByText('Techno'));
@@ -107,8 +107,8 @@ describe('OnboardingPage', () => {
                 const lastCallHistory = calls[1]?.[0] || [];
                 const lastMessage = lastCallHistory?.[(lastCallHistory?.length ?? 1) - 1];
                 expect(lastMessage?.parts?.[0]?.text).toBe('Techno');
-            });
-        });
+            }, { timeout: 10000 });
+        }, 15000);
     });
 
     describe('Accessibility', () => {

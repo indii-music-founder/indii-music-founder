@@ -166,6 +166,7 @@ export default defineConfig({
                             pkg === 'react-dom' ||
                             pkg === 'react-router' ||
                             pkg === 'react-router-dom' ||
+                            pkg === '@remix-run/router' ||
                             pkg === 'scheduler' ||
                             pkg === 'react-is'
                         ) {

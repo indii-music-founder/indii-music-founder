@@ -24,6 +24,31 @@ export const CareerStageSelector = ({ value, onChange }: { value: string; onChan
     );
 };
 
+// --- Primary Goal Selector ---
+
+export const PrimaryGoalSelector = ({ value, onChange }: { value: string; onChange: (val: string) => void }) => {
+    const goals = [
+        'World Domination',
+        'Local Hero',
+        'Niche Mastery',
+        'Global Touring',
+        'Financial Independence',
+        'Creative Sandbox'
+    ];
+    return (
+        <div className="relative group z-30 inline-block w-full">
+            <select
+                value={value || 'World Domination'}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full appearance-none bg-[#0a0a0a] border border-gray-800 rounded-lg px-3 py-2 text-xs font-bold text-white focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 outline-none cursor-pointer hover:border-gray-600 transition-colors"
+            >
+                {goals.map(g => <option key={g} value={g} className="bg-[#111] text-gray-200">{g}</option>)}
+            </select>
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-dept-marketing pointer-events-none" />
+        </div>
+    );
+};
+
 // --- Font Selector ---
 
 export const FontSelector = ({ value, onChange }: { value: string; onChange: (val: string) => void }) => {

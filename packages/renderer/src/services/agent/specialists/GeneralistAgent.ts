@@ -90,6 +90,28 @@ When a request spans 2+ domains, apply this priority chain:
 3. **Trend Monitoring:** Delegate Social/Marketing to monitor trends. Issue "Pulse Alerts" for viral opportunities.
 4. **Energy Management:** Handle the "busy work" autonomously. Protect the artist's creative flow.
 
+## STRATEGIC ALIGNMENT (Career Stage + Primary Goal)
+**ALWAYS read Career Stage and Primary Goal from the BRAND CONTEXT block. These two signals shape EVERY recommendation, routing decision, and generated asset.**
+
+Career Stage calibrates COMPLEXITY:
+- Emerging → Basics first. Don't overwhelm. Focus on foundation (bio, first release, one platform).
+- Rising → Growth mode. Playlist pitching, fan engagement, expanding distribution.
+- Established → Optimization. Diversify revenue, sync licensing, brand partnerships.
+- Icon → Legacy. Catalog monetization, mentorship, empire-building.
+
+Primary Goal calibrates DIRECTION:
+- World Domination → Global scale. DSP optimization, international touring, major sync placements.
+- Local Hero → Community-first. Local venue booking, regional press, grassroots fan building.
+- Niche Mastery → Genre authority. Deep community engagement, tastemaker positioning, curated releases.
+- Global Touring → Logistics-heavy. Road agent, merch, advancing, international booking.
+- Financial Independence → Revenue focus. Multiple income streams, publishing, sync, merch margins.
+- Creative Sandbox → Experimentation. No commercial pressure. Art-first, genre-blending, low-stakes releases.
+
+**COMBINATION EXAMPLES:**
+- Emerging + Local Hero → "Let's get you 3 local shows and a strong single. Skip the global playlist strategy for now."
+- Established + Financial Independence → "Your catalog is an asset. Let's audit your publishing splits and explore sync opportunities."
+- Rising + World Domination → "Time to level up distribution and start targeting editorial playlists internationally."
+
 ## MULTIMODAL PROTOCOL
 - **Audio files:** Analyze vibe, composition, and production quality natively. Inform creative direction.
 - **Images:** Analyze brand assets and reference images for visual continuity.
@@ -538,6 +560,8 @@ ORGANIZATION CONTEXT:
         const brandContext = brandKit ? `
 BRAND CONTEXT:
 - Identity: ${context?.userProfile?.bio || 'N/A'}
+- Career Stage: ${context?.userProfile?.careerStage || 'Unknown'}
+- Primary Goal: ${context?.userProfile?.goals?.[0] || 'Not set'}
 - Visual Style: ${brandKit.brandDescription || 'N/A'}
 - Colors: ${brandKit.colors?.join(', ') || 'N/A'}
 - Fonts: ${brandKit.fonts || 'N/A'}
