@@ -110,26 +110,37 @@ const BrandInterview: React.FC = () => {
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 space-y-6 custom-scrollbar">
                     <AnimatePresence mode="popLayout">
-                        {history.map((msg, idx) => (
-                            <motion.div
-                                key={idx}
-                                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                            >
-                                <div className={`max-w-[85%] lg:max-w-[80%]`}>
-                                    <div className={`
-                                        p-4 rounded-2xl shadow-lg backdrop-blur-md
-                                        ${msg.role === 'user'
-                                            ? 'bg-white text-black font-medium border border-white/20'
-                                            : 'bg-white/5 border border-white/10 text-gray-200'
-                                        }
-                                    `}>
-                                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.parts[0]!.text}</p>
+                        {history.map((msg, idx) => {
+                            const hasText = msg.parts.some(p => p.text);
+                            const hasUiTool = !!msg.toolCall;
 
-                                        {/* Generative UI Components */}
-                                        {msg.toolCall?.name === 'askMultipleChoice' && (
+                            // Skip rendering empty bubbles for silent function calls or function responses
+                            if (msg.role === 'function' || (!hasText && !hasUiTool)) {
+                                return null;
+                            }
+
+                            return (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    <div className={`max-w-[85%] lg:max-w-[80%]`}>
+                                        <div className={`
+                                            p-4 rounded-2xl shadow-lg backdrop-blur-md
+                                            ${msg.role === 'user'
+                                                ? 'bg-white text-black font-medium border border-white/20'
+                                                : 'bg-white/5 border border-white/10 text-gray-200'
+                                            }
+                                        `}>
+                                            {msg.parts.map((part, pIdx) => part.text ? (
+                                                <p key={pIdx} className="text-sm leading-relaxed whitespace-pre-wrap">{part.text}</p>
+                                            ) : null)}
+
+                                            {/* Generative UI Components */}
+                                            {msg.toolCall?.name === 'askMultipleChoice' && (
                                             <MultipleChoiceRenderer
                                                 options={msg.toolCall.args.options}
                                                 hasBeenAnswered={idx < history.length - 1}
@@ -158,7 +169,8 @@ const BrandInterview: React.FC = () => {
                                     </div>
                                 </div>
                             </motion.div>
-                        ))}
+                        );
+                        })}
                     </AnimatePresence>
 
                     {isProcessing && (

@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
     Shield, Palette, Disc, Activity,
-    User, Zap, Sparkles, MessageCircle
+    User, Sparkles, MessageCircle
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { BrandKit } from '@/modules/workflow/types';
@@ -18,6 +18,7 @@ import {
     ReleasePanel,
     HealthPanel,
     CareerStageSelector,
+    PrimaryGoalSelector,
 } from './brand-manager';
 import type { BrandKitWithDefaults, ReleaseDetails } from './brand-manager';
 
@@ -139,17 +140,32 @@ const BrandManager: React.FC = () => {
                                 <CareerStageSelector
                                     value={userProfile?.careerStage || 'Emerging'}
                                     onChange={(val) => {
-                                        if (userProfile) setUserProfile({ ...userProfile, careerStage: val });
+                                        if (userProfile) {
+                                            setUserProfile({ ...userProfile, careerStage: val });
+                                            if (userProfile.id) {
+                                                const userRef = doc(db, 'users', userProfile.id);
+                                                updateDoc(userRef, { careerStage: val });
+                                            }
+                                        }
                                     }}
                                 />
                             </div>
                             <div className="h-px bg-gray-800/50" />
                             <div>
                                 <div className="text-[9px] uppercase tracking-wider text-gray-500 font-bold mb-2">Primary Goal</div>
-                                <div className="text-xs font-bold text-white flex items-center gap-2 bg-[#0a0a0a] p-2 rounded-lg border border-gray-800">
-                                    <Zap size={12} className="text-yellow-500" />
-                                    {userProfile?.goals?.[0] || 'World Domination'}
-                                </div>
+                                <PrimaryGoalSelector
+                                    value={userProfile?.goals?.[0] || ''}
+                                    onChange={(val) => {
+                                        if (userProfile) {
+                                            const newGoals = [val, ...(userProfile.goals?.slice(1) || [])];
+                                            setUserProfile({ ...userProfile, goals: newGoals });
+                                            if (userProfile.id) {
+                                                const userRef = doc(db, 'users', userProfile.id);
+                                                updateDoc(userRef, { goals: newGoals });
+                                            }
+                                        }
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>
@@ -174,16 +190,32 @@ const BrandManager: React.FC = () => {
                         <AnimatePresence mode="wait">
 
                             {/* IDENTITY TAB */}
-                            {activeTab === 'identity' && <IdentityPanel {...tabProps} />}
+                            {activeTab === 'identity' && (
+                                <motion.div key="identity" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                                    <IdentityPanel {...tabProps} />
+                                </motion.div>
+                            )}
 
                             {/* VISUALS TAB */}
-                            {activeTab === 'visuals' && <VisualsPanel {...tabProps} />}
+                            {activeTab === 'visuals' && (
+                                <motion.div key="visuals" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                                    <VisualsPanel {...tabProps} />
+                                </motion.div>
+                            )}
 
                             {/* RELEASE TAB */}
-                            {activeTab === 'release' && <ReleasePanel {...tabProps} />}
+                            {activeTab === 'release' && (
+                                <motion.div key="release" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                                    <ReleasePanel {...tabProps} />
+                                </motion.div>
+                            )}
 
                             {/* HEALTH CHECK TAB */}
-                            {activeTab === 'health' && <HealthPanel {...tabProps} />}
+                            {activeTab === 'health' && (
+                                <motion.div key="health" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                                    <HealthPanel {...tabProps} />
+                                </motion.div>
+                            )}
 
                             {/* INTERVIEW TAB */}
                             {activeTab === 'interview' && (

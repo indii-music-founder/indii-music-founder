@@ -179,7 +179,8 @@ export async function generateWithFallback(
             response: {
                 candidates: result.candidates,
                 usageMetadata: result.usageMetadata,
-                text: () => result.text || ''
+                text: () => result.text || '',
+                functionCalls: () => result.functionCalls
             } as unknown as GenerateContentResponse
         } as GenerateContentResult;
     } catch (error: unknown) {

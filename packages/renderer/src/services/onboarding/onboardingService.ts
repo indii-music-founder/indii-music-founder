@@ -75,11 +75,11 @@ import {
 // --- Main Conversation Runner ---
 
 export async function runOnboardingConversation(
-    history: { role: string, parts: ContentPart[] }[],
+    history: { role: string, parts: any[], thoughtSignature?: string }[],
     userProfile: UserProfile,
     mode: 'onboarding' | 'update',
     files: ConversationFile[] = []
-): Promise<{ text: string, functionCalls?: FunctionCallPart['functionCall'][] }> {
+): Promise<{ text: string, functionCalls?: FunctionCallPart['functionCall'][], thoughtSignature?: string }> {
 
     const { coreMissing, releaseMissing, coreProgress, releaseProgress } = calculateProfileStatus(userProfile);
     const currentPhase = determinePhase(userProfile);
@@ -251,7 +251,9 @@ ALWAYS preserve what they're NOT changing.`;
     // Prepare contents with files
     const contents = history.map(h => ({
         role: h.role as 'user' | 'model' | 'system' | 'function',
-        parts: [...h.parts]
+        parts: h.thoughtSignature && h.role === 'user' && h.parts.length > 0 
+            ? [...h.parts.slice(0, -1), { ...h.parts[h.parts.length - 1], thoughtSignature: h.thoughtSignature }]
+            : [...h.parts]
     }));
 
     // Attach files to the last message if it's from the user
@@ -297,6 +299,18 @@ ALWAYS preserve what they're NOT changing.`;
         const text = response.response.text() || "";
         const functionCalls = (response.response.functionCalls?.() as { name: string; args: Record<string, unknown>; }[] | undefined);
 
+        // Extract thought signature
+        let thoughtSignature: string | undefined;
+        if (response.response.candidates && response.response.candidates[0]?.content?.parts) {
+            const parts = response.response.candidates[0].content.parts;
+            for (const part of parts) {
+                if ('thoughtSignature' in part && (part as any).thoughtSignature) {
+                    thoughtSignature = (part as any).thoughtSignature;
+                    break;
+                }
+            }
+        }
+
         // Guard against empty responses that leave the user with no feedback
         if (!text && (!functionCalls || functionCalls.length === 0)) {
             logger.warn('[Onboarding] Model returned empty response with no function calls');
@@ -305,6 +319,7 @@ ALWAYS preserve what they're NOT changing.`;
         return {
             text,
             functionCalls,
+            thoughtSignature,
         };
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);

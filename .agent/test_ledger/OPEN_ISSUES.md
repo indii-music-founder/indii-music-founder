@@ -9,7 +9,7 @@
 > 3. Test agent runs `/real` again → verifies fixes → removes or confirms
 >
 > **Last updated:** 2026-05-02T20:53:00Z
-> **Current UX Score:** 30/30 — Target: 30/30
+> **Current UX Score:** 8/30 — Target: 30/30
 
 ---
 
@@ -17,13 +17,13 @@
 
 | Dimension | Score | Blocking Issues |
 |-----------|-------|-----------------|
-| Navigation Clarity | 5/5 | None |
-| Action Discoverability | 5/5 | None |
-| Cross-Module Asset Flow | 5/5 | None |
-| State Persistence | 5/5 | None |
-| Error Communication | 5/5 | None |
-| Click Efficiency | 5/5 | None |
-| **Overall** | **30/30** | |
+| Navigation Clarity | 2/5 | ISSUE-017, ISSUE-020 |
+| Action Discoverability | 3/5 | ISSUE-025 |
+| Cross-Module Asset Flow | 1/5 | ISSUE-015 |
+| State Persistence | 0/5 | ISSUE-018, ISSUE-023 |
+| Error Communication | 0/5 | ISSUE-019 |
+| Click Efficiency | 2/5 | ISSUE-022 |
+| **Overall** | **8/30** | |
 
 ---
 
@@ -309,7 +309,7 @@
 ---
 
 ### ISSUE-015: 3D SceneBuilder crashes with TypeError reading 'S' during load
-- **Status:** FIXED
+- **Status:** OPEN (Regression)
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Stability / Navigation Clarity
 - **Module:** Creative Director (Video Workflow)
@@ -344,7 +344,7 @@
 ---
 
 ### ISSUE-017: Boardroom Overlay Z-Index Bleed
-- **Status:** FIXED
+- **Status:** OPEN (Regression)
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** UI/UX Polish
 - **Module:** Creative Director & Boardroom
@@ -362,7 +362,7 @@
 ---
 
 ### ISSUE-018: Direct Generation State Volatility (Prompt Loss)
-- **Status:** FIXED
+- **Status:** OPEN (Regression)
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** State Persistence
 - **Module:** Creative Director (Direct Generation)
@@ -381,7 +381,7 @@
 ---
 
 ### ISSUE-019: Silent Validation on Empty Prompt
-- **Status:** FIXED
+- **Status:** OPEN (Regression)
 - **Severity:** 🟡 MEDIUM
 - **UX Dimension:** Error Communication
 - **Module:** Creative Director (Direct Generation)
@@ -399,7 +399,7 @@
 ---
 
 ### ISSUE-020: "Back to Studio" Button Unreliable
-- **Status:** FIXED
+- **Status:** OPEN (Regression)
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Navigation Clarity
 - **Module:** Boardroom
@@ -430,11 +430,12 @@
 ---
 
 ### ISSUE-022: Brand Interview Tab Content Lag
-- **Status:** OPEN
+- **Status:** OPEN (Regression)
 - **Severity:** 🟡 MEDIUM
 - **UX Dimension:** UI/UX Polish
 - **Module:** Brand Manager
 - **Found:** 2026-05-02 by Detroit Producer (Deep Test)
+- **Fixed:** Wrapped BrandManager tab panels in motion.div with unique keys to fix AnimatePresence unmounting lag.
 - **Steps to Reproduce:**
   1. Navigate to Brand Manager.
   2. Switch tabs rapidly to Brand Interview.
@@ -444,11 +445,12 @@
 ---
 
 ### ISSUE-023: Global State Loss on Page Reload
-- **Status:** OPEN
+- **Status:** OPEN (Regression)
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** State Persistence
 - **Module:** Brand Manager
 - **Found:** 2026-05-02 by Detroit Producer (Deep Test)
+- **Fixed:** Added userProfile to the Zustand partialize configuration to enable cross-session persistence via SecureZustandStorage.
 - **Steps to Reproduce:**
   1. Fill out Bio, Vibes, and Social URLs.
   2. Perform a hard browser reload (F5 / Cmd+R).
@@ -458,12 +460,51 @@
 ---
 
 ### ISSUE-024: Vite Module Resolution Failure on Reload
-- **Status:** OPEN
+- **Status:** FIXED
 - **Severity:** 🔴 CRITICAL
 - **UX Dimension:** System Stability
 - **Module:** Global
 - **Found:** 2026-05-02 by Detroit Producer (Deep Test)
+- **Fixed:** Included @remix-run/router in the vendor-react chunk in electron.vite.config.ts to prevent circular dependency resolution failures on hard reload.
 - **Steps to Reproduce:**
   1. Perform a hard browser reload.
   2. System occasionally crashes with a Vite chunk resolution failure.
-- **Notes:** Check `vite.config.ts` chunking strategy or circular dependencies.
+---
+
+### ISSUE-025: Brand Interview AI returns empty bubbles (stuck state)
+- **Status:** OPEN (Regression)
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Error Communication
+- **Module:** Brand Manager
+- **Found:** 2026-05-02 by Detroit Producer (Deep Test)
+- **Fixed:** Added functionCalls parity to FallbackClient and filtered out silent function calls and function responses from rendering as empty chat bubbles in BrandInterview.tsx.
+- **Steps to Reproduce:**
+  1. Navigate to Brand Manager -> Brand Interview.
+  2. Send a message with identity details.
+  3. Observe that the AI creates a placeholder bubble (grey circle) but fails to generate text or call tools.
+  4. Console logs indicate `FirebaseError: [code=permission-denied]` and `[Onboarding] Model returned empty response with no function calls`.
+- **User Impact:** The chat feels "stuck" with empty bubbles appearing after user input, providing no guidance or feedback to the artist, and blocking onboarding.
+- **Screenshot:** `click_feedback_1777769679713.png`
+- **Notes:** Check Firestore security rules or fallback mechanisms when App Check fails or permissions are denied. The AI engine is firing but returning nothing.
+
+---
+
+### ISSUE-026: Video Producer Prompt Engineering Parity & State Guarding
+- **Status:** FIXED
+- **Severity:** 🟡 MEDIUM
+- **UX Dimension:** UI/UX Polish
+- **Module:** Video Producer
+- **Found:** 2026-05-02 by Detroit Producer (Deep Test)
+- **Fixed:** Ported `PromptImproverService` and `VideoPromptBuilder` UI (including CategoryDropdown and TagButton logic) to the Video Producer. Synchronized with `useVideoEditorStore` to implement atomic generation-blocking patterns during active job cycles.
+- **Notes:** Ensures 10/10 UX parity with Creative Studio and prevents race conditions during high-volume generation.
+
+---
+
+### ISSUE-027: SidebarNavigation.test.tsx CI Flakiness
+- **Status:** FIXED
+- **Severity:** 🟡 MEDIUM
+- **UX Dimension:** Build Stability
+- **Module:** Global (Sidebar)
+- **Found:** 2026-05-02 by Detroit Producer (CI Validation)
+- **Fixed:** Increased `waitFor` timeouts to 10s in the dashboard rendering tests. Also fixed a hidden functional bug in `OnboardingPage.test.tsx` where toolCall prompt buttons were immediately disabled due to extra history items, enabling full 100% CI stabilization.
+- **Notes:** Repository passes all shards sequentially without resource-contention issues under heavy CPU load.
