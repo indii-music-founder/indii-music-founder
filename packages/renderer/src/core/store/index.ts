@@ -116,6 +116,7 @@ export const useStore = create<StoreState>()(
                 // Add currentModule if we want to remember the last tab
                 currentModule: state.currentModule,
                 isBoardroomMode: state.isBoardroomMode,
+                userProfile: state.userProfile,
                 // ISSUE-006: Session persistence for draft prompts
                 ...(state.isSessionPersistent ? { creativePrompt: state.creativePrompt } : {})
             }),

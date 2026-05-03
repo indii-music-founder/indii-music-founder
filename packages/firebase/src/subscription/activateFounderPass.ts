@@ -27,8 +27,8 @@ import { createHash } from 'crypto';
 import { githubTokenFounders } from '../config/secrets';
 import { SubscriptionTier } from '../shared/subscription/types';
 
-const GITHUB_REPO_OWNER = 'new-detroit-music-llc';
-const GITHUB_REPO_NAME = 'indiiOS-Alpha-Electron';
+const GITHUB_REPO_OWNER = 'the-walking-agency-det';
+const GITHUB_REPO_NAME = 'indiiOS-Clean';
 const FOUNDERS_FILE_PATH = 'packages/renderer/src/config/founders.ts'; // Fixing path to point to renderer config
 const MAX_FOUNDER_SEATS = 10;
 const AGREEMENT_VERSION = '1.0.0';

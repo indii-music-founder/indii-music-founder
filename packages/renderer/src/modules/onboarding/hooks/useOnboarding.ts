@@ -21,11 +21,17 @@ import { secureRandomPick } from '@/utils/crypto-random';
 
 export interface HistoryItem {
     role: string;
-    parts: { text: string; inlineData?: { mimeType: string; data: string } }[];
+    parts: { 
+        text?: string; 
+        inlineData?: { mimeType: string; data: string };
+        functionCall?: { name: string; args: Record<string, unknown> };
+        functionResponse?: { name: string; response: Record<string, unknown> };
+    }[];
     toolCall?: {
         name: string;
         args: any;
     } | null;
+    thoughtSignature?: string;
 }
 
 interface ShareInsightArgs {
@@ -190,6 +196,13 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         if (!textToSend.trim() && files.length === 0) return;
 
         const userMsg: HistoryItem = { role: 'user', parts: [{ text: textToSend }] };
+        
+        // Inject thoughtSignature from previous model message if available
+        const lastModelMsg = history.slice().reverse().find(m => m.role === 'model' && m.thoughtSignature);
+        if (lastModelMsg && lastModelMsg.thoughtSignature) {
+            userMsg.thoughtSignature = lastModelMsg.thoughtSignature;
+        }
+
         const newHistory = [...history, userMsg];
         setHistory(newHistory);
         setInput('');
@@ -198,7 +211,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         setIsProcessing(true);
 
         try {
-            const { text, functionCalls } = await runOnboardingConversation(newHistory, userProfile, resolvedMode, currentFiles);
+            const { text, functionCalls, thoughtSignature } = await runOnboardingConversation(newHistory, userProfile, resolvedMode, currentFiles);
             const nextHistory = [...newHistory];
             let uiToolCall: HistoryItem['toolCall'] = null;
 
@@ -252,6 +265,29 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                     }
                 }
 
+                // Push the model's function calls (and text if present) into history
+                const modelParts: any[] = functionCalls.map(fc => ({ functionCall: { name: fc.name, args: fc.args } }));
+                if (text) {
+                    modelParts.push({ text });
+                }
+                
+                nextHistory.push({ 
+                    role: 'model', 
+                    parts: modelParts, 
+                    toolCall: uiToolCall,
+                    thoughtSignature 
+                });
+
+                // Push the system's function response into history
+                const functionResponseParts = functionCalls.map(fc => ({
+                    functionResponse: { name: fc.name, response: { success: true } }
+                }));
+                nextHistory.push({
+                    role: 'function',
+                    parts: functionResponseParts
+                });
+
+                // If no text was returned but we made updates, add a natural fallback as a second model turn
                 if (!text && updates.length > 0) {
                     const { coreMissing, releaseMissing } = calculateProfileStatus(updatedProfile);
                     const nextMissing = (coreMissing.length > 0
@@ -262,14 +298,12 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
 
                     const isReleaseContext = coreMissing.length === 0 && releaseMissing.length > 0;
                     const fallbackText = generateNaturalFallback(updates, nextMissing, isReleaseContext);
-                    nextHistory.push({ role: 'model', parts: [{ text: fallbackText }], toolCall: uiToolCall });
-                } else if (text) {
-                    nextHistory.push({ role: 'model', parts: [{ text }], toolCall: uiToolCall });
-                } else {
-                    nextHistory.push({ role: 'model', parts: [{ text: generateEmptyResponseFallback() }], toolCall: uiToolCall });
+                    nextHistory.push({ role: 'model', parts: [{ text: fallbackText }], thoughtSignature });
+                } else if (!text) {
+                    nextHistory.push({ role: 'model', parts: [{ text: generateEmptyResponseFallback() }], thoughtSignature });
                 }
             } else {
-                nextHistory.push({ role: 'model', parts: [{ text }] });
+                nextHistory.push({ role: 'model', parts: [{ text }], thoughtSignature });
             }
             setHistory(nextHistory);
         } catch (error: unknown) {
