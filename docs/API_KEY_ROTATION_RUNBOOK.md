@@ -161,7 +161,79 @@ This document provides the procedure for rotating API keys and secrets used by t
 
 ---
 
-## 5. Firebase Service Account Key Rotation
+## 5. Google Maps API Key Rotation
+
+### When to Rotate
+
+- If the key is suspected compromised
+- Quarterly rotation recommended for proactive security
+
+### Steps
+
+1. **Generate new key** in GCP Console → APIs & Services → Credentials
+2. **Apply restrictions**:
+   - Application restriction: HTTP referrers
+   - API restriction: Maps JavaScript API, Places API
+3. **Update environment variables:**
+
+   ```bash
+   # .env (local)
+   VITE_GOOGLE_MAPS_API_KEY=<new-key>
+   
+   # GitHub Actions Secrets
+   # Settings → Secrets → Actions → VITE_GOOGLE_MAPS_API_KEY → Update
+   ```
+
+4. **Redeploy:**
+
+   ```bash
+   npm run deploy
+   ```
+
+5. **Delete old key** in GCP Console
+
+### Services Affected
+
+- Road Manager (Maps rendering)
+
+---
+
+## 6. Mem0 Memory API Key Rotation
+
+### When to Rotate
+
+- If the key is suspected compromised
+- After personnel changes
+
+### Steps
+
+1. **Generate new key** in the Mem0 Developer Dashboard
+2. **Update environment variables:**
+
+   ```bash
+   # .env (local)
+   VITE_MEM0_API_KEY=<new-key>
+   
+   # GitHub Actions Secrets
+   # Settings → Secrets → Actions → VITE_MEM0_API_KEY → Update
+   ```
+
+3. **Redeploy:**
+
+   ```bash
+   npm run deploy
+   ```
+
+4. **Revoke old key** in Mem0 Dashboard
+
+### Services Affected
+
+- MemoryBankService
+- All AI Agents using episodic memory recall
+
+---
+
+## 7. Firebase Service Account Key Rotation
 
 ### When to Rotate
 
