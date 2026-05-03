@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -41,10 +42,13 @@ export function BoardroomModule() {
 
     const activeCount = activeAgents.length;
 
-    return (
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
         <AnimatePresence>
             <motion.div
                 key="boardroom-canvas"
+                data-testid="boardroom-module"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
@@ -107,6 +111,7 @@ export function BoardroomModule() {
 
 
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }

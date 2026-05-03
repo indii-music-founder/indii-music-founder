@@ -135,3 +135,37 @@
 - **Key Issues:** AI returns empty bubbles due to Firebase permission-denied / empty responses.
 - **Coverage Delta:** Validated function call extraction (failed gracefully but exposed backend error).
 - **UX Score:** 15/30
+
+## 2026-05-03 - Detroit Producer - Primary Goal & Career Stage Verification
+- **Modules Tested:** Brand Manager (Identity Core, Visual DNA, Release Manifest, Brand Health, Brand Interview), Creative Director (navigation persistence), Marketing Department, Road Manager
+- **Duration:** ~10 minutes
+- **Findings:** 0 new issues. 2 pre-existing regressions confirmed still open (ISSUE-022, ISSUE-025).
+- **Key Issues:**
+  - ✅ Primary Goal selector: functional, persistent, AI-wired
+  - ✅ Career Stage selector: functional, persistent, AI-wired
+  - ⚠️ ISSUE-022 (Brand Interview tab lag): still present
+  - ⚠️ ISSUE-025 (Brand Interview empty bubbles): still present
+- **Coverage Delta:**
+  - ✅ First test: Primary Goal dropdown selection + persistence across navigation
+  - ✅ First test: Career Stage change + persistence across navigation
+  - ✅ First test: Marketing Department (Campaign Generator, EPK Generator)
+  - ✅ First test: Road Manager (Tour Planning, Tech Rider, Hospitality Rider)
+  - ✅ Regression: Brand Interview tab rendering
+- **UX Score:** 27/30
+
+---
+
+## 2026-05-03 - Detroit Producer - Recent Fixes Regression Test
+- **Modules Tested:** Creative Director, Boardroom, Brand Manager
+- **Duration:** 3 minutes
+- **Findings:** 1 HIGH regression remaining.
+- **Key Issues:**
+  - ✅ ISSUE-017 (Boardroom Z-Index Bleed): FIXED
+  - ✅ ISSUE-018 (Direct Generation Prompt Persistence): FIXED
+  - ✅ ISSUE-020 (Boardroom Trap): FIXED
+  - 🔴 ISSUE-028 (Brand Manager State Persistence): OPEN (Local-first logic needs further work to sync component inputs)
+- **Coverage Delta:**
+  - ✅ Regression: Creative Director Image/Video Mode Toggle Prompt Persistence
+  - ✅ Regression: Boardroom Overlay Hierarchy and Exit Button
+  - ✅ Regression: Brand Manager Identity Core field entry followed by Hard Reload
+- **UX Score:** 28/30

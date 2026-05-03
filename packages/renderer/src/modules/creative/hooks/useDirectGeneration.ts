@@ -43,18 +43,10 @@ export function useDirectGeneration() {
     })));
     const toast = useToast();
 
-    const [localPrompt, setLocalPromptState] = useState(creativePrompt ?? '');
+    const localPrompt = creativePrompt ?? '';
     const mode = generationMode;
 
-    // Keep local input in sync with store updates (e.g. top-nav Builder pills,
-    // "reuse prompt" from Gallery, prompt-history selections).
-    useEffect(() => {
-        const next = creativePrompt ?? '';
-        setLocalPromptState(prev => (prev === next ? prev : next));
-    }, [creativePrompt]);
-
     const setLocalPrompt = useCallback((value: string) => {
-        setLocalPromptState(value);
         setCreativePrompt(value);
     }, [setCreativePrompt]);
     const [isGenerating, setIsGenerating] = useState(false);

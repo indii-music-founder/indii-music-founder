@@ -106,8 +106,8 @@ describe('BoardroomModule', () => {
     });
 
     it('renders the boardroom canvas when mode is on', () => {
-        const { container } = render(<BoardroomModule />);
-        expect(container.firstChild).not.toBeNull();
+        render(<BoardroomModule />);
+        expect(document.body.querySelector('[data-testid="boardroom-module"]')).not.toBeNull();
     });
 
     it('shows the empty state when no messages exist', () => {
