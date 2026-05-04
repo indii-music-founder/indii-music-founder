@@ -145,18 +145,23 @@ vi.mock('@/services/MembershipService', () => ({
 vi.mock('./registry', () => ({
     agentRegistry: {
         getAsync: vi.fn().mockImplementation(async (id: string) => {
+            if (id === 'generalist') {
+                const { GeneralistAgent } = await import('./specialists/GeneralistAgent');
+                return new GeneralistAgent();
+            }
             return {
                 id,
                 name: 'Mock Agent',
                 description: 'Mock Description',
                 execute: vi.fn().mockResolvedValue({
-                    content: 'I have analyzed the market data.',
+                    text: 'I have analyzed the market data.',
                     confidence: 0.9,
                     toolsUsed: []
                 })
             };
         }),
-        getAll: vi.fn().mockReturnValue([{ id: 'marketing', name: 'Marketing', description: 'desc' }])
+        getAll: vi.fn().mockReturnValue([{ id: 'marketing', name: 'Marketing', description: 'desc' }]),
+        warmup: vi.fn().mockResolvedValue(undefined)
     }
 }));
 
