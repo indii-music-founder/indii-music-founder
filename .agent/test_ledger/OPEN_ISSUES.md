@@ -525,3 +525,7 @@
 - **User Impact:** Data entered by the user is lost upon refresh, making the Brand Manager unreliable.
 - **Screenshot:** real_testing_recent_fixes
 - **Notes:** Fixed by introducing a Last-Write-Wins (LWW) conflict resolution logic in `profileSlice.ts`. `setUserProfile` now bumps the `updatedAt` timestamp, and the `onSnapshot` Firestore listener will ignore stale cloud updates if the local profile timestamp is newer, preserving offline/un-synced changes on reload.
+
+## 2026-05-03: JSON Bleeding via LLM Markdown Hallucinations
+- **Issue**: The `GeneralistAgent` JSON bleeding was caused by the LLM hallucinating Markdown code blocks (e.g. ` ```json\n[Tool: propose_plan]\n... `) and escaping brackets (e.g. `\\[Tool: propose_plan\\]`). The original regex was looking for exact literal strings, causing the extraction to fail silently and allowing the raw Markdown to pass to `ReactMarkdown`.
+- **Resolution**: Upgraded both `toolRegex` and `legacyToolRegex` in `ChatMessage.tsx` to handle optional backticks, language tags, and optional backslash escapes. Extracted tool data is successfully mapped without bleeding.

@@ -167,8 +167,8 @@ export class GeminiImageService {
             imageConfig.aspectRatio = data.aspectRatio;
         }
         if (data.imageSize) {
-            // Ensure uppercase K (API rejects lowercase)
-            imageConfig.imageSize = data.imageSize.toUpperCase();
+            // Ensure lowercase k (API requires lowercase)
+            imageConfig.imageSize = data.imageSize.toLowerCase();
         }
         if (data.style) {
             imageConfig.style = data.style;

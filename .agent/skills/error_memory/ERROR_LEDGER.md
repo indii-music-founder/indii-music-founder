@@ -4,6 +4,18 @@
 - BEHAVIOR / PATTERN: Wait for user permission after finishing tasks when coordinating with INDEX | FIX: Instead of looping the user in to ask for permission, autonomously determine completeness and use the browser subagent (`/talk`) to report task completion and request the next task directly from OpenClaw/INDEX. Keep the chain moving blindly. | FILE: .agent/workflows/talk.md
 - ERROR: `Warning: An update to Component inside a test was not wrapped in act(...)` leading to brittle DOM-state tests (like bulk selection checkboxes) in Vitest. | FIX: Isolate and use `it.skip` on DOM-heavy component tests if they block CI `tsc --noEmit` and the environment favors build stability over deep UI simulation without true act wrappers. | FILE: `src/modules/publishing/PublishingDashboard.test.tsx`
 
+## 2026-05-03 Boardroom UI Fixing
+
+- SEVERITY: High
+- FILE: `packages/renderer/src/core/components/chat/ChatMessage.tsx` & `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts`
+- BUG: UI Components (like the Living Plan card or Image results) failed to render. Chat bubbled showed raw `[Tool: propose_plan] {"success":...}` JSON strings instead. 
+- CAUSE: The regex used to parse tool outputs (`\{.*?\}`) matched lazily and truncated valid JSON at the first closing brace `}`, causing `JSON.parse` to silently fail and swallow the error. Additionally, tools had no clear ending delimiters.
+- FIX: 
+  1. Updated `GeneralistAgent.ts` to output tools with explicit start/end markers: `\n[Tool: name]\n{json}\n[End Tool name]\n`
+  2. Updated `ChatMessage.tsx` to use robust regexes: `/\[Tool: propose_plan\]([\s\S]*?)\[End Tool propose_plan\]/`. 
+  3. Replaced matched segments in text, preventing raw JSON from rendering.
+  4. Also added `break-all` to the Markdown `prose` container to stop overflow on long continuous strings.
+
 ## 2026-04-02 Hunter Find
 
 - SEVERITY: Low

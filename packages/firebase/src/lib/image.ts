@@ -24,16 +24,16 @@ const AspectRatioEnum = z.enum([
 
 /**
  * Image resolution sizes.
- * IMPORTANT: API requires UPPERCASE "K" — lowercase "1k" is rejected.
- * The schema accepts either case and normalizes to uppercase.
+ * IMPORTANT: API requires lowercase "k" (e.g., "1k").
+ * The schema accepts either case and normalizes to lowercase.
  * - "512": Flash + Legacy only
- * - "1K": All tiers
- * - "2K": Fast + Pro only
- * - "4K": Fast + Pro only
+ * - "1k": All tiers
+ * - "2k": Fast + Pro only
+ * - "4k": Fast + Pro only
  */
 const ImageSizeEnum = z.string()
-    .transform(v => v.toUpperCase())
-    .pipe(z.enum(["512", "1K", "2K", "4K"]));
+    .transform(v => v.toLowerCase())
+    .pipe(z.enum(["512", "1k", "2k", "4k"]));
 
 /**
  * Nano Banana model tier selector.
@@ -105,8 +105,8 @@ export const GenerateImageRequestSchema = z.object({
     /** Model tier to use. Default: "fast" */
     model: ModelTierEnum.nullish().default("fast"),
 
-    /** Output resolution. Must be uppercase. Default: "1K" */
-    imageSize: ImageSizeEnum.nullish().default("1K"),
+    /** Output resolution. Must be lowercase. Default: "1k" */
+    imageSize: ImageSizeEnum.nullish().default("1k"),
 
     // --- Gemini 3 Advanced Configuration ---
 

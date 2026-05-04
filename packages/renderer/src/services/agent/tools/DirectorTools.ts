@@ -196,11 +196,12 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                         projectId: currentProjectId || 'default-project'
                     });
                 });
+                const imageMarkdown = results.map((r: { id: string, url: string }) => `![Generated Image](${r.url})`).join('\n\n');
                 return toolSuccess({
                     count: results.length,
-                    image_ids: results.map(r => r.id),
-                    urls: results.map(r => r.url)
-                }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
+                    image_ids: results.map((r: { id: string }) => r.id),
+                    urls: results.map((r: { url: string }) => r.url)
+                }, `Successfully generated ${results.length} images. They are now in the Gallery.\n\n${imageMarkdown}`);
             }
             return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
         } catch (err: unknown) {
