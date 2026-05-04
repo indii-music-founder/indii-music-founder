@@ -24,6 +24,7 @@ export interface PlanStep {
   status: 'pending' | 'executing' | 'complete' | 'error';
   error?: string;
   result?: unknown;
+  dependsOn?: string[];
 }
 
 export interface Phase {
@@ -250,6 +251,69 @@ export class LivingPlanService {
       executionRef,
       updatedAt: serverTimestamp(),
     });
+  }
+
+  /**
+   * Orchestrate execution of plan steps via Promise.all for parallelism using A2A Swarm.
+   */
+  async executePlanSteps(projectId: string, planId: string): Promise<void> {
+    const plan = await this.getPlan(projectId, planId);
+    if (!plan || !plan.draft.steps) return;
+
+    const { a2aClient } = await import('./a2a/A2AClient');
+    const steps = plan.draft.steps;
+    const completed = new Set<string>();
+    const pending = new Set(steps.map(s => s.id));
+    const executing = new Set<string>();
+
+    const executeStep = async (stepId: string) => {
+      const step = steps.find(s => s.id === stepId);
+      if (!step || !step.toolName) return;
+
+      executing.add(stepId);
+      await this.updateStepStatus(projectId, planId, stepId, 'executing');
+
+      try {
+        // Find the target agent for this step (assuming toolName indicates agent or we have a default mapping)
+        // Wait, the instruction says "Orchestrate dependent steps via Promise.all".
+        // Let's assume the toolName format is "agentId.toolName" or we just use consult_specialist
+        // If it's a living plan, usually the step specifies the task.
+        const agentId = step.toolName.split('.')[0] || 'generalist';
+        const method = step.toolName.split('.')[1] || 'execute';
+
+        const result = await a2aClient.invoke(
+          agentId, 
+          method, 
+          step.input || {}, 
+          { id: crypto.randomUUID(), type: 'PLAN_STEP', status: 'in_progress', title: step.title, steps: [], createdAt: Date.now(), updatedAt: Date.now() } as any
+        );
+
+        await this.updateStepStatus(projectId, planId, stepId, 'complete', undefined, result);
+        completed.add(stepId);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        await this.updateStepStatus(projectId, planId, stepId, 'error', message);
+      } finally {
+        executing.delete(stepId);
+        pending.delete(stepId);
+      }
+    };
+
+    while (pending.size > 0) {
+      const runnableSteps = Array.from(pending).filter(stepId => {
+        const step = steps.find(s => s.id === stepId);
+        if (executing.has(stepId)) return false;
+        if (!step?.dependsOn || step.dependsOn.length === 0) return true;
+        return step.dependsOn.every(dep => completed.has(dep));
+      });
+
+      if (runnableSteps.length === 0 && executing.size === 0) {
+        // Deadlock or unresolvable dependencies
+        break;
+      }
+
+      await Promise.all(runnableSteps.map(stepId => executeStep(stepId)));
+    }
   }
 
   /**
