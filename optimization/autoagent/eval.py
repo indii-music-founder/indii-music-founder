@@ -61,7 +61,7 @@ ROUTING_TABLE = {
     ],
     "music": [
         "audio analysis", "mix feedback", "mastering", "lufs", "loudness",
-        "audio quality", "mix review", "sonic", "frequency analysis",
+        "audio quality", "mix review", "sonic", "frequency analysis", "isrc",
     ],
     "distribution": [
         "dsp delivery", "metadata", "ddex", "spotify upload", "apple music",
@@ -85,7 +85,7 @@ ROUTING_TABLE = {
         "sample i used", "clear a sample",
     ],
     "publishing": [
-        "composition rights", "pro", "mechanical license", "songwriter splits", "isrc", "iswc",
+        "composition rights", "pro", "mechanical license", "songwriter splits", "iswc",
         "publishing royalties", "ascap", "bmi", "sesac", "song registration",
     ],
     "social": [
