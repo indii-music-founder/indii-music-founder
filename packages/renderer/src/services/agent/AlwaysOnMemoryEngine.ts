@@ -506,6 +506,7 @@ Be thorough but concise. Always cite your sources.`;
             const insightId = await insightService.add(insightData);
 
             // Update connections on source memories
+            const nowTimestamp = Timestamp.now();
             for (const conn of insightData.connections) {
                 for (const memoryId of [conn.fromMemoryId, conn.toMemoryId]) {
                     const memory = batch.find((m) => m.id === memoryId);
@@ -516,7 +517,7 @@ Be thorough but concise. Always cite your sources.`;
                         await service.update(memoryId, {
                             connections: updatedConnections,
                             relatedMemoryIds: updatedRelated,
-                            updatedAt: Timestamp.now(),
+                            updatedAt: nowTimestamp,
                         } as Partial<AlwaysOnMemory>);
                     }
                 }
@@ -610,6 +611,7 @@ Be thorough but concise. Always cite your sources.`;
         const tierConfig = this.config.tiers;
         let promoted = 0;
 
+        const nowTimestamp = Timestamp.now();
         for (const memory of memories) {
             if (!memory.isActive) continue;
             const age = now - memory.createdAt.toMillis();
@@ -639,7 +641,7 @@ Be thorough but concise. Always cite your sources.`;
             if (newTier && newTier !== memory.tier) {
                 await service.update(memory.id, {
                     tier: newTier,
-                    updatedAt: Timestamp.now(),
+                    updatedAt: nowTimestamp,
                 } as Partial<AlwaysOnMemory>);
                 promoted++;
             }
@@ -669,6 +671,7 @@ Be thorough but concise. Always cite your sources.`;
         const archivalThreshold = this.config.consolidation.archivalImportanceThreshold;
         let updated = 0;
 
+        const nowTimestamp = Timestamp.now();
         for (const memory of memories) {
             if (!memory.isActive) continue;
 
@@ -683,7 +686,7 @@ Be thorough but concise. Always cite your sources.`;
             if (newImportance !== memory.importance) {
                 const updates: Partial<AlwaysOnMemory> = {
                     importance: newImportance,
-                    updatedAt: Timestamp.now(),
+                    updatedAt: nowTimestamp,
                 };
 
                 // Archive if below threshold
