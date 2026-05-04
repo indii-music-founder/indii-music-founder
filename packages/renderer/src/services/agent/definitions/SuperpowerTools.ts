@@ -110,6 +110,18 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         }
     },
     {
+        name: 'consult_specialist',
+        description: 'Consult a specialized agent using the P2P A2A Swarm protocol. Use this to query a specific specialist for targeted advice or generation.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                targetAgentId: { type: 'STRING', description: `The ID of the agent to consult. MUST be one of: ${VALID_AGENT_IDS_LIST}` },
+                payload: { type: 'OBJECT', description: 'The JSON payload or query to send to the specialist.' }
+            },
+            required: ['targetAgentId', 'payload']
+        }
+    },
+    {
         name: 'speak',
         description: 'Read text aloud using the agents voice. Use this for proactive notifications or to emphasize important information.',
         parameters: {

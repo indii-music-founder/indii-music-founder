@@ -304,7 +304,7 @@ export class AgentService {
         // all boardroom messages into the regular chat flow (causing empty responses).
         if (isBoardroomMode) {
             logger.debug('[AgentService] Routing to boardroom multi-dispatch flow');
-            await this.handleBoardroomMultiDispatchFlow(text, attachments, context, responseId);
+            await this.handleBoardroomSwarmFlow(text, attachments, context, responseId);
             return;
         }
 
@@ -588,7 +588,7 @@ export class AgentService {
     /**
      * Boardroom Multi-Dispatch Flow: Dispatches the user's prompt to all active agents simultaneously.
      */
-    private async handleBoardroomMultiDispatchFlow(
+    private async handleBoardroomSwarmFlow(
         text: string,
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
@@ -598,7 +598,7 @@ export class AgentService {
         const state = useStore.getState();
         const activeAgents = state.activeAgents && state.activeAgents.length > 0 ? state.activeAgents : [];
         const referencedAssets = state.referencedAssets || [];
-        logger.debug('[AgentService] Boardroom dispatch:', { agentCount: activeAgents.length, agents: activeAgents });
+        logger.debug('[AgentService] Boardroom swarm dispatch:', { agentCount: activeAgents.length, agents: activeAgents });
 
         if (activeAgents.length === 0) {
             logger.warn('[AgentService] Boardroom: No active agents seated');
@@ -610,24 +610,24 @@ export class AgentService {
             return;
         }
 
-        // Inject asset context into the prompt
         let assetContext = '';
         if (referencedAssets.length > 0) {
             assetContext = '\n\n[BOARDROOM REFERENCED ASSETS]\n' + referencedAssets.map(a => `- ${a.name} (${a.type}): ${a.value}`).join('\n');
         }
 
-        const enhancedText = text + assetContext + '\n\n[SYSTEM]: You are in a Boardroom meeting with other agents. Only respond from your specific department\'s perspective. Extract and execute any tasks relevant to your domain.';
+        let accumulatedContext = '';
 
-        const dispatchPromises = activeAgents.map(async (agentId, index) => {
-            // Re-use the initial placeholder for the first agent, create new ones for the rest
+        for (let index = 0; index < activeAgents.length; index++) {
+            const agentId = activeAgents[index];
+            if (!agentId) continue;
             const resId = index === 0 ? initialResponseId : uuidv4();
 
             if (index > 0) {
                 useStore.getState().addBoardroomMessage({
                     id: resId,
                     role: 'model',
-                    text: '*(Reviewing request...)*',
-                    timestamp: Date.now() + index, // slight offset to maintain order
+                    text: '*(Reviewing previous discussion...)*',
+                    timestamp: Date.now() + index,
                     isStreaming: true,
                     thoughts: [],
                     agentId: agentId
@@ -638,8 +638,12 @@ export class AgentService {
 
             let currentStreamedText = '';
 
+            const enhancedText = text + assetContext + 
+                '\n\n[SYSTEM]: You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
+                (accumulatedContext ? `\n\n[PREVIOUS AGENT RESPONSES]:\n${accumulatedContext}` : '');
+
             try {
-                logger.debug(`[AgentService] Boardroom: executing agent ${agentId}`);
+                logger.debug(`[AgentService] Boardroom: sequentially executing agent ${agentId}`);
                 const result = await this.executor.execute(
                     agentId,
                     enhancedText,
@@ -647,11 +651,9 @@ export class AgentService {
                     (event) => {
                         if (event.type === 'token') {
                             currentStreamedText += event.content;
-
                             useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
                         }
                         if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
-
                             const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
                             const newThought: AgentThought = {
                                 id: uuidv4(),
@@ -677,6 +679,10 @@ export class AgentService {
 
                 logger.debug(`[AgentService] Boardroom: agent ${agentId} responded (${result?.text?.length || 0} chars)`);
 
+                if (result?.text) {
+                    accumulatedContext += `\n[${agentId.toUpperCase()}]: ${result.text}`;
+                }
+
                 let planId: string | undefined = undefined;
                 if (result && result.toolCalls && result.toolCalls.length > 0) {
                     for (const tc of result.toolCalls) {
@@ -694,8 +700,6 @@ export class AgentService {
                         isStreaming: false
                     });
                 } else {
-                    logger.warn(`[AgentService] Boardroom: No result.text for ${agentId}, using streamed text (${currentStreamedText.length} chars)`);
-                    // If we streamed text but result.text is empty, USE the streamed text
                     if (currentStreamedText.length > 0) {
                         useStore.getState().updateBoardroomMessage(resId, {
                             text: currentStreamedText,
@@ -714,21 +718,19 @@ export class AgentService {
                     }
                 }
             } catch (err) {
-                logger.error(`[AgentService] Boardroom dispatch failed for agent ${agentId}:`, err);
+                logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
                 useStore.getState().updateBoardroomMessage(resId, {
                     text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
                     isStreaming: false,
                     thoughts: [{
                         id: uuidv4(),
-                        text: 'Execution failed in boardroom dispatch',
+                        text: 'Execution failed in boardroom swarm dispatch',
                         timestamp: Date.now(),
                         type: 'error'
                     }]
                 });
             }
-        });
-
-        await Promise.allSettled(dispatchPromises);
+        }
     }
 
     /**
