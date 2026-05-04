@@ -210,6 +210,53 @@ export class BaseAgent implements SpecializedAgent {
                     return toolError(`Consultation failed: ${message}`, 'EXECUTION_ERROR');
                 }
             },
+            consult_specialist: async (args: Record<string, unknown>, context, toolContext?: ToolExecutionContext) => {
+                const { targetAgentId, payload } = args as { targetAgentId: string; payload: Record<string, unknown> };
+
+                // GEAP: Record consultation provenance for audit trail
+                if (this.identityCard) {
+                    agentIdentityService.recordDelegation(
+                        this.identityCard,
+                        'consult_specialist',
+                        targetAgentId,
+                        context?.traceId
+                    );
+                }
+
+                try {
+                    if (!VALID_AGENT_IDS.includes(targetAgentId as typeof VALID_AGENT_IDS[number])) {
+                        return toolError(`Invalid agent ID: ${targetAgentId}`, 'INVALID_ARGS');
+                    }
+
+                    const hubSpokeError = validateHubAndSpoke(this.id, targetAgentId);
+                    if (hubSpokeError) {
+                        logger.warn(`[BaseAgent] Hub-and-spoke violation in consult_specialist: ${this.id} -> ${targetAgentId}`);
+                        return toolError(hubSpokeError, 'HUB_SPOKE_VIOLATION');
+                    }
+
+                    // A2A Swarm Request
+                    const { a2aClient } = await import('./a2a/A2AClient');
+                    const directive = {
+                        id: crypto.randomUUID(),
+                        type: 'A2A_CONSULTATION',
+                        title: `Consult ${targetAgentId}`,
+                        status: 'in_progress',
+                        steps: [],
+                        createdAt: Date.now(),
+                        updatedAt: Date.now()
+                    };
+                    
+                    const response = await a2aClient.invoke(targetAgentId, 'execute', payload, directive as any);
+                    return {
+                        success: true,
+                        data: response,
+                        message: `Consulted specialist ${targetAgentId}`
+                    };
+                } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    return toolError(`Specialist consultation failed: ${message}`, 'EXECUTION_ERROR');
+                }
+            },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             schedule_task: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { targetAgentId, task, delayMinutes } = args as { targetAgentId: string; task: string; delayMinutes: number };
