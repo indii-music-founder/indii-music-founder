@@ -172,22 +172,22 @@ describe('DJ Axiom Power User — Roosevelt Park Event Prep', () => {
     });
 
     describe('Resolution Normalization Pipeline', () => {
-        it('draft at 720p → API receives 1K', () => {
-            expect(normalizer('720p')).toBe('1K');
+        it('draft at 720p → API receives 1k', () => {
+            expect(normalizer('720p')).toBe('1k');
         });
 
-        it('production at 1080p → API receives 2K', () => {
-            expect(normalizer('1080p')).toBe('2K');
+        it('production at 1080p → API receives 2k', () => {
+            expect(normalizer('1080p')).toBe('2k');
         });
 
-        it('print-ready at 4k → API receives 4K', () => {
-            expect(normalizer('4k')).toBe('4K');
+        it('print-ready at 4k → API receives 4k', () => {
+            expect(normalizer('4k')).toBe('4k');
         });
 
         it('the full workflow: draft → review → print shop', () => {
-            expect(normalizer('720p')).toBe('1K');
-            expect(normalizer('1080p')).toBe('2K');
-            expect(normalizer('4k')).toBe('4K');
+            expect(normalizer('720p')).toBe('1k');
+            expect(normalizer('1080p')).toBe('2k');
+            expect(normalizer('4k')).toBe('4k');
         });
     });
 
@@ -298,18 +298,18 @@ describe('DJ Axiom Power User — Roosevelt Park Event Prep', () => {
             expect(controls.resolution).toBe('4k');
             expect(controls.model).toBe('pro');
             expect(controls.personGeneration).toBe('dont_allow');
-            expect(normalizer(controls.resolution)).toBe('4K');
+            expect(normalizer(controls.resolution)).toBe('4k');
 
             // 2. Switch to portrait for IG story variant
             controls.aspectRatio = '9:16';
             controls.resolution = '1080p';
-            expect(normalizer(controls.resolution)).toBe('2K');
+            expect(normalizer(controls.resolution)).toBe('2k');
 
             // 3. Quick draft for experimentation
             controls.resolution = '720p';
             controls.model = 'fast';
             controls.thinking = false;
-            expect(normalizer(controls.resolution)).toBe('1K');
+            expect(normalizer(controls.resolution)).toBe('1k');
         });
 
         it('video promo clip with audio', () => {
@@ -322,7 +322,7 @@ describe('DJ Axiom Power User — Roosevelt Park Event Prep', () => {
 
             expect(controls.generateAudio).toBe(true);
             expect(controls.model).toBe('pro');
-            expect(normalizer(controls.resolution)).toBe('2K');
+            expect(normalizer(controls.resolution)).toBe('2k');
         });
 
         it('Andromeda batch: 15 social media variants', () => {
@@ -331,7 +331,7 @@ describe('DJ Axiom Power User — Roosevelt Park Event Prep', () => {
             controls.aspectRatio = '9:16';
 
             expect(controls.isAndromedaMode).toBe(true);
-            expect(normalizer(controls.resolution)).toBe('2K');
+            expect(normalizer(controls.resolution)).toBe('2k');
         });
     });
 });

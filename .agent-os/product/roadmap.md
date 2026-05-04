@@ -98,6 +98,7 @@ Remaining gaps from `docs/GEMINI_ENTERPRISE_AGENT_PLATFORM.md:56-60`:
 - [ ] **Agent Security Dashboard** — unified threat-detection view combining Model Armor events, identity audit trail, tool-execution logs.
 - [ ] **Auto-extracted Memory Profiles** — implicit preference extraction from conversations (complement to explicit `UserMemoryService`).
 - [ ] **Agent Optimizer** — Google-side model tuning feedback loop.
+- [ ] **Agent2Agent (A2A) Protocol Integration** — Transition from Hub-and-Spoke broadcast to decentralized P2P Swarm architecture using standard A2A JSON-RPC schemas (see `docs/A2A_IMPLEMENTATION_PLAN.md`).
 
 ---
 

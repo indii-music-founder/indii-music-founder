@@ -97,9 +97,8 @@ describe('generateImageV3Fn', () => {
         expect(callArgs.model).toBe('gemini-3-pro-image-preview');
         // Prompt should be in contents
         expect(callArgs.contents[0].parts[0].text).toBe('test prompt');
-        // imageConfig should have aspectRatio and uppercase imageSize
         expect(callArgs.config.imageConfig.aspectRatio).toBe('16:9');
-        expect(callArgs.config.imageConfig.imageSize).toBe('4K'); // Uppercase!
+        expect(callArgs.config.imageConfig.imageSize).toBe('4k'); // Lowercase
         // Pro does NOT set candidateCount (always returns 1)
         expect(callArgs.config.candidateCount).toBeUndefined();
         // Response modalities for interleaved

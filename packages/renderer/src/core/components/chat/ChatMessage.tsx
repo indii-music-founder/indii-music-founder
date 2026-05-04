@@ -18,7 +18,7 @@ import { ThoughtChain } from './ThoughtChain';
 import { JsonViewer } from './JsonViewer';
 import { ImageRenderer, ToolImageOutput } from './ToolOutputRenderer';
 import { CodeBlock } from './CodeBlock';
-import { getText } from './utils';
+
 import { safeJsonParse } from '@/services/utils/json';
 import { PlanCard } from './PlanCard';
 import { livingPlanService, LivingPlan } from '@/services/agent/LivingPlanService';
@@ -111,100 +111,71 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
 export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIdentity }: MessageItemProps) => {
     // Custom Markdown Components
     // ... existing components ...
+    const { cleanText, extractedTools, planIdFallback } = useMemo(() => {
+        const text = msg.text || '';
+        const tools: Array<{name: string, json: any}> = [];
+        let planId = (msg.planId || msg.metadata?.planId) as string | undefined;
+
+        let strippedText = text;
+        
+        // Match robust backend explicit tool delimiters BEFORE Markdown corruption
+        // We handle cases where the LLM hallucinates Markdown code blocks or escapes the brackets
+        const toolRegex = /(?:```(?:json)?\s*)?(?:\\?\[)Tool:\s*([a-zA-Z0-9_]+)(?:\\?\])([\s\S]*?)(?:\\?\[)End Tool \1(?:\\?\])(?:\s*```)?/g;
+        let match;
+        
+        while ((match = toolRegex.exec(text)) !== null) {
+            const toolName = match[1]!;
+            const rawJson = match[2]!.trim();
+            
+            try {
+                // If it's a delegate task that contains an inner tool block, we skip the outer parse 
+                // and just parse the inner if possible. But for simplicity, we parse whatever is inside.
+                const json = JSON.parse(rawJson);
+                tools.push({ name: toolName, json });
+                
+                if (toolName === 'propose_plan' || toolName === 'get_plan') {
+                    const id = json.planId || json.data?.planId;
+                    if (id) planId = id;
+                }
+            } catch (e) {
+                // We still strip it even if parsing fails, so raw backend logs don't leak to UI
+                logger.warn(`Failed to parse tool output for ${toolName}:`, e);
+            }
+            
+            strippedText = strippedText.replace(match[0], '');
+        }
+
+        // Legacy regex fallback for older chat histories missing the [End Tool] wrapper
+        const legacyToolRegex = /(?:```(?:json)?\s*)?(?:\\?\[)Tool:\s*([a-zA-Z0-9_]+)(?:\\?\])\s*(\{[\s\S]*?\})(?=\n*(?:(?:\\?\[)Tool:|```|$))(?:\n*```)?/g;
+        let legacyMatch;
+        while ((legacyMatch = legacyToolRegex.exec(strippedText)) !== null) {
+            const fullMatch = legacyMatch[0];
+            const toolName = legacyMatch[1]!;
+            const rawJson = legacyMatch[2]!.trim();
+            
+            try {
+                const json = JSON.parse(rawJson);
+                tools.push({ name: toolName, json });
+                
+                if (toolName === 'propose_plan' && !planId) {
+                    const id = json.planId || json.data?.planId;
+                    if (id) planId = id;
+                }
+            } catch (_e) {
+                // Ignored. If it fails, it might be due to incomplete generation, we still strip it.
+            }
+            
+            strippedText = strippedText.replace(fullMatch, '');
+            // We must adjust regex index because we modified the string we're iterating over
+            legacyToolRegex.lastIndex -= fullMatch.length;
+        }
+
+        return { cleanText: strippedText.trim(), extractedTools: tools, planIdFallback: planId };
+    }, [msg.text, msg.planId, msg.metadata]);
+
     const markdownComponents: Components = useMemo(() => ({
         img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} />,
         p: ({ children }: { children?: React.ReactNode }) => {
-            const text = getText(children);
-            // ... (keep existing implementation)
-            // Detect Raw AI Image Tool Output
-            const toolMatch = text.match(/\[Tool: (generate_image|batch_edit_images|generate_high_res_asset|render_cinematic_grid|extract_grid_frame)\] Output: (?:Success: )?(\{.*\})/s);
-
-            if (toolMatch) {
-                // ... existing logic ...
-                try {
-                    const toolName = toolMatch[1]!;
-                    const json = JSON.parse(toolMatch[2]!);
-                    const { generatedHistory } = useStore.getState();
-
-                    let imageIds: string[] = [];
-                    if (json.image_ids && Array.isArray(json.image_ids)) imageIds = json.image_ids;
-                    else if (json.asset_id) imageIds = [json.asset_id];
-                    else if (json.grid_id) imageIds = [json.grid_id];
-                    else if (json.frame_id) imageIds = [json.frame_id];
-
-                    const images = imageIds.map(id => generatedHistory.find(h => h.id === id)).filter((img): img is NonNullable<typeof img> => !!img);
-                    if (images.length > 0) {
-                        return (
-                            <div className="flex flex-col gap-4 my-4">
-                                {images.map((img, idx: number) => (
-                                    <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} />
-                                ))}
-                            </div>
-                        );
-                    }
-                    if (json.urls && Array.isArray(json.urls)) {
-                        return (
-                            <div className="flex flex-col gap-4 my-4">
-                                {json.urls.map((url: string, idx: number) => (
-                                    <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} />
-                                ))}
-                            </div>
-                        );
-                    }
-                } catch (e: unknown) { logger.warn("Failed to parse image tool output:", e); }
-            }
-
-            // Detect Delegate Task Output
-            const delegateMatch = text.match(/\[Tool: delegate_task\] Output: (?:Success: )?(\{.*\})/s);
-            if (delegateMatch) {
-                try {
-                    const json = JSON.parse(delegateMatch[1]!);
-                    if (json.text) {
-                        const innerToolMatch = json.text.match(/\[Tool: ([^\]]+)\] Output: (?:Success: )?(\{.*\})/s);
-                        if (innerToolMatch) {
-                            const toolName = innerToolMatch[1];
-                            const innerJsonStr = innerToolMatch[2];
-                            try {
-                                const innerJson = JSON.parse(innerJsonStr);
-                                if (toolName === 'analyze_brand_consistency' && innerJson.analysis) {
-                                    return (
-                                        <div className="my-4 bg-purple-900/10 rounded-xl border border-purple-500/20 p-4">
-                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
-                                                <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                                                <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Brand Analysis Report</span>
-                                            </div>
-                                            <div className="prose prose-invert prose-sm max-w-none">
-                                                <ReactMarkdown components={{ p: ({ children }: { children?: React.ReactNode }) => <span className="block mb-2 last:mb-0">{children}</span> }}>
-                                                    {innerJson.analysis as string}
-                                                </ReactMarkdown>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                                return (
-                                    <div className="my-2 p-3 bg-white/5 rounded-lg border-l-2 border-purple-500 text-sm text-gray-300 font-mono whitespace-pre-wrap">
-                                        <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">Tool Result: {toolName}</div>
-                                        {JSON.stringify(innerJson, null, 2)}
-                                    </div>
-                                );
-                            } catch (e: unknown) { /* ignore */ }
-                        }
-                        return <ReactMarkdown>{json.text}</ReactMarkdown>;
-                    }
-                } catch (e: unknown) { logger.warn("Failed to parse delegate tool output:", e); }
-            }
-
-            // Detect Living Plan Proposal
-            const planMatch = text.match(/\[Tool: propose_plan\] Output: (?:Success: )?(\{.*\})/s);
-            if (planMatch) {
-                try {
-                    const json = JSON.parse(planMatch[1]!);
-                    if (json.planId) {
-                        return <LivingPlanToolRenderer planId={json.planId} />;
-                    }
-                } catch (e: unknown) { logger.warn("Failed to parse plan tool output:", e); }
-            }
-
             return <p className="mb-4 last:mb-0">{children}</p>;
         },
         pre: ({ children, ...props }: { children?: React.ReactNode }) => {
@@ -284,23 +255,58 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
 
                 {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} compact={variant === 'compact'} />}
 
-                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-none break-words leading-[1.5] font-medium tracking-tight`}>
+                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden break-words break-all leading-[1.5] font-medium tracking-tight`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={markdownComponents}
                     >
-                        {msg.text}
+                        {cleanText}
                     </ReactMarkdown>
                 </div>
 
                 {/* Metadata-driven Plan Rendering (Fallback/Secondary) */}
-                {msg.role === 'model' && !!(msg.planId || msg.metadata?.planId) && !msg.text.includes('[Tool: propose_plan]') && (
+                {msg.role === 'model' && planIdFallback && !extractedTools.find(t => t.name === 'propose_plan') && (
                     <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        <LivingPlanToolRenderer planId={(msg.planId || msg.metadata?.planId) as string} />
+                        <LivingPlanToolRenderer planId={planIdFallback} />
                     </div>
                 )}
 
                 {msg.role === 'system' && <span>{msg.text}</span>}
+
+                {/* Render Extracted Tools (Parsed directly from text stream) */}
+                {msg.role === 'model' && extractedTools.length > 0 && (
+                    <div className="mt-4 flex flex-col gap-4">
+                        {extractedTools.map((tool, idx) => {
+                            if (tool.name === 'propose_plan' && (tool.json.planId || tool.json.data?.planId)) {
+                                return (
+                                    <div key={`ext-tool-${idx}`} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                        <LivingPlanToolRenderer planId={tool.json.planId || tool.json.data.planId} />
+                                    </div>
+                                );
+                            }
+                            
+                            if (tool.name === 'analyze_brand_consistency' && tool.json.analysis) {
+                                return (
+                                    <div key={`ext-tool-${idx}`} className="my-4 bg-purple-900/10 rounded-xl border border-purple-500/20 p-4">
+                                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
+                                            <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                                            <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Brand Analysis Report</span>
+                                        </div>
+                                        <div className="prose prose-invert prose-sm max-w-none">
+                                            <ReactMarkdown components={{ p: ({ children }: { children?: React.ReactNode }) => <span className="block mb-2 last:mb-0">{children}</span> }}>
+                                                {tool.json.analysis as string}
+                                            </ReactMarkdown>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // We let generate_image be handled by the thoughts array below, 
+                            // or we could add it here. For now we only handle non-image tools here.
+                            return null;
+                        })}
+                    </div>
+                )}
 
                 {/* Robust Tool Result Rendering (Persisted via Thoughts) */}
                 {msg.role === 'model' && msg.thoughts?.map((thought, tIdx) => {

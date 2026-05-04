@@ -13,10 +13,10 @@ export const usePublicist = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'Live' | 'Draft' | 'Scheduled'>('all');
 
-    // Data Loading State
+    // Data Loading State — loading is derived from whether campaigns have been received
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [hasReceivedData, setHasReceivedData] = useState(false);
 
     // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
     const isMountedRef = useRef(true);
@@ -25,20 +25,21 @@ export const usePublicist = () => {
         return () => { isMountedRef.current = false; };
     }, []);
 
+    // Derive loading from userId presence + data receipt
+    const userId = userProfile?.uid || userProfile?.id;
+    const loading = !!userId && !hasReceivedData;
+
     // Initial Data Fetch
     useEffect(() => {
-        if (!userProfile?.id) return;
-
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLoading(true);
+        if (!userId) return;
 
         // Subscribe to live data
-        const unsubCampaigns = PublicistService.subscribeToCampaigns(userProfile.id, (data) => {
+        const unsubCampaigns = PublicistService.subscribeToCampaigns(userId, (data) => {
             if (!isMountedRef.current) return;
             setCampaigns(data);
-            setLoading(false);
+            setHasReceivedData(true);
         });
-        const unsubContacts = PublicistService.subscribeToContacts(userProfile.id, (data) => {
+        const unsubContacts = PublicistService.subscribeToContacts(userId, (data) => {
             if (!isMountedRef.current) return;
             setContacts(data);
         });
@@ -47,7 +48,7 @@ export const usePublicist = () => {
             safeUnsubscribe(unsubCampaigns);
             safeUnsubscribe(unsubContacts);
         };
-    }, [userProfile?.id]);
+    }, [userId]);
 
     const filteredCampaigns = useMemo(() => {
         return campaigns.filter(c => {

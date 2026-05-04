@@ -68,30 +68,30 @@ describe('Image Resolution Normalization', () => {
     }).normalizeImageResolution.bind(ImageGeneration);
 
     describe('Video-style → Image API mapping', () => {
-        it('maps "720p" to "1K"', () => {
-            expect(normalizer('720p')).toBe('1K');
+        it('maps "720p" to "1k"', () => {
+            expect(normalizer('720p')).toBe('1k');
         });
 
-        it('maps "1080p" to "2K"', () => {
-            expect(normalizer('1080p')).toBe('2K');
+        it('maps "1080p" to "2k"', () => {
+            expect(normalizer('1080p')).toBe('2k');
         });
 
-        it('maps "4k" to "4K"', () => {
-            expect(normalizer('4k')).toBe('4K');
+        it('maps "4k" to "4k"', () => {
+            expect(normalizer('4k')).toBe('4k');
         });
     });
 
     describe('Direct passthrough for already-correct values', () => {
         it('"1K" passes through', () => {
-            expect(normalizer('1K')).toBe('1K');
+            expect(normalizer('1K')).toBe('1k');
         });
 
         it('"2K" passes through', () => {
-            expect(normalizer('2K')).toBe('2K');
+            expect(normalizer('2K')).toBe('2k');
         });
 
         it('"4K" passes through', () => {
-            expect(normalizer('4K')).toBe('4K');
+            expect(normalizer('4K')).toBe('4k');
         });
 
         it('"512" passes through', () => {
@@ -100,12 +100,12 @@ describe('Image Resolution Normalization', () => {
     });
 
     describe('Case-insensitive handling', () => {
-        it('"1k" (lowercase) → "1K"', () => {
-            expect(normalizer('1k')).toBe('1K');
+        it('"1k" (lowercase) → "1k"', () => {
+            expect(normalizer('1k')).toBe('1k');
         });
 
-        it('"2k" (lowercase) → "2K"', () => {
-            expect(normalizer('2k')).toBe('2K');
+        it('"2k" (lowercase) → "2k"', () => {
+            expect(normalizer('2k')).toBe('2k');
         });
     });
 
@@ -118,13 +118,13 @@ describe('Image Resolution Normalization', () => {
             expect(normalizer('')).toBeUndefined();
         });
 
-        it('defaults unknown value "720P" to "1K"', () => {
+        it('defaults unknown value "720P" to "1k"', () => {
             // This was the exact bug: studioControls.resolution '720p' → .toUpperCase() → '720P'
-            expect(normalizer('720P')).toBe('1K');
+            expect(normalizer('720P')).toBe('1k');
         });
 
-        it('defaults unknown value "ULTRA" to "1K"', () => {
-            expect(normalizer('ULTRA')).toBe('1K');
+        it('defaults unknown value "ULTRA" to "1k"', () => {
+            expect(normalizer('ULTRA')).toBe('1k');
         });
     });
 });

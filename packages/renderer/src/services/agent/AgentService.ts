@@ -249,7 +249,7 @@ export class AgentService {
                     } else {
                         // Case C: Standard timeout
                         updateMsg(responseId, {
-                            text: `❌ **Timeout:** The request is taking longer than expected (${timeoutMs / 1000}s). If you're generating high-res assets, they may still appear in your Gallery soon.`,
+                            text: `⏳ **Still Thinking...** The AI is diving deep into this one. It's taking longer than expected (${timeoutMs / 1000}s), but don't hit the panic button yet! Grab a coffee. If you're generating heavy assets, they're probably still cooking and will show up in your Gallery soon.`,
                             thoughts: [{
                                 id: uuidv4(),
                                 text: 'Request exceeded time limit',
@@ -677,10 +677,20 @@ export class AgentService {
 
                 logger.debug(`[AgentService] Boardroom: agent ${agentId} responded (${result?.text?.length || 0} chars)`);
 
+                let planId: string | undefined = undefined;
+                if (result && result.toolCalls && result.toolCalls.length > 0) {
+                    for (const tc of result.toolCalls) {
+                        if ((tc.name === 'propose_plan' || tc.name === 'get_plan') && tc.result && typeof tc.result !== 'string' && tc.result.success && tc.result.data?.planId) {
+                            planId = tc.result.data.planId;
+                        }
+                    }
+                }
+
                 if (result && result.text) {
                     useStore.getState().updateBoardroomMessage(resId, {
                         text: result.text,
                         thoughtSignature: result.thoughtSignature,
+                        ...(planId ? { planId } : {}),
                         isStreaming: false
                     });
                 } else {
@@ -690,6 +700,7 @@ export class AgentService {
                         useStore.getState().updateBoardroomMessage(resId, {
                             text: currentStreamedText,
                             thoughtSignature: result?.thoughtSignature,
+                            ...(planId ? { planId } : {}),
                             isStreaming: false
                         });
                     } else {
@@ -697,6 +708,7 @@ export class AgentService {
                         useStore.getState().updateBoardroomMessage(resId, {
                             text: hasToolCalls ? '*(Executed tasks but provided no summary.)*' : '*(No observations or actions required from this department.)*',
                             thoughtSignature: result?.thoughtSignature,
+                            ...(planId ? { planId } : {}),
                             isStreaming: false
                         });
                     }

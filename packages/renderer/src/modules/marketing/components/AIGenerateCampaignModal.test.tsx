@@ -83,11 +83,11 @@ describe('AIGenerateCampaignModal', () => {
     it('shows loading state and handles successful generation', async () => {
         const user = userEvent.setup();
 
-        // Use a delayed promise to catch the loading state
-        (CampaignAI.generateCampaign as import("vitest").Mock).mockImplementation(async () => {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            return mockGeneratedPlan;
+        let resolveGenerate!: (value: any) => void;
+        const generatePromise = new Promise(resolve => {
+            resolveGenerate = resolve;
         });
+        (CampaignAI.generateCampaign as import("vitest").Mock).mockReturnValue(generatePromise);
 
         render(<AIGenerateCampaignModal {...defaultProps} />);
 
@@ -99,6 +99,9 @@ describe('AIGenerateCampaignModal', () => {
         // Verify loading state immediately after click
         expect(screen.getByText(/Generating.../i)).toBeInTheDocument();
         expect(generateBtn).toBeDisabled();
+
+        // Resolve the promise
+        resolveGenerate(mockGeneratedPlan);
 
         // Wait for completion
         await waitFor(() => {

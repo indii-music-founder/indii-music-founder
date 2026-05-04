@@ -30,7 +30,7 @@ export function ApprovalModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100010] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-700 flex items-center gap-3">

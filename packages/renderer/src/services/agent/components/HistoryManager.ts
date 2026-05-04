@@ -26,10 +26,12 @@ export class HistoryManager {
      */
     async getRecentHistory(): Promise<AgentMessage[]> {
         const { useStore } = await import('@/core/store');
-        const { agentHistory } = useStore.getState();
+        const state = useStore.getState();
+
+        const currentHistory = state.isBoardroomMode ? state.boardroomMessages : state.agentHistory;
 
         // Filter out system messages and internal logs for the conversation window
-        const cleanHistory = (agentHistory || []).filter(m =>
+        const cleanHistory = (currentHistory || []).filter(m =>
             (m.role === 'user' || m.role === 'model') &&
             m.text &&
             m.text.trim() !== ''

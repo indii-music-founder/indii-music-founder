@@ -141,6 +141,25 @@ vi.mock('@/services/MembershipService', () => ({
     }
 }));
 
+// Mock agentRegistry to avoid dynamic imports hanging in CI
+vi.mock('./registry', () => ({
+    agentRegistry: {
+        getAsync: vi.fn().mockImplementation(async (id: string) => {
+            return {
+                id,
+                name: 'Mock Agent',
+                description: 'Mock Description',
+                execute: vi.fn().mockResolvedValue({
+                    content: 'I have analyzed the market data.',
+                    confidence: 0.9,
+                    toolsUsed: []
+                })
+            };
+        }),
+        getAll: vi.fn().mockReturnValue([{ id: 'marketing', name: 'Marketing', description: 'desc' }])
+    }
+}));
+
 // Mock VideoGenerationService to prevent accidental API calls
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
