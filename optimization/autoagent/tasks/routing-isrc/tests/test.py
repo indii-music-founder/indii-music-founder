@@ -4,7 +4,7 @@ from pathlib import Path
 
 def test_routing():
     """
-    Verifies that the agent correctly routes ISRC requests to the Publishing specialist.
+    Verifies that the agent correctly routes ISRC requests to the Music specialist.
     """
     print("Running ISRC Routing Test...")
     
