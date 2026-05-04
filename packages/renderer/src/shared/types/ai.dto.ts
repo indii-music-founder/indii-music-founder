@@ -99,7 +99,7 @@ export interface ThinkingConfig {
 }
 
 export interface ImageConfig {
-    imageSize?: '1K' | '2K' | '4K' | string;
+    imageSize?: '1k' | '2k' | '4k' | string;
     aspectRatio?: string;
     /** Person generation policy — maps to Gemini SDK's personGeneration field. */
     personGeneration?: 'ALLOW_ALL' | 'ALLOW_ADULT' | 'ALLOW_NONE' | string;

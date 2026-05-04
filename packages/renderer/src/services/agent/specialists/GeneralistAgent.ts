@@ -779,8 +779,12 @@ CURRENT REQUEST: ${task}
                             ? result
                             : (result.message || JSON.stringify(result));
 
-                        onProgress?.({ type: 'thought', content: `Tool ${name} completed: ${outputText.substring(0, 200)}` });
-                        accumulatedResponse += `\n[Tool: ${name}] ${outputText}`;
+                        onProgress?.({ 
+                            type: 'tool_result', 
+                            toolName: name,
+                            content: typeof result === 'string' ? result : JSON.stringify(result)
+                        });
+                        accumulatedResponse += `\n[Tool: ${name}]\n${outputText}\n[End Tool ${name}]\n`;
 
                         // Check if we should break after this batch (e.g. generation tool succeeded)
                         const generationTools = ['generate_image', 'generate_video', 'edit_image', 'batch_edit_images'];

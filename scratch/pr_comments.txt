@@ -1,0 +1,835 @@
+FILE: packages/firebase/firestore.rules
+BODY: _⚠️ Potential issue_ | _🔴 Critical_ | _⚡ Quick win_
+
+**Restrict `publicist_*` documents to their owner.**
+
+These rules currently let any authenticated account read, update, or delete every publicist campaign/contact document. Since the renderer subscribes by `userId`, this is user-scoped data and needs per-document ownership checks on create/read/update/delete.
+ 
+<details>
+<summary>🔒 Suggested rule shape</summary>
+
+```diff
+ match /publicist_campaigns/{campaignId} {
+-  allow read, write: if isAuthenticated();
++  allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
++  allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+ }
+ match /publicist_contacts/{contactId} {
+-  allow read, write: if isAuthenticated();
++  allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
++  allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+ }
+```
+</details>
+As per coding guidelines, "Never trust client-side configuration for authorization—always enforce logic on the server/security rule layer."
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/firebase/firestore.rules` around lines 575 - 580, The current rules
+for match /publicist_campaigns/{campaignId} and match
+/publicist_contacts/{contactId} allow any authenticated user (isAuthenticated())
+to access all documents; change them to enforce per-document ownership by
+requiring request.auth.uid equals the document owner: on create verify
+request.auth.uid == request.resource.data.owner, and on read/update/delete
+require request.auth.uid == resource.data.owner (and deny if resource missing);
+keep isAuthenticated() as part of the check but replace the blanket allow with
+these owner checks so only the owner can create/inspect/modify their own
+publicist_campaigns and publicist_contacts documents.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:medusa:grasshopper:54c2d527-56b8-4141-9345-e0cadd5ed40d -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/firebase/firestore.rules
+BODY: _⚠️ Potential issue_ | _🔴 Critical_ | _⚡ Quick win_
+
+**Don't bypass project authorization for `livingPlans`.**
+
+This nested match overrides the parent `/projects/{projectId}` protections, but it only checks `isAuthenticated()`. Any signed-in user who knows a project ID can now read or mutate that project's plans. Reuse the same owner/org-member predicate as the parent project rule, or validate against the parent project document here.
+ 
+<details>
+<summary>🔒 Suggested rule shape</summary>
+
+```diff
+ match /projects/{projectId}/livingPlans/{planId} {
+-  allow read, write: if isAuthenticated();
++  allow read: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
++    (
++      get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid ||
++      (
++        ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
++        get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
++        isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
++      )
++    );
++  allow create, update, delete: if <same predicate>;
+ }
+```
+</details>
+As per coding guidelines, "Use Firebase Security Rules for Firestore authorization and data validation in packages/firebase/firestore.rules."
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/firebase/firestore.rules` around lines 581 - 583, The nested rule
+match /projects/{projectId}/livingPlans/{planId} currently allows read/write for
+any authenticated user via isAuthenticated(); replace this by reusing the parent
+project access predicate (e.g., the owner/org-member check used in the
+/projects/{projectId} rules) or explicitly validate the parent project document
+inside this match (fetching /projects/{projectId} and asserting the same
+membership/owner condition) so only project owners or org members may access
+livingPlans rather than any signed-in user.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:medusa:grasshopper:54c2d527-56b8-4141-9345-e0cadd5ed40d -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/firebase/src/factory.ts
+BODY: _⚠️ Potential issue_ | _🟡 Minor_ | _⚡ Quick win_
+
+**JSDoc usage example references `memory: '1GB'` which is not a valid value per the `FunctionOptions` type.**
+
+Line 14 of the module-level doc shows `memory: '1GB'`, but the actual `FunctionOptions.memory` type (line 71) only accepts `'1GiB'`, `'2GiB'`, etc. (with binary suffix). Copying the example as-is will produce a TypeScript type error.
+
+<details>
+<summary>📝 Proposed fix</summary>
+
+```diff
+- *       { region: 'us-west1', memory: '1GB', secrets: [mySecret] },
++ *       { region: 'us-west1', memory: '1GiB', secrets: [mySecret] },
+```
+</details>
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/firebase/src/factory.ts` around lines 11 - 20, Update the module
+JSDoc example to use a valid memory string that matches the
+FunctionOptions.memory type: replace the incorrect "memory: '1GB'" with the
+binary-suffix form (e.g., "memory: '1GiB'") in the defineCallable example; also
+scan other examples in this file referencing memory to ensure they use the same
+valid values.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:churro:6c21b5fb-f44c-4ba4-846a-dff5aaf3dca7 -->
+
+<!-- d98c2f50 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/firebase/src/factory.ts
+BODY: _⚠️ Potential issue_ | _🟠 Major_
+
+<details>
+<summary>🧩 Analysis chain</summary>
+
+🌐 Web query:
+
+`firebase-functions v2 CallableOptions secrets field accepted types SecretParam string`
+
+💡 Result:
+
+In firebase-functions v2, the CallableOptions interface extends HttpsOptions, and the secrets field in HttpsOptions is typed as SupportedSecretParam[]. SupportedSecretParam refers to instances of SecretParam (returned by params.defineSecret(name)) and likely JsonSecretParam (returned by params.defineJsonSecret(name)). These are the primary accepted types for binding secrets to make their .value accessible at runtime. Plain string values are also commonly used in practice for the secrets array (representing secret names directly), as seen in multiple examples, and appear to be supported either via type coercion or as part of SupportedSecretParam union (e.g., string | SecretParam). A GitHub issue explicitly types helper functions as accepting (string | SecretParam)[] for the secrets option. Examples: - secrets: [mySecret.value] where mySecret = defineSecret('MY_SECRET') (fails without binding) - secrets: ['MY_SECRET_NAME'] (works per StackOverflow solutions) Official source code confirms secrets?: SupportedSecretParam[] with import from firebase-functions/params/types. Firebase docs emphasize supplying SecretParam instances to the secrets array.
+
+Citations:
+
+- 1: https://github.com/firebase/firebase-functions/blob/master/src/v2/providers/https.ts
+- 2: https://github.com/firebase/firebase-functions/issues/1777
+- 3: https://firebase.google.com/docs/reference/functions/firebase-functions.params
+- 4: https://stackoverflow.com/questions/79615667/how-to-correctly-access-secrets-in-firebase-functions-v2-with-definesecret
+- 5: https://firebase.google.com./docs/reference/functions/2nd-gen/node/firebase-functions.https.httpsoptions
+- 6: https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.params.secretparam
+
+---
+
+🏁 Script executed:
+
+```shell
+# First, check if the file exists and get its size
+wc -l packages/firebase/src/factory.ts
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 117
+
+---
+
+🏁 Script executed:
+
+```shell
+# Read the file to see the actual types and usage around lines 81 and 122
+cat -n packages/firebase/src/factory.ts | head -150
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 6370
+
+---
+
+🏁 Script executed:
+
+```shell
+# Check the imports at the top of the file
+head -30 packages/firebase/src/factory.ts | cat -n
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 1550
+
+---
+
+🏁 Script executed:
+
+```shell
+# Verify if SecretParam is imported anywhere or if params module is used
+grep -n "SecretParam\|defineSecret\|firebase-functions/params" packages/firebase/src/factory.ts
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 62
+
+---
+
+🏁 Script executed:
+
+```shell
+# Check if CallableOptions from firebase-functions/v2/https actually accepts { name: string } or strings
+# by looking at how other functions in the codebase use secrets
+fd -e ts -e tsx | xargs grep -l "secrets:" | head -5
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 361
+
+---
+
+🏁 Script executed:
+
+```shell
+# Look for usage examples of defineCallable or other function definitions in the codebase
+grep -r "defineCallable\|defineScheduled" packages/firebase/src --include="*.ts" -A 3 | head -40
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 1166
+
+---
+
+🏁 Script executed:
+
+```shell
+# Check actual usage of secrets in one of the files that use it
+cat -n packages/firebase/src/subscription/cancelSubscription.ts | head -100
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 2659
+
+---
+
+🏁 Script executed:
+
+```shell
+# Look for any usage of secrets parameter in function definitions
+grep -r "secrets:" packages/firebase/src --include="*.ts" -B 2 -A 2 | head -50
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 4017
+
+---
+
+🏁 Script executed:
+
+```shell
+# Check what stripeSecretKey and other secrets are
+cat -n packages/firebase/src/config/secrets.ts | head -50
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 2711
+
+---
+
+🏁 Script executed:
+
+```shell
+# Also check what resendApiKey is
+grep -r "resendApiKey\|stripeSecretKey\|googleOAuthClientId" packages/firebase/src/config --include="*.ts" -B 2 -A 2
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 963
+
+---
+
+🏁 Script executed:
+
+```shell
+# Verify what ALL_SECRETS contains in platformTokenExchange
+grep -n "ALL_SECRETS" packages/firebase/src/analytics/platformTokenExchange.ts -B 5 -A 5
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 2312
+
+---
+
+🏁 Script executed:
+
+```shell
+# Check the imports in email/sendEmail.ts to see what resendApiKey is
+cat -n packages/firebase/src/email/sendEmail.ts | head -30
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 1334
+
+---
+
+🏁 Script executed:
+
+```shell
+# Check if factory.ts is actually being used in any of these functions, or if they directly use onCall
+grep -n "defineCallable\|mapOptions" packages/firebase/src/email/sendEmail.ts packages/firebase/src/subscription/cancelSubscription.ts packages/firebase/src/analytics/platformTokenExchange.ts
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 62
+
+---
+
+🏁 Script executed:
+
+```shell
+# Verify the actual type of stripeSecretKey when it's imported
+grep -n "defineSecret" packages/firebase/src/config/secrets.ts | head -3
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 273
+
+---
+
+🏁 Script executed:
+
+```shell
+# Check the Firebase documentation/types for what defineSecret returns
+# by looking at the actual type in node_modules
+find node_modules/firebase-functions -name "params.d.ts" -o -name "index.d.ts" | head -3
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 147
+
+---
+
+🏁 Script executed:
+
+```shell
+# Look at the Firebase params types
+head -100 node_modules/firebase-functions/lib/params/index.d.ts 2>/dev/null || head -100 node_modules/firebase-functions/params/index.d.ts 2>/dev/null || echo "File not found, searching for params types"
+```
+
+Repository: the-walking-agency-det/indiiOS-Clean
+
+Length of output: 123
+
+---
+
+
+
+</details>
+
+**`secrets` type accepts invalid `{ name: string }` plain objects that break Firebase Cloud Functions deployment.**
+
+Firebase v2 accepts `(string | SecretParam)[]` where `SecretParam` comes from `defineSecret()` in `firebase-functions/params`. The union at line 81 incorrectly includes `{ name: string }` plain objects, which the Firebase CLI rejects with "Secret Version ID `[object Object]` does not match expected format" errors. The cast `as string[]` at line 122 masks the type incompatibility from TypeScript but not from the deployment pipeline.
+
+Fix by removing the invalid `{ name: string }` and accepting only strings and SecretParam instances:
+
+```typescript
+import type { SecretParam } from 'firebase-functions/params';
+
+// In FunctionOptions interface:
+secrets?: (string | SecretParam)[];
+
+// In mapOptions function, remove the cast:
+secrets: opts.secrets,
+```
+
+Or if you only want to support string secret names (not SecretParam objects):
+
+```typescript
+secrets?: string[];  // Remove the cast at line 122
+```
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/firebase/src/factory.ts` at line 81, The FunctionOptions `secrets`
+union currently allows plain `{ name: string }` objects which break Firebase
+deployment; update the `secrets` type in the FunctionOptions/interface to only
+allow valid types (either `(string | SecretParam)[]` by importing `SecretParam`
+from 'firebase-functions/params' or simply `string[]` if you only want names),
+then in `mapOptions` stop casting `opts.secrets` to `string[]`—assign it
+directly (e.g., `secrets: opts.secrets`) so TypeScript enforces the correct
+shape and the deployment receives valid secret values; update any imports to
+include `SecretParam` if you choose that option.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:churro:6c21b5fb-f44c-4ba4-846a-dff5aaf3dca7 -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/firebase/src/factory.ts
+BODY: _⚠️ Potential issue_ | _🟡 Minor_ | _⚡ Quick win_
+
+**`options.region as string` silently drops multi-region array configurations in `defineScheduled`, `defineFirestoreTrigger`, and `defineStorageTrigger`.**
+
+`FunctionOptions.region` is typed as `string | string[]`, and `onSchedule`/`onDocumentWritten`/`onObjectFinalized` all support array regions in Gen 2. Casting to `string` means a caller passing `region: ['us-central1', 'us-east1']` would silently coerce to `'us-central1,us-east1'` (string coercion of the array) instead of the intended multi-region deployment.
+
+<details>
+<summary>🛠️ Proposed fix for all three trigger builders</summary>
+
+```diff
+-        region: (options.region as string) || 'us-central1',
++        region: options.region || 'us-central1',
+```
+Apply this change in `defineScheduled` (line 185), `defineFirestoreTrigger` (line 209), and `defineStorageTrigger` (line 236). Also update the `ScheduleOptions` and `DocumentOptions` typed intermediaries to accept `string | string[]` for `region` if the Firebase typings support it — or if not, keep as `string` and document that multi-region is unsupported for scheduled/trigger functions.
+</details>
+
+
+
+
+
+Also applies to: 207-218, 233-249
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/firebase/src/factory.ts` around lines 183 - 191, The region cast to
+string in the trigger builders loses array regions; update defineScheduled,
+defineFirestoreTrigger, and defineStorageTrigger to pass options.region through
+without forcing (do not use "options.region as string") so multi-region arrays
+are preserved (e.g., set scheduleOptions.region = options.region), and update
+the intermediate option types (ScheduleOptions/DocumentOptions/ObjectOptions or
+similar intermediaries used in those builders) to accept region: string |
+string[] if the Firebase typings support it (otherwise leave type as string but
+add a comment/documentation that multi-region arrays are unsupported); ensure
+the calls to onSchedule/onDocumentWritten/onObjectFinalized receive the region
+value directly.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:churro:6c21b5fb-f44c-4ba4-846a-dff5aaf3dca7 -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/firebase/src/lib/image.ts
+BODY: _⚠️ Potential issue_ | _🟡 Minor_ | _⚡ Quick win_
+
+**LGTM — but the sibling `imageSize` field at line 108–109 now has a contradicting stale JSDoc and uppercase default.**
+
+The comment at line 108 reads `"Must be uppercase. Default: '1K'"` and the default at line 109 is `"1K"`, both of which directly contradict the newly corrected documentation on lines 27–29. The default `"1K"` still works at runtime because the `.transform(v => v.toLowerCase())` normalises it before enum validation, but the mismatch is a trap for future maintainers.
+
+<details>
+<summary>📝 Proposed fix</summary>
+
+```diff
+-    /** Output resolution. Must be uppercase. Default: "1K" */
+-    imageSize: ImageSizeEnum.nullish().default("1K"),
++    /** Output resolution. Must be lowercase. Default: "1k" */
++    imageSize: ImageSizeEnum.nullish().default("1k"),
+```
+</details>
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/firebase/src/lib/image.ts` around lines 27 - 36, Update the stale
+JSDoc and default for the sibling imageSize field to match ImageSizeEnum's
+lowercase contract: change the comment that says "Must be uppercase. Default:
+'1K'" to indicate lowercase (e.g., "Must be lowercase. Default: '1k'") and
+change the default value from "1K" to "1k" so the declared default aligns with
+ImageSizeEnum (which uses .transform(v => v.toLowerCase()) and accepts "1k").
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:churro:ecdd0a26-2791-46a4-a602-db06a8bc26da -->
+
+<!-- d98c2f50 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/firebase/src/stripe/connect.ts
+BODY: _⚠️ Potential issue_ | _🟠 Major_ | _⚡ Quick win_
+
+**`createStripeAccount` does not verify the caller is authorized to create an account for the supplied `artistId`.**
+
+Any authenticated user can pass an arbitrary `artistId` in `request.data`. If this function is intended for self-onboarding, add `if (request.auth.uid !== artistId)` guard. If it is admin-only, enforce a custom claim check (same pattern as `createTransfer` above).
+
+As per coding guidelines: "Never trust client-side configuration for authorization—always enforce logic on the server/security rule layer."
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/firebase/src/stripe/connect.ts` around lines 9 - 17,
+createStripeAccount currently only checks authentication but not authorization
+for the supplied artistId; update the function to enforce server-side
+authorization by either (a) if this is self-onboarding, add a guard comparing
+request.auth.uid to the supplied artistId and throw a
+HttpsError('permission-denied', ...) when they differ, or (b) if this is
+admin-only, check the caller's custom claim (reuse the same pattern used in
+createTransfer for isAdmin or similar) and throw permission-denied when the
+claim is missing; ensure you reference request.auth.uid and artistId and use
+HttpsError for the denial path so unauthorized callers cannot create Stripe
+accounts for arbitrary artist IDs.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:churro:6c21b5fb-f44c-4ba4-846a-dff5aaf3dca7 -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/firebase/src/stripe/connect.ts
+BODY: _⚠️ Potential issue_ | _🔴 Critical_ | _⚡ Quick win_
+
+**`createTransfer` is callable by any authenticated user — critical authorization flaw.**
+
+There is no check that the caller is permitted to initiate transfers. Any authenticated Firebase user can call this function with an arbitrary `amount` and a `destinationId` they control, draining the platform's connected Stripe balance. The Stripe transfer API imposes no further constraint on who on the platform side initiates the call.
+
+At minimum, restrict this to admin users or an internal service account. For example, check a custom claim:
+
+<details>
+<summary>🔒 Proposed fix: enforce admin claim before proceeding</summary>
+
+```diff
+     if (!request.auth) {
+         throw new HttpsError('unauthenticated', 'User must be signed in.');
+     }
++
++    // Only platform admins may initiate transfers
++    if (!request.auth.token['admin']) {
++        throw new HttpsError('permission-denied', 'Insufficient privileges.');
++    }
+```
+</details>
+
+As per coding guidelines: "Never trust client-side configuration for authorization—always enforce logic on the server/security rule layer."
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/firebase/src/stripe/connect.ts` around lines 55 - 79, The
+createTransfer callable (function createTransfer) lacks server-side
+authorization: before performing stripe.transfers.create, verify the caller has
+the required admin/internal permissions (e.g. check request.auth.token.admin or
+a custom claim like request.auth.token.canCreateTransfer or compare
+request.auth.uid to a configured service account ID); if the claim is
+missing/false, throw an HttpsError('permission-denied', ...) and return early;
+keep the existing auth check for signed-in users, but add this claim check in
+the same function to restrict calls to admins/service accounts only and ensure
+inputs (amount, destinationId) are validated before calling
+stripe.transfers.create.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:churro:6c21b5fb-f44c-4ba4-846a-dff5aaf3dca7 -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/renderer/src/core/components/ApprovalModal.tsx
+BODY: _⚠️ Potential issue_ | _🟠 Major_ | _⚡ Quick win_
+
+**Avoid z-index collision with critical overlays.**
+
+Line 33 sets `z-[999999]`, which matches the critical error layer (`ErrorBoundary`) and can create unpredictable overlay precedence (mount order decides who wins). It also force-overrides feature overlays like LivingPlans and GlobalDropZone.
+
+Use a bounded modal layer below critical (e.g., `z-[100010]`) and keep `999999` reserved for truly critical system states.
+
+<details>
+<summary>Suggested patch</summary>
+
+```diff
+-        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
++        <div className="fixed inset-0 z-[100010] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+```
+</details>
+
+<!-- suggestion_start -->
+
+<details>
+<summary>📝 Committable suggestion</summary>
+
+> ‼️ **IMPORTANT**
+> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
+
+```suggestion
+        <div className="fixed inset-0 z-[100010] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+```
+
+</details>
+
+<!-- suggestion_end -->
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/renderer/src/core/components/ApprovalModal.tsx` at line 33, The
+ApprovalModal's root overlay uses an excessively high z-index (z-[999999]) that
+collides with the critical ErrorBoundary layer; update the modal overlay class
+in ApprovalModal (the outer div in the ApprovalModal component) to a bounded
+layer below critical—e.g., replace z-[999999] with z-[100010]—so the modal stays
+above normal UI overlays but below the reserved critical/system layer.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:triton:hawk:a7f3b6e3-ee95-452a-ae61-d2ca83c7b3d1 -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/renderer/src/modules/boardroom/BoardroomModule.tsx
+BODY: _⚠️ Potential issue_ | _🟡 Minor_ | _⚡ Quick win_
+
+**Missing `aria-label` leaves the button inaccessible to screen readers on small screens.**
+
+The label span uses `hidden sm:inline`, so on viewports below `sm` the button renders only the `Layers` icon with no programmatic label. `title` is not reliably announced by screen readers on focusable elements. The existing "Back to Studio" button sets both `title` and `aria-label` — this new button should follow the same pattern.
+
+<details>
+<summary>♿ Proposed fix</summary>
+
+```diff
+ <button 
+     onClick={() => setIsTrackerOpen(true)}
+     className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-all border border-cyan-500/20 mr-2"
+     title="View Active Plans"
++    aria-label="View Active Plans"
+ >
+```
+</details>
+
+<!-- suggestion_start -->
+
+<details>
+<summary>📝 Committable suggestion</summary>
+
+> ‼️ **IMPORTANT**
+> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
+
+```suggestion
+                    <button 
+                        onClick={() => setIsTrackerOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-all border border-cyan-500/20 mr-2"
+                        title="View Active Plans"
+                        aria-label="View Active Plans"
+                    >
+                        <Layers size={16} />
+                        <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Living Plans</span>
+                    </button>
+```
+
+</details>
+
+<!-- suggestion_end -->
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/renderer/src/modules/boardroom/BoardroomModule.tsx` around lines 82
+- 89, Button that opens the tracker (onClick calling setIsTrackerOpen) shows
+only the Layers icon on small screens due to the span using "hidden sm:inline",
+so add an aria-label to the button (e.g., aria-label="Living Plans") to provide
+a programmatic name for screen readers while keeping the existing title; ensure
+the aria-label text matches the visible span text so the accessible name is
+consistent.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:churro:db1a7457-9b37-41f4-8ad5-310e9ab06cb2 -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+FILE: packages/renderer/src/modules/boardroom/components/LivingPlansTracker.tsx
+BODY: _⚠️ Potential issue_ | _🟠 Major_ | _⚡ Quick win_
+
+**Clear the previous project's plans before each reload.**
+
+This effect keeps the old `plans` array when `currentProjectId` changes or when `getPlansForProject()` fails. In that case the panel can show the prior project's cards under the new project once `loading` drops back to `false`.
+ 
+<details>
+<summary>💡 Suggested fix</summary>
+
+```diff
+     useEffect(() => {
+-        if (!isOpen || !currentProjectId) return;
++        if (!isOpen || !currentProjectId) {
++            setPlans([]);
++            setLoading(false);
++            return;
++        }
+         
+         let isMounted = true;
+         // eslint-disable-next-line react-hooks/set-state-in-effect
+         setLoading(true);
++        setPlans([]);
+         livingPlanService.getPlansForProject(currentProjectId).then(data => {
+             if (isMounted) {
+                 // Sort by newest first
+                 setPlans(data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
+                 setLoading(false);
+             }
+         }).catch(err => {
+             logger.error('Failed to load living plans:', err);
+-            if (isMounted) setLoading(false);
++            if (isMounted) {
++                setPlans([]);
++                setLoading(false);
++            }
+         });
+```
+</details>
+
+<!-- suggestion_start -->
+
+<details>
+<summary>📝 Committable suggestion</summary>
+
+> ‼️ **IMPORTANT**
+> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
+
+```suggestion
+    useEffect(() => {
+        if (!isOpen || !currentProjectId) {
+            setPlans([]);
+            setLoading(false);
+            return;
+        }
+        
+        let isMounted = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLoading(true);
+        setPlans([]);
+        livingPlanService.getPlansForProject(currentProjectId).then(data => {
+            if (isMounted) {
+                // Sort by newest first
+                setPlans(data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
+                setLoading(false);
+            }
+        }).catch(err => {
+            logger.error('Failed to load living plans:', err);
+            if (isMounted) {
+                setPlans([]);
+                setLoading(false);
+            }
+        });
+
+        return () => { isMounted = false; };
+    }, [isOpen, currentProjectId]);
+```
+
+</details>
+
+<!-- suggestion_end -->
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@packages/renderer/src/modules/boardroom/components/LivingPlansTracker.tsx`
+around lines 22 - 40, When opening the panel (useEffect watching isOpen and
+currentProjectId), clear any previous plans immediately before starting the
+load: call setPlans([]) right after checking isOpen/currentProjectId and before
+setLoading(true) so the UI doesn't show stale cards; also ensure in the catch
+block you clear plans (setPlans([])) when getPlansForProject fails and before
+setting setLoading(false). Apply this change around the existing useEffect,
+setLoading, setPlans, and livingPlanService.getPlansForProject calls.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:medusa:grasshopper:54c2d527-56b8-4141-9345-e0cadd5ed40d -->
+
+<!-- 4e71b3a2 -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---

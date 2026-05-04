@@ -8,7 +8,8 @@ import { BoardroomTable } from './components/BoardroomTable';
 import { BoardroomConversationPanel } from './components/BoardroomConversationPanel';
 import { useMobile } from '@/hooks/useMobile';
 
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Users, Layers } from 'lucide-react';
+import { LivingPlansTracker } from './components/LivingPlansTracker';
 
 /**
  * BoardroomModule — The virtual multi-agent boardroom.
@@ -38,9 +39,10 @@ export function BoardroomModule() {
 
     const { isAnyPhone } = useMobile();
 
-    if (!isBoardroomMode) return null;
+    const activeCount = activeAgents?.length || 0;
+    const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
 
-    const activeCount = activeAgents.length;
+    if (!isBoardroomMode) return null;
 
     if (typeof document === 'undefined') return null;
 
@@ -76,6 +78,16 @@ export function BoardroomModule() {
                             </span>
                         )}
                     </div>
+                    <div className="flex-1" />
+                    <button 
+                        onClick={() => setIsTrackerOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-all border border-cyan-500/20 mr-2"
+                        title="View Active Plans"
+                        aria-label="Living Plans"
+                    >
+                        <Layers size={16} />
+                        <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Living Plans</span>
+                    </button>
                 </div>
 
                 {/* Split-Panel Content */}
@@ -109,7 +121,7 @@ export function BoardroomModule() {
                     </motion.div>
                 </div>
 
-
+                <LivingPlansTracker isOpen={isTrackerOpen} onClose={() => setIsTrackerOpen(false)} />
             </motion.div>
         </AnimatePresence>,
         document.body

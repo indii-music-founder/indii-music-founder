@@ -4,6 +4,8 @@ import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { agentRegistry } from '@/services/agent/registry';
 import { Bot, MessageSquare } from 'lucide-react';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface BoardroomConversationPanelProps {
     messages: AgentMessage[];
@@ -127,7 +129,18 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 
                                     {/* Message Text */}
                                     <div className="text-sm text-white/80 leading-relaxed wrap-break-word whitespace-pre-wrap">
-                                        {msg.text || (msg as { content?: string }).content || ''}
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline" />,
+                                                p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0" />,
+                                                ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2" />,
+                                                ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2" />,
+                                                img: ({ node, ...props }) => <img {...props} className="rounded-lg max-w-full max-h-[300px] object-contain my-2 border border-white/10 shadow-lg" alt={props.alt || 'Generated asset'} />
+                                            }}
+                                        >
+                                            {msg.text || (msg as { content?: string }).content || ''}
+                                        </ReactMarkdown>
                                     </div>
 
                                     {/* Streaming indicator */}
