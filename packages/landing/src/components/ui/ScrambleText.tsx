@@ -21,11 +21,9 @@ export default function ScrambleText({
     delay = 0
 }: ScrambleTextProps) {
     const [displayText, setDisplayText] = useState('');
-    // const controls = useAnimation(); // Unused
 
     useEffect(() => {
         let isCancelled = false;
-        // let timeout: NodeJS.Timeout; // Unused
 
         const animate = async () => {
             setDisplayText(''); // Clear initially
