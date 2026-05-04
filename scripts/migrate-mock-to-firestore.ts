@@ -13,7 +13,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 // Initialize Firebase Admin
-const serviceAccountPath = path.resolve(__dirname, '../firebase-service-account.json');
+const serviceAccountPath = path.resolve(process.cwd(), 'scripts', '../firebase-service-account.json');
 let db: FirebaseFirestore.Firestore;
 
 if (fs.existsSync(serviceAccountPath)) {
@@ -138,18 +138,22 @@ async function migrateMerchandiseCatalog() {
     const batch = db.batch();
     let skipped = 0;
 
-    for (const product of MERCHANDISE_CATALOG) {
-        const ref = db.collection('merchandise_catalog').doc(product.id);
-        const existing = await ref.get();
-        if (existing.exists) {
+    const now = new Date();
+    const refs = MERCHANDISE_CATALOG.map(product => db.collection('merchandise_catalog').doc(product.id));
+    const snapshots = await Promise.all(refs.map(ref => ref.get()));
+
+    for (let i = 0; i < MERCHANDISE_CATALOG.length; i++) {
+        const product = MERCHANDISE_CATALOG[i];
+        if (snapshots[i].exists) {
             console.log(`   ⏭️  Skipping ${product.id} (already exists)`);
             skipped++;
             continue;
         }
-        batch.set(ref, {
+
+        batch.set(refs[i], {
             ...product,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            createdAt: now,
+            updatedAt: now
         });
     }
 
@@ -164,18 +168,22 @@ async function migrateSamplePlatforms() {
     const batch = db.batch();
     let skipped = 0;
 
-    for (const platform of SAMPLE_PLATFORMS) {
-        const ref = db.collection('sample_platforms').doc(platform.id);
-        const existing = await ref.get();
-        if (existing.exists) {
+    const now = new Date();
+    const refs = SAMPLE_PLATFORMS.map(platform => db.collection('sample_platforms').doc(platform.id));
+    const snapshots = await Promise.all(refs.map(ref => ref.get()));
+
+    for (let i = 0; i < SAMPLE_PLATFORMS.length; i++) {
+        const platform = SAMPLE_PLATFORMS[i];
+        if (snapshots[i].exists) {
             console.log(`   ⏭️  Skipping ${platform.id} (already exists)`);
             skipped++;
             continue;
         }
-        batch.set(ref, {
+
+        batch.set(refs[i], {
             ...platform,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            createdAt: now,
+            updatedAt: now
         });
     }
 
@@ -190,18 +198,22 @@ async function migrateApiInventory() {
     const batch = db.batch();
     let skipped = 0;
 
-    for (const api of API_INVENTORY) {
-        const ref = db.collection('api_inventory').doc(api.id);
-        const existing = await ref.get();
-        if (existing.exists) {
+    const now = new Date();
+    const refs = API_INVENTORY.map(api => db.collection('api_inventory').doc(api.id));
+    const snapshots = await Promise.all(refs.map(ref => ref.get()));
+
+    for (let i = 0; i < API_INVENTORY.length; i++) {
+        const api = API_INVENTORY[i];
+        if (snapshots[i].exists) {
             console.log(`   ⏭️  Skipping ${api.id} (already exists)`);
             skipped++;
             continue;
         }
-        batch.set(ref, {
+
+        batch.set(refs[i], {
             ...api,
-            lastChecked: new Date(),
-            createdAt: new Date()
+            lastChecked: now,
+            createdAt: now
         });
     }
 
