@@ -11,7 +11,7 @@ export const LicensingAgent: AgentConfig = {
     name: 'Licensing Director',
     description: 'Manages sync licensing, master usage rights, and clearance pipelines.',
     color: 'bg-purple-600',
-    category: 'manager',
+    category: 'department',
     systemPrompt,
     functions: {
         check_availability: async (args: { title: string, artist: string, usage: string, url?: string }) => {

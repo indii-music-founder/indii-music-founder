@@ -12,6 +12,7 @@ import {
     FileCheck,
     TrendingUp,
     Network,
+    MessageSquare,
 } from 'lucide-react';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
@@ -26,8 +27,10 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps) {
-    const { setModule } = useStore(useShallow(state => ({
-        setModule: state.setModule
+    const { setModule, isEntryAssistantDismissed, setEntryAssistantDismissed } = useStore(useShallow(state => ({
+        setModule: state.setModule,
+        isEntryAssistantDismissed: state.isEntryAssistantDismissed,
+        setEntryAssistantDismissed: state.setEntryAssistantDismissed
     })));
 
     const suggestions = [
@@ -108,7 +111,22 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
             </div>
 
             {/* NEW: Entry Overlay (Chat Overlay) */}
-            <EntryOverlay onSubmit={onCommandSubmit} />
+            {!isEntryAssistantDismissed ? (
+                <EntryOverlay 
+                    onSubmit={onCommandSubmit} 
+                    onDismiss={() => setEntryAssistantDismissed(true)} 
+                />
+            ) : (
+                <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-12 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-white/50 text-xs font-medium hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                    onClick={() => setEntryAssistantDismissed(false)}
+                >
+                    <MessageSquare size={14} />
+                    Restore Entry Assistant
+                </motion.button>
+            )}
         </div>
 
     );

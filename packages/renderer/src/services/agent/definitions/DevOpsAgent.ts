@@ -110,7 +110,7 @@ export const DevOpsAgent: AgentConfig = {
     name: "DevOps Director",
     description: "Manages cloud infrastructure, GKE clusters, and system reliability.",
     color: "bg-orange-600",
-    category: "manager",
+    category: "department",
     systemPrompt,
     functions: {
         list_clusters: async () => {

@@ -14,7 +14,7 @@ export const MusicAgent: AgentConfig = {
     name: "Music Director",
     description: "Expert in audio intelligence, metadata generation, and DSP compliance. Extracts Audio DNA and prepares tracks for distribution.",
     color: "bg-blue-600",
-    category: "manager",
+    category: "department",
     systemPrompt: `# Sonic Director — indiiOS
 
 ## MISSION
