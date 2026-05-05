@@ -195,11 +195,14 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
                 commandBarInput: '',
                 commandBarAttachments: [],
                 isAgentProcessing: false,
+                currentModule: 'road',
                 canvasItems: [{ id: 'mock-item' }],
                 currentModule: 'dashboard',
                 chatChannel: 'indii',
                 isCommandBarDetached: true,
-                isAgentOpen: false
+                isAgentOpen: false,
+                isBoardroomMode: false,
+                canvasItems: []
             });
         });
     });

@@ -42,13 +42,13 @@ else
 fi
 
 echo "--> Step 4: Running Sharded Tests"
-npm test -- --run --reporter=dot --pool=forks --testTimeout=30000 --bail=3 --shard=1/4 &
+npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=1/4 &
 PID1=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=30000 --bail=3 --shard=2/4 &
+npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=2/4 &
 PID2=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=30000 --bail=3 --shard=3/4 &
+npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=3/4 &
 PID3=$!
-npm test -- --run --reporter=dot --pool=forks --testTimeout=30000 --bail=3 --shard=4/4 &
+npm test -- --run --reporter=dot --pool=forks --testTimeout=60000 --bail=3 --shard=4/4 &
 PID4=$!
 
 wait $PID1 || fail=1

@@ -8,7 +8,7 @@ import { logger } from '@/utils/logger';
  * Bug reports are saved to Firestore (bug_reports collection) and optionally
  * to GitHub Issues if VITE_GITHUB_TOKEN + VITE_GITHUB_REPO are set in .env.
  */
-export const BugReportTools = {
+export const BugReportTools: Record<string, AnyToolFunction> = {
     report_bug: wrapTool('report_bug', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const title = args.title as string | undefined;
         const description = args.description as string | undefined;
@@ -236,7 +236,8 @@ ${featureRequest.useCase}
             title: featureRequest.title,
             priority: featureRequest.priority,
             category: featureRequest.category,
-            message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.`,
+            markdownBody,
+            message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.`
         };
-    }),
+    })
 } satisfies Record<string, AnyToolFunction>;

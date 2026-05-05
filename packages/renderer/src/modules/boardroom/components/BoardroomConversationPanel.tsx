@@ -182,6 +182,8 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
  */
 function sanitizeBoardroomMessage(text: string): string {
     return text
+        // Strip raw JSON code blocks (often leaked by agents during tool processing)
+        .replace(/```json[\s\S]*?```/g, '')
         // Strip [Tool: name]...[End Tool name] blocks
         .replace(/\[Tool: [^\]]+\][\s\S]*?\[End Tool [^\]]+\]\n?/g, '')
         // Strip (SYSTEM NOTE): lines
@@ -190,6 +192,9 @@ function sanitizeBoardroomMessage(text: string): string {
         .replace(/\[SEATED_AGENTS\]:[^\n]*\n?/g, '')
         // Strip (PRIOR CONTEXT): blocks
         .replace(/\(PRIOR CONTEXT\):[\s\S]*$/g, '')
+        // Strip any remaining [Thought] or [Action] prefixes if they leak into text
+        .replace(/^\[Thought\]:.*$/gm, '')
+        .replace(/^\[Action\]:.*$/gm, '')
         .trim();
 }
 
