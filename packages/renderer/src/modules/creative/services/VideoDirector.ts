@@ -10,15 +10,7 @@ export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
         // Note: In a real scenario, we'd fetch the video blob. 
         // For this demo/port, we assume 'uri' is accessible or a data URI.
-        // If it's a remote URL, we might need a proxy or CORS handling if not on same origin.
-
         try {
-            // 1. Fetch Video
-            // const res = await fetch(uri); // Assuming URI is fetchable
-            // const blob = await res.blob();
-            // const url = URL.createObjectURL(blob);
-
-            // SIMPLIFICATION: We'll assume 'uri' is the URL we can use directly for now.
             const url = uri;
 
             if (enableDirectorsCut && !isRetry) {
