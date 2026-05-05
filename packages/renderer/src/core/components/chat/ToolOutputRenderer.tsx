@@ -5,33 +5,24 @@ import { Sparkles } from 'lucide-react';
 interface ImageRendererProps {
     src?: string;
     alt?: string;
+    messageId?: string;
+    agentId?: string;
 }
 
-export const ImageRenderer: React.FC<ImageRendererProps> = ({ src, alt }) => {
-    const { setModule, setGenerationMode, setViewMode, setSelectedItem, generatedHistory, currentProjectId } = useStore.getState();
+export const ImageRenderer: React.FC<ImageRendererProps> = ({ src, alt, messageId, agentId }) => {
+    const { openImageInStudio } = useStore.getState();
     const [isHovered, setIsHovered] = useState(false);
 
     const handleClick = () => {
-        if (!src) return;
-
-        // 1. Try to find the image in history
-        const historyItem = generatedHistory.find(h => h.url === src);
-
-        // 2. Prepare item (found or temp)
-        const itemToEdit = historyItem || {
-            id: crypto.randomUUID(),
-            url: src,
-            prompt: alt || 'Imported Image',
-            type: 'image',
-            timestamp: Date.now(),
-            projectId: currentProjectId
-        };
-
-        // 3. Navigate
-        setModule('creative');
-        setGenerationMode('image');
-        setViewMode('canvas');
-        setSelectedItem(itemToEdit);
+        if (!src || !messageId || !agentId) return;
+        
+        openImageInStudio({
+            imageId: crypto.randomUUID(),
+            sourceUrl: src,
+            sourceMessageId: messageId,
+            agentId: agentId,
+            prompt: alt || 'Imported Image'
+        });
     };
 
     return (
@@ -51,7 +42,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({ src, alt }) => {
             {/* Hover Overlay */}
             <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="bg-dept-creative text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-xl transform scale-100 hover:scale-105 transition-transform" data-testid="edit-in-studio-badge">
-                    <span>✏️ Edit in Studio</span>
+                    <span>✏️ Open in Studio</span>
                 </div>
             </div>
         </div>
@@ -63,9 +54,11 @@ interface ToolOutputProps {
     idx: number;
     url: string;
     prompt?: string;
+    messageId?: string;
+    agentId?: string;
 }
 
-export const ToolImageOutput: React.FC<ToolOutputProps> = ({ toolName, idx, url, prompt }) => {
+export const ToolImageOutput: React.FC<ToolOutputProps> = ({ toolName, idx, url, prompt, messageId, agentId }) => {
     const label = toolName === 'generate_image' ? 'GENERATED ASSET' :
         toolName === 'batch_edit_images' ? 'EDITED ASSET' :
             toolName === 'render_cinematic_grid' ? 'CINEMATIC GRID' :
@@ -78,7 +71,7 @@ export const ToolImageOutput: React.FC<ToolOutputProps> = ({ toolName, idx, url,
                 <Sparkles size={12} />
                 {label} {idx + 1}
             </div>
-            <ImageRenderer src={url} alt={prompt || `Generated Image ${idx + 1}`} />
+            <ImageRenderer src={url} alt={prompt || `Generated Image ${idx + 1}`} messageId={messageId} agentId={agentId} />
         </div>
     );
 };
