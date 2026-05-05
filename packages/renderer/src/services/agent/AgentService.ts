@@ -651,8 +651,14 @@ export class AgentService {
 
             let currentStreamedText = '';
 
+            // Build the seated-agents manifest so the Conductor knows who is in the room
+            const seatedAgentNames = activeAgents
+                .map(id => agentRegistry.get(id)?.name || id)
+                .join(', ');
+
             const enhancedText = text + assetContext + 
                 '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
+                `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.` +
                 (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
 
             try {
