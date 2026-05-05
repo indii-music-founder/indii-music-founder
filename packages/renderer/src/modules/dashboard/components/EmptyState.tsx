@@ -16,6 +16,7 @@ import {
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { EntryOverlay } from './EntryOverlay';
 
 interface EmptyStateProps {
     /** Legacy: populate the prompt input box without submitting */
@@ -24,7 +25,7 @@ interface EmptyStateProps {
     onCommandSubmit: (cmd: string) => void;
 }
 
-export function EmptyState({ onCommandSubmit }: EmptyStateProps) {
+export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps) {
     const { setModule } = useStore(useShallow(state => ({
         setModule: state.setModule
     })));
@@ -105,7 +106,11 @@ export function EmptyState({ onCommandSubmit }: EmptyStateProps) {
                     </motion.button>
                 ))}
             </div>
+
+            {/* NEW: Entry Overlay (Chat Overlay) */}
+            <EntryOverlay onSubmit={onCommandSubmit} />
         </div>
 
     );
 }
+

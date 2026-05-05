@@ -35,6 +35,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
         // Login is now handled directly via Firebase signInWithPopup in the renderer
         // No need for IPC - it works natively in Electron's Chromium
         logout: () => ipcRenderer.invoke('auth:logout'),
+        onUserUpdate: (callback: (tokens: { idToken: string, accessToken?: string | null } | null) => void) => {
+            const handler = (_event: unknown, tokens: any) => callback(tokens);
+            ipcRenderer.on('auth:user-update', handler);
+            return () => ipcRenderer.removeListener('auth:user-update', handler);
+        },
+        onError: (callback: (data: { message: string }) => void) => {
+            const handler = (_event: unknown, data: any) => callback(data);
+            ipcRenderer.on('auth:error', handler);
+            return () => ipcRenderer.removeListener('auth:error', handler);
+        }
     },
 
     // Credentials (Secure Main Process Storage)
