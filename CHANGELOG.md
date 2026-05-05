@@ -11,6 +11,11 @@ All notable changes to indiiOS are documented in this file.
 * **boardroom:** implement Swarm Protocol seating enforcement and manifest injection ([#1685](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1685))
 * **boardroom:** add output sanitization layer to strip system meta-artifacts from chat ([#1686](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1686))
 * **governance:** standardize ToolFunctionResult interface for monorepo type-safety ([#1688](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1688))
+* **a2a:** optimizer feedback endpoint + JSONL exporter (Phase 4.5) ([#1676](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1676)) ([1c78d8b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/1c78d8b98faa8e3c61bdf067f6c8bd5badf61b60))
+* **a2a:** sidecar hardening — plaintext rejection, replay protection, agent cards ([e114d9f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e114d9f5cd61c60a69f0cc9f1e747ef0da8986e1))
+* **agent:** implement A2A swarm orchestration and replace broadcast dispatch ([6ff62e1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6ff62e1d0f8684eaad138d5851cd74d76e021437))
+* merge all pending changes — boardroom tracker, image gen, strip… ([#1658](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1658)) ([2142231](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2142231568d1fae21d9cfa976304454d62adc405))
+* **security:** integrate AutoMemoryExtractor and SecurityDashboard ([fb4041b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/fb4041b242c318d2ae5d524fa34553a3a2a84e72))
 
 
 ### Bug Fixes
@@ -18,6 +23,35 @@ All notable changes to indiiOS are documented in this file.
 * **renderer:** resolve 40+ legacy type failures in AgentService orchestration pipeline
 * **dashboard:** fix mobile responsiveness for overlay quick action pills
 * **agents:** resolve stale registry imports and specialist routing conflicts
+* **brand:** ensure profile state updates bump timestamps to prevent stale sync overwrites ([cc162f5](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cc162f5a3689053c1e3d524f77d6ce38c7b1ee4c))
+* Correct ISRC routing ambiguity in Conductor prompt ([#1657](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1657)) ([2c91e31](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2c91e310528548ac9c8376adec7aaef880352165))
+* **creative:** pass showBuilder prop and update prompt builder ([b200973](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b20097347491a481978f9b09586663f12eb352cf))
+* **dev:** restore packages/renderer/vite.config.ts for npm run dev:web ([#1682](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1682)) ([7286d27](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7286d279226e5efc776a8d68777e0a6815365378))
+* resolve UX regressions and CI test flakiness ([d9a627f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/d9a627fcfda927f16e528ef83beb13f60f3a354e))
+* route ISRC to Music instead of Publishing in AutoAgent tests ([#1661](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1661)) ([9e8fc0c](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9e8fc0ccbdde74e50dff655e9c47ed51ecbf967f))
+* **types:** add 'security' to MODULE_IDS to satisfy theme types ([8843f6b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/8843f6bcb23214a369cdd1e9cc0d565506476cf4))
+* **types:** add missing 'security' module definitions to fix typecheck CI failure ([37a160f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/37a160f191c1150f3977b51b994cf423224305c9))
+* update ISRC routing from publishing to music agent ([#1655](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1655)) ([7ebee08](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/7ebee08801cdf4b0869c8a22ef57e856b9c1856d))
+
+
+### Performance
+
+* hoist Timestamp.now() in AlwaysOnMemoryEngine loops ([#1660](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1660)) ([e1f9df6](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e1f9df638178d56818dd9802daeb041afc4e8a78))
+* **scripts:** optimize migrateSamplePlatforms with Promise.all and timestamp hoisting ([#1664](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1664)) ([9ddbeed](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/9ddbeedc6d47ecad7410b91eb2175843afa310b8))
+* **scripts:** optimize N+1 query in sample platforms migration ([#1670](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1670)) ([e6e4ea4](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e6e4ea40d5cd49d17baf1089fd5d6d4d946b3d76))
+* **scripts:** optimize sample platforms migration script ([#1665](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1665)) ([c9248f6](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/c9248f6e4c0bcd716676ec2812cb0287304fc806))
+
+
+### Refactoring
+
+* **creative:** remove commented-out fetch logic in VideoDirector ([#1668](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1668)) ([2edcbbb](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2edcbbb150bb44221a293b95c475f1cc20bf2d06))
+* **renderer:** remove commented-out conversational files array in OnboardingModal ([#1667](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1667)) ([5d9ebc7](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/5d9ebc75c493745ae2b82c5fea68f72eadaf6ef5))
+* **renderer:** remove commented-out dead code in OnboardingModal ([#1679](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1679)) ([6141288](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6141288192b467bb5b2439938a56bb106464e69b))
+
+
+### Documentation
+
+* add chat-image interaction living plan + CLAUDE.md pointer ([#1683](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1683)) ([dc02e37](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/dc02e37f76c5e5f6a2b7085de8112efa8a492757))
 
 ## [1.58.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.58.0...v1.58.1) (2026-05-01)
 

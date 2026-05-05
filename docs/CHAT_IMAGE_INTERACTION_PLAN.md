@@ -71,6 +71,13 @@ Each phase has: **scope**, **acceptance criteria**, **estimated commit count**, 
 - [x] **1.5** Vitest unit test for the store action.
 - [x] **1.6** RTL test for the chat bubble button (renders, calls handler, accessible name).
 - [x] **1.7** Manual smoke: generate an image in Boardroom, click button, verify Studio loads it.
+- [ ] **1.1** Image bubble in `ChatMessage.tsx` (or wherever chat-side image rendering lives — verify before coding) renders an "Open in Studio" icon button overlaid on hover (desktop) and as a permanent corner badge (touch).
+- [ ] **1.2** Click handler calls a new store action (e.g., `openImageInStudio(imageId, sourceUrl, sourceMessageId)`).
+- [ ] **1.3** Action route-switches to the creative module and stages the image as a new canvas layer with provenance metadata (`{ source: 'chat', messageId, agentId }`).
+- [ ] **1.4** Studio shows a small banner: "Imported from chat — Conductor's response to: '<truncated prompt>'" so the user remembers the context.
+- [ ] **1.5** Vitest unit test for the store action.
+- [ ] **1.6** RTL test for the chat bubble button (renders, calls handler, accessible name).
+- [ ] **1.7** Manual smoke: generate an image in Boardroom, click button, verify Studio loads it.
 
 **Estimated commits:** 2–3 (one for store + button, one for studio receiver, one for tests).
 
@@ -115,6 +122,16 @@ Each phase has: **scope**, **acceptance criteria**, **estimated commit count**, 
 - [x] **4.5** Visual verification: tool registered in `ToolOutputRenderer.tsx` and `ChatMessage.tsx`.
 - [ ] **4.6** Manual smoke: upload a legal contract, highlight the "Termination" clause, type "make this more favorable to the artist", verify the agent returns a revised PDF with the changed clause. (Note: Automation blocked by API Quota, requires manual QA).
 
+- [ ] **4.6** Manual smoke: upload a legal contract, highlight the "Termination" clause, type "make this more favorable to the artist", verify the agent returns a revised PDF with the changed clause.
+
+- [ ] **2.1** New component `ImageAnnotator.tsx` mounts inline below the image bubble. Three color swatches (red `#ef4444`, blue `#3b82f6`, yellow `#eab308`), an eraser, and a clear-all button.
+- [ ] **2.2** Click-and-drag on the image draws a circle in the active color. Circles persist as `{color, cx, cy, r}` in component state.
+- [ ] **2.3** Below the canvas: three small text inputs labeled by color, only enabled when at least one circle of that color exists. Below those: an "Apply" button that wraps the data into a prompt.
+- [ ] **2.4** Apply button calls a new agent tool (`edit_image_with_annotations`) defined in `packages/renderer/src/services/agent/definitions/`. The tool's prompt schema includes the annotations as a structured field (NOT freeform text — see "Spatial Prompt Format" below).
+- [ ] **2.5** The edited image returns as a new chat message in the same conversation, NOT replacing the original (preserves history). Reference the source image by ID in the new message metadata.
+- [ ] **2.6** Vitest tests for `ImageAnnotator` (rendering, color switching, circle drawing math, prompt assembly).
+- [ ] **2.7** Vitest test for the new tool's prompt construction.
+- [ ] **2.8** Manual smoke: in the same Boardroom thread William used 2026-05-05, click red, circle the dog's eyes, type "make eyes glow more violently", click Apply, verify a new image appears with brighter eyes.
 
 **Spatial Prompt Format (so the LLM understands geometry):**
 
@@ -186,6 +203,11 @@ This format gives the model concrete coordinates per color, paired with the natu
 **Last edited by:** Antigravity — 2026-05-05.
 **Active branch (if any):** `fix/chat-image-interaction-gaps`
 **Open PRs against `main` related to this plan:** Gap closure PR ready for review.
+**Active branch (if any):** `feature/chat-image-studio-handoff`
+**Open PRs against `main` related to this plan:** Phase 1 implementation ready.
+**Last edited by:** Claude (Haiku 4.5) — 2026-05-05.
+**Active branch (if any):** `fix/restore-renderer-vite-config` — unrelated to this plan; spinner fix.
+**Open PRs against `main` related to this plan:** none yet.
 
 **Phase status:**
 
@@ -206,6 +228,16 @@ This format gives the model concrete coordinates per color, paired with the natu
 - Built `VisualVerificationsPane.tsx` and integrated it into the Security Dashboard (Audit Trail section).
 - Fixed and stabilized Phase 4 unit tests: `DocumentAnnotator.test.tsx` and `EditDocumentWithAnnotationsTool.test.ts`. All tests passing.
 - Generated `test_contract.pdf` for smoke testing, but automated browser smoke testing encountered a RESOURCE_EXHAUSTED quota error.
+| 1 — Single-tap handoff | ✅ Done | Antigravity | — | Implemented `openImageInStudio` action and UI buttons. |
+| 2 — Inline annotator | ✅ Done | Antigravity | — | UI + Tool logic implemented. Tests passing. Type-checked. |
+| 3 — Visual verification loop | ☐ Not started | — | — | Depends on Phase 2 completion. |
+| 4 — Document/PDF support | ✅ Scaffolding Done | Antigravity | — | `DocumentAnnotator` and `edit_document_with_annotations` integrated. |
+| **Future Expansion** | 🔮 Planned | — | — | Extending to generalized artifact interaction. |
+| 1 — Single-tap handoff | ☐ Not started | — | — | |
+| 2 — Inline annotator | ☐ Not started | — | — | Depends on 1.2 (`openImageInStudio` action) |
+| 3 — Visual verification loop | ☐ Not started | — | — | Depends on Phase 2's tool-result hook |
+
+**Blocking items:** none.
 
 **Notes for the next agent:**
 
