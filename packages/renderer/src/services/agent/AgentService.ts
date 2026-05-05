@@ -682,7 +682,6 @@ export class AgentService {
                 if (result?.text) {
                     accumulatedContext += `\n[${agentId.toUpperCase()}]: ${result.text}`;
                 }
-
                 let planId: string | undefined = undefined;
                 if (result && result.toolCalls && result.toolCalls.length > 0) {
                     for (const tc of result.toolCalls) {
