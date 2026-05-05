@@ -31,6 +31,9 @@ export default defineConfig({
       'tests/**',
       'scripts/**',
       'packages/firebase/src/test/security/**',
+      // Root-level interop fixture generator — performs real RSA-4096 WebCrypto ops.
+      // Not a unit test. Belongs in e2e/ where it runs with pytest + longer timeout.
+      'e2e_interop.test.ts',
     ],
     setupFiles: [path.resolve(import.meta.dirname, './packages/renderer/src/test/setup.ts')],
     clearMocks: true,
