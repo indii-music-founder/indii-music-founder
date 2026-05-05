@@ -248,7 +248,7 @@ describe('CommandBar', () => {
 
     it('renders active Indii state and allows switching to agent via menu', async () => {
         // Start in Indii mode
-        useTestStore.setState({ currentModule: 'dashboard', chatChannel: 'indii' });
+        useTestStore.setState({ currentModule: 'dashboard', chatChannel: 'indii', canvasItems: [{ id: 'test' } as any] });
         const _setModuleSpy = vi.spyOn(useTestStore.getState(), 'setModule');
 
         render(<CommandBar />);
