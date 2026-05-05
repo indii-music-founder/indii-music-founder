@@ -16,7 +16,7 @@ import ContractRenderer from '../ContractRenderer';
 // Chat Components
 import { ThoughtChain } from './ThoughtChain';
 import { JsonViewer } from './JsonViewer';
-import { ImageRenderer, ToolImageOutput } from './ToolOutputRenderer';
+import { ImageRenderer, ToolImageOutput, ToolDocumentOutput, ToolFeedbackOutput } from './ToolOutputRenderer';
 import { CodeBlock } from './CodeBlock';
 
 import { safeJsonParse } from '@/services/utils/json';
@@ -174,7 +174,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
     }, [msg.text, msg.planId, msg.metadata]);
 
     const markdownComponents: Components = useMemo(() => ({
-        img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} />,
+        img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />,
         p: ({ children }: { children?: React.ReactNode }) => {
             return <p className="mb-4 last:mb-0">{children}</p>;
         },
@@ -329,7 +329,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 return (
                                     <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {json.urls.map((url: string, idx: number) => (
-                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} />
+                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
                                         ))}
                                     </div>
                                 );
@@ -347,11 +347,38 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 return (
                                     <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {images.map((img, idx: number) => (
-                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} />
+                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
                                         ))}
                                     </div>
                                 );
                             }
+                        }
+
+                        // Document Tool Handling
+                        if ((toolName === 'generate_contract' || toolName === 'edit_document_with_annotations') && (json.url || json.urls)) {
+                            const urls = json.urls || [json.url];
+                            return (
+                                <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    {urls.map((url: string, idx: number) => (
+                                        <ToolDocumentOutput key={idx} toolName={toolName} idx={idx} url={url} prompt={json.name || json.title} messageId={msg.id} agentId={(msg as any).agentId || 'Conductor'} />
+                                    ))}
+                                </div>
+                            );
+                        }
+
+                        // Feedback Tool Handling (Bug/Feature)
+                        if ((toolName === 'report_bug' || toolName === 'request_feature') && json.markdownBody) {
+                            return (
+                                <div key={`tool-res-${tIdx}`} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <ToolFeedbackOutput 
+                                        toolName={toolName} 
+                                        title={json.title} 
+                                        severity={json.severity} 
+                                        priority={json.priority} 
+                                        markdownBody={json.markdownBody} 
+                                    />
+                                </div>
+                            );
                         }
                     } catch (_e: unknown) { /* ignore parse errors */ }
                     return null;
