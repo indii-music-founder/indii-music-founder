@@ -1,17 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Sparkles, MessageSquare, Bot } from 'lucide-react';
+import { Send, Sparkles, MessageSquare, Bot, X } from 'lucide-react';
 import { useEntryContext, type QuickAction } from '../hooks/useEntryContext';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface EntryOverlayProps {
     onSubmit: (message: string) => void;
+    onDismiss?: () => void;
 }
 
-export function EntryOverlay({ onSubmit }: EntryOverlayProps) {
+export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
     const {
         scenario,
         userName,
@@ -103,6 +104,17 @@ export function EntryOverlay({ onSubmit }: EntryOverlayProps) {
                 {/* Decorative Background Elements */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-dept-creative/5 blur-3xl rounded-full translate-y-1/2 -translate-x-1/2" />
+
+                {/* Dismiss Button */}
+                {onDismiss && (
+                    <button
+                        onClick={onDismiss}
+                        className="absolute top-4 right-4 z-20 p-2 text-white/40 hover:text-white/80 hover:bg-white/10 rounded-full transition-colors"
+                        aria-label="Dismiss Entry Assistant"
+                    >
+                        <X size={16} />
+                    </button>
+                )}
 
                 <div className="relative z-10">
                     {/* Greeting & Context */}

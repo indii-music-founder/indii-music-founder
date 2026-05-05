@@ -50,6 +50,8 @@ export interface AppSlice {
     setCommandMenuOpen: (open: boolean) => void;
     hasUnsavedChanges: boolean;
     setHasUnsavedChanges: (hasUnsaved: boolean) => void;
+    isEntryAssistantDismissed: boolean;
+    setEntryAssistantDismissed: (dismissed: boolean) => void;
     /** @internal Debounce tracker for toggleSidebar */
     _lastSidebarToggle?: number;
     /** @internal Debounce tracker for toggleRightPanel */
@@ -62,6 +64,17 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     projects: [],
     hasUnsavedChanges: false,
     setHasUnsavedChanges: (hasUnsaved) => set({ hasUnsavedChanges: hasUnsaved }),
+    isEntryAssistantDismissed: typeof window !== 'undefined' ? localStorage.getItem('indiiOS_entryAssistantDismissed') === 'true' : false,
+    setEntryAssistantDismissed: (dismissed) => {
+        if (typeof window !== 'undefined') {
+            if (dismissed) {
+                localStorage.setItem('indiiOS_entryAssistantDismissed', 'true');
+            } else {
+                localStorage.removeItem('indiiOS_entryAssistantDismissed');
+            }
+        }
+        set({ isEntryAssistantDismissed: dismissed });
+    },
     setModule: (module) => {
         const state = get();
         if (state.hasUnsavedChanges && state.currentModule !== module) {

@@ -28,6 +28,7 @@ vi.mock('@/core/store', async () => {
         commandBarAttachments: [] as File[],
         setCommandBarAttachments: vi.fn((a) => set({ commandBarAttachments: a })),
         isAgentProcessing: false,
+        canvasItems: [{ id: 'mock-item' }],
         agentMode: 'assistant',
         isKnowledgeBaseEnabled: false,
         setKnowledgeBaseEnabled: vi.fn((k) => set({ isKnowledgeBaseEnabled: k })),
@@ -194,12 +195,12 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
                 commandBarInput: '',
                 commandBarAttachments: [],
                 isAgentProcessing: false,
-                currentModule: 'road',
+                currentModule: 'dashboard',
+                canvasItems: [{ id: 'mock-item' }],
                 chatChannel: 'indii',
                 isCommandBarDetached: true,
                 isAgentOpen: false,
-                isBoardroomMode: false,
-                canvasItems: []
+                isBoardroomMode: false
             });
         });
     });

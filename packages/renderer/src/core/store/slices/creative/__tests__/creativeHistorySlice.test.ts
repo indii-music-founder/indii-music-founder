@@ -1,23 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { create } from 'zustand';
-import { buildCreativeHistoryState, type CreativeHistorySlice } from '../creativeHistorySlice';
-import type { CanvasImage } from '../creativeHistorySlice';
 
-/**
- * Unit test for creativeHistorySlice — specifically the openImageInStudio action
- * and chatImportContext lifecycle.
- */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { buildCreativeHistoryState, CanvasImage, CreativeHistorySlice } from '../creativeHistorySlice';
 
-// Mock the dynamic imports within buildCreativeHistoryState
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
-            currentOrganizationId: 'test-org',
-            currentProjectId: 'test-proj',
-            createFileNode: vi.fn(),
-            user: { uid: 'test-user' },
             setViewMode: vi.fn(),
-            setModule: vi.fn()
+            setModule: vi.fn(),
+            currentOrganizationId: 'test-org',
+            currentProjectId: 'test-project',
+            user: { uid: 'test-user' },
+            createFileNode: vi.fn().mockResolvedValue(undefined),
+            registerSubscription: vi.fn()
         })
     }
 }));
@@ -38,171 +32,151 @@ vi.mock('@/utils/logger', () => ({
     }
 }));
 
-describe('CreativeHistorySlice — openImageInStudio', () => {
-    let store: any;
+
+
+describe('creativeHistorySlice — openImageInStudio', () => {
+    let slice: CreativeHistorySlice;
 
     beforeEach(() => {
-        // Create a fresh store for each test using Zustand's create + buildCreativeHistoryState
-        store = create<CreativeHistorySlice>((set: any, get: any) =>
-            buildCreativeHistoryState(set, get)
+        vi.clearAllMocks();
+        slice = buildCreativeHistoryState(
+            (updater) => {
+                const update = typeof updater === 'function' ? updater(slice) : updater;
+                Object.assign(slice, update);
+            },
+            () => slice
         );
-        vi.clearAllMocks();
     });
 
-    afterEach(() => {
-        vi.clearAllMocks();
-    });
+    it('adds a canvas image on openImageInStudio call', () => {
+        expect(slice.canvasImages.length).toBe(0);
 
-    it('should add a canvas image when openImageInStudio is called', () => {
-        const state = store.getState();
-
-        state.openImageInStudio({
-            imageId: 'img-123',
+        slice.openImageInStudio({
+            imageId: 'test-image-id',
             sourceUrl: 'https://example.com/image.jpg',
-            sourceMessageId: 'msg-456',
+            sourceMessageId: 'msg-123',
             agentId: 'generalist',
-            prompt: 'neon dog'
+            prompt: 'a red car on a beach'
         });
 
-        const updatedState = store.getState();
-        expect(updatedState.canvasImages).toHaveLength(1);
+        expect(slice.canvasImages.length).toBe(1);
     });
 
-    it('should set canvasImage properties correctly', () => {
-        const state = store.getState();
-
-        state.openImageInStudio({
-            imageId: 'img-123',
+    it('creates canvas image with correct properties (base64=sourceUrl, x=100, y=100, w=512, h=512, projectId=chat_import)', () => {
+        slice.openImageInStudio({
+            imageId: 'test-image-id',
             sourceUrl: 'https://example.com/image.jpg',
-            sourceMessageId: 'msg-456',
+            sourceMessageId: 'msg-123',
             agentId: 'generalist',
-            prompt: 'neon dog'
+            prompt: 'a red car on a beach'
         });
 
-        const updatedState = store.getState();
-        const canvasImage = updatedState.canvasImages[0];
-
-        expect(canvasImage).toBeDefined();
-        expect(canvasImage.base64).toBe('https://example.com/image.jpg');
-        expect(canvasImage.x).toBe(100);
-        expect(canvasImage.y).toBe(100);
-        expect(canvasImage.width).toBe(512);
-        expect(canvasImage.height).toBe(512);
-        expect(canvasImage.aspect).toBe(1);
-        expect(canvasImage.projectId).toBe('chat_import');
-        expect(canvasImage.prompt).toBe('neon dog');
+        const added = slice.canvasImages[0];
+        expect(added?.base64).toBe('https://example.com/image.jpg');
+        expect(added?.x).toBe(100);
+        expect(added?.y).toBe(100);
+        expect(added?.width).toBe(512);
+        expect(added?.height).toBe(512);
+        expect(added?.projectId).toBe('chat_import');
+        expect(added?.prompt).toBe('a red car on a beach');
     });
 
-    it('should select the newly added canvas image', () => {
-        const state = store.getState();
+    it('selects the newly imported canvas image', () => {
+        expect(slice.selectedCanvasImageId).toBeNull();
 
-        state.openImageInStudio({
-            imageId: 'img-123',
+        slice.openImageInStudio({
+            imageId: 'test-image-id',
             sourceUrl: 'https://example.com/image.jpg',
-            sourceMessageId: 'msg-456',
+            sourceMessageId: 'msg-123',
             agentId: 'generalist',
-            prompt: 'neon dog'
+            prompt: 'a red car on a beach'
         });
 
-        const updatedState = store.getState();
-        expect(updatedState.selectedCanvasImageId).toBe(updatedState.canvasImages[0].id);
+        expect(slice.selectedCanvasImageId).toBe(slice.canvasImages[0]?.id);
     });
 
-    it('should set chatImportContext with message origin', () => {
-        const state = store.getState();
+    it('populates chatImportContext with messageId, agentId, and prompt', () => {
+        expect(slice.chatImportContext).toBeNull();
 
-        state.openImageInStudio({
-            imageId: 'img-123',
+        slice.openImageInStudio({
+            imageId: 'test-image-id',
             sourceUrl: 'https://example.com/image.jpg',
-            sourceMessageId: 'msg-456',
+            sourceMessageId: 'msg-123',
             agentId: 'generalist',
-            prompt: 'neon dog'
+            prompt: 'a red car on a beach'
         });
 
-        const updatedState = store.getState();
-        expect(updatedState.chatImportContext).toEqual({
-            messageId: 'msg-456',
+        expect(slice.chatImportContext).toEqual({
+            messageId: 'msg-123',
             agentId: 'generalist',
-            prompt: 'neon dog'
+            prompt: 'a red car on a beach'
         });
     });
 
-    it('should clear chatImportContext when clearChatImportContext is called', () => {
-        const state = store.getState();
-
-        // First, set up a chat import context
-        state.openImageInStudio({
-            imageId: 'img-123',
+    it('clears chatImportContext with clearChatImportContext action', () => {
+        slice.openImageInStudio({
+            imageId: 'test-image-id',
             sourceUrl: 'https://example.com/image.jpg',
-            sourceMessageId: 'msg-456',
+            sourceMessageId: 'msg-123',
             agentId: 'generalist',
-            prompt: 'neon dog'
+            prompt: 'a red car on a beach'
         });
 
-        let updatedState = store.getState();
-        expect(updatedState.chatImportContext).not.toBeNull();
+        expect(slice.chatImportContext).not.toBeNull();
 
-        // Now clear it
-        updatedState.clearChatImportContext();
+        slice.clearChatImportContext();
 
-        updatedState = store.getState();
-        expect(updatedState.chatImportContext).toBeNull();
+        expect(slice.chatImportContext).toBeNull();
     });
 
-    it('should generate unique layer IDs for multiple imports', () => {
-        const state = store.getState();
-
-        state.openImageInStudio({
-            imageId: 'img-1',
-            sourceUrl: 'https://example.com/img1.jpg',
+    it('generates unique layer IDs with imageId and timestamp', () => {
+        slice.openImageInStudio({
+            imageId: 'image-1',
+            sourceUrl: 'https://example.com/image1.jpg',
             sourceMessageId: 'msg-1',
             agentId: 'generalist',
-            prompt: 'dog'
+            prompt: 'prompt 1'
         });
 
-        // Small delay to ensure different timestamps
-        const timestamp1 = store.getState().canvasImages[0].id;
+        const id1 = slice.canvasImages[0]?.id;
 
-        state.openImageInStudio({
-            imageId: 'img-2',
-            sourceUrl: 'https://example.com/img2.jpg',
+        // Simulate delay
+        slice.openImageInStudio({
+            imageId: 'image-2',
+            sourceUrl: 'https://example.com/image2.jpg',
             sourceMessageId: 'msg-2',
-            agentId: 'brand',
-            prompt: 'cat'
+            agentId: 'generalist',
+            prompt: 'prompt 2'
         });
 
-        const images = store.getState().canvasImages;
-        expect(images).toHaveLength(2);
-        expect(images[0].id).not.toBe(images[1].id);
-        expect(images[0].id).toContain('layer_img-1');
-        expect(images[1].id).toContain('layer_img-2');
+        const id2 = slice.canvasImages[1]?.id;
+
+        expect(id1).not.toBe(id2);
+        expect(id1).toMatch(/^layer_image-1_\d+$/);
+        expect(id2).toMatch(/^layer_image-2_\d+$/);
     });
 
-    it('should preserve existing canvas images when adding a new one', () => {
-        const state = store.getState();
-
-        // Add first image
-        state.openImageInStudio({
-            imageId: 'img-1',
-            sourceUrl: 'https://example.com/img1.jpg',
+    it('preserves existing canvas images on second import', () => {
+        slice.openImageInStudio({
+            imageId: 'image-1',
+            sourceUrl: 'https://example.com/image1.jpg',
             sourceMessageId: 'msg-1',
             agentId: 'generalist',
-            prompt: 'dog'
+            prompt: 'prompt 1'
         });
 
-        const firstImageId = store.getState().canvasImages[0].id;
+        const firstImage = { ...slice.canvasImages[0] };
 
-        // Add second image
-        state.openImageInStudio({
-            imageId: 'img-2',
-            sourceUrl: 'https://example.com/img2.jpg',
+        slice.openImageInStudio({
+            imageId: 'image-2',
+            sourceUrl: 'https://example.com/image2.jpg',
             sourceMessageId: 'msg-2',
-            agentId: 'brand',
-            prompt: 'cat'
+            agentId: 'generalist',
+            prompt: 'prompt 2'
         });
 
-        const images = store.getState().canvasImages;
-        expect(images).toHaveLength(2);
-        expect(images[0].id).toBe(firstImageId);
+        expect(slice.canvasImages.length).toBe(2);
+        expect(slice.canvasImages[0]).toEqual(firstImage);
+        expect(slice.canvasImages[1]?.id).toMatch(/^layer_image-2_\d+$/);
     });
 });

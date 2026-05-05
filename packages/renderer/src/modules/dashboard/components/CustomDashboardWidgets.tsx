@@ -86,7 +86,7 @@ function formatCurrency(amount: number): string {
 
 function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v).toLocaleString() }: { value: number; duration?: number; formatter?: (v: number) => string }) {
     const motionValue = useMotionValue(0);
-    const rounded = useTransform(motionValue, (latest) => formatter(latest));
+    const rounded = useTransform(motionValue, (latest: number) => formatter(latest));
     const [displayValue, setDisplayValue] = useState("0");
 
     useEffect(() => {
@@ -95,7 +95,7 @@ function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v)
     }, [value, duration, motionValue]);
 
     useEffect(() => {
-        return rounded.on("change", (latest) => setDisplayValue(latest));
+        return rounded.on("change", (latest: string) => setDisplayValue(latest));
     }, [rounded]);
 
     return <span>{displayValue}</span>;
@@ -763,8 +763,8 @@ function BrandIdentityWidget() {
                     </p>
                     <div className="flex items-center gap-2">
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Identity Score</p>
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${currentStatus.bg} ${currentStatus.color}`}>
-                            {currentStatus.text}
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${currentStatus?.bg} ${currentStatus?.color}`}>
+                            {currentStatus?.text}
                         </span>
                     </div>
                 </div>

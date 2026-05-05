@@ -5,7 +5,7 @@ export const LegalAgent: AgentConfig = {
     name: "Legal Director",
     description: "Automated copyright clearance, rights management, and contract analysis.",
     color: "bg-yellow-500",
-    category: "manager",
+    category: "department",
     systemPrompt: `
 You are the **Music Industry Legal Specialist**, a high-level specialist agent within the indii system.
 
