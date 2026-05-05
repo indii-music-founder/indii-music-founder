@@ -38,6 +38,11 @@ export interface CreativeHistorySlice {
     removeCanvasImage: (id: string) => void;
     selectCanvasImage: (id: string | null) => void;
 
+    // Chat Import
+    chatImportContext: { messageId: string; agentId: string; prompt: string } | null;
+    clearChatImportContext: () => void;
+    openImageInStudio: (params: { imageId: string; sourceUrl: string; sourceMessageId: string; agentId: string; prompt: string }) => void;
+
     // Uploads
     uploadedImages: HistoryItem[];
     addUploadedImage: (img: HistoryItem) => void;
@@ -212,6 +217,39 @@ export function buildCreativeHistoryState(
         })),
         removeCanvasImage: (id: string) => set((state) => ({ canvasImages: state.canvasImages.filter(i => i.id !== id) })),
         selectCanvasImage: (id: string | null) => set({ selectedCanvasImageId: id }),
+
+        chatImportContext: null,
+        clearChatImportContext: () => set({ chatImportContext: null }),
+        openImageInStudio: ({ imageId, sourceUrl, sourceMessageId, agentId, prompt }) => {
+            // Stage the image as a new canvas layer
+            const newCanvasImage: CanvasImage = {
+                id: `layer_${imageId}_${Date.now()}`,
+                base64: sourceUrl, // URL or data URI
+                x: 100,
+                y: 100,
+                width: 512,
+                height: 512,
+                aspect: 1,
+                projectId: 'chat_import', // Temporary or default
+                prompt: prompt
+            };
+            
+            set((state) => ({
+                canvasImages: [...state.canvasImages, newCanvasImage],
+                selectedCanvasImageId: newCanvasImage.id,
+                chatImportContext: {
+                    messageId: sourceMessageId,
+                    agentId,
+                    prompt
+                }
+            }));
+            
+            // Route-switch to creative module using dynamic import of store
+            import('@/core/store').then(({ useStore }) => {
+                useStore.getState().setViewMode('canvas');
+                useStore.getState().setModule('creative');
+            });
+        },
 
         uploadedImages: [],
         addUploadedImage: (img: HistoryItem) => {
