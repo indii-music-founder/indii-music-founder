@@ -109,7 +109,11 @@ vi.mock('@/services/ai/GenAI', () => ({
             }
         }),
         generateContentStream: vi.fn(),
-        generateSpeech: vi.fn()
+        generateSpeech: vi.fn(),
+        // Stubbed because triggerAutorater fires post-completion through the
+        // MultiTurnAutorater. Returning null short-circuits the autorater's
+        // happy path so it doesn't try to write to Firestore from these tests.
+        generateStructuredData: vi.fn().mockResolvedValue(null)
     }
 }));
 
