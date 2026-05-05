@@ -653,12 +653,13 @@ export class AgentService {
             let currentStreamedText = '';
 
             const enhancedText = text + assetContext + 
-                '\n\n[SYSTEM]: You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
-                (accumulatedContext ? `\n\n[PREVIOUS AGENT RESPONSES]:\n${accumulatedContext}` : '');
+                '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
+                (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
 
             try {
                 logger.debug(`[AgentService] Boardroom: sequentially executing agent ${agentId}`);
-                const result = await this.executor.execute(
+                // Item: Add a safety timeout for swarm execution to prevent UI hangs
+                const executionPromise = this.executor.execute(
                     agentId,
                     enhancedText,
                     context as PipelineContext,
@@ -690,6 +691,13 @@ export class AgentService {
                     undefined,
                     attachments
                 );
+
+                // Race against a 60-second timeout
+                const timeoutPromise = new Promise<never>((_, reject) => 
+                    setTimeout(() => reject(new Error('Agent execution timed out (60s)')), 60000)
+                );
+
+                const result = await Promise.race([executionPromise, timeoutPromise]);
 
                 logger.debug(`[AgentService] Boardroom: agent ${agentId} responded (${result?.text?.length || 0} chars)`);
 

@@ -226,8 +226,8 @@ class MemoryService {
 
             scored.sort((a, b) => b.total - a.total);
 
-            // 0.35 replaces the old 0.6 which was too aggressive for real-world cosine scores
-            const threshold = hasVectors ? 0.35 : 0.10;
+            // 0.25 is more appropriate for hybrid scoring to allow recent/important items through
+            const threshold = hasVectors ? 0.25 : 0.10;
             let results = scored
                 .filter(s => s.total > threshold)
                 .slice(0, limit)
@@ -245,12 +245,13 @@ class MemoryService {
                 this.updateAccessStats(projectId, results);
             }
 
-            // Last resort: surface recent rules / high-importance items so the agent isn't empty-handed
+            // Last resort: surface recent items so the agent isn't empty-handed
+            // Broaden fallback to include recent facts and session messages
             if (results.length === 0 && !filters) {
-                logger.info('[MemoryService] Below threshold — falling back to recent rules/high-importance.');
+                logger.info('[MemoryService] Below threshold — falling back to most recent context.');
                 results = memories
-                    .filter(m => m.type === 'rule' || m.importance > 0.7)
                     .sort((a, b) => b.timestamp - a.timestamp)
+                    .filter(m => m.type === 'rule' || m.type === 'session_message' || m.importance > 0.4)
                     .slice(0, Math.min(3, limit));
             }
 
