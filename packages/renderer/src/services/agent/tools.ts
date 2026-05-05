@@ -1,6 +1,8 @@
 import { PUBLICIST_TOOLS } from '@/modules/publicist/tools';
 import { CREATIVE_TOOLS } from '@/modules/creative/tools';
 import { DirectorTools } from './tools/DirectorTools';
+import { EditImageWithAnnotationsTool } from './tools/EditImageWithAnnotationsTool';
+import { EditDocumentWithAnnotationsTool } from './tools/EditDocumentWithAnnotationsTool';
 import { VideoTools } from './tools/VideoTools';
 import { MemoryTools } from './tools/MemoryTools';
 import { UserMemoryTools } from './tools/UserMemoryTools';
@@ -51,6 +53,8 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CoreTools,
     ...UniversalTools,
     ...DirectorTools,
+    edit_image_with_annotations: EditImageWithAnnotationsTool.execute,
+    edit_document_with_annotations: EditDocumentWithAnnotationsTool.execute,
     ...VideoTools,
     ...CREATIVE_TOOLS,
     ...MemoryTools,
@@ -230,4 +234,9 @@ AVAILABLE TOOLS:
 110. get_plan(planId: string) - Get details of a specific plan.
 111. resize_image_for_socials(imageUrl: string, platforms?: string[]) - Resize image for TikTok, Instagram, YouTube, etc. using AI outpainting.
 112. analyze_audio_dna(audioUrl: string) - Extract BPM, Key, Mood, Genre, and Energy from an audio file.
+--- FEEDBACK ---
+113. report_bug(title: string, description: string, stepsToReproduce?: string, expectedBehavior?: string, actualBehavior?: string, severity?: string, module?: string, errorMessage?: string) - Report a bug or issue. Use when user describes something broken, crashing, or not working.
+114. request_feature(title: string, description: string, useCase?: string, priority?: string, category?: string, module?: string) - Capture a feature request or product idea. Use when user suggests new functionality, improvements, or says "it would be cool if...".
+115. edit_image_with_annotations(imageId: string, annotations: object[], colorPrompts?: object) - Edit an image using spatial annotations (circles) and color-coded instructions.
+116. edit_document_with_annotations(documentId: string, annotations: object[], globalInstruction?: string) - Edit a document (PDF/Text) using specific area highlights or sticky notes with instructions.
 `;
