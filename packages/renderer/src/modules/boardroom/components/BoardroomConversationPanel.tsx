@@ -140,7 +140,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                                 img: ({ node, ...props }) => <img {...props} className="rounded-lg max-w-full max-h-[300px] object-contain my-2 border border-white/10 shadow-lg" alt={props.alt || 'Generated asset'} />
                                             }}
                                         >
-                                            {msg.text || (msg as { content?: string }).content || ''}
+                                             {sanitizeBoardroomMessage(msg.text || (msg as { content?: string }).content || '')}
                                         </ReactMarkdown>
                                     </div>
 
@@ -174,9 +174,25 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 }
 
 /**
- * Resolve agent identity (name, hex color, initials) from the registry.
- * The registry stores colors as hex strings (e.g. '#FFE135', '#4B0082').
+ * Sanitizes Boardroom message text before rendering.
+ * Strips internal agent artifacts that should never be user-visible:
+ * - [Tool: name]...[End Tool name] blocks (tool execution output)
+ * - (SYSTEM NOTE): ... injected boardroom context
+ * - [SEATED_AGENTS]: ... seating manifest
  */
+function sanitizeBoardroomMessage(text: string): string {
+    return text
+        // Strip [Tool: name]...[End Tool name] blocks
+        .replace(/\[Tool: [^\]]+\][\s\S]*?\[End Tool [^\]]+\]\n?/g, '')
+        // Strip (SYSTEM NOTE): lines
+        .replace(/\(SYSTEM NOTE\):[^\n]*\n?/g, '')
+        // Strip [SEATED_AGENTS]: lines
+        .replace(/\[SEATED_AGENTS\]:[^\n]*\n?/g, '')
+        // Strip (PRIOR CONTEXT): blocks
+        .replace(/\(PRIOR CONTEXT\):[\s\S]*$/g, '')
+        .trim();
+}
+
 function resolveAgentIdentity(agentId: string | undefined): { name: string; color: string; initials: string } | null {
     if (!agentId) return null;
 
