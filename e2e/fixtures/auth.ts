@@ -153,13 +153,22 @@ export const test = base.extend<AuthFixtures>({
       if (
         url.includes(":listen") ||
         url.includes("/Listen/") ||
+        url.includes("/Write/") ||
         url.includes("channel?")
       ) {
+        // Return 400 Bad Request to terminate the connection instantly 
+        // and tell the client NOT to retry the stream.
         await route.fulfill({
-          status: 200,
+          status: 400,
           headers: corsHeaders,
           contentType: "application/json",
-          body: "[]",
+          body: JSON.stringify({
+            error: {
+              code: 400,
+              message: "Bad Request",
+              status: "INVALID_ARGUMENT"
+            }
+          })
         });
         return;
       }
@@ -183,13 +192,20 @@ export const test = base.extend<AuthFixtures>({
         return;
       }
 
-      // Mock all collection reads → empty list
+      // Mock all reads (collection or document)
       if (method === "GET") {
+        const isCollection = !url.includes('/documents/') || url.split('/').length % 2 === 0;
+        
         await route.fulfill({
           status: 200,
           headers: corsHeaders,
           contentType: "application/json",
-          body: JSON.stringify({ documents: [] }),
+          body: JSON.stringify(isCollection ? { documents: [] } : {
+            name: url.split("?")[0].replace("https://firestore.googleapis.com/v1/", ""),
+            fields: {},
+            createTime: new Date().toISOString(),
+            updateTime: new Date().toISOString()
+          }),
         });
         return;
       }
@@ -306,7 +322,7 @@ export const test = base.extend<AuthFixtures>({
     );
 
     // Intercept ragProxy API calls to prevent 401s during E2E with mocked auth
-    await page.route("**/*ragProxy*/**", async (route) => {
+    await page.route(/.*(ragProxy|localhost:3001).*/, async (route) => {
       const url = route.request().url();
       console.log(`[E2E] Intercepted RAG Proxy: ${url}`);
 
@@ -387,6 +403,68 @@ export const test = base.extend<AuthFixtures>({
         contentType: "application/json",
         body: JSON.stringify({
           file: { name: "files/mock-file-123", state: "ACTIVE" },
+        }),
+      });
+    });
+
+    // Intercept Gemini API get file requests
+    await page.route("**/files/*", async (route) => {
+      console.log(`[E2E] Intercepted RAG getFile: ${route.request().url()}`);
+      if (route.request().method() === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: corsHeaders });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: "application/json",
+        body: JSON.stringify({
+          name: "files/mock-file-123",
+          state: "ACTIVE"
+        }),
+      });
+    });
+
+    // Intercept Gemini API File Search Stores
+    await page.route("**/*fileSearchStores*", async (route) => {
+      const url = route.request().url();
+      console.log(`[E2E] Intercepted fileSearchStores: ${url}`);
+      if (route.request().method() === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: corsHeaders });
+        return;
+      }
+
+      if (url.includes("importFile")) {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({ name: "operations/mock-op", done: true }),
+        });
+        return;
+      }
+
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({ name: "fileSearchStores/mock-e2e-store" }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: "application/json",
+        body: JSON.stringify({
+          fileSearchStores: [
+            {
+              name: "fileSearchStores/mock-e2e-store",
+              displayName: "indiiOS Default Store",
+            },
+          ],
         }),
       });
     });

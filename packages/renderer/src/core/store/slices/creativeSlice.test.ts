@@ -17,7 +17,9 @@ vi.mock('@/core/store', () => ({
     useStore: {
         getState: vi.fn(() => ({
             currentOrganizationId: 'test-org',
-            registerSubscription: vi.fn()
+            registerSubscription: vi.fn(),
+            setViewMode: vi.fn(),
+            setModule: vi.fn()
         }))
     }
 }));
@@ -211,5 +213,31 @@ describe('CreativeSlice - initializeHistory', () => {
         expect(slice.generatedHistory).not.toContainEqual(otherUploadedItem);
         expect(slice.uploadedImages).not.toContainEqual(otherUploadedItem);
         expect(slice.uploadedAudio).not.toContainEqual(otherUploadedItem);
+    });
+
+    it('should handle openImageInStudio correctly', () => {
+        const mockParams = {
+            imageId: 'test-img',
+            sourceUrl: 'http://test.url',
+            sourceMessageId: 'msg-123',
+            agentId: 'agent-1',
+            prompt: 'test prompt'
+        };
+
+        slice.openImageInStudio(mockParams);
+
+        // Verify canvasImages was updated
+        expect(slice.canvasImages).toHaveLength(1);
+        const canvasImg = slice.canvasImages[0];
+        expect(canvasImg.base64).toBe(mockParams.sourceUrl);
+        expect(canvasImg.prompt).toBe(mockParams.prompt);
+        expect(slice.selectedCanvasImageId).toBe(canvasImg.id);
+
+        // Verify chatImportContext was set
+        expect(slice.chatImportContext).toEqual({
+            messageId: mockParams.sourceMessageId,
+            agentId: mockParams.agentId,
+            prompt: mockParams.prompt
+        });
     });
 });

@@ -108,10 +108,8 @@ export class AgentService {
         logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
 
         if (isBoardroomMode) {
-
             useStore.getState().addBoardroomMessage(userMsg);
         } else {
-
             useStore.getState().addAgentMessage(userMsg);
         }
 
@@ -292,6 +290,7 @@ export class AgentService {
             }
         } catch (e: unknown) {
             const errObj = e instanceof Error ? e : new Error(String(e));
+            logger.error('[AgentService] Fatal Error in sendMessage:', e);
             this.addSystemMessage(`❌ **Fatal Error:** ${errObj.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
@@ -653,12 +652,13 @@ export class AgentService {
             let currentStreamedText = '';
 
             const enhancedText = text + assetContext + 
-                '\n\n[SYSTEM]: You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
-                (accumulatedContext ? `\n\n[PREVIOUS AGENT RESPONSES]:\n${accumulatedContext}` : '');
+                '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
+                (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
 
             try {
                 logger.debug(`[AgentService] Boardroom: sequentially executing agent ${agentId}`);
-                const result = await this.executor.execute(
+                // Item: Add a safety timeout for swarm execution to prevent UI hangs
+                const executionPromise = this.executor.execute(
                     agentId,
                     enhancedText,
                     context as PipelineContext,
@@ -690,6 +690,13 @@ export class AgentService {
                     undefined,
                     attachments
                 );
+
+                // Race against a 60-second timeout
+                const timeoutPromise = new Promise<never>((_, reject) => 
+                    setTimeout(() => reject(new Error('Agent execution timed out (60s)')), 60000)
+                );
+
+                const result = await Promise.race([executionPromise, timeoutPromise]);
 
                 logger.debug(`[AgentService] Boardroom: agent ${agentId} responded (${result?.text?.length || 0} chars)`);
 
@@ -1048,7 +1055,13 @@ The user will see this plan and can approve it to start execution.`;
 
     private async addSystemMessage(text: string): Promise<void> {
         const { useStore } = await import('@/core/store');
-        useStore.getState().addAgentMessage({ id: uuidv4(), role: 'system', text, timestamp: Date.now() });
+        const state = useStore.getState();
+        const msg = { id: uuidv4(), role: 'system' as const, text, timestamp: Date.now() };
+        if (state.isBoardroomMode) {
+            state.addBoardroomMessage(msg);
+        } else {
+            state.addAgentMessage(msg);
+        }
     }
 
     private redactPII(text: string): string {
@@ -1104,6 +1117,55 @@ The user will see this plan and can approve it to start execution.`;
         } catch (err) {
             logger.error('[AgentService] Failed to resume plan:', err);
             this.addSystemMessage(`❌ **Failed to resume plan:** ${err instanceof Error ? err.message : String(err)}`);
+        }
+    }
+
+    /**
+     * Dispatches a specific tool call directly, bypassing normal message flow.
+     * Often used by UI components to invoke agent tools interactively.
+     */
+    async dispatchToolCall(agentId: string, toolName: string, args: Record<string, any>, responseId: string): Promise<void> {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const isBoardroomMode = state.isBoardroomMode;
+
+        try {
+            logger.info(`[AgentService] Dispatching direct tool call ${toolName} to agent ${agentId}`);
+            
+            const { TOOL_REGISTRY } = await import('./tools');
+            if (TOOL_REGISTRY[toolName]) {
+                // Execute the tool
+                const result = await TOOL_REGISTRY[toolName](args);
+                
+                const currentMsg = isBoardroomMode 
+                    ? state.boardroomMessages.find(m => m.id === responseId)
+                    : state.agentHistory.find(m => m.id === responseId);
+
+                if (currentMsg) {
+                    const newThought: AgentThought = {
+                        id: uuidv4(),
+                        text: JSON.stringify(result),
+                        timestamp: Date.now(),
+                        type: 'tool_result',
+                        toolName
+                    };
+
+                    const updateMsg = isBoardroomMode ? state.updateBoardroomMessage : state.updateAgentMessage;
+                    updateMsg(responseId, {
+                        thoughts: [...(currentMsg.thoughts || []), newThought]
+                    });
+                }
+
+                // Send a silent system prompt to make the AI aware of the user's action
+                await this.sendMessage(`[System Note] The user manually executed the tool '${toolName}' via the UI. Action complete.`, undefined, agentId, { source: 'desktop' });
+            } else {
+                throw new Error(`Tool ${toolName} not found in registry.`);
+            }
+
+        } catch (error) {
+            logger.error(`[AgentService] Tool dispatch failed:`, error);
+            const errObj = error instanceof Error ? error : new Error(String(error));
+            this.addSystemMessage(`❌ **Tool Execution Error:** ${errObj.message}`);
         }
     }
 

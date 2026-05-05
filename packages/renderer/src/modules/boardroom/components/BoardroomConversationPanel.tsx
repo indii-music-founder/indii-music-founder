@@ -80,6 +80,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                         return (
                             <motion.div
                                 key={msg.id}
+                                data-agent-id={msg.agentId}
                                 initial={{ opacity: 0, y: 12 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
