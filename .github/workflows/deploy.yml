@@ -6,6 +6,12 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: read
+  actions: read
+
 jobs:
   # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
   unit-tests:
