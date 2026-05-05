@@ -160,7 +160,7 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
         await service.sendMessage(sensitiveInput);
 
         // 1. Verify Store received redacted message (History Protection)
-        const userMsg = mockStoreState.agentHistory.find((m: any) => m.role === 'user');
+        const userMsg = mockStoreState.agentHistory.filter((m: any) => m.role === 'user').at(-1);
         expect(userMsg).toBeDefined();
         expect(userMsg.text).toBe(expectedRedacted);
         expect(userMsg.text).not.toContain("4111 1111 1111 1111");
@@ -202,7 +202,7 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
         await service.sendMessage(sensitiveInput);
 
         // 1. Verify Store
-        const userMsg = mockStoreState.agentHistory.find((m: any) => m.role === 'user');
+        const userMsg = mockStoreState.agentHistory.filter((m: any) => m.role === "user").at(-1) // ((m: any) => m.role === 'user');
         expect(userMsg.text).toBe(expectedRedacted);
         expect(userMsg.text).not.toContain("SuperSecret123!");
     });

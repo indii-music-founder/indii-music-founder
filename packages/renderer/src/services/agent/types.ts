@@ -295,6 +295,12 @@ export interface ToolFunctionResult {
     data?: any;
     error?: string;
     message?: string;
+    /** URLs of generated or modified assets (images, audio, etc.) */
+    urls?: string[];
+    /** URL of a generated document (PDF, etc.) */
+    documentUrl?: string;
+    /** Annotations or structured metadata about the result */
+    annotations?: any[];
     /** Metadata for tracing and debugging (e.g. latency, model version used) */
     metadata?: Record<string, unknown>;
 }

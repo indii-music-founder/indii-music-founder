@@ -182,15 +182,31 @@ export class SubscriptionService {
         timeoutId = setTimeout(() => reject(new Error('Subscription check timeout')), 5000);
       });
 
-      const [subscription, usage] = await Promise.race([
-        Promise.all([
+      // Wrap individually so a single auth failure (401) doesn't abort the entire check.
+      // If either call fails we fall through to graceful degradation below.
+      const [subscriptionResult, usageResult] = await Promise.race([
+        Promise.allSettled([
           this.getSubscription(targetUserId),
           this.getUsageStats(targetUserId)
         ]),
-        timeoutPromise
-      ]) as [Subscription, UsageStats];
+        timeoutPromise.then(() => [
+          { status: 'rejected' as const, reason: new Error('timeout') },
+          { status: 'rejected' as const, reason: new Error('timeout') },
+        ])
+      ]);
 
       if (timeoutId) clearTimeout(timeoutId);
+
+      // If either call failed (auth error, network, etc.), allow with graceful degradation
+      if (subscriptionResult.status === 'rejected' || usageResult.status === 'rejected') {
+        const reason = subscriptionResult.status === 'rejected'
+          ? (subscriptionResult.reason instanceof Error ? subscriptionResult.reason.message : String(subscriptionResult.reason))
+          : (usageResult.status === 'rejected' ? (usageResult.reason instanceof Error ? usageResult.reason.message : String(usageResult.reason)) : 'unknown');
+        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}), allowing with graceful degradation.`);
+        return { allowed: true };
+      }
+
+      const [subscription, usage] = [subscriptionResult.value, usageResult.value] as [Subscription, UsageStats];
 
       const tierConfig = getTierConfig(subscription.tier);
 

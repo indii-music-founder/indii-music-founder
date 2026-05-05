@@ -117,6 +117,8 @@ export const useStore = create<StoreState>()(
                 currentModule: state.currentModule,
                 isBoardroomMode: state.isBoardroomMode,
                 userProfile: state.userProfile,
+                // ISSUE-007: Persist boardroom chat history to survive HMR/soft reloads in dev
+                boardroomMessages: state.boardroomMessages,
                 // ISSUE-006: Session persistence for draft prompts
                 ...(state.isSessionPersistent ? { creativePrompt: state.creativePrompt } : {})
             }),
