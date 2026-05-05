@@ -29,7 +29,6 @@ export function EntryOverlay({ onSubmit }: EntryOverlayProps) {
         return localStorage.getItem('indiiOS_entryOverlay_dismissed') === 'true';
     });
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [input, setInput] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Auto-focus on mount
