@@ -237,7 +237,6 @@ ${featureRequest.useCase}
             priority: featureRequest.priority,
             category: featureRequest.category,
             message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.`
-            message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker. 🎯`
         };
     }),
 } satisfies Record<string, AnyToolFunction>;
