@@ -121,10 +121,6 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
         setIsProcessing(true);
 
         try {
-            // Convert files to base64 if needed (simplified for now, just passing empty array as placeholder)
-            // In a real implementation, we'd read the files here.
-            // const conversationFiles: any[] = [];
-
             const { text, functionCalls } = await runOnboardingConversation(newHistory, userProfile, 'onboarding', currentFiles);
 
             if (functionCalls && functionCalls.length > 0) {
