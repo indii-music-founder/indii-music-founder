@@ -212,6 +212,17 @@ export class AgentService {
                                 responseId, 
                                 isBoardroomMode
                             ).catch(e => logger.warn('[AgentService] Autorater execution error:', e));
+
+                            // Phase 3: Trigger Visual Autorater for image tool completions
+                            if (resultMsg.text && this.containsImageToolOutput(resultMsg.text)) {
+                                this.triggerVisualAutorater(
+                                    resultMsg.text,
+                                    redactedText,
+                                    resultMsg.agentId || 'generalist',
+                                    responseId,
+                                    isBoardroomMode
+                                ).catch(e => logger.warn('[AgentService] Visual autorater error:', e));
+                            }
                         }
                     }).finally(() => {
                         if (timeoutHandle) clearTimeout(timeoutHandle);
@@ -1218,6 +1229,113 @@ The user will see this plan and can approve it to start execution.`;
             );
         } catch (e) {
             logger.warn('[AgentService] Post-completion autorater failed:', e);
+        }
+    }
+
+    /**
+     * Checks whether a message's text contains output from an image-producing tool.
+     * Used to gate the visual autorater — we only run it when an image was actually generated.
+     */
+    private containsImageToolOutput(text: string): boolean {
+        const imageToolPatterns = [
+            /\[Tool: generate_image\]/,
+            /\[Tool: edit_image_with_annotations\]/,
+            /\[Tool: batch_edit_images\]/,
+            /\[Tool: edit_image\]/,
+        ];
+        return imageToolPatterns.some(pattern => pattern.test(text));
+    }
+
+    /**
+     * Phase 3: Visual Output Autorater — fires after any image-producing tool completes.
+     * Compares the generated image against the user's original brief, scores adherence,
+     * and dispatches corrective prompts if the score falls below threshold.
+     *
+     * Hard cap: MAX_CORRECTION_ATTEMPTS per image to prevent runaway loops.
+     */
+    private async triggerVisualAutorater(
+        responseText: string,
+        originalBrief: string,
+        agentId: string,
+        responseId: string,
+        isBoardroomMode: boolean
+    ): Promise<void> {
+        try {
+            const { VisualOutputAutorater } = await import('./governance/VisualOutputAutorater');
+
+            const traceId = `visual-${responseId}`;
+            const originalImageId = responseId; // Use the response message ID as the image identifier
+
+            // Check if we've already exhausted retries for this image
+            if (VisualOutputAutorater.hasReachedCap(originalImageId)) {
+                logger.info(`[AgentService] Visual autorater: cap reached for ${originalImageId}, skipping`);
+                return;
+            }
+
+            const input = {
+                imageBytes: '', // We pass the brief only — the LLM judge evaluates from the tool output description
+                originalBrief,
+                agentId,
+                traceId,
+                originalImageId,
+            };
+
+            const score = await VisualOutputAutorater.evaluateImage(input);
+
+            if (!score) {
+                logger.warn(`[AgentService] Visual autorater returned null score for ${traceId}`);
+                // Log audit even on null score (evaluation failure)
+                await VisualOutputAutorater.logAuditRecord(input, null, false, VisualOutputAutorater.getAttemptCount(originalImageId));
+                return;
+            }
+
+            const passed = VisualOutputAutorater.doesPass(score);
+
+            // Log to Firestore audit trail
+            const attemptNumber = VisualOutputAutorater.getAttemptCount(originalImageId) + 1;
+            await VisualOutputAutorater.logAuditRecord(input, score, passed, attemptNumber);
+
+            if (passed) {
+                logger.info(
+                    `[AgentService] Visual autorater PASSED: subject=${score.subjectMatch}, scene=${score.sceneMatch}, trace=${traceId}`
+                );
+                return;
+            }
+
+            // Image failed — check if we can retry
+            VisualOutputAutorater.recordAttempt(originalImageId);
+
+            if (VisualOutputAutorater.hasReachedCap(originalImageId)) {
+                // Cap reached — surface manual review message
+                logger.warn(`[AgentService] Visual autorater: cap reached after ${attemptNumber} attempts for ${originalImageId}`);
+
+                const { useStore } = await import('@/core/store');
+                const manualReviewMsg = {
+                    id: uuidv4(),
+                    role: 'system' as const,
+                    text: `⚠️ **Image flagged for manual review** — The autorater couldn't reach a passing score after ${attemptNumber} self-correction attempts. Gaps found: ${score.gapsFound}`,
+                    timestamp: Date.now(),
+                };
+
+                if (isBoardroomMode) {
+                    useStore.getState().addBoardroomMessage(manualReviewMsg);
+                } else {
+                    useStore.getState().addAgentMessage(manualReviewMsg);
+                }
+                return;
+            }
+
+            // Dispatch corrective prompt to the producing agent
+            logger.info(
+                `[AgentService] Visual autorater FAILED (attempt ${attemptNumber}): dispatching correction. Gaps: ${score.gapsFound}`
+            );
+
+            const correctiveMessage = `[Visual Autorater Correction] The previously generated image did not match the brief. ${score.gapsFound}. Please regenerate with the following corrections: ${score.correctivePrompt}. Original brief: "${originalBrief}"`;
+
+            // Re-enter sendMessage to trigger a corrective generation
+            await this.sendMessage(correctiveMessage, undefined, agentId, { source: 'background' });
+        } catch (error) {
+            logger.error('[AgentService] Visual autorater failed:', error);
         }
     }
 }

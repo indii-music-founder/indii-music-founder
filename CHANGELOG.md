@@ -2,6 +2,23 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.59.0](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.58.1...v1.59.0) (2026-05-05)
+
+
+### Features
+
+* **dashboard:** implement intelligent Chat Entry Overlay with context-aware greetings and dynamic actions ([#1680](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1680))
+* **boardroom:** implement Swarm Protocol seating enforcement and manifest injection ([#1685](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1685))
+* **boardroom:** add output sanitization layer to strip system meta-artifacts from chat ([#1686](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1686))
+* **governance:** standardize ToolFunctionResult interface for monorepo type-safety ([#1688](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1688))
+
+
+### Bug Fixes
+
+* **renderer:** resolve 40+ legacy type failures in AgentService orchestration pipeline
+* **dashboard:** fix mobile responsiveness for overlay quick action pills
+* **agents:** resolve stale registry imports and specialist routing conflicts
+
 ## [1.58.1](https://github.com/the-walking-agency-det/indiiOS-Clean/compare/v1.58.0...v1.58.1) (2026-05-01)
 
 
