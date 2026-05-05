@@ -547,7 +547,7 @@ export class BaseAgent implements SpecializedAgent {
         let boardroomSection = '';
         const ctxRecord = context as Record<string, any>;
         if (ctxRecord?.isBoardroomMode === true) {
-            const { agentRegistry } = await import('./AgentRegistry');
+            const { agentRegistry } = await import('./registry');
             const seated = ctxRecord.seatedAgents || [];
             const seatedNames = seated.map((id: string) => agentRegistry.get(id)?.name || id).join(', ');
             boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.\n`;
