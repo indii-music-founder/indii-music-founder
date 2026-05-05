@@ -24,7 +24,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
-import { BrainCircuit } from 'lucide-react'; // Icon for wisdom pool
+import { BrainCircuit, Database } from 'lucide-react'; // Icon for wisdom pool
+import { autoMemoryExtractor, AutoMemoryConfig } from '@/services/agent/memory/AutoMemoryExtractor';
 
 const AuditLogDashboard = React.lazy(() =>
     import('@/modules/settings/components/AuditLogDashboard').then(m => ({ default: m.AuditLogDashboard }))
@@ -41,6 +42,13 @@ const SecuritySection: React.FC = () => {
     const [showAuditLog, setShowAuditLog] = useState(false);
     const [exporting, setExporting] = useState(false);
     const { updatePreferences } = useStore(useShallow((s: StoreState) => ({ updatePreferences: s.updatePreferences })));
+    const [autoMemoryConfig, setAutoMemoryConfig] = useState<AutoMemoryConfig>({ enabled: true, extractIntervalMs: 300000 });
+
+    React.useEffect(() => {
+        if (userProfile?.uid) {
+            autoMemoryExtractor.getConfig().then(cfg => setAutoMemoryConfig(cfg));
+        }
+    }, [userProfile?.uid]);
 
     const handleLogout = async () => {
         try {
@@ -122,6 +130,18 @@ const SecuritySection: React.FC = () => {
                     <Toggle
                         enabled={userProfile?.preferences?.wisdomPoolOptIn ?? false}
                         onChange={(enabled) => updatePreferences({ wisdomPoolOptIn: enabled })}
+                    />
+                </SettingRow>
+
+                <SettingRow icon={Database} label="Auto Memory Extraction" description="Automatically extract knowledge from agent conversations to improve personalized responses.">
+                    <Toggle
+                        enabled={autoMemoryConfig.enabled}
+                        onChange={async (enabled) => {
+                            const newConfig = { ...autoMemoryConfig, enabled };
+                            setAutoMemoryConfig(newConfig);
+                            await autoMemoryExtractor.updateConfig(newConfig);
+                            showToast(enabled ? 'Auto memory enabled' : 'Auto memory disabled', 'success');
+                        }}
                     />
                 </SettingRow>
 

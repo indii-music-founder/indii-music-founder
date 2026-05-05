@@ -190,9 +190,13 @@ export class AgentService {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
+                        const currentState = useStore.getState();
+                        const resultMsg = isBoardroomMode 
+                            ? currentState.boardroomMessages.find(m => m.id === responseId)
+                            : currentState.agentHistory.find(m => m.id === responseId);
+
                         // After success, populate cache if not a generation request
                         if (!isGenerationRequest) {
-                            const resultMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
                             if (resultMsg && resultMsg.text) {
                                 this.responseCache.set(cacheKey, {
                                     text: resultMsg.text,
@@ -200,6 +204,16 @@ export class AgentService {
                                     agentId: resultMsg.agentId || 'generalist'
                                 });
                             }
+                        }
+
+                        // Trigger Autorater for feedback and fine-tuning registration
+                        if (resultMsg && auth.currentUser) {
+                            this.triggerAutorater(
+                                auth.currentUser.uid, 
+                                resultMsg.agentId || 'generalist', 
+                                responseId, 
+                                isBoardroomMode
+                            ).catch(e => logger.warn('[AgentService] Autorater execution error:', e));
                         }
                     }).finally(() => {
                         if (timeoutHandle) clearTimeout(timeoutHandle);
@@ -1090,6 +1104,44 @@ The user will see this plan and can approve it to start execution.`;
         } catch (err) {
             logger.error('[AgentService] Failed to resume plan:', err);
             this.addSystemMessage(`❌ **Failed to resume plan:** ${err instanceof Error ? err.message : String(err)}`);
+        }
+    }
+
+    /**
+     * Executes the MultiTurnAutorater post-completion to evaluate the conversation quality.
+     * High-quality traces will automatically be registered for future fine-tuning.
+     */
+    private async triggerAutorater(userId: string, agentId: string, traceId: string, isBoardroomMode: boolean): Promise<void> {
+        try {
+            const { useStore } = await import('@/core/store');
+            const state = useStore.getState();
+            const history = isBoardroomMode ? state.boardroomMessages : state.agentHistory;
+            
+            // Extract the last 10 messages for context evaluation
+            const recentMessages = history
+                .slice(-10)
+                .map(m => ({
+                    role: (m.role === 'user' || m.role === 'model' || m.role === 'system') ? m.role : 'system',
+                    content: m.text || ''
+                }));
+
+            const { MultiTurnAutorater } = await import('./governance/MultiTurnAutorater');
+            
+            // Fire-and-forget evaluation to not block the user interface
+            await MultiTurnAutorater.evaluateAndRegister(
+                userId,
+                agentId as any,
+                traceId,
+                recentMessages,
+                "Fulfill the user's creative and technical requests efficiently without looping.",
+                [
+                    "Adhere strictly to the requested schema or output format",
+                    "Do not ask unnecessary clarifying questions if context is sufficient",
+                    "Use tools correctly and interpret tool outputs properly"
+                ]
+            );
+        } catch (e) {
+            logger.warn('[AgentService] Post-completion autorater failed:', e);
         }
     }
 }
