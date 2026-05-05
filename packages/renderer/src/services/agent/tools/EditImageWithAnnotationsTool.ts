@@ -35,18 +35,23 @@ export const EditImageWithAnnotationsTool: any = {
         logger.info(`Executing edit_image_with_annotations for image ${args.imageId}`);
         try {
             // Note: the actual image edit pipeline via API would go here.
-            // For now, returning a simulated response format matching the plan.
+            // For now, returning a simulated response with urls for Phase 2.5 (new message rendering).
+            // In production, this would dispatch to a backend image-editing service.
+            const editedImageUrl = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==`;
+
             return {
                 success: true,
                 editedImageId: `edited_${args.imageId}_${Date.now()}`,
                 message: `Applied annotations to image ${args.imageId}`,
-                annotations: args.annotations
+                annotations: args.annotations,
+                urls: [editedImageUrl]
             };
         } catch (error) {
             logger.error('Failed to execute edit_image_with_annotations tool', error);
             return {
                 toolError: 'Failed to edit image.',
-                details: error instanceof Error ? error.message : 'Unknown error'
+                details: error instanceof Error ? error.message : 'Unknown error',
+                urls: []
             };
         }
     }

@@ -105,12 +105,13 @@ interface TestStoreState {
     rightPanelView: string;
     agentMode: string;
     isAgentProcessing: boolean;
+    isBoardroomMode: boolean;
     canvasItems: any[];
 }
 
 // Create a real store for testing
 const useTestStore = create<TestStoreState>((set) => ({
-    currentModule: 'dashboard',
+    currentModule: 'road',
     setModule: (mod) => set({ currentModule: mod }),
     toggleAgentWindow: vi.fn(),
     isAgentOpen: false,
@@ -136,6 +137,8 @@ const useTestStore = create<TestStoreState>((set) => ({
     rightPanelView: 'messages',
     agentMode: 'assistant',
     isAgentProcessing: false,
+    isBoardroomMode: false,
+    canvasItems: [],
     canvasItems: [{ id: "test" }],
 }));
 
@@ -162,13 +165,15 @@ describe('CommandBar', () => {
         vi.clearAllMocks();
         // Reset store state
         useTestStore.setState({
-            currentModule: 'dashboard',
+            currentModule: 'road',
             isAgentOpen: false,
             chatChannel: 'indii',
             commandBarInput: '',
             commandBarAttachments: [],
             isCommandBarDetached: true,
             isCommandBarCollapsed: false,
+            isBoardroomMode: false,
+            canvasItems: [],
             canvasItems: [{ id: '1' }],
         });
 
@@ -245,7 +250,7 @@ describe('CommandBar', () => {
 
     it('renders active Indii state and allows switching to agent via menu', async () => {
         // Start in Indii mode
-        useTestStore.setState({ currentModule: 'dashboard', chatChannel: 'indii' });
+        useTestStore.setState({ currentModule: 'dashboard', chatChannel: 'indii', canvasItems: [{ id: 'test' } as any] });
         const _setModuleSpy = vi.spyOn(useTestStore.getState(), 'setModule');
 
         render(<CommandBar />);

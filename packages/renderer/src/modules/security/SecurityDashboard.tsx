@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield, Key, Activity, Lock } from 'lucide-react';
+import { VisualVerificationsPane } from './VisualVerificationsPane';
 
 export default function SecurityDashboard() {
     return (
@@ -68,10 +69,7 @@ export default function SecurityDashboard() {
                         <p className="text-sm text-gray-400 mb-6">
                             Review system events, logins, and permission changes.
                         </p>
-                        <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl text-gray-500 bg-white/[0.01]">
-                            <Activity size={32} className="mb-3 opacity-20" />
-                            <span className="font-bold uppercase tracking-widest text-[10px]">Activity Log Pending</span>
-                        </div>
+                        <VisualVerificationsPane />
                     </div>
 
                     {/* Pane 4: Encryption & E2E */}

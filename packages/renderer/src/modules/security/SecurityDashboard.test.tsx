@@ -16,7 +16,7 @@ describe('SecurityDashboard', () => {
         render(<SecurityDashboard />);
         expect(screen.getByText(/Access Matrix Pending/)).toBeDefined();
         expect(screen.getByText(/Credential Vault Pending/)).toBeDefined();
-        expect(screen.getByText(/Activity Log Pending/)).toBeDefined();
+        expect(screen.getByText(/Loading audit logs.../)).toBeDefined();
         expect(screen.getByText(/E2E Diagnostics Pending/)).toBeDefined();
     });
 });

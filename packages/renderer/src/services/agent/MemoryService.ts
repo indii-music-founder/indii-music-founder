@@ -91,6 +91,12 @@ class MemoryService {
         source: MemoryItem['source'] = 'user',
         sessionId?: string
     ): Promise<void> {
+        // Guard against invalid projectId to prevent Firestore permission errors
+        // on paths like projects/undefined/memories
+        if (!projectId || projectId === 'undefined' || projectId === 'null') {
+            logger.warn('[MemoryService] saveMemory called with invalid projectId, skipping.');
+            return;
+        }
         const service = this.getService(projectId);
 
         // Exact-match dedup
@@ -142,6 +148,11 @@ class MemoryService {
         },
         limitIdx = 5
     ): Promise<string[]> {
+        // Guard against invalid projectId to prevent Firestore permission errors
+        if (!projectId || projectId === 'undefined' || projectId === 'null') {
+            logger.warn('[MemoryService] retrieveRelevantMemories called with invalid projectId, returning empty.');
+            return [];
+        }
         try {
             const service = this.getService(projectId);
             let memories: MemoryItem[] = [];

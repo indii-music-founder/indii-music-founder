@@ -7,6 +7,10 @@ All notable changes to indiiOS are documented in this file.
 
 ### Features
 
+* **dashboard:** implement intelligent Chat Entry Overlay with context-aware greetings and dynamic actions ([#1680](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1680))
+* **boardroom:** implement Swarm Protocol seating enforcement and manifest injection ([#1685](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1685))
+* **boardroom:** add output sanitization layer to strip system meta-artifacts from chat ([#1686](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1686))
+* **governance:** standardize ToolFunctionResult interface for monorepo type-safety ([#1688](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1688))
 * **a2a:** optimizer feedback endpoint + JSONL exporter (Phase 4.5) ([#1676](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1676)) ([1c78d8b](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/1c78d8b98faa8e3c61bdf067f6c8bd5badf61b60))
 * **a2a:** sidecar hardening — plaintext rejection, replay protection, agent cards ([e114d9f](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/e114d9f5cd61c60a69f0cc9f1e747ef0da8986e1))
 * **agent:** implement A2A swarm orchestration and replace broadcast dispatch ([6ff62e1](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/6ff62e1d0f8684eaad138d5851cd74d76e021437))
@@ -16,6 +20,9 @@ All notable changes to indiiOS are documented in this file.
 
 ### Bug Fixes
 
+* **renderer:** resolve 40+ legacy type failures in AgentService orchestration pipeline
+* **dashboard:** fix mobile responsiveness for overlay quick action pills
+* **agents:** resolve stale registry imports and specialist routing conflicts
 * **brand:** ensure profile state updates bump timestamps to prevent stale sync overwrites ([cc162f5](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/cc162f5a3689053c1e3d524f77d6ce38c7b1ee4c))
 * Correct ISRC routing ambiguity in Conductor prompt ([#1657](https://github.com/the-walking-agency-det/indiiOS-Clean/issues/1657)) ([2c91e31](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/2c91e310528548ac9c8376adec7aaef880352165))
 * **creative:** pass showBuilder prop and update prompt builder ([b200973](https://github.com/the-walking-agency-det/indiiOS-Clean/commit/b20097347491a481978f9b09586663f12eb352cf))

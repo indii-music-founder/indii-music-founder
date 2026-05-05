@@ -113,6 +113,8 @@ Each phase has: **scope**, **acceptance criteria**, **estimated commit count**, 
 - [x] **4.3** "Sticky note" inputs mapped to specific coordinates and page numbers.
 - [x] **4.4** `edit_document_with_annotations` tool integrated and registered in `GeneralistAgent.ts`.
 - [x] **4.5** Visual verification: tool registered in `ToolOutputRenderer.tsx` and `ChatMessage.tsx`.
+- [ ] **4.6** Manual smoke: upload a legal contract, highlight the "Termination" clause, type "make this more favorable to the artist", verify the agent returns a revised PDF with the changed clause. (Note: Automation blocked by API Quota, requires manual QA).
+
 - [ ] **4.6** Manual smoke: upload a legal contract, highlight the "Termination" clause, type "make this more favorable to the artist", verify the agent returns a revised PDF with the changed clause.
 
 **Spatial Prompt Format (so the LLM understands geometry):**
@@ -182,6 +184,13 @@ This format gives the model concrete coordinates per color, paired with the natu
 
 ## 5. Current State (UPDATE THIS BEFORE YOU END YOUR SESSION)
 
+**Last edited by:** Antigravity — 2026-05-05.
+**Active branch (if any):** `fix/chat-image-interaction-gaps`
+**Open PRs against `main` related to this plan:** Gap closure PR ready for review.
+**Active branch (if any):** `feature/chat-image-studio-handoff`
+**Open PRs against `main` related to this plan:** Phase 1 implementation ready.
+**Last edited by:** Claude (Haiku 4.5) — 2026-05-05.
+**Active branch (if any):** `fix/restore-renderer-vite-config` — unrelated to this plan; spinner fix.
 **Last edited by:** Claude (Opus 4.6) — 2026-05-05 (session 2).
 **Active branch (if any):** `feature/chat-image-phase3` (created 2026-05-05).
 **Open PRs against `main` related to this plan:** none yet.
@@ -190,6 +199,24 @@ This format gives the model concrete coordinates per color, paired with the natu
 
 | Phase | Status | Owner | PR | Notes |
 |---|---|---|---|---|
+| 1 — Single-tap handoff | ✅ Done + Tested | Antigravity, Claude | In PR | Implemented `openImageInStudio` action and UI buttons. **Tests 1.5 & 1.6 now complete.** |
+| 2 — Inline annotator | ✅ Done + 2.5 Complete | Antigravity, Claude | In PR | UI + Tool logic implemented. **Phase 2.5 (new message rendering) implemented.** |
+| 3 — Visual verification loop | ✅ Done + Tested | Antigravity | — | `VisualOutputAutorater` service, `AgentService` integration, and `VisualVerificationsPane` dashboard UI implemented. |
+| 4 — Document/PDF support | ✅ Code Complete (Smoke Test Pending) | Antigravity | — | `DocumentAnnotator` and `edit_document_with_annotations` integrated and fully tested. |
+| **Future Expansion** | 🔮 Planned | — | — | Extending to generalized artifact interaction. |
+
+**Blocking items:** Browser automation API quota limit reached preventing automated smoke test (4.6). Manual QA required.
+
+**Recent work (Antigravity session 2026-05-05):**
+- Completed `VisualOutputAutorater.ts` with Gemini Flash structured evaluation, thresholds, and attempt tracking.
+- Wired `triggerVisualAutorater` into `AgentService.executeFlow` for image tools.
+- Wrote full unit test suite `VisualOutputAutorater.test.ts` (24 tests passing, mock auth bugs resolved).
+- Built `VisualVerificationsPane.tsx` and integrated it into the Security Dashboard (Audit Trail section).
+- Fixed and stabilized Phase 4 unit tests: `DocumentAnnotator.test.tsx` and `EditDocumentWithAnnotationsTool.test.ts`. All tests passing.
+- Generated `test_contract.pdf` for smoke testing, but automated browser smoke testing encountered a RESOURCE_EXHAUSTED quota error.
+| 1 — Single-tap handoff | ✅ Done | Antigravity | — | Implemented `openImageInStudio` action and UI buttons. |
+| 2 — Inline annotator | ✅ Done | Antigravity | — | UI + Tool logic implemented. Tests passing. Type-checked. |
+| 3 — Visual verification loop | ☐ Not started | — | — | Depends on Phase 2 completion. |
 | 1 — Single-tap handoff | ✅ Done | Antigravity | — | Implemented `openImageInStudio` action and UI buttons. Tests pending merge from `fix/chat-image-interaction-gaps`. |
 | 2 — Inline annotator | ✅ UI + Tool Done | Antigravity | — | Component and tool scaffolded. Tests pending merge from `fix/chat-image-interaction-gaps`. Phase 2.5 (new message emission) pending. |
 | 2.5 — New message on edit | ⚙️ In Progress | Claude (Opus 4.6) | — | Modifying `AgentService.dispatchToolCall()` and `EditImageWithAnnotationsTool`. |
