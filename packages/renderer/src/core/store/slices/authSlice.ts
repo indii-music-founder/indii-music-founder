@@ -322,7 +322,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
     initializeAuthListener: () => {
         logger.debug('[Auth] Initializing Auth Listener...');
-        const { set } = _get() as any;
+        // We use the 'set' function from the outer closure (createAuthSlice)
 
         // 6. Electron Auth Handoff Listener (Item 518)
         let electronUnsub: (() => void) | null = null;
