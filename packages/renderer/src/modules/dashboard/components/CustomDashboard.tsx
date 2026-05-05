@@ -7,16 +7,14 @@ import {
     X,
     Edit3,
     Undo2,
+    Sparkles,
 } from 'lucide-react';
-
 
 /* ================================================================== */
 /*  Item 159 — Customizable Dashboard                                  */
 /* ================================================================== */
 
 import { WidgetType, Widget, WIDGET_DEFINITIONS, STORAGE_KEY, loadWidgets, WIDGET_RENDERERS } from "./CustomDashboardWidgets";
-
-/* ── Custom Dashboard ──────────────────────────────────────────────── */
 
 export function CustomDashboard() {
     const [widgets, setWidgets] = useState<Widget[]>(() => loadWidgets());
@@ -111,45 +109,49 @@ export function CustomDashboard() {
     const addedTypes = new Set(widgets.map((w) => w.type));
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-8">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-inner shadow-emerald-500/10">
-                        <LayoutDashboard size={16} className="text-emerald-400" />
+                <div className="flex items-center gap-4">
+                    <div className="relative group">
+                        <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-2xl group-hover:bg-emerald-500/40 transition-all" />
+                        <div className="relative w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center border border-white/20 shadow-2xl">
+                            <LayoutDashboard size={24} className="text-black" />
+                        </div>
                     </div>
                     <div>
-                        <h2 className="text-xl font-semibold text-white tracking-wide">My Dashboard</h2>
-                        <p className="text-[10px] text-emerald-200/60 font-medium uppercase tracking-[0.1em] mt-0.5">{widgets.length} widget{widgets.length !== 1 ? 's' : ''} · drag to reorder</p>
+                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">My Dashboard</h2>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">{widgets.length} ACTIVE WIDGETS</p>
+                        </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     {canUndo && (
                         <button
                             onClick={handleUndo}
-                            aria-label="Undo last layout change"
-                            title="Undo"
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 text-[10px] font-bold transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-gray-400 hover:text-white border border-white/10 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all"
                         >
-                            <Undo2 size={10} />
+                            <Undo2 size={12} />
                             Undo
                         </button>
                     )}
                     <button
                         onClick={() => setIsEditMode((v) => !v)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${isEditMode
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-lg ${isEditMode
+                            ? 'bg-emerald-500 text-black border-emerald-400'
+                            : 'bg-white/5 text-gray-400 hover:text-white border-white/10 hover:bg-white/10'
                             }`}
                     >
-                        <Edit3 size={10} />
-                        {isEditMode ? 'Done' : 'Edit Layout'}
+                        <Edit3 size={12} />
+                        {isEditMode ? 'Finish' : 'Edit'}
                     </button>
                     <button
                         onClick={() => setShowPicker((v) => !v)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold transition-colors"
+                        className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-black text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] active:scale-95"
                     >
-                        <Plus size={10} />
+                        <Plus size={14} className="group-hover:rotate-90 transition-transform" />
                         Add Widget
                     </button>
                 </div>
@@ -159,13 +161,22 @@ export function CustomDashboard() {
             <AnimatePresence>
                 {showPicker && (
                     <motion.div
-                        initial={{ opacity: 0, y: -8 }}
+                        initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        className="p-4 rounded-xl bg-white/[0.03] border border-white/10"
+                        exit={{ opacity: 0, y: -20 }}
+                        className="p-6 rounded-3xl glass border border-white/10 shadow-2xl relative overflow-hidden"
                     >
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Available Widgets</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-emerald-500 to-transparent" />
+                        <div className="flex items-center justify-between mb-6">
+                            <p className="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
+                                <Sparkles size={14} className="text-emerald-400" />
+                                Available Intelligence
+                            </p>
+                            <button onClick={() => setShowPicker(false)} className="text-gray-500 hover:text-white transition-colors">
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                             {(Object.entries(WIDGET_DEFINITIONS) as [WidgetType, (typeof WIDGET_DEFINITIONS)[WidgetType]][]).map(([type, def]) => {
                                 const Icon = def.icon;
                                 const alreadyAdded = addedTypes.has(type);
@@ -174,15 +185,17 @@ export function CustomDashboard() {
                                         key={type}
                                         onClick={() => addWidget(type)}
                                         disabled={alreadyAdded}
-                                        className={`flex items-start gap-2 p-3 rounded-lg text-left transition-colors ${alreadyAdded
+                                        className={`group relative flex flex-col gap-3 p-5 rounded-2xl text-left transition-all ${alreadyAdded
                                             ? 'bg-white/[0.02] opacity-40 cursor-not-allowed'
-                                            : 'bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 cursor-pointer'
+                                            : 'bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-emerald-500/40 cursor-pointer hover:scale-[1.02]'
                                             }`}
                                     >
-                                        <Icon size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
-                                        <div className="min-w-0">
-                                            <p className="text-xs font-bold text-white truncate">{def.label}</p>
-                                            <p className="text-[10px] text-gray-500">{alreadyAdded ? 'Added' : def.description}</p>
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${alreadyAdded ? 'bg-white/5' : 'bg-emerald-500/10 group-hover:bg-emerald-500 group-hover:text-black'}`}>
+                                            <Icon size={20} className={alreadyAdded ? 'text-gray-600' : 'text-emerald-400 group-hover:text-black'} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-black text-white uppercase tracking-wider">{def.label}</p>
+                                            <p className="text-[10px] text-gray-500 leading-tight mt-1 line-clamp-2">{alreadyAdded ? 'Integrated' : def.description}</p>
                                         </div>
                                     </button>
                                 );
@@ -193,8 +206,8 @@ export function CustomDashboard() {
             </AnimatePresence>
 
             {/* Widget Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                <AnimatePresence>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AnimatePresence mode="popLayout">
                     {sortedWidgets.map((widget) => {
                         const def = WIDGET_DEFINITIONS[widget.type];
                         const isDragging = dragId === widget.id;
@@ -204,45 +217,45 @@ export function CustomDashboard() {
                             <motion.div
                                 key={widget.id}
                                 layout
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: isDragging ? 0.5 : 1, scale: 1 }}
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: isDragging ? 0.3 : 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                                 draggable={isEditMode}
                                 onDragStart={() => handleDragStart(widget.id)}
                                 onDragOver={(e) => handleDragOver(e, widget.id)}
                                 onDrop={(e) => handleDrop(e, widget.id)}
                                 onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                                className={`relative rounded-2xl p-4 border transition-all min-h-[180px] shadow-lg ${isOver
-                                    ? 'border-emerald-500/40 bg-emerald-500/5 shadow-emerald-500/10'
-                                    : 'border-white/5 bg-[#0a0a0a]/50 hover:bg-[#0a0a0a]/80 hover:border-white/10 shadow-black/20'
+                                className={`group relative rounded-3xl p-6 transition-all min-h-[220px] shadow-2xl overflow-hidden border ${isOver
+                                    ? 'border-emerald-500/50 bg-emerald-500/10 scale-[1.02]'
+                                    : 'border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
                                     } ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
                             >
+                                {/* Decorative Glow */}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                
                                 {/* Edit mode controls */}
                                 {isEditMode && (
-                                    <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-10">
-                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/40">
-                                            <GripVertical size={12} className="text-gray-500" />
-                                            <span className="text-[9px] text-gray-500">drag</span>
+                                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20">
+                                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/60 border border-white/10 backdrop-blur-md">
+                                            <GripVertical size={12} className="text-emerald-400" />
+                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">DRAG TO REORDER</span>
                                         </div>
                                         <button
                                             onClick={() => removeWidget(widget.id)}
-                                            className="w-5 h-5 rounded-full bg-slate-500/10 hover:bg-slate-500/30 border border-slate-500/20 text-slate-400 flex items-center justify-center transition-colors shadow-sm"
+                                            className="w-7 h-7 rounded-lg bg-red-500/20 hover:bg-red-500 border border-red-500/20 text-red-400 hover:text-black flex items-center justify-center transition-all shadow-lg"
                                         >
-                                            <X size={10} />
+                                            <X size={14} />
                                         </button>
                                     </div>
                                 )}
 
-                                <div className={isEditMode ? 'mt-6' : ''}>
+                                <div className={`relative z-10 h-full ${isEditMode ? 'mt-8' : ''}`}>
                                     {WIDGET_RENDERERS[widget.type]()}
                                 </div>
 
-                                {/* Widget type label in edit mode */}
-                                {isEditMode && (
-                                    <div className="absolute bottom-2 right-2">
-                                        <span className="text-[9px] text-gray-600 font-mono">{def.label}</span>
-                                    </div>
-                                )}
+                                {/* Hover Border Accent */}
+                                <div className="absolute inset-x-0 bottom-0 h-[2px] bg-emerald-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500" />
                             </motion.div>
                         );
                     })}
@@ -252,11 +265,19 @@ export function CustomDashboard() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="col-span-full flex flex-col items-center justify-center py-16 text-center"
+                        className="col-span-full flex flex-col items-center justify-center py-32 text-center"
                     >
-                        <LayoutDashboard size={32} className="text-gray-700 mb-3" />
-                        <p className="text-sm font-bold text-gray-500">No widgets yet</p>
-                        <p className="text-xs text-gray-600 mt-1">Click "Add Widget" to build your dashboard</p>
+                        <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+                            <LayoutDashboard size={40} className="text-gray-700" />
+                        </div>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tight">Your OS is empty</h3>
+                        <p className="text-sm text-gray-500 mt-2 max-w-xs">Initialize your dashboard by adding intelligence widgets to track your performance.</p>
+                        <button
+                            onClick={() => setShowPicker(true)}
+                            className="mt-8 px-8 py-3 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                        >
+                            Build My Dashboard
+                        </button>
                     </motion.div>
                 )}
             </div>

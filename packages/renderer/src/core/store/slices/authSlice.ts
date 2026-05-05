@@ -11,7 +11,8 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signInAnonymously,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    signInWithCredential
 } from 'firebase/auth';
 
 /** Minimal interface for E2E mock auth objects that provide their own listener */
@@ -321,6 +322,39 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
     initializeAuthListener: () => {
         logger.debug('[Auth] Initializing Auth Listener...');
+        const { set } = _get() as any;
+
+        // 6. Electron Auth Handoff Listener (Item 518)
+        let electronUnsub: (() => void) | null = null;
+        if (typeof window !== 'undefined' && window.electronAPI?.auth?.onUserUpdate) {
+            electronUnsub = window.electronAPI.auth.onUserUpdate(async (tokens) => {
+                if (tokens) {
+                    logger.info('[Auth] Received handoff tokens from Main Process. Signing in...');
+                    try {
+                        set({ authLoading: true, authError: null });
+                        const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken || undefined);
+                        await signInWithCredential(auth, credential);
+                        // onAuthStateChanged will handle the rest
+                    } catch (err) {
+                        logger.error('[Auth] Failed to sign in with handoff tokens:', err);
+                        set({ authError: 'Authentication handoff failed. Please try again.', authLoading: false });
+                    }
+                } else {
+                    logger.info('[Auth] Received logout signal from Main Process.');
+                    // User already signed out in main, just clear local state if listener doesn't fire
+                    set({ user: null, authLoading: false });
+                }
+            });
+        }
+
+        // 7. Electron Auth Error Listener
+        let errorUnsub: (() => void) | null = null;
+        if (typeof window !== 'undefined' && window.electronAPI?.auth?.onError) {
+            errorUnsub = window.electronAPI.auth.onError((data) => {
+                logger.error('[Auth] Received auth error from Main Process:', data.message);
+                set({ authError: data.message, authLoading: false });
+            });
+        }
 
         // FAST FAIL: If no API key, don't wait for Firebase (it might hang or crash)
         // EXCLUSION: If we are using the E2E mock, allow any API key string.
@@ -466,6 +500,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         return () => {
             clearTimeout(timeoutId);
             if (debounceTimer) clearTimeout(debounceTimer);
+            if (electronUnsub) electronUnsub();
+            if (errorUnsub) errorUnsub();
             unsubscribe();
         };
     }
