@@ -468,6 +468,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-indigo-500/5',
         cssVar: '--color-dept-default',
     },
+    'security': {
+        // Security — Red for alerts & compliance
+        text: 'text-red-500',
+        bg: 'bg-red-500/10',
+        border: 'border-red-500',
+        ring: 'focus-within:ring-red-500/50',
+        hoverText: 'hover:text-red-400',
+        hoverBg: 'hover:bg-red-500/5',
+        cssVar: '--color-dept-default',
+    },
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {
