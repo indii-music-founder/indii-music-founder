@@ -85,7 +85,8 @@ export class AgentPromptBuilder {
         superpowerPrompt: string,
         memorySection: string,
         distributorSection: string,
-        autoRecallBlock?: string
+        autoRecallBlock?: string,
+        boardroomSection?: string
     ): string {
         const whiskContext = context?.whiskState ? `\n${this.buildWhiskContext(context.whiskState)}\n` : '';
         const safeTask = this.sanitizeTask(task);
@@ -95,6 +96,7 @@ export class AgentPromptBuilder {
             : '';
 
         const autoRecall = autoRecallBlock || '';
+        const boardroom = boardroomSection || '';
 
         return `
 # MISSION
@@ -119,6 +121,7 @@ ${context.brandKit.releaseDetails ? `
 ${whiskContext}
 ${alignmentRules}
 ${autoRecall}
+${boardroom}
 
 # HISTORY
 ${safeHistory}
