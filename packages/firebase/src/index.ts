@@ -40,6 +40,9 @@ admin.initializeApp();
 // Admin Functions
 export { setGodMode } from './functions/admin/setGodMode';
 
+// Auth Handoff Functions (Item 518: Cross-device secure auth)
+export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
+
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
 export { createStripeConnectAccount } from './stripe/createStripeConnectAccount';

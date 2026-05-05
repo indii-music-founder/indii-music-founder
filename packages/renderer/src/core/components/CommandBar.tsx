@@ -44,7 +44,8 @@ function CommandBar() {
         setCommandBarCollapsed,
         currentModule,
         commandBarPosition,
-        isBoardroomMode
+        isBoardroomMode,
+        canvasItems
     } = useStore(
         useShallow(state => ({
             isCommandBarDetached: state.isCommandBarDetached,
@@ -53,13 +54,14 @@ function CommandBar() {
             currentModule: state.currentModule,
             commandBarPosition: state.commandBarPosition,
             isBoardroomMode: state.isBoardroomMode,
+            canvasItems: state.canvasItems,
         }))
     );
 
     // Hide from global shell when Boardroom is active — it renders inside BoardroomModule instead.
-    // This prevents the double-render caused by Framer Motion opacity animations creating a
-    // new stacking context that traps fixed-position elements in browser (not Electron).
+    // Also hide when in Dashboard with an empty Agent Workspace to avoid duplicate inputs with EntryOverlay.
     if (isBoardroomMode) return null;
+    if (currentModule === 'dashboard' && canvasItems.length === 0) return null;
 
     const shouldShow = true;
 
