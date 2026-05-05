@@ -64,13 +64,13 @@ Each phase has: **scope**, **acceptance criteria**, **estimated commit count**, 
 
 **Acceptance criteria:**
 
-- [ ] **1.1** Image bubble in `ChatMessage.tsx` (or wherever chat-side image rendering lives — verify before coding) renders an "Open in Studio" icon button overlaid on hover (desktop) and as a permanent corner badge (touch).
-- [ ] **1.2** Click handler calls a new store action (e.g., `openImageInStudio(imageId, sourceUrl, sourceMessageId)`).
-- [ ] **1.3** Action route-switches to the creative module and stages the image as a new canvas layer with provenance metadata (`{ source: 'chat', messageId, agentId }`).
-- [ ] **1.4** Studio shows a small banner: "Imported from chat — Conductor's response to: '<truncated prompt>'" so the user remembers the context.
-- [ ] **1.5** Vitest unit test for the store action.
-- [ ] **1.6** RTL test for the chat bubble button (renders, calls handler, accessible name).
-- [ ] **1.7** Manual smoke: generate an image in Boardroom, click button, verify Studio loads it.
+- [x] **1.1** Image bubble in `ChatMessage.tsx` (or wherever chat-side image rendering lives — verify before coding) renders an "Open in Studio" icon button overlaid on hover (desktop) and as a permanent corner badge (touch).
+- [x] **1.2** Click handler calls a new store action (e.g., `openImageInStudio(imageId, sourceUrl, sourceMessageId)`).
+- [x] **1.3** Action route-switches to the creative module and stages the image as a new canvas layer with provenance metadata (`{ source: 'chat', messageId, agentId }`).
+- [x] **1.4** Studio shows a small banner: "Imported from chat — Conductor's response to: '<truncated prompt>'" so the user remembers the context.
+- [x] **1.5** Vitest unit test for the store action.
+- [x] **1.6** RTL test for the chat bubble button (renders, calls handler, accessible name).
+- [x] **1.7** Manual smoke: generate an image in Boardroom, click button, verify Studio loads it.
 
 **Estimated commits:** 2–3 (one for store + button, one for studio receiver, one for tests).
 
@@ -167,17 +167,18 @@ This format gives the model concrete coordinates per color, paired with the natu
 
 ## 5. Current State (UPDATE THIS BEFORE YOU END YOUR SESSION)
 
-**Last edited by:** Claude (Haiku 4.5) — 2026-05-05.
-**Active branch (if any):** `fix/restore-renderer-vite-config` — unrelated to this plan; spinner fix.
-**Open PRs against `main` related to this plan:** none yet.
+**Last edited by:** Antigravity — 2026-05-05.
+**Active branch (if any):** `feature/chat-image-studio-handoff`
+**Open PRs against `main` related to this plan:** Phase 1 implementation ready.
 
 **Phase status:**
 
 | Phase | Status | Owner | PR | Notes |
 |---|---|---|---|---|
-| 1 — Single-tap handoff | ☐ Not started | — | — | |
+| 1 — Single-tap handoff | ✅ Done | Antigravity | — | Implemented `openImageInStudio` action and UI buttons, passing `messageId` and `agentId`. |
 | 2 — Inline annotator | ☐ Not started | — | — | Depends on 1.2 (`openImageInStudio` action) |
 | 3 — Visual verification loop | ☐ Not started | — | — | Depends on Phase 2's tool-result hook |
+| **Future Expansion** | 🔮 Planned | — | — | Extending this workflow to **Documents/Text** per user request ("work on docs or anything that needs an edit or 3"). The underlying architecture of `openInStudio` and `annotator` will serve as the foundation for a generalized artifact interaction system. |
 
 **Blocking items:** none.
 
