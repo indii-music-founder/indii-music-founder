@@ -32,7 +32,7 @@ vi.mock('@/core/store', () => ({
             currentProjectId: 'proj1',
             uploadedImages: [],
             currentModule: 'debug'
-        })
+        } as any)
     }
 }));
 
@@ -80,7 +80,7 @@ describe('Agent Streaming', () => {
             currentProjectId: 'proj1',
             uploadedImages: [],
             currentModule: 'debug'
-        });
+        } as any);
 
         // Restore default mocks that were defined in vi.mock
         vi.mocked(AI.batchEmbedContents).mockResolvedValue([]);
