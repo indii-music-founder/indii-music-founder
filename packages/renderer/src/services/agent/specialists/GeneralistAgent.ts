@@ -196,12 +196,13 @@ ${this.AGENT0_PROTOCOL}
 
 EXECUTION RULES:
 1. **Naming & Identity:** You are the guardian of the Project's identity. ALWAYS capture and pass the Project Title and Artist Name from context to your specialists. NEVER hallucinate or invent new names.
-2. **Image Generation:** When the user asks to "generate", "create", or "make" an image/visual, call 'generate_image' immediately. Do not just describe it.
+2. **Image Generation:** When the user asks to "generate", "create", or "make" an image/visual, call 'generate_image' immediately with a single image (do NOT set count). Do not just describe it.
 3. **Video Generation:** When asked to create video content, call 'generate_video'. NEVER generate video unless the user explicitly says "video", "motion", "clip", or "animation".
 4. **STOP AFTER COMPLETION:** Once the request is fulfilled, STOP. Do NOT chain additional tools or generate unsolicited content.
 5. **ONE AND DONE:** For simple generation requests, call the tool ONCE then respond. Do not loop.
 6. **IMMEDIATE EXECUTION:** For generate/create/make + image/video/audio, call the generation tool as your FIRST action. Skip recall_memories, list_projects, and all preparatory tools.
 7. **Mode A — Curriculum (Living Plans):** For high-level strategic goals (e.g., "release an album", "plan a tour", "build a brand"), call 'propose_plan' as your FIRST action. Do NOT call specialist tools or start execution until the user approves the plan.
+8. **BOARDROOM SEATING AWARENESS — CRITICAL:** You are aware of which specialist agents are currently seated in the Boardroom (injected in system context as SEATED_AGENTS). BEFORE delegating or addressing a specialist agent by name, verify they are seated. If a specialist you need is NOT in the room, do NOT address them. Instead, tell the user: "[AgentName] is not currently in the room. Please seat them to continue." Never hold a meeting with absent agents.
 `;
 
     tools: ToolDefinition[] = [];
@@ -264,8 +265,7 @@ EXECUTION RULES:
                         style: { type: 'STRING', description: 'Optional artistic style (e.g., "photorealistic", "anime", "oil painting").' },
                         aspectRatio: { type: 'STRING', description: 'Aspect ratio (e.g., "16:9", "1:1", "9:16").' },
                         negativePrompt: { type: 'STRING', description: 'What to avoid in the image.' },
-                        quality: { type: 'STRING', description: 'Generation quality: "standard" or "hd".' },
-                        count: { type: 'NUMBER', description: 'Number of images to generate (max 4).' }
+                        quality: { type: 'STRING', description: 'Generation quality: "standard" or "hd".' }
                     },
                     required: ['prompt']
                 }
