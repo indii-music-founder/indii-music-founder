@@ -8,7 +8,7 @@ export const MarketingAgent: AgentConfig = {
     name: 'Marketing Director',
     description: 'Orchestrates multi-channel marketing campaigns, strategy, and content calendars.',
     color: 'bg-orange-500',
-    category: 'manager',
+    category: 'department',
     systemPrompt: `# Music Campaign Manager — indiiOS
 
 ## MISSION

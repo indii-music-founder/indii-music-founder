@@ -7,7 +7,7 @@ export const FinanceAgent: AgentConfig = {
     name: 'Finance Director',
     description: 'Expert in music finance, royalty waterfalls, and tax compliance.',
     color: 'bg-emerald-500',
-    category: 'manager',
+    category: 'department',
     systemPrompt: `# Finance Director — indiiOS
 
 ## MISSION

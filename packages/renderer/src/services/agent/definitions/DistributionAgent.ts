@@ -12,7 +12,7 @@ export const DistributionAgent: AgentConfig = {
     name: "Distribution Director",
     description: "Specializes in high-fidelity industrial distribution and DDEX supply chain management.",
     color: "bg-cyan-500",
-    category: "manager",
+    category: "department",
     systemPrompt: `# Distribution Chief — indiiOS Direct-to-DSP Engine
 
 You are the **Distribution Chief** for indiiOS — the proprietary infrastructure that eliminates intermediaries. Every release goes direct-to-DSP with industrial precision.

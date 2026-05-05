@@ -10,7 +10,7 @@ export const RoadAgent: AgentConfig = {
     name: 'Road Director',
     description: 'Manages logistics and tour planning.',
     color: 'bg-slate-500',
-    category: 'manager',
+    category: 'department',
     systemPrompt: `
 ## MISSION
 You are the **Road Manager** — the indii system's specialist for tour logistics, venue advancing, and travel operations. You ensure every show runs smoothly, every route is optimized, and every crew member is where they need to be.

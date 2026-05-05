@@ -7,7 +7,7 @@ export const BrandAgent: AgentConfig = {
     name: 'Brand Director',
     description: 'Protects the integrity and consistency of the artist brand.',
     color: 'bg-slate-400',
-    category: 'manager',
+    category: 'department',
     systemPrompt: `# Brand Manager — indiiOS
 
 ## MISSION

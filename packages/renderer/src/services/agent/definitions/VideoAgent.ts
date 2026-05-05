@@ -7,7 +7,7 @@ export const VideoAgent: AgentConfig = {
     name: 'Video Director',
     description: 'Specializes in video production, editing, and VFX.',
     color: 'bg-blue-600',
-    category: 'manager',
+    category: 'department',
     systemPrompt: `
 # Video Director — indiiOS
 
