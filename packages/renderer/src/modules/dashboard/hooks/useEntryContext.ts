@@ -109,12 +109,14 @@ export function useEntryContext(): EntryContext {
             { id: 'continue', label: `Resume: ${mostRecent.title}`, prompt: `Let's pick up where we left off on ${mostRecent.title}.`, icon: Play, variant: 'primary' },
             { id: 'stats', label: 'Check Stats', prompt: 'Show me my latest performance stats and royalty estimates.', icon: TrendingUp, variant: 'secondary' },
             { id: 'royalties', label: 'Check Royalties', prompt: 'How much royalty income did I earn last month across all platforms?', icon: TrendingUp, variant: 'secondary' }
+            { id: 'stats', label: 'Check Stats', prompt: 'Show me my latest performance stats and royalty estimates.', icon: TrendingUp, variant: 'secondary' }
         );
     } else {
         suggestedActions.push(
             { id: 'new-task', label: 'Start New Task', prompt: 'I want to start a new project.', icon: Sparkles, variant: 'primary' },
             { id: 'history', label: 'View History', prompt: null, action: () => useStore.setState({ rightPanelTab: 'agent', rightPanelView: 'archives', isRightPanelOpen: true }), icon: History, variant: 'secondary' },
             { id: 'trends', label: 'Analyze Trends', prompt: 'What are the current trending sounds and visual styles in my genre right now?', icon: TrendingUp, variant: 'secondary' }
+            { id: 'history', label: 'View History', prompt: null, action: () => useStore.setState({ rightPanelTab: 'agent', rightPanelView: 'archives', isRightPanelOpen: true }), icon: History, variant: 'secondary' }
         );
     }
 

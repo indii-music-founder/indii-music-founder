@@ -39,12 +39,14 @@ export const EditImageWithAnnotationsTool: any = {
             // In production, this would dispatch to a backend image-editing service.
             const editedImageUrl = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==`;
 
+            // For now, returning a simulated response format matching the plan.
             return {
                 success: true,
                 editedImageId: `edited_${args.imageId}_${Date.now()}`,
                 message: `Applied annotations to image ${args.imageId}`,
                 annotations: args.annotations,
                 urls: [editedImageUrl]
+                annotations: args.annotations
             };
         } catch (error) {
             logger.error('Failed to execute edit_image_with_annotations tool', error);
@@ -52,6 +54,7 @@ export const EditImageWithAnnotationsTool: any = {
                 toolError: 'Failed to edit image.',
                 details: error instanceof Error ? error.message : 'Unknown error',
                 urls: []
+                details: error instanceof Error ? error.message : 'Unknown error'
             };
         }
     }

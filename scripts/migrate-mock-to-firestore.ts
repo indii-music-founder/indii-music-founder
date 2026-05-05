@@ -177,6 +177,24 @@ async function migrateSamplePlatforms() {
     const batch = db.batch();
     let skipped = 0;
 
+    const refs = SAMPLE_PLATFORMS.map(platform => db.collection('sample_platforms').doc(platform.id));
+    const snapshots = await Promise.all(refs.map(ref => ref.get()));
+
+    const now = new Date();
+
+    for (let i = 0; i < SAMPLE_PLATFORMS.length; i++) {
+        const platform = SAMPLE_PLATFORMS[i];
+        const existing = snapshots[i];
+
+    // Use db.getAll to fetch all documents in a single batched network request to fix N+1 issue
+    const existingDocs = await db.getAll(...refs);
+
+    for (let i = 0; i < existingDocs.length; i++) {
+        const existing = existingDocs[i];
+        const platform = SAMPLE_PLATFORMS[i];
+        const ref = refs[i];
+
+        if (existing.exists) {
     const refs = SAMPLE_PLATFORMS.map(p => db.collection('sample_platforms').doc(p.id));
     const snapshots = refs.length > 0 ? await db.getAll(...refs) : [];
     const existingIds = new Set(snapshots.filter(snap => snap.exists).map(snap => snap.id));

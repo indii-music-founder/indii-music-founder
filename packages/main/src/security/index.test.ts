@@ -51,7 +51,7 @@ describe('security/index.ts', () => {
             expect(log.info).toHaveBeenCalledWith(expect.stringContaining('Audit complete: 2 total, 1 with flag issues'));
         });
 
-        it('should catch error and log it when cookies.get fails', async () => {
+        it('should catch error and log it when cookies.get fails properly', async () => {
             const mockError = new Error('Test Error');
             vi.mocked(electronSession.defaultSession.cookies.get).mockRejectedValue(mockError);
 
