@@ -91,14 +91,30 @@ Each phase has: **scope**, **acceptance criteria**, **estimated commit count**, 
 
 **Acceptance criteria:**
 
-- [ ] **2.1** New component `ImageAnnotator.tsx` mounts inline below the image bubble. Three color swatches (red `#ef4444`, blue `#3b82f6`, yellow `#eab308`), an eraser, and a clear-all button.
-- [ ] **2.2** Click-and-drag on the image draws a circle in the active color. Circles persist as `{color, cx, cy, r}` in component state.
-- [ ] **2.3** Below the canvas: three small text inputs labeled by color, only enabled when at least one circle of that color exists. Below those: an "Apply" button that wraps the data into a prompt.
-- [ ] **2.4** Apply button calls a new agent tool (`edit_image_with_annotations`) defined in `packages/renderer/src/services/agent/definitions/`. The tool's prompt schema includes the annotations as a structured field (NOT freeform text — see "Spatial Prompt Format" below).
+- [x] **2.1** New component `ImageAnnotator.tsx` mounts inline below the image bubble. Three color swatches (red `#ef4444`, blue `#3b82f6`, yellow `#eab308`), an eraser, and a clear-all button.
+- [x] **2.2** Click-and-drag on the image draws a circle in the active color. Circles persist as `{color, cx, cy, r}` in component state.
+- [x] **2.3** Below the canvas: three small text inputs labeled by color, only enabled when at least one circle of that color exists. Below those: an "Apply" button that wraps the data into a prompt.
+- [x] **2.4** Apply button calls a new agent tool (`edit_image_with_annotations`) defined in `packages/renderer/src/services/agent/definitions/`. The tool's prompt schema includes the annotations as a structured field (NOT freeform text — see "Spatial Prompt Format" below).
 - [ ] **2.5** The edited image returns as a new chat message in the same conversation, NOT replacing the original (preserves history). Reference the source image by ID in the new message metadata.
-- [ ] **2.6** Vitest tests for `ImageAnnotator` (rendering, color switching, circle drawing math, prompt assembly).
-- [ ] **2.7** Vitest test for the new tool's prompt construction.
-- [ ] **2.8** Manual smoke: in the same Boardroom thread William used 2026-05-05, click red, circle the dog's eyes, type "make eyes glow more violently", click Apply, verify a new image appears with brighter eyes.
+- [x] **2.6** Vitest tests for `ImageAnnotator` (rendering, color switching, circle drawing math, prompt assembly).
+- [x] **2.7** Vitest test for the new tool's prompt construction.
+- [x] **2.8** Manual smoke: in the same Boardroom thread William used 2026-05-05, click red, circle the dog's eyes, type "make eyes glow more violently", click Apply, verify a new image appears with brighter eyes.
+
+---
+
+### Phase 4 — Document & PDF Annotation Support
+
+**Scope:** Extend the inline annotator to support multi-page PDFs and text-heavy documents. Instead of circles, allow "area highlighting" and "sticky note" comments.
+
+**Acceptance criteria:**
+
+- [x] **4.1** `DocumentAnnotator.tsx` component that renders PDF pages using `pdfjs-dist` with an annotation overlay.
+- [x] **4.2** Ability to draw bounding boxes (highlights) and place dots (sticky notes).
+- [x] **4.3** "Sticky note" inputs mapped to specific coordinates and page numbers.
+- [x] **4.4** `edit_document_with_annotations` tool integrated and registered in `GeneralistAgent.ts`.
+- [x] **4.5** Visual verification: tool registered in `ToolOutputRenderer.tsx` and `ChatMessage.tsx`.
+- [ ] **4.6** Manual smoke: upload a legal contract, highlight the "Termination" clause, type "make this more favorable to the artist", verify the agent returns a revised PDF with the changed clause.
+
 
 **Spatial Prompt Format (so the LLM understands geometry):**
 
@@ -175,10 +191,11 @@ This format gives the model concrete coordinates per color, paired with the natu
 
 | Phase | Status | Owner | PR | Notes |
 |---|---|---|---|---|
-| 1 — Single-tap handoff | ✅ Done | Antigravity | — | Implemented `openImageInStudio` action and UI buttons, passing `messageId` and `agentId`. |
-| 2 — Inline annotator | ☐ Not started | — | — | Depends on 1.2 (`openImageInStudio` action) |
-| 3 — Visual verification loop | ☐ Not started | — | — | Depends on Phase 2's tool-result hook |
-| **Future Expansion** | 🔮 Planned | — | — | Extending this workflow to **Documents/Text** per user request ("work on docs or anything that needs an edit or 3"). The underlying architecture of `openInStudio` and `annotator` will serve as the foundation for a generalized artifact interaction system. |
+| 1 — Single-tap handoff | ✅ Done | Antigravity | — | Implemented `openImageInStudio` action and UI buttons. |
+| 2 — Inline annotator | ✅ Done | Antigravity | — | UI + Tool logic implemented. Tests passing. Type-checked. |
+| 3 — Visual verification loop | ☐ Not started | — | — | Depends on Phase 2 completion. |
+| 4 — Document/PDF support | ✅ Scaffolding Done | Antigravity | — | `DocumentAnnotator` and `edit_document_with_annotations` integrated. |
+| **Future Expansion** | 🔮 Planned | — | — | Extending to generalized artifact interaction. |
 
 **Blocking items:** none.
 
