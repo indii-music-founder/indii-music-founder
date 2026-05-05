@@ -138,6 +138,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
                 '@/services/agent/tools/CoreTools',
                 '@/services/agent/tools/NavigationTools',
                 '@/services/agent/tools/MemoryTools',
+                '@/services/agent/tools/BugReportTools',
             ];
 
             for (const modulePath of toolModules) {

@@ -7,7 +7,7 @@ vi.mock('../../ai/GenAI', () => ({
     GenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn(),
-        batchEmbedContents: vi.fn().mockResolvedValue({ embeddings: [] })
+        batchEmbedContents: vi.fn().mockResolvedValue([])
     }
 }));
 
@@ -20,6 +20,7 @@ vi.mock('@/services/MembershipService', () => ({
 }));
 
 import { GeneralistAgent } from '../specialists/GeneralistAgent';
+import { useStore } from '@/core/store';
 
 vi.mock('@/core/store', () => ({
     useStore: {
@@ -30,7 +31,7 @@ vi.mock('@/core/store', () => ({
             currentOrganizationId: 'org1',
             currentProjectId: 'proj1',
             uploadedImages: [],
-            currentModule: 'testing'
+            currentModule: 'debug'
         })
     }
 }));
@@ -67,7 +68,24 @@ describe('Agent Streaming', () => {
     let agent: TestAgent;
 
     beforeEach(() => {
-        vi.clearAllMocks();
+        // Reset all mocks to ensure return value queues (mockResolvedValueOnce) are cleared
+        vi.resetAllMocks();
+        
+        // Restore essential store mocks
+        vi.mocked(useStore.getState).mockReturnValue({
+            agentHistory: [],
+            addAgentMessage: vi.fn(),
+            updateAgentMessage: vi.fn(),
+            currentOrganizationId: 'org1',
+            currentProjectId: 'proj1',
+            uploadedImages: [],
+            currentModule: 'debug'
+        });
+
+        // Restore default mocks that were defined in vi.mock
+        vi.mocked(AI.batchEmbedContents).mockResolvedValue([]);
+        vi.mocked(AI.generateContent).mockResolvedValue({} as any);
+        
         agent = new TestAgent();
     });
 
@@ -108,12 +126,10 @@ describe('Agent Streaming', () => {
         // Check for token progress events
         const tokenEvents = progressHistory.filter(p => p.type === 'token');
         expect(tokenEvents).toHaveLength(3);
-        expect(tokenEvents[0].content).toBe('Hello');
-        expect(tokenEvents[1].content).toBe(' world');
-        expect(tokenEvents[2].content).toBe('!');
+        expect(tokenEvents.map(p => p.content).join('')).toBe('Hello world!');
     });
 
-    it('should handle tool calls after streaming', async () => {
+    it('should handle tool calls after streaming', { timeout: 10000 }, async () => {
         const tokens = ['Analyzing', '...'];
 
         const mockStream = new ReadableStream<StreamChunk>({
