@@ -246,6 +246,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(0, 255, 102, 0.1), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'vectors', opacity: 0.3 }
     },
+    'security': {
+        officeName: 'Security & Compliance',
+        accent: '#ef4444', // Red for security
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(239, 68, 68, 0.08), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'grid', opacity: 0.2 }
+    }
 };
 
 
