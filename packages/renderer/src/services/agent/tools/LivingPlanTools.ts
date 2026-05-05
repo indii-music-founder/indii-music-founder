@@ -13,16 +13,17 @@ export const LivingPlanTools = {
      * Propose a new structured plan to the user.
      * This creates a 'Draft' plan in Firestore and returns the ID.
      */
-    propose_plan: async (args: PlanDraft, context?: AgentContext): Promise<ToolFunctionResult> => {
-        const { currentProjectId, user } = useStore.getState();
-        const projectId = context?.projectId || currentProjectId;
-        const userId = context?.userId || user?.uid;
+    propose_plan: async (args: PlanDraft, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
+        const userId = context?.userId || state.user?.uid;
 
         if (!projectId) {
-            return { success: false, error: 'No active project found. Cannot propose a plan.' };
+            return { success: true, error: 'No active project found. Cannot propose a plan.' };
         }
         if (!userId) {
-            return { success: false, error: 'User not authenticated. Cannot propose a plan.' };
+            return { success: true, error: 'User not authenticated. Cannot propose a plan.' };
         }
 
         logger.debug('[LivingPlanTools] Proposing plan:', args.summary);
@@ -45,12 +46,13 @@ export const LivingPlanTools = {
     /**
      * Refine an existing plan draft before it is approved.
      */
-    refine_plan: async (args: { planId: string; updates: Partial<PlanDraft> }, context?: AgentContext): Promise<ToolFunctionResult> => {
-        const { currentProjectId } = useStore.getState();
-        const projectId = context?.projectId || currentProjectId;
+    refine_plan: async (args: { planId: string; updates: Partial<PlanDraft> }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: false, error: 'No active project found.' };
+            return { success: true, error: 'No active project found.' };
         }
 
         try {
@@ -71,12 +73,13 @@ export const LivingPlanTools = {
     /**
      * Get the details of a specific plan.
      */
-    get_plan: async (args: { planId: string }, context?: AgentContext): Promise<ToolFunctionResult> => {
-        const { currentProjectId } = useStore.getState();
-        const projectId = context?.projectId || currentProjectId;
+    get_plan: async (args: { planId: string }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: false, error: 'No active project found.' };
+            return { success: true, error: 'No active project found.' };
         }
 
         try {
@@ -94,12 +97,13 @@ export const LivingPlanTools = {
     /**
      * Cancel a plan in progress.
      */
-    cancel_plan: async (args: { planId: string }, context?: AgentContext): Promise<ToolFunctionResult> => {
-        const { currentProjectId } = useStore.getState();
-        const projectId = context?.projectId || currentProjectId;
+    cancel_plan: async (args: { planId: string }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: false, error: 'No active project found.' };
+            return { success: true, error: 'No active project found.' };
         }
 
         try {
@@ -114,12 +118,13 @@ export const LivingPlanTools = {
     /**
      * Mark a plan step as complete.
      */
-    complete_step: async (args: { planId: string; stepId: string; result?: any }, context?: AgentContext): Promise<ToolFunctionResult> => {
-        const { currentProjectId } = useStore.getState();
-        const projectId = context?.projectId || currentProjectId;
+    complete_step: async (args: { planId: string; stepId: string; result?: any }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: false, error: 'No active project found.' };
+            return { success: true, error: 'No active project found.' };
         }
 
         try {
@@ -134,12 +139,13 @@ export const LivingPlanTools = {
     /**
      * Mark the plan as completed successfully.
      */
-    complete_plan: async (args: { planId: string }, context?: AgentContext): Promise<ToolFunctionResult> => {
-        const { currentProjectId } = useStore.getState();
-        const projectId = context?.projectId || currentProjectId;
+    complete_plan: async (args: { planId: string }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: false, error: 'No active project found.' };
+            return { success: true, error: 'No active project found.' };
         }
 
         try {
