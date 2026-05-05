@@ -7,15 +7,8 @@ import { ImageRenderer } from '../ToolOutputRenderer';
  * Tests: rendering, click handler invocation, accessible labels
  */
 
-// Mock ImageAnnotator to avoid canvas complexity in tests
-vi.mock('../annotator/ImageAnnotator', () => ({
-    ImageAnnotator: ({ imageUrl }: any) => (
-        <div data-testid="image-annotator">Annotator for {imageUrl}</div>
-    )
-}));
-
-// Mock useStore hook
 const mockOpenImageInStudio = vi.fn();
+
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
@@ -24,60 +17,47 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-describe('ImageRenderer — Open in Studio button (Phase 1.6)', () => {
+vi.mock('../annotator/ImageAnnotator', () => ({
+    ImageAnnotator: () => <div data-testid="image-annotator" />
+}));
+
+describe('ToolOutputRenderer — ImageRenderer', () => {
+    const defaultProps = {
+        src: 'https://example.com/test.jpg',
+        alt: 'Test image',
+        messageId: 'msg-123',
+        agentId: 'generalist'
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('should render the image with src attribute', () => {
-        render(
-            <ImageRenderer
-                src="https://example.com/test.jpg"
-                alt="test image"
-                messageId="msg-1"
-                agentId="generalist"
-            />
-        );
 
-        const img = screen.getByRole('img', { name: /test image/i });
-        expect(img).toBeInTheDocument();
+    it('renders image with correct src attribute', () => {
+        render(<ImageRenderer {...defaultProps} />);
+
+        const img = screen.getByRole('img');
         expect(img).toHaveAttribute('src', 'https://example.com/test.jpg');
     });
 
-    it('should render the "Open in Studio" badge on desktop (hover overlay)', () => {
-        render(
-            <ImageRenderer
-                src="https://example.com/test.jpg"
-                alt="test image"
-                messageId="msg-1"
-                agentId="generalist"
-            />
-        );
+    it('renders desktop hover badge with data-testid="open-in-studio-badge"', () => {
+        render(<ImageRenderer {...defaultProps} />);
 
-        // The hover overlay has the data-testid from ToolOutputRenderer.tsx line 50
         const badge = screen.getByTestId('open-in-studio-badge');
         expect(badge).toBeInTheDocument();
-        expect(badge).toHaveTextContent('Open in Studio');
+        expect(badge.textContent).toContain('Open in Studio');
     });
 
-    it('should render the "Open in Studio" corner badge on mobile (hidden on desktop via CSS)', () => {
-        render(
-            <ImageRenderer
-                src="https://example.com/test.jpg"
-                alt="test image"
-                messageId="msg-1"
-                agentId="generalist"
-            />
-        );
+    it('renders mobile corner badge with "Open in Studio" text', () => {
+        render(<ImageRenderer {...defaultProps} />);
 
-        // The mobile corner badge (permanent, visible on touch devices via md:hidden)
-        // Query for the element with the md:hidden class
         const badges = screen.getAllByText(/Open in Studio/i);
-        expect(badges.length).toBeGreaterThanOrEqual(1);
+        expect(badges.length).toBeGreaterThanOrEqual(2); // Desktop + Mobile
 
-        // Verify at least one of them is in the mobile badge container (md:hidden)
+        // Find the mobile badge by checking for md:hidden class
         const mobileBadge = badges.find(el => {
-            const parent = el.closest('div[class*="md:hidden"]');
+            const parent = el.closest('[class*="md:hidden"]');
             return parent !== null;
         });
         expect(mobileBadge).toBeInTheDocument();
@@ -202,6 +182,91 @@ describe('ImageRenderer — Open in Studio button (Phase 1.6)', () => {
         expect(mockOpenImageInStudio).toHaveBeenCalledWith(
             expect.objectContaining({
                 prompt: 'a neon dog barking'
+            })
+        );
+    });
+
+    it('calls openImageInStudio with correct args on container click', () => {
+        render(<ImageRenderer {...defaultProps} />);
+
+        const container = screen.getByRole('img').closest('div');
+        expect(container).not.toBeNull();
+
+        fireEvent.click(container!);
+
+        expect(mockOpenImageInStudio).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sourceUrl: 'https://example.com/test.jpg',
+                sourceMessageId: 'msg-123',
+                agentId: 'generalist',
+                prompt: 'Test image'
+            })
+        );
+    });
+
+    it('does NOT call openImageInStudio when messageId is absent', () => {
+        render(<ImageRenderer {...defaultProps} messageId={undefined} />);
+
+        const container = screen.getByRole('img').closest('div');
+        fireEvent.click(container!);
+
+        expect(mockOpenImageInStudio).not.toHaveBeenCalled();
+    });
+
+    it('does NOT call openImageInStudio when agentId is absent', () => {
+        render(<ImageRenderer {...defaultProps} agentId={undefined} />);
+
+        const container = screen.getByRole('img').closest('div');
+        fireEvent.click(container!);
+
+        expect(mockOpenImageInStudio).not.toHaveBeenCalled();
+    });
+
+    it('has accessible title="Inline Annotator" on annotator toggle button', () => {
+        render(<ImageRenderer {...defaultProps} />);
+
+        const button = screen.getByTitle('Inline Annotator');
+        expect(button).toBeInTheDocument();
+    });
+
+    it('toggles annotator on/off when button clicked', () => {
+        render(<ImageRenderer {...defaultProps} />);
+
+        expect(screen.queryByTestId('image-annotator')).not.toBeInTheDocument();
+
+        const button = screen.getByTitle('Inline Annotator');
+        fireEvent.click(button);
+
+        expect(screen.getByTestId('image-annotator')).toBeInTheDocument();
+
+        fireEvent.click(button);
+
+        expect(screen.queryByTestId('image-annotator')).not.toBeInTheDocument();
+    });
+
+    it('does NOT call openImageInStudio when annotator button is clicked (stopPropagation)', () => {
+        render(<ImageRenderer {...defaultProps} />);
+
+        const button = screen.getByTitle('Inline Annotator');
+        fireEvent.click(button);
+
+        expect(mockOpenImageInStudio).not.toHaveBeenCalled();
+    });
+
+    it('uses alt text as prompt argument', () => {
+        const props = {
+            ...defaultProps,
+            alt: 'a red car on a beach'
+        };
+
+        render(<ImageRenderer {...props} />);
+
+        const container = screen.getByRole('img').closest('div');
+        fireEvent.click(container!);
+
+        expect(mockOpenImageInStudio).toHaveBeenCalledWith(
+            expect.objectContaining({
+                prompt: 'a red car on a beach'
             })
         );
     });

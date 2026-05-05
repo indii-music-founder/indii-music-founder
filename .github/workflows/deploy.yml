@@ -6,6 +6,12 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: read
+  actions: read
+
 jobs:
   # Item 344: Vitest test sharding — 4 parallel matrix jobs cut CI time ~4x
   unit-tests:
@@ -240,7 +246,6 @@ jobs:
       - name: Run E2E smoke tests against staging (Item 345)
         run: npx playwright test e2e/navigation.spec.ts e2e/auth-flow.spec.ts --project=chromium --timeout=30000
         timeout-minutes: 15
-        continue-on-error: true
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deploy-staging.outputs.staging-url }}
           E2E_STUDIO_URL: ${{ needs.deploy-staging.outputs.staging-url }}
@@ -292,7 +297,6 @@ jobs:
             --project indiios-v-1-1 \
             --expires 7d \
             --only app
-        continue-on-error: true
 
       - name: Deploy landing page to Firebase Hosting
         run: |
@@ -305,11 +309,9 @@ jobs:
           firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive
 
       # NOTE: Cloud Functions deploy requires Secret Manager API with active billing.
-      # Billing account 013294-5C591F-1F43B9 is currently CLOSED.
-      # Reactivate at: https://console.cloud.google.com/billing?project=indiios-v-1-1
-      # Once billing is active, remove continue-on-error to enforce strict deploys.
+      # Billing account 013294-5C591F-1F43B9 MUST BE ACTIVE for this to pass.
+      # Strict deployment enforcement enabled for production release.
       - name: Deploy Cloud Functions
-        continue-on-error: true
         run: |
           echo "Deploying Cloud Functions..."
           npm run build -w packages/firebase
@@ -319,7 +321,6 @@ jobs:
         run: |
           npm install -g @lhci/cli
           lhci autorun --config='{"ci":{"collect":{"url":["https://app.indiios.com/"],"numberOfRuns":1},"assert":{"assertions":{"categories:performance":["error",{"minScore":0.8}],"categories:accessibility":["error",{"minScore":0.9}],"categories:best-practices":["error",{"minScore":0.9}]}},"upload":{"target":"temporary-public-storage"}}}'
-        continue-on-error: true
 
       - name: Cleanup credentials
         if: always()

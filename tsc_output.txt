@@ -1,0 +1,11 @@
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(73,16): error TS18048: 'added' is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(74,16): error TS18048: 'added' is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(75,16): error TS18048: 'added' is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(76,16): error TS18048: 'added' is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(77,16): error TS18048: 'added' is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(78,16): error TS18048: 'added' is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(79,16): error TS18048: 'added' is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(93,50): error TS2532: Object is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(139,21): error TS2532: Object is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(150,21): error TS2532: Object is possibly 'undefined'.
+packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts(178,16): error TS2532: Object is possibly 'undefined'.

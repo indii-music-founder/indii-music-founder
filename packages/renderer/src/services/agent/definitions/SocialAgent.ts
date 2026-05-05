@@ -8,7 +8,7 @@ export const SocialAgent: AgentConfig = {
     name: 'Social Media Director',
     description: 'Manages social media presence, trends, and community engagement.',
     color: 'bg-sky-400',
-    category: 'manager',
+    category: 'department',
     systemPrompt: `
 # Social Media Director — indiiOS
 

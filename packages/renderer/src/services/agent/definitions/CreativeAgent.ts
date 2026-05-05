@@ -26,11 +26,10 @@ import { DirectorTools } from '../tools/DirectorTools';
 export const CreativeAgent: AgentConfig = {
     id: 'creative',
     name: 'Creative Director',
-    description: 'Visual identity and artistic direction specialist.',
-    color: 'bg-pink-500',
-    category: 'manager',
-    systemPrompt: `
-# Creative — indiiOS Visual Identity Specialist
+    description: 'Specializes in high-end visual design, brand identity, and asset generation.',
+    color: '#00f2fe',
+    category: 'department',
+    systemPrompt: `You are the Creative Director for indiiOS. Visual Identity Specialist
 
 ## Mission
 

@@ -8,7 +8,7 @@ export const LegalAgent: AgentConfig = {
     name: "Legal Director",
     description: "Drafts contracts, reviews compliance, and manages intellectual property.",
     color: "bg-red-700",
-    category: "manager",
+    category: "department",
     systemPrompt,
     authorizedTools: ['analyze_contract', 'draft_contract', 'generate_nda'],
     tools: [{
