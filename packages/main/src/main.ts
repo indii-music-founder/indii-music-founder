@@ -83,6 +83,7 @@ import { registerSecurityHandlers } from './handlers/security';
 import { registerVideoHandlers } from './handlers/video';
 import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
+import { indiiRemoteService } from './services/IndiiRemoteService';
 import { registerSchedulerHandlers } from './handlers/scheduler';
 import { SchedulerService } from './services/SchedulerService';
 import { configureSecurity, auditSessionCookies } from './security';
@@ -129,7 +130,6 @@ const createWindow = async () => {
     try { require('dotenv').config(); } catch (__e) { /* dotenv optional */ }
 
     try {
-        const { indiiRemoteService } = await import('./services/IndiiRemoteService');
         const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
         const password = Math.floor(100000 + Math.random() * 900000).toString();
         try {

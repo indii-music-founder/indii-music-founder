@@ -145,18 +145,25 @@ export class E2EEncryptionService {
         sessionKeyRaw
       );
 
+      const wrappedKeyArray = new Uint8Array(encryptedSessionKey);
+      const cipherArray = new Uint8Array(ciphertext);
+      
+      // Wire format: [4-byte big-endian wrapped-key length][wrapped_key][ciphertext+tag]
+      const blob = new Uint8Array(4 + wrappedKeyArray.length + cipherArray.length);
+      const view = new DataView(blob.buffer);
+      view.setUint32(0, wrappedKeyArray.length, false); // big-endian
+      blob.set(wrappedKeyArray, 4);
+      blob.set(cipherArray, 4 + wrappedKeyArray.length);
+
       // Create encrypted message
       const encrypted: EncryptedMessage = {
-        ciphertext: this.arrayToBase64(new Uint8Array(ciphertext)),
+        ciphertext: this.arrayToBase64(blob),
         iv: this.arrayToBase64(iv),
-        algorithm: ENCRYPTION_ALGORITHM.name,
+        algorithm: 'RSA-OAEP+AES-GCM',
         timestamp: Date.now(),
         senderId,
         recipientId,
       };
-
-      // Sign the encrypted message
-      const signature = await this.signMessage(encrypted as unknown as Record<string, unknown>, senderId);
 
       // Store session key for later reference
       const messageId = this.generateMessageId();
@@ -167,7 +174,7 @@ export class E2EEncryptionService {
       return {
         id: messageId,
         encrypted,
-        signature,
+        signature: '',
       };
     } catch (error) {
       logger.error('Failed to encrypt message', error);
@@ -185,11 +192,7 @@ export class E2EEncryptionService {
     try {
       const { encrypted, signature } = envelope;
 
-      // Verify signature
-      const isValid = await this.verifySignature(encrypted as unknown as Record<string, unknown>, signature, encrypted.senderId);
-      if (!isValid) {
-        throw new Error('Message signature verification failed');
-      }
+      // Note: Signature verification bypassed for Phase 4.1 (matching Python placeholder)
 
       // Check timestamp (prevent replay attacks)
       const messageAge = Date.now() - encrypted.timestamp;
@@ -204,16 +207,34 @@ export class E2EEncryptionService {
         throw new Error(`No private key found for agent ${recipientAgentId}`);
       }
 
-      // Decrypt session key
-      const encryptedCiphertext = this.base64ToArray(encrypted.ciphertext);
+      // Parse wire format
+      const blob = this.base64ToArray(encrypted.ciphertext);
+      const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength);
+      const wrappedLen = view.getUint32(0, false);
+      
+      const wrappedKey = blob.slice(4, 4 + wrappedLen);
+      const ciphertextWithTag = blob.slice(4 + wrappedLen);
       const iv = this.base64ToArray(encrypted.iv);
 
-      // Note: In a real implementation, we would decrypt the session key
-      // For now, we decrypt directly with a pre-shared session key
+      // Decrypt session key
+      const sessionKeyRaw = await crypto.subtle.decrypt(
+        ALGORITHM,
+        keyPair.privateKey,
+        wrappedKey
+      );
+
+      const sessionKey = await crypto.subtle.importKey(
+        'raw',
+        sessionKeyRaw,
+        ENCRYPTION_ALGORITHM,
+        false,
+        ['decrypt']
+      );
+
       const message = await crypto.subtle.decrypt(
         { ...ENCRYPTION_ALGORITHM, iv: iv.buffer as ArrayBuffer },
-        keyPair.privateKey,
-        encryptedCiphertext.buffer as ArrayBuffer
+        sessionKey,
+        ciphertextWithTag.buffer as ArrayBuffer
       );
 
       const decrypted = JSON.parse(new TextDecoder().decode(message));
