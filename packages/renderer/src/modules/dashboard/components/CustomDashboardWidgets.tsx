@@ -740,13 +740,11 @@ function BrandIdentityWidget() {
         return () => unsub();
     }, [userId]);
 
-    const statusLabel = {
     const statusLabel: Record<string, { text: string; color: string; bg: string }> = {
         synced: { text: 'In Sync', color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
         outdated: { text: 'Outdated', color: 'text-amber-400', bg: 'bg-amber-400/10' },
         missing: { text: 'Missing', color: 'text-red-400', bg: 'bg-red-400/10' },
     };
-    const currentStatus = (data?.assetsStatus && statusLabel[data.assetsStatus]) ? statusLabel[data.assetsStatus] : statusLabel.missing;
     const currentStatus = statusLabel[data?.assetsStatus || 'missing'] || statusLabel.missing;
 
     return (

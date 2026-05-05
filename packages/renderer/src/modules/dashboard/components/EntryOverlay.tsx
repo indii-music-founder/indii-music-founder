@@ -97,14 +97,10 @@ export function EntryOverlay({ onSubmit }: EntryOverlayProps) {
                 {/* Close Button */}
                 <button 
                     onClick={handleDismiss}
-                    className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/20 hover:text-white/60 hover:bg-white/10 transition-all opacity-0 group-hover/overlay:opacity-100"
+                    className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/20 hover:text-white/60 hover:bg-white/10 transition-all opacity-0 group-hover/overlay:opacity-100 z-50"
                 >
                     <X size={14} />
                 </button>
-
-            className="w-full mt-12 mb-8 max-w-3xl mx-auto"
-        >
-            <div className="relative p-6 rounded-3xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl shadow-2xl overflow-hidden group">
                 {/* Decorative Background Elements */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-dept-creative/5 blur-3xl rounded-full translate-y-1/2 -translate-x-1/2" />
