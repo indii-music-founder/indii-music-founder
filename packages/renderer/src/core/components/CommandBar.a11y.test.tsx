@@ -150,7 +150,7 @@ describe('CommandBar Accessibility', () => {
         const store = storeModule.store;
         act(() => {
             store.setState({
-                currentModule: 'dashboard',
+                currentModule: 'road',
                 chatChannel: 'agent',
                 isCommandBarDetached: true,
                 isCommandBarCollapsed: false,
@@ -158,6 +158,8 @@ describe('CommandBar Accessibility', () => {
                 commandBarAttachments: [],
                 isAgentProcessing: false,
                 isAgentOpen: false,
+                isBoardroomMode: false,
+                canvasItems: [],
             });
         });
     });

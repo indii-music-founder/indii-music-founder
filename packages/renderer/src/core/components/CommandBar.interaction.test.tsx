@@ -194,10 +194,12 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
                 commandBarInput: '',
                 commandBarAttachments: [],
                 isAgentProcessing: false,
-                currentModule: 'dashboard',
+                currentModule: 'road',
                 chatChannel: 'indii',
                 isCommandBarDetached: true,
-                isAgentOpen: false
+                isAgentOpen: false,
+                isBoardroomMode: false,
+                canvasItems: []
             });
         });
     });
