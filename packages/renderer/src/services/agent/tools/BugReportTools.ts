@@ -3,7 +3,11 @@ import type { AnyToolFunction, AgentContext, ToolFunctionArgs } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
 
-/** GitHub issue creation can be enabled by adding a GITHUB_TOKEN to env. */
+/**
+ * Bug and feature reporting tools.
+ * Bug reports are saved to Firestore (bug_reports collection) and optionally
+ * to GitHub Issues if VITE_GITHUB_TOKEN + VITE_GITHUB_REPO are set in .env.
+ */
 export const BugReportTools = {
     report_bug: wrapTool('report_bug', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const title = args.title as string | undefined;
@@ -72,6 +76,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
 ---
 *This bug was automatically reported by the indii agent.*`;
 
+        // 1. Save to Firestore
         try {
             const { FirestoreService } = await import('@/services/FirestoreService');
             const bugService = new FirestoreService<typeof bugReport>('bug_reports');
@@ -82,6 +87,37 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             // Non-blocking — still return success to the agent
         }
 
+        // 2. Attempt GitHub Issue creation if VITE_GITHUB_TOKEN + VITE_GITHUB_REPO are set in .env
+        const githubToken = (import.meta.env.VITE_GITHUB_TOKEN ?? '') as string;
+        const githubRepo = (import.meta.env.VITE_GITHUB_REPO ?? '') as string;
+        if (githubToken && githubRepo) {
+            try {
+                const ghResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${githubToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github+json',
+                        'X-GitHub-Api-Version': '2022-11-28',
+                    },
+                    body: JSON.stringify({
+                        title: `[${bugReport.severity.toUpperCase()}] ${bugReport.title}`,
+                        body: markdownBody,
+                        labels: ['bug', `severity:${bugReport.severity}`, `module:${bugReport.module}`],
+                    }),
+                });
+                if (ghResponse.ok) {
+                    const issue = await ghResponse.json() as { number: number; html_url: string };
+                    logger.info(`[BugReportTools] GitHub issue #${issue.number} created: ${issue.html_url}`);
+                } else {
+                    logger.warn(`[BugReportTools] GitHub issue creation failed: ${ghResponse.status} ${ghResponse.statusText}`);
+                }
+            } catch (ghErr: unknown) {
+                logger.warn('[BugReportTools] GitHub integration non-blocking error:', ghErr);
+            }
+        }
+
+        // 3. Save to Agent Memory for context continuity
         try {
             const { memoryService } = await import('@/services/agent/MemoryService');
             const currentProjectId = toolContext
@@ -108,6 +144,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             message: `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker.`
         };
     }),
+
     request_feature: wrapTool('request_feature', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         const title = args.title as string | undefined;
         const description = args.description as string | undefined;
@@ -164,6 +201,7 @@ ${featureRequest.useCase}
 ---
 *This feature request was captured by the indii agent from an in-app conversation.*`;
 
+        // 1. Save to Firestore
         try {
             const { FirestoreService } = await import('@/services/FirestoreService');
             const featureService = new FirestoreService<typeof featureRequest>('feature_requests');
@@ -174,6 +212,7 @@ ${featureRequest.useCase}
             // Non-blocking — still return success to the agent
         }
 
+        // 2. Save to Agent Memory
         try {
             const { memoryService } = await import('@/services/agent/MemoryService');
             const currentProjectId = toolContext
@@ -198,6 +237,7 @@ ${featureRequest.useCase}
             priority: featureRequest.priority,
             category: featureRequest.category,
             markdownBody,
+            message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.`
             message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker. 🎯`
         };
     }),
