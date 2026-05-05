@@ -315,7 +315,7 @@ jobs:
         run: |
           echo "Deploying Cloud Functions..."
           npm run build -w packages/firebase
-          firebase deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:handleSubscriptionChange,functions:onUserCreated,functions:trackAnalyticsEvent,functions:exportSplitSheet,functions:generateVideo,functions:onFounderRepoEvent --project indiios-v-1-1 --non-interactive --force
+          firebase deploy --only functions:processRelayCommand,functions:stripeWebhook,functions:exportSplitSheet,functions:triggerVideoJob,functions:executeVideoJob,functions:inngestApi --project indiios-v-1-1 --non-interactive --force
 
       - name: "Lighthouse CI audit (Item 346 - blocking thresholds)"
         run: |
