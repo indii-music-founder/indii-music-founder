@@ -720,6 +720,7 @@ CURRENT REQUEST: ${task}
         const MAX_ITERATIONS = 15;
         let accumulatedResponse = '';
         let lastToolCall: { name: string; args: string } | null = null;
+        let lastToolMessage = ''; // Human-readable message from last tool for clean UI output
 
         while (iterations < MAX_ITERATIONS) {
             iterations++;
@@ -867,6 +868,8 @@ CURRENT REQUEST: ${task}
                         const outputText = typeof result === 'string'
                             ? result
                             : (result.message || JSON.stringify(result));
+                        // Track human-readable message for clean-break synthesis (no raw JSON to users)
+                        if (outputText) lastToolMessage = outputText;
 
                         onProgress?.({ 
                             type: 'tool_result', 
@@ -883,7 +886,15 @@ CURRENT REQUEST: ${task}
                         }
                     }
 
-                    if (shouldBreakAfterBatch) break;
+                    if (shouldBreakAfterBatch) {
+                        // Replace accumulated tool blocks with a clean human-readable summary.
+                        // The raw [Tool: ...][End Tool ...] blocks are for AI context only, not users.
+                        const lastToolMsg = lastToolMessage;
+                        if (lastToolMsg) {
+                            accumulatedResponse = lastToolMsg;
+                        }
+                        break;
+                    }
                     continue; // Next turn to let AI respond to the batch of results
                 } else {
                     // No function call - this is the final text response
@@ -914,8 +925,14 @@ CURRENT REQUEST: ${task}
             }
         }
 
+        // Strip any [Tool: name]...[End Tool name] blocks from the final response.
+        // These are internal AI reasoning artifacts — users should only see the narrative text.
+        const cleanedResponse = (accumulatedResponse || 'Task completed.')
+            .replace(/\[Tool: [^\]]+\][\s\S]*?\[End Tool [^\]]+\]\n?/g, '')
+            .trim();
+
         return {
-            text: accumulatedResponse || 'Task completed.',
+            text: cleanedResponse || 'Task completed.',
         };
     }
 }
