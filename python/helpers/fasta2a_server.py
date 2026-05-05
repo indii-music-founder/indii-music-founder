@@ -32,6 +32,15 @@ from python.helpers.e2e_encryption import (
 SCHEMA_VERSION = "1.0.0"
 SERVER_VERSION = "1.0.0"
 
+# Phase 4.1.d — replay protection. Recent message IDs are kept for this window;
+# any envelope whose id has been seen within the window is rejected.
+REPLAY_WINDOW_SECONDS = 3600  # 1 hour
+
+# Methods callable in plaintext. Everything else MUST arrive as a MessageEnvelope.
+# key.exchange is the chicken-and-egg exception: a peer cannot encrypt before
+# both sides have exchanged public keys.
+PLAINTEXT_ALLOWED_METHODS = frozenset({"key.exchange"})
+
 
 class AgentCard:
     """In-memory representation of an Agent Card.
@@ -94,7 +103,32 @@ class DynamicA2AProxy:
         self._private_key = generate_keypair()
         self._public_key_jwk = export_public_key_jwk(self._private_key)
         self._peer_public_keys = {}  # senderId -> RSAPublicKey
+        # Replay protection: id -> first-seen epoch seconds.
+        self._seen_message_ids: Dict[str, float] = {}
+        # Audit ring buffer (Phase 4.3.c). Cap at 10k entries, FIFO.
+        self._audit_log: List[Dict[str, Any]] = []
+        self._audit_max = 10_000
         self._agent_cards: List[AgentCard] = self._load_cards()
+
+    def _record_audit(self, **fields: Any) -> None:
+        """Append an audit entry. Metadata only — never decrypted payload."""
+        entry = {"timestamp": time.time(), **fields}
+        self._audit_log.append(entry)
+        if len(self._audit_log) > self._audit_max:
+            self._audit_log = self._audit_log[-self._audit_max:]
+
+    def _is_replay(self, message_id: str) -> bool:
+        """True if this envelope id has been seen within the replay window."""
+        now = time.time()
+        # Lazy GC of expired ids (cheap; runs on every check).
+        self._seen_message_ids = {
+            mid: ts for mid, ts in self._seen_message_ids.items()
+            if now - ts < REPLAY_WINDOW_SECONDS
+        }
+        if message_id in self._seen_message_ids:
+            return True
+        self._seen_message_ids[message_id] = now
+        return False
 
     def _load_cards(self) -> List[AgentCard]:
         """Load agent_card.json from agents/<id>/. Phase 2.3 makes this strict."""
@@ -159,6 +193,27 @@ class DynamicA2AProxy:
                 "uptime": time.time() - self._started_at,
                 "cardCount": len(self._agent_cards),
             })
+        elif method == "GET" and path.endswith("/audit"):
+            # Phase 4.3.c — paginated audit. Query string parsing is intentionally
+            # minimal; defaults return the most recent 100 entries.
+            qs = scope.get("query_string", b"").decode("utf-8")
+            limit = 100
+            offset = 0
+            for pair in qs.split("&"):
+                if "=" not in pair:
+                    continue
+                k, v = pair.split("=", 1)
+                if k == "limit" and v.isdigit():
+                    limit = min(int(v), 1000)
+                elif k == "offset" and v.isdigit():
+                    offset = int(v)
+            entries = list(reversed(self._audit_log))[offset:offset + limit]
+            await self._send_json(send, 200, {
+                "entries": entries,
+                "total": len(self._audit_log),
+                "limit": limit,
+                "offset": offset,
+            })
         else:
             await self._send_json(send, 404, {"error": "Not Found", "path": path})
 
@@ -183,15 +238,37 @@ class DynamicA2AProxy:
         is_encrypted = False
         sender_id = None
         recipient_id = None
+        envelope_id = None
 
         if "encrypted" in request_data and "id" in request_data:
-            # It's an encrypted MessageEnvelope
+            # MessageEnvelope path
             is_encrypted = True
             envelope = envelope_from_dict(request_data)
+            envelope_id = envelope.id
+
+            # Phase 4.1.d — replay protection. Reject if id seen within window.
+            if self._is_replay(envelope_id):
+                self._record_audit(
+                    event="replay_rejected",
+                    envelopeId=envelope_id,
+                    senderId=envelope.encrypted.senderId,
+                )
+                await self._send_json(send, 400, {
+                    "jsonrpc": "2.0",
+                    "error": {"code": -32600, "message": "Replay detected"},
+                    "id": None,
+                })
+                return
+
             try:
                 plaintext = decrypt_message(envelope, self._private_key)
                 request = json.loads(plaintext)
             except Exception as e:
+                self._record_audit(
+                    event="decryption_failed",
+                    envelopeId=envelope_id,
+                    error=str(e)[:200],
+                )
                 await self._send_json(send, 400, {
                     "jsonrpc": "2.0",
                     "error": {"code": -32600, "message": f"Decryption error: {e}"},
@@ -201,7 +278,27 @@ class DynamicA2AProxy:
             sender_id = envelope.encrypted.senderId
             recipient_id = envelope.encrypted.recipientId
         else:
+            # Phase 4.1.e — plaintext is allowed only for the bootstrap method
+            # (key.exchange). Everything else is rejected with 400.
             request = request_data
+            attempted_method = (request_data.get("method") or "").strip()
+            if attempted_method not in PLAINTEXT_ALLOWED_METHODS:
+                self._record_audit(
+                    event="plaintext_rejected",
+                    method=attempted_method or "<unknown>",
+                )
+                await self._send_json(send, 400, {
+                    "jsonrpc": "2.0",
+                    "error": {
+                        "code": -32600,
+                        "message": (
+                            "Plaintext requests are not accepted. "
+                            "Wrap as MessageEnvelope or use key.exchange to bootstrap."
+                        ),
+                    },
+                    "id": request_data.get("id"),
+                })
+                return
 
         method = request.get("method")
         params = request.get("params") or {}
@@ -258,6 +355,17 @@ class DynamicA2AProxy:
                 "error": {"code": -32601, "message": f"Method not found: {method}"},
                 "id": rpc_id,
             }
+
+        # Audit successful dispatch — metadata only (no decrypted payload).
+        self._record_audit(
+            event="rpc_dispatched",
+            method=method,
+            encrypted=is_encrypted,
+            envelopeId=envelope_id,
+            senderId=sender_id,
+            recipientId=recipient_id,
+            error=("error" in response),
+        )
 
         if is_encrypted and sender_id and sender_id in self._peer_public_keys:
             response_envelope = encrypt_message(

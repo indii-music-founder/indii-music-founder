@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "agentId": "analytics",
+  "displayName": "Analytics Agent",
+  "description": "Analytics agent \u2014 metrics and observability",
+  "capabilities": [],
+  "inputSchemas": {},
+  "outputSchemas": {},
+  "costModel": {
+    "perTokenInUsd": 0.0,
+    "perTokenOutUsd": 0.0
+  },
+  "riskTier": "read",
+  "sla": {
+    "modeSync": {
+      "p50Ms": 2000,
+      "p99Ms": 5000
+    },
+    "modeStream": {
+      "firstByteMs": 500
+    }
+  }
+}

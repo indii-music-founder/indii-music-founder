@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "agentId": "indii_executor",
+  "displayName": "Indii Executor Agent",
+  "description": "Executor \u2014 runs deterministic action chains",
+  "capabilities": [],
+  "inputSchemas": {},
+  "outputSchemas": {},
+  "costModel": {
+    "perTokenInUsd": 0.0,
+    "perTokenOutUsd": 0.0
+  },
+  "riskTier": "destructive",
+  "sla": {
+    "modeSync": {
+      "p50Ms": 2000,
+      "p99Ms": 5000
+    },
+    "modeStream": {
+      "firstByteMs": 500
+    }
+  }
+}
