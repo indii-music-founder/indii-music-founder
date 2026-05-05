@@ -164,7 +164,7 @@ export function EntryOverlay({ onSubmit }: EntryOverlayProps) {
                                 </form>
 
                                 {/* Quick Actions */}
-                                <div className="flex flex-wrap gap-2">
+                                <div className="hidden sm:flex flex-wrap gap-2">
                                     <AnimatePresence mode="popLayout">
                                         {suggestedActions.map((action, i) => (
                                             <motion.button

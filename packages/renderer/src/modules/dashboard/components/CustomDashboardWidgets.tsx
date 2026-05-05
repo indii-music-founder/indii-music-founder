@@ -13,6 +13,7 @@ import {
     ShoppingBag,
     MapPin,
     LucideIcon,
+    Sparkles,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { useStore } from '@/core/store';
@@ -294,7 +295,7 @@ function NextReleaseWidget() {
     const countdown = (() => {
         if (!release) return null;
         const ms = release.releaseDate - now;
-        if (ms <= 0) return 'Today';
+        if (ms <= 0) return { days: 0, hours: 0, text: 'Today' };
         const days = Math.floor(ms / 86_400_000);
         const hours = Math.floor((ms % 86_400_000) / 3_600_000);
         return { days, hours, text: days > 0 ? `${days}D ${hours}H` : `${hours}H` };
