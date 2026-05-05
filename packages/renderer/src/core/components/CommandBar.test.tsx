@@ -105,11 +105,13 @@ interface TestStoreState {
     rightPanelView: string;
     agentMode: string;
     isAgentProcessing: boolean;
+    isBoardroomMode: boolean;
+    canvasItems: any[];
 }
 
 // Create a real store for testing
 const useTestStore = create<TestStoreState>((set) => ({
-    currentModule: 'dashboard',
+    currentModule: 'road',
     setModule: (mod) => set({ currentModule: mod }),
     toggleAgentWindow: vi.fn(),
     isAgentOpen: false,
@@ -135,6 +137,8 @@ const useTestStore = create<TestStoreState>((set) => ({
     rightPanelView: 'messages',
     agentMode: 'assistant',
     isAgentProcessing: false,
+    isBoardroomMode: false,
+    canvasItems: [],
 }));
 
 // Mock the useStore hook to use our real test store
@@ -160,13 +164,15 @@ describe('CommandBar', () => {
         vi.clearAllMocks();
         // Reset store state
         useTestStore.setState({
-            currentModule: 'dashboard',
+            currentModule: 'road',
             isAgentOpen: false,
             chatChannel: 'indii',
             commandBarInput: '',
             commandBarAttachments: [],
             isCommandBarDetached: true,
             isCommandBarCollapsed: false,
+            isBoardroomMode: false,
+            canvasItems: [],
         });
 
         // Spy on methods we want to assert

@@ -1160,6 +1160,13 @@ The user will see this plan and can approve it to start execution.`;
                     updateMsg(responseId, {
                         thoughts: [...(currentMsg.thoughts || []), newThought]
                     });
+
+                    // For image-editing tools, surface the result as a new message so history is preserved
+                    if (toolName === 'edit_image_with_annotations' && result?.urls && Array.isArray(result.urls) && result.urls.length > 0) {
+                        // Re-use the generate_image wire format so it renders naturally as image output
+                        const imageMessage = `[Tool: generate_image]\n${JSON.stringify({ urls: result.urls, prompt: args.colorPrompts })}\n[End Tool generate_image]`;
+                        await this.sendMessage(imageMessage, undefined, agentId, { source: 'desktop' });
+                    }
                 }
 
                 // Send a silent system prompt to make the AI aware of the user's action

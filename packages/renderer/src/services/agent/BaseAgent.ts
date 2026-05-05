@@ -134,6 +134,19 @@ export class BaseAgent implements SpecializedAgent {
                     );
                 }
 
+                // Swarm Seating Awareness: Enforce that only seated agents can be delegated to in Boardroom Mode
+                const ctxRecord = context as Record<string, any>;
+                if (ctxRecord?.isBoardroomMode && ctxRecord?.seatedAgents) {
+                    const seatedAgents = ctxRecord.seatedAgents as string[];
+                    if (!seatedAgents.includes(targetAgentId)) {
+                        logger.warn(`[BaseAgent] Boardroom seating violation: Agent '${targetAgentId}' is not seated at the table.`);
+                        return toolError(
+                            `Cannot delegate to '${targetAgentId}'. This agent is not currently seated at the boardroom table. You must ask the user to invite them to the boardroom if you need their expertise.`,
+                            'BOARDROOM_SEATING_VIOLATION'
+                        );
+                    }
+                }
+
                 // GEAP: Record delegation provenance for audit trail
                 if (this.identityCard) {
                     agentIdentityService.recordDelegation(
@@ -175,6 +188,21 @@ export class BaseAgent implements SpecializedAgent {
                         targetIds,
                         context?.traceId
                     );
+                }
+
+                // Swarm Seating Awareness: Enforce that only seated agents can be consulted in Boardroom Mode
+                const ctxRecord = context as Record<string, any>;
+                if (ctxRecord?.isBoardroomMode && ctxRecord?.seatedAgents) {
+                    const seatedAgents = ctxRecord.seatedAgents as string[];
+                    const unseated = consultations.filter(c => !seatedAgents.includes(c.targetAgentId));
+                    if (unseated.length > 0) {
+                        const unseatedIds = unseated.map(u => u.targetAgentId).join(', ');
+                        logger.warn(`[BaseAgent] Boardroom seating violation in consult_experts: Agents [${unseatedIds}] are not seated.`);
+                        return toolError(
+                            `Cannot consult [${unseatedIds}]. These agents are not currently seated at the boardroom table. You can only consult experts that have been invited by the user.`,
+                            'BOARDROOM_SEATING_VIOLATION'
+                        );
+                    }
                 }
 
                 try {

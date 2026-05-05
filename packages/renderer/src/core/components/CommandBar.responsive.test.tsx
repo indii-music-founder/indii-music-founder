@@ -135,7 +135,7 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         const store = storeModule.store;
         act(() => {
             store.setState({
-                currentModule: 'dashboard',
+                currentModule: 'road',
                 chatChannel: 'agent',
                 isCommandBarDetached: true,
                 isCommandBarCollapsed: false,
@@ -143,6 +143,8 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
                 commandBarAttachments: [],
                 isAgentProcessing: false,
                 isAgentOpen: false,
+                isBoardroomMode: false,
+                canvasItems: [],
             });
         });
 
