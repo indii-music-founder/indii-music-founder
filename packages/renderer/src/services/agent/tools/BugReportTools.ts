@@ -236,7 +236,6 @@ ${featureRequest.useCase}
             title: featureRequest.title,
             priority: featureRequest.priority,
             category: featureRequest.category,
-            markdownBody,
             message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.`
             message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker. 🎯`
         };
