@@ -1,5 +1,30 @@
 # Error Ledger
 
+## 2026-05-05 Web dev spinner — missing renderer Vite config
+
+- SEVERITY: High (blocks `npm run dev:web` entirely)
+- FILE: `packages/renderer/vite.config.ts` (was missing)
+- BUG: localhost:4242 (or :4243) loads index.html, then hangs on the auth-loading
+  spinner forever. DevTools Network shows `/src/main.tsx` returning HTTP 404 with
+  Content-Type `text/html` — Vite serves index.html as an SPA fallback for the
+  module URL because the module isn't found. Without main.tsx executing, the auth
+  listener never attaches, so `authLoading` stays `true`.
+- ROOT CAUSE: `package.json` `dev:web` invokes plain `vite --config packages/renderer/vite.config.ts`,
+  but that config file did not exist. Plain `vite` doesn't understand
+  `electron.vite.config.ts` (which is shaped for the `electron-vite` binary —
+  `{ main, preload, renderer }` blocks). When fed that config, plain Vite ignores
+  the unknown shape, defaults `root` to the repo root, then can't find
+  `src/main.tsx` (it lives at `packages/renderer/src/main.tsx`), and falls back
+  to serving `index.html` for everything. Same failure mode if someone manually
+  runs `vite --config electron.vite.config.ts --port 4242`.
+- FIX: Restored `packages/renderer/vite.config.ts` as a renderer-only config
+  rooted at `__dirname`, mirroring `resolve.alias` from electron.vite.config.ts.
+  Verified by curl: `/src/main.tsx` returns 200 with Content-Type `text/javascript`.
+- HOW TO PREVENT: When deleting or moving Vite configs, search the package.json
+  scripts (`grep -nE 'vite' package.json`) and confirm every script's `--config`
+  path still resolves. Don't delete a config file referenced by an npm script
+  without updating the script.
+
 ## 2026-05-04 A2A Encryption Interop (Phase 0.7)
 
 - PATTERN: WebCrypto ↔ Python `cryptography` interop for hybrid RSA-OAEP + AES-GCM encryption.
@@ -19,11 +44,11 @@
 
 - SEVERITY: High
 - FILE: `packages/renderer/src/core/components/chat/ChatMessage.tsx` & `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts`
-- BUG: UI Components (like the Living Plan card or Image results) failed to render. Chat bubbled showed raw `[Tool: propose_plan] {"success":...}` JSON strings instead. 
+- BUG: UI Components (like the Living Plan card or Image results) failed to render. Chat bubbled showed raw `[Tool: propose_plan] {"success":...}` JSON strings instead.
 - CAUSE: The regex used to parse tool outputs (`\{.*?\}`) matched lazily and truncated valid JSON at the first closing brace `}`, causing `JSON.parse` to silently fail and swallow the error. Additionally, tools had no clear ending delimiters.
-- FIX: 
+- FIX:
   1. Updated `GeneralistAgent.ts` to output tools with explicit start/end markers: `\n[Tool: name]\n{json}\n[End Tool name]\n`
-  2. Updated `ChatMessage.tsx` to use robust regexes: `/\[Tool: propose_plan\]([\s\S]*?)\[End Tool propose_plan\]/`. 
+  2. Updated `ChatMessage.tsx` to use robust regexes: `/\[Tool: propose_plan\]([\s\S]*?)\[End Tool propose_plan\]/`.
   3. Replaced matched segments in text, preventing raw JSON from rendering.
   4. Also added `break-all` to the Markdown `prose` container to stop overflow on long continuous strings.
 
