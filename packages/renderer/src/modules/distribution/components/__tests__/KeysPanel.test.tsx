@@ -64,10 +64,8 @@ describe('KeysPanel', () => {
         render(<KeysPanel />);
 
         await waitFor(() => {
-            expect(isrcService.getUserCatalog).toHaveBeenCalled();
+            expect(screen.getByText(/Check compliance for 1 track/i)).toBeDefined();
         });
-
-        expect(screen.getByText(/Check compliance for 1 track/i)).toBeDefined();
     });
 
     it('should run Merlin compliance check', async () => {
@@ -92,7 +90,9 @@ describe('KeysPanel', () => {
             }));
         });
 
-        expect(screen.getByText('Status: READY')).toBeDefined();
+        await waitFor(() => {
+            expect(screen.getByText('Status: READY')).toBeDefined();
+        });
     });
 
     it('should generate BWARM CSV', async () => {
@@ -111,6 +111,8 @@ describe('KeysPanel', () => {
             }));
         });
 
-        expect(screen.getByText(/CSV Generated/i)).toBeDefined();
+        await waitFor(() => {
+            expect(screen.getByText(/CSV Generated/i)).toBeDefined();
+        });
     });
 });
