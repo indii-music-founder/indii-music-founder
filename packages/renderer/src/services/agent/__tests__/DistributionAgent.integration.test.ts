@@ -60,7 +60,7 @@ describe('DistributionAgent Integration', () => {
     });
 
     it('should have correct category and color', () => {
-        expect(distributionAgent.category).toBe('manager');
+        expect(distributionAgent.category).toBe('department');
         expect(distributionAgent.color).toBe('bg-cyan-500');
     });
 
