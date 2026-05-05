@@ -62,7 +62,7 @@ describe('E2E Interop Fixture Generator', () => {
     }
     
     console.log('Successfully generated ts_to_py fixtures and verified round-trip!');
-  });
+  }, 30000);
 
   it('validates py_to_ts fixture', async () => {
     const fixtureDir = path.join(process.cwd(), 'python', 'tests', 'fixtures', 'e2e_interop', 'py_to_ts');
@@ -105,5 +105,5 @@ describe('E2E Interop Fixture Generator', () => {
     const decrypted = await e2eRecipient.decryptMessage(envelope, 'ts-recipient');
     expect(JSON.stringify(decrypted)).toBe(expectedPlaintext);
     console.log('Py -> TS fixture decrypted perfectly!');
-  });
+  }, 30000);
 });

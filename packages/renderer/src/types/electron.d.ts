@@ -53,6 +53,7 @@ export interface ElectronAPI {
         login: () => Promise<void>;
         logout: () => Promise<void>;
         onUserUpdate: (callback: (user: AuthTokenData | null) => void) => () => void;
+        onError: (callback: (data: { message: string }) => void) => () => void;
     };
 
     // Audio (Native Processing)

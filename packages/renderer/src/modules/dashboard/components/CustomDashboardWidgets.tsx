@@ -13,7 +13,9 @@ import {
     ShoppingBag,
     MapPin,
     LucideIcon,
+    Sparkles,
 } from 'lucide-react';
+import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
@@ -84,7 +86,7 @@ function formatCurrency(amount: number): string {
 
 function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v).toLocaleString() }: { value: number; duration?: number; formatter?: (v: number) => string }) {
     const motionValue = useMotionValue(0);
-    const rounded = useTransform(motionValue, (latest) => formatter(latest));
+    const rounded = useTransform(motionValue, (latest: number) => formatter(latest));
     const [displayValue, setDisplayValue] = useState("0");
 
     useEffect(() => {
@@ -93,7 +95,7 @@ function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v)
     }, [value, duration, motionValue]);
 
     useEffect(() => {
-        return rounded.on("change", (latest) => setDisplayValue(latest));
+        return rounded.on("change", (latest: string) => setDisplayValue(latest));
     }, [rounded]);
 
     return <span>{displayValue}</span>;
@@ -293,7 +295,7 @@ function NextReleaseWidget() {
     const countdown = (() => {
         if (!release) return null;
         const ms = release.releaseDate - now;
-        if (ms <= 0) return 'Today';
+        if (ms <= 0) return { days: 0, hours: 0, text: 'Today' };
         const days = Math.floor(ms / 86_400_000);
         const hours = Math.floor((ms % 86_400_000) / 3_600_000);
         return { days, hours, text: days > 0 ? `${days}D ${hours}H` : `${hours}H` };
@@ -761,8 +763,8 @@ function BrandIdentityWidget() {
                     </p>
                     <div className="flex items-center gap-2">
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Identity Score</p>
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${currentStatus.bg} ${currentStatus.color}`}>
-                            {currentStatus.text}
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${currentStatus?.bg} ${currentStatus?.color}`}>
+                            {currentStatus?.text}
                         </span>
                     </div>
                 </div>

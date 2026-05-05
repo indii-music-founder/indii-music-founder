@@ -66,15 +66,25 @@ export const test = base.extend<AuthFixtures>({
 
     // Track failed/rejected requests to pinpoint 4xx/500 errors
     page.on("response", (response) => {
+      const url = response.url();
       if (response.status() >= 400) {
+        // Ignore intentional 403s on Firestore WebChannel streams
+        if (response.status() === 403 && url.includes('firestore.googleapis.com')) {
+          return;
+        }
         console.log(
-          `[BROWSER NETWORK ERROR] ${response.status()} on ${response.url()}`,
+          `[BROWSER NETWORK ERROR] ${response.status()} on ${url}`,
         );
       }
     });
     page.on("requestfailed", (request) => {
+      const url = request.url();
+      // Ignore intentional failures on Firestore WebChannel streams
+      if (url.includes('firestore.googleapis.com') && url.includes('channel')) {
+        return;
+      }
       console.log(
-        `[BROWSER NETWORK FAILED] ${request.failure()?.errorText} on ${request.url()}`,
+        `[BROWSER NETWORK FAILED] ${request.failure()?.errorText} on ${url}`,
       );
     });
 
@@ -156,17 +166,17 @@ export const test = base.extend<AuthFixtures>({
         url.includes("/Write/") ||
         url.includes("channel?")
       ) {
-        // Return 400 Bad Request to terminate the connection instantly 
-        // and tell the client NOT to retry the stream.
+        // Return 403 Permission Denied to terminate the connection instantly 
+        // and tell the client NOT to retry the stream, avoiding 400 Bad Request noise.
         await route.fulfill({
-          status: 400,
+          status: 403,
           headers: corsHeaders,
           contentType: "application/json",
           body: JSON.stringify({
             error: {
-              code: 400,
-              message: "Bad Request",
-              status: "INVALID_ARGUMENT"
+              code: 403,
+              message: "Permission Denied",
+              status: "PERMISSION_DENIED"
             }
           })
         });

@@ -105,6 +105,7 @@ interface TestStoreState {
     rightPanelView: string;
     agentMode: string;
     isAgentProcessing: boolean;
+    canvasItems: any[];
 }
 
 // Create a real store for testing
@@ -135,6 +136,7 @@ const useTestStore = create<TestStoreState>((set) => ({
     rightPanelView: 'messages',
     agentMode: 'assistant',
     isAgentProcessing: false,
+    canvasItems: [{ id: "test" }],
 }));
 
 // Mock the useStore hook to use our real test store
@@ -167,6 +169,7 @@ describe('CommandBar', () => {
             commandBarAttachments: [],
             isCommandBarDetached: true,
             isCommandBarCollapsed: false,
+            canvasItems: [{ id: '1' }],
         });
 
         // Spy on methods we want to assert

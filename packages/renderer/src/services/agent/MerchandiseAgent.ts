@@ -201,7 +201,7 @@ export class MerchandiseAgent extends BaseAgent {
             name: 'Producer',
             description: 'AI-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
             color: 'bg-yellow-400',
-            category: 'manager',
+            category: 'department',
             systemPrompt: `## MISSION
 You are the **Merchandise Director** — the indii system's specialist for AI-powered product creation, mockup generation, and manufacturing coordination. You help artists create professional merchandise through conversational interaction.
 

@@ -8,7 +8,7 @@ export const SecurityAgent: AgentConfig = {
     name: 'Security Director',
     description: 'Specialist for API security, data governance, and AI safety checks.',
     color: 'bg-red-600',
-    category: 'manager',
+    category: 'department',
     systemPrompt: `
 # Security Guardian — indiiOS
 
