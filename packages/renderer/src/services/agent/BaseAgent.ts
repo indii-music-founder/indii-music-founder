@@ -543,6 +543,16 @@ export class BaseAgent implements SpecializedAgent {
             ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
             : '';
 
+        // BOARDROOM: Seating Manifest Injection
+        let boardroomSection = '';
+        const ctxRecord = context as Record<string, any>;
+        if (ctxRecord?.isBoardroomMode === true) {
+            const { agentRegistry } = await import('./AgentRegistry');
+            const seated = ctxRecord.seatedAgents || [];
+            const seatedNames = seated.map((id: string) => agentRegistry.get(id)?.name || id).join(', ');
+            boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, tell the user to seat them.\n`;
+        }
+
         let safeHistory = context?.chatHistoryString || '';
 
         // KEEPER: Intelligent Context Truncation
@@ -588,7 +598,8 @@ export class BaseAgent implements SpecializedAgent {
             memorySection,
             distributorSection,
             // Layer 5: Big Brain auto-recall block (XML from all 4 memory layers)
-            (context as Record<string, unknown> | undefined)?.autoRecallBlock as string | undefined
+            (context as Record<string, unknown> | undefined)?.autoRecallBlock as string | undefined,
+            boardroomSection
         );
 
         // Tool gathering logic via ToolPoolAssembler
