@@ -3,6 +3,7 @@ import { ipcMain } from 'electron';
 import { CredentialSchema, CredentialIdSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
+import { credentialService } from '../services/CredentialService';
 
 interface Credentials {
     apiKey?: string;
@@ -19,7 +20,6 @@ export function registerCredentialHandlers() {
             // Validate
             CredentialSchema.parse({ id, creds });
 
-            const { credentialService } = await import('../services/CredentialService');
             await credentialService.saveCredentials(id, creds);
             return { success: true };
         } catch (error) {
@@ -36,7 +36,6 @@ export function registerCredentialHandlers() {
             validateSender(event);
             const validatedId = CredentialIdSchema.parse(id);
 
-            const { credentialService } = await import('../services/CredentialService');
             return await credentialService.getCredentials(validatedId);
         } catch (error) {
             log.error('Credential Get Failed:', error);
@@ -49,7 +48,6 @@ export function registerCredentialHandlers() {
             validateSender(event);
             const validatedId = CredentialIdSchema.parse(id);
 
-            const { credentialService } = await import('../services/CredentialService');
             await credentialService.deleteCredentials(validatedId);
             return { success: true };
         } catch (error) {

@@ -1,0 +1,11 @@
+{
+  "kty": "RSA",
+  "alg": "RSA-OAEP-256",
+  "use": "enc",
+  "key_ops": [
+    "encrypt"
+  ],
+  "ext": true,
+  "n": "r-bFJhjcxK9mg59W0K3plBHvfE5Kzpve49ukn6gHr1MxDG3eEcqOXqxqs9-lud2VUsgyXjrgn9L8_3GCQhSTM_hCMwCWHCL2tXFKvNf0iAtoN_CCWHZHChLKVkkmzEw5FpmP7nlXV7LWiDl-5TYAxv96DyHN1-8khL0aupK7BxfS1Wp4rritFs3euCH5zC-2bFk2b_cTYF3puI236lIEIDZmYMm31Sznyl4I_Hjkh-fFIi9bZIXIKFr-4VYKSlKZ_k-DKBumaJbkhNjvwnGXwitKNzDZEyC-Ap2AS7FhE_P2Ru4jyFLI0kWP4k40CwciXkMEshehYHlxOwUnW0WOwhWJpx5rgX83IqRTkbmnVW1Gjf4cWPc4IzzVPTS-P6BovGpsfHJ2CTaVDL-siJ_0Eg__gK3DCwDabDbodh7fsjS9CXTveqYClqRfkuIm7zWQrdvD7l1KwP8ROeFRUGqc6USgfqXHzrFUV9N2ybyltb64Rclc_4rl1PXkk57T4U_0NKOdjp6MiPmjgsELpoJKtzW0p7ozeWM6UrQxJULQjZZu-KT3wj9XPwmFSluX7S2mXVHpNeU1iNyvbO7tRIkizeiQInYLiwkefIA2-LjuP9DRVeuzS4g3TSvJvziSLsIotINXncKFn75t3Juua00qMe8SiHQcx5QCuilIeypSjkM",
+  "e": "AQAB"
+}
