@@ -39,7 +39,7 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 describe('CreativeHistorySlice — openImageInStudio', () => {
-    let store: ReturnType<typeof create<CreativeHistorySlice>>;
+    let store: any;
 
     beforeEach(() => {
         // Create a fresh store for each test using Zustand's create + buildCreativeHistoryState
