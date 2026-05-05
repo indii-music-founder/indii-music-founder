@@ -35,10 +35,9 @@ import {
     onRequest,
     HttpsError,
     type CallableRequest,
-    type CallableOptions,
     type HttpsOptions,
 } from 'firebase-functions/v2/https';
-import type { SecretParam } from 'firebase-functions/params';
+// import type { SecretParam } from 'firebase-functions/params';
 
 import {
     onSchedule,
@@ -79,7 +78,7 @@ export interface FunctionOptions {
     /** CPU allocation. Default: 1 */
     cpu?: number | 'gcf_gen1';
     /** Secret references */
-    secrets?: (string | SecretParam)[];
+    secrets?: any[];
     /** Whether to enforce App Check. Default: false */
     enforceAppCheck?: boolean;
     /** Concurrency per instance. Default: 80 */
@@ -112,7 +111,7 @@ export interface StableCallableRequest<T = unknown> {
  * Maps our stable FunctionOptions to the current generation's option format.
  * This is the ONLY function that needs updating when upgrading generations.
  */
-function mapOptions(opts: FunctionOptions): CallableOptions {
+function mapOptions(opts: FunctionOptions): any {
     return {
         region: opts.region || 'us-central1',
         memory: opts.memory,
@@ -165,7 +164,7 @@ export function defineHttps(
     handler: (req: unknown, res: unknown) => void | Promise<void>
 ) {
     const mappedOptions = mapOptions(options) as HttpsOptions;
-    return onRequest(mappedOptions, handler as Parameters<typeof onRequest>[1]);
+    return onRequest(mappedOptions, handler as any);
 }
 
 /**
@@ -183,7 +182,7 @@ export function defineScheduled(
 ) {
     const scheduleOptions: ScheduleOptions = {
         schedule,
-        region: options.region || 'us-central1',
+        region: (options.region as any) || 'us-central1',
         memory: options.memory,
         timeoutSeconds: options.timeoutSeconds,
     };
@@ -207,7 +206,7 @@ export function defineFirestoreTrigger(
 ) {
     const docOptions: DocumentOptions = {
         document: documentPath,
-        region: options.region || 'us-central1',
+        region: (options.region as any) || 'us-central1',
         memory: options.memory,
         timeoutSeconds: options.timeoutSeconds,
     };
@@ -234,7 +233,7 @@ export function defineStorageTrigger(
 ) {
     const storageOpts = {
         bucket,
-        region: options.region || 'us-central1',
+        region: (options.region as any) || 'us-central1',
         memory: options.memory,
         timeoutSeconds: options.timeoutSeconds,
     };

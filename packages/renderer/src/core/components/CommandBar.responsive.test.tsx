@@ -29,6 +29,7 @@ vi.mock('@/core/store', async () => {
         commandBarAttachments: [] as File[],
         setCommandBarAttachments: vi.fn((a) => set({ commandBarAttachments: a })),
         isAgentProcessing: false,
+        canvasItems: [{ id: 'mock-item' }],
         agentMode: 'assistant',
         isKnowledgeBaseEnabled: false,
         setKnowledgeBaseEnabled: vi.fn((k) => set({ isKnowledgeBaseEnabled: k })),
@@ -142,6 +143,7 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
                 commandBarInput: '',
                 commandBarAttachments: [],
                 isAgentProcessing: false,
+                canvasItems: [{ id: 'mock-item' }],
                 isAgentOpen: false,
             });
         });

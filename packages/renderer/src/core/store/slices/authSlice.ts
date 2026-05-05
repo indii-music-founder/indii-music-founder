@@ -322,7 +322,6 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
     initializeAuthListener: () => {
         logger.debug('[Auth] Initializing Auth Listener...');
-        const { set } = _get() as any;
 
         // 6. Electron Auth Handoff Listener (Item 518)
         let electronUnsub: (() => void) | null = null;
@@ -350,7 +349,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         // 7. Electron Auth Error Listener
         let errorUnsub: (() => void) | null = null;
         if (typeof window !== 'undefined' && window.electronAPI?.auth?.onError) {
-            errorUnsub = window.electronAPI.auth.onError((data) => {
+            errorUnsub = window.electronAPI.auth.onError((data: { message: string }) => {
                 logger.error('[Auth] Received auth error from Main Process:', data.message);
                 set({ authError: data.message, authLoading: false });
             });

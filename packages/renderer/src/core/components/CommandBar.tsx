@@ -61,7 +61,7 @@ function CommandBar() {
     // Hide from global shell when Boardroom is active — it renders inside BoardroomModule instead.
     // Also hide when in Dashboard with an empty Agent Workspace to avoid duplicate inputs with EntryOverlay.
     if (isBoardroomMode) return null;
-    if (currentModule === 'dashboard' && canvasItems.length === 0) return null;
+    if (currentModule === 'dashboard' && (!canvasItems || canvasItems.length === 0)) return null;
 
     const shouldShow = true;
 
