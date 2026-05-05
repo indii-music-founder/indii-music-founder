@@ -108,4 +108,97 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             message: `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker.`
         };
     }),
+    request_feature: wrapTool('request_feature', async (args: ToolFunctionArgs, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const title = args.title as string | undefined;
+        const description = args.description as string | undefined;
+        const useCase = (args.useCase as string) || 'Not provided';
+        const priority = (args.priority as 'nice-to-have' | 'important' | 'critical') || 'nice-to-have';
+        const category = (args.category as 'ux' | 'performance' | 'integration' | 'content' | 'other') || 'other';
+        const moduleArg = args.module as string | undefined;
+
+        if (!title || !description) {
+            return toolError('Feature request requires at least a title and description.', 'MISSING_FIELDS');
+        }
+
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+
+        const featureRequest = {
+            id: `feat-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            title,
+            description,
+            useCase,
+            priority,
+            category,
+            module: moduleArg || state.currentModule || 'unknown',
+            requestedAt: new Date().toISOString(),
+            requestedBy: 'user-via-agent',
+            status: 'open' as const,
+            context: {
+                projectId: state.currentProjectId,
+                organizationId: state.currentOrganizationId,
+                currentModule: state.currentModule,
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'electron',
+            },
+        };
+
+        // Format as GitHub-compatible markdown
+        const markdownBody = `## Feature Request
+
+**Priority:** \`${featureRequest.priority.toUpperCase()}\`
+**Category:** \`${featureRequest.category}\`
+**Module:** \`${featureRequest.module}\`
+**Requested:** ${featureRequest.requestedAt}
+
+### Description
+${featureRequest.description}
+
+### Use Case
+${featureRequest.useCase}
+
+### Environment
+- Project: \`${featureRequest.context.projectId || 'N/A'}\`
+- Module: \`${featureRequest.context.currentModule || 'N/A'}\`
+- Platform: \`${featureRequest.context.userAgent}\`
+
+---
+*This feature request was captured by the indii agent from an in-app conversation.*`;
+
+        try {
+            const { FirestoreService } = await import('@/services/FirestoreService');
+            const featureService = new FirestoreService<typeof featureRequest>('feature_requests');
+            await featureService.add(featureRequest);
+            logger.info(`[BugReportTools] Feature request saved: ${featureRequest.id} — "${featureRequest.title}"`);
+        } catch (e: unknown) {
+            logger.warn('[BugReportTools] Failed to persist feature request to Firestore:', e);
+            // Non-blocking — still return success to the agent
+        }
+
+        try {
+            const { memoryService } = await import('@/services/agent/MemoryService');
+            const currentProjectId = toolContext
+                ? toolContext.get('currentProjectId')
+                : state.currentProjectId;
+            if (currentProjectId) {
+                await memoryService.saveMemory(
+                    currentProjectId,
+                    `Feature requested: "${featureRequest.title}" (${featureRequest.priority}) for ${featureRequest.module}. ${featureRequest.description.substring(0, 100)}`,
+                    'fact',
+                    0.6,
+                    'system'
+                );
+            }
+        } catch (e: unknown) {
+            logger.warn('[BugReportTools] Failed to save feature request to memory:', e);
+        }
+
+        return {
+            featureId: featureRequest.id,
+            title: featureRequest.title,
+            priority: featureRequest.priority,
+            category: featureRequest.category,
+            markdownBody,
+            message: `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker. 🎯`
+        };
+    }),
 } satisfies Record<string, AnyToolFunction>;
