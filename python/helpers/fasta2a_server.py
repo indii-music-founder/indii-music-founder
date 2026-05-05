@@ -41,6 +41,20 @@ REPLAY_WINDOW_SECONDS = 3600  # 1 hour
 # both sides have exchanged public keys.
 PLAINTEXT_ALLOWED_METHODS = frozenset({"key.exchange"})
 
+# Phase 4.5 — optimizer feedback log. Append-only JSONL so the export tool can
+# stream-read without locking. Created on first write.
+OPTIMIZER_FEEDBACK_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "optimizer_feedback.jsonl"
+)
+
+VALID_FEEDBACK_DIMENSIONS = frozenset({
+    "relevance", "factuality", "helpfulness", "safety", "conciseness",
+    "goalCompletion", "adherence", "coherence", "toolEfficiency",
+    "userThumbsUp", "userThumbsDown",
+})
+
+VALID_EXEMPLAR_TYPES = frozenset({"positive", "negative", "neutral"})
+
 
 class AgentCard:
     """In-memory representation of an Agent Card.
@@ -178,6 +192,8 @@ class DynamicA2AProxy:
 
         if method == "POST" and path.endswith("/rpc"):
             await self._handle_rpc(receive, send)
+        elif method == "POST" and path.endswith("/optimizer/feedback"):
+            await self._handle_optimizer_feedback(receive, send)
         elif method == "GET" and "/stream/" in path:
             request_id = path.rsplit("/", 1)[-1]
             await self._handle_stream(request_id, send)
@@ -413,6 +429,87 @@ class DynamicA2AProxy:
         finally:
             await send({"type": "http.response.body", "body": b""})
             self._request_streams.pop(request_id, None)
+
+    async def _handle_optimizer_feedback(self, receive, send):
+        """Phase 4.5 — accept feedback events for fine-tuning corpus.
+
+        Body: {conversationId, turnId, score, dimension, exemplarType,
+               agentId, prompt?, idealResponse?}
+
+        Validation is permissive (open dimension/exemplar enums) but rejects
+        missing required fields and out-of-range scores. Persisted append-only
+        to JSONL for cheap stream-read by the export tool.
+        """
+        body_parts = []
+        while True:
+            message = await receive()
+            body_parts.append(message.get("body", b""))
+            if not message.get("more_body"):
+                break
+
+        try:
+            body = json.loads(b"".join(body_parts).decode("utf-8"))
+        except json.JSONDecodeError:
+            await self._send_json(send, 400, {"error": "Invalid JSON"})
+            return
+
+        required = ("conversationId", "turnId", "score", "dimension", "exemplarType")
+        missing = [k for k in required if k not in body]
+        if missing:
+            await self._send_json(send, 400, {
+                "error": "Missing required fields",
+                "missing": missing,
+            })
+            return
+
+        score = body.get("score")
+        if not isinstance(score, (int, float)) or not (0 <= score <= 10):
+            await self._send_json(send, 400, {
+                "error": "score must be a number in [0, 10]",
+            })
+            return
+
+        dimension = body.get("dimension")
+        if dimension not in VALID_FEEDBACK_DIMENSIONS:
+            await self._send_json(send, 400, {
+                "error": f"dimension must be one of {sorted(VALID_FEEDBACK_DIMENSIONS)}",
+            })
+            return
+
+        exemplar_type = body.get("exemplarType")
+        if exemplar_type not in VALID_EXEMPLAR_TYPES:
+            await self._send_json(send, 400, {
+                "error": f"exemplarType must be one of {sorted(VALID_EXEMPLAR_TYPES)}",
+            })
+            return
+
+        # Append to JSONL. Create parent dir on first write.
+        OPTIMIZER_FEEDBACK_PATH.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            "ts": time.time(),
+            "conversationId": body["conversationId"],
+            "turnId": body["turnId"],
+            "agentId": body.get("agentId"),
+            "score": score,
+            "dimension": dimension,
+            "exemplarType": exemplar_type,
+            "prompt": body.get("prompt"),
+            "idealResponse": body.get("idealResponse"),
+        }
+        with OPTIMIZER_FEEDBACK_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+        self._record_audit(
+            event="optimizer_feedback_accepted",
+            conversationId=record["conversationId"],
+            turnId=record["turnId"],
+            agentId=record["agentId"],
+            dimension=dimension,
+            exemplarType=exemplar_type,
+            score=score,
+        )
+
+        await self._send_json(send, 200, {"status": "accepted", "ts": record["ts"]})
 
     async def _send_json(self, send, status: int, body: Dict[str, Any]):
         body_bytes = json.dumps(body).encode("utf-8")
