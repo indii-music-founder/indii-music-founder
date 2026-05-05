@@ -350,8 +350,6 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // 7. Electron Auth Error Listener
         let errorUnsub: (() => void) | null = null;
-        if (typeof window !== 'undefined' && (window as any).electronAPI?.auth?.onError) {
-            errorUnsub = (window as any).electronAPI.auth.onError((data: any) => {
         if (typeof window !== 'undefined' && window.electronAPI?.auth?.onError) {
             errorUnsub = window.electronAPI.auth.onError((data) => {
                 logger.error('[Auth] Received auth error from Main Process:', data.message);
