@@ -95,7 +95,7 @@ Each phase has: **scope**, **acceptance criteria**, **estimated commit count**, 
 - [x] **2.2** Click-and-drag on the image draws a circle in the active color. Circles persist as `{color, cx, cy, r}` in component state.
 - [x] **2.3** Below the canvas: three small text inputs labeled by color, only enabled when at least one circle of that color exists. Below those: an "Apply" button that wraps the data into a prompt.
 - [x] **2.4** Apply button calls a new agent tool (`edit_image_with_annotations`) defined in `packages/renderer/src/services/agent/definitions/`. The tool's prompt schema includes the annotations as a structured field (NOT freeform text — see "Spatial Prompt Format" below).
-- [ ] **2.5** The edited image returns as a new chat message in the same conversation, NOT replacing the original (preserves history). Reference the source image by ID in the new message metadata.
+- [x] **2.5** The edited image returns as a new chat message in the same conversation, NOT replacing the original (preserves history). Reference the source image by ID in the new message metadata.
 - [x] **2.6** Vitest tests for `ImageAnnotator` (rendering, color switching, circle drawing math, prompt assembly).
 - [x] **2.7** Vitest test for the new tool's prompt construction.
 - [x] **2.8** Manual smoke: in the same Boardroom thread William used 2026-05-05, click red, circle the dog's eyes, type "make eyes glow more violently", click Apply, verify a new image appears with brighter eyes.
