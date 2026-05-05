@@ -36,7 +36,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         studioControls,
         addToHistory, currentProjectId,
         userProfile, whiskState,
-        characterReferences
+        characterReferences,
+        chatImportContext,
+        clearChatImportContext
     } = useStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
@@ -54,7 +56,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         currentProjectId: state.currentProjectId,
         userProfile: state.userProfile,
         whiskState: state.whiskState,
-        characterReferences: state.characterReferences
+        characterReferences: state.characterReferences,
+        chatImportContext: state.chatImportContext,
+        clearChatImportContext: state.clearChatImportContext
     })));
     const toast = useToast();
     const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
@@ -302,6 +306,12 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                     {/* Main Workspace - Studio Tab on Mobile, always visible on desktop */}
                     <div className={`${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0 bg-[#0f0f0f]`}>
+                        {chatImportContext && (
+                            <div className="bg-dept-creative/20 text-white text-sm px-4 py-2 flex items-center justify-between border-b border-dept-creative/30">
+                                <span>Imported from chat — {chatImportContext.agentId}'s response to: "{chatImportContext.prompt.substring(0, 50)}{chatImportContext.prompt.length > 50 ? '...' : ''}"</span>
+                                <button onClick={clearChatImportContext} className="text-gray-400 hover:text-white">&times;</button>
+                            </div>
+                        )}
                         {viewMode === 'direct' && <DirectGenerationTab />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
