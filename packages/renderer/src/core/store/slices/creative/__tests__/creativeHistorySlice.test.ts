@@ -43,7 +43,7 @@ describe('CreativeHistorySlice — openImageInStudio', () => {
 
     beforeEach(() => {
         // Create a fresh store for each test using Zustand's create + buildCreativeHistoryState
-        store = create<CreativeHistorySlice>((set, get) =>
+        store = create<CreativeHistorySlice>((set: any, get: any) =>
             buildCreativeHistoryState(set, get)
         );
         vi.clearAllMocks();

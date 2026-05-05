@@ -14,6 +14,7 @@ import {
     MapPin,
     LucideIcon,
 } from 'lucide-react';
+import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
