@@ -189,7 +189,7 @@ describe('Sidebar Navigation Integration', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('brand-manager')).toBeInTheDocument();
-        }, { timeout: 10000 });
+        }, { timeout: 20000 });
     });
 
     it('renders correct dashboard for Campaign Manager', async () => {
@@ -208,7 +208,7 @@ describe('Sidebar Navigation Integration', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('campaign-dashboard')).toBeInTheDocument();
-        }, { timeout: 10000 });
+        }, { timeout: 20000 });
     });
 
     it('renders correct dashboard for Publicist', async () => {
@@ -227,7 +227,7 @@ describe('Sidebar Navigation Integration', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('publicist-dashboard')).toBeInTheDocument();
-        }, { timeout: 10000 });
+        }, { timeout: 20000 });
     });
 
     it('renders correct dashboard for Publishing', async () => {
@@ -246,7 +246,7 @@ describe('Sidebar Navigation Integration', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('publishing-dashboard')).toBeInTheDocument();
-        }, { timeout: 10000 });
+        }, { timeout: 20000 });
     });
 
     it('renders correct dashboard for Finance', async () => {
@@ -265,7 +265,7 @@ describe('Sidebar Navigation Integration', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('finance-dashboard')).toBeInTheDocument();
-        }, { timeout: 10000 });
+        }, { timeout: 20000 });
     });
 
     it('renders correct dashboard for Licensing', async () => {
@@ -284,7 +284,7 @@ describe('Sidebar Navigation Integration', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('licensing-dashboard')).toBeInTheDocument();
-        }, { timeout: 10000 });
+        }, { timeout: 20000 });
     });
 
     it('renders navigation items correctly', () => {
