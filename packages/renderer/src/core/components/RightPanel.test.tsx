@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
 import RightPanel from './RightPanel';
 import { useStore } from '../store';
 
@@ -81,11 +82,20 @@ vi.mock('./command-bar/PromptArea', () => ({
 }));
 
 vi.mock('motion/react', () => ({
-    motion: {
-        aside: ({ children, className, ...props }: any) => <aside className={className} {...props}>{children}</aside>,
-        div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-        button: ({ children, className, ...props }: any) => <button className={className} {...props}>{children}</button>,
-    },
+    motion: new Proxy({}, {
+        get: (_target, property: string) => {
+            if (property === 'aside') {
+                return ({ children, ...props }: any) => <aside {...props}>{children}</aside>;
+            }
+            if (property === 'div') {
+                return ({ children, ...props }: any) => <div {...props}>{children}</div>;
+            }
+            if (property === 'button') {
+                return ({ children, ...props }: any) => <button {...props}>{children}</button>;
+            }
+            return ({ children, ...props }: any) => React.createElement(property, props, children);
+        }
+    }),
     AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 

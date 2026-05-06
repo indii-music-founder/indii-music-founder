@@ -5,7 +5,29 @@ export const VideoCard: AgentCard = {
     agentId: 'video',
     displayName: 'Video Agent',
     description: 'Specialist for video operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "video_editing",
+        "description": "Video editing",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "vfx_review",
+        "description": "VFX review",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "render_management",
+        "description": "Render management",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

@@ -1,5 +1,27 @@
 # Error Ledger
 
+## 2026-05-06 Hierarchical agent scope violations (Phase 1)
+
+Three new tool-error codes thrown by `BaseAgent.delegate_task` and `BaseAgent.consult_experts`
+when `context.conversationMode` is set. They are NOT bugs — they are intentional governance
+rejections from the three-mode hybrid agent system. Future debugging that surfaces these codes
+should treat them as expected behavior unless the mode/context is misconfigured.
+
+- **DIRECT_MODE_NO_DELEGATION** — User is in 1:1 conversation with one agent. Any
+  `delegate_task` / `consult_experts` call from the agent is blocked.
+  Fix path: switch to Department or Boardroom mode, or have the agent answer from its own context.
+- **DEPARTMENT_SCOPE_VIOLATION** — In Department mode, agent attempted to reach an agent
+  in a different department. Workers + heads stay within one department.
+  Fix path: cross-department work belongs in Boardroom mode.
+- **BOARDROOM_TIER_VIOLATION** — In Boardroom mode, agent tried to seat / target a worker
+  rather than a department head. Boardroom is heads-only.
+  Fix path: use Department mode to reach workers; only heads sit in the Boardroom.
+
+REGISTRY: `packages/renderer/src/services/agent/departments.ts` is the single source of truth
+for who is a head vs worker, and which workers belong to which department.
+
+ENFORCEMENT: `packages/renderer/src/services/agent/BaseAgent.ts` (delegate_task ~L137, consult_experts ~L193).
+
 ## 2026-05-05 Web dev spinner — missing renderer Vite config
 
 - SEVERITY: High (blocks `npm run dev:web` entirely)

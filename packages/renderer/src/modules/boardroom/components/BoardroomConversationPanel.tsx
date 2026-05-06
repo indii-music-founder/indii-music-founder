@@ -6,6 +6,7 @@ import { Bot, MessageSquare } from 'lucide-react';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { TextEffect } from '@/components/motion-primitives/text-effect';
 
 interface BoardroomConversationPanelProps {
     messages: AgentMessage[];
@@ -40,10 +41,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                     <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-4">
                         <MessageSquare size={22} className="text-indigo-400/50" />
                     </div>
-                    <p className="text-sm font-medium text-white/40">Awaiting discussion...</p>
-                    <p className="text-xs text-white/20 mt-1 max-w-[240px]">
+                    <TextEffect preset="fade" className="text-sm font-medium text-white/40">Awaiting discussion...</TextEffect>
+                    <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
                         Select agents and submit a brief to start the boardroom session.
-                    </p>
+                    </TextEffect>
                 </div>
 
                 {/* Prompt Area — always visible so users can start the conversation */}

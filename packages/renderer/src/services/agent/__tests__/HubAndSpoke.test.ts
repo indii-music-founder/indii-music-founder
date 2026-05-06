@@ -7,6 +7,7 @@ import {
     SPOKE_AGENT_IDS,
     VALID_AGENT_IDS
 } from '../types';
+import { sameDepartment } from '../departments';
 import { INDII_MESSAGES } from '../constants';
 
 describe('Hub-and-Spoke Architecture', () => {
@@ -188,10 +189,13 @@ describe('Hub-and-Spoke Architecture', () => {
             });
         });
 
-        it('blocks complete spoke-to-spoke matrix (all combinations)', () => {
-            // No spoke can delegate to any other spoke
+        it('blocks complete spoke-to-spoke matrix (across different departments)', () => {
+            // No spoke can delegate to any other spoke in a different department
             SPOKE_AGENT_IDS.forEach(source => {
                 SPOKE_AGENT_IDS.forEach(target => {
+                    // Skip if they are in the same department (allowed in hierarchical routing)
+                    if (sameDepartment(source, target)) return;
+                    
                     const result = validateHubAndSpoke(source, target);
                     expect(result).not.toBeNull();
                     expect(result).toContain('indii architecture rule');

@@ -173,7 +173,25 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+        if (!this.credentials?.sftpHost || !window.electronAPI?.sftp) {
+            return 'processing';
+        }
+
+        try {
+            const result = await window.electronAPI.sftp.listDirectory(`/status/`);
+            if (result.success && result.files) {
+                const statusFile = result.files.find(f => f.name.includes(releaseId));
+                if (statusFile) {
+                    if (statusFile.name.includes('DELIVERED')) return 'live';
+                    if (statusFile.name.includes('ERROR')) return 'failed';
+                    return 'processing';
+                }
+            }
+        } catch (e) {
+            logger.warn('[CDBaby] Status check failed:', e);
+        }
+
         return 'processing';
     }
 
@@ -185,7 +203,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        return {
+        const baseEarnings: DistributorEarnings = {
             distributorId: 'cdbaby',
             releaseId: releaseId,
             period: period,
@@ -197,6 +215,46 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
             currencyCode: 'USD',
             lastUpdated: new Date().toISOString()
         };
+
+        if (!this.credentials?.sftpHost || !window.electronAPI?.sftp) {
+            return baseEarnings;
+        }
+
+        try {
+            // CDBaby DSR reports
+            const remotePath = `/reports/sales_${period.startDate.substring(0, 7)}.tsv`;
+            const fileResult = await window.electronAPI.sftp.readFile(remotePath);
+
+            if (fileResult.success && fileResult.content) {
+                const { dsrService } = await import('@/services/ddex/DSRService');
+                const parsed = await dsrService.ingestFlatFile(fileResult.content);
+                
+                if (parsed.success && parsed.data) {
+                    const txn = parsed.data.transactions.filter(t => 
+                        t.resourceId.isrc === releaseId || (t.resourceId.title && t.resourceId.title.includes(releaseId))
+                    );
+
+                    const streams = txn.filter(t => t.usageType === 'OnDemandStream').reduce((sum, t) => sum + t.usageCount, 0);
+                    const downloads = txn.filter(t => t.usageType === 'Download').reduce((sum, t) => sum + t.usageCount, 0);
+                    const grossRevenue = txn.reduce((sum, t) => sum + t.revenueAmount, 0);
+                    const netRevenue = grossRevenue * (this.requirements.pricing.payoutPercentage / 100);
+
+                    return {
+                        ...baseEarnings,
+                        streams,
+                        downloads,
+                        grossRevenue,
+                        distributorFee: grossRevenue - netRevenue,
+                        netRevenue,
+                        lastUpdated: new Date().toISOString()
+                    };
+                }
+            }
+        } catch (e) {
+            logger.warn('[CDBaby] Earnings fetch failed:', e);
+        }
+
+        return baseEarnings;
     }
 
     async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {

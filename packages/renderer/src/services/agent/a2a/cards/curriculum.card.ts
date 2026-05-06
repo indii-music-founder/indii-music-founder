@@ -5,7 +5,22 @@ export const CurriculumCard: AgentCard = {
     agentId: 'curriculum',
     displayName: 'Curriculum Agent',
     description: 'Specialist for curriculum operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "educational_planning",
+        "description": "Educational planning",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "learning_path_design",
+        "description": "Learning path design",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

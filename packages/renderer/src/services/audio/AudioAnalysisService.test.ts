@@ -54,6 +54,13 @@ const { mockTF, mockEssentiaInstance, mockEssentiaWASM } = vi.hoisted(() => ({
 
 const _MockEssentiaClass = vi.fn().mockImplementation(() => mockEssentiaInstance);
 
+// Mock GeminiFileService
+vi.mock('@/services/ai/GeminiFileService', () => ({
+    GeminiFileService: {
+        uploadFile: vi.fn().mockResolvedValue({ uri: 'mock-uri' })
+    }
+}));
+
 // Mock MusicLibraryService
 vi.mock('@/services/music/MusicLibraryService', () => ({
     musicLibraryService: {

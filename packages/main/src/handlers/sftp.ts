@@ -114,4 +114,26 @@ export const registerSFTPHandlers = () => {
             return false;
         }
     });
+
+    ipcMain.handle('sftp:list-directory', async (event, remotePath: string) => {
+        try {
+            validateSender(event);
+            const files = await sftpService.listDirectory(remotePath);
+            return { success: true, files };
+        } catch (error) {
+            log.error('SFTP List Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('sftp:read-file', async (event, remotePath: string) => {
+        try {
+            validateSender(event);
+            const content = await sftpService.readFile(remotePath);
+            return { success: true, content };
+        } catch (error) {
+            log.error('SFTP Read Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
 }

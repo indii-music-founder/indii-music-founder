@@ -23,6 +23,7 @@ import { TypeaheadMenu, type TypeaheadContext } from './TypeaheadMenu';
 import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
+import { AgentModePicker } from '@/components/AgentModePicker';
 
 interface PromptAreaProps {
     className?: string;
@@ -36,6 +37,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const [isListening, setIsListening] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [showModePicker, setShowModePicker] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const _cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,7 +56,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled,
         setCommandBarCollapsed,
-        isBoardroomMode,
+        conversationMode,
+        setConversationMode,
         stopAgent,
         isAgentProcessing
     } = useStore(useShallow(state => ({
@@ -72,10 +75,24 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isKnowledgeBaseEnabled: state.isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled: state.setKnowledgeBaseEnabled,
         setCommandBarCollapsed: state.setCommandBarCollapsed,
-        isBoardroomMode: state.isBoardroomMode,
+        conversationMode: state.conversationMode,
+        setConversationMode: state.setConversationMode,
         stopAgent: state.stopAgent,
         isAgentProcessing: state.isAgentProcessing
     })));
+
+    const isBoardroom = conversationMode === 'boardroom';
+    
+    // Sync chatChannel (theme) with conversationMode
+    useEffect(() => {
+        if (conversationMode === 'boardroom') {
+            if (chatChannel !== 'indii') setChatChannel('indii');
+        } else {
+            if (currentModule !== 'dashboard' && currentModule !== 'select-org' && chatChannel === 'indii') {
+                setChatChannel('agent');
+            }
+        }
+    }, [conversationMode, currentModule, chatChannel, setChatChannel]);
 
     const isIndiiMode = chatChannel === 'indii';
     const colors = getColorForModule(currentModule);
@@ -236,7 +253,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top
             // In Boardroom mode, messages route to boardroomMessages — DON'T open the right panel
             const isOnAgentModule = currentModule === 'agent';
-            if (!isOnAgentModule && !isBoardroomMode) {
+            if (!isOnAgentModule && !isBoardroom) {
                 if (!isRightPanelOpen) {
                     toggleRightPanel();
                 }
@@ -262,7 +279,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             logger.error("PromptArea: Fatal crash", fatalError);
             setIsProcessing(false);
         }
-    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, isBoardroomMode, setCommandBarInput, setCommandBarAttachments]);
+    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, isBoardroom, setCommandBarInput, setCommandBarAttachments]);
 
     const actionButtonBase = "flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
     const submitButtonBase = "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white";
@@ -400,24 +417,50 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     <div className="flex items-center gap-1.5 shrink-0">
                         {/* Dock Position Toggle — removed entirely. Position is now locked to right in boardroom mode. */}
 
-                        {/* Agent / indii Mode Toggle */}
-                        <button
-                            onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
-                            className={cn(
-                                "rounded-lg transition-all border flex items-center justify-center overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                                isDocked ? "w-7 h-7" : "w-8 h-8",
-                                isIndiiMode
-                                    ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50"
-                                    : "bg-cyan-600/30 border-cyan-500/40 hover:bg-cyan-600/50"
-                            )}
-                            aria-label={isIndiiMode ? "Switch to Agent mode" : "Switch to indii mode"}
-                            title={isIndiiMode ? "indii mode — click for Agent" : "Agent mode — click for indii"}
-                        >
-                            <IndiiFavicon size={isDocked ? 14 : 18} />
-                        </button>
+                        {/* Hierarchical Agent Mode Picker */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowModePicker(!showModePicker)}
+                                className={cn(
+                                    "rounded-lg transition-all border flex items-center justify-center overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    isDocked ? "w-7 h-7" : "w-8 h-8",
+                                    isBoardroom
+                                        ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+                                        : conversationMode === 'department'
+                                            ? "bg-blue-600/30 border-blue-500/40 hover:bg-blue-600/50"
+                                            : "bg-pink-600/30 border-pink-500/40 hover:bg-pink-600/50"
+                                )}
+                                aria-label="Change Agent Mode"
+                                title={`Mode: ${conversationMode}`}
+                            >
+                                <IndiiFavicon size={isDocked ? 14 : 18} />
+                            </button>
+
+                            <AnimatePresence>
+                                {showModePicker && (
+                                    <>
+                                        <motion.div 
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="fixed inset-0 z-40" 
+                                            onClick={() => setShowModePicker(false)} 
+                                        />
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                            className="absolute bottom-full right-0 mb-4 z-50"
+                                        >
+                                            <AgentModePicker className="w-80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/10" />
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
+                        </div>
 
                         {/* Collapse/Detach controls — hidden in boardroom (locked to right, always expanded) */}
-                        {!isDocked && !isMobile && !isBoardroomMode && (
+                        {!isDocked && !isMobile && !isBoardroom && (
                             <div className="flex items-center gap-1 border-l border-white/10 px-2 mr-1">
                                 <PromptInputAction tooltip="Collapse Chat">
                                     <button

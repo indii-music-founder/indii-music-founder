@@ -68,6 +68,7 @@ describe('PromptArea Error Resilience', () => {
       setCommandBarAttachments: (attachments: any[]) => set({ commandBarAttachments: attachments }),
       activeAgentProvider: 'native',
       setActiveAgentProvider: vi.fn(),
+      conversationMode: 'direct',
     }));
 
     // Mock Store Module

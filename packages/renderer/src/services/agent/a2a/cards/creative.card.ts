@@ -5,7 +5,29 @@ export const CreativeCard: AgentCard = {
     agentId: 'creative',
     displayName: 'Creative Agent',
     description: 'Specialist for creative operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "art_direction",
+        "description": "Art direction",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "visual_brainstorming",
+        "description": "Visual brainstorming",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "design_execution",
+        "description": "Design execution",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

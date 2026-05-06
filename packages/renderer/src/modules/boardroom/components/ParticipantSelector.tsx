@@ -5,6 +5,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { Briefcase, Target, Scale, DollarSign, Palette, Film, Share2, Library } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AnimatePresence } from 'framer-motion';
+import { DEPARTMENTS } from '@/services/agent/departments';
 
 const AVAILABLE_AGENTS = [
     { id: 'marketing', name: 'Marketing Dept.', icon: Target, color: 'text-rose-400', glow: 'shadow-[0_0_25px_rgba(244,63,94,0.6)]', bg: 'bg-rose-500/20' },
@@ -24,6 +26,8 @@ export default function ParticipantSelector() {
             toggleAgent: state.toggleAgent
         }))
     );
+
+    const [focusedHead, setFocusedHead] = React.useState<string | null>(null);
 
     const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo, agentId: string, isActive: boolean) => {
         // Center of viewport
@@ -62,7 +66,13 @@ export default function ParticipantSelector() {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <motion.button
-                                    onClick={() => toggleAgent(agent.id)}
+                                    onClick={() => {
+                                        if (isActive) {
+                                            setFocusedHead(prev => prev === agent.id ? null : agent.id);
+                                        } else {
+                                            toggleAgent(agent.id);
+                                        }
+                                    }}
                                     drag
                                     dragSnapToOrigin
                                     onDragEnd={(e, info) => handleDragEnd(e, info, agent.id, isActive)}
@@ -101,6 +111,47 @@ export default function ParticipantSelector() {
                     </TooltipProvider>
                 );
             })}
+
+            {/* Inner Orbit for Workers */}
+            <AnimatePresence>
+                {focusedHead && (DEPARTMENTS[focusedHead]?.workerIds?.length ?? 0) > 0 && (
+                    <>
+                        {DEPARTMENTS[focusedHead]!.workerIds!.map((workerId, index) => {
+                            const total = DEPARTMENTS[focusedHead]!.workerIds!.length;
+                            const angle = (index / Math.max(total, 1)) * Math.PI * 2;
+                            const radiusX = 18;
+                            const radiusY = 12;
+                            const left = 50 + radiusX * Math.cos(angle);
+                            const top = 50 + radiusY * Math.sin(angle);
+                            
+                            const headConfig = AVAILABLE_AGENTS.find(a => a.id === focusedHead);
+
+                            return (
+                                <motion.div
+                                    key={workerId}
+                                    initial={{ opacity: 0, scale: 0.5, left: '50%', top: '50%' }}
+                                    animate={{ opacity: 1, scale: 1, left: `${left}%`, top: `${top}%` }}
+                                    exit={{ opacity: 0, scale: 0.5, left: '50%', top: '50%' }}
+                                    transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                                    className={cn(
+                                        "absolute w-12 h-12 -ml-6 -mt-6 rounded-full flex flex-col items-center justify-center border border-white/20 z-30 pointer-events-auto",
+                                        headConfig?.bg || "bg-indigo-500/20",
+                                        "shadow-[0_0_15px_rgba(255,255,255,0.1)] backdrop-blur-md"
+                                    )}
+                                    title={workerId}
+                                >
+                                    <span className={cn("text-[9px] font-bold uppercase tracking-widest", headConfig?.color || "text-white/70")}>
+                                        Worker
+                                    </span>
+                                    <span className="text-[10px] text-white/90 truncate max-w-[40px]">
+                                        {workerId.split('.')[1]}
+                                    </span>
+                                </motion.div>
+                            );
+                        })}
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

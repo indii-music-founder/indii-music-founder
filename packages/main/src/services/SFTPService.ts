@@ -73,6 +73,27 @@ class SFTPService {
         }
     }
 
+    async listDirectory(remotePath: string): Promise<any[]> {
+        if (!this.connected) throw new SFTPError('NOT_CONNECTED', 'SFTP client not connected');
+        try {
+            return await this.client.list(remotePath);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            throw new SFTPError('LIST_FAILED', `Failed to list directory: ${msg}`, error);
+        }
+    }
+
+    async readFile(remotePath: string): Promise<string> {
+        if (!this.connected) throw new SFTPError('NOT_CONNECTED', 'SFTP client not connected');
+        try {
+            const buffer = await this.client.get(remotePath);
+            return buffer.toString('utf8');
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            throw new SFTPError('READ_FAILED', `Failed to read file: ${msg}`, error);
+        }
+    }
+
     async disconnect(): Promise<void> {
         if (this.connected) {
             await this.client.end();

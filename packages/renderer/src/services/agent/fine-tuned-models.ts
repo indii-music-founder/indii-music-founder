@@ -29,6 +29,9 @@ export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<ValidAgentId, string>> = 
     // === DEPARTMENTS ===
     // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
     'finance':         'projects/223837784072/locations/us-central1/endpoints/969646660151934976',
+    'finance.accounting': undefined,
+    'finance.tax':       undefined,
+    'finance.royalty':   undefined,
     // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27
     'legal':           'projects/223837784072/locations/us-central1/endpoints/5559518367884247040',
     // R5 — gemini-2.5-flash base (100 examples) — 2026-04-27

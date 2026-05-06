@@ -5,7 +5,29 @@ export const RoadCard: AgentCard = {
     agentId: 'road',
     displayName: 'Road Agent',
     description: 'Specialist for road operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "tour_routing",
+        "description": "Tour routing",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "logistics_planning",
+        "description": "Logistics planning",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "booking_management",
+        "description": "Booking management",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

@@ -12,6 +12,7 @@ import { BudgetVsActuals } from './components/BudgetVsActuals';
 import { SplitSheetEscrow } from './components/SplitSheetEscrow';
 import { ReceiptOCR } from './components/ReceiptOCR';
 import { LabelDealRecoupment } from './components/LabelDealRecoupment';
+import { RevenueView } from './components/RevenueView';
 import { useFinance } from './hooks/useFinance';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
@@ -95,10 +96,12 @@ export default function FinanceDashboard() {
                 </>
             }
         >
-            {/* Tabs */}
-            <Tabs defaultValue="earnings" className="flex-1 flex flex-col overflow-hidden">
+            <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
                     <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
+                        <TabsTrigger value="overview" data-testid="finance-tab-overview" className="text-muted-foreground data-[state=active]:text-purple-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-purple-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <TrendingUp size={14} /> Revenue Overview
+                        </TabsTrigger>
                         <TabsTrigger value="earnings" data-testid="finance-tab-earnings" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Clock size={14} /> {t('finance.tabs.earnings')}
                         </TabsTrigger>
@@ -143,6 +146,11 @@ export default function FinanceDashboard() {
 
                 <div className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
                     <div className="p-4 md:p-6">
+                        <TabsContent value="overview" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Revenue Overview">
+                                <RevenueView />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
                         <TabsContent value="earnings" className="mt-0 outline-none">
                             <ModuleErrorBoundary moduleName="Finance / Earnings">
                                 <EarningsDashboard />

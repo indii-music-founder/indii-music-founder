@@ -12,7 +12,8 @@
     "packages/firebase",
     "packages/shared",
     "packages/landing",
-    "packages/sdk"
+    "packages/sdk",
+    "packages/mcp-server-local"
   ],
   "scripts": {
     "dev": "electron-vite dev",

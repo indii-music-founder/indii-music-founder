@@ -216,7 +216,7 @@ export default function ConductorSection() {
           </span>
         </h2>
         <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed font-light">
-          The indii Conductor is your creative orchestrator for independence. Tell it what you want
+          The Sovereign Command is your creative orchestrator for independence. Tell it what you want
           to achieve, and it coordinates your specialist team to handle the labor—leaving you 
           free to stay focused on the art.
         </p>
@@ -285,7 +285,7 @@ export default function ConductorSection() {
           <div className="flex items-center gap-4 text-xs font-mono text-gray-500">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              Conductor routing to 5 agents
+              Sovereign Command routing to 5 agents
             </span>
             <span className="text-white/10">|</span>
             <span>Distribution → Creative → Publicist → Marketing → Social</span>

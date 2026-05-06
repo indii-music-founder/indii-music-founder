@@ -115,6 +115,10 @@ export interface ReleaseAssets {
     name?: string;
     path?: string;
   };
+  lyricsFile?: {
+    name?: string;
+    path?: string;
+  };
   additionalAssets?: {
     type: 'lyrics' | 'video' | 'pressKit';
     url: string;

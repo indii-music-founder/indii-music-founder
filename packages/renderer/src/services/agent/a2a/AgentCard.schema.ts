@@ -8,6 +8,16 @@ export const CapabilitySchema = z.object({
   streaming: z.boolean(),
 });
 
+/**
+ * Roster — turns AgentCards into Living Cards. Declares the agent's tier in the
+ * department hierarchy and (for heads) the workers reporting to them.
+ */
+export const RosterSchema = z.object({
+  category: z.enum(['manager', 'department', 'specialist']),
+  departmentId: z.string().optional(),
+  workerIds: z.array(z.string()).optional(),
+});
+
 export const AgentCardSchema = z.object({
   schemaVersion: z.literal('1.0.0'),
   agentId: z.string(),
@@ -32,7 +42,9 @@ export const AgentCardSchema = z.object({
       firstByteMs: z.number(),
     }),
   }),
+  roster: RosterSchema.optional(),
 });
 
 export type Capability = z.infer<typeof CapabilitySchema>;
+export type Roster = z.infer<typeof RosterSchema>;
 export type AgentCard = z.infer<typeof AgentCardSchema>;

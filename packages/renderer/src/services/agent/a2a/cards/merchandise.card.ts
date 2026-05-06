@@ -5,7 +5,29 @@ export const MerchandiseCard: AgentCard = {
     agentId: 'merchandise',
     displayName: 'Merchandise Agent',
     description: 'Specialist for merchandise operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "product_design",
+        "description": "Product design",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "supplier_logistics",
+        "description": "Supplier logistics",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "store_management",
+        "description": "Store management",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

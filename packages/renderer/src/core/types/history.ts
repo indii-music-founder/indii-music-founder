@@ -12,7 +12,7 @@ export interface HistoryItem {
     category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
     tags?: string[];
     subject?: string;
-    origin?: 'generated' | 'uploaded' | 'canvas-export';
+    origin?: 'generated' | 'uploaded' | 'canvas-export' | 'editor';
     localPath?: string; // Path to locally saved file (Electron/Veo)
     /** ID of the source HistoryItem this was derived from (e.g., canvas-export of a generated image) */
     parentId?: string;

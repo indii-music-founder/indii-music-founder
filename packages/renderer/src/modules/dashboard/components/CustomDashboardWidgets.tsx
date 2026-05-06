@@ -15,7 +15,8 @@ import {
     LucideIcon,
     Sparkles,
 } from 'lucide-react';
-import { motion, useMotionValue, useTransform, animate } from 'motion/react';
+import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'motion/react';
+import { revenueService, type RevenueStats } from '@/services/RevenueService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
@@ -34,7 +35,7 @@ import type {
     DashboardTourStatus,
 } from '@/services/dashboard/schema';
 
-export type WidgetType = 'streams_today' | 'revenue_mtd' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status';
+export type WidgetType = 'streams_today' | 'revenue_mtd' | 'revenue_aggregated' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status';
 
 export interface Widget {
     id: string;
@@ -45,6 +46,7 @@ export interface Widget {
 export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: LucideIcon; description: string }> = {
     streams_today: { label: 'Streams Today', icon: Music, description: 'Daily stream count across all DSPs' },
     revenue_mtd: { label: 'Revenue MTD', icon: DollarSign, description: 'Month-to-date royalty revenue' },
+    revenue_aggregated: { label: 'Revenue Aggregate', icon: TrendingUp, description: 'Total revenue from all sources' },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
     top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
     agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent AI agent tasks and completions' },
@@ -59,7 +61,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
 
 const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w1', type: 'streams_today', order: 0 },
-    { id: 'w2', type: 'revenue_mtd', order: 1 },
+    { id: 'w2', type: 'revenue_aggregated', order: 1 },
     { id: 'w3', type: 'next_release', order: 2 },
     { id: 'w4', type: 'top_track', order: 3 },
     { id: 'w5', type: 'audience_growth', order: 4 },
@@ -901,5 +903,83 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     brand_identity: () => <BrandIdentityWidget />,
     merch_sales: () => <MerchSalesWidget />,
     tour_status: () => <TourStatusWidget />,
+    revenue_aggregated: () => <RevenueAggregatedWidget />,
 };
+
+function RevenueAggregatedWidget() {
+    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const setModule = useStore(useShallow((s) => s.setModule));
+    const [stats, setStats] = useState<RevenueStats | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        const fetchStats = async () => {
+            try {
+                const data = await revenueService.getUserRevenueStats(userId, '30d');
+                setStats(data);
+            } catch (error) {
+                console.error('Error fetching revenue stats:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStats();
+    }, [userId]);
+
+    return (
+        <div className="flex flex-col h-full justify-between group/widget cursor-pointer" onClick={() => setModule('finance')} data-testid="revenue-aggregated-widget">
+            <div>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-purple-500 group-hover/widget:text-black transition-all duration-500">
+                        <TrendingUp size={18} className="group-hover/widget:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Aggregate Revenue</span>
+                </div>
+                
+                <div className="space-y-1">
+                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                        ${stats?.totalRevenue.toLocaleString() || '0'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Gross Revenue</p>
+                        {stats && stats.revenueChange !== 0 && (
+                            <span className={`text-[10px] font-black ${stats.revenueChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {stats.revenueChange >= 0 ? '+' : ''}{stats.revenueChange.toFixed(1)}%
+                            </span>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6">
+                <div className="flex gap-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    {stats && Object.entries(stats.sources).map(([key, value], i) => {
+                        const percentage = stats.totalRevenue > 0 ? (value / stats.totalRevenue) * 100 : 0;
+                        const colors: Record<string, string> = {
+                            streaming: 'bg-blue-500',
+                            merch: 'bg-purple-500',
+                            licensing: 'bg-emerald-500',
+                            social: 'bg-pink-500'
+                        };
+                        if (percentage === 0) return null;
+                        return (
+                            <motion.div
+                                key={key}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percentage}%` }}
+                                className={`h-full ${colors[key] || 'bg-gray-500'}`}
+                                transition={{ delay: i * 0.1 }}
+                            />
+                        );
+                    })}
+                </div>
+                <div className="mt-2 flex justify-between items-center">
+                    <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Multi-Stream Distribution</span>
+                    <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest group-hover/widget:translate-x-1 transition-transform">View Details →</span>
+                </div>
+            </div>
+        </div>
+    );
+}
 

@@ -136,16 +136,18 @@ export default function Sidebar() {
     });
 
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar, isBoardroomMode, toggleBoardroomMode } = useStore(
+    const { currentModule, setModule, isSidebarOpen, toggleSidebar, conversationMode, setConversationMode } = useStore(
         useShallow((state) => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
             isSidebarOpen: state.isSidebarOpen,
             toggleSidebar: state.toggleSidebar,
-            isBoardroomMode: state.isBoardroomMode,
-            toggleBoardroomMode: state.toggleBoardroomMode,
+            conversationMode: state.conversationMode,
+            setConversationMode: state.setConversationMode,
         }))
     );
+    const isBoardroomMode = conversationMode === 'boardroom';
+    const toggleBoardroomMode = () => setConversationMode(isBoardroomMode ? 'department' : 'boardroom');
 
     // Navigation throttle to prevent rapid-fire module switching (Firestore b815 crash fix)
     const lastNavTimeRef = useRef(0);

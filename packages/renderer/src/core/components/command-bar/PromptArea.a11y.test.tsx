@@ -88,13 +88,8 @@ describe('PromptArea Accessibility', () => {
     const dictateBtn = screen.getByRole('button', { name: /voice input/i });
     expect(dictateBtn).toBeInTheDocument();
 
-    // 3. Agent / indii mode toggle button
-    // The PromptArea refactor replaced the agent-selector dropdown with a
-    // mode-toggle button whose aria-label is either "Switch to Agent mode" or
-    // "Switch to indii mode" depending on whether indii mode is active.
-    // Our mock has chatChannel='agent' (not 'indii'), so isIndiiMode=false,
-    // meaning the button reads "Switch to indii mode".
-    const modeToggleBtn = screen.getByRole('button', { name: /switch to (agent|indii) mode/i });
+    // mode-toggle button whose aria-label is "Change Agent Mode"
+    const modeToggleBtn = screen.getByRole('button', { name: /change agent mode/i });
     expect(modeToggleBtn).toBeInTheDocument();
 
     // 4. Dock/Detach Button (only shown when !isDocked && !isMobile && !isBoardroomMode)

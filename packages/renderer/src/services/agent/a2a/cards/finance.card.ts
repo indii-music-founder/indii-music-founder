@@ -5,7 +5,29 @@ export const FinanceCard: AgentCard = {
     agentId: 'finance',
     displayName: 'Finance Agent',
     description: 'Specialist for finance operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "financial_modeling",
+        "description": "Financial modeling",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "revenue_tracking",
+        "description": "Revenue tracking",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "budget_allocation",
+        "description": "Budget allocation",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {
@@ -21,5 +43,9 @@ export const FinanceCard: AgentCard = {
         modeStream: {
             firstByteMs: 500
         }
+    },
+    roster: {
+        category: 'department',
+        workerIds: ['finance.accounting', 'finance.tax', 'finance.royalty']
     }
 };

@@ -18,6 +18,7 @@ export interface ExecutionContextOptions {
     projectId?: string;
     agentId: string;
     traceId: string;
+    conversationMode?: 'direct' | 'department' | 'boardroom';
 }
 
 export interface StateModification {
@@ -86,6 +87,7 @@ export class AgentExecutionContext {
             agentHistory: state.agentHistory ? JSON.parse(JSON.stringify(state.agentHistory)) : [],
             agentMode: state.agentMode,
             chatChannel: state.chatChannel,
+            conversationMode: state.conversationMode,
 
             // Creative state
             canvasImages: state.canvasImages ? JSON.parse(JSON.stringify(state.canvasImages)) : [],
@@ -336,6 +338,7 @@ export class ExecutionContextFactory {
         userId?: string;
         projectId?: string;
         traceId?: string;
+        conversationMode?: 'direct' | 'department' | 'boardroom';
     }, agentId: string): Promise<AgentExecutionContext> {
         const { useStore } = await import('@/core/store');
         return AgentExecutionContext._create({

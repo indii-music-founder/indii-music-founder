@@ -73,6 +73,9 @@ export const VALID_AGENT_IDS = [
     'marketing',
     'legal',
     'finance',
+    'finance.accounting',
+    'finance.tax',
+    'finance.royalty',
     'producer',
     'director',
     'screenwriter',
@@ -149,6 +152,16 @@ export function validateHubAndSpoke(sourceAgentId: string, targetAgentId: string
         return null;
     }
 
+    // Hierarchical allowance: Head -> Worker (e.g., finance -> finance.tax)
+    if (targetAgentId && sourceAgentId && targetAgentId.startsWith(`${sourceAgentId}.`)) {
+        return null;
+    }
+
+    // Hierarchical allowance: Worker -> Head (e.g., finance.tax -> finance)
+    if (sourceAgentId && targetAgentId && sourceAgentId.startsWith(`${targetAgentId}.`)) {
+        return null;
+    }
+
     // Spokes can only delegate to hub
     if (isSpokeAgent(sourceAgentId)) {
         if (isHubAgent(targetAgentId)) {
@@ -192,6 +205,8 @@ export interface AgentContext {
     userAlignmentRules?: string[]; // Injected strategic alignment rules
     ragCorpus?: string;
     activeModule?: string;
+    conversationMode?: 'direct' | 'department' | 'boardroom';
+    seatedAgents?: string[];
     userProfile?: UserProfile;
     distributor?: DistributorInfo;
     traceId?: string;

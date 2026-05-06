@@ -180,7 +180,9 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                 const result = await MerchandiseService.submitToProduction({
                     productId: effectiveProductId,
                     variantId: `${selectedSize}-${selectedColor.name}`,
-                    quantity: quantity
+                    quantity: quantity,
+                    price: retailPrice,
+                    totalAmount: retailPrice * quantity
                 });
 
                 if (result.success) {

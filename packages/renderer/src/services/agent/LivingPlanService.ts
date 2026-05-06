@@ -25,6 +25,7 @@ export interface PlanStep {
   error?: string;
   result?: unknown;
   dependsOn?: string[];
+  agentId?: string;
 }
 
 export interface Phase {

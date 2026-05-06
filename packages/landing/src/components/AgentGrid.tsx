@@ -145,7 +145,7 @@ const agents: AgentDef[] = [
   {
     id: 'music',
     name: 'Music',
-    title: 'Sonic Auditor',
+    title: 'Sonic Identity',
     tagline: 'Know your DNA.',
     description:
       'Deep audio analysis for BPM, key, mood, and energy. Ensure your mixes are industry-hardened and platform-ready before you hit upload.',
@@ -163,7 +163,7 @@ const agents: AgentDef[] = [
   {
     id: 'governance',
     name: 'Operations',
-    title: 'Career Operations',
+    title: 'Sovereign Command',
     tagline: 'CEO Status.',
     description:
       'The bridge between intent and execution. Every action is tracked, secured, and owned by you. Total career independence without the bloodsucking managers.',
@@ -174,7 +174,7 @@ const agents: AgentDef[] = [
     borderClass: 'border-violet-500/20',
     glowColor: 'rgba(139,92,246,0.2)',
     tier: 2,
-    image: '/conductor-real.png',
+    image: '/deep-test-boardroom-1.png',
   },
   {
     id: 'finance',
@@ -222,7 +222,7 @@ const agents: AgentDef[] = [
     borderClass: 'border-rose-500/20',
     glowColor: 'rgba(244,63,94,0.2)',
     tier: 2,
-    image: '/analytics-preview.png',
+    image: '/deep-test-campaign-1.png',
   },
 
   /* ---- TIER 3: FULL ARSENAL ---- */
@@ -329,7 +329,7 @@ const agents: AgentDef[] = [
     borderClass: 'border-teal-500/20',
     glowColor: 'rgba(45,212,191,0.15)',
     tier: 3,
-    image: '/publicist-preview.png',
+    image: '/deep-test-publicist-1.png',
   },
   {
     id: 'road',
@@ -344,7 +344,7 @@ const agents: AgentDef[] = [
     borderClass: 'border-red-500/20',
     glowColor: 'rgba(248,113,113,0.15)',
     tier: 3,
-    image: '/road-preview.png',
+    image: '/deep-test-booking-1.png',
   },
 ];
 
