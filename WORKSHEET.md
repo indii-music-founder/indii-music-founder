@@ -5,13 +5,13 @@ We use the philosophy "Think First, Work Second". This worksheet represents all 
 ## Phase 1: AI Refinement & Type Safety (Foundational Core)
 *Goal: Solidify the agentic reasoning loop and eliminate brittle type assertions before adding complex agent features.*
 
-- [ ] **1.1. Core AI Types**: Update `ai.dto.ts` to include `thoughtSignature` across all content parts and streaming chunks.
-- [ ] **1.2. AI Service Injection**: Modify `AIService.ts` and `FirebaseAIService.ts` to correctly extract, store, and inject `thoughtSignature` on every payload.
-- [ ] **1.3. Agent Continuity**: Update `BaseAgent.ts` so `thoughtSignature` propagates seamlessly across multi-turn function calls to prevent context degradation.
-- [ ] **1.4. Env Var Typing**: Fix environment variable typing in `vite-env.d.ts`.
-- [ ] **1.5. Interface Harmonization**: Unify the `Project` interfaces between the global store and dashboard modules.
-- [ ] **1.6. Distribution Payload Typing**: Resolve IPC payload typing in distribution components (replacing `as any`).
-- [ ] **1.7. Verification**: Run `npm run typecheck` and ensure exactly **0 errors**.
+- [x] **1.1. Core AI Types**: Update `ai.dto.ts` to include `thoughtSignature` across all content parts and streaming chunks.
+- [x] **1.2. AI Service Injection**: Modify `AIService.ts` and `FirebaseAIService.ts` to correctly extract, store, and inject `thoughtSignature` on every payload.
+- [x] **1.3. Agent Continuity**: Update `BaseAgent.ts` so `thoughtSignature` propagates seamlessly across multi-turn function calls to prevent context degradation.
+- [x] **1.4. Env Var Typing**: Fix environment variable typing in `vite-env.d.ts`.
+- [x] **1.5. Interface Harmonization**: Unify the `Project` interfaces between the global store and dashboard modules.
+- [x] **1.6. Distribution Payload Typing**: Resolve IPC payload typing in distribution components (replacing `as any`).
+- [x] **1.7. Verification**: Run `npm run typecheck` and ensure exactly **0 errors**.
 
 ## Phase 2: Agent System Expansion
 *Goal: Wire up the specialized agents (Publicist, Brand, Marketing, Road, Security) so they can execute actual actions against the platform services.*
