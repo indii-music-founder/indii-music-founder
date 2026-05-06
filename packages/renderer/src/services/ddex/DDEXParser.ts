@@ -300,7 +300,8 @@ class DDEXParserImpl {
             AIToolsUsed: {
               AIToolUsed: r.aiGenerationInfo.aiToolsUsed
             },
-            HumanContributionDescription: r.aiGenerationInfo.humanContributionDescription
+            HumanContributionDescription: r.aiGenerationInfo.humanContributionDescription,
+            DisclosureType: r.aiGenerationInfo.disclosureType
           }
         } : {})
       })),
@@ -571,17 +572,17 @@ class DDEXParserImpl {
 
   private mapDSRRecord(record: Record<string, string>, index: number) {
     return {
-      transactionId: record['TransactionId'] || `TX-${index}`,
+      transactionId: record['TransactionId'] || record['TransactionID'] || record['ID'] || `TX-${index}`,
       resourceId: {
-        isrc: record['ISRC'] || record['ResourceISRC'],
-        title: record['Title'] || record['TrackTitle'],
+        isrc: record['ISRC'] || record['ResourceISRC'] || record['RecordingISRC'],
+        title: record['Title'] || record['TrackTitle'] || record['ResourceTitle'],
       },
-      usageType: this.mapUsageType(record['UsageType'] || record['TransactionType'] || ''),
-      usageCount: parseInt(record['UsageCount'] || record['Quantity'] || '0', 10),
-      revenueAmount: parseFloat(record['Revenue'] || record['Amount'] || '0'),
-      currencyCode: record['Currency'] || 'USD',
-      territoryCode: record['Territory'] || record['Country'] || 'US',
-      serviceName: record['ServiceName'] || record['DSP'],
+      usageType: this.mapUsageType(record['UsageType'] || record['TransactionType'] || record['Usage'] || ''),
+      usageCount: parseInt(record['UsageCount'] || record['Quantity'] || record['Units'] || '0', 10),
+      revenueAmount: parseFloat(record['Revenue'] || record['Amount'] || record['TotalRevenue'] || record['NetRevenue'] || '0'),
+      currencyCode: record['Currency'] || record['CurrencyCode'] || 'USD',
+      territoryCode: record['Territory'] || record['Country'] || record['TerritoryCode'] || 'US',
+      serviceName: record['ServiceName'] || record['DSP'] || record['StoreName'] || record['Platform'],
     };
   }
 
