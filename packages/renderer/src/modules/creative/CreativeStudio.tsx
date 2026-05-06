@@ -12,6 +12,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { WhiskService } from '@/services/WhiskService';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import DirectGenerationTab from './components/DirectGenerationTab';
+import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 
@@ -315,6 +316,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'direct' && <DirectGenerationTab />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
+                        {viewMode === 'showroom' && <ShowroomUI />}
                         {viewMode === 'lab' && <AILab />}
                         {viewMode === 'editor' && selectedItem && (
                             <CreativeCanvas

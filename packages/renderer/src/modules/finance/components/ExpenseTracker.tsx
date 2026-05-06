@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { useDropzone } from 'react-dropzone';
+import FileUpload from '@/components/kokonutui/file-upload';
 import { motion } from 'motion/react';
 import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -140,11 +140,9 @@ export const ExpenseTracker: React.FC = React.memo(() => {
         toast.success("Expense added manually.");
     }, [userProfile?.id, addExpense, toast]);
 
-    const onDrop = useCallback((acceptedFiles: File[]) => {
+    const handleFilesSelected = useCallback((acceptedFiles: File[]) => {
         acceptedFiles.forEach(processFile);
     }, [processFile]);
-
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'image/*': [] } });
 
     return (
         <motion.div
@@ -193,33 +191,22 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                 </div>
 
                 {/* Drop Zone */}
-                <div className="w-full md:w-1/3 p-4 border-l border-white/10 bg-black/20">
-                    <div
-                        {...getRootProps()}
-                        className={`h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-6 cursor-pointer transition-all duration-300 ${isDragActive
-                            ? 'border-teal-500 bg-teal-500/10 scale-[0.98]'
-                            : 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                            }`}
-                    >
-                        <input {...getInputProps()} />
-                        {isAnalyzing ? (
-                            <div className="flex flex-col items-center">
-                                <Loader2 className="animate-spin text-teal-500 mb-4" size={32} />
-                                <p className="text-teal-400 font-medium animate-pulse">Analyzing Receipt...</p>
-                                <p className="text-xs text-gray-500 mt-2">Extracting Vendor & Amount</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 text-gray-400 group-hover:text-white transition-colors border border-white/5">
-                                    <Camera size={24} />
-                                </div>
-                                <p className="text-white font-medium mb-2">Scan Receipt</p>
-                                <p className="text-xs text-gray-500 max-w-[200px]">
-                                    Drop an image here or click to upload. AI will automatically extract details.
-                                </p>
-                            </>
-                        )}
-                    </div>
+                <div className="w-full md:w-1/3 p-4 border-l border-white/10 bg-black/20 flex flex-col items-center justify-center">
+                    {isAnalyzing ? (
+                        <div className="flex flex-col items-center">
+                            <Loader2 className="animate-spin text-teal-500 mb-4" size={32} />
+                            <p className="text-teal-400 font-medium animate-pulse">Analyzing Receipt...</p>
+                            <p className="text-xs text-gray-500 mt-2">Extracting Vendor & Amount</p>
+                        </div>
+                    ) : (
+                        <FileUpload
+                            onFilesSelected={handleFilesSelected}
+                            acceptedFileTypes={['image/*']}
+                            multiple={true}
+                            immediate={true}
+                            className="w-full"
+                        />
+                    )}
                 </div>
             </div>
         </motion.div>

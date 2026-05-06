@@ -21,9 +21,10 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
         isLoading
     } = useEntryContext();
 
-    const { isBoardroomMode } = useStore(useShallow(state => ({
-        isBoardroomMode: state.isBoardroomMode
+    const { conversationMode } = useStore(useShallow(state => ({
+        conversationMode: state.conversationMode
     })));
+    const isBoardroomMode = conversationMode === 'boardroom';
 
     const [input, setInput] = useState('');
     const [isDismissed, setIsDismissed] = useState(() => {

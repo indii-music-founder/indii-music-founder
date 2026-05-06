@@ -220,6 +220,17 @@ export const test = base.extend<AuthFixtures>({
         return;
       }
 
+      // Mock runQuery (POST)
+      if (url.includes(":runQuery")) {
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+        return;
+      }
+
       // Mock all writes (addDoc/updateDoc/setDoc) → return a fake document reference.
       // This unblocks distributionService.createTask() and other Firestore writes
       // that would otherwise hang indefinitely in the offline CI environment.
@@ -229,7 +240,7 @@ export const test = base.extend<AuthFixtures>({
           headers: corsHeaders,
           contentType: "application/json",
           body: JSON.stringify({
-            name: `projects/mock-project/databases/(default)/documents/mock-collection/mock-doc-${Date.now()}`,
+            name: url.split("?")[0].replace("https://firestore.googleapis.com/v1/", "") || `projects/mock-project/databases/(default)/documents/mock-collection/mock-doc-${Date.now()}`,
             fields: {},
             createTime: new Date().toISOString(),
             updateTime: new Date().toISOString(),
@@ -645,6 +656,7 @@ export const test = base.extend<AuthFixtures>({
         },
         sftp: {
           connect: () => Promise.resolve({ success: true }),
+          connectDistributor: () => Promise.resolve({ success: true }),
           disconnect: () => Promise.resolve(),
           isConnected: () => Promise.resolve(true),
           uploadDirectory: () => Promise.resolve({ success: true }),
@@ -709,9 +721,9 @@ export const test = base.extend<AuthFixtures>({
         // This prevents the 60s+ timeout from 4 distributors × 3 retry attempts.
         localStorage.setItem("E2E_DISTRIBUTOR_CONNECTIONS", JSON.stringify([
           { distributorId: "distrokid", isConnected: false, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
-          { distributorId: "tunecore", isConnected: false, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
-          { distributorId: "cdbaby", isConnected: false, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
-          { distributorId: "symphonic", isConnected: false, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
+          { distributorId: "tunecore", isConnected: true, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
+          { distributorId: "cdbaby", isConnected: true, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
+          { distributorId: "symphonic", isConnected: true, features: { canCreateRelease: true, canUpdateRelease: true, canTakedown: true, canFetchEarnings: true, canFetchAnalytics: true } },
         ]));
       } catch (e) {
         // Ignore if localStorage is unavailable

@@ -179,7 +179,33 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
         }
     }
 
-    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+        if (!this.credentials?.apiKey) {
+            return 'in_review';
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/releases/${releaseId}/status`, {
+                headers: {
+                    'Authorization': `Bearer ${this.credentials.apiKey}`,
+                    ...this.getVersionedHeaders(),
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const statusMap: Record<string, ReleaseStatus> = {
+                    'LIVE': 'live',
+                    'PENDING': 'pending_review',
+                    'REVIEW': 'in_review',
+                    'FAILED': 'failed',
+                };
+                return statusMap[data.status] || 'in_review';
+            }
+        } catch (e) {
+            logger.warn('[TuneCore] Status check failed:', e);
+        }
+
         return 'in_review';
     }
 
@@ -191,7 +217,7 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        return {
+        const baseEarnings: DistributorEarnings = {
             distributorId: 'tunecore',
             releaseId: releaseId,
             period: period,
@@ -203,6 +229,35 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
             currencyCode: 'USD',
             lastUpdated: new Date().toISOString()
         };
+
+        if (!this.credentials?.apiKey) {
+            return baseEarnings;
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/earnings?release_id=${releaseId}&start=${period.startDate}&end=${period.endDate || ''}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.credentials.apiKey}`,
+                    ...this.getVersionedHeaders(),
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    ...baseEarnings,
+                    streams: data.total_streams || 0,
+                    downloads: data.total_downloads || 0,
+                    grossRevenue: data.gross_revenue || 0,
+                    netRevenue: data.net_revenue || 0,
+                    lastUpdated: new Date().toISOString()
+                };
+            }
+        } catch (e) {
+            logger.warn('[TuneCore] Earnings fetch failed:', e);
+        }
+
+        return baseEarnings;
     }
 
     async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {

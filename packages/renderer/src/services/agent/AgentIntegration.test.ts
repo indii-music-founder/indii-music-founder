@@ -259,18 +259,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
                 }
             } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
-            // 3. Mock Specialist Execution
-            vi.mocked(AI.generateContent).mockResolvedValueOnce({
-                response: {
-                    text: () => 'I have analyzed the market data.',
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'I have analyzed the market data.' }]
-                        }
-                    }],
-                    usageMetadata: { totalTokenCount: 100 }
-                }
-            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
+            // 3. Specialist Execution is mocked at the registry level
 
             await service.sendMessage('Analyze market trends');
 

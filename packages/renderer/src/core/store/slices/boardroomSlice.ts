@@ -8,13 +8,8 @@ export interface ReferencedAsset {
 }
 
 export interface BoardroomSlice {
-    isBoardroomMode: boolean;
     activeAgents: string[];
     referencedAssets: ReferencedAsset[];
-
-    // Actions
-    toggleBoardroomMode: () => void;
-    setBoardroomMode: (isActive: boolean) => void;
 
     toggleAgent: (agentId: string) => void;
     addActiveAgent: (agentId: string) => void;
@@ -26,12 +21,8 @@ export interface BoardroomSlice {
 }
 
 export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => ({
-    isBoardroomMode: false,
     activeAgents: ['generalist'], // indii Conductor (hub agent) always present initially
     referencedAssets: [],
-
-    toggleBoardroomMode: () => set((state) => ({ isBoardroomMode: !state.isBoardroomMode })),
-    setBoardroomMode: (isActive) => set({ isBoardroomMode: isActive }),
 
     toggleAgent: (agentId) => set((state) => {
         const isActive = state.activeAgents.includes(agentId);

@@ -256,6 +256,43 @@ export class ERNMapper {
                       resources.push(imageResource);
         }
 
+        // 3. Lyrics Resource
+        if (metadata.lyrics || assets?.lyricsFile) {
+                      const lyricsRef = 'TX1';
+                      resourceReferences.push(lyricsRef);
+
+                      const lyricsResource: Resource = {
+                                        resourceReference: lyricsRef,
+                                        resourceType: 'Text',
+                                        resourceId: {
+                                                            proprietaryId: {
+                                                                                id: 'LYRICS',
+                                                                                proprietaryIdType: 'Internal'
+                                                            }
+                                        },
+                                        resourceTitle: { titleText: `${metadata.trackTitle} Lyrics`, titleType: 'DisplayTitle' },
+                                        displayArtistName: metadata.artistName,
+                                        contributors: [],
+                                        textDetails: {
+                                                            textType: 'Lyrics',
+                                                            textContent: metadata.lyrics,
+                                                            languageOfText: metadata.language || 'en'
+                                        }
+                      };
+
+                      if (assets?.lyricsFile) {
+                                        lyricsResource.technicalDetails = [{
+                                                            technicalResourceDetailsReference: 'T3',
+                                                            file: {
+                                                                                  fileName: assets.lyricsFile.name || 'lyrics.txt',
+                                                                                  filePath: assets.lyricsFile.path,
+                                                            }
+                                        }];
+                      }
+
+                      resources.push(lyricsResource);
+        }
+
         return { resources, resourceReferences };
     }
 
@@ -393,6 +430,11 @@ export class ERNMapper {
             'mixer': 'Mixer',
             'composer': 'Composer',
             'lyricist': 'Lyricist',
+            'arranger': 'Arranger',
+            'mastering engineer': 'MasteringEngineer',
+            'recording engineer': 'RecordingEngineer',
+            'remix artist': 'RemixArtist',
+            'featured artist': 'FeaturedArtist',
         };
 
         splits.forEach(split => {

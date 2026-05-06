@@ -200,7 +200,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
                 chatChannel: 'indii',
                 isCommandBarDetached: true,
                 isAgentOpen: false,
-                isBoardroomMode: false
+                conversationMode: 'direct'
             });
         });
     });

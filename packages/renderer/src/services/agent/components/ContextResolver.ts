@@ -8,7 +8,7 @@ export class ContextResolver {
     async resolveContext(): Promise<AgentContext> {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
-        const { currentProjectId, projects, currentOrganizationId, userProfile, currentModule } = state;
+        const { currentProjectId, projects, currentOrganizationId, userProfile, currentModule, conversationMode, activeAgents } = state;
         const currentProject = projects?.find(p => p.id === currentProjectId);
         const brandKit = userProfile?.brandKit;
 
@@ -45,6 +45,8 @@ export class ContextResolver {
             brandKit,
             activeModule: currentModule,
             chatHistory: state.agentHistory || [],
+            conversationMode,
+            seatedAgents: activeAgents,
             distributor,
             whiskState: state.whiskState
         };

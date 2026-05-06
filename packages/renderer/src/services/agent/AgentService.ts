@@ -104,7 +104,7 @@ export class AgentService {
         };
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
-        const isBoardroomMode = state.isBoardroomMode;
+        const isBoardroomMode = state.conversationMode === 'boardroom';
         logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
 
         if (isBoardroomMode) {
@@ -320,23 +320,33 @@ export class AgentService {
     ): Promise<void> {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
-        const { updateAgentMessage, activeAgentProvider } = state;
-        const isBoardroomMode = state.isBoardroomMode;
+        const { updateAgentMessage } = state;
+        const conversationMode = state.conversationMode;
+        
+        context.conversationMode = conversationMode;
 
-        // 0. Boardroom Multi-Dispatch — MUST be checked FIRST.
-        // The "direct" provider check used to run before this, which hijacked
-        // all boardroom messages into the regular chat flow (causing empty responses).
-        if (isBoardroomMode) {
+        // 0. Dispatch by Mode — MUST be checked FIRST.
+        if (conversationMode === 'boardroom') {
             logger.debug('[AgentService] Routing to boardroom multi-dispatch flow');
             await this.handleBoardroomSwarmFlow(text, attachments, context, responseId);
             return;
         }
 
-        // 1. Direct Chat: Bypass all orchestration, talk straight to the LLM
-        if (activeAgentProvider === 'direct') {
-            logger.debug('[AgentService] Routing to direct chat flow');
-            await this.handleDirectChatFlow(text, attachments, context, responseId);
+        if (conversationMode === 'department') {
+            logger.debug('[AgentService] Routing to department flow');
+            await this.handleDepartmentFlow(text, attachments, context, responseId);
             return;
+        }
+
+        if (conversationMode === 'direct') {
+            // Check if direct flow should be bypassed to standard graph orchestration,
+            // or handled via the pure LLM path if provider is set to 'direct'
+            if (state.activeAgentProvider === 'direct') {
+                logger.debug('[AgentService] Routing to direct chat flow (provider override)');
+                await this.handleDirectChatFlow(text, attachments, context, responseId);
+                return;
+            }
+            // If direct mode, and provider is not 'direct', we proceed to standard orchestration
         }
 
         // 1. Resolve Orchestration Path
@@ -440,6 +450,75 @@ export class AgentService {
                     state.activeSessionId
                 ).catch(err => logger.warn('[AgentService] Failed to index agent response:', err));
             }
+        } else {
+            updateAgentMessage(responseId, {
+                thoughtSignature: result?.thoughtSignature
+            });
+        }
+    }
+
+    /**
+     * Department Flow: Limits execution to a specific department.
+     * The task is routed directly to the Head of the active department.
+     */
+    private async handleDepartmentFlow(
+        text: string,
+        attachments: { mimeType: string; base64: string }[] | undefined,
+        context: AgentContext,
+        responseId: string
+    ): Promise<void> {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const { updateAgentMessage, activeDepartmentId } = state;
+
+        if (!activeDepartmentId) {
+            updateAgentMessage(responseId, { text: '❌ No department selected.' });
+            return;
+        }
+
+        const { DEPARTMENTS } = await import('./departments');
+        const dept = DEPARTMENTS[activeDepartmentId];
+        
+        if (!dept) {
+            updateAgentMessage(responseId, { text: `❌ Invalid department: ${activeDepartmentId}` });
+            return;
+        }
+
+        // Force execution to the department head
+        const forcedAgentId = dept.headId;
+        updateAgentMessage(responseId, { agentId: forcedAgentId });
+        
+        let currentStreamedText = '';
+        const result = await this.executor.execute(forcedAgentId, text, context as PipelineContext, (event) => {
+            if (event.type === 'token') {
+                currentStreamedText += event.content;
+                updateAgentMessage(responseId, { text: currentStreamedText });
+            }
+            if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
+                const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
+                const newThought: AgentThought = {
+                    id: uuidv4(),
+                    text: event.content || '',
+                    timestamp: Date.now(),
+                    type: event.type as AgentThought["type"],
+                };
+                if (event.type === 'tool' || event.type === 'tool_result') {
+                    if (event.toolName) newThought.toolName = event.toolName;
+                }
+                const safeThought = JSON.parse(JSON.stringify(newThought));
+                if (currentMsg) {
+                    updateAgentMessage(responseId, {
+                        thoughts: [...(currentMsg.thoughts || []), safeThought]
+                    });
+                }
+            }
+        }, undefined, undefined, attachments);
+
+        if (result && result.text) {
+            updateAgentMessage(responseId, {
+                text: result.text,
+                thoughtSignature: result.thoughtSignature
+            });
         } else {
             updateAgentMessage(responseId, {
                 thoughtSignature: result?.thoughtSignature
@@ -621,6 +700,7 @@ export class AgentService {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
         const activeAgents = state.activeAgents && state.activeAgents.length > 0 ? state.activeAgents : [];
+        context.seatedAgents = activeAgents;
         const referencedAssets = state.referencedAssets || [];
         logger.debug('[AgentService] Boardroom swarm dispatch:', { agentCount: activeAgents.length, agents: activeAgents });
 
@@ -1074,7 +1154,7 @@ The user will see this plan and can approve it to start execution.`;
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
         const msg = { id: uuidv4(), role: 'system' as const, text, timestamp: Date.now() };
-        if (state.isBoardroomMode) {
+        if (state.conversationMode === 'boardroom') {
             state.addBoardroomMessage(msg);
         } else {
             state.addAgentMessage(msg);
@@ -1144,7 +1224,7 @@ The user will see this plan and can approve it to start execution.`;
     async dispatchToolCall(agentId: string, toolName: string, args: Record<string, any>, responseId: string): Promise<void> {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
-        const isBoardroomMode = state.isBoardroomMode;
+        const isBoardroomMode = state.conversationMode === 'boardroom';
 
         try {
             logger.info(`[AgentService] Dispatching direct tool call ${toolName} to agent ${agentId}`);

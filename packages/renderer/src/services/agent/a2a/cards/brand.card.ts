@@ -5,7 +5,29 @@ export const BrandCard: AgentCard = {
     agentId: 'brand',
     displayName: 'Brand Agent',
     description: 'Specialist for brand operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "brand_strategy",
+        "description": "Brand strategy",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "identity_formulation",
+        "description": "Identity formulation",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "voice_generation",
+        "description": "Voice generation",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

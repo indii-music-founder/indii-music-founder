@@ -5,7 +5,29 @@ export const LicensingCard: AgentCard = {
     agentId: 'licensing',
     displayName: 'Licensing Agent',
     description: 'Specialist for licensing operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "sync_licensing",
+        "description": "Sync licensing",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "clearance_processing",
+        "description": "Clearance processing",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "rights_negotiation",
+        "description": "Rights negotiation",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

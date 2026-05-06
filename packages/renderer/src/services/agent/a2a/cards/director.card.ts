@@ -5,7 +5,29 @@ export const DirectorCard: AgentCard = {
     agentId: 'director',
     displayName: 'Director Agent',
     description: 'Specialist for director operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "video_direction",
+        "description": "Video direction",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "storyboarding",
+        "description": "Storyboarding",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "visual_narrative",
+        "description": "Visual narrative",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

@@ -5,7 +5,29 @@ export const PublicistCard: AgentCard = {
     agentId: 'publicist',
     displayName: 'Publicist Agent',
     description: 'Specialist for publicist operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "pr_outreach",
+        "description": "PR outreach",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "press_release_writing",
+        "description": "Press release writing",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "media_relations",
+        "description": "Media relations",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

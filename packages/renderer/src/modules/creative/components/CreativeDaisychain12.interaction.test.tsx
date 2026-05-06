@@ -310,7 +310,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         expect(mockSetPrompt).toHaveBeenCalledWith('Initial Prompt, Cool Brand');
 
         // --- CLICK 7: Switch to Showroom ---
-        const showroomBtn = screen.getByTestId('showroom-view-btn');
+        const showroomBtn = screen.getAllByTestId('showroom-view-btn')[0]!;
         fireEvent.click(showroomBtn);
         expect(await screen.findByText('Product Showroom')).toBeInTheDocument();
 

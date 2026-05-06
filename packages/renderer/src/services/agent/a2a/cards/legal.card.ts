@@ -5,7 +5,29 @@ export const LegalCard: AgentCard = {
     agentId: 'legal',
     displayName: 'Legal Agent',
     description: 'Specialist for legal operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "contract_review",
+        "description": "Contract review",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "rights_management",
+        "description": "Rights management",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "compliance_checking",
+        "description": "Compliance checking",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

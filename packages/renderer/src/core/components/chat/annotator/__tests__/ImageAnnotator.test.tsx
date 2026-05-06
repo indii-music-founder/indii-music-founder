@@ -19,7 +19,7 @@ vi.mock('uuid', () => ({
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
-            isBoardroomMode: false,
+            conversationMode: 'direct',
             updateAgentMessage: vi.fn(),
             updateBoardroomMessage: vi.fn()
         })

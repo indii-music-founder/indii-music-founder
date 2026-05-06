@@ -160,6 +160,12 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
             return () => { };
         }
 
+        // E2E Mock Bypass: skip real Firestore listeners
+        if (typeof window !== 'undefined' && ((window as any).FIREBASE_E2E_MOCK || localStorage.getItem('FIREBASE_E2E_MOCK'))) {
+            set((state) => ({ distribution: { ...state.distribution, loading: false, releases: [], error: null } }));
+            return () => { };
+        }
+
         set((state) => ({ distribution: { ...state.distribution, loading: true } }));
 
         return DistributionSyncService.subscribeToReleases(

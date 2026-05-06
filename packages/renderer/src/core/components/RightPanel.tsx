@@ -14,7 +14,7 @@ import { MessageItem } from '@/core/components/chat/ChatMessage';
 import AssetSpotlight from '@/modules/dashboard/components/AssetSpotlight';
 import { BatchingStatus } from './agent/BatchingStatus';
 import { cn } from '@/lib/utils';
-
+import { TextEffect } from '@/components/motion-primitives/text-effect';
 export default function RightPanel() {
 
     const {
@@ -123,8 +123,8 @@ export default function RightPanel() {
                                     {agentHistory.length === 0 ? (
                                         <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
                                             <MessageSquare size={32} className="mb-4 text-purple-400" />
-                                            <p className="text-sm font-medium">No messages yet</p>
-                                            <p className="text-xs mt-1">Start a conversation with indii to see it here.</p>
+                                            <TextEffect preset="fade" className="text-sm font-medium">No messages yet</TextEffect>
+                                            <TextEffect preset="fade" delay={0.5} className="text-xs mt-1">Start a conversation with indii to see it here.</TextEffect>
                                         </div>
                                     ) : (
                                         <div className="space-y-6">

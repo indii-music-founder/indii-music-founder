@@ -160,7 +160,7 @@ describe('CommandBar Accessibility', () => {
                 isAgentProcessing: false,
                 canvasItems: [{ id: 'mock-item' }],
                 isAgentOpen: false,
-                isBoardroomMode: false,
+                conversationMode: 'direct',
             });
         });
     });
@@ -199,7 +199,7 @@ describe('CommandBar Accessibility', () => {
         } else {
             // Already in indii mode
             expect(
-                screen.queryByRole('button', { name: /switch to agent mode/i })
+                screen.queryByRole('button', { name: /change agent mode/i })
             ).toBeInTheDocument();
         }
     });

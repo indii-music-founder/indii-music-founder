@@ -105,7 +105,7 @@ interface TestStoreState {
     rightPanelView: string;
     agentMode: string;
     isAgentProcessing: boolean;
-    isBoardroomMode: boolean;
+    conversationMode: 'direct' | 'department' | 'boardroom';
     canvasItems: any[];
 }
 
@@ -137,7 +137,7 @@ const useTestStore = create<TestStoreState>((set) => ({
     rightPanelView: 'messages',
     agentMode: 'assistant',
     isAgentProcessing: false,
-    isBoardroomMode: false,
+    conversationMode: 'direct',
     canvasItems: [{ id: "test" }],
 }));
 
@@ -171,7 +171,7 @@ describe('CommandBar', () => {
             commandBarAttachments: [],
             isCommandBarDetached: true,
             isCommandBarCollapsed: false,
-            isBoardroomMode: false,
+            conversationMode: 'direct',
             canvasItems: [{ id: '1' }],
         });
 
@@ -183,23 +183,17 @@ describe('CommandBar', () => {
         (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockToast);
     });
 
-    it('renders the delegate button correctly', () => {
+    it('renders the mode picker button correctly', () => {
         render(<CommandBar />);
-        // The agent/indii mode toggle button: aria-label depends on chatChannel state
-        // Default state is chatChannel='indii', so label is 'Switch to Agent mode'
-        const button = document.querySelector('button[aria-label="Switch to Agent mode"]');
+        const button = document.querySelector('button[aria-label="Change Agent Mode"]');
         expect(button).toBeInTheDocument();
     });
 
-    it('opens the dropdown when delegate button is clicked', () => {
+    it('opens the mode picker when clicked', () => {
         render(<CommandBar />);
-        // The mode toggle now switches between indii/agent mode — no dropdown
-        const button = document.querySelector('button[aria-label="Switch to Agent mode"]') as HTMLElement;
+        const button = document.querySelector('button[aria-label="Change Agent Mode"]') as HTMLElement;
         expect(button).toBeInTheDocument();
         fireEvent.click(button);
-        // After click, chatChannel becomes 'agent', label flips to 'Switch to indii mode'
-        const flippedButton = document.querySelector('button[aria-label="Switch to indii mode"]');
-        expect(flippedButton).toBeInTheDocument();
     });
 
     it('switches module and opens agent window when a manager is selected', () => {
@@ -231,30 +225,14 @@ describe('CommandBar', () => {
 
     // ... existing metadata tests ...
 
-    it('calls setChatChannel("indii") when Indii is selected from menu', () => {
-        // Start in agent mode
-        useTestStore.setState({ currentModule: 'road', chatChannel: 'agent' });
-        const setChatChannelSpy = vi.spyOn(useTestStore.getState(), 'setChatChannel');
-
-        render(<CommandBar />);
-
-        // In agent mode, the toggle shows 'Switch to indii mode'
-        const toggleBtn = document.querySelector('button[aria-label="Switch to indii mode"]') as HTMLElement;
-        expect(toggleBtn).toBeInTheDocument();
-        fireEvent.click(toggleBtn);
-
-        expect(setChatChannelSpy).toHaveBeenCalledWith('indii');
-    });
-
-    it('renders active Indii state and allows switching to agent via menu', async () => {
+    it('renders active Indii state and allows submitting', async () => {
         // Start in Indii mode
         useTestStore.setState({ currentModule: 'dashboard', chatChannel: 'indii', canvasItems: [{ id: 'test' } as any] });
-        const _setModuleSpy = vi.spyOn(useTestStore.getState(), 'setModule');
 
         render(<CommandBar />);
 
         // The mode toggle button renders with the correct label
-        const activeBtn = document.querySelector('button[aria-label="Switch to Agent mode"]');
+        const activeBtn = document.querySelector('button[aria-label="Change Agent Mode"]');
         expect(activeBtn).toBeInTheDocument();
 
         // Verify indii-mode placeholder
@@ -269,14 +247,6 @@ describe('CommandBar', () => {
         await waitFor(() => {
             expect(agentService.sendMessage).toHaveBeenCalledWith('Hello Indii', undefined, undefined);
         });
-
-        // Click toggle to switch to agent mode
-        fireEvent.click(activeBtn as HTMLElement);
-        // After toggle, chatChannel becomes 'agent' — setModule not directly triggered by toggle alone,
-        // but module switching via store navigation would trigger setModule.
-        // Verify the toggle flipped the label.
-        const agentBtn = document.querySelector('button[aria-label="Switch to indii mode"]');
-        expect(agentBtn).toBeInTheDocument();
     });
 
     it('updates button text based on current module', () => {
@@ -289,14 +259,14 @@ describe('CommandBar', () => {
     it('sends a message when form is submitted', async () => {
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText('Launch a campaign, audit security, or ask anything...');
+        const input = screen.getByPlaceholderText('Message road...');
         fireEvent.change(input, { target: { value: 'Hello agent' } });
 
         const submitButton = document.querySelector('button[aria-label="Run command"]');
         fireEvent.click(submitButton!);
 
         await waitFor(() => {
-            expect(agentService.sendMessage).toHaveBeenCalledWith('Hello agent', undefined, undefined);
+            expect(agentService.sendMessage).toHaveBeenCalledWith('Hello agent', undefined, 'road');
         });
     });
     it('handles drag and drop events', async () => {

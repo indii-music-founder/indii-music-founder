@@ -30,6 +30,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         formatTime,
         handleAddSampleClip,
         handleExport,
+        handleDownloadMP4,
         handleLibraryDragStart,
         handleDrop,
         updateClip,
@@ -78,14 +79,23 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     </div>
                 }
                 right={
-                    <button
-                        onClick={handleExport}
-                        disabled={isExporting}
-                        data-testid="video-export-btn"
-                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${isExporting ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
-                    >
-                        {isExporting ? 'Exporting...' : 'Export Video'}
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleDownloadMP4}
+                            disabled={isExporting}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${isExporting ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white'}`}
+                        >
+                            {isExporting ? 'Working...' : 'Download MP4'}
+                        </button>
+                        <button
+                            onClick={handleExport}
+                            disabled={isExporting}
+                            data-testid="video-export-btn"
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${isExporting ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
+                        >
+                            {isExporting ? 'Exporting...' : 'Cloud Render'}
+                        </button>
+                    </div>
                 }
             />
 

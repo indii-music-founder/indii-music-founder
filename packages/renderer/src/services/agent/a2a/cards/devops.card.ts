@@ -5,7 +5,29 @@ export const DevopsCard: AgentCard = {
     agentId: 'devops',
     displayName: 'Devops Agent',
     description: 'Specialist for devops operations.',
-    capabilities: [],
+    capabilities: [
+    {
+        "name": "deployment_automation",
+        "description": "Deployment automation",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "infrastructure_monitoring",
+        "description": "Infrastructure monitoring",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    },
+    {
+        "name": "system_stability",
+        "description": "System stability",
+        "inputSchemaRef": "#/components/schemas/Empty",
+        "outputSchemaRef": "#/components/schemas/Empty",
+        "streaming": false
+    }
+],
     inputSchemas: {},
     outputSchemas: {},
     costModel: {

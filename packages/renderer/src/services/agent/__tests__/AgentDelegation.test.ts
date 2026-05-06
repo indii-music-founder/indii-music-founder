@@ -221,6 +221,33 @@ describe('Agent Delegation and Collaboration', () => {
         });
     });
 
+    describe('Hierarchical Constraints (Phase 8)', () => {
+        it('department head can delegate to its workers', () => {
+            expect(validateHubAndSpoke('finance', 'finance.tax')).toBeNull();
+            expect(validateHubAndSpoke('finance', 'finance.accounting')).toBeNull();
+        });
+
+        it('worker can delegate back to its department head', () => {
+            expect(validateHubAndSpoke('finance.tax', 'finance')).toBeNull();
+        });
+
+        it('worker cannot delegate to other workers in the same department', () => {
+            const result = validateHubAndSpoke('finance.tax', 'finance.accounting');
+            expect(result).not.toBeNull();
+            expect(result).toContain('indii architecture rule');
+        });
+
+        it('worker cannot delegate to other department heads', () => {
+            const result = validateHubAndSpoke('finance.tax', 'legal');
+            expect(result).not.toBeNull();
+        });
+
+        it('head cannot delegate to workers of another department', () => {
+            const result = validateHubAndSpoke('legal', 'finance.tax');
+            expect(result).not.toBeNull();
+        });
+    });
+
     describe('Real-World Scenario Tests', () => {
         it('scenario: album release campaign', () => {
             // Complete flow for album release

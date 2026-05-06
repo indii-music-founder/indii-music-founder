@@ -15,30 +15,19 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Bot, User, Loader2, Wifi, WifiOff, LogIn, ChevronDown } from 'lucide-react';
+import { Send, Bot, User, Loader2, Wifi, WifiOff, LogIn, ChevronDown, LayoutGrid, Users, User as UserIcon } from 'lucide-react';
 import { remoteRelayService, type RemoteResponse, type DesktopState } from '@/services/agent/RemoteRelayService';
+import { AgentModePicker } from '@/components/AgentModePicker';
+import { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
 import { auth } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logger } from '@/utils/logger';
+import { cn } from '@/lib/utils';
 
 // Available specialist agents for routing
 // Agent IDs MUST match the keys in AGENT_PROMPTS (packages/firebase/src/relay/agentPrompts.ts).
 // Mismatches cause silent fallback to the generalist conductor.
-const CONTROLLER_AGENTS = [
-    { id: 'auto', label: 'indii (Auto)', icon: '🎯' },
-    { id: 'brand', label: 'Brand Manager', icon: '🎨' },
-    { id: 'road', label: 'Road Manager', icon: '🚐' },
-    { id: 'marketing', label: 'Marketing', icon: '📣' },
-    { id: 'social', label: 'Social Media', icon: '📱' },
-    { id: 'finance', label: 'Finance', icon: '💰' },
-    { id: 'legal', label: 'Legal', icon: '⚖️' },
-    { id: 'publishing', label: 'Publishing', icon: '📰' },
-    { id: 'licensing', label: 'Licensing', icon: '📋' },
-    { id: 'publicist', label: 'Publicist', icon: '🎤' },
-    { id: 'music', label: 'Music', icon: '🎵' },
-    { id: 'video', label: 'Video', icon: '🎬' },
-    { id: 'creative', label: 'Creative Director', icon: '✨' },
-];
+// CONTROLLER_AGENTS is now derived from AgentModePicker via DEPARTMENTS
 
 interface ChatMessage {
     id: string;
@@ -61,7 +50,12 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
     const [isWaiting, setIsWaiting] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
-    const [selectedAgent, setSelectedAgent] = useState('auto');
+    
+    // Mode and targeting state for mobile remote
+    const [selectedMode, setSelectedMode] = useState<ConversationMode>('boardroom');
+    const [selectedDept, setSelectedDept] = useState<string | null>(null);
+    const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+    
     const [showAgentPicker, setShowAgentPicker] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const pendingCommandId = useRef<string | null>(null);
@@ -118,8 +112,17 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
         }]);
 
         try {
-            // Send command via Firestore with targeted agent
-            const targetAgentId = selectedAgent === 'auto' ? undefined : selectedAgent;
+            // Send command via Firestore with targeted agent/dept/mode context
+            // If boardroom, target is undefined (generalist conductor)
+            // If department, target is the head of the department
+            // If direct, target is the specific agent
+            let targetAgentId: string | undefined = undefined;
+            if (selectedMode === 'department' && selectedDept) {
+                targetAgentId = selectedDept; // Head ID usually matches Dept ID in our system
+            } else if (selectedMode === 'direct' && selectedAgent) {
+                targetAgentId = selectedAgent;
+            }
+
             const commandId = await remoteRelayService.sendCommand(userText, targetAgentId);
             if (!commandId) throw new Error('Failed to send command');
 
@@ -318,28 +321,24 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
                 )}
             </div>
 
-            {/* Agent Picker */}
+            {/* Hierarchical Agent Mode Picker */}
             {showAgentPicker && (
-                <div className="absolute bottom-20 left-0 right-0 mx-3 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 max-h-[280px] overflow-y-auto">
-                    {CONTROLLER_AGENTS.map(agent => (
-                        <button
-                            key={agent.id}
-                            onClick={() => {
-                                setSelectedAgent(agent.id);
-                                setShowAgentPicker(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${selectedAgent === agent.id
-                                ? 'bg-blue-600/20 text-blue-400'
-                                : 'text-[#c9d1d9] hover:bg-[#21262d]'
-                                }`}
-                        >
-                            <span className="text-base">{agent.icon}</span>
-                            <span>{agent.label}</span>
-                            {selectedAgent === agent.id && (
-                                <span className="ml-auto text-xs text-blue-400">✓</span>
-                            )}
-                        </button>
-                    ))}
+                <div className="absolute bottom-20 left-0 right-0 mx-3 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 overflow-hidden">
+                    <AgentModePicker 
+                        className="border-none bg-transparent"
+                        mode={selectedMode}
+                        onModeChange={setSelectedMode}
+                        departmentId={selectedDept}
+                        onDepartmentChange={setSelectedDept}
+                        agentId={selectedAgent}
+                        onAgentChange={setSelectedAgent}
+                    />
+                    <button 
+                        onClick={() => setShowAgentPicker(false)}
+                        className="w-full py-3 bg-blue-600/10 text-blue-400 text-xs font-bold border-t border-[#30363d] hover:bg-blue-600/20 transition-colors"
+                    >
+                        DONE
+                    </button>
                 </div>
             )}
 
@@ -347,18 +346,28 @@ export default function AgentChat({ onSendCommand: _onSendCommand }: AgentChatPr
             <div className="mt-3 flex gap-2">
                 <button
                     onClick={() => setShowAgentPicker(!showAgentPicker)}
-                    className="flex items-center gap-1 px-2 h-10 rounded-xl bg-[#161b22] border border-[#30363d] text-xs text-[#8b949e] hover:border-blue-600/50 transition-colors flex-shrink-0"
-                    title="Select agent"
+                    className={cn(
+                        "flex items-center gap-1 px-3 h-10 rounded-xl border transition-all flex-shrink-0",
+                        selectedMode === 'boardroom' ? "bg-purple-600/20 border-purple-500/30 text-purple-400" :
+                        selectedMode === 'department' ? "bg-blue-600/20 border-blue-500/30 text-blue-400" :
+                        "bg-pink-600/20 border-pink-500/30 text-pink-400"
+                    )}
+                    title="Select mode/agent"
                 >
-                    <span>{CONTROLLER_AGENTS.find(a => a.id === selectedAgent)?.icon || '🎯'}</span>
-                    <ChevronDown className="w-3 h-3" />
+                    {selectedMode === 'boardroom' ? <LayoutGrid className="w-4 h-4" /> :
+                     selectedMode === 'department' ? <Users className="w-4 h-4" /> :
+                     <UserIcon className="w-4 h-4" />}
+                    <ChevronDown className="w-3 h-3 ml-1" />
                 </button>
                 <input
                     type="text"
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isWaiting ? 'Waiting for desktop…' : `Message ${CONTROLLER_AGENTS.find(a => a.id === selectedAgent)?.label || 'your agents'}…`}
+                    placeholder={isWaiting ? 'Waiting…' : 
+                                selectedMode === 'boardroom' ? "Message Boardroom…" :
+                                selectedMode === 'department' ? `Message ${selectedDept || 'Dept'}…` :
+                                `Message ${selectedAgent || 'Agent'}…`}
                     disabled={isWaiting}
                     className="flex-1 bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#484f58] focus:outline-none focus:border-blue-600/50 transition-colors disabled:opacity-50"
                 />

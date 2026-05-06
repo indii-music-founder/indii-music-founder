@@ -3,6 +3,7 @@ import { AGENT_CONFIGS } from './agentConfig';
 import { freezeAgentConfig } from './FreezeDiagnostic';
 
 import { SpecializedAgent, AgentRegistryProvider } from './types';
+import { DEPARTMENTS } from './departments';
 
 export class AgentRegistry implements AgentRegistryProvider {
     private agents: Map<string, SpecializedAgent> = new Map();
@@ -158,6 +159,44 @@ export class AgentRegistry implements AgentRegistryProvider {
             });
         } catch (e: unknown) {
             logger.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
+        }
+
+        // Register worker placeholders from DEPARTMENTS
+        try {
+            for (const dept of Object.values(DEPARTMENTS)) {
+                const typedDept = dept as any;
+                for (const workerId of typedDept.workerIds) {
+                    try {
+                        const workerMeta = {
+                            id: workerId,
+                            name: `${typedDept.displayName} Worker: ${workerId.split('.')[1]}`,
+                            description: `Worker agent for the ${typedDept.displayName} department.`,
+                            color: '#666',
+                            category: 'specialist',
+                            execute: async () => { throw new Error('Cannot execute metadata-only worker agent'); }
+                        } as SpecializedAgent;
+
+                        this.registerLazy(workerMeta, async () => {
+                            const { BaseAgent } = await import('./BaseAgent');
+                            const agent = new BaseAgent({
+                                id: workerId,
+                                name: workerMeta.name,
+                                description: workerMeta.description,
+                                color: workerMeta.color,
+                                category: 'specialist',
+                                systemPrompt: `You are a worker in the ${typedDept.displayName} department.`,
+                                tools: []
+                            });
+                            freezeAgentConfig(agent);
+                            return agent;
+                        });
+                    } catch (e: unknown) {
+                        logger.warn(`[AgentRegistry] Failed to register worker agent '${workerId}':`, e);
+                    }
+                }
+            }
+        } catch (e: unknown) {
+            logger.warn("[AgentRegistry] Failed to register worker agents:", e);
         }
     }
 

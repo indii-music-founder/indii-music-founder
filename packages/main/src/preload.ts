@@ -74,6 +74,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         uploadDirectory: (localPath: string, remotePath: string) => ipcRenderer.invoke('sftp:upload-directory', localPath, remotePath),
         disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
         isConnected: () => ipcRenderer.invoke('sftp:is-connected'),
+        listDirectory: (remotePath: string) => ipcRenderer.invoke('sftp:list-directory', remotePath),
+        readFile: (remotePath: string) => ipcRenderer.invoke('sftp:read-file', remotePath),
     },
     // Brand Capabilities
     brand: {
@@ -103,6 +105,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     video: {
         saveAsset: (url: string, filename: string) => ipcRenderer.invoke('video:save-asset', url, filename),
         openFolder: (filePath?: string) => ipcRenderer.invoke('video:open-folder', filePath),
+        render: (config: unknown) => ipcRenderer.invoke('video:render', config),
     },
 
 
