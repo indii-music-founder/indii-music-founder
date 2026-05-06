@@ -162,9 +162,24 @@ Provide:
             const prompt = `Generate a realistic distance matrix for a tour route (e.g., LA to SF). Return distance and duration.`;
             const response = await GenAI.generateText(prompt);
             return { success: true, data: { matrix: response } };
+        },
+        generate_itinerary: async (args: { tour_name: string, start_date: string, end_date: string, cities: string[] }) => {
+            const prompt = `Generate a detailed day-by-day tour itinerary for "${args.tour_name}".
+            Start Date: ${args.start_date}
+            End Date: ${args.end_date}
+            Cities: ${args.cities.join(', ')}
+            
+            Include travel days, load-in times, soundchecks, show times, and load-out times. Return as structured JSON.`;
+            try {
+                const response = await GenAI.generateStructuredData(prompt, { type: 'object' } as Schema);
+                return { success: true, data: response };
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : String(error);
+                return { success: false, error: message };
+            }
         }
     },
-    authorizedTools: ['plan_tour_route', 'calculate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist'],
+    authorizedTools: ['plan_tour_route', 'calculate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'generate_itinerary'],
     tools: [{
         functionDeclarations: [
             {
@@ -300,6 +315,20 @@ Provide:
                         timelineDays: { type: "NUMBER", description: "Days until the first tour date." }
                     },
                     required: ["artistCitizenship", "tourDestination", "timelineDays"]
+                }
+            },
+            {
+                name: "generate_itinerary",
+                description: "Generate a detailed day-by-day tour itinerary including travel, load-in, soundcheck, and show times.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        tour_name: { type: "STRING", description: "Name of the tour." },
+                        start_date: { type: "STRING", description: "Start date (YYYY-MM-DD)." },
+                        end_date: { type: "STRING", description: "End date (YYYY-MM-DD)." },
+                        cities: { type: "ARRAY", items: { type: "STRING" }, description: "List of cities to visit." }
+                    },
+                    required: ["tour_name", "start_date", "end_date", "cities"]
                 }
             }
         ]
