@@ -147,9 +147,18 @@ If a task is outside Security, say:
             const prompt = `Simulate rotating credentials for ${args.service_name}. Generate a detailed audit log of the key exchange and revocation.`;
             const response = await GenAI.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
             return { success: true, data: { message: response } };
+        },
+        scan_for_vulnerabilities: async (args: { target: string }) => {
+            const prompt = `Perform a simulated vulnerability scan against target: "${args.target}". Return a security assessment report as JSON, listing potential vulnerabilities, severity, and remediation steps.`;
+            try {
+                const response = await GenAI.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
+                return { success: true, data: response };
+            } catch (e: unknown) {
+                return { success: false, error: (e as Error).message };
+            }
         }
     },
-    authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'browser_tool', 'credential_vault'],
+    authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'browser_tool', 'credential_vault', 'scan_for_vulnerabilities'],
     tools: [{
         functionDeclarations: [
             {
@@ -230,6 +239,17 @@ If a task is outside Security, say:
                         password: { type: "STRING" }
                     },
                     required: ["action", "service"]
+                }
+            },
+            {
+                name: "scan_for_vulnerabilities",
+                description: "Scan a target system, URL, or API for potential security vulnerabilities.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        target: { type: "STRING", description: "The system or URL to scan." }
+                    },
+                    required: ["target"]
                 }
             }
         ]
